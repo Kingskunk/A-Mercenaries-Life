@@ -475,12 +475,18 @@
 *label dg_status_line
 *gosub dg_dark_check
 *temp dgsl_marked {(("dg_mark_" & dg_pos))}
-*if (dgsl_marked)
-  *line_break
-  [b][A chalk cross is drawn on the wall here][/b]
+*temp dgsl_has_notice false
+*comment One separator puts the status group below room prose. Further separators appear only between banners, avoiding the old double gaps.
 *line_break
+*if (dgsl_marked)
+  [b][A chalk cross is drawn on the wall here][/b]
+  *set dgsl_has_notice true
 *if (dg_torch_fed_now)
+  *if (dgsl_has_notice)
+    *line_break
   [b][The torch gutters, and a word to the flame coaxes it on for three more steps][/b]
+  *set dgsl_has_notice true
+*if (dgsl_has_notice)
   *line_break
 *if (sees_in_dark)
   [b][You see in the dark: no light needed][/b]
@@ -915,11 +921,11 @@
   *set dss_scroll {("has_scroll_" & dss_spell)}
 *temp dss_slots 0
 *temp dss_permanent_free false
-*if ((dss_spell = "jump") and (inv_otherworldly_leap))
+*if (((dss_spell = "jump") and (inv_otherworldly_leap)) and (not(spells_blocked)))
   *set dss_permanent_free true
-*if ((dss_spell = "mage_armor") and (inv_armor_of_shadows))
+*if (((dss_spell = "mage_armor") and (inv_armor_of_shadows)) and (not(spells_blocked)))
   *set dss_permanent_free true
-*if ((dss_spell = "false_life") and (inv_fiendish_vigor))
+*if (((dss_spell = "false_life") and (inv_fiendish_vigor)) and (not(spells_blocked)))
   *set dss_permanent_free true
 *if (character_class = "wizard")
   *set dss_slots wizard_spell_slots

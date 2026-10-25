@@ -2300,6 +2300,11 @@
     [b][⚡ ${fhb_name} is sheathed in booming energy: thunder damage if they move][/b]
   *set fhb_i + 1
   *goto fight_hub_boom_loop
+*comment Casting spoiled by untrained armor or a shield (equipment.txt recalculate_proficiency): the spell options are hidden, so this says why. Scrolls still work.
+*if (spells_blocked)
+  *if (((character_class = "wizard") or (character_class = "bard")) or ((character_class = "warlock") or (character_class = "ranger")))
+    *line_break
+    [b][✋ Your spellcasting is spoiled: ${spells_blocked_why}][/b]
 *if (agathys_active)
   *line_break
   [b][❄️ Armor of Agathys Active — ${temp_hp} Temp HP | 5 Cold Damage Retaliation][/b]
@@ -2938,20 +2943,20 @@
         *goto resolve_weapon_attack_choice
   *comment GEN:END combat_arrow_options
 
-  *if (combat_can_booming)
+  *if ((combat_can_booming) and (not(spells_blocked)))
     *comment One variant per melee weapon: the battle bar folds "Booming Blade: X" into one slot and opens the weapons on a click (battlehud.js). The Classic list shows each as a line.
     *comment An ACTION, as in the 2024 rules: the cast IS the melee attack, so it spends an attack as the plain one does. booming_armed is set only for the length of that one swing (fight_attack_spent clears it).
     # [b][ACTION][/b] [b][Booming Blade: ${weapon}][/b] Swing with thunder drawn tight along it: the foe struck takes thunder if it moves of its own accord.
       *set booming_armed true
       *set booming_side false
       *goto fight_booming_go
-  *if (combat_can_booming_side)
+  *if ((combat_can_booming_side) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Booming Blade: ${sidearm}][/b] Swing with thunder drawn tight along it: the foe struck takes thunder if it moves of its own accord.
       *set booming_armed true
       *set booming_side true
       *goto fight_booming_go
 
-  *if (combat_can_true_strike)
+  *if ((combat_can_true_strike) and (not(spells_blocked)))
     *comment Two options for one cantrip: the battle bar folds every "True Strike: X" pair into one slot and opens the variants on a click (battlehud.js). The Classic list shows both lines.
     *comment An ACTION, as in the 2024 rules: the cast IS the weapon attack, so it spends an attack exactly as the plain one does (resolve_weapon_attack_choice).
     # [b][ACTION][/b] [b][True Strike: Weapon][/b] Strike with your ${weapon}, rolling with your @{(character_class = "wizard") Intelligence|Charisma} instead of your body, for the weapon's own damage.
@@ -3243,7 +3248,7 @@
         *goto fight_bonus_spent
       *goto fight_action_spent
 
-  *if ((combat_player_actions_left > 0) and (combat_can_spread))
+  *if (((combat_player_actions_left > 0) and (combat_can_spread)) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Control Flames][/b] Spread the fire on a burning foe to the others on its tile.
       *comment Shares the cantrip replay lock (combat_cantrip_choice_locked) with the attack cantrips: they all cost the ACTION, so they are mutually exclusive on a page.
       *if (not(combat_cantrip_choice_locked)) or (not(locked_combat_cantrip_choice_page_id = page_id))
@@ -3258,7 +3263,7 @@
       *line_break
       *goto fight_action_spent
 
-  *if (((combat_player_actions_left > 0) and (known_fire_bolt)))
+  *if ((((combat_player_actions_left > 0) and (known_fire_bolt))) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Fire Bolt][/b] Hurl a mote of arcane flame at ${combat_enemy_epithet}.
       *comment Whole-body replay lock (2026-09-30, shared by every attack-roll cantrip option below -- Ray of
       *comment Frost/Shocking Grasp/Eldritch Blast/Chill Touch -- plus Vicious Mockery just past them, one shared
@@ -3309,7 +3314,7 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if ((((combat_player_actions_left > 0) and (known_ray_of_frost)) and (spell_reach_ok_ray_of_frost)))
+  *if (((((combat_player_actions_left > 0) and (known_ray_of_frost)) and (spell_reach_ok_ray_of_frost))) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Ray of Frost][/b] Loose a beam of numbing cold at ${combat_med_epithet}.
       *comment Shares Fire Bolt's own whole-body replay lock (combat_cantrip_choice_locked, its own comment above
       *comment has the full explanation) -- same bug shape, same one-action-per-page exclusivity.
@@ -3356,7 +3361,7 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if ((((combat_player_actions_left > 0) and (combat_melee_reach)) and (known_shocking_grasp)))
+  *if (((((combat_player_actions_left > 0) and (combat_melee_reach)) and (known_shocking_grasp))) and (not(spells_blocked)))
     *comment TOUCH reach (tools/spell_catalog.json: "shocking_grasp" is range "touch"), so it is only usable against
     *comment a target you are actually touching -- a spell you cannot reach is not offered at a penalty, it is simply
     *comment not offered. This is the REACH gate, a DIFFERENT question from spell_range_of's disadvantage below: a
@@ -3430,7 +3435,7 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if (((combat_player_actions_left > 0) and (known_eldritch_blast)))
+  *if ((((combat_player_actions_left > 0) and (known_eldritch_blast))) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Eldritch Blast][/b] Unleash a crackling beam of eldritch force at ${combat_enemy_epithet}.
       *comment Shares Fire Bolt's own whole-body replay lock (combat_cantrip_choice_locked, its own comment above
       *comment has the full explanation) -- same bug shape, same one-action-per-page exclusivity.
@@ -3490,7 +3495,7 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if ((((combat_player_actions_left > 0) and (known_chill_touch)) and (spell_reach_ok_chill_touch)))
+  *if (((((combat_player_actions_left > 0) and (known_chill_touch)) and (spell_reach_ok_chill_touch))) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Chill Touch][/b] Conjure a skeletal hand of necrotic frost against ${combat_med_epithet}.
       *comment Shares Fire Bolt's own whole-body replay lock (combat_cantrip_choice_locked, its own comment above
       *comment has the full explanation) -- same bug shape, same one-action-per-page exclusivity.
@@ -3535,7 +3540,7 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if ((((combat_player_actions_left > 0) and (known_vicious_mockery)) and (spell_reach_ok_vicious_mockery)))
+  *if (((((combat_player_actions_left > 0) and (known_vicious_mockery)) and (spell_reach_ok_vicious_mockery))) and (not(spells_blocked)))
     *comment Tagged "ranged" in tools/spell_catalog.json, but deliberately NOT wired to spell_range_of's penalty
     *comment and deliberately NOT gated on reach: Vicious Mockery resolves as a Wisdom SAVE (below), so the
     *comment player never makes an attack roll to spoil. The close-combat penalty is a penalty on the ATTACK
@@ -3586,7 +3591,7 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if ((((combat_player_actions_left > 0) and (known_poison_spray)) and (spell_reach_ok_poison_spray)))
+  *if (((((combat_player_actions_left > 0) and (known_poison_spray)) and (spell_reach_ok_poison_spray))) and (not(spells_blocked)))
     *comment POISON SPRAY (2026-10-20, the 2024 cantrip): a Constitution SAVE against the player's spell save DC, like Vicious Mockery's Wisdom one, so there is no attack roll and Hex cannot fire. 1d12 poison on a failure; the dice scale at 5th level (2d12), which no character reaches yet, so resolve_player_hit still rolls one die. Reach "short" (30 ft): Close or nearer. The Poisoner's Robes add 1d4 poison to this (combat_dice.txt resolve_player_hit).
     # [b][ACTION][/b] [b][Poison Spray][/b] Fling a bitter puff of poison at the nearest foe.
       *if (not(combat_cantrip_choice_locked)) or (not(locked_combat_cantrip_choice_page_id = page_id))
@@ -3620,7 +3625,7 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if (((combat_player_actions_left > 0) and (((character_class = "wizard") and (known_magic_missile)) and (wizard_spell_slots > 0))))
+  *if ((((combat_player_actions_left > 0) and (((character_class = "wizard") and (known_magic_missile)) and (wizard_spell_slots > 0)))) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Magic Missile][/b] Loose three darts of force at targets you choose in the sidebar.
       *comment Arms targeting mode instead of casting immediately (2026-09-28) -- RAW lets the three darts be
       *comment split across up to three targets, not forced onto whichever single enemy fight_pick_target's
@@ -3636,7 +3641,7 @@
       *set combat_mm_darts_6 0
       *goto fight_target_magic_missile
 
-  *if ((((combat_can_hex) and (combat_player_bonus_left > 0))) and (spell_reach_ok_hex))
+  *if (((((combat_can_hex) and (combat_player_bonus_left > 0))) and (spell_reach_ok_hex)) and (not(spells_blocked)))
     # [b][BONUS ACTION][/b] [b][Hex][/b] @{combat_hex_orphaned Move your curse to|Lay a baleful eldritch curse upon} ${combat_med_epithet}.
       *gosub_scene combat_movement fight_pick_target
       *gosub_scene combat_movement fight_retarget_by_class "medium"
@@ -3647,7 +3652,7 @@
       *line_break
       *goto fight_bonus_spent
 
-  *if ((combat_player_actions_left > 0) and (((known_armor_of_agathys) and (warlock_spell_slots > 0)) and (not(agathys_active))))
+  *if (((combat_player_actions_left > 0) and (((known_armor_of_agathys) and (warlock_spell_slots > 0)) and (not(agathys_active)))) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Armor of Agathys][/b] Sheathe yourself in spectral frost that punishes melee strikes.
       *gosub_scene combat_spells resolve_cast_agathys
       A brittle casing of translucent, jagged rime coats your shoulders and arms, radiating bone-chilling cold. Any foe foolish enough to strike you will feel the frost shatter back against the blow.
@@ -3656,7 +3661,7 @@
       *line_break
       *goto fight_action_spent
 
-  *if (combat_can_mage_armor)
+  *if ((combat_can_mage_armor) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Mage Armor][/b] Lay a ward of unseen force over yourself: base AC 13 + Dexterity for 24 hours, while you wear no armor.
       *comment Not a fight-long effect: it lasts a day and is still there after the fight. equipment.txt cast_mage_armor spends the slot (none for Armor of Shadows), starts the 24-hour timer
       *comment and recomputes armor_class; it carries its own per-page lock, so a replay of this page cannot spend a second slot.
@@ -3667,7 +3672,7 @@
       *line_break
       *goto fight_action_spent
 
-  *if (combat_can_false_life)
+  *if ((combat_can_false_life) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][False Life][/b] Weave a necromantic shroud over your flesh: 1d4 + 4 temporary hit points for 12 hours.
       *gosub_scene combat_spells resolve_cast_false_life
       You murmur a dark necromantic rite. A numb, leathery vitality spreads beneath your skin, insulating your muscles against immediate harm.
@@ -3676,7 +3681,7 @@
       *line_break
       *goto fight_action_spent
 
-  *if ((((combat_player_actions_left > 0) and ((known_dissonant_whispers) and (bard_spell_slots > 0)))) and (spell_reach_ok_dissonant_whispers))
+  *if (((((combat_player_actions_left > 0) and ((known_dissonant_whispers) and (bard_spell_slots > 0)))) and (spell_reach_ok_dissonant_whispers)) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Dissonant Whispers][/b] A discordant psychic phrase wracks ${combat_med_epithet}.
       *comment Whole-body replay lock (2026-09-30, same bug/shape as resolve_weapon_attack_choice's own header
       *comment comment above): fight_pick_target's kill-priority re-scan and pick_spell_flavor's *rand pick were
@@ -3713,7 +3718,7 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if (((combat_can_fear) and (spell_reach_ok_cause_fear)))
+  *if ((((combat_can_fear) and (spell_reach_ok_cause_fear))) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Cause Fear][/b] Plant a whispered dread in ${combat_med_epithet}.@{show_stat_hints  [Wisdom Save]|}
       *gosub_scene combat_movement fight_pick_target
       *gosub_scene combat_movement fight_retarget_by_class "medium"
@@ -3722,14 +3727,14 @@
       *gosub_scene combat_spells resolve_cast_cause_fear
       *goto fight_action_spent
 
-  *if (combat_can_hadar)
+  *if ((combat_can_hadar) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Arms of Hadar][/b] Black arms lash every foe within reach, and what they catch cannot strike back.@{show_stat_hints  [Strength Save, 2d6 Necrotic]|}
       *gosub_scene combat_prose flavor_arms_of_hadar
       *line_break
       *gosub_scene combat_spells resolve_arms_of_hadar
       *goto fight_check_enemy_hp
 
-  *if (((combat_player_actions_left > 0) and ((known_bane) and (bard_spell_slots > 0))))
+  *if ((((combat_player_actions_left > 0) and ((known_bane) and (bard_spell_slots > 0)))) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Bane][/b] Sour the aim and nerve of every foe still standing near you.
       *comment No fight_pick_target re-sync here -- unlike every other targeted option, Bane doesn't act on the
       *comment single "active" target at all; resolve_cast_bane picks its own up to three targets internally.
@@ -3738,7 +3743,7 @@
       *gosub_scene combat_spells resolve_cast_bane
       *goto fight_action_spent
 
-  *if ((combat_can_healing_word) and (combat_player_bonus_left > 0))
+  *if (((combat_can_healing_word) and (combat_player_bonus_left > 0)) and (not(spells_blocked)))
     # [b][BONUS ACTION][/b] [b][Healing Word][/b] @{combat_ally_alive_exists Speak a curative word across the fight, to you or an ally.|Speak a curative syllable to knit your gashes.}
       *comment With an ally on the field the player picks who is healed in the sidebar (fight_target_friendly_healing_word); alone, it heals the caster at once, as it always did.
       *set combat_friendly_target 0
@@ -3820,7 +3825,7 @@
         *goto fight_bonus_spent
       *goto fight_action_spent
 
-  *if (combat_can_shield)
+  *if ((combat_can_shield) and (not(spells_blocked)))
     # [b][Shield][/b] Hold the barrier-spell ready to snap into place when it can deflect a hit.
       *set shield_armed true
       You murmur the first half of the somatic phrase under your breath, holding the working coiled and ready at your fingertips, costing you nothing to keep it there.
@@ -3829,7 +3834,7 @@
       *line_break
       *goto fight_round_hub
 
-  *if (((((combat_player_actions_left > 0) and (character_class = "warlock")) and (known_hellish_rebuke)) and (warlock_spell_slots > 0)) and ((not(rebuke_armed)) and (not(player_oa_used))))
+  *if ((((((combat_player_actions_left > 0) and (character_class = "warlock")) and (known_hellish_rebuke)) and (warlock_spell_slots > 0)) and ((not(rebuke_armed)) and (not(player_oa_used)))) and (not(spells_blocked)))
     # [b][Hellish Rebuke][/b] Hold a vengeful retort ready, to scorch whoever next wounds you.
       *set rebuke_armed true
       You bite down on a retort and hold it there, hot behind your teeth, ready to spit back at whoever next draws your blood.
@@ -3847,7 +3852,7 @@
       *line_break
       *goto fight_bonus_spent
 
-  *if ((((combat_can_hunters_mark) and (combat_player_bonus_left > 0))) and (spell_reach_ok_hunters_mark))
+  *if (((((combat_can_hunters_mark) and (combat_player_bonus_left > 0))) and (spell_reach_ok_hunters_mark)) and (not(spells_blocked)))
     # [b][BONUS ACTION][/b] [b][Hunter's Mark][/b] @{combat_hm_orphaned Move your mark to|Mark} ${combat_med_epithet} as your quarry${chm_cost_text}.
       *gosub_scene combat_movement fight_pick_target
       *gosub_scene combat_movement fight_retarget_by_class "medium"
@@ -3857,7 +3862,7 @@
       *line_break
       *goto fight_bonus_spent
 
-  *if ((combat_can_ensnaring) and (combat_player_bonus_left > 0))
+  *if (((combat_can_ensnaring) and (combat_player_bonus_left > 0)) and (not(spells_blocked)))
     # [b][BONUS ACTION][/b] [b][Ensnaring Strike][/b] Your next weapon hit calls up thorned vines that bind the target if it fails a Strength save.@{show_stat_hints  [Strength Save, 1d6 Piercing]|}
       *gosub_scene combat_spells resolve_cast_ensnaring_strike
       You murmur the word and feel thorns rise along your weapon, waiting for a hit to carry them.
@@ -3885,7 +3890,7 @@
       *line_break
       *goto fight_bonus_spent
 
-  *if ((combat_can_blade_ward) and (combat_player_bonus_left > 0))
+  *if (((combat_can_blade_ward) and (combat_player_bonus_left > 0)) and (not(spells_blocked)))
     # [b][BONUS ACTION][/b] [b][Blade Ward][/b] Blows land on the sigil, not on you.
       *comment Sets BOTH flags so a fresh cast always starts clean. Only offered when no ward is up or fading.
       *comment Idempotent, so this pair needs no replay lock (the tick, which is not idempotent, has

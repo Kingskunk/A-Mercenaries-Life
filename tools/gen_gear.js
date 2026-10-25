@@ -629,7 +629,7 @@ function genTradeData() {
     var it = byId[id], sl = it.sell || {};
     data.items[id] = {
       name: it.name, title: it.title || it.name, kind: it.kind, group: it.tradeGroup || "", tier: it.tier || "", retail: it.retail || 0, weight: it.weight || 0,
-      minutes: it.minutes || 10, hint: it.hint || (it.traits ? traitHint(it) : ""), slot: slotLabel(it), stack: stackable(it),
+      minutes: it.minutes || 10, hint: it.tradeHint || it.hint || (it.traits ? traitHint(it) : ""), slot: slotLabel(it), stack: stackable(it),
       sell: { smith: sl.smith || 0, pawn: sl.pawn || 0, general: sl.general || 0, tailor: sl.tailor || 0, jeweler: sl.jeweler || 0, pawnFixed: sl.pawnFixed || 0, smithPiece: sl.smithPiece || 0, herbalistPiece: sl.herbalistPiece || 0, gamePiece: sl.gamePiece || 0, countVar: sl.countVar || "" }
     };
   });

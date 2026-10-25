@@ -248,9 +248,10 @@
   var CATEGORY_LABEL = {
     weapon: "Weapons", armor: "Body armor", shield: "Shields & off-hand", head: "Headwear",
     cloak: "Cloaks", hands: "Gloves", feet: "Footwear", neck: "Neckwear", ring: "Rings",
-    tool: "Tools", consumable: "Consumables", gemstone: "Loose stones", jewelry: "Jewelry", salvage: "Salvage", other: "Other"
+    tool: "Tools", consumable: "Consumables", gemstone: "Loose stones", jewelry: "Jewelry", salvage: "Salvage", other: "Other",
+    grain: "Grain & bread", produce: "Produce", meat: "Meat & fish", dairy: "Dairy & eggs", pantry: "Salt & sweets", ore: "Ore & metal", timber: "Timber & fuel", hides: "Hides & horn", cloth: "Wool & cloth"
   };
-  var CATEGORY_ORDER = ["weapon", "armor", "shield", "head", "cloak", "hands", "feet", "neck", "ring", "tool", "consumable", "gemstone", "jewelry", "salvage", "other"];
+  var CATEGORY_ORDER = ["weapon", "armor", "shield", "head", "cloak", "hands", "feet", "neck", "ring", "tool", "consumable", "gemstone", "jewelry", "salvage", "other", "grain", "produce", "meat", "dairy", "pantry", "ore", "timber", "hides", "cloth"];
   function categoryOf(it) {
     var kind = String(it && it.kind || "").toLowerCase();
     var group = String(it && it.group || "").toLowerCase();
@@ -258,14 +259,79 @@
     if (kind === "valuable") return "gemstone";
     return CATEGORY_LABEL[kind] ? kind : "other";
   }
-  function categoriesFor(rows) {
-    var found = {};
-    rows.forEach(function (r) { found[categoryOf(data().items[r.id])] = true; });
-    return CATEGORY_ORDER.filter(function (key) { return found[key]; });
+  /* ------------------------------------------------------------------ finding things (2026-10-25, the user: a long list needs navigating)
+   * The rows of one tab are filtered by the search box, the flag chips and the category chip, sorted, and (when sorted by group with no category picked) split under folding group headers.
+   * Facts about a row (its first unit's price, how that stands against the usual price, what the player holds and has set aside) are worked out once here and used for all three. */
+  var SORTS = {
+    buy: [["group", "By group"], ["name", "Name A–Z"], ["low", "Price: low to high"], ["high", "Price: high to low"], ["usual", "Cheapest for its worth"], ["margin", "Best resale margin"], ["perload", "Most value per load"]],
+    sell: [["group", "By group"], ["name", "Name A–Z"], ["low", "Price: low to high"], ["high", "Price: high to low"], ["usual", "Best for its worth"], ["profit", "Most profit"], ["perload", "Most value per load"]]
+  };
+  function flagList(kind, mk) {
+    var f = [["cart", "In cart"]];
+    if (kind === "buy") { f.push(["own", "I have some"]); if (mk) { f.push(["away", "Resells higher"]); f.push(["usual", "Cheap now"]); } }
+    else { f.push(["profit", "Above what I paid"]); if (mk) f.push(["usual", "Pays well"]); }
+    return f;
   }
-  function filterRows(rows) {
-    return view.category ? rows.filter(function (r) { return categoryOf(data().items[r.id]) === view.category; }) : rows;
+  function rowFacts(trade, mk, kind, r, s) {
+    var it = data().items[r.id], g = mk ? mk.def.goods[r.id] : null, price, base;
+    if (mk && g) { var l = ladderOf(mk, kind, r.id, 0, 1)[0]; price = l === undefined ? null : l; base = num(g.base); }
+    else { price = kind === "buy" ? num(it.retail) : num(r.unit); base = num(it.retail); }
+    var bs = basisFor(r.id, s), away = null, w = wt(r.id);
+    // what the best other market the player has seen pays for it (the resale value of a good bought here)
+    if (kind === "buy" && mk && price !== null) { var el = elsewhere("sell", r.id, trade, s); if (el.best) away = el.best; }
+    return { it: it, price: price, ratio: price !== null && base > 0 ? price / base : 1, qty: cart[kind][r.id] || 0, have: owned(r.id, s), profit: kind === "sell" && bs && price !== null ? price - bs.t / 10 : null,
+      away: away, margin: away && price > 0 ? (away.v - price) / price : null, resells: !!away && away.v >= price * 1.1 && away.v - price >= 0.2, perLoad: price !== null && w > 0 ? price / w : null, cat: categoryOf(it) };
   }
+  function arrange(trade, mk, s, kind, rows) {
+    var key = kind === "buy" ? "buy" : "sell", q = String(view.q || "").toLowerCase().replace(/^\s+|\s+$/g, ""), fl = view.flags || {};
+    var items = rows.map(function (r) { return { r: r, f: rowFacts(trade, mk, kind, r, s) }; });
+    var filtered = !!q || Object.keys(fl).some(function (k) { return fl[k]; });
+    var base = items.filter(function (x) {
+      var f = x.f, label = (CATEGORY_LABEL[f.cat] || "").toLowerCase();
+      if (q && (f.it.title || "").toLowerCase().indexOf(q) < 0 && (f.it.name || "").toLowerCase().indexOf(q) < 0 && label.indexOf(q) < 0) return false;
+      if (fl.cart && !f.qty) return false;
+      if (fl.own && !f.have) return false;
+      if (fl.away && !f.resells) return false;
+      if (fl.profit && !(f.profit !== null && f.profit > 0)) return false;
+      if (fl.usual && !(kind === "buy" ? f.ratio <= 0.92 : f.ratio >= 1.08)) return false;
+      return true;
+    });
+    var counts = {}, cats = [];
+    base.forEach(function (x) { counts[x.f.cat] = (counts[x.f.cat] || 0) + 1; });
+    CATEGORY_ORDER.forEach(function (c) { if (counts[c]) cats.push({ key: c, n: counts[c] }); });
+    if (view.category && !counts[view.category]) view.category = "";
+    var shown = view.category ? base.filter(function (x) { return x.f.cat === view.category; }) : base;
+    var order = function (x) { return CATEGORY_ORDER.indexOf(x.f.cat); }, nameOf = function (x) { return String(x.f.it.title || x.f.it.name || ""); };
+    var byName = function (a, b) { return nameOf(a).localeCompare(nameOf(b)); };
+    var sort = SORTS[key].some(function (o) { return o[0] === view.sort; }) ? view.sort : "group";
+    var price = function (x) { return x.f.price === null ? Infinity : x.f.price; };
+    shown.sort(function (a, b) {
+      if (sort === "name") return byName(a, b);
+      if (sort === "low") return price(a) - price(b) || byName(a, b);
+      if (sort === "high") return (b.f.price === null ? -1 : b.f.price) - (a.f.price === null ? -1 : a.f.price) || byName(a, b);
+      if (sort === "usual") return kind === "buy" ? a.f.ratio - b.f.ratio || byName(a, b) : b.f.ratio - a.f.ratio || byName(a, b);
+      if (sort === "profit") return (b.f.profit === null ? -1e9 : b.f.profit) - (a.f.profit === null ? -1e9 : a.f.profit) || byName(a, b);
+      if (sort === "margin") return (b.f.margin === null ? -1e9 : b.f.margin) - (a.f.margin === null ? -1e9 : a.f.margin) || byName(a, b);
+      if (sort === "perload") return (b.f.perLoad === null ? -1 : b.f.perLoad) - (a.f.perLoad === null ? -1 : a.f.perLoad) || byName(a, b);
+      return order(a) - order(b) || byName(a, b);
+    });
+    var entries = [], grouped = sort === "group" && !view.category && cats.length > 1;
+    if (grouped) {
+      cats.forEach(function (c) {
+        var mine = shown.filter(function (x) { return x.f.cat === c.key; }), inCart = 0;
+        mine.forEach(function (x) { inCart += x.f.qty ? 1 : 0; });
+        var folded = !filtered && !!view.fold[kind + ":" + c.key];
+        entries.push({ head: c.key, n: mine.length, inCart: inCart, folded: folded });
+        if (!folded) mine.forEach(function (x) { entries.push(x.r); });
+      });
+    } else shown.forEach(function (x) { entries.push(x.r); });
+    return { entries: entries, cats: cats, all: rows.length, matched: base.length, filtered: filtered, sort: sort };
+  }
+  function headHtml(h) {
+    return '<div class="trd-grouphead' + (h.folded ? " trd-folded" : "") + '" data-fold="' + esc(h.head) + '" role="button" tabindex="0" aria-expanded="' + (!h.folded) + '"><span class="trd-caret">' + (h.folded ? "▸" : "▾") + "</span> " + esc(CATEGORY_LABEL[h.head] || h.head) + " <small>" + h.n + "</small>" + (h.inCart ? ' <small class="trd-incart">' + h.inCart + " in cart</small>" : "") + "</div>";
+  }
+  function noMatchHtml() { return '<div class="trd-empty">Nothing matches. <button type="button" class="trd-link" data-act="resetfilters">Clear the search and filters</button></div>'; }
+
   function tradeIcon(id, it) {
     var resolver = window.ItemIconResolver, key = "misc", src = "";
     if (resolver && typeof resolver.keyFor === "function") key = resolver.keyFor(id, it);
@@ -278,8 +344,8 @@
 
   if (typeof document === "undefined") return; // node tests stop here (mirrors inventory.js)
 
-  var dlg, elTitle, elPurse, elBody, elFoot, elTabs, elControls, elFilter;
-  var view = { key: "", tab: "buy", category: "" };
+  var dlg, elTitle, elPurse, elBody, elFoot, elTabs, elControls, elRail, elTools, elSearch, elSort, elFlags, elCats;
+  var view = { key: "", tab: "buy", category: "", q: "", sort: "group", flags: {}, fold: {} };
   var cart = { buy: {}, sell: {} };
   var reopen = false;
   var confirmedLabel = null; // the settle option we clicked; the old page can linger while ChoiceScript fades it out
@@ -295,26 +361,38 @@
         '<span class="trd-purse"></span><span class="trd-spacer"></span>' +
         '<button type="button" class="trd-close" data-act="close" aria-label="Close trade">×</button>' +
       "</div>" +
-      '<div class="trd-controls"><div class="trd-tabs"></div><label class="trd-filter-wrap">Show <select class="trd-filter" data-act="filter"></select></label></div>' +
-      '<div class="trd-body"></div>' +
-      '<div class="trd-foot"></div>';
+      '<div class="trd-controls"><div class="trd-tabs"></div></div>' +
+      '<div class="trd-split"><div class="trd-rail">' +
+        '<div class="trd-tools"><input type="search" class="trd-search" data-act="search" placeholder="Search goods" aria-label="Search goods" autocomplete="off"><select class="trd-sort" data-act="sort" aria-label="Sort"></select><span class="trd-flags"></span></div>' +
+        '<div class="trd-cats"></div>' +
+        '<div class="trd-keys">Shift-click: ten at a time<br>Ctrl-click +: the most you can afford<br>Ctrl-click −: clear the line</div>' +
+      '</div><div class="trd-right"><div class="trd-body"></div><div class="trd-foot"></div></div></div>';
     document.body.appendChild(dlg);
     elTitle = dlg.querySelector(".trd-title");
     elPurse = dlg.querySelector(".trd-purse");
     elControls = dlg.querySelector(".trd-controls");
     elTabs = dlg.querySelector(".trd-tabs");
-    elFilter = dlg.querySelector(".trd-filter");
+    elRail = dlg.querySelector(".trd-rail");
+    elTools = dlg.querySelector(".trd-tools");
+    elSearch = dlg.querySelector(".trd-search");
+    elSort = dlg.querySelector(".trd-sort");
+    elFlags = dlg.querySelector(".trd-flags");
+    elCats = dlg.querySelector(".trd-cats");
     elBody = dlg.querySelector(".trd-body");
     elFoot = dlg.querySelector(".trd-foot");
     dlg.addEventListener("click", onClick);
     dlg.addEventListener("change", onChange);
+    dlg.addEventListener("input", onInput);
     dlg.addEventListener("mouseover", onOver);
     dlg.addEventListener("mousemove", onMove);
     dlg.addEventListener("mouseleave", hideTip);
     // Keep typing from reaching the game's own hotkeys (1-9, J/K...) while this panel is up.
     dlg.addEventListener("keydown", function (ev) {
       ev.stopPropagation();
-      if (ev.key === "Escape") return; // let the dialog's native close run
+      // Escape in the search box clears it first; the dialog's native close runs when it is already empty
+      if (ev.key === "Escape" && ev.target === elSearch && elSearch.value) { ev.preventDefault(); elSearch.value = ""; view.q = ""; render(); return; }
+      if (ev.key === "Escape") return;
+      if ((ev.key === "Enter" || ev.key === " ") && ev.target && ev.target.getAttribute && ev.target.hasAttribute("data-fold")) { ev.preventDefault(); toggleFold(ev.target.getAttribute("data-fold")); }
     });
     dlg.addEventListener("mousedown", function (ev) { if (ev.target === dlg) close(); });
     dlg.addEventListener("close", function () { render(); });
@@ -330,7 +408,8 @@
    * what the purse weighs (the purse is always held as the fewest coins). Only shown, never a gate: a trade that overloads is allowed, with the words the shop menus use. */
   function IP() { return window.InventoryPanel && window.InventoryPanel.loadOf ? window.InventoryPanel : null; }
   function wt(id) { var it = data().items[id]; return it ? num(it.weight) : 0; }
-  function weightTag(id) { var w = wt(id), p = IP(); return w && p ? '<span class="trd-wt">' + p.fmtLoad(w) + " load</span>" : ""; }
+  // "you have 14 · 0.4 load" as one unit: it fits on the name's line or drops whole to the next, never split
+  function tagsHtml(have, id) { var w = wt(id), p = IP(), bits = []; if (have) bits.push("you have " + have); if (w && p) bits.push(p.fmtLoad(w) + " load"); return bits.length ? '<span class="trd-tags">' + bits.join(" · ") + "</span>" : ""; }
   function cartLoad(t, s) {
     var p = IP(), ld = p ? p.loadOf(s) : null;
     if (!ld) return null;
@@ -402,8 +481,8 @@
     var g = mk.def.goods[id], S = num(mk.st.stock[id]), next = info && info.next !== null ? info.next : null;
     var f = g.fixed ? 1 : window.Market.factor(S, g.target), wr = g.worldRatio || 1, mark = (f > 1.1 || wr > 1.1) ? ' <span class="trd-vs trd-vs-up">▲</span>' : ((f < 0.9 || wr < 0.9) ? ' <span class="trd-vs trd-vs-down">▼</span>' : "");
     var held = mk.st.resv && mk.st.resv[id] ? mk.st.resv[id].qty : 0;
-    var shelf = kind === "buy" ? '<small class="trd-stock">' + (S > 0 ? S + " on the shelf" : "sold out") + (held ? ", " + Math.min(held, S) + " yours" : "") + "</small>"
-      : '<small class="trd-stock">' + (g.fixed ? "" : (S > 0 ? S + " held" : "none held")) + (limited && appetiteLeft(mk, id) !== null ? " · takes " + fmt(appetiteLeft(mk, id)) + " today" : "") + "</small>";
+    var shelf = kind === "buy" ? '<small class="trd-stock">' + (S > 0 ? S : "sold out") + (held ? " · " + Math.min(held, S) + " yours" : "") + "</small>"
+      : '<small class="trd-stock">' + (g.fixed ? "" : (S > 0 ? S : "none")) + (limited && appetiteLeft(mk, id) !== null ? " · takes " + fmt(appetiteLeft(mk, id)) + " today" : "") + "</small>";
     var head = next === null ? (kind === "buy" ? "sold out" : "—") : (qty > 0 ? '<small class="trd-nextlabel">next</small> ' : "") + fmtUnit(next, kind);
     var avg = line && line.qty > 0 ? '<small class="trd-total">' + line.qty + " for " + fmt(line.total) + (line.qty > 1 ? " · avg " + fmtUnit(line.total / line.qty, kind) : "") + "</small>" : "";
     var bits = [];
@@ -418,7 +497,7 @@
     if (!el || !el.best) return "";
     var b = el.best, better = here !== null && here !== undefined && (kind === "buy" ? b.v < here * 0.9 : b.v > here * 1.1);
     var when = b.age <= 0 ? "today" : b.age + "d ago" + (b.age > 20 ? " (old)" : "");
-    return '<div class="trd-known' + (better ? " trd-known-better" : "") + '">Elsewhere: ' + fmtUnit(b.v, kind) + " · " + esc(b.title) + " · " + when + (better ? (kind === "buy" ? " · cheaper" : " · pays more") : "") + "</div>";
+    return '<div class="trd-known' + (better ? " trd-known-better" : "") + '">' + fmtUnit(b.v, kind) + " · " + esc(b.title) + " · " + when + (better ? (kind === "buy" ? " · cheaper" : " · pays more") : "") + "</div>";
   }
 
   /* ---- the hover card (2026-10-24): the combatant and condition cards' look (index.html #csTip), built inside the dialog because a modal dialog sits above everything else */
@@ -450,8 +529,10 @@
       var dearC = kind === "buy" ? "tBad" : "tGood", cheapC = kind === "buy" ? "tGood" : "tBad";
       if (wr > 1.1) out += '<div class="tRow"><span>Supply</span><span class="' + dearC + '">short · higher than usual</span></div>';
       else if (wr < 0.9) out += '<div class="tRow"><span>Supply</span><span class="' + cheapC + '">plentiful · lower than usual</span></div>';
+      if (!g.fixed) out += '<div class="tRow"><span>' + (kind === "buy" ? "On the shelf" : "Held here") + "</span><span><b>" + num(mk.st.stock[id]) + "</b></span></div>";
       if (sf > 1.1) out += '<div class="tRow"><span>Shelf</span><span class="' + dearC + '">thin</span></div>';
       else if (sf < 0.9) out += '<div class="tRow"><span>Shelf</span><span class="' + cheapC + '">well stocked</span></div>';
+      if (kind === "buy") { var rs = elsewhere("sell", id, trade, s).best; if (rs && first !== undefined && rs.v >= first * 1.1) out += '<div class="tRow"><span>Pays more at</span><span><b>' + esc(rs.title) + "</b> · " + fmtUnit(rs.v, "sell") + " <i>" + ageText(rs.age) + "</i></span></div>"; }
       var stops = lastStops(trade, s, 3);
       out += '<div class="tSub">At your last stops</div>';
       if (!stops.length) out += '<div class="tText">No other market seen yet.</div>';
@@ -484,8 +565,7 @@
     return '<span class="trd-step">' +
       '<button type="button" class="trd-btn" data-step="-1" data-kind="' + kind + '" data-id="' + esc(id) + '" data-max="' + max + '"' + (qty ? "" : " disabled") + ' aria-label="Fewer">−</button>' +
       '<span class="trd-qty' + (qty ? " trd-qty-on" : "") + '">' + qty + "</span>" +
-      '<button type="button" class="trd-btn' + (slip ? " trd-btn-slip" : "") + '" data-step="1" data-kind="' + kind + '" data-id="' + esc(id) + '" data-max="' + max + '"' + (qty >= max ? " disabled" : "") + ' aria-label="More">+</button>' +
-      (max > 1 ? '<button type="button" class="trd-btn trd-btn-max" data-step="max" data-kind="' + kind + '" data-id="' + esc(id) + '" data-max="' + max + '" data-fit="' + (fit === undefined ? max : fit) + '"' + (qty >= (fit === undefined ? max : fit) ? " disabled" : "") + ' aria-label="As many as possible">Max</button>' : "") +
+      '<button type="button" class="trd-btn' + (slip ? " trd-btn-slip" : "") + '" data-step="1" data-kind="' + kind + '" data-id="' + esc(id) + '" data-max="' + max + '" data-fit="' + (fit === undefined ? max : fit) + '"' + (qty >= max ? " disabled" : "") + ' aria-label="More">+</button>' +
       "</span>";
   }
 
@@ -494,7 +574,7 @@
     var s = statsNow(), trade = currentTrade();
     hideTip();
     if (!trade) { elBody.innerHTML = '<div class="trd-empty">There is nothing to trade here.</div>'; elFoot.innerHTML = ""; elTabs.innerHTML = ""; elControls.style.display = "none"; return; }
-    if (view.key !== trade.key) { view.key = trade.key; view.tab = trade.def.buy.length ? "buy" : "sell"; view.category = ""; cart = { buy: {}, sell: {} }; }
+    if (view.key !== trade.key) { view.key = trade.key; view.tab = trade.def.buy.length ? "buy" : "sell"; view.category = ""; view.q = ""; view.sort = "group"; view.flags = {}; view.fold = {}; if (elSearch) elSearch.value = ""; cart = { buy: {}, sell: {} }; }
 
     elTitle.textContent = trade.def.title;
     var mk = marketOn(trade) ? { def: marketDef(trade), st: marketState(trade) } : null;
@@ -522,18 +602,24 @@
     if (!hasBuy) view.tab = "sell";
     if (!hasSell) view.tab = "buy";
 
-    var currentRows = view.tab === "buy" ? buys : sells;
-    var categories = categoriesFor(currentRows);
-    if (categories.indexOf(view.category) === -1) view.category = "";
-    elFilter.parentNode.style.display = categories.length > 1 ? "" : "none";
-    elFilter.innerHTML = '<option value="">All items</option>' + categories.map(function (key) {
-      return '<option value="' + key + '"' + (view.category === key ? " selected" : "") + ">" + CATEGORY_LABEL[key] + "</option>";
-    }).join("");
-    elControls.style.display = (hasBuy && hasSell) || categories.length > 1 ? "" : "none";
-    buys = filterRows(buys);
-    sells = filterRows(sells);
     // A unique piece (stack false: the magical dress, rings) you already own leaves the shelf until you sell it back, and a shelf never offers more than one of it.
     buys = buys.filter(function (r) { var it = data().items[r.id]; return !(it && !it.stack && it.kind !== "salvage" && owned(r.id, s) > 0); });
+    var arranged = arrange(trade, mk, s, view.tab, view.tab === "buy" ? buys : sells);
+    if (view.tab === "buy") buys = arranged.entries; else sells = arranged.entries;
+    elControls.style.display = (hasBuy && hasSell) ? "" : "none";
+    // the tools show once a tab is long enough to need them; the chips whenever there is more than one group
+    var showTools = arranged.all > 7 || arranged.filtered;
+    elTools.style.display = showTools ? "" : "none";
+    if (showTools) {
+      if (document.activeElement !== elSearch) elSearch.value = view.q;
+      elSort.innerHTML = SORTS[view.tab].map(function (o) { return '<option value="' + o[0] + '"' + (arranged.sort === o[0] ? " selected" : "") + ">" + o[1] + "</option>"; }).join("");
+      elFlags.innerHTML = flagList(view.tab, mk).map(function (f) { return '<button type="button" class="trd-chip trd-flag" data-flag="' + f[0] + '" aria-pressed="' + !!view.flags[f[0]] + '">' + f[1] + "</button>"; }).join("");
+    }
+    elCats.style.display = arranged.cats.length > 1 ? "" : "none";
+    elRail.style.display = (showTools || arranged.cats.length > 1) ? "" : "none";
+    elCats.innerHTML = arranged.cats.length > 1 ? '<button type="button" class="trd-chip" data-cat="" aria-pressed="' + !view.category + '">All <small>' + arranged.matched + "</small></button>" + arranged.cats.map(function (c) {
+      return '<button type="button" class="trd-chip" data-cat="' + c.key + '" aria-pressed="' + (view.category === c.key) + '">' + CATEGORY_LABEL[c.key] + " <small>" + c.n + "</small></button>";
+    }).join("") : "";
 
     var q = mk ? marketQuote(trade, mk.st, cart) : null;
     function lineOf(list, id) { var f = null; (list || []).forEach(function (l) { if (l.id === id) f = l; }); return f; }
@@ -542,8 +628,10 @@
     Object.keys(cart.sell).forEach(function (id) { var bs = basisFor(id, s), qn = cart.sell[id], ln = lineOf(q ? q.sell : [], id); if (!bs || !qn) return; var credit = ln ? ln.total : unitPrice(id, trade.def.buyer) * qn, m = Math.min(qn, bs.q); sumProfit += Math.round(credit * (m / qn) - m * bs.t / 10); profitN += m; });
     var html = "", hints = truthy(s.show_stat_hints);
     if (view.tab === "buy") {
-      if (!buys.length) html = '<div class="trd-empty">Nothing on the racks right now.</div>';
+      if (!arranged.all) html = '<div class="trd-empty">Nothing on the racks right now.</div>';
+      else if (!buys.length) html = noMatchHtml();
       buys.forEach(function (r) {
+        if (r.head) { html += headHtml(r); return; }
         var it = data().items[r.id], have = owned(r.id, s), qty = cart.buy[r.id] || 0;
         var bl = lineOf(q ? q.buy : [], r.id), info = mk ? stepInfo(mk, r.id, "buy", qty, bl) : null;
         var many = it.stack || it.kind === "salvage", bcap = many ? (mk ? num((mk.st.stock || {})[r.id]) : 99) : 1, bmax = mk ? marketMax(trade, mk.st, "buy", r.id, bcap) : bcap, bfit = mk ? marketMax(trade, mk.st, "buy", r.id, bmax, true) : bmax;
@@ -551,7 +639,7 @@
         html += '<div class="trd-row' + (qty ? " trd-row-on" : "") + '" data-tip="buy:' + esc(r.id) + '">' +
           tradeIcon(r.id, it) +
           '<div class="trd-main">' +
-            '<div class="trd-name">' + esc(it.title) + (it.slot ? '<span class="trd-slot">' + esc(it.slot) + "</span>" : "") + (have ? '<span class="trd-have">you have ' + have + "</span>" : "") + weightTag(r.id) + "</div>" +
+            '<div class="trd-name">' + esc(it.title) + (it.slot ? '<span class="trd-slot">' + esc(it.slot) + "</span>" : "") + tagsHtml(have, r.id) + "</div>" +
             (hints && it.hint ? '<div class="trd-meta">' + esc(it.hint) + "</div>" : "") +
             (r.warn ? '<div class="trd-warn">' + esc(r.warn) + "</div>" : "") +
             (wearingLine(r.id, it, s) ? '<div class="trd-worn">' + esc(wearingLine(r.id, it, s)) + "</div>" : "") +
@@ -563,9 +651,13 @@
         "</div>";
       });
     } else {
-      if (!sells.length) html = '<div class="trd-empty">You have nothing this buyer wants.</div>';
-      else if (sellBonus() > 0) html += '<div class="trd-bonus">Your Charisma earns you ' + sellBonus() + '% more on everything you sell.</div>';
+      if (!arranged.all) html = '<div class="trd-empty">You have nothing this buyer wants.</div>';
+      else {
+        if (sellBonus() > 0) html += '<div class="trd-bonus">Your Charisma earns you ' + sellBonus() + '% more on everything you sell.</div>';
+        if (!sells.length) html += noMatchHtml();
+      }
       sells.forEach(function (r) {
+        if (r.head) { html += headHtml(r); return; }
         var it = data().items[r.id], qty = cart.sell[r.id] || 0, worn = isWorn(r.id, s);
         var sl = lineOf(q ? q.sell : [], r.id), info = mk ? stepInfo(mk, r.id, "sell", qty, sl) : null, bs = basisFor(r.id, s), el = mk ? elsewhere("sell", r.id, trade, s) : null;
         var smax = mk ? marketMax(trade, mk.st, "sell", r.id, r.have) : r.have, limited = !!mk && smax < r.have;
@@ -579,7 +671,7 @@
         html += '<div class="trd-row' + (qty ? " trd-row-on" : "") + '" data-tip="sell:' + esc(r.id) + '">' +
           tradeIcon(r.id, it) +
           '<div class="trd-main">' +
-            '<div class="trd-name">' + esc(it.title) + (it.slot ? '<span class="trd-slot">' + esc(it.slot) + "</span>" : "") + '<span class="trd-have">you have ' + r.have + "</span>" + weightTag(r.id) +
+            '<div class="trd-name">' + esc(it.title) + (it.slot ? '<span class="trd-slot">' + esc(it.slot) + "</span>" : "") + tagsHtml(r.have, r.id) +
               (worn ? '<span class="trd-badge">worn</span>' : "") + "</div>" +
             (note ? '<div class="trd-warn">' + esc(note) + "</div>" : "") +
             basisHtml +
@@ -593,22 +685,22 @@
     elBody.innerHTML = html;
 
     var t = totals(trade, s, q), lines = "";
-    if (t.buying) lines += '<div class="trd-line"><span>Buying ' + t.buying + (t.buying === 1 ? " item" : " items") + '</span><span>−' + fmt(t.cost) + "</span></div>";
-    if (t.selling) lines += '<div class="trd-line"><span>Selling ' + t.selling + (t.selling === 1 ? " item" : " items") + '</span><span>+' + fmt(t.credit) + "</span></div>";
-    if (t.selling && profitN) lines += '<div class="trd-line trd-line-profit"><span>Profit on the ' + profitN + (profitN === 1 ? " you bought" : " you bought") + '</span><span class="' + (sumProfit >= 0 ? "trd-profit-pos" : "trd-profit-neg") + '">' + signed(sumProfit) + "</span></div>";
-    if (!t.buying && !t.selling) lines = '<div class="trd-line trd-line-idle"><span>Set some items aside to trade.</span></div>';
+    // The footer is a short summary (what the cart costs or fetches, the purse after, the load) beside the buttons; the market's own purse is in the header and the counts are on the tabs.
+    if (t.buying) lines += '<div class="trd-line"><span>Buying</span><span>−' + fmt(t.cost) + "</span></div>";
+    if (t.selling) lines += '<div class="trd-line"><span>Selling</span><span>+' + fmt(t.credit) + "</span></div>";
+    if (t.selling && profitN) lines += '<div class="trd-line trd-line-profit"><span>Profit on the ' + profitN + ' you bought</span><span class="' + (sumProfit >= 0 ? "trd-profit-pos" : "trd-profit-neg") + '">' + signed(sumProfit) + "</span></div>";
+    if (!t.buying && !t.selling) lines = '<div class="trd-line trd-line-idle trd-wide"><span>Set some items aside to trade.</span></div>';
     else if (t.short) lines += '<div class="trd-line trd-line-bad"><span>Not enough coin</span><span>short ' + fmt(t.short) + "</span></div>";
     else lines += '<div class="trd-line trd-line-net"><span>Purse after</span><span>' + fmt(t.funds + t.credit - t.cost) + "</span></div>";
-    if (q && (t.buying || t.selling)) lines += '<div class="trd-line trd-line-merchant"><span>' + esc(trade.def.title) + ' will hold</span><span>' + fmt(Math.max(0, q.purseAfter)) + "</span></div>";
-    if (q && !q.ok) lines += '<div class="trd-line trd-line-bad"><span>' + esc(q.problems.map(function (p) { var m = /the purse is short by (\d+) copper/.exec(p); return m ? trade.def.title + " cannot pay that much: short " + fmt(Number(m[1])) : p; })[0]) + "</span><span></span></div>";
+    if (q && !q.ok) lines += '<div class="trd-line trd-line-bad trd-wide"><span>' + esc(q.problems.map(function (p) { var m = /the purse is short by (\d+) copper/.exec(p); return m ? trade.def.title + " cannot pay that much: short " + fmt(Number(m[1])) : p; })[0]) + "</span><span></span></div>";
     var cl = (t.buying || t.selling) ? cartLoad(t, s) : null;
     if (cl) {
       var f = IP().fmtLoad, over = cl.after > cl.capacity;
-      lines += '<div class="trd-line trd-line-load' + (over ? " trd-line-bad" : "") + '"><span>Load after</span><span>' + f(cl.now) + " → " + f(cl.after) + " of " + f(cl.capacity) + "</span></div>";
-      if (over) lines += '<div class="trd-line trd-line-bad"><span>Over your limit: you tire ' + cl.pct + "% faster on the move</span><span></span></div>";
+      lines += '<div class="trd-line trd-line-load' + (over ? " trd-line-bad" : "") + '"><span>Load</span><span>' + f(cl.now) + " → " + f(cl.after) + " of " + f(cl.capacity) + "</span></div>";
+      if (over) lines += '<div class="trd-line trd-line-bad trd-wide"><span>Over your limit: you tire ' + cl.pct + "% faster on the move</span><span></span></div>";
     }
     var can = (t.buying || t.selling) && !t.short && (!q || q.ok);
-    elFoot.innerHTML = lines +
+    elFoot.innerHTML = '<div class="trd-sum">' + lines + "</div>" +
       '<div class="trd-actions">' +
         '<button type="button" class="trd-clear" data-act="clear"' + ((t.buying || t.selling) ? "" : " disabled") + ">Clear</button>" +
         '<button type="button" class="trd-confirm" data-act="confirm"' + (can ? "" : " disabled") + ">Confirm trade</button>" +
@@ -653,13 +745,17 @@
 
   function onClick(ev) {
     var t = ev.target;
-    while (t && t !== dlg && !(t.getAttribute && (t.hasAttribute("data-act") || t.hasAttribute("data-tab") || t.hasAttribute("data-step")))) t = t.parentNode;
+    while (t && t !== dlg && !(t.getAttribute && (t.hasAttribute("data-act") || t.hasAttribute("data-tab") || t.hasAttribute("data-step") || t.hasAttribute("data-cat") || t.hasAttribute("data-flag") || t.hasAttribute("data-fold")))) t = t.parentNode;
     if (!t || t === dlg) return;
-    if (t.hasAttribute("data-tab")) { view.tab = t.getAttribute("data-tab"); render(); return; }
+    if (t.hasAttribute("data-tab")) { view.tab = t.getAttribute("data-tab"); view.category = ""; render(); return; }
+    if (t.hasAttribute("data-cat")) { view.category = t.getAttribute("data-cat"); render(); return; }
+    if (t.hasAttribute("data-flag")) { var fk = t.getAttribute("data-flag"); view.flags[fk] = !view.flags[fk]; render(); return; }
+    if (t.hasAttribute("data-fold")) { toggleFold(t.getAttribute("data-fold")); return; }
     if (t.hasAttribute("data-step")) {
       if (t.disabled) return;
       var kind = t.getAttribute("data-kind"), id = t.getAttribute("data-id"), max = num(t.getAttribute("data-max"));
-      if (t.getAttribute("data-step") === "max") setQty(kind, id, num(t.getAttribute("data-fit")), max);
+      // Ctrl (or Cmd) on + takes the most that can be afforded (Ctrl on - empties the line); Shift moves ten
+      if (ev.ctrlKey || ev.metaKey) setQty(kind, id, t.getAttribute("data-step") === "1" ? num(t.getAttribute("data-fit")) : 0, max);
       else setQty(kind, id, (cart[kind][id] || 0) + num(t.getAttribute("data-step")) * (ev.shiftKey ? 10 : 1), max);
       render();
       return;
@@ -667,15 +763,18 @@
     var act = t.getAttribute("data-act");
     if (act === "close") return close();
     if (act === "clear") { cart = { buy: {}, sell: {} }; render(); return; }
+    if (act === "resetfilters") { view.q = ""; view.flags = {}; view.category = ""; if (elSearch) elSearch.value = ""; render(); return; }
     if (act === "confirm") { if (!t.disabled) confirm(); }
   }
 
+  function toggleFold(cat) { var k = view.tab + ":" + cat; view.fold[k] = !view.fold[k]; render(); }
   function onChange(ev) {
     var t = ev.target;
-    if (t && t.getAttribute && t.getAttribute("data-act") === "filter") {
-      view.category = t.value;
-      render();
-    }
+    if (t && t.getAttribute && t.getAttribute("data-act") === "sort") { view.sort = t.value; render(); }
+  }
+  function onInput(ev) {
+    var t = ev.target;
+    if (t && t.getAttribute && t.getAttribute("data-act") === "search") { view.q = t.value; render(); }
   }
 
   function open() {

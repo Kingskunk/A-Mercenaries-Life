@@ -112,7 +112,7 @@
 
   // Mirrors armor_tier (apply_armor_loadout), armor_prof_check and recalculate_proficiency in
   // equipment.txt, so the sidebar's "not proficient" warning follows a panel swap immediately.
-  // The starting kit is grandfathered exactly as in the real label.
+  // Nothing is grandfathered: the class kit is trained by construction. Also mirrors the casting rule (2026-10-25): untrained armor or a shield sets spells_blocked and refreshes the known_ spell flags.
   EQ.recalcProficiency = function recalcProficiency(s) {
     var t = s.armor_type, tier = "none";
     if (t === "leather" || t === "buff_coat") tier = "light";
@@ -124,11 +124,28 @@
     if (c === "fighter") ok = true;
     if ((c === "barbarian" || c === "ranger") && tier !== "heavy") ok = true;
     if ((c === "bard" || c === "rogue" || c === "warlock") && tier === "light") ok = true;
-    s.armor_nonprof = (s.equipped_armor_id !== "starting") && !ok;
-    // Shields: a starting shield is grandfathered (shield_grandfathered); fighter, barbarian and
-    // ranger are trained. Mirrors shield_prof_check in equipment.txt.
+    s.armor_nonprof = !ok;
+    // Shields: fighter, barbarian and ranger are trained. Mirrors shield_prof_check in equipment.txt.
     var shieldOk = c === "fighter" || c === "barbarian" || c === "ranger" || c === "none";
-    s.shield_nonprof = truthy(s.shield_equipped) && !truthy(s.shield_grandfathered) && !shieldOk;
+    s.shield_nonprof = truthy(s.shield_equipped) && !shieldOk;
+    s.spells_blocked = !!(s.armor_nonprof || s.shield_nonprof);
+    s.spells_blocked_why = s.armor_nonprof ? "You are not trained in the armor you wear, and it spoils your casting." : (s.shield_nonprof ? "You are not trained in the shield you carry, and it spoils your casting." : "");
+    EQ.refreshKnown(s);
+  };
+
+  // Mirrors refresh_known_spells (character_progression.txt): known_<spell> is true when the spell is in one of the character's slots AND casting is not spoiled; what an item grants
+  // (item_cantrip, the worn ring's cantrip) is not the character's own casting and stays. Every known_ stat is a spell, so the ids come from the stats themselves.
+  var KNOWN_SLOTS = ["wizard_cantrip", "wizard_cantrip_2", "wizard_cantrip_3", "warlock_cantrip", "warlock_cantrip_2", "bard_cantrip", "bard_cantrip_2", "race_cantrip", "race_cantrip_2",
+    "wizard_spell", "wizard_spell_2", "wizard_spell_3", "warlock_spell", "warlock_spell_2", "bard_spell", "bard_spell_2", "bard_spell_3", "ranger_spell", "ranger_spell_2", "ranger_spell_3"];
+  EQ.refreshKnown = function refreshKnown(s) {
+    var blocked = truthy(s.spells_blocked);
+    Object.keys(s).forEach(function (k) {
+      if (k.indexOf("known_") !== 0) return;
+      var id = k.slice(6);
+      s[k] = !blocked && KNOWN_SLOTS.some(function (slot) { return s[slot] === id; });
+    });
+    if (truthy(s.inv_otherworldly_leap) && !blocked) s.known_jump = true;
+    if (s.item_cantrip && s.item_cantrip !== "none" && ("known_" + s.item_cantrip) in s) s["known_" + s.item_cantrip] = true;
   };
 
   // The slot-id stat each bucket's equip state lives in (mirrors equip_<slot>'s own

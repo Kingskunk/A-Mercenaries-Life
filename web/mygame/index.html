@@ -336,6 +336,7 @@ var rootDir = "../";
 #statSidebar .sbWaitRow { display: flex; gap: 0.4em; margin-top: 0.6em; }
 #statSidebar .sbWaitRow .sbWait { flex: 1 1 0; width: auto; margin-top: 0; }
 #statSidebar .spellNote { font-size: 0.78em; color: var(--ch-dim); margin-top: 0.4em; line-height: 1.4; }
+#statSidebar .spellBlocked { color: var(--ch-warn); }
 /* Combat state (2026-09-27): the sidebar's own header gets a small badge, and date/time/weather/purse swap for
    a live turn-order list (renderStatSidebar below) -- reusing the combat_turn_kind_N/_slot_N stats the ChoiceScript
    engine already builds, not a second panel, so this never fights the sidebar for space or attention.
@@ -1283,7 +1284,8 @@ button#statSidebar .turnRow,
     else if (s.character_class === "bard") statsOrbs = miniOrbs(s.bard_spell_slots, s.bard_spell_slots_max, "");
     else if (s.character_class === "warlock") statsOrbs = miniOrbs(s.warlock_spell_slots, s.warlock_spell_slots_max, " pact");
     else if (s.character_class === "ranger") statsOrbs = miniOrbs(s.ranger_spell_slots, s.ranger_spell_slots_max, "");
-    var nonprofHtml = (isTruthy(s.armor_nonprof) || isTruthy(s.shield_nonprof)) ? "<div class=\"timePeriod\" title=\"Your class is not trained in this gear: disadvantage on STR and DEX rolls\" style=\"color:var(--ch-warn);font-style:normal;\">&#9888; " + (isTruthy(s.armor_nonprof) && isTruthy(s.shield_nonprof) ? "Armor &amp; shield" : (isTruthy(s.shield_nonprof) ? "Shield" : "Armor")) + ": not proficient</div>" : "";
+    var SB_CASTERS = { wizard: 1, bard: 1, warlock: 1, ranger: 1 };
+    var nonprofHtml = (isTruthy(s.armor_nonprof) || isTruthy(s.shield_nonprof)) ? "<div class=\"timePeriod\" title=\"Your class is not trained in this gear: disadvantage on STR and DEX rolls" + (SB_CASTERS[s.character_class] ? ", and no spellcasting while it is worn" : "") + "\" style=\"color:var(--ch-warn);font-style:normal;\">&#9888; " + (isTruthy(s.armor_nonprof) && isTruthy(s.shield_nonprof) ? "Armor &amp; shield" : (isTruthy(s.shield_nonprof) ? "Shield" : "Armor")) + ": not proficient</div>" : "";
     function abilTile(label, score, boon, mod) { return "<div>" + label + "<b>" + fmt(score) + "</b>" + boon + "<span>" + fmt(mod) + "</span></div>"; }
     // The name banner is the switch between the two views. In combat the sidebar stays on Status (the turn order and click-to-target live there), so the banner is
     // plain then and a Stats view left open is put back.
@@ -2176,6 +2178,7 @@ button#statSidebar .turnRow,
     return "<details class=\"spellbook\"" + (spellOpen ? " open" : "") + ">" +
              "<summary>Spellbook" + (spells.length ? " (" + spells.length + ")" : "") + "</summary>" +
              "<div class=\"spellTabs\">" + tabs + "</div>" + body +
+             ((spells.length && isTruthy((window.stats || {}).spells_blocked)) ? "<div class=\"spellNote spellBlocked\">" + esc(String((window.stats || {}).spells_blocked_why || "")) + " Scrolls and what an item grants still work.</div>" : "") +
              "<div class=\"spellNote\">Select a spell to read it. Spells that can be cast outside a fight have a Cast button.</div>" +
            "</details>";
   }
