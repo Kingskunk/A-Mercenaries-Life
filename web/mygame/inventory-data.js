@@ -281,10 +281,16 @@
       use: true
     },
     {
+      id: "honey", category: "provisions", owned: "has_honey",
+      weight: 0.5, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_honey) || 0); return "Honey" + (n > 1 ? " ×" + n : ""); },
+      description: "Strained amber honey, sealed in a small pottery jar for the pot, pastry, or market stall."
+    },
+    {
       id: "honeycomb", category: "consumables", owned: "has_honeycomb",
       weight: 0.5, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_honeycomb) || 0); return "Honeycomb" + (n > 1 ? " ×" + n : ""); },
-      description: "Dark gold comb from wild bees, an ingredient and a snack, and a gift for a bear.",
+      description: "Dark gold comb from wild bees: a snack, a gift for a bear, and part of Green Honey Mash.",
       badge: "Holds off about 9 hours of hunger",
       use: true
     },
@@ -387,10 +393,10 @@
       description: "Plucked and cleaned farm chicken, wrapped for the road and ready for a fire or pot."
     },
     {
-      id: "fresh_fish_fillet", category: "provisions", owned: "has_fresh_fish_fillet",
+      id: "fish", category: "provisions", owned: "has_fish",
       weight: 0.75, stow: true, stack: true,
-      name: function (s) { var n = 1 + (Number(s.spare_fresh_fish_fillet) || 0); return "Fresh Fish Fillet" + (n > 1 ? " ×" + n : ""); },
-      description: "White-fleshed river fish fillet, wrapped in damp leaves for cooking that day."
+      name: function (s) { var n = 1 + (Number(s.spare_fish) || 0); return "Fish" + (n > 1 ? " ×" + n : ""); },
+      description: "A whole fish, salted and packed for the road, for the pan or the pot."
     },
     {
       id: "cabbage", category: "provisions", owned: "has_cabbage",

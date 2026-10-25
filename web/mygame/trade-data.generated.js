@@ -2626,16 +2626,16 @@ window.TRADE_DATA = {
     "countVar": ""
    }
   },
-  "fresh_fish_fillet": {
-   "name": "fresh fish fillet",
-   "title": "Fresh Fish Fillet",
+  "fish": {
+   "name": "fish",
+   "title": "Fish",
    "kind": "ingredient",
    "group": "provisions",
    "tier": "",
    "retail": 4,
    "weight": 0.75,
    "minutes": 5,
-   "hint": "Fresh cooking ingredient",
+   "hint": "Raw cooking ingredient",
    "slot": "",
    "stack": true,
    "sell": {
@@ -3126,10 +3126,10 @@ window.TRADE_DATA = {
     "countVar": ""
    }
   },
-  "honeycomb": {
-   "name": "honeycomb",
-   "title": "Honeycomb",
-   "kind": "consumable",
+  "honey": {
+   "name": "honey",
+   "title": "Honey",
+   "kind": "ingredient",
    "group": "provisions",
    "tier": "",
    "retail": 4,
@@ -3808,7 +3808,7 @@ window.TRADE_DATA = {
     "waxed_oilcloth",
     "lye_soap",
     "trail_rations",
-    "fresh_fish_fillet"
+    "fish"
    ],
    "sell": [
     "hemp_rope",
@@ -3869,12 +3869,12 @@ window.TRADE_DATA = {
     "dressed_chicken",
     "cabbage",
     "pumpkin",
-    "honeycomb",
+    "honey",
     "boar_meat",
     "venison",
     "butter",
     "animal_fat",
-    "fresh_fish_fillet",
+    "fish",
     "iron_ore",
     "iron_bar",
     "longshade_timber",
@@ -3908,10 +3908,10 @@ window.TRADE_DATA = {
     "salt",
     "charcoal",
     "longshade_timber",
-    "honeycomb",
+    "honey",
     "butter",
     "animal_fat",
-    "fresh_fish_fillet",
+    "fish",
     "iron_ore",
     "furs",
     "leather",
@@ -3927,7 +3927,7 @@ window.TRADE_DATA = {
    "commodities": true,
    "buyer": "market",
    "buy": [
-    "honeycomb",
+    "honey",
     "boar_meat",
     "venison",
     "barley_loaf",
@@ -3943,7 +3943,7 @@ window.TRADE_DATA = {
     "potatoes",
     "tomatoes",
     "dressed_chicken",
-    "fresh_fish_fillet",
+    "fish",
     "cabbage",
     "pumpkin",
     "iron_ore",
@@ -3960,7 +3960,7 @@ window.TRADE_DATA = {
     "elk_antler"
    ],
    "sell": [
-    "honeycomb",
+    "honey",
     "boar_meat",
     "venison",
     "barley_loaf",
@@ -3976,7 +3976,7 @@ window.TRADE_DATA = {
     "potatoes",
     "tomatoes",
     "dressed_chicken",
-    "fresh_fish_fillet",
+    "fish",
     "cabbage",
     "pumpkin",
     "iron_ore",
@@ -3998,7 +3998,7 @@ window.TRADE_DATA = {
    "commodities": true,
    "buyer": "market",
    "buy": [
-    "honeycomb",
+    "honey",
     "boar_meat",
     "venison",
     "barley_loaf",
@@ -4014,7 +4014,7 @@ window.TRADE_DATA = {
     "potatoes",
     "tomatoes",
     "dressed_chicken",
-    "fresh_fish_fillet",
+    "fish",
     "cabbage",
     "pumpkin",
     "iron_ore",
@@ -4031,7 +4031,7 @@ window.TRADE_DATA = {
     "elk_antler"
    ],
    "sell": [
-    "honeycomb",
+    "honey",
     "boar_meat",
     "venison",
     "barley_loaf",
@@ -4047,7 +4047,7 @@ window.TRADE_DATA = {
     "potatoes",
     "tomatoes",
     "dressed_chicken",
-    "fresh_fish_fillet",
+    "fish",
     "cabbage",
     "pumpkin",
     "iron_ore",
@@ -4069,7 +4069,7 @@ window.TRADE_DATA = {
    "commodities": true,
    "buyer": "market",
    "buy": [
-    "honeycomb",
+    "honey",
     "boar_meat",
     "venison",
     "barley_loaf",
@@ -4085,7 +4085,7 @@ window.TRADE_DATA = {
     "potatoes",
     "tomatoes",
     "dressed_chicken",
-    "fresh_fish_fillet",
+    "fish",
     "cabbage",
     "pumpkin",
     "iron_ore",
@@ -4102,7 +4102,7 @@ window.TRADE_DATA = {
     "elk_antler"
    ],
    "sell": [
-    "honeycomb",
+    "honey",
     "boar_meat",
     "venison",
     "barley_loaf",
@@ -4118,7 +4118,7 @@ window.TRADE_DATA = {
     "potatoes",
     "tomatoes",
     "dressed_chicken",
-    "fresh_fish_fillet",
+    "fish",
     "cabbage",
     "pumpkin",
     "iron_ore",
@@ -4140,7 +4140,7 @@ window.TRADE_DATA = {
    "commodities": true,
    "buyer": "market",
    "buy": [
-    "honeycomb",
+    "honey",
     "boar_meat",
     "venison",
     "barley_loaf",
@@ -4156,7 +4156,7 @@ window.TRADE_DATA = {
     "potatoes",
     "tomatoes",
     "dressed_chicken",
-    "fresh_fish_fillet",
+    "fish",
     "cabbage",
     "pumpkin",
     "iron_ore",
@@ -4173,7 +4173,7 @@ window.TRADE_DATA = {
     "elk_antler"
    ],
    "sell": [
-    "honeycomb",
+    "honey",
     "boar_meat",
     "venison",
     "barley_loaf",
@@ -4189,7 +4189,7 @@ window.TRADE_DATA = {
     "potatoes",
     "tomatoes",
     "dressed_chicken",
-    "fresh_fish_fillet",
+    "fish",
     "cabbage",
     "pumpkin",
     "iron_ore",
@@ -4211,7 +4211,7 @@ window.TRADE_DATA = {
    "commodities": true,
    "buyer": "market",
    "buy": [
-    "honeycomb",
+    "honey",
     "boar_meat",
     "venison",
     "barley_loaf",
@@ -4227,7 +4227,7 @@ window.TRADE_DATA = {
     "potatoes",
     "tomatoes",
     "dressed_chicken",
-    "fresh_fish_fillet",
+    "fish",
     "cabbage",
     "pumpkin",
     "iron_ore",
@@ -4244,7 +4244,7 @@ window.TRADE_DATA = {
     "elk_antler"
    ],
    "sell": [
-    "honeycomb",
+    "honey",
     "boar_meat",
     "venison",
     "barley_loaf",
@@ -4260,7 +4260,7 @@ window.TRADE_DATA = {
     "potatoes",
     "tomatoes",
     "dressed_chicken",
-    "fresh_fish_fillet",
+    "fish",
     "cabbage",
     "pumpkin",
     "iron_ore",
@@ -4282,7 +4282,7 @@ window.TRADE_DATA = {
    "commodities": true,
    "buyer": "market",
    "buy": [
-    "honeycomb",
+    "honey",
     "boar_meat",
     "venison",
     "barley_loaf",
@@ -4298,7 +4298,7 @@ window.TRADE_DATA = {
     "potatoes",
     "tomatoes",
     "dressed_chicken",
-    "fresh_fish_fillet",
+    "fish",
     "cabbage",
     "pumpkin",
     "iron_ore",
@@ -4315,7 +4315,7 @@ window.TRADE_DATA = {
     "elk_antler"
    ],
    "sell": [
-    "honeycomb",
+    "honey",
     "boar_meat",
     "venison",
     "barley_loaf",
@@ -4331,7 +4331,7 @@ window.TRADE_DATA = {
     "potatoes",
     "tomatoes",
     "dressed_chicken",
-    "fresh_fish_fillet",
+    "fish",
     "cabbage",
     "pumpkin",
     "iron_ore",
@@ -4353,7 +4353,7 @@ window.TRADE_DATA = {
    "commodities": true,
    "buyer": "market",
    "buy": [
-    "honeycomb",
+    "honey",
     "boar_meat",
     "venison",
     "barley_loaf",
@@ -4369,7 +4369,7 @@ window.TRADE_DATA = {
     "potatoes",
     "tomatoes",
     "dressed_chicken",
-    "fresh_fish_fillet",
+    "fish",
     "cabbage",
     "pumpkin",
     "iron_ore",
@@ -4386,7 +4386,7 @@ window.TRADE_DATA = {
     "elk_antler"
    ],
    "sell": [
-    "honeycomb",
+    "honey",
     "boar_meat",
     "venison",
     "barley_loaf",
@@ -4402,7 +4402,7 @@ window.TRADE_DATA = {
     "potatoes",
     "tomatoes",
     "dressed_chicken",
-    "fresh_fish_fillet",
+    "fish",
     "cabbage",
     "pumpkin",
     "iron_ore",
@@ -4424,7 +4424,7 @@ window.TRADE_DATA = {
    "commodities": true,
    "buyer": "market",
    "buy": [
-    "honeycomb",
+    "honey",
     "boar_meat",
     "venison",
     "barley_loaf",
@@ -4440,6 +4440,7 @@ window.TRADE_DATA = {
     "potatoes",
     "tomatoes",
     "dressed_chicken",
+    "fish",
     "cabbage",
     "pumpkin",
     "iron_ore",
@@ -4456,7 +4457,7 @@ window.TRADE_DATA = {
     "elk_antler"
    ],
    "sell": [
-    "honeycomb",
+    "honey",
     "boar_meat",
     "venison",
     "barley_loaf",
@@ -4472,6 +4473,7 @@ window.TRADE_DATA = {
     "potatoes",
     "tomatoes",
     "dressed_chicken",
+    "fish",
     "cabbage",
     "pumpkin",
     "iron_ore",
@@ -4523,15 +4525,6 @@ window.TRADE_DATA = {
     "venison",
     "animal_fat"
    ]
-  },
-  "fish_slip": {
-   "title": "Fishmongers' Slip",
-   "commodities": false,
-   "buyer": "",
-   "buy": [
-    "fresh_fish_fillet"
-   ],
-   "sell": []
   }
  }
 };

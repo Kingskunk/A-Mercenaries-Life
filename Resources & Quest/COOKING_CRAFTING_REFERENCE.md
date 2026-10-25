@@ -9,15 +9,15 @@ Every output has a dedicated, previously unmapped illustration from `ICONS/Item/
 | Salt-Roasted Boar | Boar Meat + Salt | 10 | `FOOD_Grilled_Pork_Leg_Unfaded_Icon.png` |
 | Onion-Seared Venison | Venison + Onions | 10 | `FOOD_Grilled_Steak_Unfaded_Icon.png` |
 | Hearth-Roast Chicken and Roots | Dressed Chicken + Root-Vegetable Bundle | 11 | `FOOD_Hearty_Dinner_Unfaded_Icon.png` |
-| Riverfish Barley Pie | Fresh Fish Fillet + Grain | 11 | `FOOD_Salmon_Pie_Unfaded_Icon.png` |
-| Tomato Riverfish Broth | Fresh Fish Fillet + Tomatoes | 11 | `FOOD_Seafood_Bouillabaisse_Unfaded_Icon.png` |
+| Riverfish Barley Pie | Fish + Grain | 11 | `FOOD_Salmon_Pie_Unfaded_Icon.png` |
+| Tomato Riverfish Broth | Fish + Tomatoes | 11 | `FOOD_Seafood_Bouillabaisse_Unfaded_Icon.png` |
 | Smoked Sausage and Cabbage Braise | Dried Pork Sausage + Cabbage | 10 | `FOOD_Stout_Stew_Unfaded_Icon.png` |
 | Pumpkin and Onion Soup | Pumpkin + Onions | 10 | `FOOD_Pumpkin_Soup_Unfaded_Icon.png` |
 | Field-Garden Stew | Root-Vegetable Bundle + Cabbage | 10 | `FOOD_Vegetable_Soup_Unfaded_Icon.png` |
-| Honeyed Barley Porridge | Grain + Honeycomb | 10 | `FOOD_Fruit_Porridge_Unfaded_Icon.png` |
+| Honeyed Barley Porridge | Grain + Honey | 10 | `FOOD_Fruit_Porridge_Unfaded_Icon.png` |
 | Apple Barley Porridge | Grain + Orchard Apple | 10 | `FOOD_Fruit_Porridge_R_Unfaded_Icon.png` |
 | Acorn-Truffle Pottage | Acorn Truffle + Potatoes | 12 | `FOOD_Mushroom_Soup_A_Unfaded_Icon.png` |
-| Brambleberry Honey Tart | Brambleberry + Honeycomb | 12 | `FOOD_Berry_Tart_Unfaded_Icon.png` |
+| Brambleberry Honey Tart | Brambleberry + Honey | 12 | `FOOD_Berry_Tart_Unfaded_Icon.png` |
 
 ## Future implementation notes
 

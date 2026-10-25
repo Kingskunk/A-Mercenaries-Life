@@ -146,6 +146,7 @@ const MAP = {
   iron_bar: "../Generic/Iron_Bars_Generated_Source.png",
   iron_ore: "../Generic/Iron_Ore_Generated_Source.png",     // the user's own art (2026-10-24)
   longshade_timber: "../Generic/Longshade_Timber_Generated_Source.png",   // the user's own art (2026-10-24)
+  honey: "../Generic/Honey_Generated_Source.png",                         // the user's own art (2026-10-25)
   butter: "../Generic/Butter_Generated_Source.png",                      // the user's own art (2026-10-25)
   animal_fat: "../Generic/Animal_Fat_Generated_Source.png",              // the user's own art (2026-10-25)
   salt: "../Generic/Salt_Generated_Source.png",                         // the user's own art (2026-10-24)
@@ -217,7 +218,7 @@ const MAP = {
   potatoes: "FOOD_Potato_Unfaded_Icon.png",
   tomatoes: "FOOD_Tomato_Unfaded_Icon.png",
   dressed_chicken: "FOOD_Whole_Chicken_Unfaded_Icon.png",
-  fresh_fish_fillet: "FOOD_Fish_Fillet_Unfaded_Icon.png",
+  fish_whole: "FOOD_Fish_A_Unfaded_Icon.png",     // the user's pick (2026-10-25): a whole fish
   cabbage: "FOOD_Cabbage_Unfaded_Icon.png",
   pumpkin: "FOOD_Pumpkin_Unfaded_Icon.png",
   fish: "Bucket_of_Fish_Unfaded_Icon.png",

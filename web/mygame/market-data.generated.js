@@ -1592,7 +1592,7 @@ window.MARKET_DEFS = {
     "buyPct": 0.5,
     "mult": 1
    },
-   "fresh_fish_fillet": {
+   "fish": {
     "base": 4,
     "target": 30,
     "stock0": 30,
@@ -1919,10 +1919,10 @@ window.MARKET_DEFS = {
     },
     "need": 0.4
    },
-   "honeycomb": {
+   "honey": {
     "base": 4,
-    "target": 25,
-    "stock0": 25,
+    "target": 38,
+    "stock0": 38,
     "buyPct": 0.8,
     "mult": 1,
     "world": {
@@ -1974,7 +1974,7 @@ window.MARKET_DEFS = {
     },
     "need": 0.5
    },
-   "fresh_fish_fillet": {
+   "fish": {
     "base": 4,
     "target": 19,
     "stock0": 19,
@@ -2137,10 +2137,10 @@ window.MARKET_DEFS = {
    "purse": 0.1
   },
   "goods": {
-   "honeycomb": {
+   "honey": {
     "base": 4,
-    "target": 32,
-    "stock0": 32,
+    "target": 48,
+    "stock0": 48,
     "buyPct": 0.8,
     "mult": 1.03,
     "world": {
@@ -2313,7 +2313,7 @@ window.MARKET_DEFS = {
     },
     "need": 0.6
    },
-   "fresh_fish_fillet": {
+   "fish": {
     "base": 4,
     "target": 30,
     "stock0": 30,
@@ -2498,10 +2498,10 @@ window.MARKET_DEFS = {
    "purse": 0.1
   },
   "goods": {
-   "honeycomb": {
+   "honey": {
     "base": 4,
-    "target": 12,
-    "stock0": 12,
+    "target": 18,
+    "stock0": 18,
     "buyPct": 0.8,
     "mult": 1.21,
     "world": {
@@ -2674,7 +2674,7 @@ window.MARKET_DEFS = {
     },
     "need": 0.6
    },
-   "fresh_fish_fillet": {
+   "fish": {
     "base": 4,
     "target": 149,
     "stock0": 149,
@@ -2859,10 +2859,10 @@ window.MARKET_DEFS = {
    "purse": 0.1
   },
   "goods": {
-   "honeycomb": {
+   "honey": {
     "base": 4,
-    "target": 25,
-    "stock0": 25,
+    "target": 38,
+    "stock0": 38,
     "buyPct": 0.8,
     "mult": 1,
     "world": {
@@ -3035,7 +3035,7 @@ window.MARKET_DEFS = {
     },
     "need": 0.6
    },
-   "fresh_fish_fillet": {
+   "fish": {
     "base": 4,
     "target": 17,
     "stock0": 17,
@@ -3220,10 +3220,10 @@ window.MARKET_DEFS = {
    "purse": 0.1
   },
   "goods": {
-   "honeycomb": {
+   "honey": {
     "base": 4,
-    "target": 13,
-    "stock0": 13,
+    "target": 19,
+    "stock0": 19,
     "buyPct": 0.8,
     "mult": 1.175,
     "world": {
@@ -3396,7 +3396,7 @@ window.MARKET_DEFS = {
     },
     "need": 0.6
    },
-   "fresh_fish_fillet": {
+   "fish": {
     "base": 4,
     "target": 59,
     "stock0": 59,
@@ -3581,10 +3581,10 @@ window.MARKET_DEFS = {
    "purse": 0.1
   },
   "goods": {
-   "honeycomb": {
+   "honey": {
     "base": 4,
-    "target": 22,
-    "stock0": 22,
+    "target": 33,
+    "stock0": 33,
     "buyPct": 0.8,
     "mult": 1.09,
     "world": {
@@ -3757,7 +3757,7 @@ window.MARKET_DEFS = {
     },
     "need": 0.6
    },
-   "fresh_fish_fillet": {
+   "fish": {
     "base": 4,
     "target": 17,
     "stock0": 17,
@@ -3942,10 +3942,10 @@ window.MARKET_DEFS = {
    "purse": 0.1
   },
   "goods": {
-   "honeycomb": {
+   "honey": {
     "base": 4,
-    "target": 14,
-    "stock0": 14,
+    "target": 22,
+    "stock0": 22,
     "buyPct": 0.8,
     "mult": 1.13,
     "world": {
@@ -4118,7 +4118,7 @@ window.MARKET_DEFS = {
     },
     "need": 0.6
    },
-   "fresh_fish_fillet": {
+   "fish": {
     "base": 4,
     "target": 3,
     "stock0": 0,
@@ -4302,10 +4302,10 @@ window.MARKET_DEFS = {
    "purse": 0.1
   },
   "goods": {
-   "honeycomb": {
+   "honey": {
     "base": 4,
-    "target": 13,
-    "stock0": 13,
+    "target": 19,
+    "stock0": 19,
     "buyPct": 0.8,
     "mult": 1.165,
     "world": {
@@ -4478,7 +4478,7 @@ window.MARKET_DEFS = {
     },
     "need": 0.6
    },
-   "fresh_fish_fillet": {
+   "fish": {
     "base": 4,
     "target": 3,
     "stock0": 0,
@@ -4662,10 +4662,10 @@ window.MARKET_DEFS = {
    "purse": 0.1
   },
   "goods": {
-   "honeycomb": {
+   "honey": {
     "base": 4,
-    "target": 23,
-    "stock0": 23,
+    "target": 35,
+    "stock0": 35,
     "buyPct": 0.8,
     "mult": 1.23,
     "world": {
@@ -4837,6 +4837,17 @@ window.MARKET_DEFS = {
      "tile": "pv"
     },
     "need": 0.6
+   },
+   "fish": {
+    "base": 4,
+    "target": 297,
+    "stock0": 297,
+    "buyPct": 0.8,
+    "mult": 0.9,
+    "world": {
+     "tile": "pv"
+    },
+    "need": 0.8
    },
    "cabbage": {
     "base": 2,
@@ -5122,26 +5133,6 @@ window.MARKET_DEFS = {
     "buyPct": 0.667,
     "mult": 1,
     "sells": false
-   }
-  }
- },
- "fish_slip": {
-  "id": "fish_slip",
-  "title": "Fishmongers' Slip",
-  "tier": "stall",
-  "purseTarget": 40,
-  "regen": {
-   "stock": 0.3,
-   "purse": 0.1
-  },
-  "goods": {
-   "fresh_fish_fillet": {
-    "base": 4,
-    "target": 30,
-    "stock0": 30,
-    "buyPct": 0.5,
-    "mult": 1,
-    "buys": false
    }
   }
  }
