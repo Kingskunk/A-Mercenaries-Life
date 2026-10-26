@@ -26,14 +26,14 @@ window.CRAFT_RECIPES = {
       summary: "For 8 hours: +3 to footing checks on slick stone, fords, wet timber and loose scree." }
   ],
   cooking: [
-    { id: "salt_roasted_boar", name: "Salt-Roasted Boar", ingredients: ["boar_meat", "salt"], dc: 10, property: "cooked meal", icon: "cooking_salt_roasted_boar",
-      summary: "A crisp-edged haunch, roasted over a steady fire and seasoned with coast salt." },
+    { id: "dripping_roasted_boar", name: "Dripping-Roasted Boar", ingredients: ["boar_meat", "animal_fat"], dc: 10, property: "cooked meal", icon: "cooking_dripping_roasted_boar",
+      summary: "A thick cut of boar, roasted over a steady fire and basted in its own rendered fat." },
     { id: "onion_seared_venison", name: "Onion-Seared Venison", ingredients: ["venison", "onions"], dc: 10, property: "cooked meal", icon: "cooking_onion_seared_venison",
-      summary: "Lean venison seared hard, then finished in the pan with sweetened onions." },
-    { id: "hearth_roast_chicken", name: "Hearth-Roast Chicken and Roots", ingredients: ["dressed_chicken", "root_vegetable_bundle"], dc: 11, property: "cooked meal", icon: "cooking_hearth_roast_chicken",
-      summary: "A chicken roasted with carrots and turnips until the roots take up the drippings." },
-    { id: "riverfish_barley_pie", name: "Riverfish Barley Pie", ingredients: ["fish", "grain"], dc: 11, property: "cooked meal", icon: "cooking_riverfish_barley_pie",
-      summary: "Flaked riverfish beneath a coarse barley crust; filling enough for the road." },
+      summary: "Lean venison seared in the iron pot, then finished with sweetened onions." },
+    { id: "pot_braised_chicken", name: "Pot-Braised Chicken and Roots", ingredients: ["dressed_chicken", "root_vegetable_bundle"], dc: 11, property: "cooked meal", icon: "cooking_pot_braised_chicken",
+      summary: "A portion of chicken braised with carrots and turnips until the roots take up the drippings." },
+    { id: "riverfish_barley_pottage", name: "Riverfish and Barley Pottage", ingredients: ["fish", "grain"], dc: 11, property: "cooked meal", icon: "cooking_riverfish_barley_pottage",
+      summary: "Flaked riverfish stirred into a thick pot of barley, filling enough for the road." },
     { id: "tomato_riverfish_broth", name: "Tomato Riverfish Broth", ingredients: ["fish", "tomatoes"], dc: 11, property: "cooked meal", icon: "cooking_tomato_riverfish_broth",
       summary: "A bright, briny fish broth made to be eaten hot from the pot." },
     { id: "smoked_sausage_braise", name: "Smoked Sausage and Cabbage Braise", ingredients: ["dried_pork_sausage", "cabbage"], dc: 10, property: "cooked meal", icon: "cooking_smoked_sausage_braise",
@@ -48,7 +48,7 @@ window.CRAFT_RECIPES = {
       summary: "Tart orchard apple folded through a pot of barley porridge." },
     { id: "acorn_truffle_pottage", name: "Acorn-Truffle Pottage", ingredients: ["acorn_truffle", "potatoes"], dc: 12, property: "cooked meal", icon: "cooking_acorn_truffle_pottage",
       summary: "A small pot of earthy truffle and potato, worth making while the rare fungus is fresh." },
-    { id: "brambleberry_honey_tart", name: "Brambleberry Honey Tart", ingredients: ["brambleberry", "honey"], dc: 12, property: "cooked meal", icon: "cooking_brambleberry_honey_tart",
-      summary: "A sharp berry tart glazed with honey from the Longshade's wild bees." }
+    { id: "brambleberry_barley_pudding", name: "Brambleberry Barley Pudding", ingredients: ["brambleberry", "grain"], dc: 12, property: "cooked meal", icon: "cooking_brambleberry_barley_pudding",
+      summary: "Brambleberries simmered into a thick barley pudding, sharp and sweet from the fruit." }
   ]
 };

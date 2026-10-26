@@ -1,82 +1,92 @@
 # Cooking crafting reference
 
-This is the first cookbook for the future Cooking craft mode.  It follows the current alchemy rule exactly: a recipe is two distinct counted ingredients, in either order.  The cooking pot will be the required tool when the mode is wired into the Craft panel; this catalogue makes no cooking action live on its own.
+This is the first cookbook for the future Cooking craft mode. Like alchemy, each recipe uses two distinct ingredient types, in either order, and spends **one whole unit of each** (portions are deferred; see the last section). The cooking pot will be the required tool when the mode is wired into the Craft panel; this catalogue makes no cooking action live on its own.
 
-Every output has a dedicated, previously unmapped illustration from `ICONS/Item/Consumable/Camp_supply/Food`.  No finished dish shares its art with another cookbook dish, an alchemy output, or an existing item-icon key.  `node tools/check_cooking_recipes.js` enforces that rule.
+Every output has a dedicated illustration from `ICONS/Item/Consumable/Camp_supply/Food`. No finished dish shares its art with another cookbook dish, an alchemy output, or an existing item-icon key. `node tools/check_cooking_recipes.js` enforces that rule.
+
+## Proposed Craft interface
+
+- Keep one **Craft** tab in the inventory. Inside it, place **Alchemy | Cooking** mode buttons above the current activity and recipe controls. Alchemy keeps **Brew | Recipes**; Cooking shows **Cook | Recipes**. Switching modes preserves each mode's ingredient selections separately, so herbs do not appear in the cooking boxes and food does not appear in the brewing boxes.
+- Cooking uses the existing ingredient boxes, result preview, and action button; each current recipe fills two boxes, with the third remaining reserved for later recipes. The recipe preview should show each ingredient and how many you hold. The button reads **Cook** and gives a specific reason when the place, heat, pot, or an ingredient is missing. The Recipes view should list the cooking catalogue the same way.
+- The **Iron Cooking Pot** is the only required inventory tool for pot recipes. Its slot fills automatically from the pack or a reachable container, including saddlebags when the horse is with the player. Show its source and a missing state as alchemy does. The pot stays in inventory and is not consumed or manually dragged into the slot. A future oven-only recipe uses an available oven and the host's bakeware; it does not require the player's pot unless that particular recipe also calls for it. A frying pan, mortar and pestle, vial, portable burner, and lamp oil are not cooking requirements.
+- Show **Heat** as a separate status, not an inventory tool slot: for example, `Campfire ready`, `Inn kitchen and oven ready`, `Communal oven ready`, or `No cooking place`. Where a campfire is allowed, the existing tinderbox or a fire-lighting ability can establish it. The presence of the Wait button alone does not imply permission or space for a cooking fire. The selected recipe determines whether it needs the pot or an oven; the player never chooses a station in a separate menu.
+- Follow the current Craft panel's reachable-container rule: gear in a container left outside a dungeon is unavailable inside it. Heat and location eligibility need a shared check so the displayed reason and the eventual cooking action agree. Opening the Cooking tab and reading recipes remain possible even when cooking is unavailable.
+
+### Cooking access by place
+
+| Place | Cooking access | Available station |
+| --- | --- | --- |
+| Camp | When a cooking fire can be lit or is already burning | Fire and player's pot; no oven |
+| Mother Marda's communal bakehouse, Middle Ward | While the bakehouse is open and its ovens are working; not during a temporary oven shutdown | Communal oven, plus heat for pot dishes |
+| Drowned Oar, Alderford | After Maura's cellar is cleared (`maura_cellar_cleared`) | Inn kitchen and oven |
+| Split Pine, Timbermouth | After Ressa's ring is returned freely or for payment (`hale_ring_stage` is `returned_free` or `returned_paid`) | Inn kitchen and oven |
+| Reedhouse, Brinewick | After Nessa's daughter quest is peacefully resolved (`bw_daughter_completed`); the wedding need not have happened | Inn kitchen and oven |
+
+Treat an inn with a working kitchen as having a modest oven even where the present scene does not spell it out. Kitchen permission is earned from the named innkeeper's successful personal quest, not from renting a room. Once earned, the **Cook** button is available directly in that inn's hall or counter and in its rented room at any hour. Cooking from the room represents briefly using the downstairs kitchen and returning; it does not add a kitchen room, a travel step, or a separate oven choice. Both pages inherit the same inn-specific permission and station availability, while unrelated rooms and neighboring locations do not. Later innkeeper favors can add more inns to the table without changing the Craft interface.
 
 ## Proposed meal boons
 
-Prepared inn food currently grants a +1 ability boon for four hours. Cooking should keep the bonus at +1 and earn its advantage through duration: eight hours for ordinary recipes, twelve hours for meals using hunted meat or scarce forage. These are design targets for the eventual **eat** action, not effects applied when a dish is crafted. Boon duration is separate from how long a meal holds off hunger. A cooked meal should use the existing single food-boon slot, replacing the previous food boon rather than stacking with it. No extra healing or temporary HP is assumed in this proposal.
+Prepared inn food currently grants a +1 ability boon for four hours. Cooking keeps the bonus at +1 and earns its advantage through duration: eight hours for **staple** dishes, ten for **hearty** ones, and twelve for **special** ones (hunted meat, whole poultry and scarce forage). Each tier also sets the temporary HP and the cooking time (table below). These are design targets for the eventual **eat** action, not effects applied when a dish is crafted. Boon duration is separate from how long a meal holds off hunger. A cooked meal uses the existing single food-boon slot (`food_buff_*`), replacing the previous food boon rather than stacking with it. **Temporary HP (the user, 2026-10-26):** eating a dish gives its tier's temporary HP (staple 1, hearty 2, special 2), matching the 1–2 a bought meal gives. It is *set, not added*, exactly as a tavern meal does (`buy_tavern_item` raises `temp_hp` to the value only when the value is higher). No other healing.
 
-| Recipe | Ingredients | DC | Proposed boon on eating | Duration | Finished-dish icon |
-| --- | --- | ---: | --- | ---: | --- |
-| Salt-Roasted Boar | Boar Meat + Salt | 10 | +1 STR | 12 hours | `FOOD_Grilled_Pork_Leg_Unfaded_Icon.png` |
-| Onion-Seared Venison | Venison + Onions | 10 | +1 DEX | 12 hours | `FOOD_Grilled_Steak_Unfaded_Icon.png` |
-| Hearth-Roast Chicken and Roots | Dressed Chicken + Root-Vegetable Bundle | 11 | +1 CON | 8 hours | `FOOD_Hearty_Dinner_Unfaded_Icon.png` |
-| Riverfish Barley Pie | Fish + Grain | 11 | +1 CON | 8 hours | `FOOD_Salmon_Pie_Unfaded_Icon.png` |
-| Tomato Riverfish Broth | Fish + Tomatoes | 11 | +1 WIS | 8 hours | `FOOD_Seafood_Bouillabaisse_Unfaded_Icon.png` |
-| Smoked Sausage and Cabbage Braise | Dried Pork Sausage + Cabbage | 10 | +1 STR | 8 hours | `FOOD_Stout_Stew_Unfaded_Icon.png` |
-| Pumpkin and Onion Soup | Pumpkin + Onions | 10 | +1 WIS | 8 hours | `FOOD_Pumpkin_Soup_Unfaded_Icon.png` |
-| Field-Garden Stew | Root-Vegetable Bundle + Cabbage | 10 | +1 CON | 8 hours | `FOOD_Vegetable_Soup_Unfaded_Icon.png` |
-| Honeyed Barley Porridge | Grain + Honey | 10 | +1 INT | 8 hours | `FOOD_Fruit_Porridge_Unfaded_Icon.png` |
-| Apple Barley Porridge | Grain + Orchard Apple | 10 | +1 CON | 8 hours | `FOOD_Fruit_Porridge_R_Unfaded_Icon.png` |
-| Acorn-Truffle Pottage | Acorn Truffle + Potatoes | 12 | +1 INT | 12 hours | `FOOD_Mushroom_Soup_A_Unfaded_Icon.png` |
-| Brambleberry Honey Tart | Brambleberry + Honey | 12 | +1 CHA | 12 hours | `FOOD_Berry_Tart_Unfaded_Icon.png` |
+Each recipe spends **one whole unit of each ingredient** at the unit's existing price and weight, and makes one finished meal. The cost column is the two units' retail price in copper (foraged goods use their herbalist sale value: acorn truffle 3c, brambleberry 2c).
 
-## Recipe and portion review before implementation
+| Recipe | Ingredients (one unit each) | Cost | DC | Boon on eating | Tier | Duration | Temp HP | Cook time | Finished-dish icon |
+| --- | --- | ---: | ---: | --- | --- | ---: | ---: | ---: | --- |
+| Dripping-Roasted Boar | Boar Meat + Animal Fat | 9 c | 10 | +1 STR | special | 12 hours | 2 | 60 min | `FOOD_Grilled_Pork_Leg_Unfaded_Icon.png` |
+| Onion-Seared Venison | Venison + Onions | 9 c | 10 | +1 DEX | special | 12 hours | 2 | 60 min | `FOOD_Grilled_Steak_Unfaded_Icon.png` |
+| Pot-Braised Chicken and Roots | Dressed Chicken + Root-Vegetable Bundle | 9 c | 11 | +1 CON | special | 12 hours | 2 | 60 min | `FOOD_Hearty_Dinner_Unfaded_Icon.png` |
+| Riverfish and Barley Pottage | Fish + Grain | 6 c | 11 | +1 CON | hearty | 10 hours | 2 | 45 min | `FOOD_Murky_Stew_Unfaded_Icon.png` |
+| Tomato Riverfish Broth | Fish + Tomatoes | 7 c | 11 | +1 WIS | hearty | 10 hours | 2 | 45 min | `FOOD_Seafood_Bouillabaisse_Unfaded_Icon.png` |
+| Smoked Sausage and Cabbage Braise | Dried Pork Sausage + Cabbage | 5 c | 10 | +1 STR | hearty | 10 hours | 2 | 45 min | `FOOD_Stout_Stew_Unfaded_Icon.png` |
+| Pumpkin and Onion Soup | Pumpkin + Onions | 5 c | 10 | +1 WIS | staple | 8 hours | 1 | 30 min | `FOOD_Pumpkin_Soup_Unfaded_Icon.png` |
+| Field-Garden Stew | Root-Vegetable Bundle + Cabbage | 4 c | 10 | +1 CON | staple | 8 hours | 1 | 30 min | `FOOD_Vegetable_Soup_Unfaded_Icon.png` |
+| Honeyed Barley Porridge | Grain + Honey | 6 c | 10 | +1 INT | staple | 8 hours | 1 | 30 min | `FOOD_Gruel_Unfaded_Icon.png` |
+| Apple Barley Porridge | Grain + Orchard Apple | 3 c | 10 | +1 CON | staple | 8 hours | 1 | 30 min | `FOOD_Fruit_Porridge_Unfaded_Icon.png` |
+| Acorn-Truffle Pottage | Acorn Truffle + Potatoes | 4 c | 12 | +1 INT | special | 12 hours | 2 | 60 min | `FOOD_Mushroom_Soup_A_Unfaded_Icon.png` |
+| Brambleberry Barley Pudding | Brambleberry + Grain | 4 c | 12 | +1 CHA | special | 12 hours | 2 | 60 min | `FOOD_Fruit_Porridge_R_Unfaded_Icon.png` |
 
-- **Portions are the main balance decision.** Many catalogue items already describe more than one serving: salt and grain are two-pound sacks, onions are a string of four, farm eggs come six to a basket, and honey is a jar. A whole pumpkin or chicken also needs a serving decision. One cooked serving should spend only the amount the recipe needs. Keep recipes at two *kinds* of ingredient; each can specify how many portions it uses.
-- **Check the two pastry names against their inputs.** Fish + grain does not clearly make a pie, and brambleberries + honey do not make a tart without a crust. The available butter, animal fat, and grain could support a later pastry rule, or the dishes could be renamed to match what two inputs and a pot can make. The existing pie and tart illustrations should be reconsidered if the dishes are renamed.
-- **Add a simple egg dish if the cookbook expands.** Farm Eggs + Onions could make Onion Egg Scramble; Farm Eggs + Cheese could make Cheese Eggs. Both use items already sold in the provision markets and give players a short, low-cost cooking path. A Dried Pork Sausage + Potatoes hash would likewise use two existing ingredients.
-- **Set the cooking cost in time as well as ingredients.** The longer boon should require preparation time and a cooking pot, with the timer beginning only when the finished meal is eaten. Decide failure losses and whether cooked dishes keep in a pack before making these boons live.
+**Balance notes (checked against the game's bought meals, 2026-10-26).** Bought meals are a 4-hour +1 boon with 1–2 temporary HP at 1–2 c in the country inns (stew 2 c, lunch or herring 1 c), 2–4 c in Port Valen, and they clear hunger; a trail ration is 2 c and holds off hunger for 36 hours with no boon. A cooked dish costs 3–9 c, so **cooking cannot win on coin** and is not meant to. Its value is where no inn is (the road, camp, a dungeon), turning hunted and foraged goods into a long boon, a full waking day instead of four hours, and the CHA boon no inn sells. A cooked meal must still not be strictly worse than a bought one, so each tier carries at least the temporary HP of the bought meal it replaces (decided 2026-10-26). Per boon-hour a cooked dish now runs 0.33–0.75 c against an inn's 0.25–0.5 c, with the same temporary HP and two to three times the length.
 
-## Proposed portion and resale model
+**Dripping-Roasted Boar** uses animal fat in place of coast salt (the user, 2026-10-26). With whole-unit cooking a salt sack would be spent on every meal, and salt keeps its curing role. The fat comes off the same boar when it is skinned, so a hunter can make the dish from one kill. This also gives animal fat its first recipe.
 
-Treat the existing market item as an **unopened unit** at its current price and weight. For a portioned ingredient, track unopened units and the portions left in one opened unit separately. Cooking uses the opened unit first; opening a new one moves it out of the unopened count. For example, if a four-onion string is opened and one onion is used, the pack shows three onions left, and there is no intact string to sell. Buying another string adds one unopened unit without resetting the three loose onions.
+## Recipe review before implementation
 
-For the first implementation, shops should buy **unopened units only**. The sell menu must count only those units and label them clearly; opened ingredients remain available for cooking. This preserves existing whole-item prices and avoids fractional-copper resale and buy/sell rounding exploits. Weight should fall as portions are used. If selling leftovers is wanted later, quote the *entire opened remainder* as one lot with a single rounded price, never round each tiny portion separately.
-
-### Proposed units and recipe costs
-
-Each successful cooking action makes **one finished meal**. Each current recipe spends **one portion of each of its two ingredients**; the table below sets how many portions an existing market unit contains. A failed cook should never consume an entire unopened unit when only one portion was at stake. Counts are working balance values, not a change to the goods currently sold.
-
-| Ingredient | Current unit | Proposed portions per unit | Reason |
-| --- | --- | ---: | --- |
-| Boar Meat | 2 lb haunch | 4 | One substantial meat serving from about half a pound. |
-| Venison | 2 lb haunch | 4 | Same yield as boar meat. |
-| Dressed Chicken | 3 lb whole bird | 4 | Four meal portions after bone and trimming. |
-| Fish | One 0.75 lb fish | 1 | The fish is the main part of the dish. |
-| Dried Pork Sausage | One short sausage | 1 | Already a single-use food item. |
-| Root-Vegetable Bundle | 1 lb bundle | 2 | Half a bundle per hearty meal. |
-| Grain | 2 lb sack | 8 | About a quarter pound of dry grain per porridge or crust. |
-| Onions | Four-onion string | 4 | One onion per dish. |
-| Potatoes | 1 lb net | 4 | About a quarter pound per pottage. |
-| Tomatoes | 0.75 lb basket | 2 | Half the basket for a fish broth. |
-| Cabbage | One 1.5 lb head | 4 | A quarter head per stew or braise. |
-| Pumpkin | One 4 lb pumpkin | 6 | About six bowls after rind and seeds are removed. |
-| Honey | One 0.5 lb jar | 8 | About one ounce to sweeten a meal. |
-| Salt | 2 lb sack | 64 | A small seasoning allowance; this is a pantry staple, not a full meal component. |
-| Orchard Apple | One apple | 1 | Already a single-use food item. |
-| Acorn Truffle | One foraged piece | 1 | Scarce counted forage; do not divide further. |
-| Brambleberry | One gathered unit | 1 | Scarce counted forage; do not divide further. |
-
-For potential later recipes, the existing six-egg basket would contain **six egg portions**, the half-pound butter block **eight cooking portions**, and the one-pound animal-fat slab **sixteen cooking portions**. Keep the cheese wedge as **one unit** for now: it can already be eaten whole for hunger relief, so dividing it would also require a decision about that action. These future ingredients do not add recipes to the current catalogue.
-
-The salt figure exposes a recipe-design problem: one seasoning portion costs very little and a sack lasts through many meals. Before cooking goes live, consider making salt a pantry requirement or optional seasoning rather than the entire second ingredient in Salt-Roasted Boar. This would need a different meaningful second ingredient while keeping the two-ingredient recipe rule.
-
-The future recipe descriptions should also match serving-sized inputs: a quarter of a chicken or haunch can make one meal, while prose about roasting and consuming a whole bird or haunch would imply all four portions were spent.
-
-### Opened state and inventory display
-
-- Keep **unopened units** and **remaining portions in one opened unit** as separate counts for each portioned item. There is at most one opened unit of each item type; if it reaches zero, the next use opens another intact unit. Cooking always spends the opened portions first. Buying, gathering, and selling unopened units must not overwrite an opened remainder.
-- Show a small **Opened** marker on the item tile whenever an opened unit exists. On hover, show both counts and the total usable portions, for example: `Grain — 2 unopened sacks; 1 opened sack with 5/8 portions left; 21 portions available`. The existing selected-item detail card should show the same line on click or tap, because hover is unavailable on touch screens. Include the counts in the tile's accessible name as well.
-- The tile's normal quantity badge should count unopened units only; the Opened marker tells the player there is more usable stock. An item with zero unopened units but a nonempty opened unit must still appear in the pack. The Craft recipe view should check and display **portions available**, while the shop sell view should check and display **unopened units sellable**.
-- Weight for an opened unit is its full-unit weight multiplied by `portions remaining / portions per unit`; unopened units keep their full weight. This estimate is adequate for the current abstract encumbrance system. A full unopened unit retains its existing price; opened portions are not offered for sale in the first implementation.
-
-These are design notes only. The current inventory, shops, and crafting code still handle whole items.
+- **Keep dishes plausible over a campfire.** Pottage, pudding, and braised chicken can be made in the lidded iron pot. The chicken illustration still shows a plated portion with roots. A separate frying pan is not an inventory item.
+- **Add a simple egg dish if the cookbook expands.** Farm Eggs + Onions could make Onion Egg Scramble; Farm Eggs + Cheese could make Cheese Eggs. A Dried Pork Sausage + Potatoes hash would likewise use two existing ingredients. Butter and beeswax have no recipe yet.
+- **Keep preparation distinct from eating.** The cooking attempt spends time and ingredients; a successful dish becomes a carried item. Its hunger relief and boon apply only when it is eaten.
+- **Recipe descriptions** should read as one meal. Prose about roasting a whole bird or haunch is fine here because the whole unit is spent.
 
 ## Future implementation notes
 
-- Keep the recipes in `web/mygame/crafting-data.js` as the runtime catalogue and update this table at the same time.
-- The recipe ids are reserved output item ids.  Add their consumable records and food-use effects before enabling the Cooking tab or dispatching them through `crafting.txt`.
-- Food is intended to be a proper meal, not an alchemical buff. Final hunger, rest, portion, spoilage, and failure rules still need decisions when the cooking action is implemented. The boon table above is a proposal only; the game does not apply it yet.
+- Keep the recipes in `web/mygame/crafting-data.js` as the runtime catalogue and update this table at the same time. It already stores two ingredient ids per recipe, so whole-unit cooking needs no new ingredient fields.
+- The recipe ids are reserved output item ids. Add their consumable records with the shared cooked-meal effect before enabling the Cooking tab or dispatching them through `crafting.txt`.
+- Food is intended to be a proper meal, not an alchemical buff. The rules below are implementation targets only; the game does not apply them yet.
+
+### First implementation rules
+
+- **Heat:** Camp cooking is available when the existing campfire is usable; do not add a second weather roll to an already burning fire or require a new firewood item. The three quest-unlocked inn kitchens work at any hour from their hall or rented room. Marda's bakehouse works only while it is open and its ovens are operating; its current night closure and temporary Dry Lion outage remain real gates.
+- **Check and time:** Roll the better of Survival or Nature against the recipe's listed DC. A recipe with an 8-hour boon takes 30 minutes to cook, a 10-hour recipe 45 minutes, and a 12-hour recipe 60 minutes. Show the time and DC before the player presses **Cook**; both success and failure spend the time.
+- **Failure:** The first listed ingredient is the recipe's main ingredient. On failure the main ingredient is lost (one unit); keep the other ingredient, create no meal, and spend the full cooking time. This makes risk visible and keeps a failed boar roast from costing only a pinch of fat.
+- **Success and eating:** Spend one unit of each ingredient and create one carried meal. Eating it counts as a full meal, clears hunger like an inn meal, and applies its listed +1 food boon for the listed duration. The timer starts on eating and replaces, rather than stacks with, any active food boon. Apply the existing manual food-use guard against eating again too soon. It also sets temporary HP to the dish's tier value (never lowering a higher amount already held); no other healing.
+- **Storage:** Identical finished meals stack. There is no separate spoilage clock for cooked dishes in the first version, consistent with the current raw-food inventory. Their weight and ordinary inventory sale status are set when their consumable records are added; cooking itself does not sell or serve them.
+- **Recipes and learning:** Start with **no cooking recipes known**: every cooking `recipe_<id>` flag is false. All twelve dishes are experimentable, following alchemy's first-success discovery flow. The Cooking Recipes view initially says to try ingredient pairs; afterward it lists only learned dishes. A known recipe with a missing ingredient stays visible but dimmed, with what is missing shown. A first successful experiment teaches the dish; a failed attempt teaches nothing. Recipe books, purchases, and cooks who teach can later set the same flag, without a second unlock system. No books or teachers need to exist for the first cooking release.
+- **Ingredient-box preview:** A learned recipe shows its name, dish icon, DC, time, station, and boon. An unlearned but experimentable matching pair shows `Untried preparation` with a question-mark result icon, DC, time, station, and the main-ingredient loss on failure; it hides the dish name, final art, and boon. Its action reads **Experiment**. Success makes the dish and teaches it; failure spends the time and the main ingredient without teaching it. A taught-only recipe that is not yet learned must look exactly like an invalid pair: show no hidden dish information and disable the action.
+- **Automatic eating:** The hunger system can eat from the pack to prevent starvation. Prefer ordinary rations before boon-bearing cooked meals. If it does select a cooked meal, use the same eating effect as a manual choice so hunger and the boon are applied together and the meal is removed exactly once.
+
+### Code structure for adding recipes later
+
+- Keep the **recipe definition** as data in the existing `window.CRAFT_RECIPES.cooking` catalogue. Extend each entry with `station` (`pot` or `oven`), `discovery` (`experiment` or `taught`), a boon stat, and a tier such as `staple`, `hearty`, or `special`; one tier table supplies the shared 8/10/12-hour boon durations, 30/45/60-minute cooking times and 1/2/2 temporary HP, so a balance adjustment to a whole tier is one edit instead of twelve. The recipe id remains its output item id, and the first ingredient remains the failure-loss ingredient. A new dish should not need a new branch in the Craft panel or cooking action.
+- Define one **station/access contract** for the Cook button and the action's validation. Give the camp, bakehouse, and each inn a stable site id and capability (`pot` heat, oven) plus its existing unlock condition. The hall and rented room identify the same inn. Bind the current site to the current page (as `pagegate.js` does for Wait and Rest) so access cannot carry into an unrelated scene, and validate the page and quest flags again when Cook is pressed. The JavaScript preview and the ChoiceScript action must agree on those inputs and reasons. This avoids separate cooking labels and choices in every inn.
+- Put one **cooking action** (`craft_cook`, next to `craft_brew` in `crafting.txt`) in the shared crafting scene: validate site, pot when needed, heat, recipe, and ingredients; perform the check; advance time; then apply either the success or failure transaction once. A page refresh or repeated click must not award a second meal, consume ingredients twice, or advance time twice. Keep alchemy's brewing action and rules intact.
+- Put one **cooked-meal use effect** behind both manual eating and automatic hunger eating, by extending `use_consumable`. Look up the dish's boon by its recipe/output id; do not duplicate durations and stats in scene-specific inn code. Output items still need inventory records in `tools/gear_catalog.json`, with a common cooked-meal effect type.
+- Keep **recipe knowledge** separate from ownership of ingredients or a finished meal. Successful experimental cooking, a book, and a teacher all grant the same persistent `recipe_<id>` flag once. Use the same learned-recipe filter as alchemy for the Recipes view and one shared preview rule for both the result panel and recipe rows. Mark the current twelve recipes `experiment`. Default a new recipe to `experiment` unless a real book, teacher, or quest source exists for a `taught` gate; otherwise the dish would be inaccessible. The preview must not reveal a taught-only pair by giving it a different missing-recipe message from an invalid pair.
+- Two ingredient boxes identify a recipe by their **unordered pair**. Require unique pairs for the first version (they are: 12 recipes, 12 pairs). If the expanding cookbook needs two different dishes from the same pair, let the player select the desired result in the recipe/result view instead of silently taking the first match. The existing third box can later support three-ingredient recipes without changing the station rules.
+- Validate the data before compiling: unique order-independent ingredient pairs, known ingredient and output ids, valid stations, DCs and tiers, and distinct output art (`node tools/check_cooking_recipes.js` covers the art today). A new-recipe workflow should add one recipe entry, one output record in `tools/gear_catalog.json`, and one icon mapping in `tools/gen_item_icons.js`, then run their generators and one cookbook check. Focused play checks should cover each access gate, oven versus camp, failure loss, boon replacement, and automatic eating.
+
+## Deferred: portions and opened units
+
+Deciding against it for now (the user, 2026-10-26: realism is traded for a cheaper build that is easier to maintain). Every ingredient is spent as a whole unit, so a sack of salt or a jar of honey goes into one meal. The earlier design is kept here so it can be added later without changing the recipe data's shape:
+
+- **What it was.** Each market unit holds a number of portions (grain 8, honey 8, boar and venison 4, salt 64 and so on). Cooking spends portions from one *opened* unit first, then opens another. Shops buy unopened units only; weight falls with the portions left; the inventory tile shows an **Opened** marker and the Craft preview shows portions available.
+- **What it would touch.** A second counter for each portioned item, then the inventory tiles and tooltips, carried weight, the trade panel and shops (sell only unopened), and the Craft preview, all through one helper (usable portions, consume opened-first, unopened-for-sale, proportional weight). That breadth is why it is deferred.
+- **If it is added.** Give recipes a per-ingredient portion count (default 1, so existing entries stay valid), add the helper first, then switch the cooking action, preview and shops over to it together. Salt would become a pantry-style seasoning at that point.

@@ -105,18 +105,18 @@ const MAP = {
   potion_winterward: "Consumable/Elixir/ELX_Elixir_of_Cold_Resistance_Unfaded_Icon.png",
   potion_surestep: "Consumable/Potion/POT_Potion_of_Glorious_Vaulting_Unfaded_Icon.png",                           // the user's own art: the herbalist's brass burner
   // ---- the twelve distinct finished-dish illustrations reserved for the future Cooking craft mode (COOKING_CRAFTING_REFERENCE.md)
-  cooking_salt_roasted_boar: "FOOD_Grilled_Pork_Leg_Unfaded_Icon.png",
+  cooking_dripping_roasted_boar: "FOOD_Grilled_Pork_Leg_Unfaded_Icon.png",
   cooking_onion_seared_venison: "FOOD_Grilled_Steak_Unfaded_Icon.png",
-  cooking_hearth_roast_chicken: "FOOD_Hearty_Dinner_Unfaded_Icon.png",
-  cooking_riverfish_barley_pie: "FOOD_Salmon_Pie_Unfaded_Icon.png",
+  cooking_pot_braised_chicken: "FOOD_Hearty_Dinner_Unfaded_Icon.png",
+  cooking_riverfish_barley_pottage: "FOOD_Murky_Stew_Unfaded_Icon.png",
   cooking_tomato_riverfish_broth: "FOOD_Seafood_Bouillabaisse_Unfaded_Icon.png",
   cooking_smoked_sausage_braise: "FOOD_Stout_Stew_Unfaded_Icon.png",
   cooking_pumpkin_onion_soup: "FOOD_Pumpkin_Soup_Unfaded_Icon.png",
   cooking_field_garden_stew: "FOOD_Vegetable_Soup_Unfaded_Icon.png",
-  cooking_honeyed_barley_porridge: "FOOD_Fruit_Porridge_Unfaded_Icon.png",
-  cooking_apple_barley_porridge: "FOOD_Fruit_Porridge_R_Unfaded_Icon.png",
+  cooking_honeyed_barley_porridge: "FOOD_Gruel_Unfaded_Icon.png",
+  cooking_apple_barley_porridge: "FOOD_Fruit_Porridge_Unfaded_Icon.png",
   cooking_acorn_truffle_pottage: "FOOD_Mushroom_Soup_A_Unfaded_Icon.png",
-  cooking_brambleberry_honey_tart: "FOOD_Berry_Tart_Unfaded_Icon.png",
+  cooking_brambleberry_barley_pudding: "FOOD_Fruit_Porridge_R_Unfaded_Icon.png",
   alch_fire: "GRN_Alchemist's_Fire_Unfaded_Icon.png",
   elixir: "ELX_Elixir_of_Darkvision_Unfaded_Icon.png",
   salve: "Clutter_Bottle_Small_Flowers_Unfaded_Icon.webp",
@@ -278,6 +278,8 @@ if (refreshAt >= 0) {
   const end = js.lastIndexOf(";");
   if (start < 0 || end < start) { console.error("could not read the existing item-icons.js bundle"); process.exit(1); }
   const out = JSON.parse(js.slice(start, end));
+  // MAP is authoritative: renamed icon keys must not survive as stale aliases.
+  for (const k of Object.keys(out)) if (!Object.prototype.hasOwnProperty.call(MAP, k)) delete out[k];
   for (const k of refreshKeys) {
     if (!Object.prototype.hasOwnProperty.call(MAP, k)) { console.error("unknown icon key: " + k); bad++; continue; }
     if (!SRC[k] || path.extname(SRC[k]).toLowerCase() !== ".png") { console.error(k + " does not resolve to a PNG source"); bad++; continue; }
