@@ -801,6 +801,12 @@
       description: "Two-pound sack of coarse coast salt, for curing and the cook-pot."
     },
     {
+      id: "beeswax", category: "provisions", owned: "has_beeswax",
+      weight: 1, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_beeswax) || 0); return "Beeswax" + (n > 1 ? " ×" + n : ""); },
+      description: "One-pound cake of clean beeswax for candles, seals, and waterproofing."
+    },
+    {
       id: "furs", category: "provisions", owned: "has_furs",
       weight: 1.5, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_furs) || 0); return "Furs" + (n > 1 ? " ×" + n : ""); },

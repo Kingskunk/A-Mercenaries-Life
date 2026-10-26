@@ -547,7 +547,88 @@
           }
           return out;
         },
-        see: ["alderford", "gilded_scales"]
+        see: ["whitefold", "alderford", "gilded_scales", "nerin_bale", "hessa_vail", "perrin_holt"]
+      },
+      {
+        id: "nerin_bale", category: "people", title: "Nerin Bale",
+        sub: "Wool grader at the Fleecefold",
+        role: "Weighs and grades wool at Whitefold's Fleecefold",
+        link: ["Nerin Bale"],
+        tags: ["Whitefold", "Trade"], aliases: ["Nerin", "Bale", "Fleecefold", "wool grader", "weighing floor"],
+        unlock: "wf_fold_seen",
+        body: function (s) {
+          var out = [
+            "The lean worker at the Fleecefold's beam scale, with sandy hair cut close against the wind, a pale burn scar across one hand, and loose wool clinging to his dark vest. He weighs each fleece and writes the result down before he looks up."
+          ];
+          if (truthy(s.wf_fold_asked_wool)) {
+            out.push("Nerin separates the clip by length, grease, weather damage and burrs. His rule is that a buyer should pay for what is in the sack, so the next cart has reason to return.");
+          }
+          if (truthy(s.wf_fold_asked_weather)) {
+            out.push("He treats bad weather as work that must be met early: shut the gate, mend the fence, and get a late lamb under cover. In his view, most losses begin when someone leaves a task for morning.");
+          }
+          return out;
+        },
+        see: ["whitefold", "edda_cale"]
+      },
+      {
+        id: "hessa_vail", category: "people", title: "Hessa Vail",
+        sub: "Weighkeeper at the Quarry Yard",
+        role: "Keeps the load slate at Whitefold's Quarry Yard",
+        link: ["Hessa Vail"],
+        tags: ["Whitefold", "Trade"], aliases: ["Hessa", "Vail", "Quarry Yard", "quarry", "weigh platform", "stone"],
+        unlock: "wf_yard_seen",
+        body: function (s) {
+          var out = [
+            "The middle-aged woman at the Quarry Yard's weigh platform, with a slate at her hip, a pale seam through one eyebrow, and chalk worked into her dark gloves. She weighs the carts and marks each block before it leaves the yard."
+          ];
+          if (truthy(s.wf_yard_asked_stone)) {
+            out.push("Whitefold sends cut blocks and lime down the road when the carts can carry them. Hessa leaves the wool to the folds, satisfied that the two trades share a road.");
+          }
+          if (truthy(s.wf_yard_asked_road)) {
+            out.push("She knows the quarry road does not make a pass through the Coldspine. Beyond the working face lie goat ground, scree and drops; Stonewatch is the route through the range.");
+          }
+          return out;
+        },
+        see: ["whitefold", "edda_cale"]
+      },
+      {
+        id: "perrin_holt", category: "people", title: "Perrin Holt",
+        sub: "Keeper of the White Ram",
+        role: "Innkeeper, the White Ram in Whitefold",
+        link: ["Perrin Holt"],
+        tags: ["Whitefold"], aliases: ["Perrin", "Holt", "innkeeper", "White Ram", "rooms", "stable yard"],
+        unlock: "wf_ram_seen",
+        body: [
+          "The broad-shouldered keeper of the White Ram, with a close grey beard, a flattened nose that healed crooked, flour on one sleeve, and the room keys at his belt. He keeps the inn's stove, beds and stable yard in working order.",
+          "Perrin offers stew, a bed and a dry stall without ceremony. The White Ram's public room faces Whitefold's common, while its small stable yard has a covered trough, hitching rails and four dry stalls."
+        ],
+        see: ["whitefold"]
+      },
+      {
+        id: "mara_venn", category: "people", title: "Mara Venn",
+        sub: "Keeper of Redvein's Gather House",
+        role: "Keeps the notices and relief stores at Redvein's Gather House",
+        link: ["Mara Venn"],
+        tags: ["Redvein"], aliases: ["Mara", "Venn", "Gather House", "notices", "collection box"],
+        unlock: "rv_hall_seen",
+        body: [
+          "The middle-aged woman at the Gather House table, with dark hair streaked white at the temples beneath a wool cap, a thin scar across one cheek, and red dust in the folds of her rolled sleeves. She keeps the notice rail, hauling lists and collection box within reach.",
+          "Mara directs anyone who needs a name posted or shelter from the weather to speak before helping themselves. The Gather House keeps a stove, benches, spare lamps and folded blankets for the village."
+        ],
+        see: ["redvein", "ilyra_fen"]
+      },
+      {
+        id: "ilyra_fen", category: "people", title: "Ilyra Fen",
+        sub: "Keeper of the Red Lantern",
+        role: "Innkeeper, the Red Lantern in Redvein",
+        link: ["Ilyra Fen"],
+        tags: ["Redvein"], aliases: ["Ilyra", "Fen", "innkeeper", "Red Lantern", "rooms", "stable yard"],
+        unlock: "rv_lantern_seen",
+        body: [
+          "The lean keeper of the Red Lantern, with one cloudy grey eye, black hair pinned up with a wooden skewer, and small white nicks across the backs of her strong hands. She keeps the counter and the room keys within reach.",
+          "Ilyra tells travellers to warm themselves before deciding whether they need a bed, and directs anyone with an animal to the stable gate. The inn has a stove-warmed public room, beds upstairs and a walled yard with three covered stalls."
+        ],
+        see: ["redvein", "mara_venn"]
       },
 
       /* ------------------------------------------------------------ PEOPLE: KARR */
@@ -788,7 +869,55 @@
           "A river town built around an old imperial limestone weir, where the highland road down from the Crags reaches the head of the Grey and the river drops away toward the gorge. Sawmills crowd the bank above the falls. Below them stand warehouses, curing lofts, and muddy wharves where the barges tie up to load for the downriver run. The brine trade is the town's spine: carts bring salt up the High Grey Road from Valen, and the river catch is split, cured, dried, and packed into firkins for the run downriver.",
           "North of town, the Coldspine runs east and west across the whole of the north as a broken mountain barrier, with few passes fit for wagons or an army and a fort in each. Its southern foothills supply stone, wool and ore. In the east its last low spur comes down toward the Black Sinks, and the only practical freight way east uses the narrow ground between that spur and the marsh, which is why the old gatehouse there matters to every loaded wagon."
         ],
-        see: ["port_valen", "grey_river", "sanctuary_charter", "gilded_scales", "imperial_booms", "meridian_empire", "saint_althea", "iron_carrion", "grey_marches", "carters_lot_af", "pells_stores"]
+        see: ["port_valen", "grey_river", "sanctuary_charter", "gilded_scales", "imperial_booms", "meridian_empire", "saint_althea", "iron_carrion", "grey_marches", "carters_lot_af", "pells_stores", "whitefold", "redvein"]
+      },
+      {
+        id: "whitefold", category: "places", title: "Whitefold",
+        sub: "A limestone and sheep village in the Coldspine foothills",
+        tags: ["Alderford", "Coldspine", "Trade"], aliases: ["Coldspine foothills", "Limestone Cut", "Fleecefold", "Quarry Yard", "White Ram", "lime kilns", "sheep village"],
+        link: ["Whitefold"],
+        unlock: "wf_seen",
+        body: function (s) {
+          var out = [
+            "A spread of low stone steadings, fold yards and barns on the hard pale ground at the southern foot of the Coldspine. The common is where the cart road through Limestone Cut meets the narrower foothill road toward Redvein, and where Whitefold trades while the yards are working.",
+            "The village's work is divided between the flocks and the quarry: sheep pens and lambing sheds climb the lower slopes, while the western end holds the cutting beds, lime kilns and waiting carts beneath the pale quarry face."
+          ];
+          if (truthy(s.wf_fold_seen)) {
+            out.push("The Fleecefold is Whitefold's shared weighing and baling barn. Its Common Room holds the notice rail and the long table where the Common meets.");
+          }
+          if (truthy(s.wf_yard_seen)) {
+            out.push("The Quarry Yard sorts cut stone under open sheds and loads it from the weigh platform. Its gate leads toward the stepped quarry, not a route through the mountain.");
+          }
+          if (truthy(s.wf_ram_seen)) {
+            out.push("The White Ram is the inn beside the common, with a stove-warmed public room, beds upstairs and a small walled stable yard.");
+          }
+          return out;
+        },
+        see: ["alderford", "edda_cale", "nerin_bale", "hessa_vail", "perrin_holt"]
+      },
+      {
+        id: "redvein", category: "places", title: "Redvein",
+        sub: "A mining village in the Coldspine foothills",
+        tags: ["Alderford", "Coldspine", "Trade"], aliases: ["Eastcut", "Eastcut Market", "Eastcut Road", "Gather House", "Red Lantern", "iron ore", "mining village"],
+        link: ["Redvein"],
+        unlock: "rv_seen",
+        body: function (s) {
+          var out = [
+            "A mining village in a fold of the Coldspine's southern foothills, where rough grey stone cottages stand below red spoil heaps and the Eastcut Road bends south toward Alderford. Fresh-cut ore gives the village its sharp iron smell, mixed with cold stone, damp earth and smoke.",
+            "The upper side of the village is a working yard before the timbered mine mouths. Ore is sorted there, loaded onto wagons at the scale platform and traded at the market stalls along its edge."
+          ];
+          if (truthy(s.rv_hall_seen)) {
+            out.push("The Gather House faces the open space near the cottages. It is Redvein's place for notices, public business, warmth and the supplies collected when a household needs help.");
+          }
+          if (truthy(s.rv_lantern_seen)) {
+            out.push("The Red Lantern is the roadside inn beside the Gather House, with a stove-warmed public room, upstairs beds and a walled stable yard.");
+          }
+          if (truthy(s.rv_eastcut_seen)) {
+            out.push("The Eastcut Market occupies the mine-gate yard, where ore tables, trestle stalls and the scale platform share the ground. Scales road wardens guard the strongbox and loaded wagons while trade is underway.");
+          }
+          return out;
+        },
+        see: ["alderford", "mara_venn", "ilyra_fen"]
       },
       {
         id: "pells_stores", category: "places", title: "Pell's Stores",

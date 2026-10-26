@@ -959,7 +959,7 @@ window.MARKET_DEFS = {
  },
  "pawn": {
   "id": "pawn",
-  "title": "The Pawnbroker's Window",
+  "title": "The Open Hand",
   "tier": "city shop",
   "purseTarget": 5000,
   "regen": {
@@ -2040,6 +2040,17 @@ window.MARKET_DEFS = {
     },
     "need": 0.8
    },
+   "beeswax": {
+    "base": 8,
+    "target": 105,
+    "stock0": 105,
+    "buyPct": 0.8,
+    "mult": 0.9,
+    "world": {
+     "tile": "fv"
+    },
+    "need": 0.5
+   },
    "furs": {
     "base": 14,
     "target": 50,
@@ -2400,6 +2411,17 @@ window.MARKET_DEFS = {
      "tile": "tm"
     },
     "need": 0.8
+   },
+   "beeswax": {
+    "base": 8,
+    "target": 123,
+    "stock0": 123,
+    "buyPct": 0.8,
+    "mult": 0.93,
+    "world": {
+     "tile": "tm"
+    },
+    "need": 0.5
    },
    "furs": {
     "base": 14,
@@ -2762,6 +2784,17 @@ window.MARKET_DEFS = {
     },
     "need": 0.8
    },
+   "beeswax": {
+    "base": 8,
+    "target": 47,
+    "stock0": 47,
+    "buyPct": 0.8,
+    "mult": 1.11,
+    "world": {
+     "tile": "bw"
+    },
+    "need": 0.5
+   },
    "furs": {
     "base": 14,
     "target": 31,
@@ -3122,6 +3155,17 @@ window.MARKET_DEFS = {
      "tile": "fo"
     },
     "need": 0.8
+   },
+   "beeswax": {
+    "base": 8,
+    "target": 83,
+    "stock0": 83,
+    "buyPct": 0.8,
+    "mult": 0.975,
+    "world": {
+     "tile": "fo"
+    },
+    "need": 0.5
    },
    "furs": {
     "base": 14,
@@ -3484,6 +3528,17 @@ window.MARKET_DEFS = {
     },
     "need": 0.8
    },
+   "beeswax": {
+    "base": 8,
+    "target": 50,
+    "stock0": 50,
+    "buyPct": 0.8,
+    "mult": 1.075,
+    "world": {
+     "tile": "mc"
+    },
+    "need": 0.5
+   },
    "furs": {
     "base": 14,
     "target": 36,
@@ -3845,6 +3900,17 @@ window.MARKET_DEFS = {
     },
     "need": 0.8
    },
+   "beeswax": {
+    "base": 8,
+    "target": 89,
+    "stock0": 89,
+    "buyPct": 0.8,
+    "mult": 0.99,
+    "world": {
+     "tile": "af"
+    },
+    "need": 0.5
+   },
    "furs": {
     "base": 14,
     "target": 60,
@@ -4204,6 +4270,17 @@ window.MARKET_DEFS = {
      "tile": "rv"
     },
     "need": 0.8
+   },
+   "beeswax": {
+    "base": 8,
+    "target": 58,
+    "stock0": 58,
+    "buyPct": 0.8,
+    "mult": 1.03,
+    "world": {
+     "tile": "rv"
+    },
+    "need": 0.5
    },
    "furs": {
     "base": 14,
@@ -4565,6 +4642,17 @@ window.MARKET_DEFS = {
     },
     "need": 0.8
    },
+   "beeswax": {
+    "base": 8,
+    "target": 52,
+    "stock0": 52,
+    "buyPct": 0.8,
+    "mult": 1.065,
+    "world": {
+     "tile": "wf"
+    },
+    "need": 0.5
+   },
    "furs": {
     "base": 14,
     "target": 45,
@@ -4925,6 +5013,17 @@ window.MARKET_DEFS = {
      "tile": "pv"
     },
     "need": 0.8
+   },
+   "beeswax": {
+    "base": 8,
+    "target": 88,
+    "stock0": 88,
+    "buyPct": 0.8,
+    "mult": 1.13,
+    "world": {
+     "tile": "pv"
+    },
+    "need": 0.5
    },
    "furs": {
     "base": 14,

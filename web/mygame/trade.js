@@ -127,7 +127,7 @@
   }
   // The markets the player stood in most recently before this one (the newest first), or, with heard, the ones they heard of.
   function lastStops(trade, s, n, heard) {
-    return TB().stops(parseSeen(s.trade_seen), !!heard, trade.key, 99).filter(function (e) { return data().trades[e.key]; }).slice(0, n).map(function (e) { return { key: e.key, title: String(data().trades[e.key].title).replace(/ Market$/, "").replace(/^The /, ""), d: e.d, q: e.q, h: e.h, p: e.p }; });
+    return TB().stops(parseSeen(s.trade_seen), !!heard, trade.key, 99).filter(function (e) { return data().trades[e.key]; }).slice(0, n).map(function (e) { return { key: e.key, title: TB().placeName(e.key), d: e.d, q: e.q, h: e.h, p: e.p }; });
   }
   function ageText(days) { return days <= 0 ? "today" : (days === 1 ? "yesterday" : days + " days ago"); }
   // The best price the player has seen for a good in ANOTHER market (the lowest ask for a buy row, the highest bid for a sell row), and every one they know of.
@@ -137,7 +137,7 @@
       if (k === trade.key || !data().trades[k]) return;
       var p = seen[k].p[id]; if (!p) return;
       var v = kind === "buy" ? p[0] : p[1]; if (v === null || v === undefined) return;
-      var e = { title: String(data().trades[k].title).replace(/ Market$/, "").replace(/^The /, ""), v: v / 10, age: today() - seen[k].d, heard: !!seen[k].h };
+      var e = { title: TB().placeName(k), v: v / 10, age: today() - seen[k].d, heard: !!seen[k].h };
       all.push(e); if (!best || (kind === "buy" ? e.v < best.v : e.v > best.v)) best = e;
     });
     all.sort(function (a, b) { return kind === "buy" ? a.v - b.v : b.v - a.v; });
@@ -685,14 +685,17 @@
     if (t.selling) lines += '<div class="trd-line"><span>Selling</span><span>+' + fmt(t.credit) + "</span></div>";
     if (t.selling && profitN) lines += '<div class="trd-line trd-line-profit"><span>Profit on the ' + profitN + ' you bought</span><span class="' + (sumProfit >= 0 ? "trd-profit-pos" : "trd-profit-neg") + '">' + signed(sumProfit) + "</span></div>";
     if (!t.buying && !t.selling) lines = '<div class="trd-line trd-line-idle trd-wide"><span>Set some items aside to trade.</span></div>';
-    else if (t.short) lines += '<div class="trd-line trd-line-bad"><span>Not enough coin</span><span>short ' + fmt(t.short) + "</span></div>";
-    else lines += '<div class="trd-line trd-line-net"><span>Purse after</span><span>' + fmt(t.funds + t.credit - t.cost) + "</span></div>";
+    else {
+      // 2026-10-25 (the user): a cart the purse cannot cover shows a negative "Purse after" in red instead of a second, full-width "Not enough coin" line that moved the footer; Confirm is disabled the same way.
+      var after = t.funds + t.credit - t.cost;
+      lines += '<div class="trd-line trd-line-net' + (after < 0 ? " trd-neg" : "") + '"><span>Purse after</span><span>' + (after < 0 ? "−" : "") + fmt(Math.abs(after)) + "</span></div>";
+    }
     if (q && !q.ok) lines += '<div class="trd-line trd-line-bad trd-wide"><span>' + esc(q.problems.map(function (p) { var m = /the purse is short by (\d+) copper/.exec(p); return m ? trade.def.title + " cannot pay that much: short " + fmt(Number(m[1])) : p; })[0]) + "</span><span></span></div>";
     var cl = (t.buying || t.selling) ? cartLoad(t, s) : null;
     if (cl) {
       var f = IP().fmtLoad, over = cl.after > cl.capacity;
-      lines += '<div class="trd-line trd-line-load' + (over ? " trd-line-bad" : "") + '"><span>Load</span><span>' + f(cl.now) + " → " + f(cl.after) + " of " + f(cl.capacity) + "</span></div>";
-      if (over) lines += '<div class="trd-line trd-line-bad trd-wide"><span>Over your limit: you tire ' + cl.pct + "% faster on the move</span><span></span></div>";
+      lines += '<div class="trd-line trd-line-load' + (over ? " trd-neg" : "") + '"><span>Load</span><span>' + f(cl.now) + " → " + f(cl.after) + " of " + f(cl.capacity) + "</span></div>";
+      // 2026-10-25 (the user): going over the limit is shown by the Load line turning red, in its own slot; no second "Over your limit" line.
     }
     var can = (t.buying || t.selling) && !t.short && (!q || q.ok);
     elFoot.innerHTML = '<div class="trd-sum">' + lines + "</div>" +

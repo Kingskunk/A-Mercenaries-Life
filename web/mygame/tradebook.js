@@ -9,7 +9,7 @@
  * A RUMOR is a quiet check made once a day at each open market while it is open (equipment.txt market_rumor_check). On a success it teaches the player the prices of the nearest market they hold no
  * data for (road miles, WORLD_DATA.tiles[tile].near), the next nearest when they hold it, and, when they hold every market, it freshens the one with the oldest data. A natural 20 teaches two.
  * The prices are what that market asked and paid some days before (the better the roll, the fresher), worked out from the world model: it is a pure function of the day, so a day before the game
- * began works as well as any other. Nothing in a rumor names a place or a good by hand: the place is the market's own title, the tidbit is the event at that tile or the good whose price level has moved most over the last 30 days, and a new open market takes part with no edit here.
+ * began works as well as any other. Nothing in a rumor names a place or a good by hand: the place is the settlement's name (placeName: from the market's tile, with the market's title added only where a town has two), the tidbit is the event at that tile or the good whose price level has moved most over the last 30 days, and a new open market takes part with no edit here.
  */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) module.exports = factory();
@@ -61,9 +61,15 @@
   }
 
   /* ------------------------------------------------------------------ places */
+  // The name a rumor and the panel's "last stops" give a market (2026-10-25, the user): the SETTLEMENT it stands in (WORLD_DATA.tiles[tile].name, so "Redvein", not "Eastcut"), read from the data, never a list.
+  // A settlement with more than one open market adds the market's own name, "Redvein (Eastcut)", so two stops in one town stay apart. A market with no tile falls back to its title.
   function placeName(key) {
-    var t = R().TRADE_DATA && R().TRADE_DATA.trades && R().TRADE_DATA.trades[key];
-    return String(t ? t.title : key).replace(/ Market$/, "").replace(/^The /, "the ");
+    var Rt = R(), D = Rt.MARKET_DEFS || {}, W = Rt.WORLD_DATA, t = Rt.TRADE_DATA && Rt.TRADE_DATA.trades && Rt.TRADE_DATA.trades[key];
+    var title = String(t ? t.title : key).replace(/ Market$/, "").replace(/^The /, "the ");
+    var tile = D[key] && D[key].tile, town = tile && W && W.tiles && W.tiles[tile] && W.tiles[tile].name;
+    if (!town) return title;
+    var same = openMarkets().filter(function (k) { return D[k].tile === tile; });
+    return same.length > 1 ? town + " (" + title + ")" : town;
   }
   function openMarkets() { var D = R().MARKET_DEFS || {}; return Object.keys(D).filter(function (k) { return D[k].commodities && D[k].tile; }).sort(); }
   // every open market except fromKey, nearest first by road miles between their tiles (the same tile counts as 0), ties by key

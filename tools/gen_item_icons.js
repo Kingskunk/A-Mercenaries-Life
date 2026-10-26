@@ -150,6 +150,7 @@ const MAP = {
   butter: "../Generic/Butter_Generated_Source.png",                      // the user's own art (2026-10-25)
   animal_fat: "../Generic/Animal_Fat_Generated_Source.png",              // the user's own art (2026-10-25)
   salt: "../Generic/Salt_Generated_Source.png",                         // the user's own art (2026-10-24)
+  beeswax: "../Generic/Beeswax_Generated_Source.png",                  // the user's own art (2026-10-25)
   charcoal: "../Generic/Charcoal_Generated_Source.png",                  // the user's own art (2026-10-24)
   scrap: "Clutter_AdamantineScrap_Unfaded_Icon.webp",
   bramble_heart: "../Generic/Gnarled_Bramble_Heart_Generated_Source.png",   // the user's own art (2026-10-21): Dubhar's heart of bramble
