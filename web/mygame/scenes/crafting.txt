@@ -66,3 +66,131 @@
 *set time_advance_call_id "craft_brew_time"
 *gosub_scene calendar advance_time
 *return
+
+*comment ====================================================================================
+*comment COOKING (2026-10-26, the user's design: Resources & Quest/COOKING_CRAFTING_REFERENCE.md). The panel's Cook button leaves the dish in craft_* (craft_potion = the dish id, craft_a the MAIN ingredient, craft_b the other, craft_dc, craft_minutes, craft_mode "cooking")
+*comment and opens the dossier at codex_craft_now, which runs craft_cook once. A dish spends one whole unit of each ingredient; a failure loses the main ingredient only. The pot stays in the pack.
+*comment
+*comment THE PLACE is one contract. A page that offers cooking declares itself with *gosub_scene crafting cook_site_set "<site id>" when it is built (the camp hub does; the inns and the bakehouse will). That records the id and the page_id and works the place out in
+*comment cook_site_eval, the only place a site's rule is written. The panel reads the result while cook_site_page is the current page_id; craft_cook works it out again, so what the button promised and what the action checks cannot drift apart.
+*comment To add a place: one branch in cook_site_eval, and one cook_site_set call on the pages that are that place.
+*comment ====================================================================================
+*label cook_site_set
+*params css_id
+*set cook_site css_id
+*set cook_site_page page_id
+*gosub cook_site_eval
+*return
+
+*label cook_site_eval
+*set cook_site_ok false
+*set cook_site_label "No cooking place"
+*set cook_site_why "There is nowhere to cook here."
+*comment The camp: the fire the camp page already counts (a tinderbox, Fire Bolt or Prestidigitation, or a fire shared with a stranger); no second weather roll.
+*if (cook_site = "camp")
+  *if ((((has_tinderbox) or (known_fire_bolt)) or (known_prestidigitation)) or (ow_camp_fire_shared))
+    *set cook_site_ok true
+    *set cook_site_label "Campfire ready"
+    *set cook_site_why ""
+  *else
+    *set cook_site_label "No fire"
+    *set cook_site_why "You have no way to light a fire."
+*comment THE INNS (2026-10-26): an inn's kitchen and oven are the player's once its keeper's own quest is settled; renting a room alone never earns it. The hall and the rented room are the same site, so both pages declare the same id.
+*comment Maura: the cellar cleared. Ressa: her ring returned, free or for payment. Nessa: her daughter's quest resolved (the wedding need not have happened).
+*temp ce_inn false
+*temp ce_unlocked false
+*temp ce_keeper ""
+*if (cook_site = "drowned_oar")
+  *set ce_inn true
+  *set ce_keeper "Maura"
+  *set ce_unlocked maura_cellar_cleared
+*if (cook_site = "split_pine")
+  *set ce_inn true
+  *set ce_keeper "Ressa"
+  *set ce_unlocked ((hale_ring_stage = "returned_free") or (hale_ring_stage = "returned_paid"))
+*if (cook_site = "reedhouse")
+  *set ce_inn true
+  *set ce_keeper "Nessa"
+  *set ce_unlocked bw_daughter_completed
+*if (ce_inn)
+  *if (ce_unlocked)
+    *set cook_site_ok true
+    *set cook_site_label "Inn kitchen and oven ready"
+    *set cook_site_why ""
+  *else
+    *set cook_site_label "Kitchen closed"
+    *set cook_site_why (ce_keeper & "'s kitchen is closed to guests.")
+*comment MOTHER MARDA'S BAKEHOUSE: the communal oven, while it is open. The closure rule is port_valen_middle_ward.txt mw_bakehouse_state, the same one the bakehouse page reads.
+*if (cook_site = "bakehouse")
+  *gosub_scene port_valen/port_valen_middle_ward mw_bakehouse_state
+  *if (mw_bakehouse_closed = "")
+    *set cook_site_ok true
+    *set cook_site_label "Communal oven ready"
+    *set cook_site_why ""
+  *elseif (mw_bakehouse_closed = "outage")
+    *set cook_site_label "Ovens banked"
+    *set cook_site_why "The ovens are banked while the water line is shut."
+  *else
+    *set cook_site_label "Bakehouse shut"
+    *set cook_site_why "The bakehouse is shut."
+*return
+
+*comment *gosub craft_take <item_id>: spend ONE unit of an ingredient whatever kind it is (a counted forage item loses one from its count; a stacked item gives up a spare, then the last copy).
+*label craft_take
+*params ct_item
+*gosub_scene equipment gear_count ct_item
+*if (gear_kind = "salvage")
+  *set {gear_count_var} (gear_qty - 1)
+*else
+  *gosub_scene equipment spend_consumable ct_item
+*return
+
+*comment Cooking is run once per click by codex_craft_now, like craft_brew (no page lock of its own). Outputs craft_ok and craft_text.
+*label craft_cook
+*set craft_text ""
+*set craft_ok false
+*if (combat_engaged)
+  *set craft_text "You cannot cook in the middle of a fight."
+  *return
+*if (not(cook_site_page = page_id))
+  *set craft_text "There is nowhere to cook here."
+  *return
+*gosub cook_site_eval
+*if (not(cook_site_ok))
+  *set craft_text cook_site_why
+  *return
+*if (not(has_cooking_pot))
+  *set craft_text "You have no cooking pot."
+  *return
+*gosub_scene equipment gear_count craft_a
+*temp cc_have_a gear_qty
+*gosub_scene equipment gear_count craft_b
+*temp cc_have_b gear_qty
+*if (cc_have_a < 1)
+  *set craft_text "You have no ${craft_a_name} left."
+  *return
+*if (cc_have_b < 1)
+  *set craft_text "You have no ${craft_b_name} left."
+  *return
+*comment The better of Survival and Nature against the dish's DC.
+*gosub_scene dice_engine roll_skill_check craft_dc "survival" "" "nature" "" "" ""
+*set craft_ok check_success
+*temp cc_flag ("recipe_" & craft_potion)
+*temp cc_known ({cc_flag})
+*if (craft_ok)
+  *gosub craft_take craft_a
+  *gosub craft_take craft_b
+  *gosub_scene equipment grant_gear craft_potion 1
+  *set craft_text "🍲 Cooked ${craft_potion_name} (check ${check_total} against ${craft_dc}). ${craft_minutes} minutes."
+  *comment The first success teaches the dish (the Craft view's Recipes list reads recipe_<id>), as a first brew does.
+  *if (not(cc_known))
+    *set {cc_flag} true
+    *set craft_text "${craft_text} New recipe learned."
+*else
+  *gosub craft_take craft_a
+  *set craft_text "The meal burns black (check ${check_total} against ${craft_dc}) and the ${craft_a_name} is ruined. ${craft_minutes} minutes."
+*set hours_to_pass 0
+*set minutes_to_pass craft_minutes
+*set time_advance_call_id "craft_cook_time"
+*gosub_scene calendar advance_time
+*return

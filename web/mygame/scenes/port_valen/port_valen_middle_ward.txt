@@ -1813,9 +1813,21 @@ Here the wall is newer and higher, faced in pale limestone, and the trunk road p
 *comment MOTHER MARDA'S COMMUNAL BAKEHOUSE
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+*comment WHEN THE BAKEHOUSE IS SHUT (2026-10-26): written once here, read by the hub page below and by cooking (crafting.txt cook_site_eval), so the two cannot disagree. Outputs mw_bakehouse_closed: "" open, "outage" while the Dry Lion
+*comment water line is shut, "shut" at night or in a cold blizzard.
+*label mw_bakehouse_state
+*set mw_bakehouse_closed ""
+*if ((dry_lion_resolution = "failed") and (campaign_day <= dry_lion_outage_until_day))
+  *set mw_bakehouse_closed "outage"
+*elseif ((time_period = "Night") or ((weather_severity >= 3) and (weather_cold)))
+  *set mw_bakehouse_closed "shut"
+*return
+
 *label mw_bakehouse
 *set mw_bakehouse_seen true
 *set scenery_subplace "middle_ward_bakehouse"
+*comment The bakehouse is a place to cook while it is open (crafting.txt cook_site_set works out mw_bakehouse_closed through mw_bakehouse_state, which the two closure pages below read).
+*gosub_scene crafting cook_site_set "bakehouse"
 [b]◈ MOTHER MARDA'S COMMUNAL BAKEHOUSE[/b]
 *line_break
 
@@ -1826,7 +1838,7 @@ Here the wall is newer and higher, faced in pale limestone, and the trunk road p
   "Marda," she says, her voice rich and raspy from chimney smoke. "The sign outside says 'Mother,' but don't mistake that for charity. Fresh rye by the loaf, hot pasties at the counter, and I take dinner pots from the tenements until third bell. Keep your ${feet_prose} clean, pay your copper before you take a bite, and leave your street quarrels outside."
 *else
   *comment Repeat visits: Keep the existing time-of-day descriptions (Pre-Dawn, Day, Dusk)
-*if ((dry_lion_resolution = "failed") and (campaign_day <= dry_lion_outage_until_day))
+*if (mw_bakehouse_closed = "outage")
   The ovens are banked while the water line is shut. Marda's apprentices carry out yesterday's bread, but there is no fresh dough on the boards and no hot food at the counter.
   *choice
     # Leave the quiet bakehouse...
@@ -1835,7 +1847,7 @@ Here the wall is newer and higher, faced in pale limestone, and the trunk road p
       # ↦ Walk to the district picked on the sidebar. [port_valen:read]
         *goto_scene port_valen/port_valen port_valen_walk_picked
 
-*if ((time_period = "Night") or ((weather_severity >= 3) and (weather_cold)))
+*if (mw_bakehouse_closed = "shut")
   *if (weather_cold)
     A howling upland blizzard scours Conduit Square, banking deep drifts of white powder against the bakehouse walls. The timber storm-shutters are dropped and secured with forged pins to protect the ovens from the freezing squall, and the awning is lashed flat against the rafters. High above, woodsmoke is torn instantly to shreds by the shrieking wind as the chimney flue vents into the whiteout.
     *choice

@@ -184,11 +184,18 @@ Cast, read your abilities, or change interface settings. Rest and Wait are in th
 *comment taken off for this brew (a second brew on one page would otherwise reuse the first roll and skip its time) and put back exactly as found, so the page replayed as the dossier closes does not find a lock that is not its own. A brew can tick
 *comment the hunger and fatigue debts like any half hour, so it is refused where that could kill, as a wait is.
 *label codex_craft_now
+*comment craft_mode "cooking" (2026-10-26) runs crafting.txt craft_cook instead of craft_brew, through the same lock handling.
 *if (combat_engaged)
-  *set spell_cast_toast "You cannot brew in the middle of a fight."
+  *if (craft_mode = "cooking")
+    *set spell_cast_toast "You cannot cook in the middle of a fight."
+  *else
+    *set spell_cast_toast "You cannot brew in the middle of a fight."
   *finish
 *if (((hunger_stage = "Starving") or (fatigue_stage = "Collapsing")) and (hp_current <= 2))
-  *set spell_cast_toast "You are too starved and spent to stand over a brew for half an hour without it costing what little you have left. Eat, or sleep, first."
+  *if (craft_mode = "cooking")
+    *set spell_cast_toast "You are too starved and spent to stand over a pot for the time it takes without it costing what little you have left. Eat, or sleep, first."
+  *else
+    *set spell_cast_toast "You are too starved and spent to stand over a brew for half an hour without it costing what little you have left. Eat, or sleep, first."
   *finish
 *temp ccn_roll_locked roll_locked
 *temp ccn_roll_page locked_page_id
@@ -200,7 +207,10 @@ Cast, read your abilities, or change interface settings. Rest and Wait are in th
 *temp ccn_time_call time_advance_call_id
 *set roll_locked false
 *set time_advance_locked false
-*gosub_scene crafting craft_brew
+*if (craft_mode = "cooking")
+  *gosub_scene crafting craft_cook
+*else
+  *gosub_scene crafting craft_brew
 *set roll_locked ccn_roll_locked
 *set locked_page_id ccn_roll_page
 *set locked_guidance_roll ccn_roll_guidance

@@ -39,6 +39,26 @@ items.forEach(function (it) {
   byId[it.id] = it;
 });
 
+// COOKED MEALS (2026-10-26, the user): a dish is a catalog item with effect { type: "meal" } and nothing else. Its boon stat and tier come from its recipe (web/mygame/crafting-data.js, the recipe with the same id) and the tier's
+// hours and temporary HP from COOK_TIERS there, so a balance change is one edit in that file. Eating it is a full meal (like a ration) plus a +1 food boon (the one food_buff slot) and temporary HP; the game never eats one for
+// you (food_pick lists rations only).
+var CRAFT = (function () {
+  var saved = global.window; global.window = {};
+  try { require(path.join(GAME, "crafting-data.js")); return global.window; } finally { global.window = saved; }
+})();
+items.forEach(function (it) {
+  if (!it.effect || it.effect.type !== "meal") return;
+  var rec = ((CRAFT.CRAFT_RECIPES || {}).cooking || []).filter(function (r) { return r.id === it.id; })[0];
+  if (!rec) throw new Error("meal '" + it.id + "' has no cooking recipe with that id in crafting-data.js");
+  var tier = (CRAFT.COOK_TIERS || {})[rec.tier];
+  if (!tier) throw new Error("recipe '" + it.id + "' has an unknown tier " + rec.tier);
+  if (["str", "dex", "con", "int", "wis", "cha"].indexOf(rec.stat) < 0) throw new Error("recipe '" + it.id + "' has an unknown boon stat " + rec.stat);
+  var ef = it.effect;
+  ef.name = it.title; ef.stat = rec.stat; ef.bonus = 1; ef.desc = "+1 " + rec.stat.toUpperCase();
+  ef.minutes = tier.hours * 60; ef.tempHp = tier.tempHp; ef.food = 2160;
+  if (!it.hint) it.hint = "Full meal, +1 " + rec.stat.toUpperCase() + " for " + tier.hours + " hours, " + tier.tempHp + " temporary HP";
+});
+
 // A trade marked "commodities" (an open market: a village lane, a town's trading ground) deals in EVERY item tagged with a commodity (tools/gear_catalog.json, item.commodity.makers), on both its
 // shops, so a new trade good is one tagged item and no market list is edited by hand. The items it already lists keep their place; the rest follow in catalog order.
 (CATALOG.trades || []).forEach(function (t) {
@@ -120,6 +140,8 @@ function genCreates() {
   var buys = tradeIds("buy"), sells = tradeIds("sell");
   var L = items.filter(makesFlag).map(function (it) { return "*create " + flag(it) + " false"; });
   items.forEach(function (it) { if (stackable(it)) L.push("*create spare_" + it.id + " 0"); });
+  // What the character has learned to cook (the Craft view's Recipes list reads recipe_<id>; the first success sets it): one flag per cooking recipe, so a new dish needs no startup edit.
+  ((CRAFT.CRAFT_RECIPES || {}).cooking || []).forEach(function (r) { L.push("*create recipe_" + r.id + " false"); });
   // SPELL SOURCES (2026-10-20): dungeon.txt dg_spell_source reads has_scroll_<spell id> for ANY spell it is asked about, so the flag exists for every spell of level 1 and up even before its scroll does (the scroll items above create their own).
   spellIdsOfLevelOneUp().forEach(function (id) { if (!items.some(function (it) { return it.id === "scroll_" + id; })) L.push("*create has_scroll_" + id + " false"); });
   (CATALOG.containers || []).forEach(function (ct) { listed().forEach(function (it) { L.push("*create stow_" + ct.id + "_" + it.id + " 0"); if (it.holds) L.push("*create stow_" + ct.id + "_" + it.holds.var + " 0"); }); });   // what is in each container (web/mygame/inventory.js)
@@ -139,6 +161,7 @@ function effectSummary(it) {
   if (ef.type === "wash") return "Hygiene back to Clean, with water at hand";
   if (ef.type === "dressing") return "+" + ef.bonus + " HP from your next sleep";
   if (ef.type === "ration") return ef.food && ef.food < 2160 ? "Holds off about " + Math.round(ef.food / 60) + " hours of hunger" : "Clears hunger, like a meal";
+  if (ef.type === "meal") return "A full meal: +" + ef.bonus + " " + ef.stat.toUpperCase() + " for " + ef.minutes / 60 + " hours, +" + ef.tempHp + " temporary HP";
   if (ef.type === "throw" || ef.type === "arrow" || ef.type === "scroll" || ef.type === "training" || ef.type === "brew" || ef.type === "draught" || ef.type === "brewed") return ef.summary;
   var h = ef.minutes % 60 === 0 ? (ef.minutes / 60) + " hours" : ef.minutes + " minutes";
   return "+" + ef.bonus + " " + ef.stat.toUpperCase() + " for " + h;
@@ -183,6 +206,15 @@ function genGearInfo() {
         if (ef.autoEat === false) L.push('  *set gear_food_auto false');
         if (ef.autoEatAfter) L.push('  *set gear_food_after ' + q(ef.autoEatAfter));
         if (it.ate) { L.push('  *set gear_ate_one ' + q(it.ate.one)); L.push('  *set gear_ate_many ' + q(it.ate.many)); }
+      } else if (ef.type === "meal") {
+        // a cooked dish: the hunger it holds off (a whole meal, 2160) and the food boon and temporary HP use_consumable (equipment.txt) sets when it is eaten
+        L.push('  *set gear_food_mins ' + ef.food);
+        L.push('  *set gear_eff_name ' + q(ef.name));
+        L.push('  *set gear_eff_desc ' + q(ef.desc));
+        L.push('  *set gear_eff_stat ' + q(ef.stat));
+        L.push('  *set gear_eff_bonus ' + ef.bonus);
+        L.push('  *set gear_eff_minutes ' + ef.minutes);
+        L.push('  *set gear_eff_temp_hp ' + ef.tempHp);
       } else if (ef.type === "dressing" || ef.type === "draught") {
         L.push('  *set gear_eff_bonus ' + ef.bonus);
       } else if (ef.type === "scroll") {

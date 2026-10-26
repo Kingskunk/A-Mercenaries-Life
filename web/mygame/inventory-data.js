@@ -538,6 +538,102 @@
       description: "Blackened lidded iron pot with a wire bail for cooking over a campfire."
     },
     {
+      id: "dripping_roasted_boar", category: "consumables", owned: "has_dripping_roasted_boar",
+      weight: 1, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_dripping_roasted_boar) || 0); return "Dripping-Roasted Boar" + (n > 1 ? " ×" + n : ""); },
+      description: "Roast boar wrapped in cloth, glossy with its own fat.",
+      badge: "A full meal: +1 STR for 12 hours, +2 temporary HP",
+      use: true
+    },
+    {
+      id: "onion_seared_venison", category: "consumables", owned: "has_onion_seared_venison",
+      weight: 1, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_onion_seared_venison) || 0); return "Onion-Seared Venison" + (n > 1 ? " ×" + n : ""); },
+      description: "Seared venison and brown onions wrapped in cloth.",
+      badge: "A full meal: +1 DEX for 12 hours, +2 temporary HP",
+      use: true
+    },
+    {
+      id: "pot_braised_chicken", category: "consumables", owned: "has_pot_braised_chicken",
+      weight: 1, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_pot_braised_chicken) || 0); return "Pot-Braised Chicken and Roots" + (n > 1 ? " ×" + n : ""); },
+      description: "Braised chicken with carrots and turnips, wrapped in cloth.",
+      badge: "A full meal: +1 CON for 12 hours, +2 temporary HP",
+      use: true
+    },
+    {
+      id: "riverfish_barley_pottage", category: "consumables", owned: "has_riverfish_barley_pottage",
+      weight: 1, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_riverfish_barley_pottage) || 0); return "Riverfish and Barley Pottage" + (n > 1 ? " ×" + n : ""); },
+      description: "Crock of riverfish and barley pottage.",
+      badge: "A full meal: +1 CON for 10 hours, +2 temporary HP",
+      use: true
+    },
+    {
+      id: "tomato_riverfish_broth", category: "consumables", owned: "has_tomato_riverfish_broth",
+      weight: 1, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_tomato_riverfish_broth) || 0); return "Tomato Riverfish Broth" + (n > 1 ? " ×" + n : ""); },
+      description: "Stoppered crock of tomato and riverfish broth.",
+      badge: "A full meal: +1 WIS for 10 hours, +2 temporary HP",
+      use: true
+    },
+    {
+      id: "smoked_sausage_braise", category: "consumables", owned: "has_smoked_sausage_braise",
+      weight: 1, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_smoked_sausage_braise) || 0); return "Smoked Sausage and Cabbage Braise" + (n > 1 ? " ×" + n : ""); },
+      description: "Crock of cabbage braised with smoked sausage.",
+      badge: "A full meal: +1 STR for 10 hours, +2 temporary HP",
+      use: true
+    },
+    {
+      id: "pumpkin_onion_soup", category: "consumables", owned: "has_pumpkin_onion_soup",
+      weight: 1, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_pumpkin_onion_soup) || 0); return "Pumpkin and Onion Soup" + (n > 1 ? " ×" + n : ""); },
+      description: "Stoppered crock of pumpkin and onion soup.",
+      badge: "A full meal: +1 WIS for 8 hours, +1 temporary HP",
+      use: true
+    },
+    {
+      id: "field_garden_stew", category: "consumables", owned: "has_field_garden_stew",
+      weight: 1, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_field_garden_stew) || 0); return "Field-Garden Stew" + (n > 1 ? " ×" + n : ""); },
+      description: "Crock of root and cabbage stew.",
+      badge: "A full meal: +1 CON for 8 hours, +1 temporary HP",
+      use: true
+    },
+    {
+      id: "honeyed_barley_porridge", category: "consumables", owned: "has_honeyed_barley_porridge",
+      weight: 1, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_honeyed_barley_porridge) || 0); return "Honeyed Barley Porridge" + (n > 1 ? " ×" + n : ""); },
+      description: "Crock of barley porridge sweetened with honey.",
+      badge: "A full meal: +1 INT for 8 hours, +1 temporary HP",
+      use: true
+    },
+    {
+      id: "apple_barley_porridge", category: "consumables", owned: "has_apple_barley_porridge",
+      weight: 1, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_apple_barley_porridge) || 0); return "Apple Barley Porridge" + (n > 1 ? " ×" + n : ""); },
+      description: "Crock of barley porridge with stewed apple.",
+      badge: "A full meal: +1 CON for 8 hours, +1 temporary HP",
+      use: true
+    },
+    {
+      id: "acorn_truffle_pottage", category: "consumables", owned: "has_acorn_truffle_pottage",
+      weight: 1, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_acorn_truffle_pottage) || 0); return "Acorn-Truffle Pottage" + (n > 1 ? " ×" + n : ""); },
+      description: "Crock of potato pottage with acorn truffle.",
+      badge: "A full meal: +1 INT for 12 hours, +2 temporary HP",
+      use: true
+    },
+    {
+      id: "brambleberry_barley_pudding", category: "consumables", owned: "has_brambleberry_barley_pudding",
+      weight: 1, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_brambleberry_barley_pudding) || 0); return "Brambleberry Barley Pudding" + (n > 1 ? " ×" + n : ""); },
+      description: "Crock of barley pudding streaked with brambleberry.",
+      badge: "A full meal: +1 CHA for 12 hours, +2 temporary HP",
+      use: true
+    },
+    {
       id: "chalk_sticks", category: "provisions", owned: "has_chalk_sticks",
       weight: 0.1, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_chalk_sticks) || 0); return "Chalk Sticks" + (n > 1 ? " ×" + n : ""); },

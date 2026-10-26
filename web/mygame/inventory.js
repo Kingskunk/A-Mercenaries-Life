@@ -204,8 +204,15 @@
     if (bucket === "feet" && /slipper|dancing shoe|swallowstep/i.test(String(s.feet_desc || ""))) return "shoes_dancing";
     return BUCKET_ICON[bucket] || "misc";
   }
+  // A crafted item's art is named by its recipe (crafting-data.js `icon`), so a new dish or potion needs no entry in ID_ICON.
+  function recipeIcon(id) {
+    var all = window.CRAFT_RECIPES || {}, kinds = Object.keys(all), i, j;
+    for (i = 0; i < kinds.length; i++) for (j = 0; j < all[kinds[i]].length; j++) if (all[kinds[i]][j].id === id) return all[kinds[i]][j].icon || "";
+    return "";
+  }
   function itemIconKey(r) {
     if (ID_ICON[r.id]) return ID_ICON[r.id];
+    var rk = recipeIcon(r.id); if (rk) return rk;
     var slot = r.equip && r.equip.slot;
     if (slot === "weapon") return weaponIcon(r.name);
     if (slot === "head") return headIcon(r.name);
@@ -224,6 +231,7 @@
   ROOT.ItemIconResolver = {
     keyFor: function (id, item) {
       if (ID_ICON[id]) return ID_ICON[id];
+      var rk = recipeIcon(id); if (rk) return rk;
       var kind = String(item && item.kind || "").toLowerCase();
       if (kind === "weapon") return weaponIcon(item && (item.title || item.name));
       if (kind === "head") return headIcon(item && (item.title || item.name));
@@ -394,7 +402,7 @@
   if (typeof document === "undefined") return; // node tests stop here (mirrors lorebook.js)
 
   var dlg, elDoll, elBag, elTip;
-  var view = { craftTab: "brew", category: "", sel: null, drag: null, dragC: null, slot: null, dragSlot: null, note: "", left: "you", csel: null, qty: 1, craft: "alchemy", box: [null, null, null] };
+  var view = { craftTab: "brew", category: "", sel: null, drag: null, dragC: null, slot: null, dragSlot: null, note: "", left: "you", csel: null, qty: 1, craft: "alchemy", box: [null, null, null], boxes: {}, pending: false, craftMsg: "", useMsg: "", dirty: false };
 
   function statsNow() { return window.stats || {}; }
 
@@ -456,6 +464,7 @@
     });
     dlg.addEventListener("mousedown", function (ev) { if (ev.target === dlg) close(); });
     // Escape closes a dialog natively, wherever the focus is (a redraw leaves it on the page): with a slot lit, the first press only puts the light away
+    dlg.addEventListener("close", onDialogClose);
     dlg.addEventListener("cancel", function (ev) { if (view.slot) { ev.preventDefault(); view.slot = null; render(); } });
   }
 
@@ -522,7 +531,7 @@
     view.slot = null; view.sel = null; note(""); render();
   }
 
-  function note(msg) { view.note = msg || ""; }
+  function note(msg) { view.note = msg || ""; view.craftMsg = ""; view.useMsg = ""; }
 
   // The single path that puts something on: the same EquipmentEngine calls the old dropdowns made, with the same hand-off to the dossier for
   // pieces that change an ability score (the scores, max HP and AC are re-derived by ChoiceScript there).
@@ -716,7 +725,7 @@
       var c = splitCount(r.name);
       var on = /^equipped/i.test(r.badge || "");
       var fits = view.slot && accepts(r, view.slot.bucket);
-      var out = (view.slot && !fits) || (view.category && r.category !== view.category) || (view.left === "craft" && !r.alchemy);
+      var out = (view.slot && !fits) || (view.category && r.category !== view.category) || (view.left === "craft" && !canBox(r));
       html += '<button type="button" class="inv-tile inv-bagitem' + (view.sel === r.id ? " inv-sel" : "") + (on ? " inv-on" : "") + (fits ? " inv-accepts" : (out ? " inv-dim" : "")) + '" data-item="' + esc(r.id) + '" data-cell="' + cell + '"' +
         ' draggable="true" aria-label="' + esc(c.name) + '">' + iconImg(itemIconKey(r)) +
         (c.count > 1 ? '<span class="inv-cnt">' + c.count + "</span>" : "") + (on ? '<span class="inv-eq" aria-hidden="true"></span>' : "") + "</button>";
@@ -727,6 +736,7 @@
     var xc = xferContext(s), sel = xc && xc.sel ? xc.sel : (view.sel ? findOwned(view.sel) : null);
     html += '<div class="inv-detail' + (!sel && view.slot ? " inv-detail-slot" : "") + '">';
     if (view.note) html += '<div class="inv-note inv-note-warn">' + esc(view.note) + "</div>";
+    if (view.useMsg) html += '<div class="inv-craft-done" role="status">' + esc(view.useMsg) + "</div>";
     if (!sel && view.slot) html += slotCardHtml(s, lit);
     else if (sel) {
       var sc = splitCount(sel.name);
@@ -738,9 +748,9 @@
         '<div class="inv-detail-acts">' +
         (sel.equip && sel.equip.attune ? '<button type="button" class="inv-use" data-attune="' + (truthy(s.hearthstone_attuned) ? "break" : "attune") + '">' + (truthy(s.hearthstone_attuned) ? "Break attunement" : "Attune") + "</button>"
           : (sel.equip ? '<button type="button" class="inv-use" data-equip-sel>Equip</button>' : "")) +
-        (sel.use ? '<button type="button" class="inv-use" data-use="' + esc(sel.id) + '"' + (canUse() ? "" : " disabled") + ">" + esc(sel.useLabel) + "</button>" : "") +
+        (sel.use ? '<button type="button" class="inv-use" data-use="' + esc(sel.id) + '"' + (canUse() && !view.pending ? "" : " disabled") + ">" + esc(sel.useLabel) + "</button>" : "") +
         "</div>";
-    } else if (view.note) {
+    } else if (view.note || view.useMsg) {
       /* the notice above is all there is to say */
     } else if (view.slot) {
       /* the slot's card above */
@@ -798,10 +808,16 @@
    * CRAFT_MODES is what each kind of crafting needs: alchemy now, cooking later with its own tools. */
   var CRAFT_MODES = {
     alchemy: {
-      name: "Alchemy", fuel: { burner: "portable_burner", item: "lamp_oil", uses: 5, flame: ["known_fire_bolt", "known_prestidigitation", "known_control_flames"] }, tools: [
+      name: "Alchemy", verb: "Brew", fuel: { burner: "portable_burner", item: "lamp_oil", uses: 5, flame: ["known_fire_bolt", "known_prestidigitation", "known_control_flames"] }, tools: [
         { id: "empty_potion_vial", label: "Empty Potion Vial", role: "Holds the brew" },
         { id: "portable_burner", label: "Portable Burner", role: "The flame to brew over" },
         { id: "mortar_pestle", label: "Mortar and Pestle", role: "Grinds the herbs" }
+      ]
+    },
+    // Cooking (2026-10-26, the user): the pot is the only inventory tool; the heat is a place, not an item (cookSite below).
+    cooking: {
+      name: "Cooking", verb: "Cook", tools: [
+        { id: "cooking_pot", label: "Iron Cooking Pot", role: "Holds the meal" }
       ]
     }
   };
@@ -831,9 +847,46 @@
     if (b.lit) return "Lit by your own flame";
     return "Fuel " + b.left + " of " + b.uses + " · " + b.flasks + (b.flasks === 1 ? " flask" : " flasks");
   }
+  // The mode the Craft view is in ("alchemy" or "cooking"), and what each mode takes in its boxes (2026-10-26, the user's cooking design: COOKING_CRAFTING_REFERENCE.md).
+  // Alchemy keeps its herb flag (item.alchemy); any other mode takes whatever its own recipes call for, so a new dish needs no flag on any item.
+  function craftKey() { return view.craft || "alchemy"; }
+  function craftTable() { return (window.CRAFT_RECIPES || {})[craftKey()] || []; }
+  function canBox(r) {
+    if (!r) return false;
+    if (craftKey() === "alchemy") return !!r.alchemy;
+    return craftTable().some(function (x) { return x.ingredients.indexOf(r.id) >= 0; });
+  }
+  // How many of an ingredient the character carries in the pack: a has_/spare_ item counts by its stack, a forage item by its own count.
+  function countOf(id, s) {
+    var it = stowItem(id);
+    return it && s["has_" + id] !== undefined ? haveOf(it, s) : (Number(s[id]) || 0);
+  }
+  function ingredientIcon(id) { return ROOT.ItemIconResolver.keyFor(id, stowItem(id)); }
+  // A dish's tier numbers (crafting-data.js COOK_TIERS): boon hours, cooking minutes, temporary HP.
+  function cookInfo(rec) {
+    var t = (window.COOK_TIERS || {})[rec.tier] || {};
+    return { hours: t.hours || 0, minutes: t.minutes || 0, tempHp: t.tempHp || 0 };
+  }
+  function boonLine(rec) {
+    var c = cookInfo(rec);
+    return "+1 " + String(rec.stat || "").toUpperCase() + " for " + c.hours + " hours · " + c.tempHp + " temporary HP";
+  }
+  // WHERE THE CHARACTER CAN COOK (the one place the Cook button and the Heat line read). A page that offers cooking declares it when it is built (crafting.txt cook_site_set: the camp hub now; the
+  // inns and the bakehouse later), and ChoiceScript works out whether the place is usable (cook_site_eval). It counts only while it was declared on the CURRENT page, as the wait mark does,
+  // so it cannot follow the player into another scene; craft_cook checks it again when Cook is pressed.
+  function cookSite(s) {
+    var page = Number(s.cook_site_page) || 0;
+    if (!s.cook_site || page <= 0 || page !== (Number(s.page_id) || 0)) return { ok: false, label: "No cooking place", why: "There is nowhere to cook here." };
+    return { ok: truthyS(s.cook_site_ok), label: String(s.cook_site_label || "Cooking place"), why: String(s.cook_site_why || "") };
+  }
+  function craftModeBarHtml() {
+    return '<div class="inv-craft-modes" role="tablist">' + Object.keys(CRAFT_MODES).map(function (k) {
+      return '<button type="button" class="inv-ctab" data-craft-mode="' + k + '" aria-pressed="' + (craftKey() === k) + '">' + esc(CRAFT_MODES[k].name) + "</button>";
+    }).join("") + "</div>";
+  }
   function craftPaneHtml(s) {
-    var mode = CRAFT_MODES[view.craft || "alchemy"], html = '<div class="inv-cpane inv-craft"><div class="inv-craft-title">' + esc(mode.name) + "</div>" +
-      '<div class="inv-craft-tabs" role="tablist"><button type="button" class="inv-ctab" data-craft-tab="brew" aria-pressed="' + (view.craftTab !== "recipes") + '">Brew</button><button type="button" class="inv-ctab" data-craft-tab="recipes" aria-pressed="' + (view.craftTab === "recipes") + '">Recipes</button></div>';
+    var key = craftKey(), mode = CRAFT_MODES[key], cook = key === "cooking", html = '<div class="inv-cpane inv-craft">' + craftModeBarHtml() +
+      '<div class="inv-craft-tabs" role="tablist"><button type="button" class="inv-ctab" data-craft-tab="brew" aria-pressed="' + (view.craftTab !== "recipes") + '">' + esc(mode.verb) + '</button><button type="button" class="inv-ctab" data-craft-tab="recipes" aria-pressed="' + (view.craftTab === "recipes") + '">Recipes</button></div>';
     if (view.craftTab === "recipes") return html + recipesHtml(s) + "</div>";
     html +=
       '<div class="inv-cnote">All reachable tools are ready to use—no dragging needed.</div><div class="inv-craft-tools">';
@@ -847,6 +900,7 @@
         (have && bs && t.id === bs.tool ? '<span class="inv-craft-src inv-craft-fuel' + (!bs.lit && bs.left <= 0 && bs.flasks <= 0 ? " inv-craft-nofuel" : "") + '">' + esc(burnerLine(bs)) + "</span>" : "") + "</div>";
     });
     html += "</div>";
+    if (cook) { var site = cookSite(s); html += '<div class="inv-craft-heat' + (site.ok ? "" : " inv-craft-nofuel") + '"><b>Heat</b> · ' + esc(site.label) + "</div>"; }
     normalizeBox(s);
     html += '<div class="inv-craft-sub">Ingredients</div><div class="inv-craft-boxes">';
     view.box.forEach(function (id, i) {
@@ -857,16 +911,42 @@
         '<span class="inv-craft-src">' + esc(r ? boxFree(id, s) + " more in your pack" : "") + "</span></div>";
     });
     html += '</div><div class="inv-cnote">Click or drag an ingredient to a box. Click to remove.</div>';
-    var res = craftResult(s);
-    html += '<div class="inv-craft-sub">Makes</div><div class="inv-craft-result' + (res.recipe ? " inv-craft-ok" : "") + '">' +
-      '<span class="inv-tile inv-craft-out' + (res.recipe ? "" : " inv-slot-empty") + '" aria-hidden="true">' + (res.recipe ? iconImg(res.recipe.icon) : "") + "</span>" +
-      '<div class="inv-craft-info"><div class="inv-craft-pname">' + esc(res.recipe ? res.recipe.name : "Nothing yet") + "</div>" +
-      (res.recipe ? '<div class="inv-craft-meta">' + esc(res.property + " · Crafting DC " + res.recipe.dc) + "</div>" : "") +
-      '<div class="inv-craft-desc">' + esc(res.recipe ? res.recipe.summary : res.text) + "</div></div></div>";
-    var why = res.recipe ? craftWhy(s) : "";
-    html += '<div class="inv-craft-act"><button type="button" class="inv-use inv-craft-go" data-craft-go' + (res.recipe && !why ? "" : " disabled") + ">Craft</button>" +
-      (why ? '<div class="inv-craft-why">' + esc(why) + "</div>" : (res.recipe ? '<div class="inv-cnote">A brew takes 20 to 30 minutes. A failed brew loses one ingredient and keeps the vial.</div>' : "")) + "</div>";
+    // What the boxes make (2026-10-26, the user): a compact card with the button inside it. One short line that never wraps; the rest is on hover (craftCard / craftTipHtml).
+    var cd = craftCard(s), why = cd.rec ? craftWhy(s) : "";
+    html += '<div class="inv-craft-sub">Makes</div><div class="inv-craft-result' + (cd.rec ? " inv-craft-ok" : "") + '"' + (cd.rec ? ' data-craft-tip="1" tabindex="0" aria-label="' + esc(cd.name + ". " + cd.line + ". " + cd.tipMeta + ". " + cd.text + " " + cd.hint) + '"' : "") + ">" +
+      '<span class="inv-tile inv-craft-out' + (cd.rec ? "" : " inv-slot-empty") + '" aria-hidden="true">' + cd.out + "</span>" +
+      '<div class="inv-craft-info"><div class="inv-craft-pname">' + esc(cd.name) + "</div>" +
+      (cd.rec ? '<div class="inv-craft-meta">' + esc(cd.line) + "</div>" : '<div class="inv-craft-desc">' + esc(cd.text) + "</div>") + "</div>" +
+      '<button type="button" class="inv-use inv-craft-go inv-craft-go-sm" data-craft-go' + (cd.rec && !why && !view.pending ? "" : " disabled") + ">" + cd.label + "</button></div>" +
+      (view.craftMsg ? '<div class="inv-craft-done" role="status">' + esc(view.craftMsg) + "</div>" : "") +
+      (why ? '<div class="inv-craft-why">' + esc(why) + "</div>" : "");
     return html + "</div>";
+  }
+  // What the Makes card shows: its name, picture, ONE short line (what it gives, or the check) and its button label; and what the hover card adds. A cooking pair the character has not cooked yet is an untried
+  // preparation: no name, picture or boon, only the check, the time and what a failure costs.
+  function craftCard(s) {
+    var cook = craftKey() === "cooking", res = craftResult(s), rec = res.recipe, known = !!rec && (!cook || truthyS(s["recipe_" + rec.id]));
+    var c = { rec: rec, known: known, name: "Nothing yet", line: "", out: "", tipMeta: "", text: res.text || "", hint: "", label: !cook ? "Craft" : (rec && !known ? "Experiment" : "Cook") };
+    if (!rec) return c;
+    var lost = cook ? ingredientName(rec.ingredients[0]).toLowerCase() : "";
+    if (!cook) {
+      c.name = rec.name; c.out = iconImg(rec.icon); c.line = res.property + " · DC " + rec.dc; c.tipMeta = "Crafting DC " + rec.dc + " · 20 to 30 minutes";
+      c.text = rec.summary; c.hint = "A failed brew loses one ingredient and keeps the vial.";
+    } else if (known) {
+      var ci = cookInfo(rec);
+      c.name = rec.name; c.out = iconImg(rec.icon); c.line = "+1 " + String(rec.stat || "").toUpperCase() + " · " + ci.hours + "h · DC " + rec.dc; c.tipMeta = boonLine(rec) + " · " + ci.minutes + " minutes";
+      c.text = rec.summary; c.hint = "A failed try loses the " + lost + " and keeps the rest.";
+    } else {
+      c.name = "Untried preparation"; c.out = '<span class="inv-craft-q">?</span>'; c.line = "Experiment · DC " + rec.dc; c.tipMeta = "DC " + rec.dc + " · " + cookInfo(rec).minutes + " minutes";
+      c.text = "You cannot tell what this will make."; c.hint = "A failed try loses the " + lost + " and keeps the rest.";
+    }
+    return c;
+  }
+  function craftTipHtml() {
+    var c = craftCard(statsNow());
+    if (!c.rec) return "";
+    return '<div class="bt-name">' + esc(c.name) + "</div>" + (c.tipMeta ? '<div class="bt-meta">' + esc(c.tipMeta) + "</div>" : "") +
+      (c.text ? '<div class="bt-text">' + esc(c.text) + "</div>" : "") + (c.hint ? '<div class="bt-hint">' + esc(c.hint) + "</div>" : "");
   }
   // The recipes the character knows, one row each: the potion, its two herbs with how many are carried, and a click that puts the herbs in the boxes and goes back to Brew.
   function ingredientName(id) {
@@ -878,41 +958,44 @@
     return ((window.CRAFT_RECIPES || {})[view.craft || "alchemy"] || []).filter(function (r) { return truthyS(s["recipe_" + r.id]); });
   }
   function recipesHtml(s) {
-    var list = knownRecipes(s);
-    if (!list.length) return '<div class="inv-cnote">No recipes yet. Brew matching herbs to discover them.</div>';
-    var html = '<div class="inv-cnote">Click a recipe to put its herbs in the boxes.</div><div class="inv-recipes">';
+    var cook = craftKey() === "cooking", list = knownRecipes(s);
+    if (!list.length) return '<div class="inv-cnote">' + (cook ? "No recipes yet. Try pairing ingredients to discover dishes." : "No recipes yet. Brew matching herbs to discover them.") + "</div>";
+    var html = '<div class="inv-cnote">Click a recipe to put its ' + (cook ? "ingredients" : "herbs") + ' in the boxes.</div><div class="inv-recipes">';
     list.forEach(function (r) {
-      var a = r.ingredients[0], b = r.ingredients[1], na = Number(s[a]) || 0, nb = Number(s[b]) || 0, ok = na > 0 && nb > 0, miss = [];
+      var a = r.ingredients[0], b = r.ingredients[1], na = countOf(a, s), nb = countOf(b, s), ok = na > 0 && nb > 0, miss = [];
       if (na <= 0) miss.push(ingredientName(a));
       if (nb <= 0) miss.push(ingredientName(b));
       html += '<button type="button" class="inv-recipe' + (ok ? "" : " inv-recipe-off") + '" data-recipe="' + esc(r.id) + '"' + (ok ? "" : " disabled") + ' aria-label="' + esc(r.name + (ok ? "" : ": you need " + miss.join(" and "))) + '">' +
         '<span class="inv-tile inv-recipe-out">' + iconImg(r.icon) + "</span>" +
-        '<span class="inv-recipe-text"><span class="inv-recipe-name">' + esc(r.name) + '</span><span class="inv-recipe-sub">' + esc(ok ? effectLabel(r.property) + " · DC " + r.dc : "You need " + miss.join(" and ")) + "</span></span>" +
-        '<span class="inv-recipe-herbs"><span class="inv-recipe-herb' + (na > 0 ? "" : " inv-recipe-miss") + '" title="' + esc(ingredientName(a)) + '">' + iconImg(ID_ICON[a] || "misc") + "<b>" + na + '</b></span><span class="inv-recipe-herb' + (nb > 0 ? "" : " inv-recipe-miss") + '" title="' + esc(ingredientName(b)) + '">' + iconImg(ID_ICON[b] || "misc") + "<b>" + nb + "</b></span></span></button>";
+        '<span class="inv-recipe-text"><span class="inv-recipe-name">' + esc(r.name) + '</span><span class="inv-recipe-sub">' + esc(ok ? (cook ? boonLine(r) + " · DC " + r.dc : effectLabel(r.property) + " · DC " + r.dc) : "You need " + miss.join(" and ")) + "</span></span>" +
+        '<span class="inv-recipe-herbs"><span class="inv-recipe-herb' + (na > 0 ? "" : " inv-recipe-miss") + '" title="' + esc(ingredientName(a)) + '">' + iconImg(ingredientIcon(a)) + "<b>" + na + '</b></span><span class="inv-recipe-herb' + (nb > 0 ? "" : " inv-recipe-miss") + '" title="' + esc(ingredientName(b)) + '">' + iconImg(ingredientIcon(b)) + "<b>" + nb + "</b></span></span></button>";
     });
     return html + "</div>";
   }
-  // Why the brew cannot be made now, or "": a fight, a place where the Wait menu is closed (pagegate.js), or a missing tool.
+  // Why the brew (or the dish) cannot be made now, or "": a fight, a place where the Wait menu is closed (pagegate.js), a missing tool or, for cooking, no place to cook.
   function craftWhy(s) {
-    var mode = CRAFT_MODES[view.craft || "alchemy"], missing = [];
+    var key = craftKey(), mode = CRAFT_MODES[key], missing = [], verb = mode.verb.toLowerCase();
     if (truthyS(s.combat_engaged)) return "Not in the middle of a fight.";
     // THE PLACE (2026-10-23, the user: for now, brewing is open wherever the Wait menu is): the same page gate the sidebar's Wait button asks (pagegate.js), so a page that allows waiting allows a brew, and a quest page, a conversation, a busy dungeon node or the prologue does not.
-    if (window.PageGate && window.PageGate.waitReason()) return "You can brew only where you could stop and wait: the streets of a district, a town, the road, or a quiet passage in a dungeon.";
+    if (key !== "cooking" && window.PageGate && window.PageGate.waitReason()) return "You can " + verb + " only where you could stop and wait: the streets of a district, a town, the road, or a quiet passage in a dungeon.";
+    if (key === "cooking") { var site = cookSite(s); if (!site.ok) return site.why; }
     mode.tools.forEach(function (t) { if (craftReach(t.id, s).n <= 0) missing.push(t.label.toLowerCase()); });
     if (missing.length) return "You need your " + missing.join(" and ") + ".";
     var bs = burnerState(s, mode);
     if (bs && !bs.lit && bs.left <= 0 && bs.flasks <= 0) return "Your burner has no oil.";
-    if (!canUse()) return "You cannot brew from here right now.";
+    if (!canUse()) return "You cannot " + verb + " from here right now.";
     return "";
   }
+
   // Brew: hand the recipe to ChoiceScript through the dossier (the same one-shot route as Use). The result is one line shown as a toast on the page; the boxes keep what is left, so another brew is one click away.
   function craftNow() {
-    var s = statsNow(), res = craftResult(s);
+    var s = statsNow(), res = craftResult(s), cook = craftKey() === "cooking";
     normalizeBox(s);
-    var ids = view.box.filter(Boolean), why = res.recipe ? craftWhy(s) : "Nothing to brew yet.";
+    var ids = view.box.filter(Boolean), why = res.recipe ? craftWhy(s) : (cook ? "Nothing to cook yet." : "Nothing to brew yet.");
     if (why || ids.length !== 2) { note(why || "Two ingredients are needed."); render(); return; }
     // the vial is used from the pack: if it is only in a container, one is taken out first
-    var pulls = ["empty_potion_vial"], bst = burnerState(s, CRAFT_MODES[view.craft || "alchemy"]);
+    // (a pot stays in the pack once it has been taken out, like any tool the mode needs)
+    var pulls = cook ? ["cooking_pot"] : ["empty_potion_vial"], bst = cook ? null : burnerState(s, CRAFT_MODES[craftKey()]);
     if (bst && !bst.lit && bst.left <= 0) pulls.push(bst.item);
     for (var pi = 0; pi < pulls.length; pi++) {
       var pit = stowItem(pulls[pi]);
@@ -923,40 +1006,79 @@
       }
     }
     s.craft_burner = !!bst;
-    var ra = findOwned(ids[0]), rb = findOwned(ids[1]);
+    // a failed dish loses its MAIN ingredient (the recipe's first), so a dish goes by the recipe's order, not the boxes'
+    var order = cook ? res.recipe.ingredients.slice() : ids, ra = findOwned(order[0]), rb = findOwned(order[1]);
+    s.craft_mode = craftKey(); s.craft_minutes = cook ? cookInfo(res.recipe).minutes : 30;
     s.craft_potion = res.recipe.id; s.craft_potion_name = res.recipe.name; s.craft_dc = res.recipe.dc;
-    s.craft_a = ids[0]; s.craft_b = ids[1];
-    s.craft_a_name = ra ? splitCount(ra.name).name : ids[0]; s.craft_b_name = rb ? splitCount(rb.name).name : ids[1];
-    close();
-    var scene = new window.Scene("choicescript_stats", window.stats, window.nav, { secondaryMode: "stats", saveSlot: "temp" });
-    scene.targetLabel = { label: "codex_craft_now", origin: "url", originLine: 0 };
-    window.clearScreen(function () {
-      if (typeof window.setButtonTitles === "function") window.setButtonTitles();
-      scene.execute();
+    s.craft_a = order[0]; s.craft_b = order[1];
+    s.craft_a_name = ra ? splitCount(ra.name).name : order[0]; s.craft_b_name = rb ? splitCount(rb.name).name : order[1];
+    if (cook) { s.craft_a_name = s.craft_a_name.toLowerCase(); s.craft_b_name = s.craft_b_name.toLowerCase(); }
+    // The panel STAYS OPEN and the page behind it stays untouched (2026-10-26, the user: a crafting menu keeps you in the menu, with no page changing behind it). ChoiceScript still does all the work
+    // (the one-shot codex_craft_now); quietRun runs it with its output muted and the game's page rebuild skipped. The button is greyed meanwhile.
+    view.pending = true; view.craftMsg = ""; render();
+    quietRun("codex_craft_now", function (ok) {
+      var msg = String(window.stats.spell_cast_toast || "");
+      window.stats.spell_cast_toast = "";
+      view.pending = false; note(""); view.craftMsg = msg || (ok ? "" : "That did not finish. Try again.");
+      view.dirty = true;                       // the page behind is stale now (the clock moved, things were spent); it is refreshed ONCE, when the panel closes
+      if (dlg && dlg.open) render();
     });
+  }
+  // Run a one-shot dossier label (choicescript_stats codex_craft_now ...) WITHOUT touching the page the player is looking at. Normally a one-shot ends in returnFromStats(): fade the page, load the last
+  // save, rebuild the page. Here that call is intercepted (the page-draw it would make is skipped) and the three things the rebuild did are done by hand: the page's own scene is put back (the one-shot's
+  // Scene sets stats.scene and stats.sceneName), the new stats are saved (the page scene's refreshSavedProgress, which is what a page does when it pauses), and what the one-shot printed (a dice banner)
+  // goes to a hidden stand-in for #text instead of the page. done(ok) runs when the label finishes; if it never does, a timer ends it after 4 seconds.
+  function quietRun(label, done) {
+    var s = window.stats, prevScene = s.scene, prevName = s.sceneName, real = document.getElementById("text"), decoy = null, orig = window.returnFromStats, ended = false, keep = {};
+    // The one-shot starts its own page as far as the engine is concerned: it moves page_id and the record of where the page began (choice_page_start_*), which the saved game resumes from. Put them back.
+    ["page_id", "choice_page_start_scene", "choice_page_start_line", "choice_page_start_indent"].forEach(function (k) { keep[k] = s[k]; });
+    function end(ok) {
+      if (ended) return;
+      ended = true;
+      window.returnFromStats = orig;
+      if (decoy && decoy.parentNode) decoy.parentNode.removeChild(decoy);
+      if (real) real.id = "text";
+      s.scene = prevScene; s.sceneName = prevName;
+      Object.keys(keep).forEach(function (k) { s[k] = keep[k]; });
+      if (ok && prevScene && typeof prevScene.refreshSavedProgress === "function") { try { prevScene.refreshSavedProgress(); } catch (e) { /* the next real page save covers it */ } }
+      done(ok);
+    }
+    if (real) { real.id = "text_held"; decoy = document.createElement("div"); decoy.id = "text"; decoy.style.display = "none"; document.body.appendChild(decoy); }
+    window.returnFromStats = function () { end(true); };
+    setTimeout(function () { end(false); }, 4000);
+    var scene = new window.Scene("choicescript_stats", s, window.nav, { secondaryMode: "stats", saveSlot: "temp" });
+    scene.targetLabel = { label: label, origin: "url", originLine: 0 };
+    try { scene.execute(); } catch (e) { end(false); throw e; }
+  }
+  // Closing the panel after a craft refreshes the page behind it, once, the way a one-shot used to on its way out (so the page's own text and options match the new time and stock).
+  function onDialogClose() {
+    hideTip();
+    if (view.dirty) { view.dirty = false; if (typeof window.returnFromStats === "function") window.returnFromStats(); }
   }
   function effectLabel(e) { return String(e || "").split("_").map(function (w) { return w.charAt(0).toUpperCase() + w.slice(1); }).join(" "); }
   // What the filled boxes would make: {recipe, property} for a known pair, else {text} saying why not. Order does not matter; three ingredients are for stronger brews later.
   function craftResult(s) {
-    var ids = view.box.filter(Boolean), table = (window.CRAFT_RECIPES || {})[view.craft || "alchemy"] || [];
+    var cook = craftKey() === "cooking", ids = view.box.filter(Boolean), table = craftTable();
     if (ids.length === 0) return { text: "Put two ingredients in the boxes to see the result." };
     if (ids.length === 1) return { text: "Add a second ingredient." };
-    if (ids.length === 3) return { text: "Three ingredients are for stronger brews later. For now, a brew takes two." };
+    if (ids.length === 3) return { text: cook ? "A dish takes two ingredients for now." : "Three ingredients are for stronger brews later. For now, a brew takes two." };
     var a = ids[0], b = ids[1];
     for (var i = 0; i < table.length; i++) {
       var p = table[i].ingredients;
       if ((p[0] === a && p[1] === b) || (p[0] === b && p[1] === a)) return { recipe: table[i], property: effectLabel(table[i].property) };
     }
     if (a === b) return { text: "Two of the same ingredient make nothing." };
+    if (cook) return { text: "Nothing good comes of this pair." };
     var ra = findOwned(a), rb = findOwned(b), ea = ra && ra.alchemy ? ra.alchemy.effects : [], eb = rb && rb.alchemy ? rb.alchemy.effects : [];
     var shared = ea.filter(function (e) { return eb.indexOf(e) >= 0; });
     return { text: shared.length ? "They share " + effectLabel(shared[0]) + ", but nothing is brewed from this pair." : "These two have nothing in common to brew." };
   }
+
   // Ingredients are counted in the pack under their own id. What the boxes hold is only chosen, not spent: this is how many of one are still free to choose.
   function boxFree(id, s) {
     var used = 0;
     view.box.forEach(function (b) { if (b === id) used++; });
-    return (Number(s[id]) || 0) - used;
+    return countOf(id, s) - used;
   }
   // A box whose ingredient is no longer carried (used, sold, dropped) empties itself.
   function normalizeBox(s) {
@@ -964,14 +1086,14 @@
     view.box = view.box.map(function (id) {
       if (!id) return null;
       seen[id] = (seen[id] || 0) + 1;
-      return seen[id] <= (Number(s[id]) || 0) ? id : null;
+      return seen[id] <= countOf(id, s) ? id : null;
     });
   }
   // Put an ingredient in a box: the one named, or the first empty one. A filled box takes the new one in its place.
   function addToBox(id, idx) {
     var s = statsNow(), r = findOwned(id);
     normalizeBox(s);
-    if (!r || !r.alchemy) { note("That is not an ingredient."); render(); return; }
+    if (!canBox(r)) { note("That is not an ingredient."); render(); return; }
     var nm = splitCount(r.name).name;
     if (idx === undefined || idx === null) idx = view.box.indexOf(null);
     if (idx < 0) { note("All three boxes are full. Click a filled box to take its ingredient back."); render(); return; }
@@ -1070,9 +1192,10 @@
     elTip.style.top = ((top - padT) / z) + "px";
   }
   function onOver(ev) {
-    var t = ev.target && ev.target.closest ? ev.target.closest("[data-item], [data-citem], [data-slot]") : null;
+    var t = ev.target && ev.target.closest ? ev.target.closest("[data-item], [data-citem], [data-slot], [data-craft-tip]") : null;
     if (!t || view.drag) { if (!t) hideTip(); return; }
-    if (t.hasAttribute("data-citem")) showTip(t, tipHtmlForItem(stowedEntry(view.left, t.getAttribute("data-citem"), statsNow()) || {}));
+    if (t.hasAttribute("data-craft-tip")) showTip(t, craftTipHtml());
+    else if (t.hasAttribute("data-citem")) showTip(t, tipHtmlForItem(stowedEntry(view.left, t.getAttribute("data-citem"), statsNow()) || {}));
     else if (t.hasAttribute("data-item")) showTip(t, tipHtmlForItem(findOwned(t.getAttribute("data-item")) || {}));
     else showTip(t, tipHtmlForSlot(t.getAttribute("data-slot"), t.getAttribute("data-ring") || ""));
   }
@@ -1113,7 +1236,7 @@
     // mark the slots that take it, without rebuilding the DOM mid-drag (that would cancel the drag)
     var r = findOwned(view.drag);
     Array.prototype.forEach.call(dlg.querySelectorAll("[data-slot]"), function (el) { if (accepts(r, el.getAttribute("data-slot"))) el.classList.add("inv-accepts"); });
-    if (view.left === "craft" && r.alchemy) Array.prototype.forEach.call(dlg.querySelectorAll("[data-box]"), function (el) { el.classList.add("inv-accepts"); });
+    if (view.left === "craft" && canBox(r)) Array.prototype.forEach.call(dlg.querySelectorAll("[data-box]"), function (el) { el.classList.add("inv-accepts"); });
     // with a container open, its pane takes what can be stowed
     if (containerOpen() && r.stow) Array.prototype.forEach.call(dlg.querySelectorAll(".inv-cpane"), function (el) { el.classList.add("inv-drop-ok"); });
   }
@@ -1142,7 +1265,7 @@
     if (!view.drag) return;
     if (containerOpen() && overPane(ev)) { var ds2 = findOwned(view.drag); if (ds2 && ds2.stow) ev.preventDefault(); return; }
     var bx = ev.target && ev.target.closest ? ev.target.closest("[data-box]") : null;
-    if (bx) { var di = findOwned(view.drag); if (di && di.alchemy) { ev.preventDefault(); bx.classList.add("inv-over"); } return; }
+    if (bx) { var di = findOwned(view.drag); if (di && canBox(di)) { ev.preventDefault(); bx.classList.add("inv-over"); } return; }
     if (t) { if (accepts(findOwned(view.drag), t.getAttribute("data-slot"))) { ev.preventDefault(); t.classList.add("inv-over"); } return; }
     var cl = cellOf(ev);
     if (cl && cl.getAttribute("data-item") !== view.drag) { ev.preventDefault(); cl.classList.add("inv-over"); }
@@ -1198,14 +1321,18 @@
     return !truthy(statsNow().combat_engaged) && typeof window.Scene === "function" && typeof window.clearScreen === "function" && !!window.nav;
   }
   function useItem(id) {
-    if (!canUse()) return;
+    if (!canUse() || view.pending) return;
     statsNow().use_item_id = id;
-    close();
-    var scene = new window.Scene("choicescript_stats", window.stats, window.nav, { secondaryMode: "stats", saveSlot: "temp" });
-    scene.targetLabel = { label: "codex_use_now", origin: "url", originLine: 0 };
-    window.clearScreen(function () {
-      if (typeof window.setButtonTitles === "function") window.setButtonTitles();
-      scene.execute();
+    // The panel STAYS OPEN and the page behind it is left alone (2026-10-26, the user: eating and drinking should not close the inventory or replay the page). The same one-shot as before
+    // (codex_use_now, which runs equipment.txt use_consumable), run by quietRun; its one-line result shows under the item, and the page is refreshed once when the panel closes.
+    view.pending = true; view.useMsg = ""; render();
+    quietRun("codex_use_now", function (ok) {
+      var msg = String(window.stats.spell_cast_toast || "");
+      window.stats.spell_cast_toast = "";
+      view.pending = false; note(""); view.useMsg = msg || (ok ? "" : "That did not finish. Try again.");
+      view.dirty = true;
+      if (view.sel && !findOwned(view.sel)) view.sel = null;     // the last one was used up
+      if (dlg && dlg.open) render();
     });
   }
 
@@ -1221,6 +1348,7 @@
   function attuneViaDossier(action) {
     if (!canUse()) { note("Attunement is changed from the dossier, and not in the middle of a fight."); render(); return; }
     statsNow().attune_action = action;
+    view.dirty = false;   // this hand-off rebuilds the page itself
     close();
     var scene = new window.Scene("choicescript_stats", window.stats, window.nav, { secondaryMode: "stats", saveSlot: "temp" });
     scene.targetLabel = { label: "codex_attune_do", origin: "url", originLine: 0 };
@@ -1234,6 +1362,7 @@
     var st = statsNow();
     st.equip_slot = bucket;
     st.equip_item_id = id;
+    view.dirty = false;   // this hand-off rebuilds the page itself
     close();
     var scene = new window.Scene("choicescript_stats", window.stats, window.nav, { secondaryMode: "stats", saveSlot: "temp" });
     scene.targetLabel = { label: "codex_equip_do", origin: "url", originLine: 0 };
@@ -1255,7 +1384,7 @@
   }
 
   function onClick(ev) {
-    var t = ev.target && ev.target.closest ? ev.target.closest("[data-act], [data-cat], [data-item], [data-slot], .inv-blank[data-cell], [data-takeoff], [data-pop-shield], [data-attune], [data-swap-sidearm], [data-equip-sel], [data-use], [data-left], [data-citem], [data-qty], [data-qty-set], [data-xfer], [data-box], [data-craft-go], [data-craft-tab], [data-recipe]") : null;
+    var t = ev.target && ev.target.closest ? ev.target.closest("[data-act], [data-cat], [data-item], [data-slot], .inv-blank[data-cell], [data-takeoff], [data-pop-shield], [data-attune], [data-swap-sidearm], [data-equip-sel], [data-use], [data-left], [data-citem], [data-qty], [data-qty-set], [data-xfer], [data-box], [data-craft-go], [data-craft-tab], [data-craft-mode], [data-recipe]") : null;
     if (!t || !dlg.contains(t)) {
       if (view.slot) { view.slot = null; render(); }   // a click on empty space puts the lit slot away
       return;
@@ -1293,6 +1422,11 @@
       return;
     }
     if (t.hasAttribute("data-craft-go")) { if (!t.disabled) craftNow(); return; }
+    if (t.hasAttribute("data-craft-mode")) {
+      var cm = t.getAttribute("data-craft-mode");
+      if (CRAFT_MODES[cm] && cm !== craftKey()) { view.boxes[craftKey()] = view.box; view.craft = cm; view.box = view.boxes[cm] || [null, null, null]; view.craftTab = "brew"; note(""); render(); }
+      return;
+    }
     if (t.hasAttribute("data-craft-tab")) { view.craftTab = t.getAttribute("data-craft-tab"); note(""); render(); return; }
     if (t.hasAttribute("data-recipe")) {
       if (t.disabled) return;
@@ -1305,7 +1439,7 @@
     if (t.hasAttribute("data-cat")) { view.category = t.getAttribute("data-cat"); render(); return; }
     if (t.hasAttribute("data-item")) {
       var id = t.getAttribute("data-item");
-      if (view.left === "craft") { var ing = findOwned(id); if (ing && ing.alchemy) { addToBox(id); return; } }
+      if (view.left === "craft") { var ing = findOwned(id); if (ing && canBox(ing)) { addToBox(id); return; } }
       if (ev.shiftKey && view.left !== "you" && view.left !== "craft") { var carried = findOwned(id); if (carried && carried.stow) { doMove("stow", id, 99999); return; } }   // shift-click moves the whole stack into the open container
       view.sel = view.sel === id ? null : id; view.csel = null; view.qty = 1;
       view.slot = null; note("");
