@@ -8,7 +8,7 @@
 *comment   Rest: the one-hour short rest (character_progression.txt short_rest_preview / do_short_rest), the same one the dossier's Rest menu takes, with the camp's fire taken into the exposure.
 *comment   Eat: not here any more (2026-10-18, the user's call): the player eats from the pack whenever they like, and the game eats for them only to stop starvation (calendar.txt advance_time).
 *comment   Train: a training session on your own (character_progression.txt training_preview / do_training_session). It counts fully toward the level-up sessions and shares the compound's once-a-day limit
-*comment     (last_training_day), so camping never gives a second session in a day. The compound keeps its teachers and its prose; this is a short self-directed track with no squad voice.
+*comment     (last_training_day), so camping never gives a second session in a day. It needs safe weather and enough light: daylight, darkvision, or a campfire. The compound keeps its teachers and its prose; this is a short self-directed track with no squad voice.
 *comment   Break camp: back to the map.
 *comment A button that cannot be used right now stays listed and is reworded to say why (the closure pages cost no time and set nothing). To add a camp activity, add one option and one label here.
 *comment
@@ -46,8 +46,11 @@
     *set cp_jug 2
 *gosub_scene equipment water_at_hand
 *temp cp_fire false
-*if (((has_tinderbox) or (known_fire_bolt)) or (known_prestidigitation))
+*if ((((has_tinderbox) or (known_fire_bolt)) or (known_prestidigitation)) or (ow_camp_fire_shared))
   *set cp_fire true
+*if (((not(cp_done)) and (training_can_train)) and ((cp_dark) and ((sees_in_dark) or (cp_fire))))
+  *if (weather_severity < 3)
+    *set cp_train_ok true
 [b]◈ CAMP: ${ow_name}[/b]
 *line_break
 You have made camp in the best patch of ground you could find.
@@ -108,10 +111,10 @@ You have made camp in the best patch of ground you could find.
   *if ((not(cp_done)) and (not(training_can_train)))
     # Train on your own: you have already trained today.
       *goto camp_train_closed
-  *if (((not(cp_done)) and (training_can_train)) and (cp_dark))
-    # Train on your own: the light is going.
+  *if ((((not(cp_done)) and (training_can_train)) and (cp_dark)) and (not((sees_in_dark) or (cp_fire))))
+    # Train on your own: you need darkvision or a fire.
       *goto camp_train_closed
-  *if ((((not(cp_done)) and (training_can_train)) and (not(cp_dark))) and (weather_severity >= 3))
+  *if ((((not(cp_done)) and (training_can_train)) and ((not(cp_dark)) or ((sees_in_dark) or (cp_fire)))) and (weather_severity >= 3))
     # Train on your own: too foul out.
       *goto camp_train_closed
   # Break camp and go back to the road.
@@ -255,20 +258,34 @@ You spread the camp kit out on the ground and go over it a seam at a time with t
 *comment (which do_training_session has already counted on this page), never from the clock or *rand, so a replayed page prints the same words. ──
 *label camp_train_closed
 *gosub_scene character_progression training_preview
+*temp ctc_dark false
+*if ((time_period = "Night") or ((time_period = "Pre-Dawn") or (time_period = "Dusk")))
+  *set ctc_dark true
+*temp ctc_fire false
+*if ((((has_tinderbox) or (known_fire_bolt)) or (known_prestidigitation)) or (ow_camp_fire_shared))
+  *set ctc_fire true
+*temp ctc_light false
+*if ((not(ctc_dark)) or ((sees_in_dark) or (ctc_fire)))
+  *set ctc_light true
 [b]◈ CAMP[/b]
 *line_break
 *if (training_sessions >= level_up_sessions_needed)
   You work through your training until you are bored of it. There is nothing left to learn today.
 *elseif (not(training_can_train))
   You have put in a full day's training already. Another bout now would only wear you down, and tired hands learn nothing.
+*elseif (not(ctc_light))
+  The ground beyond camp is too dark to read. You need darkvision or a fire before you train.
 *elseif (weather_severity >= 3)
   The weather is too foul to work in. You would only be learning to slip in the mud.
 *else
-  The light is going, and nobody trains on strange ground in the dark.
+  There is nothing to keep you from training.
 *page_break Back to the fire…
 *goto camp_hub
 
 *label camp_train
+*temp ct_dark false
+*if ((time_period = "Night") or ((time_period = "Pre-Dawn") or (time_period = "Dusk")))
+  *set ct_dark true
 *set hours_to_pass training_hours
 *set minutes_to_pass 0
 *set exposure_base_mins (training_hours * 60)
@@ -280,6 +297,11 @@ You spread the camp kit out on the ground and go over it a seam at a time with t
 *temp ct_pick (training_sessions modulo 6)
 [b]◈ CAMP[/b]
 *line_break
+*if (ct_dark)
+  *if (sees_in_dark)
+    The dark leaves the ground clear to your eyes, and the small camp keeps the rest of the night at a distance.
+  *else
+    You keep close to the firelight, working only the ground and movements you can read clearly.
 *if (character_class = "fighter")
   *if (ct_pick <= 2)
     You clear a patch of ground and run weapon forms: guard, cut, recovery, then the same sequence again until it no longer needs thought.

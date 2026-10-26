@@ -5018,7 +5018,7 @@ You find a spot at the stores awning where a quartermaster is still ladling out 
 *if (training_sessions >= level_up_sessions_needed)
   *set dr_done true
 *temp dr_open false
-*if ((not(dr_done)) and ((training_can_train) and ((dr_day) and (weather_severity < 3))))
+*if ((not(dr_done)) and ((training_can_train) and (weather_severity < 3)))
   *set dr_open true
 [b]◈ THE DRILL SQUARE[/b]
 *line_break
@@ -5080,18 +5080,19 @@ A rail fence rings a wide square of packed ground behind the barracks, scuffed b
 
 *choice
   *if (dr_open)
-    # Drill with your squad. [~4 Hours]
-      *goto pv_carrion_drill
+    *if (dr_day)
+      # Drill with your squad. [~4 Hours]
+        *goto pv_carrion_drill
+    *else
+      # Train on the lit yard. [~4 Hours]
+        *goto pv_carrion_drill
   *if (dr_done)
     # Drill with your squad: nothing more the yard can teach you.
       *goto pv_carrion_drill_done
   *if ((not(dr_done)) and (not(training_can_train)))
     # Drill with your squad: you have done your shift for the day.
       *goto pv_carrion_drill_closed
-  *if (((not(dr_done)) and (training_can_train)) and (not(dr_day)))
-    # Drill with your squad: the yard is shut until morning.
-      *goto pv_carrion_drill_closed
-  *if ((((not(dr_done)) and (training_can_train)) and (dr_day)) and (weather_severity >= 3))
+  *if (((not(dr_done)) and (training_can_train)) and (weather_severity >= 3))
     # Drill with your squad: called off for the weather.
       *goto pv_carrion_drill_closed
   *if (leaders_at_drill)
@@ -5113,15 +5114,8 @@ A rail fence rings a wide square of packed ground behind the barracks, scuffed b
 *gosub_scene character_progression training_preview
 [b]◈ THE DRILL SQUARE[/b]
 *line_break
-*temp dr_day false
-*if ((time_period = "Morning") or (time_period = "Midday"))
-  *set dr_day true
 *if (not(training_can_train))
   You have already put in a full shift on the yard today. The corporals are not handing out a second one, and a tired recruit is a hazard to everyone in the line.
-*elseif ((time_period = "Dusk") or (time_period = "Afternoon"))
-  Drill is over for the day. The racks are chained shut and the last of the ranks are filing off toward the cookhouse.
-*elseif (not(dr_day))
-  The yard lies dark and the racks are chained shut. Drill begins with the light.
 *else
   The yard is empty. Drill has been called off, the racks are chained shut, and nobody is going out onto the open earth until the weather eases.
 *choice
@@ -5278,6 +5272,9 @@ A rail fence rings a wide square of packed ground behind the barracks, scuffed b
 *comment do_training_session runs BEFORE any prose, so training_sessions is already this session's number: it picks the vignette
 *comment (a rotation of six, so no two sessions in a row match) and marks the first and last session. A replay finds the same number.
 *label pv_carrion_drill
+*temp dr_solo false
+*if ((not(time_period = "Morning")) and (not(time_period = "Midday")))
+  *set dr_solo true
 *set hours_to_pass training_hours
 *set minutes_to_pass 0
 *set exposure_base_mins (training_hours * 60)
@@ -5293,6 +5290,8 @@ A rail fence rings a wide square of packed ground behind the barracks, scuffed b
 *gosub_scene character_progression do_training_session
 *temp dr_start (((clock_hour + 24) - training_hours) modulo 24)
 *temp dr_pick (training_sessions modulo 6)
+*if (dr_solo)
+  *goto pv_carrion_solo_drill
 [b]◈ THE DRILL SQUARE[/b]
 *line_break
 *comment Opening line: the hour the session started (derived from the clock at its end) and whether it is wet.
@@ -5422,6 +5421,39 @@ A rail fence rings a wide square of packed ground behind the barracks, scuffed b
       *goto_scene port_valen/port_valen port_valen_walk_picked
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label pv_carrion_solo_drill
+[b]◈ THE DRILL SQUARE[/b]
+*line_break
+The squad drill has ended, the practice racks are chained, and the gate brazier throws enough light across the near yard for careful work with your own gear.
+
+*if (character_class = "fighter")
+  You run guard, cut and recovery in a measured loop, then work shield turns and footwork until each return to stance is clean.
+*elseif (character_class = "barbarian")
+  You shoulder your pack for carries and holds, then work controlled strikes into the open air until strength answers without taking over.
+*elseif (character_class = "rogue")
+  You move between the rail shadows and the brazier's edge, placing each step where the packed ground will not betray it, then practice quick turns and recoveries.
+*elseif (character_class = "ranger")
+  You pace the fence line, noting the dark approaches, then repeat the motions of drawing, setting and moving until the sequence stays steady in the low light.
+*elseif (character_class = "wizard")
+  You work through precise cantrip motions and small tracing exercises, stopping whenever the brazier light makes a line uncertain.
+*elseif (character_class = "bard")
+  You keep your voice low while you work scales, breath and the rhythm of a practiced verse, trimming every movement until it lands cleanly.
+*elseif (character_class = "warlock")
+  You rehearse the words and signs that steady your magic, measuring each motion against the brazier's light before you risk calling on more.
+*else
+  You work through stance, breath, balance and kit checks until the quiet repetition has driven the last slackness from your body.
+
+*if ((training_sessions = level_up_sessions_needed) and (level_up_sessions_needed > 0))
+  When you finish, you count the tally marks you have been keeping. This is the last one you needed.
+
+[b][🎯 Personal Training | ${training_hours} hours | Training ${training_sessions} / ${level_up_sessions_needed} | ${clock_time}][/b]
+*choice
+  # Back across the square.
+    *goto pv_poi_carrion
+  *if (vane_independent_operative)
+    # Walk to the district picked on the sidebar.
+      *goto_scene port_valen/port_valen port_valen_walk_picked
+
 *comment YSOLDE'S WORKROOM (pv_poi_workroom): the back room of the timber headquarters, where Vane sends the Cadre for "contract audits
 *comment or arcane counsel". A place and a handful of talk topics, no quest: her quests live in scenes/carrion_company/.
 *comment Open by day after the morning drill (Pre-Dawn, Night and Late Night shut it, as the hub's pv_is_night does; Morning and Midday she is out on the
