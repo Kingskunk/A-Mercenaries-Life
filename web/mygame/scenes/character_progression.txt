@@ -369,6 +369,78 @@
   *set last_training_day ((ts_start - (ts_start modulo 1440)) / 1440)
 *return
 
+*comment PRIVATE INN-ROOM TRAINING: every paid inn room calls this one label with its own stable id. The caller owns only its
+*comment choice and return route; this label owns the daily gate, four-hour advance, replay-safe session, and class prose.
+*label inn_room_training
+*params irt_inn_id
+*gosub training_preview
+[b]◈ ROOM TRAINING[/b]
+*line_break
+*if (training_sessions >= level_up_sessions_needed)
+  You work through your training until you are bored of it. There is nothing left to learn today.
+  *return
+*if (not(training_can_train))
+  You have put in a full day's training already. Another bout now would only wear you down, and tired hands learn nothing.
+  *return
+*set hours_to_pass training_hours
+*set minutes_to_pass 0
+*set time_advance_call_id ("inn_room_training_" & irt_inn_id)
+*gosub_scene calendar advance_time
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*gosub do_training_session
+*comment Recompute the derived page flag after the clock moves: a late session may end after midnight, and the rule is based on its start day.
+*gosub training_preview
+*temp irt_pick (training_sessions modulo 2)
+You make space beside the bed, bar the door, and give the room over to a few uninterrupted hours of work.
+
+*if (character_class = "fighter")
+  *if (irt_pick = 0)
+    You move through measured weapon forms, keeping every guard, cut, and recovery tight enough not to strike the walls.
+  *else
+    You drill footwork and stance changes across the floorboards until your legs remember the positions without thought.
+*elseif (character_class = "barbarian")
+  *if (irt_pick = 0)
+    You work steady lifts, carries, and holds with your pack, finding control beneath the effort instead of simply forcing it.
+  *else
+    You practice powerful movements in the narrow space, stopping before anger can take the work out of your hands.
+*elseif (character_class = "rogue")
+  *if (irt_pick = 0)
+    You cross the room again and again without making the boards complain, testing each step until the quiet becomes habit.
+  *else
+    You use the shutter, door, and furniture as cover marks, studying the quickest lines between them from every angle.
+*elseif (character_class = "ranger")
+  *if (irt_pick = 0)
+    You check each strap and fastener, then work balance and ready movements in the small clear space beside the bed.
+  *else
+    You pace out the room's sightlines and exits, turning the simple exercise into a lesson in positioning and awareness.
+*elseif (character_class = "wizard")
+  *if (irt_pick = 0)
+    You trace precise arcane patterns in the air, correcting each motion until it ends exactly where you intend.
+  *else
+    You rehearse the smallest cantrip gestures with controlled breath and cadence, keeping the magic safely contained.
+*elseif (character_class = "bard")
+  *if (irt_pick = 0)
+    You work quiet scales and measured breaths, feeling for the point where a phrase carries cleanly without strain.
+  *else
+    You keep a soft rhythm against your knee and rehearse a tale's turns, cutting every wasted word from the telling.
+*elseif (character_class = "warlock")
+  *if (irt_pick = 0)
+    You rehearse the words and signs that steady your magic, keeping each one measured and precise.
+  *else
+    You sit with the pact's familiar pressure and test where your own will ends and its answer begins.
+*else
+  You work the fundamentals: posture, breath, balance, and the careful inspection of every piece of your kit.
+*if ((training_sessions = level_up_sessions_needed) and (level_up_sessions_needed > 0))
+  *line_break
+  When you finish, you count the notches you have been cutting in a leather strap. The count is the one you came for.
+*line_break
+[b][🎯 Room Training | ${training_hours} hours | Training ${training_sessions} / ${level_up_sessions_needed} | ${clock_time}][/b]
+*return
+
 *comment Level up (called by the dossier page codex_levelup_do after the confirm page set level_up_from). character_level is set to an
 *comment EXACT target (level_up_from + 1), not incremented, and the two things that follow are worked out from state: update_dnd_stats
 *comment moves current HP by the change in max HP (so the level-up heals by that amount, as decided), and each pool rises by the change in
