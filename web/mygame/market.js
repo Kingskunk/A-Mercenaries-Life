@@ -45,7 +45,7 @@
 })(typeof window !== "undefined" ? window : this, function () {
   "use strict";
 
-  var LO = 0.5, HI = 1.5, MIN_F = 0.6, MAX_F = 2.0, KNEE_MULT = 2, FLOOR_F = 0.25, BUYBACK_DAYS = 14, MAX_BUY_PCT = 0.8, MAX_ASK = 2, MIN_ASK = 0.5;
+  var LO = 0.5, HI = 1.5, MIN_F = 0.6, MAX_F = 2.0, KNEE_MULT = 2, FLOOR_F = 0.25, BUYBACK_DAYS = 14, MAX_BUY_PCT = 0.8, MAX_ASK = 1.5, MIN_ASK = 0.75;
 
   function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
   function num(v, d) { var n = Number(v); return isFinite(n) ? n : (d || 0); }
@@ -61,17 +61,19 @@
     return 1;
   }
   // What the merchant asks for one unit when it holds `stock` (before the unit leaves), and what it pays for one unit when the shelf would then hold `stockAfter` (the stock once the unit has arrived).
-  // No ask is ever above MAX_ASK times the base price (the user, 2026-10-24: a shortage may double a price, never more): the distance level, the world's supply and the shelf all multiply, and this caps the product.
+  // No ask is ever above MAX_ASK times the base price: the distance level, the world's supply and the shelf all multiply, and this caps the product. The band is 0.75 to 1.5 (the user, 2026-10-27: a short hop was
+  // paying +140%; it was 0.5 to 2 from 2026-10-24). With the buy-back at 0.8 at most, the widest gap any good can show between a buy and a sale anywhere is 0.75 to 1.2 of the base, +60%.
   // The payout is capped the same way, so it still never rises with stock (the round-trip proof needs that).
-  // And none below MIN_ASK times the base (a harvest glut halves a price, it does not make a pumpkin worth nothing). Both clamps keep the price from rising with stock.
-  function ask(base, stock, target, mult) { return Math.max(base * MIN_ASK, Math.min(base * (mult || 1) * factor(stock, target), base * MAX_ASK)); }
+  // And none below MIN_ASK times the base (a harvest glut cheapens a price by a quarter, it does not make a pumpkin worth nothing). Both clamps keep the price from rising with stock.
+  // `hi` is the good's own top of the band (a far good's widens with distance: tools/commodity_range.js); without one it is MAX_ASK.
+  function ask(base, stock, target, mult, hi) { return Math.max(base * MIN_ASK, Math.min(base * (mult || 1) * factor(stock, target), base * (hi || MAX_ASK))); }
   // What the market pays: the same price, with the shortage premium damped by the good's need (damp), and none at all for an unstocked good (flat). ratio is the world's part of mult (worldRatio).
   function damp(v, need) { return v > 1 && need !== undefined ? 1 + need * (v - 1) : v; }
-  function bid(base, stockAfter, target, buyPct, mult, need, ratio, flat) {
+  function bid(base, stockAfter, target, buyPct, mult, need, ratio, flat, hi) {
     var f = factor(stockAfter, target), m = mult || 1;
     if (flat) { f = Math.min(1, f); if (ratio && ratio > 1) m = m / ratio; }
     else { f = damp(f, need); if (ratio && ratio > 1) m = m / ratio * damp(ratio, need); }
-    return Math.max(base * MIN_ASK, Math.min(base * m * f, base * MAX_ASK)) * buyPct;
+    return Math.max(base * MIN_ASK, Math.min(base * m * f, base * (hi || MAX_ASK))) * buyPct;
   }
 
   function good(def, id) { return def.goods && def.goods[id] ? def.goods[id] : null; }
@@ -152,7 +154,7 @@
       if (n > S) { problem(id + ": only " + S + " on the shelf"); n = S; }
       if (n <= 0) return;
       var sum = 0, first = 0, last = 0, s = S, i;
-      for (i = 0; i < n; i++) { var p = g.fixed ? b : ask(b, s, g.target, g.mult); if (i === 0) first = p; last = p; sum += p; s -= 1; }
+      for (i = 0; i < n; i++) { var p = g.fixed ? b : ask(b, s, g.target, g.mult, g.hi); if (i === 0) first = p; last = p; sum += p; s -= 1; }
       var total = Math.ceil(sum - 1e-9);
       q.buy.push({ id: id, qty: n, total: total, first: first, last: last });
       q.buyTotal += total;
@@ -162,7 +164,7 @@
       if (!g || g.buys === false) { problem(id + ": not wanted here"); return; }
       if (n <= 0) return;
       var pct = num(g.buyPct, 0.5), sum = 0, first = 0, last = 0, s = S, i;
-      for (i = 0; i < n; i++) { var p = (g.fixed ? b * pct : bid(b, s + 1, g.target, pct, g.mult, g.need, g.worldRatio, g.unstocked)) * bonus; if (i === 0) first = p; last = p; sum += p; s += 1; }
+      for (i = 0; i < n; i++) { var p = (g.fixed ? b * pct : bid(b, s + 1, g.target, pct, g.mult, g.need, g.worldRatio, g.unstocked, g.hi)) * bonus; if (i === 0) first = p; last = p; sum += p; s += 1; }
       var total = Math.floor(sum + 1e-9);
       if (total <= 0) { problem(id + ": worth nothing at this price"); return; }
       // a commodity market spends only a share of its purse on one good a day
@@ -187,8 +189,8 @@
     var b = num(g.base), bonus = 1 + Math.max(0, num(opts && opts.sellBonusPct)) / 100, S = num(state.stock[id]), pct = num(g.buyPct, 0.5);
     for (i = 0; i < count; i++) {
       var k = from + i;
-      if (kind === "buy") { if (k >= S) break; out.push(g.fixed ? b : ask(b, S - k, g.target, g.mult)); }
-      else out.push((g.fixed ? b * pct : bid(b, S + k + 1, g.target, pct, g.mult, g.need, g.worldRatio, g.unstocked)) * bonus);
+      if (kind === "buy") { if (k >= S) break; out.push(g.fixed ? b : ask(b, S - k, g.target, g.mult, g.hi)); }
+      else out.push((g.fixed ? b * pct : bid(b, S + k + 1, g.target, pct, g.mult, g.need, g.worldRatio, g.unstocked, g.hi)) * bonus);
     }
     return out;
   }
@@ -220,7 +222,7 @@
     if (!g) return null;
     if (base === undefined) base = num(g.base);
     var S = num(state.stock[id]), f = g.fixed ? 1 : factor(S, g.target), pct = num(g.buyPct, 0.5);
-    return { stock: S, target: g.target, held: state.resv[id] ? state.resv[id].qty : 0, askNow: Math.ceil(Math.max(base * MIN_ASK, Math.min(base * (g.fixed ? 1 : num(g.mult, 1)) * f, base * MAX_ASK)) - 1e-9), bidNow: Math.floor(Math.max(base * MIN_ASK, Math.min(base * (g.fixed ? 1 : num(g.mult, 1) * factor(S + 1, g.target)), base * MAX_ASK)) * pct + 1e-9), vsUsual: f > 1.1 ? 1 : (f < 0.9 ? -1 : 0) };
+    return { stock: S, target: g.target, held: state.resv[id] ? state.resv[id].qty : 0, askNow: Math.ceil(Math.max(base * MIN_ASK, Math.min(base * (g.fixed ? 1 : num(g.mult, 1)) * f, base * (g.hi || MAX_ASK))) - 1e-9), bidNow: Math.floor(Math.max(base * MIN_ASK, Math.min(base * (g.fixed ? 1 : num(g.mult, 1) * factor(S + 1, g.target)), base * (g.hi || MAX_ASK))) * pct + 1e-9), vsUsual: f > 1.1 ? 1 : (f < 0.9 ? -1 : 0) };
   }
 
   // One short string for a saved stat: v1|d=<day>|p=<purse>|s=id:qty,id:qty|r=id:qty@until,...

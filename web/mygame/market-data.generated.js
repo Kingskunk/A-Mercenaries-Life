@@ -2035,6 +2035,7 @@ window.MARKET_DEFS = {
     "stock0": 46,
     "buyPct": 0.8,
     "mult": 1.11,
+    "hi": 1.605,
     "world": {
      "tile": "fv"
     },
@@ -2057,6 +2058,7 @@ window.MARKET_DEFS = {
     "stock0": 50,
     "buyPct": 0.8,
     "mult": 0.975,
+    "hi": 1.538,
     "world": {
      "tile": "fv"
     },
@@ -2090,6 +2092,7 @@ window.MARKET_DEFS = {
     "stock0": 50,
     "buyPct": 0.8,
     "mult": 0.99,
+    "hi": 1.515,
     "world": {
      "tile": "fv"
     },
@@ -2407,6 +2410,7 @@ window.MARKET_DEFS = {
     "stock0": 67,
     "buyPct": 0.8,
     "mult": 1.08,
+    "hi": 1.59,
     "world": {
      "tile": "tm"
     },
@@ -2429,6 +2433,7 @@ window.MARKET_DEFS = {
     "stock0": 72,
     "buyPct": 0.8,
     "mult": 0.945,
+    "hi": 1.523,
     "world": {
      "tile": "tm"
     },
@@ -2801,6 +2806,7 @@ window.MARKET_DEFS = {
     "stock0": 31,
     "buyPct": 0.8,
     "mult": 1.125,
+    "hi": 1.613,
     "world": {
      "tile": "bw"
     },
@@ -2834,6 +2840,7 @@ window.MARKET_DEFS = {
     "stock0": 36,
     "buyPct": 0.8,
     "mult": 1.08,
+    "hi": 1.54,
     "world": {
      "tile": "bw"
     },
@@ -3151,6 +3158,7 @@ window.MARKET_DEFS = {
     "stock0": 45,
     "buyPct": 0.8,
     "mult": 1.125,
+    "hi": 1.613,
     "world": {
      "tile": "fo"
     },
@@ -3206,6 +3214,7 @@ window.MARKET_DEFS = {
     "stock0": 41,
     "buyPct": 0.8,
     "mult": 1.045,
+    "hi": 1.523,
     "world": {
      "tile": "fo"
     },
@@ -3523,6 +3532,7 @@ window.MARKET_DEFS = {
     "stock0": 58,
     "buyPct": 0.8,
     "mult": 1.06,
+    "hi": 1.54,
     "world": {
      "tile": "mc"
     },
@@ -3545,6 +3555,7 @@ window.MARKET_DEFS = {
     "stock0": 36,
     "buyPct": 0.8,
     "mult": 1.09,
+    "hi": 1.545,
     "world": {
      "tile": "mc"
     },
@@ -3578,6 +3589,7 @@ window.MARKET_DEFS = {
     "stock0": 49,
     "buyPct": 0.8,
     "mult": 0.985,
+    "hi": 1.54,
     "world": {
      "tile": "mc"
     },
@@ -3895,6 +3907,7 @@ window.MARKET_DEFS = {
     "stock0": 62,
     "buyPct": 0.8,
     "mult": 1.13,
+    "hi": 1.575,
     "world": {
      "tile": "af"
     },
@@ -3917,6 +3930,7 @@ window.MARKET_DEFS = {
     "stock0": 60,
     "buyPct": 0.8,
     "mult": 1.04,
+    "hi": 1.52,
     "world": {
      "tile": "af"
     },
@@ -4266,6 +4280,7 @@ window.MARKET_DEFS = {
     "stock0": 42,
     "buyPct": 0.8,
     "mult": 1.17,
+    "hi": 1.595,
     "world": {
      "tile": "rv"
     },
@@ -4321,6 +4336,7 @@ window.MARKET_DEFS = {
     "stock0": 55,
     "buyPct": 0.8,
     "mult": 0.94,
+    "hi": 1.52,
     "world": {
      "tile": "rv"
     },
@@ -4637,6 +4653,7 @@ window.MARKET_DEFS = {
     "stock0": 44,
     "buyPct": 0.8,
     "mult": 1.15,
+    "hi": 1.585,
     "world": {
      "tile": "wf"
     },
@@ -4692,6 +4709,7 @@ window.MARKET_DEFS = {
     "stock0": 48,
     "buyPct": 0.8,
     "mult": 0.975,
+    "hi": 1.538,
     "world": {
      "tile": "wf"
     },
@@ -5031,6 +5049,7 @@ window.MARKET_DEFS = {
     "stock0": 66,
     "buyPct": 0.8,
     "mult": 1.145,
+    "hi": 1.585,
     "world": {
      "tile": "pv"
     },

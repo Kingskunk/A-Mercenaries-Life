@@ -15,14 +15,14 @@
  * OPEN MARKETS AND COMMODITIES (2026-10-24, the user): a merchant with "commodities": true and a "tile" (a village lane, a town's trading ground) deals in every item tagged item.commodity in
  * tools/gear_catalog.json, each with the places that make it (makers: tile id -> "major" or "minor"). Nothing is listed per market: a new trade good is one tagged item, a new market one entry with
  * its tile. Everything below comes from the road MILES between the market's tile and each maker (web/mygame/overworld-data.js), with the numbers in market_defs.json "commodity":
- *   price level   the lowest, over the makers, of (cost at the source: major 0.8, minor 1.0) + perMile x miles, never above capLevel; it is the good's regional multiplier (mult) at this market
+ *   price level   the lowest, over the makers, of (cost at the source: major 0.8, minor 1.0) + perMile x miles, never above its class's ceiling (commodity.range: local and regional 1.5, far 3.0; tools/commodity_range.js); it is the good's regional multiplier (mult) at this market
  *   supply        the sum over makers of (weight: major 1, minor 0.25) x 1 / (1 + miles / supplyHalf), so a maker's goods reach a market in smaller and smaller share the further away it is but never stop: the share of a usual shelf the market holds and restocks to
  *   supplied      supply >= minSupply: the shelf starts full at target = the standard depth x supply, and restocks. Otherwise the market makes nothing of it and nothing reaches it: it starts at 0 on the
  *                 shelf, never restocks, uses the little it is sold slowly (flow), and pays a shortage price for it
  *   buys          every commodity, at buyShare of the price (the market's own share)
  *   inputs        a refined good's makers have inputs (the catalog's commodity.inputs: bars from ore, cloth from wool, leather from hides), and a shop with a tile and "inputs": true (a smith, a tailor)
  *                 prices its wares by theirs (market_defs.json "inputs": byKind and byItem shares of the price), so a crisis at a mine reaches the smiths through the bars
- *   reach/need    commodity.reach (road miles a good travels to be stocked: a market with no maker in reach does not stock it, flagged unstocked, and pays no shortage premium for it) and commodity.need (0 to 1:
+ *   reach/need    commodity.range (local, regional or far) names the good's class: its reach in road miles unless commodity.reach overrides it, and how far its price band may widen with distance; commodity.reach (road miles a good travels to be stocked: a market with no maker in reach does not stock it, flagged unstocked, and pays no shortage premium for it) and commodity.need (0 to 1:
  *                 how much of the shortage premium the market PAYS for it; a market always charges the full premium) come from the catalog; def.appetite is the share of its purse a market spends on one good a day
  *   world         each good carries its market's tile (and a ware its inputs); web/mygame/world.js scales its supply and price level by the day from web/mygame/world-data.generated.js (tools/gen_world.js:
  *                 populations, demand, capacities, seasons and shocks)
@@ -35,6 +35,7 @@
 const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
+const CR = require("./commodity_range");
 
 const ROOT = path.resolve(__dirname, "..");
 const OUT = path.join(ROOT, "web", "mygame", "market-data.generated.js");
@@ -93,24 +94,26 @@ Object.keys(defs.merchants).forEach((mid) => {
     if (!sells) g.sells = false;
     if (fixed) g.fixed = true;
     if (m.commodities && CAT[id] && CAT[id].commodity) {
-      const mk = CAT[id].commodity.makers, bt = target, reach = CAT[id].commodity.reach || Infinity;
-      let supply = 0, level = CP.capLevel;
+      const mk = CAT[id].commodity.makers, bt = target, reach = CR.reachOf(CAT[id], CP);
+      let supply = 0, level = CR.capLevelOf(CAT[id], CP), nearest = Infinity;
       Object.keys(mk).forEach((tile) => {
         if (!OW.nodes[tile]) problems.push(id + ": maker tile " + tile + " is not on the map");
         const d = miles(m.tile, tile);
         if (d > reach) return;   // beyond the good's reach
         supply += CP.weight[mk[tile]] / (1 + d / CP.supplyHalf);
-        level = Math.min(level, CP.cost[mk[tile]] + CP.perMile * d);
+        level = Math.min(level, CP.cost[mk[tile]] + CP.perMile * d); nearest = Math.min(nearest, d);
       });
       const supplied = supply >= CP.minSupply;
       const t2 = Math.max(defs.minDepth, Math.round(bt * (supplied ? supply : CP.unsuppliedShare)));
       delete g.buys; delete g.sells;
-      g.mult = Math.round(level * 1000) / 1000; g.target = t2; g.stock0 = supplied ? t2 : 0; g.buyPct = Math.min(M.MAX_BUY_PCT, m.buyShare || 0.8);
+      g.mult = Math.round(level * 1000) / 1000; g.target = t2;
+      { const top = CR.topOf(CAT[id], CP, nearest); if (top !== CP.band.max) g.hi = top; }   // a far good's band widens with the miles to its nearest maker (a local or regional good keeps to the band)
+      g.stock0 = supplied ? t2 : 0; g.buyPct = Math.min(M.MAX_BUY_PCT, m.buyShare || 0.8);
       if (!supplied) { g.restock = false; g.flow = -Math.round(t2 * CP.useRate * 100) / 100; }
       // the world (web/mygame/world.js): the makers this market draws on [tile, reach weight, miles] and the good's season curve
       if (supply > 0) g.world = { tile: m.tile };   // what the world does to it comes from web/mygame/world-data.generated.js (tools/gen_world.js)
       g.need = CAT[id].commodity.need;
-      if (supply <= 0) { g.unstocked = true; g.sells = false; g.mult = 1; g.target = defs.minDepth; g.stock0 = 0; g.buyPct = Math.min(M.MAX_BUY_PCT, m.buyShare || 0.8); delete g.world; delete g.restock; delete g.flow; }
+      if (supply <= 0) { g.unstocked = true; g.sells = false; g.mult = 1; g.target = defs.minDepth; g.stock0 = 0; g.buyPct = Math.min(M.MAX_BUY_PCT, m.buyShare || 0.8); delete g.world; delete g.restock; delete g.flow; delete g.hi; }
       commodityReport.push({ mid: mid, id: id, level: g.mult, supply: Math.round(supply * 100) / 100, target: t2, supplied: supplied });
     }
     if (m.inputs && m.tile && !m.commodities && !fixed && it.group !== "jewelry") {

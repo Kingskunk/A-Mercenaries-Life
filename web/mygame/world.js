@@ -41,7 +41,7 @@
 
   var YEAR = 360, START_YEARDAY = 7 * 30 + 13;             // campaign day 1 is the 14th of Scorpio, day 224 of the year
   var SEASON_MID = [45, 135, 225, 315];                    // the middle day of spring, summer, autumn and winter
-  var TRAVEL_MPD = 20, WINDOW = 12, DEMAND_WINDOW = 20, PRICE_EXP = -0.8, PRICE_MIN = 0.6, PRICE_MAX = 2, SUPPLY_MIN = 0.05, SUPPLY_MAX = 3, EXT_CAP = 1.5, LOCAL_CAP = 1.5;
+  var TRAVEL_MPD = 20, WINDOW = 12, DEMAND_WINDOW = 20, PRICE_EXP = -0.8, PRICE_MIN = 0.75, PRICE_MAX = 1.5, SUPPLY_MIN = 0.05, SUPPLY_MAX = 3, EXT_CAP = 1.5, LOCAL_CAP = 1.5;
   var STEP = 6;
   var EVENTS_ON = true, evcache = {};
   var DATA = null, scache = {}, dcache = {}, derived = {}, scount = 0, dcount = 0, dercount = 0, rcache = {}, rcount = 0, ecache = {}, ecount = 0;
@@ -295,10 +295,13 @@
           c.mult = Math.round(num(g.mult, 1) * ir * 1000) / 1000;
           c.worldRatio = Math.round(ir * 1000) / 1000;
         } else {
-          var sp = supplyAt(seed, id, g.world.tile, day, 0), ra = ratioOf(sp);
-          c.mult = Math.round(num(g.mult, 1) * ra * 1000) / 1000;
+          // The price band (2026-10-27, the user: a day's walk from a chicken farm must not pay double): the good's FINAL level here, the distance level times the world's scarcity ratio, stays between
+          // PRICE_MIN and PRICE_MAX of the base (a far good's own top, g.hi, widens with the miles to its nearest maker: tools/commodity_range.js). Both parts used to multiply freely, and a market at the edge of a good's reach was charged for its distance twice (the road miles, then the thin shelf).
+          // worldRatio is kept as the final level over the distance level, so the buy-back's shortage damping (market.js bid) still sees what the world did.
+          var sp = supplyAt(seed, id, g.world.tile, day, 0), ra = ratioOf(sp), lv = num(g.mult, 1), fin = clamp(lv * ra, PRICE_MIN, g.hi || PRICE_MAX);
+          c.mult = Math.round(fin * 1000) / 1000;
           c.supply = Math.round(sp * 1000) / 1000;
-          c.worldRatio = Math.round(ra * 1000) / 1000;
+          c.worldRatio = Math.round(fin / lv * 1000) / 1000;
         }
       }
       goods[id] = c;

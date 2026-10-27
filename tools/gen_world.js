@@ -14,6 +14,7 @@
  */
 "use strict";
 const fs = require("fs");
+const CR = require("./commodity_range");
 const path = require("path");
 
 const ROOT = path.resolve(__dirname, "..");
@@ -44,7 +45,7 @@ function build() {
       const per = (defs.demand[id] || 0) * S[t].pop / 1000, ind = (defs.industry[t] && defs.industry[t][id]) || 0;
       const D = Math.max(P.minDemand, per + ind);
       const w = {}, d = {}; let sw = 0;
-      makerTiles.forEach((m) => { const mi = miles(t, m); if (!isFinite(mi) || mi > (it.commodity.reach || Infinity)) return; d[m] = Math.round(mi * 10) / 10; w[m] = CP.weight[mk[m]] / (1 + mi / CP.supplyHalf); sw += w[m]; });
+      makerTiles.forEach((m) => { const mi = miles(t, m); if (!isFinite(mi) || mi > CR.reachOf(it, CP)) return; d[m] = Math.round(mi * 10) / 10; w[m] = CP.weight[mk[m]] / (1 + mi / CP.supplyHalf); sw += w[m]; });
       if (sw <= 0) return;
       const s = {}; Object.keys(w).forEach((m) => { s[m] = r4(w[m] / sw); });
       G.consumers.push({ tile: t, D: Math.round(D * 100) / 100, pull: data.tiles[t].pull, s: s, miles: d });

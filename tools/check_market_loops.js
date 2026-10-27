@@ -22,6 +22,7 @@ const path = require("path");
 const fs = require("fs");
 const vm = require("vm");
 const M = require(path.join(__dirname, "..", "web", "mygame", "market.js"));
+const CR = require("./commodity_range");
 
 let fails = 0, checks = 0;
 function ok(cond, msg) { checks++; if (!cond) { fails++; console.log("FAIL: " + msg); } }
@@ -322,10 +323,10 @@ section("commodities and distance");
     commodities.forEach((it) => {
       const g = def.goods[it.id];
       if (!g) { const tr = cat.trades.find((t) => t.name === mid); ok(!!(tr && (tr.excludeCommodities || []).indexOf(it.id) >= 0), mid + " deals in " + it.id + " (or the catalog leaves it off that floor on purpose)"); return; }
-      let level = CP.capLevel, inReach = 0;
-      Object.keys(it.commodity.makers).forEach((t) => { const d = tile === t ? 0 : OW.route(tile, t).miles; if (d > (it.commodity.reach || Infinity)) return; inReach++; level = Math.min(level, CP.cost[it.commodity.makers[t]] + CP.perMile * d); });
-      if (!inReach) { ok(g.unstocked === true && g.sells === false && g.buys !== false && !g.world, mid + "/" + it.id + ": no maker within " + it.commodity.reach + " miles, so it is not stocked and the market pays no premium for it"); return; }
-      ok(g.buys !== false && g.sells !== false && Math.abs(g.mult - level) < 0.001 && g.mult >= CP.cost.major - 1e-9 && g.mult <= CP.capLevel + 1e-9, mid + "/" + it.id + ": bought here, price level " + g.mult + " is the nearest maker's cost plus the miles (makers within reach only)");
+      let level = CR.capLevelOf(it, CP), inReach = 0;
+      Object.keys(it.commodity.makers).forEach((t) => { const d = tile === t ? 0 : OW.route(tile, t).miles; if (d > CR.reachOf(it, CP)) return; inReach++; level = Math.min(level, CP.cost[it.commodity.makers[t]] + CP.perMile * d); });
+      if (!inReach) { ok(g.unstocked === true && g.sells === false && g.buys !== false && !g.world, mid + "/" + it.id + ": no maker within " + CR.reachOf(it, CP) + " miles, so it is not stocked and the market pays no premium for it"); return; }
+      ok(g.buys !== false && g.sells !== false && Math.abs(g.mult - level) < 0.001 && g.mult >= CP.cost.major - 1e-9 && g.mult <= CR.capLevelOf(it, CP) + 1e-9, mid + "/" + it.id + ": bought here, price level " + g.mult + " is the nearest maker's cost plus the miles (makers within reach only)");
       if (g.restock === false) ok(g.stock0 === 0 && g.flow < 0, mid + "/" + it.id + ": a good with no supply starts empty and is used up, never restocked");
     });
   });
@@ -343,6 +344,7 @@ section("the world: seasons and shocks");
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, "..", "web", "mygame", "market-data.generated.js"), "utf8"), sandbox);
   const DEFS = sandbox.window.MARKET_DEFS, open = Object.keys(DEFS).filter((m) => DEFS[m].commodities);
   const cat = JSON.parse(fs.readFileSync(path.join(__dirname, "gear_catalog.json"), "utf8"));
+  const CP = JSON.parse(fs.readFileSync(path.join(__dirname, "market_defs.json"), "utf8")).commodity;
   // determinism and range of one maker's output
   ok(W.output(7, "rv", "iron_ore", 123.4, [1, 1, 1, 1]) === W.output(7, "rv", "iron_ore", 123.4, [1, 1, 1, 1]), "the same seed, tile, good and day always give the same output");
   ok(W.output(7, "rv", "iron_ore", 50, [1, 1, 1, 1]) !== W.output(8, "rv", "iron_ore", 50, [1, 1, 1, 1]) || W.output(7, "rv", "iron_ore", 90, [1, 1, 1, 1]) !== W.output(8, "rv", "iron_ore", 90, [1, 1, 1, 1]), "a different seed gives a different history");
@@ -365,26 +367,31 @@ section("the world: seasons and shocks");
     ok(M.validate(def).length === 0, mid + " derived for day " + day + " validates");
     Object.keys(def.goods).forEach((gid) => {
       const g = def.goods[gid], g0 = DEFS[mid].goods[gid];
-      if (g.worldRatio !== undefined) { minLevel = Math.min(minLevel, g.mult / g0.mult); maxLevel = Math.max(maxLevel, g.mult / g0.mult); }
+      if (g.worldRatio !== undefined) { minLevel = Math.min(minLevel, g.mult); maxLevel = Math.max(maxLevel, g.mult / (g.hi || CP.band.max)); }
       const st = M.init(def, day); st.purse = 1e9;
       [1, 3, 9].forEach((k) => { const b = M.quote(st, def, { buy: { [gid]: k } }, null); if (!b.ok || !b.buy.length) return; const q = b.buy[0].qty; const st2 = M.commit(st, def, b, day); const sl = M.quote(st2, def, { sell: { [gid]: q } }, null); if (!sl.ok || !sl.sell.length) return; cases++; worstRt = Math.max(worstRt, sl.sellTotal - b.buyTotal); });
     });
   }));
   ok(worstRt <= 0, "a round trip loses money at every merchant on every sampled day, " + cases + " cases (best " + worstRt + ")");
-  ok(minLevel >= 0.6 - 1e-9 && maxLevel <= 2 + 1e-9, "the world scales a price level between 0.6 and 2 (" + minLevel.toFixed(2) + " to " + maxLevel.toFixed(2) + ")");
-  // the 2x cap: no ask is ever above twice the base price, with the world and an empty shelf together
+  ok(minLevel >= CP.band.min - 1e-9 && maxLevel <= 1 + 1e-9, "the world keeps a price level inside the band, " + CP.band.min + " times the base up to its own top (lowest " + minLevel.toFixed(2) + ", highest " + maxLevel.toFixed(2) + " of its top)");
+  // the band: no ask is ever above its good's top (1.5 times the base; a far good's widens), with the world and an empty shelf together
   let capBreaks = 0, capCases = 0, capWorst = 0;
   for (let seed = 1; seed <= 8; seed++) for (let day = 5; day <= 360; day += 25) Object.keys(DEFS).forEach((mid) => {
     const def = W.derive(DEFS[mid], day, seed), st = M.init(def, day); st.purse = 1e9;
     Object.keys(def.goods).forEach((gid) => {
       const g = def.goods[gid]; if (g.fixed || g.sells === false) return;
       st.stock[gid] = 1; const b = M.quote(st, def, { buy: { [gid]: 1 } }, null); if (!b.ok || !b.buy.length) return;
-      capCases++; capWorst = Math.max(capWorst, b.buyTotal / g.base); if (b.buyTotal > Math.ceil(2 * g.base)) capBreaks++;
+      capCases++; capWorst = Math.max(capWorst, b.buyTotal / g.base); if (b.buyTotal > Math.ceil((g.hi || CP.band.max) * g.base)) capBreaks++;
     });
   });
-  ok(capBreaks === 0, "no ask in " + capCases + " cases is above twice the base price (worst " + capWorst.toFixed(2) + " times, rounding up)");
-  ok(M.ask(8, 0, 10, 1.9) <= 16 + 1e-9 && M.bid(8, 0, 10, 0.8, 1.9) <= 16 * 0.8 + 1e-9, "the ask and the payout are both capped at twice the base price");
-  ok(M.ask(8, 500, 10, 0.5) >= 4 - 1e-9 && M.bid(8, 500, 10, 0.8, 0.5) >= 4 * 0.8 - 1e-9, "and neither falls below half the base price, so a glut never prices a pumpkin at nothing");
+  ok(capBreaks === 0, "no ask in " + capCases + " cases is above the top of its band (worst " + capWorst.toFixed(2) + " times, rounding up)");
+  ok(M.ask(8, 0, 10, 1.9) <= 8 * CP.band.max + 1e-9 && M.bid(8, 0, 10, 0.8, 1.9) <= 8 * CP.band.max * 0.8 + 1e-9, "the ask and the payout are both capped at the top of the band (" + CP.band.max + " times the base price)");
+  ok(M.ask(8, 500, 10, 0.5) >= 8 * CP.band.min - 1e-9 && M.bid(8, 500, 10, 0.8, 0.5) >= 8 * CP.band.min * 0.8 - 1e-9, "and neither falls below the bottom of it (" + CP.band.min + " times), so a glut never prices a pumpkin at nothing");
+  // a far good's own top widens with the miles (tools/commodity_range.js): a salt 600 miles from its maker may reach the ceiling, never more; a local good never leaves the band at any distance
+  const salt = { commodity: { range: "far" } }, fish = { commodity: { range: "local" } };
+  ok(CR.topOf(salt, CP, 0) === CP.band.max && CR.topOf(salt, CP, 300) > CP.band.max && CR.topOf(salt, CP, 600) === CP.classes.far.ceiling && CR.topOf(salt, CP, 6000) === CP.classes.far.ceiling, "a far good's top widens with the miles from its nearest maker, to the ceiling (" + CR.topOf(salt, CP, 300) + " at 300 miles, " + CR.topOf(salt, CP, 600) + " at 600)");
+  ok(CR.topOf(fish, CP, 6000) === CP.band.max && CR.reachOf(fish, CP) === CP.classes.local.reach && CR.reachOf(salt, CP) === Infinity, "a local good keeps to the band at any distance, and only a far good has no reach limit");
+  ok(M.ask(8, 0, 10, 3, CR.topOf(salt, CP, 600)) <= 8 * CP.classes.far.ceiling + 1e-9 && M.ask(8, 0, 10, 3, CR.topOf(salt, CP, 600)) > 8 * CP.band.max, "the market honours a good's own top: a far shortage may pass the band, never the ceiling");
   // chains: a mine's bad spell thins the bars at the forge and lifts the smith's price a few days later
   let lowBar = 0, lowN = 0, highBar = 0, highN = 0, lowAxe = 0, highAxe = 0, axeMin = Infinity, axeMax = 0;
   for (let seed = 1; seed <= 40; seed++) for (let day = 10; day <= 360; day += 4) {
@@ -443,7 +450,7 @@ section("reach, need and appetite");
   const st = M.init(dep, 0); st.purse = 1e9;
   const pay = (id) => M.quote(st, dep, { sell: { [id]: 1 } }, null).sellTotal, charge = (id) => M.quote(Object.assign({}, st, { stock: { staple: 5, luxury: 5 } }), dep, { buy: { [id]: 1 } }, null).buyTotal;
   ok(pay("luxury") < pay("staple"), "a short market pays less for a good it needs little (" + pay("luxury") + " copper) than for one it needs (" + pay("staple") + ")");
-  ok(pay("staple") <= 20 * 0.8 + 1e-9 && pay("luxury") >= 5 * 0.8 - 1e-9, "and the payout stays between the floor and twice the base price");
+  ok(pay("staple") <= 20 * 0.8 + 1e-9 && pay("luxury") >= 5 * 0.8 - 1e-9, "and the payout stays between the bottom and the top of the band");
   ok(charge("luxury") === charge("staple"), "while what the market CHARGES for a short good is the same whatever it needs (" + charge("luxury") + " copper)");
   // an unstocked good pays no premium at all
   const dun = mkDef({ wool: g({ stock0: 0, target: 3, unstocked: true, sells: false, need: 0.4 }) }), stu = M.init(dun, 0); stu.purse = 1e9;
