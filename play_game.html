@@ -47253,6 +47253,7 @@ window.AMBIENCE_V = {"bathhouse_ambience":"tn030s","city_day":"tmxmza","city_ind
     harbor:        { all: "medieval_harbour" },
     dredge_end:    { all: "medieval_slums" },
     village:       { day: "generic_village", night: "generic_village_town_night" },
+    village_room:  { day: "generic_village", night: "generic_village_town_night", level: 0.18, indoor: true },
     woodland:      { day: "woodland_village", night: "generic_village_town_night" },
     shop:          { all: "city_indoor", indoor: true },
     civic_indoor:  { all: "city_indoor", indoor: true },
@@ -47295,7 +47296,7 @@ window.AMBIENCE_V = {"bathhouse_ambience":"tn030s","city_day":"tmxmza","city_ind
     generic_town_inn: "tavern",
     generic_town_inn_room: "lodgings",
     generic_village_inn: "tavern",
-    generic_village_inn_room: "lodgings",
+    generic_village_inn_room: "village_room",
     generic_quiet_lodgings: "lodgings",
     shared_factors_hall: "factors_hall",
     middle_ward_bathhouse: "bathhouse",
@@ -47325,6 +47326,7 @@ window.AMBIENCE_V = {"bathhouse_ambience":"tn030s","city_day":"tmxmza","city_ind
   // ambience beneath them. Each level is deliberately below a full bed.
   var OVERLAY = {
     alderford: [{ all: "watermill_ambience_needs_to_be_layered_on_top_water_and_mill_sound_only", level: 0.34 }],
+    generic_village_inn_room: [{ day: "quiet_tavern", night: "crowded_tavern", level: 0.24 }],
     black_sinks_causeway_before: [{ day: "marshland_ambience_wind_birds_shallowwater_reeds", night: "marshland_night_crickets_shallowwater_ambience", level: 0.24 }],
     black_sinks_captured_gatehouse_bivouac: [{ all: "wind_against_stone_creeking_timber_distantsound_needstobelayerd", level: 0.22 }],
     black_sinks_gilded_scales_toll_fort: [{ all: "wind_against_stone_creeking_timber_distantsound_needstobelayerd", level: 0.18 }],
@@ -47374,8 +47376,11 @@ window.AMBIENCE_V = {"bathhouse_ambience":"tn030s","city_day":"tmxmza","city_ind
     if (p) {
       var sp = p.spec, siege = p.kind === "siege";
       if (siege) put(s.squad === "cadre" && has("siege_with_magic") ? "siege_with_magic" : "siege_battle", 1);
-      else if (sp.all) put(sp.all, 1);
-      else { put(sp.day, d); put(sp.night, 1 - d); }
+      else {
+        var placeLevel = Number(sp.level) || 1;
+        if (sp.all) put(sp.all, placeLevel);
+        else { put(sp.day, d * placeLevel); put(sp.night, (1 - d) * placeLevel); }
+      }
     }
     // Never attach this to a romance, a room, or a person: it is only set for an explicit,
     // player-selected intimacy passage, and is deliberately quiet beneath the indoor bed.
