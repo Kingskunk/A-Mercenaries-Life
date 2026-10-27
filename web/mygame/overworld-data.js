@@ -23,7 +23,7 @@
  * night line), so the approach to a town looks different by lamplight or in a gale; overworld.txt ow_here picks one. Each is a plain sentence or two, no people to be named.
  * also (optional) is a second terrain for a tile that is two things at once (a road through hills, wooded hills): one of the same kinds, drawn as a ring of its colour round the tile's own colour, and named
  * on the card ("Forest and hills"). It changes nothing else. kind picks the tile's colour in the panel: "city", "town", "village", "fort", "road", "woodroad", "hills", "forest" (add a kind here and a colour in overworldmap.css). "woodroad" is a made road with the trees close on both sides (the Longshade Edge): for road events and forest events it counts as BOTH a road and a forest (kindIn below), so it meets the stranger, the lamp, the cart and the beasts, and has its own colour so it reads apart from the deep forest.
- * territory (required) is who holds the tile: an id in TERRITORIES below. Every tile so far belongs to the Gilded Scales (the user's call, 2026-10-08). It is data only for now: nothing in the panel or the
+ * territory (required) is the jurisdiction that holds the tile: an id in TERRITORIES below. Every tile so far belongs to the Valen Reach under the Gilded Scales (the user's call, 2026-10-08). It is data only for now: nothing in the panel or the
  * scenes reads it yet, so it is the place to hang tolls, patrols, escort pay and danger by owner later. A new territory is one entry in TERRITORIES.
  * ford (optional, true): a crossing of running water the road makes here, where a road event (the ford) can happen; the event reads how high the water is from the weather's memory.
  * danger (optional, 0 to 3, default 0) is how rough the LAND is for a caravan before anyone patrols it: 0 safe, 1 uneasy, 2 rough, 3 dangerous. The EFFECTIVE danger is that number plus the patrol of the territory that holds the tile
@@ -63,7 +63,7 @@
   // Who holds the land. Add a territory here and give its tiles its id.
   // patrol shifts the danger of every tile the territory holds (see danger above): a negative number is a patrolled road, a positive one a lawless one. The Scales keep the river road patrolled.
   var TERRITORIES = {
-    scales: { name: "The Gilded Scales", patrol: -1 }
+    scales: { name: "The Valen Reach", ruler: "The Gilded Scales", patrol: -1 }
   };
 
   // How each terrain walks, as a percent of a road mile's time. "blocked" has no pace: it is never walked. name is what the map card calls the ground.

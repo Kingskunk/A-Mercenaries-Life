@@ -496,14 +496,14 @@
     {
       id: "marlcross", category: "places", title: "Marlcross",
       sub: "The eastern rye and milling village",
-      tags: ["Eastern Grainlands", "Trade"], aliases: ["grain green", "cross hall", "windmill", "rye", "milling fair", "eastern high ground"],
+      tags: ["Valen Reach", "Eastern Grainlands", "Trade"], aliases: ["grain green", "cross hall", "windmill", "rye", "milling fair", "eastern high ground"],
       link: ["Marlcross"],
       unlock: "mc_seen",
       body: [
         "A village where the High Grey Road meets three farm tracks on the eastern high ground. Its surrounding fields are known for rye: sacks come to the Grain Green to be weighed, then go on to the drying floors, windmill, or raised storehouses.",
         "The old stone cross and the Cross Hall stand at the meeting of the roads. Its annual Milling Fair turns the Grain Green into a day of pies, prizes, and a very public contest."
       ],
-      see: ["sella_morren", "tamsin_pike"]
+      see: ["valen_reach", "sella_morren", "tamsin_pike"]
     },
 
     /* -------------------------------------------------------- PLACES: TIDAL FLATS */
@@ -511,14 +511,14 @@
     {
       id: "brinewick", category: "places", title: "Brinewick",
       sub: "Salt village on the western tidal flats",
-      tags: ["Western Tidal Flats", "Trade"], aliases: ["Tide House", "Reedhouse", "Slip Market", "Saltworks", "salt pans", "brine beds"],
+      tags: ["Valen Reach", "Western Tidal Flats", "Trade"], aliases: ["Tide House", "Reedhouse", "Slip Market", "Saltworks", "salt pans", "brine beds"],
       link: ["Brinewick"],
       unlock: "bw_seen",
       body: [
         "A village built inside an earthen bank where the road meets the tidal flats. Brinewick makes salt by letting brine stand in shallow beds, then boiling it in peat-fired pan sheds.",
         "The raised Tide House is its refuge and council room; salt, fish and road goods trade at the narrow loading slip. The Reedhouse and its stable yard sit on the highest ground by the road gate."
       ],
-      see: ["hesta_rill", "nessa_cale"]
+      see: ["valen_reach", "hesta_rill", "nessa_cale"]
     },
 
     /* ------------------------------------------------------------- PLACES: THE CITY */
@@ -1555,9 +1555,12 @@
         if (truthy(s.ysolde_ostrand_told)) {
           out.push("The Carrion's Cadre handler, [[ysolde|Ysolde]], carries the house's name. She says the house set its insurance prices from river charts she drew, and that she left over who was allowed to read them.");
         }
+        if (truthy(s.met_morzan)) {
+          out.push("[[house_morzan|House Morzan]] of Alderford is a recognized cadet branch. Its merchant lord holds Alderford's factor's chair by appointment of the full Council of Factors, not by Ostrand inheritance.");
+        }
         return out;
       },
-      see: ["upper_wharves", "pq_house_halloran", "pq_house_vantry", "ysolde"]
+      see: ["upper_wharves", "pq_house_halloran", "pq_house_vantry", "ysolde", "house_morzan", "morzan"]
     },
     {
       id: "gilt_needle", category: "places", title: "The Gilt Needle",

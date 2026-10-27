@@ -150,6 +150,8 @@ const MAP = {
   butter: "../Generic/Butter_Generated_Source.png",                      // the user's own art (2026-10-25)
   animal_fat: "../Generic/Animal_Fat_Generated_Source.png",              // the user's own art (2026-10-25)
   salt: "../Generic/Salt_Generated_Source.png",                         // the user's own art (2026-10-24)
+  trash_can_closed: "../Generic/trash_can_closed.png",                  // the user's own art (2026-10-26): the discard target that appears while dragging an item
+  trash_can_open: "../Generic/trash_can_open.png",                      // the user's own art (2026-10-26): shown while an item is held over it
   beeswax: "../Generic/Beeswax_Generated_Source.png",                  // the user's own art (2026-10-25)
   charcoal: "../Generic/Charcoal_Generated_Source.png",                  // the user's own art (2026-10-24)
   scrap: "Clutter_AdamantineScrap_Unfaded_Icon.webp",

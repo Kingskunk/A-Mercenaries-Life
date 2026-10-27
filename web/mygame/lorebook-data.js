@@ -425,14 +425,16 @@
       },
       {
         id: "morzan", category: "people", title: "Factor Morzan",
-        sub: "Factor of the Gilded Scales",
-        role: "Guild factor of the Gilded Scales, Alderford Factor's Hall",
-        link: ["Morzan", "Factor Morzan"],
-        tags: ["Alderford"], aliases: ["Factor Morzan", "Morzan", "Factor's Hall", "factor"],
+        sub: "Merchant lord and Factor of Alderford",
+        role: "Merchant Lord of House Morzan; Gilded Scales factor, Alderford Factor's Hall",
+        link: ["Morzan", "Factor Morzan", "Merchant Lord Morzan"],
+        tags: ["Alderford", "Gilded Scales"], aliases: ["Factor Morzan", "Merchant Lord Morzan", "Morzan", "Factor's Hall", "factor", "merchant lord"],
         unlock: "met_morzan",
         body: function (s) {
           var out = [
-            "The Gilded Scales' factor in Alderford. He receives the company's vouchers, checks their seals, and decides when the Hall will release payment.",
+            "The Gilded Scales' factor and merchant lord in Alderford. He heads [[house_morzan|House Morzan]], a cadet house of Ostrand whose interests lie in cargo bonds, river freight and the contracts that carry both toward Port Valen.",
+            "The collective Council of Factors appointed him to Alderford's factor's chair. His house gives him rank and powerful connections, but the office is a Council charge rather than a private Ostrand grant, and another Council appointment can replace him.",
+            "He controls the Scales' administration in Alderford and its customs district: contracts, official weights, tolls, bonded stores and payments that pass through the town. Whitefold and Redvein keep their own local councils, but their outward contracts and disputed trade agreements reach his Hall.",
             "His office is at the back of Alderford's Factor's Hall on the customs slip. Chief Clerk Orlov runs the public counter."
           ];
           if (truthy(s.rennick_reported)) {
@@ -446,7 +448,19 @@
           }
           return out;
         },
-        see: ["gilded_scales", "rennick", "talia", "bran", "orlov", "alderford", "letters_of_credit"]
+        see: ["house_morzan", "pq_house_ostrand", "gilded_scales", "rennick", "talia", "bran", "orlov", "alderford", "letters_of_credit"]
+      },
+      {
+        id: "house_morzan", category: "factions", title: "House Morzan",
+        sub: "An Ostrand cadet house seated at Alderford",
+        link: ["House Morzan"],
+        tags: ["Alderford", "Gilded Scales", "Trade"], aliases: ["Morzan house", "Ostrand cadet house", "cadet house"],
+        unlock: "met_morzan",
+        body: [
+          "A merchant-lord house seated at Alderford and a recognized cadet branch of [[pq_house_ostrand|House Ostrand]]. Its position grew from cargo bonds, letters of credit, insured freight and the contract traffic that meets the Grey at Alderford before moving downriver.",
+          "Its head, [[morzan|Factor Morzan]], holds Alderford's factor's chair by appointment of the collective Council of Factors. The Ostrand connection supports the house, but does not own the office: the Factor administers the Gilded Scales' full customs district and answers to the Council that appointed him."
+        ],
+        see: ["morzan", "pq_house_ostrand", "gilded_scales", "alderford", "valen_reach", "letters_of_credit"]
       },
       {
         id: "orlov", category: "people", title: "Chief Clerk Orlov",
@@ -689,14 +703,14 @@
         id: "gilded_scales", category: "factions", title: "The Gilded Scales",
         link: ["Gilded Scales"],
         sub: "Merchant cartel and paymasters",
-        tags: ["Port Valen", "Trade"], aliases: ["Scales", "First Factor", "Council of Factors", "cartel", "factors", "free city", "Free City", "plutocracy"],
+        tags: ["Port Valen", "Valen Reach", "Trade"], aliases: ["Scales", "First Factor", "Council of Factors", "cartel", "factors", "free city", "Free City", "plutocracy"],
         unlock: "codex_gilded_scales",
         meter: { stat: "gilded_scales_rep", label: "Standing with the Gilded Scales" },
         body: [
-          "A cartel of river merchants and guild-masters based in Port Valen, with its head house on Civic Heights beside the Council Hall and its merchant houses' estates in the Patrician Quarter. They hold the timber trade, the grain barges, and the river toll-gates across the province. Through the Council, they fund Valen's war charter; their clerks book the Carrion's stores, pay, and road costs, but cannot give the company field orders.",
+          "A cartel of river merchants and guild-masters based in Port Valen, with its head house on Civic Heights beside the Council Hall and its merchant houses' estates in the Patrician Quarter. They hold the timber trade, the grain barges, and the river toll-gates throughout [[valen_reach|the Valen Reach]]. Through the Council, they fund Valen's war charter; their clerks book the Carrion's stores, pay, and road costs, but cannot give the company field orders.",
           "The cartel is led by a <b>First Factor</b>, who speaks for the Scales on war, treaty, and city policy. The First Factor answers to the Council of Factors, the ruling council of Port Valen, made up of the senior merchant houses. Below them, appointed officers run records, taxes, courts, and the Port Watch. Port Valen holds the old imperial title of a free city, and no crown rules it."
         ],
-        see: ["port_valen", "port_watch", "letters_of_credit", "alderford", "council", "upper_wharves", "debtor_crews"]
+        see: ["valen_reach", "port_valen", "port_watch", "letters_of_credit", "alderford", "council", "upper_wharves", "debtor_crews"]
       },
       {
         id: "port_watch", category: "factions", title: "The Port Valen Watch",
@@ -814,7 +828,7 @@
         tags: ["Regional", "Trade"], aliases: ["Marches", "frontier", "borderland", "map", "regions", "economy", "trade", "goods", "powers"],
         body: function (s) {
           var out = [
-            "A frontier borderland between the coastal routes and the northern highlands. Highland valleys lie north of the Grey River, downland and farms west of it, and peat bogs and reed flats east of it. The river runs south to Port Valen."
+            "A frontier borderland between the coastal routes and the northern highlands. Highland valleys lie north of the Grey River, downland and farms west of it, and peat bogs and reed flats east of it. The river runs south through [[valen_reach|the Valen Reach]] to Port Valen."
           ];
           var held = [];
           if (truthy(s.codex_stenmark)) {
@@ -832,13 +846,29 @@
           }
           return out;
         },
-        see: ["port_valen", "alderford", "black_sinks", "broken_crags", "stenmark", "karrs_keep", "ashbrook", "house_gault", "western_vale", "skell", "great_sedge", "grey_river"]
+        see: ["valen_reach", "port_valen", "alderford", "black_sinks", "broken_crags", "stenmark", "karrs_keep", "ashbrook", "house_gault", "western_vale", "skell", "great_sedge", "grey_river"]
+      },
+      {
+        id: "valen_reach", category: "places", title: "The Valen Reach",
+        link: ["Valen Reach"],
+        sub: "The river territory governed from Port Valen",
+        tags: ["Regional", "Port Valen", "Gilded Scales", "Trade"], aliases: ["Reach", "Valen territory", "Valen hinterland", "the province", "Scales territory", "Free City of Port Valen and the Valen Reach"],
+        unlock: function (s) {
+          return truthy(s.codex_gilded_scales) || truthy(s.codex_port_valen) || truthy(s.port_valen_hub_seen) ||
+            truthy(s.codex_alderford) || truthy(s.timbermouth_seen) || truthy(s.bc_seen) || truthy(s.ah_seen) ||
+            truthy(s.bw_seen) || truthy(s.mc_seen) || truthy(s.wf_seen) || truthy(s.rv_seen);
+        },
+        body: [
+          "The river territory governed from Port Valen, extending from the coast along the Grey River and the Ashrun into the settlements of the interior. Its roads, toll posts and river trade bind its towns and villages to the free city.",
+          "The Gilded Scales administer the Reach through factors, customs houses, toll collectors, courts and local officials recognized by the Council of Factors. Port Valen retains the old imperial title of a free city, but its authority reaches far beyond its walls. The Reach has no king or hereditary ruler; charters, contracts and merchant power hold it together. Formal documents style the polity <i>the Free City of Port Valen and the Valen Reach</i>."
+        ],
+        see: ["grey_marches", "port_valen", "gilded_scales", "port_watch", "alderford", "timbermouth", "barleycross", "ashrun_holt", "marlcross", "brinewick", "whitefold", "redvein", "grey_river"]
       },
       {
         id: "port_valen", category: "places", title: "Port Valen",
         link: ["Port Valen"],
         sub: "A free port where the Grey River meets the sea",
-        tags: ["Port Valen"], aliases: ["Port Valen", "Dredge-End", "Patrician Quarter", "free city", "Free City", "Council", "capital"],
+        tags: ["Port Valen", "Valen Reach"], aliases: ["Port Valen", "Dredge-End", "Patrician Quarter", "free city", "Free City", "Council", "capital"],
         unlock: function (s) {
           return truthy(s.codex_port_valen) || truthy(s.port_valen_hub_seen) || truthy(s.port_valen_harbor_seen) ||
             truthy(s.dredge_end_seen) || truthy(s.mw_seen) || truthy(s.civic_heights_seen) || truthy(s.upper_wharves_seen) ||
@@ -853,28 +883,28 @@
             truthy(s.pq_tailor_seen) || truthy(s.pq_estates_seen);
         },
         body: [
-          "A port city built where the Grey River comes down out of its limestone gorge and spreads into the estuary. The river reaches it from a fork in the north, where its two arms meet: the Grey itself, running up to Alderford, and the Ashrun, a smaller stream from the western forest. The city climbs the slope behind the harbor in terraces of slate roofs and grey stone. It calls itself a free city, and has since the Old Charter of Meridian gave it the road and the right to keep its own gate. The doors on the plaza of the Heights all carry the same three-masted seal.",
+          "A port city built where the Grey River comes down out of its limestone gorge and spreads into the estuary. The river reaches it from a fork in the north, where its two arms meet: the Grey itself, running up to Alderford, and the Ashrun, a smaller stream from the western forest. The city climbs the slope behind the harbor in terraces of slate roofs and grey stone. It calls itself a free city, and has since the Old Charter of Meridian gave it the road and the right to keep its own gate. From here, its Council and factors administer [[valen_reach|the Valen Reach]]. The doors on the plaza of the Heights all carry the same three-masted seal.",
           "The city runs down in layers: the Heights with their council hall and bronze scale, the workshops and wagon yards of the Middle Ward, the wharves along the water, and at the canal's edge Dredge-End, a cramped warren of leaning terraces and broken lanes, older and poorer than the rest. The Greybridge crosses the river just above its tidal reach, tying the city to the west-bank road. The landward wall has two gates. The River Gate in the west opens on the Grey River road, which follows the river cuttings north to the fork. There the road to Timbermouth climbs the west arm into the uplands, forty miles from the city. The Charter Gate in the east opens on the old imperial road; its north-east branch, the High Grey Road, crosses the high ground above the Grey to the weir town, thirty miles away."
         ],
-        see: ["gilded_scales", "port_watch", "black_oath", "alderford", "iron_carrion", "harbor_quayside", "dredge_end", "middle_ward", "upper_wharves", "civic_heights", "council", "grey_marches"]
+        see: ["valen_reach", "gilded_scales", "port_watch", "black_oath", "alderford", "iron_carrion", "harbor_quayside", "dredge_end", "middle_ward", "upper_wharves", "civic_heights", "council", "grey_marches"]
       },
       {
         id: "alderford", category: "places", title: "Alderford",
         link: ["Alderford"],
         sub: "The frontier's river weir town & barge port",
-        tags: ["Alderford", "Grey River", "Trade"], aliases: ["Alderford", "weir", "waystation", "salt lofts", "brine", "river town", "logging slips"],
+        tags: ["Alderford", "Valen Reach", "Grey River", "Trade"], aliases: ["Alderford", "weir", "waystation", "salt lofts", "brine", "river town", "logging slips"],
         unlock: "codex_alderford",
         meter: { stat: "alderford_rep", label: "Standing in Alderford" },
         body: [
           "A river town built around an old imperial limestone weir, where the highland road down from the Crags reaches the head of the Grey and the river drops away toward the gorge. Sawmills crowd the bank above the falls. Below them stand warehouses, curing lofts, and muddy wharves where the barges tie up to load for the downriver run. The brine trade is the town's spine: carts bring salt up the High Grey Road from Valen, and the river catch is split, cured, dried, and packed into firkins for the run downriver.",
           "North of town, the Coldspine runs east and west across the whole of the north as a broken mountain barrier, with few passes fit for wagons or an army and a fort in each. Its southern foothills supply stone, wool and ore. In the east its last low spur comes down toward the Black Sinks, and the only practical freight way east uses the narrow ground between that spur and the marsh, which is why the old gatehouse there matters to every loaded wagon."
         ],
-        see: ["port_valen", "grey_river", "sanctuary_charter", "gilded_scales", "imperial_booms", "meridian_empire", "saint_althea", "iron_carrion", "grey_marches", "carters_lot_af", "pells_stores", "whitefold", "redvein"]
+        see: ["valen_reach", "port_valen", "grey_river", "sanctuary_charter", "gilded_scales", "imperial_booms", "meridian_empire", "saint_althea", "iron_carrion", "grey_marches", "carters_lot_af", "pells_stores", "whitefold", "redvein"]
       },
       {
         id: "whitefold", category: "places", title: "Whitefold",
         sub: "A limestone and sheep village in the Coldspine foothills",
-        tags: ["Alderford", "Coldspine", "Trade"], aliases: ["Coldspine foothills", "Limestone Cut", "Fleecefold", "Quarry Yard", "White Ram", "lime kilns", "sheep village"],
+        tags: ["Alderford", "Valen Reach", "Coldspine", "Trade"], aliases: ["Coldspine foothills", "Limestone Cut", "Fleecefold", "Quarry Yard", "White Ram", "lime kilns", "sheep village"],
         link: ["Whitefold"],
         unlock: "wf_seen",
         body: function (s) {
@@ -893,12 +923,12 @@
           }
           return out;
         },
-        see: ["alderford", "edda_cale", "nerin_bale", "hessa_vail", "perrin_holt"]
+        see: ["valen_reach", "alderford", "edda_cale", "nerin_bale", "hessa_vail", "perrin_holt"]
       },
       {
         id: "redvein", category: "places", title: "Redvein",
         sub: "A mining village in the Coldspine foothills",
-        tags: ["Alderford", "Coldspine", "Trade"], aliases: ["Eastcut", "Eastcut Market", "Eastcut Road", "Gather House", "Red Lantern", "iron ore", "mining village"],
+        tags: ["Alderford", "Valen Reach", "Coldspine", "Trade"], aliases: ["Eastcut", "Eastcut Market", "Eastcut Road", "Gather House", "Red Lantern", "iron ore", "mining village"],
         link: ["Redvein"],
         unlock: "rv_seen",
         body: function (s) {
@@ -917,7 +947,7 @@
           }
           return out;
         },
-        see: ["alderford", "mara_venn", "ilyra_fen"]
+        see: ["valen_reach", "alderford", "mara_venn", "ilyra_fen"]
       },
       {
         id: "pells_stores", category: "places", title: "Pell's Stores",
@@ -958,12 +988,12 @@
         id: "grey_river", category: "places", title: "The Grey River",
         link: ["Grey River"],
         sub: "Alderford to Port Valen by water",
-        tags: ["Grey River"], aliases: ["Grey River", "river gorge", "downriver", "waterway", "downriver run"],
+        tags: ["Grey River", "Valen Reach"], aliases: ["Grey River", "river gorge", "downriver", "waterway", "downriver run"],
         unlock: "codex_river_gorge",
         body: [
           "A wide navigable river running between limestone bluffs from Alderford to Port Valen. Above the weir there is road but no barge water. The current carries loaded boats south; crews work far harder to bring them back. Cold spray, river damp and old imperial works make the gorge a waterman's road."
         ],
-        see: ["alderford", "port_valen", "imperial_booms", "grey_marches"]
+        see: ["valen_reach", "alderford", "port_valen", "imperial_booms", "grey_marches"]
       },
       {
         id: "black_sinks", category: "places", title: "The Black Sinks Causeway",
@@ -982,7 +1012,7 @@
           }
           return out;
         },
-        see: ["squatters", "gilded_scales", "meridian_empire", "iron_carrion", "grey_river", "alderford", "grey_marches", "great_sedge", "stenmark"]
+        see: ["squatters", "gilded_scales", "valen_reach", "meridian_empire", "iron_carrion", "grey_river", "alderford", "grey_marches", "great_sedge", "stenmark"]
       },
       {
         id: "broken_crags", category: "places", title: "The Highland Crags",
@@ -1138,9 +1168,9 @@
         tags: ["Trade", "Law"], aliases: ["credit", "banking", "counting house", "vault", "tariff", "tolls"],
         unlock: "codex_letters_of_credit",
         body: [
-          "The Gilded Scales' banking system, built so river trade can move without iron-bound coin chests on roads full of bandits. Merchants and mercenary companies leave silver at a regional counting house and receive a wax-sealed parchment draft. Any allied vault in the province pays it out in full, minus a fee."
+          "The Gilded Scales' banking system, built so river trade can move without iron-bound coin chests on roads full of bandits. Merchants and mercenary companies leave silver at a regional counting house and receive a wax-sealed parchment draft. Any allied vault in the Valen Reach pays it out in full, minus a fee."
         ],
-        see: ["gilded_scales"]
+        see: ["gilded_scales", "valen_reach"]
       },
       {
         id: "sanctuary_charter", category: "history", title: "The Chapel's Sanctuary",

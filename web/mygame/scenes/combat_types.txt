@@ -126,6 +126,31 @@
   *set {(("combat_enemy" & aes_slot) & "_size")} aes_size
 *return
 
+*label assign_enemy_creature_type
+*comment Stable rules-facing taxonomy for items, abilities, and future encounter logic. Add every new enemy
+*comment library archetype here; tools/check_enemy_creature_types.js rejects an unclassified archetype.
+*comment Allowed values: humanoid, beast, plant, undead. An empty value is reserved for hand-authored or
+*comment legacy combatants that have not opted into the shared type library.
+*params aect_slot aect_type
+*temp aect_value ""
+*if ((((aect_type = "swordsman") or (aect_type = "axeman")) or (aect_type = "knifeman")) or (aect_type = "maceman"))
+  *set aect_value "humanoid"
+*if ((((aect_type = "spearman") or (aect_type = "hookman")) or (aect_type = "archer")) or (aect_type = "slinger"))
+  *set aect_value "humanoid"
+*if ((aect_type = "guard") or (aect_type = "hedge_mage"))
+  *set aect_value "humanoid"
+*if ((aect_type = "beast") or (aect_type = "mire_rat"))
+  *set aect_value "beast"
+*if (aect_type = "twig_blight")
+  *set aect_value "plant"
+*if (aect_type = "lacedon")
+  *set aect_value "undead"
+*if (aect_slot = 1)
+  *set combat_enemy_creature_type aect_value
+*else
+  *set {(("combat_enemy" & aect_slot) & "_creature_type")} aect_value
+*return
+
 *label apply_ability_score_range
 *comment Ability scores, one score for one slot: rolls each of the six for a type-library enemy, feeding
 *comment initiative and the derived combat-bonus/AC/HP labels below. The manual per-slot override wins if set
@@ -339,6 +364,7 @@
   *gosub apply_type_twig_blight
 *gosub assign_enemy_behavior_profile combat_apply_slot combat_apply_type
 *gosub assign_enemy_size combat_apply_slot combat_apply_type
+*gosub assign_enemy_creature_type combat_apply_slot combat_apply_type
 *gosub assign_enemy_reach combat_apply_slot combat_apply_type
 *comment Which library type fills this slot. fight_narrate_enemy_turn reads the slot's hit, miss and move-2 prose from
 *comment flavor_from_type by this id, so each type's lines are written once (flavor_type_<name>), not once per slot.

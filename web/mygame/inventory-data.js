@@ -1244,6 +1244,7 @@
     {
       id: "horse", category: "mounts", owned: "has_horse",
       weight: 0,
+      keep: "You would never leave your horse behind.",   // a keep tag (web/mygame/discard.js): the reason it can never be thrown away
       name: function (s) { return String(s.horse_name || "Horse"); },
       description: function (s) { return "Your " + String(s.horse_coat || "") + " " + (s.horse_sex === "gelding" ? "gelding" : "mare") + ", bridled and saddled. You ride on the road: a mile takes about 12 minutes instead of 24. A stable keeps it for 2 copper a day in a town or city and 1 in a village, and it grazes free on the road. Three days unpaid and the stable keeps it." + (Number(s.horse_unpaid_days) > 0 ? " The stable is owed " + Number(s.horse_owed) + " copper (" + Number(s.horse_unpaid_days) + " days unpaid)." : "");; },
       badge: function () { return "Ridden"; }

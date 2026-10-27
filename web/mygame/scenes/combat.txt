@@ -186,6 +186,8 @@
   *set combat_enemy_atk_bonus combat_enemy_atk_override
 *if (not(combat_enemy_size_override = ""))
   *set combat_enemy_size combat_enemy_size_override
+*if (not(combat_enemy_creature_type_override = ""))
+  *set combat_enemy_creature_type combat_enemy_creature_type_override
 *if (not(combat_enemy_dmg_sides_override = 0))
   *set combat_enemy_dmg_dice_sides combat_enemy_dmg_sides_override
 *if (not(combat_enemy_dmg_type_override = ""))
@@ -196,6 +198,7 @@
 *set combat_enemy_ac_override 999
 *set combat_enemy_atk_override 999
 *set combat_enemy_size_override ""
+*set combat_enemy_creature_type_override ""
 *comment Slots 2 and beyond: one generic subroutine (apply_slot_stat_override, below) instead of a hand-copied
 *comment block per slot. Widening combat_enemy_slot_cap later needs no change here.
 *temp fs_ov_i 2
@@ -220,6 +223,7 @@
 *set combat_enemy1_extra_dmg_bonus combat_enemy_extra_dmg_bonus
 *set combat_enemy1_extra_dmg_type combat_enemy_extra_dmg_type
 *set combat_enemy1_size combat_enemy_size
+*set combat_enemy1_creature_type combat_enemy_creature_type
 *set combat_enemy1_epithet combat_enemy_epithet
 *set combat_enemy1_metal_armor combat_enemy_metal_armor
 *set combat_enemy1_dmg_type combat_enemy_dmg_type
@@ -338,6 +342,7 @@
 *temp aso_ac_ov {(aso_p & "ac_override")}
 *temp aso_atk_ov {(aso_p & "atk_override")}
 *temp aso_size_ov {(aso_p & "size_override")}
+*temp aso_creature_type_ov {(aso_p & "creature_type_override")}
 *temp aso_delta 0
 *if (not(aso_hp_ov = 999))
   *set {(aso_p & "hp")} aso_hp_ov
@@ -352,10 +357,13 @@
   *set {(aso_p & "atk_bonus")} aso_atk_ov
 *if (not(aso_size_ov = ""))
   *set {(aso_p & "size")} aso_size_ov
+*if (not(aso_creature_type_ov = ""))
+  *set {(aso_p & "creature_type")} aso_creature_type_ov
 *set {(aso_p & "hp_override")} 999
 *set {(aso_p & "ac_override")} 999
 *set {(aso_p & "atk_override")} 999
 *set {(aso_p & "size_override")} ""
+*set {(aso_p & "creature_type_override")} ""
 *return
 
 *label cri_is_better_than_best
@@ -741,6 +749,7 @@
 *set combat_enemy_extra_dmg_bonus 0
 *set combat_enemy_extra_dmg_type "poison"
 *set combat_enemy_size "medium"
+*set combat_enemy_creature_type ""
 *set combat_enemy_weapon_type "melee"
 *set combat_enemy_behavior_profile "feral"
 *comment Sidearm (2026-09-29, plan §4.1): bare/active-target reset, same place and reason as weapon_type above.
@@ -810,6 +819,7 @@
   *set {(fc_p & "extra_dmg_bonus")} 0
   *set {(fc_p & "extra_dmg_type")} "poison"
   *set {(fc_p & "size")} "medium"
+  *set {(fc_p & "creature_type")} ""
   *set {(fc_p & "weapon_type")} "melee"
   *set {(fc_p & "behavior_profile")} "feral"
   *comment Sidearm (2026-09-29, plan §4.1): per-slot reset, same leftover-state reason as weapon_type above -- a
@@ -884,6 +894,7 @@
   *set {(fc_p & "ac_override")} 999
   *set {(fc_p & "atk_override")} 999
   *set {(fc_p & "size_override")} ""
+  *set {(fc_p & "creature_type_override")} ""
   *comment Ability scores are opt-in like condition/movepool above, not always-set like hp/ac/atk_bonus -- a
   *comment hand-authored fight can be silent about them entirely, so they need an explicit reset to "average
   *comment human" or a later fight in the same slot could otherwise inherit an earlier type-library fight's roll.
@@ -951,6 +962,7 @@
 *set combat_enemy_ac_override 999
 *set combat_enemy_atk_override 999
 *set combat_enemy_size_override ""
+*set combat_enemy_creature_type_override ""
 *comment Bare slot-1 ability scores, same opt-in reset as the numbered slots above.
 *set combat_enemy_strength 10
 *set combat_enemy_dexterity 10
@@ -1021,10 +1033,10 @@
 *comment A fight with one non-lethal slot (combat_nonlethal_slot) reads the flag off the enemy now being attacked.
 *if (combat_nonlethal_slot > 0)
   *set combat_is_nonlethal (combat_active_target = combat_nonlethal_slot)
-*comment The player's strike and finishing lines follow the enemy being attacked (a creature in the same fight as a person, the Burning Grove's Twig Blights beside the mage), not only slot 1.
-*temp fti_ft {(fti_p & "flavor_type")}
-*if (not(fti_ft = ""))
-  *set combat_player_creature ((((fti_ft = "lacedon") or (fti_ft = "mire_rat")) or (fti_ft = "beast")) or (fti_ft = "twig_blight"))
+*comment The active type is the shared hook for type-specific items and abilities. Creature narration follows it
+*comment too, so a mixed fight switches correctly when the player changes targets.
+*set combat_enemy_creature_type {(fti_p & "creature_type")}
+*set combat_player_creature ((not(combat_enemy_creature_type = "")) and (not(combat_enemy_creature_type = "humanoid")))
 *set combat_enemy_name {(fti_p & "name")}
 *set combat_enemy_hp {(fti_p & "hp")}
 *set combat_enemy_max_hp {(fti_p & "max_hp")}
@@ -6079,7 +6091,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *set flb_i + 1
   *goto fight_library_slot_loop
 *set combat_round 1
-*if ((combat_lib_1 = "lacedon") or ((combat_lib_1 = "mire_rat") or (combat_lib_1 = "beast")))
+*if ((not(combat_enemy1_creature_type = "")) and (not(combat_enemy1_creature_type = "humanoid")))
   *gosub_scene combat_types apply_creature_weapon_flavor
 *else
   *gosub_scene combat_types apply_generic_weapon_flavor

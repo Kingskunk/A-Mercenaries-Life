@@ -78,7 +78,7 @@ load("web/mygame/inventory.js");
 // web/scene.js pokes window.Scenery and window.Ambience at every page boundary (2026-10-17); a script run has no browser, so the global object stands in for window. It is made AFTER util.js loads, which takes a defined window to mean a browser.
 if (typeof global.window === "undefined") global.window = global;
 // the economy (trade book, rumors): market_rumor_check reads them through window
-["web/mygame/market-data.generated.js", "web/mygame/world-data.generated.js", "web/mygame/trade-data.generated.js", "web/mygame/market.js", "web/mygame/world.js", "web/mygame/tradebook.js"].forEach(load);
+["web/mygame/market-data.generated.js", "web/mygame/world-data.generated.js", "web/mygame/trade-data.generated.js", "web/mygame/market.js", "web/mygame/world.js", "web/mygame/tradebook.js", "web/mygame/discard-data.generated.js", "web/mygame/discard.js"].forEach(load);
 if (global.World && global.World.setData && global.WORLD_DATA) global.World.setData(global.WORLD_DATA);   // the global object itself, so window.Overworld and the other data files the scenes read through window are found
 
 nav = new SceneNavigator(["startup"]);

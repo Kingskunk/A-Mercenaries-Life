@@ -12,16 +12,21 @@
  *
  * Run: node tools/gen_ui_art.js            (write)
  *      node tools/gen_ui_art.js --check    (exit 1 if web/mygame/uiart.css is missing a name, or a source file is gone)
+ *      node tools/gen_ui_art.js --refresh-png silhouette_fighter ...
+ *                                              (embed selected already-sized PNG sources without rebuilding the other art)
  */
 const { spawn } = require("child_process");
 const fs = require("fs");
+const http = require("http");
 const os = require("os");
 const path = require("path");
 
 const ROOT = path.resolve(__dirname, "..");
 const OUT = path.join(ROOT, "web", "mygame", "uiart.css");
 const CHROME = process.env.CHROME || "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
-const PORT = 9341;
+// A fixed debugging port can be held by a stale Chrome helper and leave fetch() waiting forever.
+// Give each generator run its own port, and bound every connection probe below.
+const PORT = 9300 + Math.floor(Math.random() * 500);
 
 const ART = [
   // name        source (under ICONS/)                    w     h    quality
@@ -33,7 +38,14 @@ const ART = [
   ["hpframe",   "UiElements/Hp_frame.png",               640,  40,  0.92],   // the HP bar casing
   ["slot",      "UiElements/Mini_frame1.png",            96,   96,  0.92],   // HUD slot frame
   ["buttonon",  "UiElements/button_ready_on.png",        192,  96,  0.92],   // crimson button (Level Up)
-  ["silhouette", "UiElements/warrior_silhouette_man.png",  320,  640, 0.9],    // the dark figure behind the paper doll in the Inventory
+  ["silhouette",            "UiElements/warrior_silhouette_man.png",   320, 640, 0.9], // fallback figure behind the Inventory paper doll
+  ["silhouette_fighter",    "UiElements/fighter_silhouette_man.png",   320, 640, 0.9],
+  ["silhouette_barbarian",  "UiElements/barbarian_silhouette_man.png", 320, 640, 0.9],
+  ["silhouette_rogue",      "UiElements/rogue_silhouette_man.png",     320, 640, 0.9],
+  ["silhouette_ranger",     "UiElements/ranger_silhouette_man.png",    320, 640, 0.9],
+  ["silhouette_bard",       "UiElements/bard_silhouette_man.png",      320, 640, 0.9],
+  ["silhouette_wizard",     "UiElements/wizard_silhouette_man_v2.png", 320, 640, 0.9],
+  ["silhouette_warlock",    "UiElements/warlock_silhouette_man.png",   320, 640, 0.9],
   ["btn2on",    "UiElements/button2_ready_on.png",       128,  128, 0.92],   // square bronze-framed crimson button, stretched tall for the HUD's Advance and Retreat
   ["stone",     "UiElements/mid_background.png",         1280, 640, 0.60],   // the dark stone behind everything (nearly black, so it compresses hard)
 
@@ -65,6 +77,8 @@ const ART = [
 const SCENERY_DIR = path.join(ROOT, "scenery");
 const MANIFEST = path.join(ROOT, "web", "mygame", "scenery-data.js");
 const WALL = path.join(ROOT, "Wallpaper");
+// These are intentionally always-night standalone scenes, not the missing half of a day/night pair.
+const SCENE_SINGLE_OVERRIDES = { "prologue_camp_night.png": "prologue_camp_night" };
 // A picture with no _Day / _Night partner (an interior, which looks the same at every hour) is a SINGLE: one file, scenery/<name>.webp, darkened at night by the page.
 // The list scenery-data.js holds is {key: "pair" | "single"}.
 const SCENE_KINDS = {};
@@ -82,6 +96,12 @@ if (fs.existsSync(WALL)) {
     ART.push(["scene_" + key + "_night", "../Wallpaper/" + night, 1672, 0, 0.72]);
   });
   files.forEach((f) => {
+    const forcedKey = SCENE_SINGLE_OVERRIDES[f.toLowerCase()];
+    if (forcedKey) {
+      SCENE_KINDS[forcedKey] = "single";
+      ART.push(["scene_" + forcedKey, "../Wallpaper/" + f, 1672, 0, 0.72]);
+      return;
+    }
     if (partnered[f] || /_(Day|Night)\.[a-z]+$/i.test(f)) return;   // a half of a pair, reported above if its partner is missing
     const key = plain(f.replace(/\.[a-z]+$/i, ""));
     SCENE_KINDS[key] = "single";
@@ -90,6 +110,7 @@ if (fs.existsSync(WALL)) {
 }
 
 const checkOnly = process.argv.includes("--check");
+const refreshAt = process.argv.indexOf("--refresh-png");
 // --scenery: only the place backdrops (the UI art in uiart.css is left alone), and only those whose source picture in /Wallpaper is newer than the copy in /scenery. node compile.js runs
 // `gen_ui_art.js --scenery --check` and, if it says stale, `gen_ui_art.js --scenery`, so changing a picture in /Wallpaper and compiling is all it takes. --force redoes every picture.
 const SCENERY_ONLY = process.argv.includes("--scenery"), FORCE = process.argv.includes("--force");
@@ -116,6 +137,28 @@ function checkSources() {
     if (!fs.existsSync(path.join(ROOT, "ICONS", a[1]))) { console.error("  MISSING source: " + a[1]); bad++; }
   }
   return bad;
+}
+
+// Targeted refresh for already-sized transparent PNGs. This mirrors item-icons' refresh path and is useful when only a few UI assets changed: it preserves every
+// unrelated generated variable and does not require launching the headless-browser resizer.
+if (refreshAt >= 0) {
+  const keys = process.argv.slice(refreshAt + 1), byName = Object.fromEntries(ART.map((a) => [a[0], a]));
+  let css = fs.existsSync(OUT) ? fs.readFileSync(OUT, "utf8") : "", bad = 0;
+  if (!keys.length) { console.error("--refresh-png needs at least one ART name"); process.exit(1); }
+  if (!css) { console.error("uiart.css is missing; run the full generator first"); process.exit(1); }
+  for (const key of keys) {
+    const art = byName[key], src = art && path.join(ROOT, "ICONS", art[1]);
+    if (!art) { console.error("unknown UI art key: " + key); bad++; continue; }
+    if (path.extname(src).toLowerCase() !== ".png" || !fs.existsSync(src)) { console.error(key + " does not resolve to a PNG source"); bad++; continue; }
+    const decl = "  --art-" + key + ": url(\"data:image/png;base64," + fs.readFileSync(src).toString("base64") + "\");";
+    const re = new RegExp("^\\s*--art-" + key + ":.*;$", "m");
+    if (re.test(css)) css = css.replace(re, decl);
+    else css = css.replace(/\n}\s*$/, "\n" + decl + "\n}\n");
+  }
+  if (bad) process.exit(1);
+  fs.writeFileSync(OUT, css);
+  console.log("refreshed " + keys.length + " PNG UI assets in " + path.relative(ROOT, OUT));
+  process.exit(0);
 }
 
 if (checkOnly) {
@@ -145,8 +188,20 @@ const todo = ART.filter((a) => !SCENERY_ONLY || a[0].indexOf("scene_") === 0).fi
 if (SCENERY_ONLY && !todo.length) { writeManifest(); console.log("scenery is up to date"); process.exit(0); }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const getJson = (url, timeoutMs) => new Promise((resolve, reject) => {
+  const req = http.get(url, (res) => {
+    let body = "";
+    res.setEncoding("utf8");
+    res.on("data", (chunk) => { body += chunk; });
+    res.on("end", () => { try { resolve(JSON.parse(body)); } catch (e) { reject(e); } });
+  });
+  req.setTimeout(timeoutMs, () => req.destroy(new Error("debug endpoint timeout")));
+  req.on("error", reject);
+});
 
 (async () => {
+  // Node's fetch/AbortSignal handles may be unref'ed on Windows; keep the process alive until the browser conversion and cleanup have genuinely finished.
+  const keepAlive = setInterval(() => {}, 1000);
   const page = "file:///" + path.join(ROOT, "ICONS").replace(/\\/g, "/") + "/UiElements/Frame_mid.png";   // any file:// page to run in
   const chrome = spawn(CHROME, ["--headless=new", "--disable-gpu", "--allow-file-access-from-files", "--remote-debugging-port=" + PORT, "--no-first-run",
     "--user-data-dir=" + path.join(os.tmpdir(), "cs-uiart-" + Date.now()), page], { stdio: "ignore" });
@@ -155,12 +210,15 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     let list = null;
     for (let i = 0; i < 40; i++) {
       await sleep(250);
-      try { list = await (await fetch("http://127.0.0.1:" + PORT + "/json/list")).json(); if (list.some((t) => t.type === "page")) break; } catch (e) {}
+      try { list = await getJson("http://127.0.0.1:" + PORT + "/json/list", 500); if (list.some((t) => t.type === "page")) break; } catch (e) {}
     }
     const target = list && list.find((t) => t.type === "page");
     if (!target) throw new Error("no browser page appeared (is Chrome at " + CHROME + "? set CHROME=...)");
     ws = new WebSocket(target.webSocketDebuggerUrl);
-    await new Promise((res, rej) => { ws.onopen = res; ws.onerror = rej; });
+    await Promise.race([
+      new Promise((res, rej) => { ws.onopen = res; ws.onerror = rej; }),
+      sleep(5000).then(() => { throw new Error("browser debugging WebSocket did not open"); })
+    ]);
     let id = 0; const pending = new Map();
     ws.onmessage = (ev) => { const m = JSON.parse(ev.data); if (m.id && pending.has(m.id)) { pending.get(m.id)(m); pending.delete(m.id); } };
     const evaluate = (expression) => new Promise((res, rej) => {
@@ -200,6 +258,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     writeManifest();
     if (!SCENERY_ONLY) console.log("wrote " + path.relative(ROOT, OUT) + " (" + Math.round(css.length / 1024) + " KB)");
   } finally {
+    clearInterval(keepAlive);
     if (ws) try { ws.close(); } catch (e) {}
     chrome.kill();
   }

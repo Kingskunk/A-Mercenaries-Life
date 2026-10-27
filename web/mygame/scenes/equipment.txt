@@ -3578,6 +3578,57 @@ You fill the empty @{(jug_fill_n = 1) jug|jugs} from ${jug_refill_source}, then 
   *set {gear_flag_var} false
 *return
 
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment DISCARDING ITEMS (2026-10-26, the user: protected unless clearly junk; web/mygame/discard.js is the one rule). The panel sets discard_item and discard_qty and runs choicescript_stats codex_discard_now, which
+*comment calls this. It asks the SAME rule the panel asked (Discard.status, through *script), so the panel can never talk it into throwing away something protected, and on top of that it refuses a fight, an item the
+*comment character does not have, and the piece being worn (a worn piece can lose only its spare copies). Each copy goes through sell_gear, so the jug's water and the camp kit's wear are handled as in a sale; a
+*comment counted forage item loses exactly the number asked. The item is destroyed: nothing is left on the ground. No time passes. Outputs discard_ok and discard_text (one line, shown in the panel).
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label discard_gear
+*set discard_ok false
+*set discard_text ""
+*if (combat_engaged)
+  *set discard_text "Not in the middle of a fight."
+  *return
+*script var D = window.Discard; var id = String(stats.discard_item); var r = D ? D.status(id, stats) : { ok: false, why: "That cannot be thrown away." }; stats.discard_allowed = !!r.ok; stats.discard_why = r.ok ? "" : String(r.why); stats.discard_worn = !!(D && D.worn(id, stats));
+*if (not(discard_allowed))
+  *set discard_text discard_why
+  *return
+*gosub gear_count discard_item
+*if (gear_qty < 1)
+  *set discard_text "You have none of that."
+  *return
+*temp dg_have gear_qty
+*temp dg_salvage (gear_kind = "salvage")
+*temp dg_n discard_qty
+*if (dg_n < 1)
+  *set dg_n 1
+*if (dg_n > dg_have)
+  *set dg_n dg_have
+*comment A worn piece keeps the one being worn: only its spare copies can go.
+*if ((discard_worn) and (not(dg_salvage)))
+  *if (dg_have < 2)
+    *set discard_text "You are wearing that."
+    *return
+  *if (dg_n > (dg_have - 1))
+    *set dg_n (dg_have - 1)
+*temp dg_name gear_name
+*if (dg_salvage)
+  *set {gear_count_var} (dg_have - dg_n)
+*else
+  *temp dg_i 0
+  *label dg_each
+  *if (dg_i < dg_n)
+    *gosub sell_gear discard_item
+    *set dg_i (dg_i + 1)
+    *goto dg_each
+*set discard_ok true
+*if (dg_n = 1)
+  *set discard_text (("You throw away the " & dg_name) & ".")
+*else
+  *set discard_text ((("You throw away " & dg_n) & (" " & dg_name)) & ".")
+*return
+
 *label use_consumable
 *params uc_item
 *if (not(use_locked)) or (not(locked_use_page_id = page_id))

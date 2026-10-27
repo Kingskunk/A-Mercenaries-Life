@@ -18,7 +18,7 @@
     {
       id: "timbermouth", category: "places", title: "Timbermouth",
       sub: "A road town at the edge of the Longshade",
-      tags: ["Timbermouth", "Gilded Scales", "Trade"], aliases: ["longshade", "longshade ash", "the longshade", "market", "sawmill", "factor's hall"],
+      tags: ["Timbermouth", "Valen Reach", "Gilded Scales", "Trade"], aliases: ["longshade", "longshade ash", "the longshade", "market", "sawmill", "factor's hall"],
       link: ["Timbermouth"],
       unlock: function (s) {
         return truthy(s.timbermouth_seen) || truthy(s.tm_lot_seen) || truthy(s.tm_inn_seen) ||
@@ -28,7 +28,7 @@
         "A road town of timber houses around a paved square, at the edge of the Longshade. Roads lead toward the river, the forest and the farm country, with only gateposts at their mouths.",
         "The Ashrun turns the sawmill below the town, and ranks of graded ash stand beneath open sheds. Workshops, the Market, the Split Pine and the Gilded Scales' Timbermouth Factor's Hall all open from the square."
       ],
-      see: ["gilded_scales", "split_pine", "workshops_lane", "marlows_store", "factors_hall_tm"]
+      see: ["valen_reach", "gilded_scales", "split_pine", "workshops_lane", "marlows_store", "factors_hall_tm"]
     },
 
     {
@@ -146,7 +146,7 @@
     {
       id: "barleycross", category: "places", title: "Barleycross",
       sub: "A farming village six miles from Timbermouth",
-      tags: ["Barleycross", "Timbermouth", "Trade"], aliases: ["farming village", "farm country", "gathering hall", "the lane", "lane market", "common pasture"],
+      tags: ["Barleycross", "Valen Reach", "Timbermouth", "Trade"], aliases: ["farming village", "farm country", "gathering hall", "the lane", "lane market", "common pasture"],
       link: ["Barleycross"],
       unlock: "bc_seen",
       body: function (s) {
@@ -161,7 +161,7 @@
         }
         return out;
       },
-      see: ["wenna_hart", "timbermouth"]
+      see: ["valen_reach", "wenna_hart", "timbermouth"]
     },
 
     {
@@ -203,7 +203,7 @@
     {
       id: "ashrun_holt", category: "places", title: "Ashrun Holt",
       sub: "A forest village on the Ashrun",
-      tags: ["Ashrun Holt", "Timbermouth"], aliases: ["forest village", "the holt", "longhouse", "the landing", "charcoal camp", "old ash"],
+      tags: ["Ashrun Holt", "Valen Reach", "Timbermouth"], aliases: ["forest village", "the holt", "longhouse", "the landing", "charcoal camp", "old ash"],
       link: ["Ashrun Holt"],
       unlock: "ah_seen",
       body: function (s) {
@@ -218,7 +218,7 @@
         }
         return out;
       },
-      see: ["lysa_thorn", "timbermouth"]
+      see: ["valen_reach", "lysa_thorn", "timbermouth"]
     },
 
     {

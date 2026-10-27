@@ -402,7 +402,7 @@
   if (typeof document === "undefined") return; // node tests stop here (mirrors lorebook.js)
 
   var dlg, elDoll, elBag, elTip;
-  var view = { craftTab: "brew", category: "", sel: null, drag: null, dragC: null, slot: null, dragSlot: null, note: "", left: "you", csel: null, qty: 1, craft: "alchemy", box: [null, null, null], boxes: {}, pending: false, craftMsg: "", useMsg: "", dirty: false };
+  var view = { craftTab: "brew", category: "", sel: null, drag: null, dragC: null, slot: null, dragSlot: null, note: "", left: "you", csel: null, qty: 1, craft: "alchemy", box: [null, null, null], boxes: {}, pending: false, craftMsg: "", useMsg: "", dirty: false, confirm: null };
 
   function statsNow() { return window.stats || {}; }
 
@@ -435,6 +435,9 @@
       '<section class="inv-doll" aria-label="Equipment"></section>' +
       '<section class="inv-bag" aria-label="Carried gear"></section>' +
       "</div>" +
+      // The discard target (2026-10-26, the user: a trash can in the empty space at the bottom right, not a strip over the item card). Fixed to the screen corner so it sits outside the panel; shown only while a carried
+      // item is dragged (the class inv-dragging on the dialog), and the open can shows while an item is held over it. Dropping on it opens the usual confirmation.
+      '<div class="inv-trash" data-bin aria-hidden="true"><img class="inv-trash-closed" alt="" src="' + iconSrc("trash_can_closed") + '"><img class="inv-trash-open" alt="" src="' + iconSrc("trash_can_open") + '"><span>Throw away</span></div>' +
       '<div class="inv-tip" id="invTip" role="tooltip"></div>';
     document.body.appendChild(dlg);
 
@@ -450,12 +453,19 @@
     dlg.addEventListener("dragstart", onDragStart);
     dlg.addEventListener("dragend", onDragEnd);
     dlg.addEventListener("dragover", onDragOver);
+    dlg.addEventListener("dragleave", function (ev) { var b = ev.target && ev.target.closest ? ev.target.closest("[data-bin]") : null; if (b && !(ev.relatedTarget && b.contains(ev.relatedTarget))) b.classList.remove("inv-over"); });
     dlg.addEventListener("drop", onDrop);
     // Stop typing/keys from leaking to the game's own global hotkeys (J/K/Q/W/1-9) while this panel is open, but still handle I here ourselves:
     // a listener on document would never see it, since this one already stopped its propagation. Escape also closes a slot's option list first.
     dlg.addEventListener("keydown", function (ev) {
       ev.stopPropagation();
       if (isTextTarget(ev.target)) return;
+      if (view.confirm) {
+        if (ev.key === "Escape") { ev.preventDefault(); view.confirm = null; render(); return; }
+        if (ev.key === "Enter" && !(ev.target && ev.target.tagName === "BUTTON")) { ev.preventDefault(); doDiscard(); return; }
+        return;
+      }
+      if (ev.key === "Delete" && view.sel && !view.pending) { ev.preventDefault(); askDiscard(view.sel); return; }
       if (ev.key === "Escape" && view.slot) { ev.preventDefault(); view.slot = null; render(); return; }
       if ((ev.key === "i" || ev.key === "I") && !ev.ctrlKey && !ev.metaKey && !ev.altKey) {
         ev.preventDefault();
@@ -465,7 +475,27 @@
     dlg.addEventListener("mousedown", function (ev) { if (ev.target === dlg) close(); });
     // Escape closes a dialog natively, wherever the focus is (a redraw leaves it on the page): with a slot lit, the first press only puts the light away
     dlg.addEventListener("close", onDialogClose);
-    dlg.addEventListener("cancel", function (ev) { if (view.slot) { ev.preventDefault(); view.slot = null; render(); } });
+    // Right-click (and a touch long-press, which most browsers also report as a context menu) on a carried item asks to throw it away; the long-press timer below covers the browsers that do not.
+    dlg.addEventListener("contextmenu", function (ev) {
+      var it = ev.target && ev.target.closest ? ev.target.closest("[data-item]") : null;
+      if (!it) return;
+      ev.preventDefault();
+      askDiscard(it.getAttribute("data-item"));
+    });
+    var lp = { timer: null, x: 0, y: 0 };
+    function lpStop() { if (lp.timer) { clearTimeout(lp.timer); lp.timer = null; } }
+    dlg.addEventListener("pointerdown", function (ev) {
+      var it = ev.pointerType !== "mouse" && ev.target && ev.target.closest ? ev.target.closest("[data-item]") : null;
+      lpStop();
+      if (!it) return;
+      lp.x = ev.clientX; lp.y = ev.clientY;
+      lp.timer = setTimeout(function () { lp.timer = null; askDiscard(it.getAttribute("data-item")); }, 650);
+    });
+    dlg.addEventListener("pointermove", function (ev) { if (lp.timer && (Math.abs(ev.clientX - lp.x) > 10 || Math.abs(ev.clientY - lp.y) > 10)) lpStop(); });
+    dlg.addEventListener("pointerup", lpStop);
+    dlg.addEventListener("pointercancel", lpStop);
+    dlg.addEventListener("dragstart", lpStop);
+    dlg.addEventListener("cancel", function (ev) { if (view.confirm) { ev.preventDefault(); view.confirm = null; render(); return; } if (view.slot) { ev.preventDefault(); view.slot = null; render(); } });
   }
 
   function categoryLabel(id) {
@@ -575,6 +605,17 @@
 
   /* ---------------------------------------------------------------- the doll */
 
+  // Class art is cosmetic and resolved from a closed list so a malformed save can never write into the style attribute.
+  // The pre-class recruit and any future class without art keep the original warrior silhouette.
+  var DOLL_ART = {
+    fighter: "silhouette_fighter", barbarian: "silhouette_barbarian", rogue: "silhouette_rogue", ranger: "silhouette_ranger",
+    bard: "silhouette_bard", wizard: "silhouette_wizard", warlock: "silhouette_warlock"
+  };
+  function dollArtStyle(s) {
+    var key = DOLL_ART[String(s.character_class || "").toLowerCase()];
+    return key ? ' style="background-image:var(--art-' + key + ',var(--art-silhouette))"' : "";
+  }
+
   function slotTileHtml(bucket, ringSlot, col, row) {
     var s = statsNow(), d = slotDesc(bucket, ringSlot);
     if (!d) return "";
@@ -590,7 +631,7 @@
   }
 
   function renderDoll(s) {
-    var html = '<div class="inv-fig"><div class="inv-figart"></div>';
+    var html = '<div class="inv-fig"><div class="inv-figart"' + dollArtStyle(s) + "></div>";
     DOLL_SLOTS.forEach(function (d) { html += slotTileHtml(d[0], d[1], d[2], d[3]); });
     html += "</div>";
     html += '<div class="inv-weapons">' + slotTileHtml("weapon", "", 0, 0) + slotTileHtml("sidearm", "", 0, 0) + "</div>";
@@ -761,6 +802,9 @@
     }
     if (xc && xc.sel && xc.dir) html += xferHtml(xc);
     html += '<div class="inv-purse" title="Coin on you">' + esc(purseText(s)) + (ld ? " · weighs " + fmtLoad(ld.coin) : "") + "</div></div>";
+    // a drop onto the bag rebuilds it, which takes the dragged tile away before its dragend can fire: so a redraw with nothing being dragged always hides the trash can
+    if (!view.drag) dlg.classList.remove("inv-dragging");
+    html += confirmHtml();
     elBag.innerHTML = html;
   }
 
@@ -1204,6 +1248,7 @@
 
   function clearDrag() {
     view.drag = null; view.dragSlot = null; view.dragC = null;
+    dlg.classList.remove("inv-dragging");
     Array.prototype.forEach.call(dlg.querySelectorAll(".inv-accepts, .inv-over, .inv-drop-ok"), function (el) { el.classList.remove("inv-accepts", "inv-over", "inv-drop-ok"); });
   }
   function onDragStart(ev) {
@@ -1231,6 +1276,7 @@
     var t = ev.target && ev.target.closest ? ev.target.closest("[data-item]") : null;
     if (!t || !findOwned(t.getAttribute("data-item"))) return;
     view.drag = t.getAttribute("data-item");
+    dlg.classList.add("inv-dragging");   // reveals the discard bin (CSS only: no rebuild, which would cancel the drag)
     try { ev.dataTransfer.setData("text/plain", view.drag); ev.dataTransfer.effectAllowed = "move"; } catch (e) { /* some browsers refuse; the drop reads view.drag */ }
     hideTip();
     // mark the slots that take it, without rebuilding the DOM mid-drag (that would cancel the drag)
@@ -1263,6 +1309,8 @@
     }
     if (view.dragC) { if (elBag.contains(ev.target)) ev.preventDefault(); return; }
     if (!view.drag) return;
+    var bin = ev.target && ev.target.closest ? ev.target.closest("[data-bin]") : null;
+    if (bin) { ev.preventDefault(); bin.classList.add("inv-over"); return; }
     if (containerOpen() && overPane(ev)) { var ds2 = findOwned(view.drag); if (ds2 && ds2.stow) ev.preventDefault(); return; }
     var bx = ev.target && ev.target.closest ? ev.target.closest("[data-box]") : null;
     if (bx) { var di = findOwned(view.drag); if (di && canBox(di)) { ev.preventDefault(); bx.classList.add("inv-over"); } return; }
@@ -1271,6 +1319,7 @@
     if (cl && cl.getAttribute("data-item") !== view.drag) { ev.preventDefault(); cl.classList.add("inv-over"); }
   }
   function onDrop(ev) {
+    dlg.classList.remove("inv-dragging");   // the dragged tile may be rebuilt below, and then no dragend arrives
     if (view.dragSlot) {
       var kind = slotDropKind(ev), ds = view.dragSlot;
       clearDrag();
@@ -1290,6 +1339,9 @@
     var t = ev.target && ev.target.closest ? ev.target.closest("[data-slot]") : null;
     var id = view.drag;
     if (!id) return;
+    // A drop is the end of the gesture: nothing stays selected, or the next click on an empty cell would carry the item there (clicking an empty cell moves the SELECTED item). A discard re-selects it below.
+    view.sel = null;
+    if (ev.target && ev.target.closest && ev.target.closest("[data-bin]")) { ev.preventDefault(); clearDrag(); askDiscard(id); return; }
     if (containerOpen() && overPane(ev)) {
       var sr = findOwned(id);
       clearDrag();
@@ -1320,6 +1372,70 @@
     if (sc && sc.secondaryMode === "stats") return false;
     return !truthy(statsNow().combat_engaged) && typeof window.Scene === "function" && typeof window.clearScreen === "function" && !!window.nav;
   }
+  /* ---------------------------------------------------------------- throwing items away (2026-10-26, the user)
+   * The rules are web/mygame/discard.js (protected unless clearly junk; a keep tag, with its reason, locks an item); the action is ChoiceScript (equipment.txt discard_gear, run by the one-shot codex_discard_now
+   * through quietRun, which checks the same rules again). The panel only asks: a protected item is refused at once with its reason, anything else opens a small confirmation (a quantity step for a stack, a hint
+   * when a buyer would pay for it). Reached by dragging a carried item onto the bin, right-click, a touch long-press, or the Delete key on the selected item. */
+  function copperText(n) {
+    var g = Math.floor(n / 100), sv = Math.floor((n % 100) / 10), c = n % 10, out = [];
+    if (g) out.push(g + "g");
+    if (sv) out.push(sv + "s");
+    if (c || !out.length) out.push(c + "c");
+    return out.join(" ");
+  }
+  function worthHint(id, qty) {
+    var td = window.TRADE_DATA && window.TRADE_DATA.items && window.TRADE_DATA.items[id];
+    if (!td || !td.retail) return "";
+    var v = Math.round(td.retail * qty * 0.5);
+    return v >= 5 ? "A buyer would pay about " + copperText(v) + ". Sell it instead?" : "";
+  }
+  function askDiscard(id) {
+    var s = statsNow(), r = findOwned(id), D = window.Discard;
+    if (!r || view.pending) return;
+    view.sel = id; view.useMsg = ""; view.craftMsg = "";
+    if (!canUse()) { note("You cannot do that right now."); render(); return; }
+    var st = D ? D.status(id, s) : { ok: false, why: "That cannot be thrown away." };
+    if (!st.ok) { note(st.why); render(); return; }
+    var c = splitCount(r.name), have = c.count || 1, max = D.worn(id, s) ? have - 1 : have;
+    if (max < 1) { note("You are wearing that."); render(); return; }
+    note("");
+    view.confirm = { id: id, name: c.name, qty: 1, max: max };
+    render();
+  }
+  function discardStep(how) {
+    var c = view.confirm;
+    if (!c) return;
+    c.qty = how === "all" ? c.max : Math.max(1, Math.min(c.max, c.qty + Number(how)));
+    render();
+  }
+  function confirmHtml() {
+    var c = view.confirm;
+    if (!c) return "";
+    var hint = worthHint(c.id, c.qty);
+    return '<div class="inv-confirm" data-discard-veil><div class="inv-confirm-card" role="alertdialog" aria-label="Throw away ' + esc(c.name) + '">' +
+      '<div class="inv-confirm-title">Throw away ' + esc(c.name) + "?</div>" +
+      (c.max > 1 ? '<div class="inv-confirm-qty"><button type="button" class="inv-ctab" data-discard-step="-1"' + (c.qty <= 1 ? " disabled" : "") + ' aria-label="One fewer">−</button><b>' + c.qty + "</b> of " + c.max +
+        '<button type="button" class="inv-ctab" data-discard-step="1"' + (c.qty >= c.max ? " disabled" : "") + ' aria-label="One more">+</button><button type="button" class="inv-ctab" data-discard-step="all"' + (c.qty >= c.max ? " disabled" : "") + ">All</button></div>" : "") +
+      (hint ? '<div class="inv-confirm-hint">' + esc(hint) + "</div>" : "") +
+      '<div class="inv-confirm-acts"><button type="button" class="inv-use" data-discard-go>Throw away</button><button type="button" class="inv-ctab" data-discard-cancel>Cancel</button></div></div></div>';
+  }
+  function doDiscard() {
+    var c = view.confirm;
+    if (!c || view.pending) return;
+    if (!canUse()) { view.confirm = null; note("You cannot do that right now."); render(); return; }
+    var s = statsNow();
+    s.discard_item = c.id; s.discard_qty = c.qty;
+    view.confirm = null; view.pending = true; view.useMsg = ""; render();
+    quietRun("codex_discard_now", function (ok) {
+      var msg = String(window.stats.spell_cast_toast || "");
+      window.stats.spell_cast_toast = "";
+      view.pending = false; note(""); view.useMsg = msg || (ok ? "" : "That did not finish. Try again.");
+      view.dirty = true;
+      if (view.sel && !findOwned(view.sel)) view.sel = null;
+      if (dlg && dlg.open) render();
+    });
+  }
+
   function useItem(id) {
     if (!canUse() || view.pending) return;
     statsNow().use_item_id = id;
@@ -1384,7 +1500,7 @@
   }
 
   function onClick(ev) {
-    var t = ev.target && ev.target.closest ? ev.target.closest("[data-act], [data-cat], [data-item], [data-slot], .inv-blank[data-cell], [data-takeoff], [data-pop-shield], [data-attune], [data-swap-sidearm], [data-equip-sel], [data-use], [data-left], [data-citem], [data-qty], [data-qty-set], [data-xfer], [data-box], [data-craft-go], [data-craft-tab], [data-craft-mode], [data-recipe]") : null;
+    var t = ev.target && ev.target.closest ? ev.target.closest("[data-act], [data-cat], [data-item], [data-slot], .inv-blank[data-cell], [data-takeoff], [data-pop-shield], [data-attune], [data-swap-sidearm], [data-equip-sel], [data-use], [data-left], [data-citem], [data-qty], [data-qty-set], [data-xfer], [data-box], [data-craft-go], [data-craft-tab], [data-craft-mode], [data-recipe], [data-discard-step], [data-discard-go], [data-discard-cancel], [data-discard-veil]") : null;
     if (!t || !dlg.contains(t)) {
       if (view.slot) { view.slot = null; render(); }   // a click on empty space puts the lit slot away
       return;
@@ -1421,6 +1537,10 @@
       doMove(xc2.dir, xc2.sel.id, cur);
       return;
     }
+    if (t.hasAttribute("data-discard-step")) { discardStep(t.getAttribute("data-discard-step")); return; }
+    if (t.hasAttribute("data-discard-go")) { doDiscard(); return; }
+    if (t.hasAttribute("data-discard-cancel") || (t.hasAttribute("data-discard-veil") && ev.target === t)) { view.confirm = null; render(); return; }
+    if (t.hasAttribute("data-discard-veil")) return;
     if (t.hasAttribute("data-craft-go")) { if (!t.disabled) craftNow(); return; }
     if (t.hasAttribute("data-craft-mode")) {
       var cm = t.getAttribute("data-craft-mode");

@@ -134,7 +134,8 @@
     function (s) { return s.sceneName === "prologue/company_intake" && s.scenery_subplace === "prologue_carrion_compound" ? "carrion_compound" : undefined; }, // Iron Carrion intake and munitions camp
     function (s) { return s.sceneName === "prologue/company_intake" && s.scenery_subplace === "prologue_flashback_village" ? "village_green" : undefined; }, // Ashbrook memory
     function (s) { return s.sceneName === "prologue/company_intake" && s.scenery_subplace === "prologue_flashback_dredge" ? "dredge_end" : undefined; }, // Dredge-End memory
-    function (s) { return s.sceneName === "prologue/camp_night" || s.sceneName === "prologue/dawn_trial" || s.sceneName === "prologue/class_select" ? "carrion_compound" : undefined; }, // company bivouac and dawn trials
+    function (s) { return s.sceneName === "prologue/camp_night" ? "prologue_camp_night" : undefined; }, // the always-night company bivouac has its own standalone art
+    function (s) { return s.sceneName === "prologue/dawn_trial" || s.sceneName === "prologue/class_select" ? "carrion_compound" : undefined; }, // the compound's dawn trials and class selection
     function (s) { return s.sceneName === "prologue/alderford" && s.scenery_subplace === "prologue_alderford_riverfront" ? "alderford" : undefined; }, // prologue Alderford hub and morning muster
     function (s) { return s.sceneName === "prologue/alderford" && s.scenery_subplace === "prologue_curing_sheds" ? "generic_curing_shed" : undefined; }, // Alderford fish-curing shed
     function (s) { return s.sceneName === "prologue/alderford" && s.scenery_subplace === "prologue_cadre_pavilion" ? "carrion_compound" : undefined; }, // Carrion's riverside medical marquee
@@ -152,7 +153,7 @@
     function (s) { return s.sceneName === "port_valen/radiant/notice_board" && s.cr_origin === "fv" ? "generic_village_gathering_hall" : undefined; }, // Barleycross's board is inside its village hall
     function (s) { return s.sceneName === "horse_dealer" && s.horse_place === "bc" ? "generic_village_pasture" : undefined; }, // Barleycross's working-horse rail stands at the common pasture
     function (s) { return s.sceneName === "horse_dealer" && s.horse_place === "mw" ? "village_stable_yard" : undefined; }, // Port Valen's dealer works from the Middle Ward yard
-    function (s) { return counterShop(s) && s.shop_open !== "trapper" && s.shop_open !== "halda" ? "generic_trade_shop" : undefined; }, // shop counters in settlements; Halda has a scoped forge rule above and the forest trapper stays outdoors
+    function (s) { return counterShop(s) && s.shop_open !== "trapper" && s.shop_open !== "halda" ? "generic_trade_shop_open" : undefined; }, // unobstructed shop counters; Halda has a scoped forge rule above and the forest trapper stays outdoors
     function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_inn_room" ? "generic_town_inn_room" : undefined; }, // Wagoner's Rest guest room and Kess's rented chamber
     function (s) { return s.sceneName === "timbermouth/split_pine_inn" && s.scenery_subplace === "town_inn_room" ? "generic_town_inn_room" : undefined; }, // Split Pine guest room
     function (s) { return s.scenery_subplace === "village_inn_room" && (s.sceneName === "alderford/drowned_oar" || s.sceneName === "alderford/redvein/red_lantern" || s.sceneName === "alderford/whitefold/white_ram" || s.sceneName === "port_valen/brinewick/reedhouse" || s.sceneName === "port_valen/marlcross/wayfarers_rest") ? "generic_village_inn_room" : undefined; }, // village inns and Maura's Drowned Oar rooms
