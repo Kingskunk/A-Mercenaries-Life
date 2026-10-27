@@ -4,7 +4,7 @@
  *   local     spoils or is bulky (fish, eggs, game, bread, fruit)   a short reach, and the price never leaves the band
  *   regional  keeps for a while (grain, produce, ore, hides, wool)  a long reach, and the price never leaves the band
  *   far       durable and valuable (salt, furs, cloth, spices)      no reach limit, and the band's top widens with the miles from the nearest maker, to a ceiling
- * commodity.reach (road miles) is still accepted: it overrides the class's reach for that one good. The band itself ("commodity.band": min, max) is the plain price level a good may have anywhere:
+ * commodity.reach (effective freight miles) is still accepted: it overrides the class's reach for that one good. The band itself ("commodity.band": min, max) is the plain price level a good may have anywhere:
  * the shop-wide rule that a short hop never pays double.
  */
 "use strict";
@@ -13,7 +13,7 @@ function klass(it, CP) {
   if (!k) throw new Error((it && it.id) + ": commodity.range must be one of " + Object.keys(CP.classes || {}).join(", ") + " (got " + r + ")");
   return k;
 }
-// road miles a good travels to be stocked (Infinity: no limit)
+// effective freight miles a good travels to be stocked (Infinity: no limit)
 function reachOf(it, CP) {
   const c = it.commodity;
   if (c.reach !== undefined && c.reach !== null) return c.reach;

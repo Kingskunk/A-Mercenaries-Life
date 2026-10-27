@@ -23,6 +23,7 @@ const fs = require("fs");
 const vm = require("vm");
 const M = require(path.join(__dirname, "..", "web", "mygame", "market.js"));
 const CR = require("./commodity_range");
+const Freight = require("./freight_routes");
 
 let fails = 0, checks = 0;
 function ok(cond, msg) { checks++; if (!cond) { fails++; console.log("FAIL: " + msg); } }
@@ -314,6 +315,7 @@ section("commodities and distance");
   commodities.forEach((it) => {
     const tiles = Object.keys(it.commodity.makers);
     ok(tiles.length > 0 && tiles.every((t) => OW.nodes[t] && (it.commodity.makers[t] === "major" || it.commodity.makers[t] === "minor")), it.id + " has makers on real map tiles (" + tiles.join(",") + ")");
+    ok(!it.commodity.freight || Freight.defs.profiles.indexOf(it.commodity.freight) >= 0, it.id + " has a known freight profile");
     ok(it.retail > 0, it.id + " has a base price");
   });
   const open = Object.keys(DEFS).filter((m) => DEFS[m].commodities);
@@ -324,12 +326,21 @@ section("commodities and distance");
       const g = def.goods[it.id];
       if (!g) { const tr = cat.trades.find((t) => t.name === mid); ok(!!(tr && (tr.excludeCommodities || []).indexOf(it.id) >= 0), mid + " deals in " + it.id + " (or the catalog leaves it off that floor on purpose)"); return; }
       let level = CR.capLevelOf(it, CP), inReach = 0;
-      Object.keys(it.commodity.makers).forEach((t) => { const d = tile === t ? 0 : OW.route(tile, t).miles; if (d > CR.reachOf(it, CP)) return; inReach++; level = Math.min(level, CP.cost[it.commodity.makers[t]] + CP.perMile * d); });
+      Object.keys(it.commodity.makers).forEach((t) => { const route = Freight.route(t, tile, it), d = route.ok ? route.costDistance : Infinity; if (d > CR.reachOf(it, CP)) return; inReach++; level = Math.min(level, CP.cost[it.commodity.makers[t]] + CP.perMile * d); });
       if (!inReach) { ok(g.unstocked === true && g.sells === false && g.buys !== false && !g.world, mid + "/" + it.id + ": no maker within " + CR.reachOf(it, CP) + " miles, so it is not stocked and the market pays no premium for it"); return; }
-      ok(g.buys !== false && g.sells !== false && Math.abs(g.mult - level) < 0.001 && g.mult >= CP.cost.major - 1e-9 && g.mult <= CR.capLevelOf(it, CP) + 1e-9, mid + "/" + it.id + ": bought here, price level " + g.mult + " is the nearest maker's cost plus the miles (makers within reach only)");
+      ok(g.buys !== false && g.sells !== false && Math.abs(g.mult - level) < 0.001 && g.mult >= CP.cost.major - 1e-9 && g.mult <= CR.capLevelOf(it, CP) + 1e-9, mid + "/" + it.id + ": bought here, price level " + g.mult + " is the nearest maker's cost plus freight distance (makers within reach only)");
       if (g.restock === false) ok(g.stock0 === 0 && g.flow < 0, mid + "/" + it.id + ": a good with no supply starts empty and is used up, never restocked");
     });
   });
+  const byId = {}; commodities.forEach((it) => { byId[it.id] = it; });
+  const limestone = byId.limestone;
+  const wfPv = Freight.route("wf", "pv", limestone), wfPvRoad = Freight.roadRoute("wf", "pv", limestone);
+  const wfBw = Freight.route("wf", "bw", limestone), wfBwRoad = Freight.roadRoute("wf", "bw", limestone);
+  ok(limestone && limestone.commodity.makers.wf === "major" && limestone.commodity.freight === "bulk", "limestone is a bulk commodity made at Whitefold");
+  ok(wfPv.costDistance < wfPvRoad.costDistance && wfPv.legs.some((leg) => leg.mode === "grey_downstream"), "Whitefold limestone reaches Port Valen more cheaply through the Grey");
+  ok(wfBw.costDistance < wfBwRoad.costDistance && wfBw.legs.some((leg) => leg.mode === "tidal_craft"), "Whitefold limestone reaches Brinewick through Grey and tidal freight");
+  ok(Freight.route("pv", "af", limestone).costDistance > Freight.route("af", "pv", limestone).costDistance, "upstream Grey freight costs more than downstream freight");
+  ok(Freight.route("fo", "tm", byId.longshade_timber).legs.some((leg) => leg.mode === "log_drive") && Freight.route("fo", "tm", byId.charcoal).legs.every((leg) => leg.mode === "road"), "the Ashrun log drive carries timber but not charcoal");
 }
 
 // ---------------------------------------------------------------- 11. the world: seasons and shocks (web/mygame/world.js)

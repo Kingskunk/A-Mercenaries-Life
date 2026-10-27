@@ -23,9 +23,9 @@ Built 2026-10-27. The game is packed as a PWA: an installable web page that keep
 3. **Tablet (Chrome):** open the address, wait for "Game files saved. It now works offline.", then menu, "Install app" (or "Add to Home screen"). It opens fullscreen from then on.
 4. **Update:** build again. The next time the app is opened with a connection (or comes back to the front after five minutes) it downloads only the files whose hash changed, then shows **"Update ready. Save your game first." [Reload]**. Nothing changes under you until you tap Reload.
 
-## The Flask route for the Mempalace server
+## The Flask route for the Mempalace server (added 2026-10-27)
 
-Add to `server.py` (change the path if the project moves). It serves the game under `/game/`:
+`C:UsersKweseyDesktopMempalaceserver.py` now has a `serve_game` route (after `serve_portrait`). The game is at **https://exquisite-defy-percent.ngrok-free.dev/game/** (the static domain, tunnelled to port 5000). The route reads `dist/` from this folder (override with a `GAME_DIR` environment variable), gzips text files (the 14 MB page goes out as about 7 MB), and answers ETag and byte-range requests. The version in `server.py` is the real one; this is its shape:
 
 ```python
 from flask import send_from_directory
@@ -40,7 +40,9 @@ def game_files(p="index.html"):
     return resp
 ```
 
-The game then lives at `https://<your-static-domain>/game/`. Everything the app does is relative to its own address, so a sub-folder works. Gameplay logic stays out of the server: it only hands over files.
+Everything the app does is relative to its own address, so the `/game/` folder works. Gameplay logic stays out of the server: it only hands over files. Rebuilding `dist/` is all an update needs; the server picks the new files up at once (no restart).
+
+**ngrok's free-plan warning page.** The first time a browser opens the tunnel, ngrok shows a "Visit Site" page; tap it once on the tablet. After that the installed app serves its pages from its own cache and never meets it. The app's own downloads send `ngrok-skip-browser-warning`, so updates are not blocked by it either (the browser's separate check of `sw.js` can be, harmlessly: the app looks for new builds on its own).
 
 ## How the offline worker works (`app/sw.js`)
 

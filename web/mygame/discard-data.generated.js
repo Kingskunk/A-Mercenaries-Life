@@ -101,6 +101,7 @@ window.DISCARD_DATA = {
   "longshade_shortbow": {"kind":"weapon"},
   "wooden_clogs": {"kind":"feet"},
   "iron_ore": {"kind":"ingredient"},
+  "limestone": {"kind":"ingredient"},
   "iron_bar": {"kind":"ingredient"},
   "longshade_timber": {"kind":"ingredient"},
   "charcoal": {"kind":"ingredient"},

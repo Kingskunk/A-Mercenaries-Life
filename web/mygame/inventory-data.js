@@ -873,6 +873,12 @@
       description: "Hand-sorted red iron ore from the Eastcut, for a smelter's furnace."
     },
     {
+      id: "limestone", category: "provisions", owned: "has_limestone",
+      weight: 6, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_limestone) || 0); return "Limestone" + (n > 1 ? " ×" + n : ""); },
+      description: "Six-pound piece of Whitefold limestone, for masonry or burning into lime."
+    },
+    {
       id: "iron_bar", category: "provisions", owned: "has_iron_bar",
       weight: 2.5, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_iron_bar) || 0); return "Iron Bar" + (n > 1 ? " ×" + n : ""); },

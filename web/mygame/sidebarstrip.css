@@ -1,0 +1,58 @@
+/* The sidebar strip and the sidebar's fold handle (web/mygame/sidebarstrip.js, 2026-10-27, the user). */
+
+/* folded away on a wide window: the column's room goes back to the story (the battle HUD and the frame read --side-w) */
+/* The column is centered between the rail and --side-w. With the sidebar gone that is not the middle of the screen (the rail takes room on the left only), so a wide window reserves the rail's width on the right as well:
+   the frame then sits at the true center (2026-10-27, the user). Only the room the frame does not use is reserved (its widest is 1176px with its border), so a tablet's narrower window loses nothing. */
+html.sbHidden.hasSidebar { --side-w: min(var(--rail-w), max(0px, calc(100vw / var(--z, 1) - var(--rail-w) - 1176px))); }
+html.sbHidden #statSidebar { display: none !important; }
+
+/* a narrow window (where index.html hides the sidebar for good) can open it as a drawer over the story */
+html.sbDrawer #statSidebar {
+  display: flex !important; z-index: 1200; padding: 10px; border-radius: 12px;
+  background: rgba(14, 11, 10, 0.97); border: 1px solid var(--ch-line-hi, #6b5a4a); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+}
+
+/* ---- the sidebar's round portrait is the fold button (its title says so) ---- */
+#statSidebar .sbRing[data-ss-collapse] { cursor: pointer; transition: filter 0.15s; }
+#statSidebar .sbRing[data-ss-collapse]:hover, #statSidebar .sbRing[data-ss-collapse]:focus-visible { filter: brightness(1.35); outline: none; }
+
+/* ---- the strip, in the banner row ---- */
+#sbStrip {
+  position: fixed; z-index: 998; height: 48px; box-sizing: border-box; display: none; align-items: center; justify-content: flex-end; gap: 12px; padding: 0 8px 0 12px;
+  border: 1px solid var(--ch-line, #4b3d31); border-radius: 8px; background: rgba(18, 16, 15, 0.78); color: var(--ch-text, #e8e0d2);
+  font: 12px/1.25 var(--ch-font-ui, sans-serif); white-space: nowrap; overflow: hidden;
+}
+#sbStrip .ssWhen { display: flex; flex-direction: column; flex: 0 0 auto; }
+#sbStrip .ssNow { overflow: hidden; text-overflow: ellipsis; }
+#sbStrip .ssNow b { font-weight: 700; color: var(--ch-head-text, #f0ece6); }
+#sbStrip .ssDate { font-size: 11px; color: var(--ch-dim, #a99f90); overflow: hidden; text-overflow: ellipsis; }
+#sbStrip .ssConds { display: flex; gap: 5px; }
+#sbStrip .ssCond { padding: 2px 7px; border: 1px solid var(--ch-line, #4b3d31); border-radius: 999px; font-size: 11px; color: var(--ch-dim, #a99f90); }
+#sbStrip .ssCond.warn { color: var(--ch-warn, #e2a25f); border-color: var(--ch-warn, #e2a25f); }
+#sbStrip .ssCond.bad { color: var(--ch-bad, #e58a8a); border-color: var(--ch-bad, #e58a8a); background: rgba(181, 58, 53, 0.18); }
+#sbStrip .ssPurse { padding-left: 10px; border-left: 1px solid var(--ch-line, #4b3d31); font-weight: 600; color: var(--ch-brass, #d9a441); }
+#sbStrip .ssBtns { display: flex; gap: 3px; padding-left: 10px; border-left: 1px solid var(--ch-line, #4b3d31); }
+#sbStrip .ssBtn {
+  padding: 5px 7px; min-height: 30px; border: 1px solid var(--ch-line, #4b3d31); border-radius: 6px; background: var(--ch-card, #221e1b); color: var(--ch-text, #e8e0d2);
+  font: 600 10.5px/1 var(--ch-font-ui, sans-serif); letter-spacing: 0.03em; text-transform: uppercase; cursor: pointer;
+}
+#sbStrip .ssBtn:hover:not(:disabled), #sbStrip .ssBtn:focus-visible { border-color: var(--ch-crimson-hi, #b53a35); outline: none; }
+#sbStrip .ssBtn:disabled { color: var(--ch-dim, #a99f90); opacity: 0.55; cursor: not-allowed; }
+#sbStrip .ssOpen { min-width: 30px; font-size: 15px; color: var(--ch-brass, #d9a441); }
+
+/* less room: drop the date line; then the period and weather, and every pill that is not a warning (a hungry or hurt player still sees it) */
+#sbStrip[data-size="mid"] .ssDate { display: none; }
+#sbStrip[data-size="tight"] .ssDate, #sbStrip[data-size="tight"] .ssPer { display: none; }
+#sbStrip[data-size="tight"] .ssCond:not(.warn):not(.bad) { display: none; }
+#sbStrip[data-size="tight"] { gap: 4px; padding: 0 5px 0 8px; }
+#sbStrip[data-size="tight"] .ssBtns, #sbStrip[data-size="tight"] .ssPurse { padding-left: 5px; }
+#sbStrip[data-size="tight"] .ssBtns { gap: 2px; }
+#sbStrip[data-size="tight"] .ssBtn { padding: 5px 4px; font-size: 10px; letter-spacing: 0; }
+#sbStrip[data-size="tight"] .ssCond { padding: 2px 5px; font-size: 10px; }
+#sbStrip[data-size="tight"] .ssConds { gap: 3px; }
+
+/* a touch screen: bigger targets, and nothing needs a hover */
+@media (pointer: coarse) {
+  #sbStrip .ssBtn { min-height: 38px; padding: 6px 12px; }
+  #sbStrip { height: 52px; }
+}

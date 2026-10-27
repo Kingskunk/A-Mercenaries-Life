@@ -380,11 +380,31 @@ The quest occupies most of a day after its morning hook: roughly one hour of foc
 
 - **5 Silver Marks**, paid once from the fee the four Common interests set aside for the outside account. This sits above a small local task but below the eight-silver Overdue Peddler investigation.
 - **One completed job on the Contractor's Insignia**, because the four-seat Common witnesses and certifies the work inside Gilded Scales territory. This does **not** also award `gilded_scales_rep`; local certification is not the same as improving the player's relationship with the central organization.
+- **One finished quest toward level-up progression** after any successful Room 4 repair is carried through the Room 5 reckoning. This is separate from the Contractor's Insignia job. Implementation sets the permanent `weight_road_successful_completion` flag once the successful finale is recorded; `refresh_quests_finished` then receives exactly `+1` from the quest's count label. Do not increment `quests_finished` directly during the reward transaction, because that total is derived whenever level-up progress refreshes.
 - **Permanent White Ram kitchen and oven access** on any successful Room 4 result. Perrin benefits from retaining a usable freight route and grants the player the same practical favor regardless of which resource saved it. No extra room or counter choice is required; Cooking is available anywhere the normal inn interaction exposes Alchemy/Cooking.
 - **At most one constituency-favor flag** from the matrix above, subject to the formal-liability cancellation. These flags should unlock later services or personal requests only when those rewards are concretely designed. Do not invent a free stone, lime, wool, or equipment payout merely to consume the flag during the finale.
 - Outcome-specific street prose, road-approach prose, Fleecefold notices, Quarry Yard and White Ram dialogue, and Lorebook additions.
 
-On `road_lost`, the player receives no silver, no completed Insignia job, no kitchen access, and no constituency favor. The accounting decision and its relationship or reform consequences still persist; failure does not erase the investigation.
+On `road_lost`, the player receives no silver, no completed Insignia job, no level-up quest credit, no kitchen access, and no constituency favor. The accounting decision and its relationship or reform consequences still persist; failure does not erase the investigation.
+
+### Level-up quest credit
+
+The new quest scene must own a counting label following the existing derived-counter convention:
+
+```choicescript
+*label count_finished_weight_road
+*if (weight_road_successful_completion)
+  *set quests_finished +1
+*return
+```
+
+`character_progression.txt` must call it once from `refresh_quests_finished`:
+
+```choicescript
+*gosub_scene alderford/whitefold/the_weight_of_the_road count_finished_weight_road
+```
+
+Set `weight_road_successful_completion` only when Room 5 records a completed quest whose Room 4 repair succeeded. Never clear it. The `"road_lost"` failure path leaves it false even though the player still attends the reckoning and records an accounting outcome. Because `refresh_quests_finished` rebuilds its total from zero each time, this permanent boolean and count label are replay-safe and always contribute exactly one successful quest.
 
 #### Future Whitefold visits
 
@@ -442,6 +462,7 @@ Names are provisional until implementation.
 - `weight_road_repair_total`: stored check total for the result banner and replay-safe prose
 - `weight_road_repair_roll_resolved`: replay guard for the single climactic roll and its stored result
 - `weight_road_repair_success`: whether Room 4 preserved a usable road; false on a failed operation or expired deadline
+- `weight_road_successful_completion`: permanent level-up credit marker, set only when a successful repair is finalized through Room 5; never set by `"road_lost"` and never cleared
 - `weight_road_accounting`: `"full"`, `"shared"`, `"formal_quarry"`, `"formal_folds"`, or `"formal_commonwarden"`
 - `weight_road_reforms_adopted`: true only after full public accounting
 - `weight_road_quarry_favor`: potential later Hessa service or request; never an automatic item payout
@@ -462,6 +483,7 @@ Names are provisional until implementation.
 - Source-level gating of the generated **Leave Whitefold** sidebar service in `tools/gen_city_settlements.js`, followed by regeneration; add a defensive Whitefold quest check at the overworld handoff so a stale or unusual route cannot escape the settlement
 - Optional post-quest Orlov records route and Morzan penalty decision in `alderford/factors_hall.txt`; neither gates the Whitefold investigation, repair, or full-accounting outcome
 - Startup variables in the appropriate startup source part, followed by startup regeneration
+- `count_finished_weight_road` in the new quest scene and one corresponding `*gosub_scene` in `character_progression.txt`'s `refresh_quests_finished`, so a successful completion adds exactly one derived level-up quest credit
 - Active quest entry in `web/mygame/quest-data.js`
 - Outcome-gated Lorebook additions for Whitefold and the involved NPCs
 - Quest registry summary in `Resources & Quest/QUESTS.md`
@@ -480,6 +502,6 @@ Before implementation, decide:
 - **Commitment and abandonment:** Ignoring the initial alarm leaves the event unstarted and eligible to recur. Following Edda into Room 1 commits the player; there is no second acceptance prompt or indefinitely suspended emergency afterward. Leaving Whitefold is blocked, while deliberately exceeding the four-hour investigation deadline produces the designed road-loss resolution.
 - **Room 4 resolution:** Room 4 is one decisive best-of-two skill check after the player chooses which resource Whitefold sacrifices. Earlier preparation grants advantage, support and losses alter the displayed DC, and success or failure converges on Room 5 without retries or supporting-check spam.
 - **Room 5 resolution:** Room 5 has no additional roll. Full accounting requires all three principal evidence flags, or exactly two plus both Perrin's corroborating timeline and preserved site evidence. Shared fault is always available; each formal-liability target requires its own strong evidence.
-- **Reward scale:** Any successful repair pays 5 Silver Marks, adds one completed Insignia job without adding Gilded Scales standing, and permanently unlocks the White Ram kitchen and oven. `road_lost` grants none of those successful-repair rewards.
+- **Reward scale:** Any successful repair finalized through Room 5 pays 5 Silver Marks, adds one completed Insignia job, contributes one finished quest toward level-up progression, and permanently unlocks the White Ram kitchen and oven without adding Gilded Scales standing. `road_lost` grants none of those successful-repair rewards or level-up credit.
 - **Local favors:** The physical sacrifice permits at most one constituency favor—folds after contracted-stone repair, quarry after the pasture bypass, or Common after fund stabilization. Formal liability against that constituency cancels the favor; no accounting choice creates extra constituency rewards.
 - **Persistent scope:** Future Whitefold visits show the physical road result and accounting result in prose, dialogue, Fleecefold notices, and Lorebook additions. The first implementation does not remove map access or alter generated commodity prices and stock.

@@ -145,6 +145,7 @@ const MAP = {
   // ---- ingredients and salvage
   iron_bar: "../Generic/Iron_Bars_Generated_Source.png",
   iron_ore: "../Generic/Iron_Ore_Generated_Source.png",     // the user's own art (2026-10-24)
+  limestone: "../Generic/Limestone_Generated_Source.png",
   longshade_timber: "../Generic/Longshade_Timber_Generated_Source.png",   // the user's own art (2026-10-24)
   honey: "../Generic/Honey_Generated_Source.png",                         // the user's own art (2026-10-25)
   butter: "../Generic/Butter_Generated_Source.png",                      // the user's own art (2026-10-25)

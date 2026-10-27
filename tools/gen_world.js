@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /*
  * gen_world.js -- writes web/mygame/world-data.generated.js (window.WORLD_DATA): the numbers web/mygame/world.js runs on, from tools/gear_catalog.json (each commodity's makers, seasons and inputs),
- * the overworld map (road miles between settlements) and tools/market_defs.json ("settlements": populations; "demand": what a thousand people use of a good in a day; "industry": what a
+ * the freight graph (effective cost distance and travel time between settlements) and tools/market_defs.json ("settlements": populations; "demand": what a thousand people use of a good in a day; "industry": what a
  * settlement's trades eat; "dseason": demand's seasons; "world": the model's parameters).
  *
  * For every commodity (an item with commodity.makers) it works out
- *   (a settlement draws only on makers within the good's reach, the catalog's commodity.reach in road miles; one with no maker in reach is left out and the market there does not stock the good)
+ *   (a settlement draws only on makers within the good's reach, measured in effective freight miles; one with no maker in reach is left out and the market there does not stock the good)
  *   consumers   every settlement: its normal demand D (units a day: population / 1000 x the good's use, plus industry, never below minDemand), its pull (population ^ pullExp), and for each maker
- *               the settlement draws on its SHARE s (the maker's reach weight, tier weight / (1 + miles / supplyHalf), over the sum for that settlement) and the miles
+ *               the settlement draws on its SHARE s (the maker's reach weight, tier weight / (1 + freight distance / supplyHalf), over the sum for that settlement), its freight distance and travel days
  *   store       the good's STOCKPILE time constant in days (the catalog's commodity.store): web/mygame/world.js smooths a maker's output over it (a granary, a salt shed, a timber stack)
  *   makers      each maker's CAPACITY, units a day, never below coverFloor x what the settlements drawing on it want of it, and otherwise: margin x (the total demand of every settlement that can reach a maker) x (tier weight x population ^ capExp) over the sum of that for the good's makers
  * Nothing here is random. Run via node tools/gen_markets.js (which calls this), or alone: node tools/gen_world.js [--check]
@@ -15,6 +15,7 @@
 "use strict";
 const fs = require("fs");
 const CR = require("./commodity_range");
+const Freight = require("./freight_routes");
 const path = require("path");
 
 const ROOT = path.resolve(__dirname, "..");
@@ -27,7 +28,7 @@ function build() {
   const OW = global.Overworld;
   const P = defs.world, CP = defs.commodity, S = {};
   Object.keys(defs.settlements).forEach((k) => { if (k[0] !== "_") S[k] = defs.settlements[k]; });
-  const miles = (a, b) => { if (a === b) return 0; const r = OW.route(a, b); return r && r.ok ? r.miles : Infinity; };
+  const roadMiles = (a, b) => { if (a === b) return 0; const r = OW.route(a, b); return r && r.ok ? r.miles : Infinity; };
   const r4 = (v) => Math.round(v * 10000) / 10000;
   const data = { params: { margin: P.margin, pullExp: P.pullExp, capExp: P.capExp }, tiles: {}, goods: {} };
   const report = [], problems = [];
@@ -44,11 +45,11 @@ function build() {
     Object.keys(S).forEach((t) => {
       const per = (defs.demand[id] || 0) * S[t].pop / 1000, ind = (defs.industry[t] && defs.industry[t][id]) || 0;
       const D = Math.max(P.minDemand, per + ind);
-      const w = {}, d = {}; let sw = 0;
-      makerTiles.forEach((m) => { const mi = miles(t, m); if (!isFinite(mi) || mi > CR.reachOf(it, CP)) return; d[m] = Math.round(mi * 10) / 10; w[m] = CP.weight[mk[m]] / (1 + mi / CP.supplyHalf); sw += w[m]; });
+      const w = {}, d = {}, days = {}; let sw = 0;
+      makerTiles.forEach((m) => { const route = Freight.route(m, t, it), mi = route.ok ? route.costDistance : Infinity; if (!isFinite(mi) || mi > CR.reachOf(it, CP)) return; d[m] = Math.round(mi * 10) / 10; days[m] = Math.round(route.travelDays * 10000) / 10000; w[m] = CP.weight[mk[m]] / (1 + mi / CP.supplyHalf); sw += w[m]; });
       if (sw <= 0) return;
       const s = {}; Object.keys(w).forEach((m) => { s[m] = r4(w[m] / sw); });
-      G.consumers.push({ tile: t, D: Math.round(D * 100) / 100, pull: data.tiles[t].pull, s: s, miles: d });
+      G.consumers.push({ tile: t, D: Math.round(D * 100) / 100, pull: data.tiles[t].pull, s: s, miles: d, days: days });
     });
     // capacities
     const Dtot = G.consumers.reduce((a, c) => a + c.D, 0);
@@ -61,7 +62,7 @@ function build() {
     data.goods[id] = G;
   });
   // every settlement's road distance to the others, nearest first (rumors pick the nearest market the player has no price data for)
-  Object.keys(data.tiles).forEach((t) => { data.tiles[t].near = Object.keys(data.tiles).filter((o) => o !== t).map((o) => [o, Math.round(miles(t, o) * 10) / 10]).filter((e) => isFinite(e[1])).sort((a, b) => a[1] - b[1] || (a[0] < b[0] ? -1 : 1)); });
+  Object.keys(data.tiles).forEach((t) => { data.tiles[t].near = Object.keys(data.tiles).filter((o) => o !== t).map((o) => [o, Math.round(roadMiles(t, o) * 10) / 10]).filter((e) => isFinite(e[1])).sort((a, b) => a[1] - b[1] || (a[0] < b[0] ? -1 : 1)); });
   // long named events (market_defs.json "events"): copied as they are, after a check that every tile and good they name exists and that a length stays within 30 to 90 days
   const EV = defs.events, evKinds = EV.kinds.concat(EV.regional);
   evKinds.forEach((k) => {

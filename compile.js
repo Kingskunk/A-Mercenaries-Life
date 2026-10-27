@@ -54,6 +54,12 @@ if (typeof process != "undefined") {
     fs.writeFileSync(file, content, "utf8");
     console.log('Generated', path.resolve(file));
   }
+  // The default compile (no output file named) also packs the installable tablet app into dist/ (tools/build_app.js; see Resources & Quest/APP_PACKAGING.md), so one run publishes both.
+  // A compile to a named file (the tests and scratch builds do that) leaves dist/ alone. A failed pack is reported, never fatal: the game itself has compiled.
+  if (!process.argv[2]) {
+    var packed = require('child_process').spawnSync(process.execPath, [path.join(__dirname, 'tools', 'build_app.js'), '--no-compile'], {cwd: __dirname, stdio: 'inherit'});
+    if (packed.status !== 0) console.log('WARNING: tools/build_app.js failed; dist/ was not updated.');
+  }
 }
 
 if (!rootDir) rootDir = "web/";

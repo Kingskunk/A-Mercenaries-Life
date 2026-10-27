@@ -14,9 +14,9 @@
  *
  * OPEN MARKETS AND COMMODITIES (2026-10-24, the user): a merchant with "commodities": true and a "tile" (a village lane, a town's trading ground) deals in every item tagged item.commodity in
  * tools/gear_catalog.json, each with the places that make it (makers: tile id -> "major" or "minor"). Nothing is listed per market: a new trade good is one tagged item, a new market one entry with
- * its tile. Everything below comes from the road MILES between the market's tile and each maker (web/mygame/overworld-data.js), with the numbers in market_defs.json "commodity":
- *   price level   the lowest, over the makers, of (cost at the source: major 0.8, minor 1.0) + perMile x miles, never above its class's ceiling (commodity.range: local and regional 1.5, far 3.0; tools/commodity_range.js); it is the good's regional multiplier (mult) at this market
- *   supply        the sum over makers of (weight: major 1, minor 0.25) x 1 / (1 + miles / supplyHalf), so a maker's goods reach a market in smaller and smaller share the further away it is but never stop: the share of a usual shelf the market holds and restocks to
+ * its tile. Everything below comes from effective freight distance between the market's tile and each maker (tools/freight_routes.js), with the numbers in market_defs.json "commodity":
+ *   price level   the lowest, over the makers, of (cost at the source: major 0.8, minor 1.0) + perMile x freight distance, never above its class's ceiling (commodity.range: local and regional 1.5, far 3.0; tools/commodity_range.js); it is the good's regional multiplier (mult) at this market
+ *   supply        the sum over makers of (weight: major 1, minor 0.25) x 1 / (1 + freight distance / supplyHalf), so a maker's goods reach a market in smaller and smaller share the further away it is but never stop: the share of a usual shelf the market holds and restocks to
  *   supplied      supply >= minSupply: the shelf starts full at target = the standard depth x supply, and restocks. Otherwise the market makes nothing of it and nothing reaches it: it starts at 0 on the
  *                 shelf, never restocks, uses the little it is sold slowly (flow), and pays a shortage price for it
  *   buys          every commodity, at buyShare of the price (the market's own share)
@@ -36,6 +36,7 @@ const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
 const CR = require("./commodity_range");
+const Freight = require("./freight_routes");
 
 const ROOT = path.resolve(__dirname, "..");
 const OUT = path.join(ROOT, "web", "mygame", "market-data.generated.js");
@@ -47,7 +48,7 @@ const CATALOG = JSON.parse(fs.readFileSync(path.join(__dirname, "gear_catalog.js
 const CAT = {};
 CATALOG.items.forEach((it) => { CAT[it.id] = it; });
 const CP = defs.commodity;
-function miles(a, b) { if (a === b) return 0; const r = OW.route(a, b); return r && r.ok ? r.miles : Infinity; }
+function freightDistance(a, b, item) { const r = Freight.route(a, b, item); return r && r.ok ? r.costDistance : Infinity; }
 
 const sandbox = { window: {} };
 vm.runInNewContext(fs.readFileSync(path.join(ROOT, "web", "mygame", "trade-data.generated.js"), "utf8"), sandbox);
@@ -98,7 +99,7 @@ Object.keys(defs.merchants).forEach((mid) => {
       let supply = 0, level = CR.capLevelOf(CAT[id], CP), nearest = Infinity;
       Object.keys(mk).forEach((tile) => {
         if (!OW.nodes[tile]) problems.push(id + ": maker tile " + tile + " is not on the map");
-        const d = miles(m.tile, tile);
+        const d = freightDistance(tile, m.tile, CAT[id]);
         if (d > reach) return;   // beyond the good's reach
         supply += CP.weight[mk[tile]] / (1 + d / CP.supplyHalf);
         level = Math.min(level, CP.cost[mk[tile]] + CP.perMile * d); nearest = Math.min(nearest, d);

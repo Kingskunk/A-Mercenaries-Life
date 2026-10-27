@@ -141,7 +141,7 @@
     camp_kit: "blanket", waxed_oilcloth: "cloth", lockpick_set: "lockpicks", padlock: "padlock", door_bolt: "door_bolt", iron_manacles: "iron_manacles",
     broadcloth_cloak: "cloak_traveler", storm_cape: "cloak_storm", winter_cloak: "cloak_winter", summer_duster: "cloak_duster", felt_hat: "h_hat", fur_cap: "h_cap",
     lined_gloves: "gloves_lined", scholar_gloves: "gloves_scholar", masters_gloves: "gloves_master", waxed_boots: "boots_rain", winter_boots: "boots_winter", dancing_slippers: "shoes_dancing",
-    wool_muffler: "neck_muffler", silk_neckcloth: "neck_cravat", iron_bar: "iron_bar", iron_ore: "iron_ore", longshade_timber: "longshade_timber", charcoal: "charcoal", salt: "salt", beeswax: "beeswax", butter: "butter", animal_fat: "animal_fat", scrap_steel: "scrap", frog_slime: "frog_slime", honey: "honey", honeycomb: "honeycomb", heartwood_fruit: "heartwood_fruit", boar_meat: "boar_meat", raw_hide: "raw_hide", boar_tusk: "boar_tusk", elk_antler: "elk_antler", venison: "venison", centipede_gland: "gland", viper_venom: "venom", grave_ichor: "ichor",
+    wool_muffler: "neck_muffler", silk_neckcloth: "neck_cravat", iron_bar: "iron_bar", iron_ore: "iron_ore", limestone: "limestone", longshade_timber: "longshade_timber", charcoal: "charcoal", salt: "salt", beeswax: "beeswax", butter: "butter", animal_fat: "animal_fat", scrap_steel: "scrap", frog_slime: "frog_slime", honey: "honey", honeycomb: "honeycomb", heartwood_fruit: "heartwood_fruit", boar_meat: "boar_meat", raw_hide: "raw_hide", boar_tusk: "boar_tusk", elk_antler: "elk_antler", venison: "venison", centipede_gland: "gland", viper_venom: "venom", grave_ichor: "ichor",
     sluice_moss: "sluice_moss", brinecap: "brinecap", pale_crackroot: "pale_crackroot", cistern_spores: "cistern_spores", glowmold: "glowmold",
     silverleaf: "silverleaf", oakheart_balsam: "oakheart_balsam", shadefern: "shadefern", acorn_truffle: "acorn_truffle", brambleberry: "brambleberry",
     talia_oiled_cloak: "cloak", rorik_grip_wraps: "gloves", rorik_campaign_belt: "belt", talia_deck_boots: "boots", brant_iron_heel_boots: "boots_iron_heel",
@@ -429,15 +429,16 @@
       '<div class="inv-head">' +
       "<h2>Inventory</h2>" +
       '<span class="inv-count"></span><span class="inv-spacer"></span>' +
+      // The discard target (2026-10-26, the user: the trash can icons; moved 2026-10-27, the user: the screen corner had no room). It sits in the header, which always has free width and is never covered by the
+      // grid or the item card; shown only while a carried item is dragged (the class inv-dragging on the dialog), and the open can shows while an item is held over it. Dropping on it opens the usual
+      // confirmation. A touch screen has no use for it (a long press asks the same question), so inventory.css hides it there.
+      '<div class="inv-trash" data-bin aria-hidden="true"><img class="inv-trash-closed" alt="" src="' + iconSrc("trash_can_closed") + '"><img class="inv-trash-open" alt="" src="' + iconSrc("trash_can_open") + '"><span>Throw away</span></div>' +
       '<button type="button" class="inv-close" data-act="close" aria-label="Close inventory">×</button>' +
       "</div>" +
       '<div class="inv-main">' +
       '<section class="inv-doll" aria-label="Equipment"></section>' +
       '<section class="inv-bag" aria-label="Carried gear"></section>' +
       "</div>" +
-      // The discard target (2026-10-26, the user: a trash can in the empty space at the bottom right, not a strip over the item card). Fixed to the screen corner so it sits outside the panel; shown only while a carried
-      // item is dragged (the class inv-dragging on the dialog), and the open can shows while an item is held over it. Dropping on it opens the usual confirmation.
-      '<div class="inv-trash" data-bin aria-hidden="true"><img class="inv-trash-closed" alt="" src="' + iconSrc("trash_can_closed") + '"><img class="inv-trash-open" alt="" src="' + iconSrc("trash_can_open") + '"><span>Throw away</span></div>' +
       '<div class="inv-tip" id="invTip" role="tooltip"></div>';
     document.body.appendChild(dlg);
 

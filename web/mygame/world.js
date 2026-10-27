@@ -253,13 +253,14 @@
         m = G.makers[i];
         var s = c.s[m.tile]; if (!s) continue;
         var miles = c.miles[m.tile] || 0;
-        var out = m.cap * outputMult(seed, m.tile, good, num(day) - miles / TRAVEL_MPD, depth), ratio;
+        var travelDays = c.days && c.days[m.tile] != null ? c.days[m.tile] : miles / TRAVEL_MPD;
+        var out = m.cap * outputMult(seed, m.tile, good, num(day) - travelDays, depth), ratio;
         if (m.tile === tile) ratio = Math.min(LOCAL_CAP, out / Math.max(1e-9, demandAt(seed, G, c, day) * s));
         else {
           var mc = null, j;
           for (j = 0; j < G.consumers.length; j++) if (G.consumers[j].tile === m.tile) { mc = G.consumers[j]; break; }
           var keep = mc && mc.s[m.tile] ? demandAt(seed, G, mc, day) * mc.s[m.tile] : 0;
-          ratio = Math.min(EXT_CAP, Math.max(0, out - keep) * c.pull / Math.max(1e-9, drawOn(seed, G, m.tile, day))) * eventMult(seed, m.tile, good, num(day) - miles / TRAVEL_MPD, "export");
+          ratio = Math.min(EXT_CAP, Math.max(0, out - keep) * c.pull / Math.max(1e-9, drawOn(seed, G, m.tile, day))) * eventMult(seed, m.tile, good, num(day) - travelDays, "export");
         }
         sum += s * ratio;
       }
