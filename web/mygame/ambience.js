@@ -60,6 +60,7 @@
     marshland:     { day: "marshland_ambience_wind_birds_shallowwater_reeds", night: "marshland_night_crickets_shallowwater_ambience" },
     undercroft:    { all: "city_indoor", indoor: true },
     tavern:        { day: "quiet_tavern", night: "crowded_tavern", indoor: true },   // it fills up as the day ends
+    sewer:         { all: "sewer", indoor: true },
     silt_conduits: { all: "sewer", indoor: true },
     siege:         { all: "siege_battle" }
   };
