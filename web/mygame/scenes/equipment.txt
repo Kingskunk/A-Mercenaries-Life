@@ -3385,12 +3385,17 @@
   *set gear_label (((gear_label & " (you have ") & gl_owned) & ")")
 *return
 
-*comment *gosub_scene equipment grant_gear <item_id> <copies>   (adds copies; the FIRST copy sets has_<id>, and on
-*comment its own wears the armor or readies the shield; extra copies go to spare_<id> and change nothing worn.
+*comment *gosub_scene equipment grant_gear <item_id> <copies>   (counted salvage adds to its own counter;
+*comment other gear sets has_<id> on the first copy and, on its own, wears armor or readies a shield.
+*comment Extra copies go to spare_<id> and change nothing worn.
 *comment Output gear_grant_note. The caller takes the coin inside its own currency lock.) Loot drops call this too.
 *label grant_gear
 *params gg_item gg_qty
 *gosub gear_info gg_item
+*if (gear_kind = "salvage")
+  *set {gear_count_var} (({gear_count_var}) + gg_qty)
+  *set gear_grant_note ""
+  *return
 *set gear_flag_var ("has_" & gg_item)
 *set gear_spare_var ("spare_" & gg_item)
 *set gear_grant_note ""
@@ -3863,7 +3868,7 @@ You fill the empty @{(jug_fill_n = 1) jug|jugs} from ${jug_refill_source}, then 
 *if (sb_qty > 0)
   *gosub gear_info sb_item
   *comment A unique piece (gear_stack false: the magical dress, rings) is bought once, and not at all while one is owned; it comes back to the shelf when it is sold.
-  *if (not(gear_stack))
+  *if ((not(gear_stack)) and (not(gear_kind = "salvage")))
     *set sb_qty 1
     *gosub gear_count sb_item
     *if (gear_qty > 0)

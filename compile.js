@@ -351,6 +351,7 @@ function compile(){
   verifyFileName("alderford/whitefold/stone_yard.txt");
   verifyFileName("alderford/whitefold/fleecefold.txt");
   verifyFileName("alderford/whitefold/white_ram.txt");
+  verifyFileName("alderford/whitefold/the_weight_of_the_road.txt");
   // Alderford follows the same one-hub, one-file-per-place shape as Timbermouth. Every place needs a verifyFileName line here because it is reached by *goto_scene rather than *scene_list.
   verifyFileName("alderford/alderford.txt");
   verifyFileName("alderford/drowned_oar.txt");

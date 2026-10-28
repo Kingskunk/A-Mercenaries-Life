@@ -10,6 +10,8 @@
 
 *label wf_ram_main
 *set scenery_subplace "village_inn_hall"
+*comment The inn's kitchen is a place to cook once Perrin's kitchen is open to the player (crafting.txt cook_site_eval); the hall and the rented room are the same site.
+*gosub_scene crafting cook_site_set "white_ram"
 *temp wf_ram_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
 *if (wf_ram_now >= wf_ram_room_until)
   *set wf_ram_room_active false
@@ -65,6 +67,10 @@ The White Ram is a low stone inn with a broad slate roof and a carved ram's head
 *comment Open-world free time: the sidebar's Wait and Rest work on this page (web/mygame/pagegate.js).
 *set wait_ok_page page_id
 *choice
+  *comment THE WEIGHT OF THE ROAD, Room 2: Perrin's timeline, with no check (the_weight_of_the_road.txt wr_perrin).
+  *if ((weight_road_quest_stage = "investigation") and (not(weight_road_perrin_reviewed)))
+    # Ask Perrin what he has seen of the Cut road.
+      *goto_scene alderford/whitefold/the_weight_of_the_road wr_perrin
   *if ((not(wf_ram_dark)) and ((((gold * 100) + (silver * 10)) + copper) >= 2))
     # [2 Copper Bits] Buy mutton stew with beans and barley. [~20 min]@{show_stat_hints  [+2 Temp HP, +1 CON for 4h]|}
       *set tavern_item_cost_copper 2
@@ -184,6 +190,7 @@ The yard is small but dry. Fresh straw lies in the stalls, a pump fills the cove
 
 *label wf_ram_room
 *set scenery_subplace "village_inn_room"
+*gosub_scene crafting cook_site_set "white_ram"
 *temp wf_room_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
 *if (wf_room_now >= wf_ram_room_until)
   *set wf_ram_room_active false
@@ -210,12 +217,15 @@ The room under the slate roof holds a plank bed, straw mattress, folded wool bla
   Cold clings to the window wall, though the room itself stays dry.
 
 *choice
-  # Train in your room. [~${training_hours} Hours]
-    *gosub_scene character_progression inn_room_training "white_ram"
-    *page_break Back to your room…
-    *goto wf_ram_room
-  # Bar the door and sleep in the bed. [~8 Hours]
-    *goto wf_ram_sleep
+  *comment THE WEIGHT OF THE ROAD: while the quest is active the long hours (training and sleep) are not offered, since they would run the wall's clock out in one click. The room still has its basin.
+  *if (not(weight_road_active))
+    # Train in your room. [~${training_hours} Hours]
+      *gosub_scene character_progression inn_room_training "white_ram"
+      *page_break Back to your room…
+      *goto wf_ram_room
+  *if (not(weight_road_active))
+    # Bar the door and sleep in the bed. [~8 Hours]
+      *goto wf_ram_sleep
   # Wash in the basin. [~10 min]
     *goto wf_ram_wash
   # Walk back out to Whitefold.

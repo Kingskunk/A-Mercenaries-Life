@@ -153,6 +153,39 @@
       active: function (s) { return s.peddler_stage === "active"; }
     },
     {
+      // The Weight of the Road (alderford/whitefold/the_weight_of_the_road.txt): offered on a clear, wet morning when the Whitefold road wall collapses; the player offers their services to Edda Cale. Counts toward the level-2 pool only once a successful repair is carried through the Common's reckoning, and on the insignia.
+      id: "weight_road", title: "The Weight of the Road",
+      giver: "Edda Cale, Commonwarden of Whitefold",
+      place: "Whitefold · the Limestone Cut road",
+      clues: function (s) {
+        var c = [];
+        if (truthy(s.weight_road_hessa_reviewed)) c.push("Hessa says the wall had been left open since the thaw, and calls the heavy loads ordinary variation.");
+        if (truthy(s.weight_road_hessa_evidence)) c.push("Hessa's notebook carries one extra block against cart after cart that the clean dispatch tally leaves out.");
+        if (truthy(s.weight_road_nerin_reviewed)) c.push("Nerin says the quarry's spoil closed the high sheep track, so the upper flocks have come down the Cut road since the thaw.");
+        if (truthy(s.weight_road_nerin_evidence)) c.push("The penned sheep carry quarry dust and ditch mud from three upper folds that never share a lane.");
+        if (truthy(s.weight_road_perrin_evidence)) c.push("Perrin saw road crewmen wheel a handcart of the stone stacked beside the Cut road toward the lambing shelter, before Edda came in wanting stew for the crew.");
+        if (truthy(s.weight_road_edda_evidence)) c.push("Edda admits she told the road crew to take the stacked stone for the lambing shelter, and meant the Common to replace it.");
+        else if (["wall", "repair", "reckoning"].indexOf(s.weight_road_quest_stage) >= 0) c.push("The Common's road papers record the wall's winter opening and the stone stacked beside it, but not what became of that stone.");
+        if (truthy(s.weight_road_read_ditch)) c.push("The drain's uphill mouth was packed to the top with mud, dung and wool.");
+        if (truthy(s.weight_road_read_courses)) c.push("The rows around the drain were laid short, with no long stones reaching back to hold the face.");
+        if (truthy(s.weight_road_read_fill)) c.push("The road fill was soaked through, and the loaded carts' ruts ran deepest right over the drain.");
+        if (truthy(s.weight_road_failure_chain_known)) c.push("No one thing brought the wall down: loose rows, a fouled drain, soaked fill and a heavy cart together did.");
+        if (truthy(s.weight_road_contract_seen)) c.push("The weir order: sixty squared blocks due at the Factor's Hall nine days from then, or Whitefold pays thirty silver marks and the cost of buying the stone elsewhere.");
+        return c;
+      },
+      goal: function (s) {
+        var g = { emergency: "Save what you can at the broken wall on the Limestone Cut road.",
+          investigation: "Gather the accounts of Whitefold's people and bring them back to Edda Cale.",
+          wall: "Read what the broken wall shows and prepare for the repair.",
+          repair: "Choose what Whitefold gives up to repair the road.",
+          reckoning: "Attend the Common's meeting at the Fleecefold." };
+        return g[s.weight_road_quest_stage] || "";
+      },
+      insignia: true,
+      levelProgress: "Counts toward level progress when a successful repair is carried through the Common's reckoning.",
+      active: function (s) { return ["emergency", "investigation", "wall", "repair", "reckoning"].indexOf(s.weight_road_quest_stage) >= 0; }
+    },
+    {
       id: "hale_ring", title: "The Hale Ring",
       giver: function (s) { return truthy(s.hale_ring_cassia_spoken) ? "Cassia Rell, the Bright Setting" : "A ring found on the River Road"; },
       levelProgress: "Counts toward level progress when returned to Ressa Hale.",

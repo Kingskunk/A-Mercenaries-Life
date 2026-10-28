@@ -405,6 +405,7 @@
 *temp rsc_ability_ok false
 *temp rsc_mod 0
 *temp rsc_prof false
+*temp rsc_gear 0
 *label roll_skill_check_loop
 *if (rsc_i = 1)
   *set rsc_candidate rsc_skill_1
@@ -464,9 +465,16 @@
     *set rsc_ability_ok true
   *if (not(rsc_ability_ok))
     *bug "roll_skill_check: ability override '${rsc_override}' did not resolve to a real ability (got '${rsc_ability}') -- check the override at the call site"
-  *if ((not(rsc_have_best)) or (rsc_mod > rsc_best_bonus))
+  *comment GEAR THAT BELONGS TO ONE SKILL (opt-in, 2026-10-28, for the Weight of the Road): a caller sets check_gear_context before this call and the carried gear then follows the skill that actually wins.
+  *comment "leverage_repair" (a task of heavy work and grounded repair): a Repair Kit's +1 counts for the Investigation candidate when the skills are compared, and the Iron Prybar's advantage is given below only if Athletics wins.
+  *comment With no context set nothing here changes, so every existing caller rolls exactly as before.
+  *set rsc_gear 0
+  *if (check_gear_context = "leverage_repair")
+    *if ((rsc_candidate = "investigation") and (has_tool_kit))
+      *set rsc_gear 1
+  *if ((not(rsc_have_best)) or ((rsc_mod + rsc_gear) > rsc_best_bonus))
     *set rsc_have_best true
-    *set rsc_best_bonus rsc_mod
+    *set rsc_best_bonus (rsc_mod + rsc_gear)
     *set rsc_best_skill rsc_candidate
     *set rsc_best_ability rsc_ability
     *set rsc_best_display skill_lookup_display
@@ -486,6 +494,17 @@
 *comment again after the roll, as at every other caller, so a replayed page that skips the roll cannot leave it set for the next one.
 *if (((character_class = "bard") and (character_level >= 2)) and (not(rsc_best_prof)))
   *set check_flat_bonus ((prof_bonus - (prof_bonus modulo 2)) / 2)
+*set check_skill_id rsc_best_skill
+*comment The winning skill decides which gear applies (see the comment in the loop). The Repair Kit rides on the shared repair task type, which roll_d20_check turns into its normal +1 and label; the Prybar's advantage is cleared by the roll like any other.
+*if (check_gear_context = "leverage_repair")
+  *if ((rsc_best_skill = "investigation") and (has_tool_kit))
+    *set check_task_type "repair"
+  *if ((rsc_best_skill = "athletics") and (has_iron_crowbar))
+    *set advantage true
 *gosub roll_d20_check
 *set check_flat_bonus 0
+*comment A replayed roll skips the part of roll_d20_check that clears the task type, so it is cleared here as well; the context is one roll's and never carries to the next.
+*if (not(check_gear_context = ""))
+  *set check_task_type "none"
+  *set check_gear_context ""
 *return

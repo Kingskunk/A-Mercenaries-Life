@@ -264,6 +264,7 @@
     def.services.forEach(function (x) { if (x.id === serviceId) svc = x; });
     if (!svc) return false;
     if (svc.seen && !truthy(statsNow()[svc.seen])) return false;
+    if (svc.lock && truthy(statsNow()[svc.lock])) return false;   // a quest holds the way shut (Whitefold's Leave while the Weight of the Road is active)
     close();
     run = { place: { id: "svc:" + settlementId + ":" + serviceId, name: svc.name, steps: svc.steps, done: svc.done, settlement: settlementId, noRecent: true }, i: 0, prevAnimate: window.animateEnabled };
     if (typeof window.animateEnabled !== "undefined") window.animateEnabled = false;
@@ -462,10 +463,11 @@
     var st = CT.settlement();
     if (!st) { elBody.innerHTML = '<div class="ct-empty">There is nowhere to go from here.</div>'; return; }
     elBody.innerHTML = '<div class="ct-here-note">You are in ' + esc(st.def.name) + '.</div><div class="ct-svcs">' + st.def.services.map(function (sv, n) {
-      var off = !!sv.seen && !truthy(statsNow()[sv.seen]);   // not found yet: listed, greyed
+      var locked = !!sv.lock && truthy(statsNow()[sv.lock]);   // held shut by a quest: listed, greyed, with its reason
+      var off = locked || (!!sv.seen && !truthy(statsNow()[sv.seen]));   // not found yet: listed, greyed
       var from = Math.max(0, startAt(sv.steps)), mins = 0;      // minutes from where you stand: steps already behind you cost nothing
       for (var q = from; q < sv.steps.length; q++) mins += (sv.stepMin && sv.stepMin[q]) || 0;
-      return '<button type="button" class="ct-svc' + (off ? ' off' : '') + '" data-svc="' + esc(sv.id) + '"' + (off ? ' disabled' : '') + '><i>' + (n + 1) + '</i><span class="ct-sname">' + esc(sv.name) + '</span><span class="ct-smin">' + (off ? "You haven't found it yet" : (mins > 0 ? "about " + mins + " min" : "")) + '</span></button>';
+      return '<button type="button" class="ct-svc' + (off ? ' off' : '') + '" data-svc="' + esc(sv.id) + '"' + (off ? ' disabled' : '') + '><i>' + (n + 1) + '</i><span class="ct-sname">' + esc(sv.name) + '</span><span class="ct-smin">' + (locked ? esc(sv.lockReason || "Not now") : off ? "You haven't found it yet" : (mins > 0 ? "about " + mins + " min" : "")) + '</span></button>';
     }).join("") + '</div>';
   }
 

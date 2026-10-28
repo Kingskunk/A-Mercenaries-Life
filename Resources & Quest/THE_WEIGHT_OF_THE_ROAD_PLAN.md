@@ -61,7 +61,7 @@ Edda concealed this because the decision protected animals and workers during an
 
 ### The quarry loads
 
-Whitefold is behind on a valuable stone delivery recorded through Alderford's Factor's Hall. Hessa allowed several carts to carry one additional block rather than lose another day to an extra journey. Her working slate shows the true weights, while the clean dispatch tally prepared for the Factor's Hall gives the ordinary load count.
+Whitefold is behind on a valuable stone delivery recorded through Alderford's Factor's Hall. Hessa allowed several carts to carry one additional block rather than lose another day to an extra journey. Her working notebook shows the true weights, while the clean dispatch tally prepared for the Factor's Hall gives the ordinary load count.
 
 Hessa knew the road repair was unfinished. She believed the remaining wall would hold through the last deliveries, especially in dry weather.
 
@@ -83,9 +83,9 @@ The quest should begin through the event, not through a floating work offer.
 
 The quest becomes eligible at least one month into the campaign, after the player has an Insignia carrying roughly ten completed jobs and has met Edda, Hessa, Nerin, and Perrin and spoken through their existing introductory dialogue. It triggers on an eligible morning with a clear current sky but wet or sodden ground left by earlier rain. That combination supports both the pleasant-weather arrival and the trapped water that caused the collapse.
 
-Entering Whitefold replaces the ordinary street activity with a quarry horn sounding from the yard and a mud-spattered villager running up the Limestone Cut road. Edda is present at the Fleecefold, checks the player's Insignia, and can comment on the name and completed work recorded on it.
+Entering Whitefold replaces the ordinary street activity with a quarry horn sounding from the yard and a mud-spattered villager running up the Limestone Cut road with news of the collapse. The player overhears Edda sending every hand to the wall; she does not approach the player. If the player offers their services, Edda asks for the Insignia, reads the name, rank and completed work recorded on it, accepts the help and promises good pay.
 
-The player has one clean refusal point before following Edda to the road. Ignoring the alarm does not start the quest or consume the event; the world remains unchanged and the hook may appear again on a later eligible visit. Following Edda and beginning Room 1 is the commitment. Once the player has intervened in the emergency, Edda does not ask them to accept the same quest a second time, and the investigation cannot be left indefinitely unstarted while the wall waits offscreen.
+The player has one clean choice: offer their services, or keep out of it as though they had never heard the horn. Ignoring the alarm does not start the quest or consume the event; the world remains unchanged and the hook may appear again on a later eligible morning. Offering help and beginning Room 1 is the commitment. Once the player has intervened in the emergency, Edda does not ask them to accept the same quest a second time, and the investigation cannot be left indefinitely unstarted while the wall waits offscreen.
 
 Following reaches the collapse while the cart, sheep, and surviving wall are still in danger. This qualifies as an immediate physical emergency, so the scene may demand a quick decision without violating the normal rule against NPCs assigning unsolicited work.
 
@@ -133,7 +133,7 @@ All routes converge after the danger is contained. The unchosen problems are han
 
 Edda asks the player to assemble an independent account before the Common meets. The player may visit the Whitefold NPCs in any order. This is where the Open world reopens again. We may have to make changes to the whitefold itself for the duration of this quest.
 
-- **Hessa's two tallies:** Repeating heavy entries in her working slate, absent from the clean dispatch tally prepared for the Factor's Hall, reveal that the additional weight was deliberate. Winning her confidence or reading the figures carefully secures the strongest proof.
+- **Hessa's two tallies:** Repeating heavy entries in her working notebook, absent from the clean dispatch tally prepared for the Factor's Hall, reveal that the additional weight was deliberate. Winning her confidence or reading the figures carefully secures the strongest proof.
 - **Nerin's wool and flock records:** Several upper flocks arrived together on days when they would ordinarily have used different lanes. Mud and pale quarry dust on the animals support his account of the obstructed drove path.
 - **Perrin's disconnected observations:** Carters complained about extra blocks, shepherds arrived angry and chalk-covered, and during the difficult lambing night he saw road masons take a handcart of stacked limestone toward the damaged shelter before Edda bought food for the crew. Perrin does not know the whole answer; he supplies the link between the road stone and Edda's unrecorded authorization.
 - **Edda's maintenance papers:** The written account records the winter opening of the wall but not the lambing shelter's use of the stacked repair stone.
@@ -146,7 +146,7 @@ Room 2 is not a four-person wall of skill checks. Speaking to an NPC always prov
 
 | Lead | Player-facing action | Skill check | DC | Success | Failure and assistance |
 | --- | --- | --- | --- | --- | --- |
-| **Hessa's load records** | **Compare the working slate with the clean dispatch tally.** | **Investigation** (`investigation`) | **12** | Secures the repeated heavy entries and the mismatch between Hessa's two records as strong quarry evidence. | The figures are rubbed, abbreviated, and interrupted by ordinary tallies; the player can establish that loads varied but cannot prove deliberate overloading. Saving the cart in Room 1 grants advantage because Hessa permits a less guarded look at both records. The Repair Kit does not apply. |
+| **Hessa's load records** | **Compare Hessa's notebook with the clean dispatch tally.** | **Investigation** (`investigation`) | **12** | Secures the repeated heavy entries and the mismatch between Hessa's two records as strong quarry evidence. | The figures are rubbed, abbreviated, and interrupted by ordinary tallies; the player can establish that loads varied but cannot prove deliberate overloading. Saving the cart in Room 1 grants advantage because Hessa permits a less guarded look at both records. The Repair Kit does not apply. |
 | **Nerin's flock** | **Inspect the sheep and trace where the upper flocks came down.** | **Survival** (`survival`) | **11** | Quarry dust, ditch mud, and the pattern of hoof wear corroborate repeated use of the freight road and secure strong fold evidence. | Nerin still admits bringing the flocks down the road, but the physical signs are too mixed to establish how often or how badly the intake was fouled. Saving the sheep in Room 1 grants advantage because Nerin helps identify the affected animals and their usual route. |
 | **Perrin's recollection** | **Have Perrin put the complaints and the storm-night meal in order.** | **No check** | — | Perrin's timeline is guaranteed corroboration and points directly toward the unrecorded winter repair. It also grants advantage when Edda is asked about the missing stone. | Perrin is connective evidence rather than a culprit protecting himself. Charging a roll merely to hear his recollection would add a fourth gate without adding a meaningful risk. |
 | **Edda's maintenance papers** | **Set the incomplete account beside Perrin's timeline and ask what happened to the repair stone.** | **Persuasion** (`persuasion`) | **12** | Edda gives a candid account of authorizing the shelter repair, securing strong Common evidence. | The written omission remains evident, but Edda refuses to turn it into a formal admission while the road is still failing. Perrin's timeline grants advantage. If Perrin was skipped, preserved physical evidence from Room 1 grants advantage instead; these sources do not stack. |
@@ -329,15 +329,12 @@ Room 5 contains **no new skill check**. The decisive rolls have already happened
 
 1. **Give the full public account.** Record Edda's unlisted authorization, Hessa's heavy carts, and Nerin's diverted flocks as one causal chain. Whitefold accepts collective responsibility rather than assigning the entire loss to one interest. The Common orders three concrete reforms: emergency withdrawals must be entered in the shared ledger, quarry loads remain capped until the road is certified, and the quarry and folds receive named duties for keeping the drove path and road drain clear. This is the strongest institutional ending, but none of the three principals can preserve a spotless public reputation.
 2. **Record negotiated common fault.** State that unfinished maintenance, heavy traffic, and a blocked drain combined, without entering every concealed decision or naming one principal debtor. The four interests share the formal burden in the proportions created by the Room 4 result. This preserves working relationships and produces the calmest immediate aftermath, but it creates no new inspection or recordkeeping rule and leaves the official account deliberately incomplete.
-3. **Place formal liability.** Open a short second menu that names the supported targets: **the quarry**, **the folds**, or **the Commonwarden's office**. This is a real allocation choice, not three alternate methods of making the same check. The selected interest bears Whitefold's internal compensation and the principal share of any contract loss. The outside Factor's Hall still deals with Whitefold as the contracting settlement; the Common cannot make an external debt disappear by naming a local culprit.
+*Cut on 2026-10-28:* a third choice, **formal liability** (naming the quarry, the folds or the Commonwarden's office as principal debtor through a second menu, with a favor cancelled and a relationship scar), was removed so the ending has two accounts and one path to the reward. The outside Factor's Hall deals with Whitefold as a whole in any case.
 
 The exact player-facing choices should state the consequence rather than merely the tone:
 
 - **Enter every concealed decision and require shared safeguards.**
 - **Record the collapse as common fault and preserve the working peace.**
-- **Assign formal liability under the road agreement.**
-
-The formal-liability submenu only shows an interest when the corresponding strong evidence exists: Hessa's slate for the quarry, Nerin's account and traces for the folds, or Edda's papers for the Commonwarden's office. The player cannot impose a legally clean judgment on suspicion alone.
 
 #### Full-accounting gate
 
@@ -347,7 +344,7 @@ The full account is available when all three principal evidence flags are true. 
 
 The physical failure chain is always known from Room 3 and is not another gate. Orlov is not required. If the full-accounting gate is closed, its disabled label should explain that the account cannot prove every concealed decision rather than hiding the route without explanation.
 
-Negotiated common fault is always available, including after `road_lost`. Formal liability is available target by target as described above. Once the player chooses, the decision is final: store it before the closing prose, apply rewards once, clear the emergency locks, and set the quest to `"resolved"` or `"failed"` behind a page boundary.
+Negotiated common fault is always available, including after `road_lost`. Once the player chooses, the decision is final: store it before the closing prose, apply rewards once, clear the emergency locks, and set the quest to `"resolved"` or `"failed"` behind a page boundary.
 
 #### How the repair and accounting outcomes combine
 
@@ -360,9 +357,7 @@ The Room 4 result determines who already bore the physical sacrifice and therefo
 | `fund_stabilized` | The emergency reserve pays for local labor and rough material, leaving Whitefold financially exposed. | **Common goodwill:** Edda and the seated interests recognize that both working livelihoods were preserved at public cost. |
 | `road_lost` | The freight road and stone delivery are lost; earlier animal, cart, or evidence losses also remain. | None. |
 
-Only the listed constituency favor can arise from a physical result. Full or shared accounting preserves it. Formal liability against that same constituency cancels it: Nerin does not offer fold goodwill if the folds are made principal debtor, Hessa does not offer quarry goodwill if the quarry is liable, and the Common does not offer its goodwill if the Commonwarden's office is liable. Blaming a different interest does not create a second favor. Full accounting additionally sets the institutional-reform outcome, but that is a world-state benefit rather than a second supplier reward.
-
-Formal liability should also leave one explicit relationship scar: Hessa becomes cool and strictly contractual, Nerin refuses personal favors, or Edda deals with the player only in her official capacity. This changes later dialogue without locking the player out of Whitefold's essential inn, market, roads, or quest services.
+Only the listed constituency favor can arise from a physical result, and both accountings preserve it. Full accounting additionally sets the institutional-reform outcome, but that is a world-state benefit rather than a second supplier reward.
 
 ## Failure State
 
@@ -370,7 +365,7 @@ The quest needs a designed loss rather than indefinite retries.
 
 If the Room 4 operation fails, or the player allows more than 240 minutes to pass after Room 2 begins, the bowed wall and drain collapse completely. No one dies solely because of one failed roll, but the freight road closes for a longer rebuilding season, Whitefold loses the quarry delivery, and animals or material already lost remain lost. Deadline failure receives its own prose showing the collapse occurring while the player is elsewhere in Whitefold; it must not silently teleport the player back to the road.
 
-This is a failed **repair**, not a reason to delete Room 5. After the immediate collapse aftermath, set the physical outcome to `"road_lost"`, advance to `"reckoning"`, and hold the Common's meeting. The player may still give a full, shared, or formal-liability account if the evidence supports it, but receives no successful-repair reward. Only after that accounting is recorded does the quest enter its final `"failed"` stage.
+This is a failed **repair**, not a reason to delete Room 5. After the immediate collapse aftermath, set the physical outcome to `"road_lost"`, advance to `"reckoning"`, and hold the Common's meeting. The player may still give a full or shared account if the evidence supports it, but receives no successful-repair reward. Only after that accounting is recorded does the quest enter its final `"failed"` stage.
 
 Suggested resolution value: `weight_road_resolution = "road_lost"`.
 
@@ -382,7 +377,7 @@ The quest occupies most of a day after its morning hook: roughly one hour of foc
 - **One completed job on the Contractor's Insignia**, because the four-seat Common witnesses and certifies the work inside Gilded Scales territory. This does **not** also award `gilded_scales_rep`; local certification is not the same as improving the player's relationship with the central organization.
 - **One finished quest toward level-up progression** after any successful Room 4 repair is carried through the Room 5 reckoning. This is separate from the Contractor's Insignia job. Implementation sets the permanent `weight_road_successful_completion` flag once the successful finale is recorded; `refresh_quests_finished` then receives exactly `+1` from the quest's count label. Do not increment `quests_finished` directly during the reward transaction, because that total is derived whenever level-up progress refreshes.
 - **Permanent White Ram kitchen and oven access** on any successful Room 4 result. Perrin benefits from retaining a usable freight route and grants the player the same practical favor regardless of which resource saved it. No extra room or counter choice is required; Cooking is available anywhere the normal inn interaction exposes Alchemy/Cooking.
-- **At most one constituency-favor flag** from the matrix above, subject to the formal-liability cancellation. These flags should unlock later services or personal requests only when those rewards are concretely designed. Do not invent a free stone, lime, wool, or equipment payout merely to consume the flag during the finale.
+- **At most one constituency-favor flag** from the matrix above. These flags should unlock later services or personal requests only when those rewards are concretely designed. Do not invent a free stone, lime, wool, or equipment payout merely to consume the flag during the finale.
 - Outcome-specific street prose, road-approach prose, Fleecefold notices, Quarry Yard and White Ram dialogue, and Lorebook additions.
 
 On `road_lost`, the player receives no silver, no completed Insignia job, no level-up quest credit, no kitchen access, and no constituency favor. The accounting decision and its relationship or reform consequences still persist; failure does not erase the investigation.
@@ -419,7 +414,6 @@ The accounting result supplies a second, independent layer:
 
 - **Full:** a posted ledger and named maintenance rota appear at the Fleecefold; later dialogue treats the rules as active rather than saying only that lessons were learned.
 - **Shared:** no names are posted, and later dialogue emphasizes the preserved peace and the things left unsaid.
-- **Formal quarry/folds/Commonwarden:** the notice names the liable interest, and the affected NPC uses the cool relationship variant described above.
 
 Use a one-time first-return exchange for the larger reaction, followed by short persistent lines so every visit does not replay the finale. Lorebook text should append the physical and accounting outcomes to the existing Whitefold and NPC entries rather than creating duplicate entries.
 
@@ -463,7 +457,7 @@ Names are provisional until implementation.
 - `weight_road_repair_roll_resolved`: replay guard for the single climactic roll and its stored result
 - `weight_road_repair_success`: whether Room 4 preserved a usable road; false on a failed operation or expired deadline
 - `weight_road_successful_completion`: permanent level-up credit marker, set only when a successful repair is finalized through Room 5; never set by `"road_lost"` and never cleared
-- `weight_road_accounting`: `"full"`, `"shared"`, `"formal_quarry"`, `"formal_folds"`, or `"formal_commonwarden"`
+- `weight_road_accounting`: `"full"` or `"shared"`
 - `weight_road_reforms_adopted`: true only after full public accounting
 - `weight_road_quarry_favor`: potential later Hessa service or request; never an automatic item payout
 - `weight_road_folds_favor`: potential later Nerin service or request; never an automatic item payout
@@ -497,11 +491,11 @@ Before implementation, decide:
 
 ## Resolved Design Decisions
 
-- **Alderford travel:** The active quest remains entirely within Whitefold. Edda's and Hessa's local records establish the delivery obligation and penalty. Orlov is not required for full public accounting, formal liability, or any repair plan. Any later visit to Orlov or Morzan is an optional post-quest attempt to confirm the filed settlement or negotiate the contract's consequences.
+- **Alderford travel:** The active quest remains entirely within Whitefold. Edda's and Hessa's local records establish the delivery obligation and penalty. Orlov is not required for full public accounting or any repair plan. Any later visit to Orlov or Morzan is an optional post-quest attempt to confirm the filed settlement or negotiate the contract's consequences.
 - **Quest weather and hour:** The hook appears in the Morning under a clear current sky when `ground_state` remains `"wet"` or `"sodden"` from earlier rain. The old water explains the failure and continuing deadline without forcing a storm to begin during the quest.
-- **Commitment and abandonment:** Ignoring the initial alarm leaves the event unstarted and eligible to recur. Following Edda into Room 1 commits the player; there is no second acceptance prompt or indefinitely suspended emergency afterward. Leaving Whitefold is blocked, while deliberately exceeding the four-hour investigation deadline produces the designed road-loss resolution.
+- **Commitment and abandonment:** Ignoring the initial alarm leaves the event unstarted and eligible to recur. Offering help and entering Room 1 commits the player; there is no second acceptance prompt or indefinitely suspended emergency afterward. Leaving Whitefold is blocked, while deliberately exceeding the four-hour investigation deadline produces the designed road-loss resolution.
 - **Room 4 resolution:** Room 4 is one decisive best-of-two skill check after the player chooses which resource Whitefold sacrifices. Earlier preparation grants advantage, support and losses alter the displayed DC, and success or failure converges on Room 5 without retries or supporting-check spam.
-- **Room 5 resolution:** Room 5 has no additional roll. Full accounting requires all three principal evidence flags, or exactly two plus both Perrin's corroborating timeline and preserved site evidence. Shared fault is always available; each formal-liability target requires its own strong evidence.
+- **Room 5 resolution:** Room 5 has no additional roll. Full accounting requires all three principal evidence flags, or exactly two plus both Perrin's corroborating timeline and preserved site evidence. Shared fault is always available.
 - **Reward scale:** Any successful repair finalized through Room 5 pays 5 Silver Marks, adds one completed Insignia job, contributes one finished quest toward level-up progression, and permanently unlocks the White Ram kitchen and oven without adding Gilded Scales standing. `road_lost` grants none of those successful-repair rewards or level-up credit.
-- **Local favors:** The physical sacrifice permits at most one constituency favor—folds after contracted-stone repair, quarry after the pasture bypass, or Common after fund stabilization. Formal liability against that constituency cancels the favor; no accounting choice creates extra constituency rewards.
+- **Local favors:** The physical sacrifice permits at most one constituency favor—folds after contracted-stone repair, quarry after the pasture bypass, or Common after fund stabilization. No accounting choice creates extra constituency rewards.
 - **Persistent scope:** Future Whitefold visits show the physical road result and accounting result in prose, dialogue, Fleecefold notices, and Lorebook additions. The first implementation does not remove map access or alter generated commodity prices and stock.

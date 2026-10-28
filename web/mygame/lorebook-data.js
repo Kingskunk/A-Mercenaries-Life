@@ -556,6 +556,9 @@
           if (truthy(s.wf_common_asked_rule)) {
             out.push("Whitefold's Common has four seats: the upper folds, the lower folds, the quarry and kilns, and the houses that live by the road. When a seat falls vacant, its people choose another voice. The four choose one of themselves as Commonwarden. The chair carries the Common's word, keeps the meeting moving, and breaks a tied vote.");
           }
+          if (truthy(s.weight_road_resolved) && s.weight_road_accounting === "full") {
+            out.push("After the Cut road wall fell she had her own part in it, the stone she let go to the lambing shelter, entered in the Common's book.");
+          }
           if (truthy(s.wf_common_asked_alderford)) {
             out.push("The Common decides its pasture, wells, walls and lanes. Contracts, weights and payments that leave the village pass through Alderford's Factor's Hall. A killing, a broken road agreement, or any dispute Whitefold cannot contain goes down to Alderford.");
           }
@@ -580,6 +583,15 @@
           if (truthy(s.wf_fold_asked_weather)) {
             out.push("He treats bad weather as work that must be met early: shut the gate, mend the fence, and get a late lamb under cover. In his view, most losses begin when someone leaves a task for morning.");
           }
+          if (truthy(s.weight_road_nerin_evidence)) {
+            out.push("His upper flocks walked the Cut road all season because the quarry's spoil had closed the high sheep track. The sheep's legs and the drain's packed mouth, full of their mud and wool, showed it.");
+          } else if (truthy(s.weight_road_nerin_reviewed)) {
+            out.push("He admits the upper flocks have come down the Cut road since the quarry closed the high sheep track.");
+          }
+          if (truthy(s.weight_road_resolved)) {
+            if (s.weight_road_resolution === "pasture_bypass") out.push("The cart track across the lower grazing took ground from the folds.");
+            if (s.weight_road_accounting === "full") out.push("His name is on the notice rail as the folds' person for clearing the high track and the road drain.");
+          }
           return out;
         },
         see: ["whitefold", "edda_cale"]
@@ -587,19 +599,32 @@
       {
         id: "hessa_vail", category: "people", title: "Hessa Vail",
         sub: "Weighkeeper at the Quarry Yard",
-        role: "Keeps the load slate at Whitefold's Quarry Yard",
+        role: "Weighs and records the loads at Whitefold's Quarry Yard",
         link: ["Hessa Vail"],
         tags: ["Whitefold", "Trade"], aliases: ["Hessa", "Vail", "Quarry Yard", "quarry", "weigh platform", "stone"],
         unlock: "wf_yard_seen",
         body: function (s) {
           var out = [
-            "The middle-aged woman at the Quarry Yard's weigh platform, with a slate at her hip, a pale seam through one eyebrow, and chalk worked into her dark gloves. She weighs the carts and marks each block before it leaves the yard."
+            "The middle-aged woman at the Quarry Yard's weigh platform, with a notebook at her hip, a pale seam through one eyebrow, and chalk worked into her dark gloves. She weighs the carts and marks each block before it leaves the yard."
           ];
           if (truthy(s.wf_yard_asked_stone)) {
             out.push("Whitefold sends cut blocks and lime down the road when the carts can carry them. Hessa leaves the wool to the folds, satisfied that the two trades share a road.");
           }
           if (truthy(s.wf_yard_asked_road)) {
             out.push("She knows the quarry road does not make a pass through the Coldspine. Beyond the working face lie goat ground, scree and drops; Stonewatch is the route through the range.");
+          }
+          if (truthy(s.weight_road_hessa_evidence)) {
+            out.push("Her notebook carried one block more than the dispatch tally on cart after cart, in the weeks the Cut road wall stood open. She knew the wall was open.");
+          } else if (truthy(s.weight_road_hessa_reviewed)) {
+            out.push("She says the loads on the Cut road varied, and that the Common is the one to answer for a wall left open since the thaw.");
+          }
+          if (truthy(s.weight_road_resolved)) {
+            var hr = s.weight_road_resolution;
+            if (hr === "road_rebuilt") out.push("The best of her stack went into the wall at the bend, and the weir order went short.");
+            else if (hr === "pasture_bypass") out.push("The weir order stayed whole, and the yard's carts run over the track across the lower grazing.");
+            else if (hr === "fund_stabilized") out.push("The weir order stayed whole, and the yard's carts run over the patched wall.");
+            else out.push("With the freight road lost, the yard's blocks wait behind a fence with nowhere to go.");
+            if (s.weight_road_accounting === "full") out.push("Her name is on the notice rail as the yard's person for clearing the high track and the road drain.");
           }
           return out;
         },
@@ -612,10 +637,19 @@
         link: ["Perrin Holt"],
         tags: ["Whitefold"], aliases: ["Perrin", "Holt", "innkeeper", "White Ram", "rooms", "stable yard"],
         unlock: "wf_ram_seen",
-        body: [
-          "The broad-shouldered keeper of the White Ram, with a close grey beard, a flattened nose that healed crooked, flour on one sleeve, and the room keys at his belt. He keeps the inn's stove, beds and stable yard in working order.",
-          "Perrin offers stew, a bed and a dry stall without ceremony. The White Ram's public room faces Whitefold's common, while its small stable yard has a covered trough, hitching rails and four dry stalls."
-        ],
+        body: function (s) {
+          var out = [
+            "The broad-shouldered keeper of the White Ram, with a close grey beard, a flattened nose that healed crooked, flour on one sleeve, and the room keys at his belt. He keeps the inn's stove, beds and stable yard in working order.",
+            "Perrin offers stew, a bed and a dry stall without ceremony. The White Ram's public room faces Whitefold's common, while its small stable yard has a covered trough, hitching rails and four dry stalls."
+          ];
+          if (truthy(s.weight_road_perrin_reviewed)) {
+            out.push("Carters and shepherds talk while they eat at his tables. He saw a handcart of the road crew's stacked stone go up the lane toward the lambing shelter before Edda came in wanting stew for the crew, and he cannot say who agreed to it.");
+          }
+          if (truthy(s.wf_ram_kitchen_unlocked)) {
+            out.push("Once the freight road was carrying carts again and the Common had met, he opened his kitchen and oven to the person who carried the account through, at any hour the stove is lit.");
+          }
+          return out;
+        },
         see: ["whitefold"]
       },
       {
@@ -920,6 +954,15 @@
           }
           if (truthy(s.wf_ram_seen)) {
             out.push("The White Ram is the inn beside the common, with a stove-warmed public room, beds upstairs and a small walled stable yard.");
+          }
+          if (truthy(s.weight_road_resolved)) {
+            var wr = s.weight_road_resolution;
+            if (wr === "road_rebuilt") out.push("The wall at the bend of the Cut road was rebuilt in the Coldspine's own cut stone after it collapsed, at the price of the best of the yard's weir order.");
+            else if (wr === "pasture_bypass") out.push("After the Cut road wall collapsed, carts were sent over a fenced track across the lower grazing, and the old road stands closed.");
+            else if (wr === "fund_stabilized") out.push("The Cut road wall was patched in rough mixed stone, paid for out of the Common's reserve, and is checked every few days.");
+            else out.push("When the Cut road wall collapsed the freight road was lost. It stays fenced above the bend, and only walkers and pack animals use the track around the slope.");
+            if (s.weight_road_accounting === "full") out.push("The Common wrote the whole chain of the collapse into its book. Every coin taken from its box is now written down, the quarry's loads are held until the road is signed sound, and the yard and the folds each name a person to clear the high track and the road drain.");
+            else out.push("The Common recorded the collapse as everyone's fault, in few words.");
           }
           return out;
         },

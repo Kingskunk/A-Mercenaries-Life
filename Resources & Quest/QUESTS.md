@@ -72,6 +72,18 @@ graph TD
 
 ---
 
+## The Weight of the Road (`alderford/whitefold/the_weight_of_the_road.txt`)
+
+* **Origin:** A Whitefold civic investigation and repair. On a Morning with clear weather over wet ground, campaign day 30 or later, once the player holds an Insignia with ten finished jobs and has met Edda, Nerin, Hessa and Perrin, a horn sounds and the retaining wall on the Limestone Cut road collapses. The player overhears the alarm and chooses to offer their services (Edda reads the Insignia and promises pay) or keep out of it (the quest stays unstarted and the hook can return on a later eligible morning). Offering help is the commitment.
+* **Rooms:** (1) The broken road: one intervention, the cart (Athletics 12; an Iron Prybar or Hemp Rope gives advantage), the sheep (Animal Handling 11, or Speak with Animals as an automatic success when it can be cast as a spell) or the site (Investigation 12). (2) Four accounts of one road: Hessa (Investigation 12 on her notebook against the dispatch tally), Nerin (Survival 11 on the penned flock), Perrin (no check), then Edda's papers (Persuasion 12) at the commitment, which needs two leads reviewed. (3) The wall beneath the road: read the ditch, the rows and the fill (guaranteed), read the weir order and the road agreement, make one preparation (Investigation 12, Survival 11 or Athletics 12), then the roadside decision. (4) The price of repair: one irreversible best-of-two roll, the contracted stone (Athletics or Investigation, base 13), the pasture bypass (Survival or Animal Handling, base 12) or the Common's fund (Persuasion or Insight, base 12). (5) The Common's reckoning: no roll; the full account (needs proof) or the shared account.
+* **The clock:** The investigation is timed from Edda's request. Past 120 minutes the Room 3 preparation has disadvantage, past 180 the repair DC rises by one, and past 240 the wall gives way (the road is lost). Whitefold cannot be left while the quest is active, and the inn's sleep and training are not offered.
+* **Resolutions:** `road_rebuilt`, `pasture_bypass`, `fund_stabilized` or `road_lost`, with a `full` or `shared` accounting. A successful repair pays 5 Silver Marks, adds one completed job to the Insignia (no Gilded Scales standing), counts once toward level progress, opens the White Ram's kitchen and oven for good and sets one constituency-favor flag (folds, quarry or Common; the flags unlock nothing yet). `road_lost` pays nothing. Full accounting also sets `weight_road_reforms_adopted`.
+* **Player-facing state:** The sidebar lists the quest while it is active, with clues as they are found. Afterwards Whitefold shows the road as it stands, a notice and rota after a full account, a line in the Quarry Yard and the Fleecefold, and one short word from Edda on the first visit on a later day. The Lorebook's Whitefold and Edda entries record the outcome. Formal liability (naming one local interest as debtor) and the Orlov and Morzan follow-up at the Factor's Hall were cut or left out.
+* **Level progress:** A successful repair counts as one completed quest (`weight_road_successful_completion`, counted by `count_finished_weight_road`).
+* **Key variables:** `weight_road_quest_stage`, `weight_road_active`, `weight_road_resolution`, `weight_road_accounting`, `weight_road_repair_plan`, `weight_road_repair_dc`, `weight_road_successful_completion`, `wf_ram_kitchen_unlocked`; the full list is in `startup_parts/50_the_weight_of_the_road.txt` and the design in `THE_WEIGHT_OF_THE_ROAD_PLAN.md`.
+
+---
+
 ## Chapter 1: The Black Sinks (`battle_black_sinks.txt`)
 
 ### 1. Assault on the Sinks Gatehouse

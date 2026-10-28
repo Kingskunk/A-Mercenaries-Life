@@ -16,6 +16,8 @@
 *temp wf_yard_first false
 *if (not(wf_yard_seen))
   *set wf_yard_first true
+*comment THE WEIGHT OF THE ROAD: the day the player kept out of the alarm (weight_road_hook_declined_day), Hessa is away at the broken wall and her conversations are closed.
+*temp wf_away (weight_road_hook_declined_day = campaign_day)
 *set wf_yard_seen true
 [b]◈ THE QUARRY YARD[/b]
 *line_break
@@ -31,16 +33,37 @@ The Quarry Yard lies below the lowest pale face of the Coldspine. Stone blocks s
   Work lamps burn under the sheds, but the gate toward the quarry itself is barred.
 
 *if (wf_yard_first)
-  A middle-aged human woman stands by the weigh platform with a slate tucked against her hip. Her face is broad and weather-reddened, a pale seam cuts through one eyebrow, and chalk has settled into the creases of her dark work gloves. She glances from the cart marks to you.
+  A middle-aged human woman stands by the weigh platform with a notebook tucked against her hip. Her face is broad and weather-reddened, a pale seam cuts through one eyebrow, and chalk has settled into the creases of her dark work gloves. She glances from the cart marks to you.
 
   "Hessa Vail," she says. "If you need stone, wait until I finish weighing this load. If you need trouble, the mountain has enough of its own."
+*elseif (wf_away)
+  The weigh platform stands empty, and most of the carts are gone from the yard. The blocks wait in their ranks under the sheds.
+*elseif (weight_road_quest_stage = "investigation")
+  Hessa Vail stands at the weigh platform picking dried grey mud off the cover of her notebook with a thumbnail.
 *else
-  Hessa Vail marks another block on her slate beside the weigh platform.
+  Hessa Vail marks another block in her notebook beside the weigh platform.
+
+*if (weight_road_resolved)
+  *if (weight_road_resolution = "road_rebuilt")
+    Gaps show in the stacks where the best blocks went into the road, and the weir order's tally hangs unfilled on the weigh-house door.
+  *elseif (weight_road_resolution = "pasture_bypass")
+    Carts queue at the gate for the new track, and the stacks stand whole under their sheds.
+  *elseif (weight_road_resolution = "fund_stabilized")
+    The stacks stand whole under their sheds, with the weir order's blocks ready for the carts.
+  *else
+    Blocks pile up in the yard with nowhere to go, and few carts stand at the gate.
 
 *comment Open-world free time: the sidebar's Wait and Rest work on this page (web/mygame/pagegate.js).
 *set wait_ok_page page_id
 *choice
-  *if (not(wf_yard_asked_stone))
+  *comment THE WEIGHT OF THE ROAD, Room 2: Hessa's account, then her notebook against the dispatch tally (the_weight_of_the_road.txt wr_hessa).
+  *if ((weight_road_quest_stage = "investigation") and (not(weight_road_hessa_reviewed)))
+    # Ask Hessa about the broken road.
+      *goto_scene alderford/whitefold/the_weight_of_the_road wr_hessa
+  *if ((weight_road_quest_stage = "investigation") and ((weight_road_hessa_reviewed) and (not(weight_road_hessa_tried))))
+    # Compare Hessa's notebook with the clean dispatch tally.@{show_stat_hints  [Investigation DC 12]|}
+      *goto_scene alderford/whitefold/the_weight_of_the_road wr_hessa_compare
+  *if ((not(wf_yard_asked_stone)) and (not(wf_away)))
     # Ask Hessa what Whitefold sends down the road.
       *set wf_yard_asked_stone true
       You nod toward the covered stacks. "What leaves Whitefold most often?"
@@ -57,7 +80,7 @@ The Quarry Yard lies below the lowest pale face of the Coldspine. Stone blocks s
         # ⇥ [pvgo:home:whitefold]
           *goto wf_stone_yard
         *comment GEN:END place_steps home:whitefold
-  *if (not(wf_yard_asked_road))
+  *if ((not(wf_yard_asked_road)) and (not(wf_away)))
     # Ask Hessa whether the quarry road goes any farther into the Coldspine.
       *set wf_yard_asked_road true
       You nod toward the broad gate and the track beyond it. "Does this road keep going after the quarry?"

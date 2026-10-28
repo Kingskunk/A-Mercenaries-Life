@@ -12,6 +12,9 @@
  *   whose only statements are an optional *set shop_open "" and a *goto to the hub, or to a page that has such an exit itself) also gets a hidden copy "⇥ [pvgo:home:<settlement>]". The list of files that count as
  *   place menus is in the registry: quest pages, event pages, job lots and romance scenes are left out on purpose, so those pages stay un-leavable from the sidebar, as they were.
  *
+ * A LOCK. A service may carry lock: a variable name, and lockReason: the words shown while it is true. The card greys the button and refuses the route (citytravel.js). The hub's own option must carry the same guard, so the hidden copy
+ *   this script clones does not exist while the lock holds; the lock only makes the refusal immediate and explains it.
+ *
  * THE CONTRACT. Every settlement must define all three services; this script throws if one is missing or a step finds no option, so a half-built village fails the compile instead of reaching the player.
  * ADDING A SETTLEMENT: one entry in SETTLEMENTS below (its hub page and labels, its place files, the three routes), then `node tools/gen_city_data.js`. The minutes each route costs are measured by
  * tools/check_city_settlements.js --write into tools/city_settlements_extra.json.
@@ -75,7 +78,8 @@ const SETTLEMENTS = {
     services: {
       board: { name: "Notice board", seen: "wf_fold_seen", steps: [S("whitefold", "wf_fleecefold", "alderford/whitefold/whitefold.txt"), S("wf_fleecefold", "cr_read", "alderford/whitefold/fleecefold.txt")], done: "You are at the notice rail." },
       inn: { name: "The White Ram", seen: "wf_ram_seen", steps: [S("whitefold", "wf_white_ram", "alderford/whitefold/whitefold.txt")], done: "You are at the White Ram." },
-      leave: { name: "Leave Whitefold", steps: [S("whitefold", "ow_here", "alderford/whitefold/whitefold.txt")], done: "You take the road out of Whitefold." }
+      // The Weight of the Road holds the village shut: the hub's roads option is guarded by the same flag (so no hidden copy exists while it is set), and the card greys the button with this reason.
+      leave: { name: "Leave Whitefold", steps: [S("whitefold", "ow_here", "alderford/whitefold/whitefold.txt")], done: "You take the road out of Whitefold.", lock: "weight_road_active", lockReason: "The roads are shut while the wall is down." }
     }
   },
   barleycross: {
@@ -190,7 +194,7 @@ function run(opts) {
     const services = SERVICES.map(s => {
       def.services[s].steps.forEach(st => keys.add(st[0] + ":" + st[1]));
       if (s !== "leave" && !def.services[s].seen) throw new Error("settlement " + id + " " + s + " has no seen flag (the Town card greys it until the player has been there)");
-      return { id: s, name: def.services[s].name, seen: def.services[s].seen || "", done: def.services[s].done, steps: def.services[s].steps.map(st => st[0] + ":" + st[1]), stepMin: (measured[id] && measured[id][s]) ? measured[id][s] : def.services[s].steps.map(() => 0) };
+      return { id: s, name: def.services[s].name, seen: def.services[s].seen || "", lock: def.services[s].lock || "", lockReason: def.services[s].lockReason || "", done: def.services[s].done, steps: def.services[s].steps.map(st => st[0] + ":" + st[1]), stepMin: (measured[id] && measured[id][s]) ? measured[id][s] : def.services[s].steps.map(() => 0) };
     });
     out[id] = { name: def.name, keys: Array.from(keys), services: services };
   });

@@ -525,6 +525,8 @@ window.CITY_SETTLEMENTS = {
     "id": "board",
     "name": "Notice board",
     "seen": "af_hall_seen",
+    "lock": "",
+    "lockReason": "",
     "done": "You are at the notice board.",
     "steps": [
      "af_menu:af_hall",
@@ -539,6 +541,8 @@ window.CITY_SETTLEMENTS = {
     "id": "inn",
     "name": "The Drowned Oar Taphouse",
     "seen": "af_oar_seen",
+    "lock": "",
+    "lockReason": "",
     "done": "You are at the Drowned Oar.",
     "steps": [
      "af_menu:af_oar"
@@ -551,6 +555,8 @@ window.CITY_SETTLEMENTS = {
     "id": "leave",
     "name": "Leave Alderford",
     "seen": "",
+    "lock": "",
+    "lockReason": "",
     "done": "You take the road out of Alderford.",
     "steps": [
      "af_menu:ow_here"
@@ -574,6 +580,8 @@ window.CITY_SETTLEMENTS = {
     "id": "board",
     "name": "Notice board",
     "seen": "tm_hall_seen",
+    "lock": "",
+    "lockReason": "",
     "done": "You are at the notice board.",
     "steps": [
      "tm_menu:tm_hall",
@@ -588,6 +596,8 @@ window.CITY_SETTLEMENTS = {
     "id": "inn",
     "name": "The Split Pine Inn",
     "seen": "tm_inn_seen",
+    "lock": "",
+    "lockReason": "",
     "done": "You are at the Split Pine Inn.",
     "steps": [
      "tm_menu:tm_inn"
@@ -600,6 +610,8 @@ window.CITY_SETTLEMENTS = {
     "id": "leave",
     "name": "Leave Timbermouth",
     "seen": "",
+    "lock": "",
+    "lockReason": "",
     "done": "You take the road out of Timbermouth.",
     "steps": [
      "tm_menu:ow_here"
@@ -623,6 +635,8 @@ window.CITY_SETTLEMENTS = {
     "id": "board",
     "name": "Notice board",
     "seen": "bw_tide_house_seen",
+    "lock": "",
+    "lockReason": "",
     "done": "You are at the notice board.",
     "steps": [
      "brinewick:bw_tide_house",
@@ -637,6 +651,8 @@ window.CITY_SETTLEMENTS = {
     "id": "inn",
     "name": "The Reedhouse",
     "seen": "bw_reedhouse_seen",
+    "lock": "",
+    "lockReason": "",
     "done": "You are at the Reedhouse.",
     "steps": [
      "brinewick:bw_reedhouse"
@@ -649,6 +665,8 @@ window.CITY_SETTLEMENTS = {
     "id": "leave",
     "name": "Leave Brinewick",
     "seen": "",
+    "lock": "",
+    "lockReason": "",
     "done": "You take the bank road out of Brinewick.",
     "steps": [
      "brinewick:ow_here"
@@ -672,6 +690,8 @@ window.CITY_SETTLEMENTS = {
     "id": "board",
     "name": "Notice board",
     "seen": "mc_hall_seen",
+    "lock": "",
+    "lockReason": "",
     "done": "You are at the notice board.",
     "steps": [
      "marlcross:mc_cross_hall",
@@ -686,6 +706,8 @@ window.CITY_SETTLEMENTS = {
     "id": "inn",
     "name": "The Wayfarer's Rest",
     "seen": "mc_rest_seen",
+    "lock": "",
+    "lockReason": "",
     "done": "You are at the Wayfarer's Rest.",
     "steps": [
      "marlcross:mc_wayfarers_rest"
@@ -698,6 +720,8 @@ window.CITY_SETTLEMENTS = {
     "id": "leave",
     "name": "Leave Marlcross",
     "seen": "",
+    "lock": "",
+    "lockReason": "",
     "done": "You take the High Grey Road out of Marlcross.",
     "steps": [
      "marlcross:ow_here"
@@ -721,6 +745,8 @@ window.CITY_SETTLEMENTS = {
     "id": "board",
     "name": "Notice board",
     "seen": "rv_hall_seen",
+    "lock": "",
+    "lockReason": "",
     "done": "You are at the notice board.",
     "steps": [
      "redvein:rv_gather_house",
@@ -735,6 +761,8 @@ window.CITY_SETTLEMENTS = {
     "id": "inn",
     "name": "The Red Lantern",
     "seen": "rv_lantern_seen",
+    "lock": "",
+    "lockReason": "",
     "done": "You are at the Red Lantern.",
     "steps": [
      "redvein:rv_red_lantern"
@@ -747,6 +775,8 @@ window.CITY_SETTLEMENTS = {
     "id": "leave",
     "name": "Leave Redvein",
     "seen": "",
+    "lock": "",
+    "lockReason": "",
     "done": "You take the Eastcut Road out of Redvein.",
     "steps": [
      "redvein:ow_here"
@@ -770,6 +800,8 @@ window.CITY_SETTLEMENTS = {
     "id": "board",
     "name": "Notice board",
     "seen": "wf_fold_seen",
+    "lock": "",
+    "lockReason": "",
     "done": "You are at the notice rail.",
     "steps": [
      "whitefold:wf_fleecefold",
@@ -784,6 +816,8 @@ window.CITY_SETTLEMENTS = {
     "id": "inn",
     "name": "The White Ram",
     "seen": "wf_ram_seen",
+    "lock": "",
+    "lockReason": "",
     "done": "You are at the White Ram.",
     "steps": [
      "whitefold:wf_white_ram"
@@ -796,6 +830,8 @@ window.CITY_SETTLEMENTS = {
     "id": "leave",
     "name": "Leave Whitefold",
     "seen": "",
+    "lock": "weight_road_active",
+    "lockReason": "The roads are shut while the wall is down.",
     "done": "You take the road out of Whitefold.",
     "steps": [
      "whitefold:ow_here"
@@ -820,6 +856,8 @@ window.CITY_SETTLEMENTS = {
     "id": "board",
     "name": "Notice board",
     "seen": "bc_hall_seen",
+    "lock": "",
+    "lockReason": "",
     "done": "You are at the notice post.",
     "steps": [
      "barleycross:bc_green",
@@ -834,6 +872,8 @@ window.CITY_SETTLEMENTS = {
     "id": "inn",
     "name": "The farmer's barn",
     "seen": "bc_lane_seen",
+    "lock": "",
+    "lockReason": "",
     "done": "You are at the barn.",
     "steps": [
      "barleycross:bc_lane",
@@ -848,6 +888,8 @@ window.CITY_SETTLEMENTS = {
     "id": "leave",
     "name": "Leave Barleycross",
     "seen": "",
+    "lock": "",
+    "lockReason": "",
     "done": "You take the farm road out of Barleycross.",
     "steps": [
      "barleycross:ow_here"
@@ -871,6 +913,8 @@ window.CITY_SETTLEMENTS = {
     "id": "board",
     "name": "Board of cords",
     "seen": "ah_speaker_seen",
+    "lock": "",
+    "lockReason": "",
     "done": "You are at the board of cords.",
     "steps": [
      "ashrun_holt:ah_longhouse",
@@ -885,6 +929,8 @@ window.CITY_SETTLEMENTS = {
     "id": "inn",
     "name": "Ashrun House",
     "seen": "ah_inn_seen",
+    "lock": "",
+    "lockReason": "",
     "done": "You are at Ashrun House.",
     "steps": [
      "ashrun_holt:ah_inn"
@@ -897,6 +943,8 @@ window.CITY_SETTLEMENTS = {
     "id": "leave",
     "name": "Leave Ashrun Holt",
     "seen": "",
+    "lock": "",
+    "lockReason": "",
     "done": "You take the forest track out of Ashrun Holt.",
     "steps": [
      "ashrun_holt:ow_here"

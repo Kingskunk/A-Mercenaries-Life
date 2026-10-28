@@ -1,0 +1,1333 @@
+*comment ====================================================================================
+*comment THE WEIGHT OF THE ROAD (Whitefold quest). The plan is Resources & Quest/THE_WEIGHT_OF_THE_ROAD_PLAN.md; every variable it uses is created in startup_parts/50_the_weight_of_the_road.txt.
+*comment The quest is five conceptual rooms: the broken road, four accounts of one road, the wall beneath the road, the price of repair and the Common's reckoning. This file holds all of the quest's own labels and prose;
+*comment only its hooks and choices live in whitefold.txt, fleecefold.txt, stone_yard.txt and white_ram.txt.
+*comment ====================================================================================
+
+*comment ── THE VILLAGE LOCK ──
+*comment While weight_road_active is true Whitefold cannot be left: the hub's roads option (whitefold.txt), the sidebar's Leave Whitefold (tools/gen_city_settlements.js, the lock on the leave service) and the overworld
+*comment handoff (overworld.txt ow_here) all read it. Sidebar Wait and Rest read wait_lock_reason (pagegate.js), so the quest sets its own words there and clears them only if they are still its own, never another system's lock.
+*comment Every route that ends the quest (resolved or failed) must call weight_road_release_village. Both labels are plain sets, so a replayed page repeats them harmlessly.
+*label weight_road_lock_village
+*set weight_road_active true
+*set wait_lock_reason "The wall above the road is still shifting. This is no time to sit idle."
+*return
+
+*label weight_road_release_village
+*set weight_road_active false
+*if (wait_lock_reason = "The wall above the road is still shifting. This is no time to sit idle.")
+  *set wait_lock_reason ""
+*return
+
+*comment ── LEVEL-UP QUEST CREDIT ──
+*comment Level-up quest pool: a successful repair carried through the Common's reckoning counts once.
+*comment replay-ok: refresh_quests_finished (character_progression.txt) sets quests_finished to 0 and then calls this label, so the count is rebuilt from the permanent flag on every call and a replay cannot double it.
+*label count_finished_weight_road
+*if (weight_road_successful_completion)
+  *set quests_finished + 1
+*return
+
+*comment ── THE HOOK (Room 1, first half) ──
+*comment Reached from the Whitefold hub (whitefold.txt) on the same page, straight after the sky layer, so it replaces the street layer for that visit. The player overhears the alarm and chooses: offering to help is the
+*comment commitment (Edda reads the Insignia, accepts and promises pay; the player is never approached), keeping out of it leaves the quest unstarted (only the day is stored, so the alarm does not repeat that morning).
+*label wr_hook
+
+A horn sounds from the Quarry Yard in short, hard blasts, over and over, until the common stops what it was doing.
+
+A man comes running up the Limestone Cut road with mud to his thighs and chalk to the elbows. He runs straight past the trough. "The wall!" he shouts at the Fleecefold. "Edda! The road wall's down at the Cut bend, the cart's on the lip and the sheep are under it!"
+
+Edda Cale is out of the Fleecefold door before he reaches it, her crook in one hand. She takes him by the arm. "How much of it?"
+
+"Twenty feet, and the rest is bulging out over the drop. The lads can't hold that cart on the rope alone."
+
+"Then every hand in the yard goes up there," she says. "Rope, levers, hurdles for the sheep. Go."
+
+The man turns back toward the Cut road, and the first of the quarry carts is already rolling out of the yard behind him. Edda sets off after them at a hard walk, calling for rope as she goes. You are close enough to catch her up.
+
+*choice
+  # Offer your services to Edda.
+    You fall in beside her. "You'll want more hands on that road. I'm for hire."
+
+    Edda stops short and looks you over. "Brass first." she says, holding out her palm.
+
+    You put your Insignia in her hand. She takes a flat grey stone from her coat and passes it over the disc, and the brass gives its soft chime.
+
+    "${name}," she reads. "$!{hall_insignia_rank} rank. Port Valen page, ${hall_jobs_scales} jobs finished." She presses the Insignia back into your hand. "That'll do."
+
+    The horn sounds again. "Come up the road with me and do as I say," Edda says, already moving, "and Whitefold will pay you well for it."
+    *goto wr_follow
+  # Keep out of it.
+    You turn back to what you were doing. The horn goes on while the carts rumble up the Cut road after the runner, and Edda's calling fades behind them.
+    *set weight_road_hook_declined_day campaign_day
+    *page_break Back to the common…
+    *goto_scene alderford/whitefold/whitefold whitefold
+
+*comment Following is the commitment: the stage moves to emergency, Whitefold shuts behind the player and the quest's wait lock is set. Both are plain sets, so a replayed page repeats them harmlessly.
+*label wr_follow
+*set weight_road_quest_stage "emergency"
+*gosub weight_road_lock_village
+*page_break Up the Limestone Cut road…
+*goto wr_room1
+
+*comment ── ROOM 1: THE BROKEN ROAD ──
+*comment The player arrives while the cart, the flock and the bowed wall are all still in danger and takes ONE intervention (the plan's table): the cart (Athletics 12, a carried Iron Prybar or Hemp Rope gives advantage),
+*comment the sheep (Animal Handling 11, or Speak with Animals as an automatic success when it can be cast right now as a spell, never a ritual) or the site (Investigation 12). Each is a single roll with no retry.
+*comment A success sets that intervention's saved flag and trust flag; a failure leaves the matching cost, and the two problems not chosen are left to the villagers (their flags stay false). All routes meet at wr_settled.
+*comment weight_road_common_trust is set by a successful site intervention (Edda's own priority was getting people off the bowed wall); the plan did not name a source for it.
+*label wr_room1
+*set minutes_to_pass 15
+*set time_advance_call_id "wr_room1_walk"
+*gosub_scene alderford/whitefold/whitefold wf_walk_time
+*gosub_scene dungeon dg_spell_source "speak_with_animals" "Speak with Animals" 0 "spell"
+
+The Limestone Cut road leaves the common between the sheep pens and climbs along the shoulder of the slope. You hear the bend before you reach it: men shouting in short bursts, a dog barking without pause, and under it a dry grinding of stone on stone.
+
+At the bend, the downhill half of the road is gone. About twenty feet of the wall that held it up has folded outward and slid away down the slope, and the cart track ends in a ragged shelf with wheel ruts running out into air. Pale facing stones lie scattered through torn turf and grey fill. The covered drain that carried ditch water out under the road once opened through that wall, and its mouth is buried now beneath fallen blocks. Brown water is gathering in the ditch on the uphill side and seeping into the broken edge of the road.
+
+The wall beyond the gap still stands, bellied out over the drop. Every time a boot or a wheel crosses the road above it, chalk crumbs and wet grit trickle from between its stones.
+
+A loaded quarry cart has slewed toward the edge, one wheel sunk to its hub and the bed tilted downhill. Squared pale blocks are stacked on the bed, and they slide a finger's width each time the team lunges. Four men with chalk to the elbows haul on a rope made fast to the cart's rear post, their boots skating in the mud.
+
+Hessa Vail stands at the tail of the cart with her notebook crushed under one arm. "That's the weir order for the Factor's Hall!" she bawls at the men. "Every block on that bed is paid for already! Hold her!"
+
+Below the road, the flock has scattered over the rubble slope. Some animals are wedged among the fallen stones, some are bunched in a hollow, and a dozen or so are bolting downhill with two dogs and a pair of shepherds cutting after them. Nerin Bale stands among the stones with one arm raised, turning what he can. "The old ewe with the red daub on her neck!" he shouts up the slope. "Turn her and the rest will follow!"
+
+Edda Cale is waving the loose hands back from the bowed wall. "Off it! Everyone off it, or it goes the same way!"
+
+*choice
+  # Secure the cart and team.@{show_stat_hints  [Athletics DC 12]|}
+    *goto wr_cart
+  # Round up the scattered sheep.@{show_stat_hints  [Animal Handling DC 11]|}
+    *goto wr_sheep
+  # Get everyone off the bowed wall and keep the collapse as it fell.@{show_stat_hints  [Investigation DC 12]|}
+    *goto wr_site
+  *if (dg_ss_can)
+    # Call to the scattered flock. [${dg_ss_tag}]
+      *goto wr_sheep_call
+
+*label wr_cart
+*set weight_road_emergency_choice "cart"
+You shove through to the tail of the cart. "Hold the team where they stand," you tell the men on the rope. "Nobody pulls until I say."
+
+*if (has_iron_crowbar)
+  You jam your Iron Prybar under the sunk wheel and set your weight on it.
+  *set advantage true
+*elseif (has_hemp_rope)
+  You pass a turn of your Hemp Rope round the cart's front post and back to the men, so the strain is shared between them.
+  *set advantage true
+*else
+  You get your shoulder under the leaning bed and plant your feet.
+*gosub_scene dice_engine roll_skill_check 12 "athletics" "" "" "" "" ""
+*if (check_success)
+  The wheel grinds up out of its hole an inch, then three. "Now!" you shout, and the men walk the team forward one step at a time until all four wheels bear on solid road.
+
+  Hessa runs a finger down her notebook, checking it against the stack line by line, all the way to the end. "All here," she says, and gives you one short nod.
+  *set weight_road_cart_saved true
+  *set weight_road_quarry_trust true
+*else
+  The lever skids on the wet stone. The wheel lurches, the load surges against its ropes, and three blocks slide off the bed and go down the slope, bouncing, taking turf with them. A horse goes to its knees in the harness, and the cart's tail swings round and catches you across the shoulder.
+
+  *gosub wr_hurt
+
+  The men get the team up and the cart held with what is left of the load. Hessa watches the blocks go with her mouth set hard, then turns and bellows at the rope crew to keep their feet.
+*set minutes_to_pass 25
+*set time_advance_call_id "wr_room1_work"
+*gosub_scene alderford/whitefold/whitefold wf_walk_time
+*goto wr_settled
+
+*label wr_sheep
+*set weight_road_emergency_choice "sheep"
+You scramble down onto the rubble beside Nerin. "Which ones lead?" you call.
+
+"The old ewe with the red daub!" Nerin shouts back, and he points her out with his crook, a heavy-boned ewe working her way across the slope with half the flock strung out behind her. "Get her turned toward the fold gate, and the rest will follow."
+
+*gosub_scene dice_engine roll_skill_check 11 "animal_handling" "" "" "" "" ""
+*if (check_success)
+  You work along the low side of the slope, slow and wide, and when the old ewe swings her head toward you, you step across her path and hold your arms out. She stops short. The sheep behind her pile up, bawling, and the dogs flatten to the ground at your heels. You walk them up the slope toward the fold gate a few steps at a time, and the rest of the flock strings out behind.
+
+  Nerin counts them through the gate with his crook. "That's every one," he says. "I'd not have laid money on it."
+  *set weight_road_sheep_saved true
+  *set weight_road_folds_trust true
+*else
+  You come in too fast and too close. The old ewe wheels away from you and breaks across the rubble, and the flock goes after her in a bleating rush. Some go down among the loose stones, and a few never get up again. The dogs cut off the rest before they can follow.
+
+  Nerin is already on his knees among the fallen sheep.
+*set minutes_to_pass 25
+*set time_advance_call_id "wr_room1_work"
+*gosub_scene alderford/whitefold/whitefold wf_walk_time
+*goto wr_settled
+
+*comment Speak with Animals: an automatic success. Paid through the shared spell-source routines (a free casting, a slot or a scroll; never a ritual here, since the source was asked for as a spell) and replay-safe because dg_spell_cast keeps its own lock.
+*label wr_sheep_call
+*set weight_road_emergency_choice "sheep"
+*gosub_scene dungeon dg_spell_cast "speak_with_animals"
+You scramble down onto the rubble beside Nerin.
+*if (dg_ss_cost = "scroll")
+  You unroll the scroll and read it aloud over the noise.
+*elseif (dg_ss_cost = "slot")
+  You speak the words and feel the spell leave you.
+*else
+  You speak the words under your breath.
+The shouting around you thins to a single animal's bleat, and then to words.
+
+"You, with the red on your neck!" you call to the old ewe. "They're all following you. Turn up the slope toward the gate, and don't stop."
+
+The ewe's head swings round, her eyes ringed with white. "Ground ran," she bleats. "Stones fell. The lambs..."
+
+"I know," you tell her. "Up the slope, to the gate. I'll be right behind you."
+
+She bawls once, a long note that the others take up, and turns uphill. The flock pours after her over the rubble in a bleating stream.
+
+Nerin lowers his crook. "What did you say to her?"
+
+"Where to go," you answer.
+
+"Aye, well." He watches the last of them through the gate. "She'd not have done it for me."
+*set weight_road_sheep_saved true
+*set weight_road_folds_trust true
+*set minutes_to_pass 15
+*set time_advance_call_id "wr_room1_work"
+*gosub_scene alderford/whitefold/whitefold wf_walk_time
+*goto wr_settled
+
+*label wr_site
+*set weight_road_emergency_choice "site"
+You climb back onto the road and plant yourself between the workers and the bowed wall. "Leave the fallen stone where it lies!" you shout. "Everybody off the road below the cart!"
+
+While they back away, you walk the edge, reading it: the courses of the standing wall, the wheel ruts running out into air, the fresh breaks around the buried drain mouth.
+
+*gosub_scene dice_engine roll_skill_check 12 "investigation" "" "" "" "" ""
+*if (check_success)
+  You find the line where the road still holds and draw it in the mud with your heel, then have the workers lay hurdles along it. "Nothing past this moves," you tell them. "Not a stone." Edda takes the line as her own and shouts it down the road, and the men fall back from the edge. The fallen blocks lie where they came to rest, with the drain mouth and the courses above it still readable.
+  *set weight_road_evidence_preserved true
+  *set weight_road_common_trust true
+*else
+  You call the line too far out. Before you can correct it, a gang hurrying to clear the road drags the facing stones off the drain mouth and flings them down the slope, and the rubble beside it is turned over. Edda hauls the men back from the bowed wall. The courses around the drain are scrambled now, and some of what the fall might have shown is gone.
+*set minutes_to_pass 25
+*set time_advance_call_id "wr_room1_work"
+*gosub_scene alderford/whitefold/whitefold wf_walk_time
+*goto wr_settled
+
+*comment HP lost to the cart's failure (1 to 4), inside the lock a replay cannot repeat, never below 1. weight_road_hurt keeps the number so a replayed page prints the same banner.
+*label wr_hurt
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *rand weight_road_hurt 1 4
+  *if (hp_current > weight_road_hurt)
+    *set hp_current (hp_current - weight_road_hurt)
+  *else
+    *set hp_current 1
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+[b][Lost ${weight_road_hurt} HP][/b]
+*return
+
+*comment Every route meets here. The two problems the player did not choose were handled by the villagers, imperfectly: their saved flags stay false, which is what Room 4's difficulty reads.
+*label wr_settled
+*page_break The horn falls silent…
+
+The horn in the yard has stopped. The worst is over, and what is left is quieter.
+
+*if (weight_road_cart_saved)
+  The cart stands on solid road with every block still on its bed, and the team stands with their heads low, steaming.
+*elseif (weight_road_emergency_choice = "cart")
+  The cart stands on the road short of the blocks that went down the slope, and the near horse favors a foreleg.
+*else
+  The villagers have dragged the cart off the lip with ropes and a great deal of shouting, but not before some of its blocks went over the edge.
+
+*if (weight_road_sheep_saved)
+  The flock is penned at the fold gate, whole and bleating.
+*elseif (weight_road_emergency_choice = "sheep")
+  Most of the flock is penned at the fold gate, and Nerin and two shepherds are working among the animals still lying on the slope.
+*else
+  The shepherds and their dogs have gathered most of the flock, but a number of sheep lie among the fallen stones.
+
+*if (weight_road_evidence_preserved)
+  The fallen blocks lie as they came to rest, with hurdles marking the line nobody crosses.
+*elseif (weight_road_emergency_choice = "site")
+  Workers are hauling the last of the scattered stone clear of the drain, and the ground around it is trampled flat.
+*else
+  Hands have already begun hauling fallen stone aside to reach the drain, and the ground around it is churned to mud.
+
+Edda Cale walks the length of the broken edge with her crook in one hand, stopping at the bowed wall to lay her palm flat against it. Then she turns and looks for you.
+
+*goto wr_room2
+
+*comment ── ROOM 2: FOUR ACCOUNTS OF ONE ROAD ──
+*comment Edda asks for an outside account and sends the player to Hessa, Nerin and Perrin; her own maintenance papers wait at the Fleecefold. Her request starts the investigation: the stage moves to investigation and the
+*comment clock is stamped (absolute minutes, the plan's weight_road_investigation_start_stamp). Whitefold is open to the player again, inside the village lock, with the common's street life replaced by wr_street.
+*label wr_room2
+
+Edda crosses to you with grey mud to her knees and wipes her palm down her coat. "That's the worst of it done," she says. "It isn't the worst of it over." She tips her head at the bowed wall. "It's still moving, and before it's done moving I'll have four people at my table each telling me it was somebody else's doing."
+
+"I can help with that." you say.
+
+"Yes you can, I want an account from nobody can call a friend of the quarry, the folds or the road. Your brass answers to the Hiring Hall, not to anyone here." She hooks her crook over her arm. 
+
+"Who do I talk to?"
+
+"Hessa Vail has the load tallies. Nerin Bale knows where the flocks have been walking. And Perrin Holt feeds half the carters and shepherds in this valley, and they talk while they eat." She glances at the road under your feet. "The Common's papers on the road are on my table at the Fleecefold. Read them when you've heard the others."
+
+You look at the bowed face. "How long does it have?"
+
+"It's held this long on grit and luck. I wouldn't count on it past two hours, and three would be a gift."
+
+"Then I'd better go," you say.
+
+*comment The stamp is taken once: a replayed page (a refresh, or the dossier closing) runs this again after the walk below has moved the clock, so only the first run, which finds the stage still at emergency, sets it.
+*if (not(weight_road_quest_stage = "investigation"))
+  *set weight_road_quest_stage "investigation"
+  *set weight_road_investigation_start_stamp (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+  *set weight_road_elapsed 0
+  *set weight_road_delay_level 0
+*set minutes_to_pass 15
+*set time_advance_call_id "wr_room2_walk"
+*gosub_scene alderford/whitefold/whitefold wf_walk_time
+*page_break Back down the Limestone Cut road…
+*goto_scene alderford/whitefold/whitefold whitefold
+
+*comment ── THE INVESTIGATION CLOCK ──
+*comment Minutes since Room 2 began, read from the stamp. weight_road_delay_level is 0 up to 120 minutes, 1 from 121 to 180, 2 from 181 to 240 and 3 after 240 (the road is lost). It keeps counting through the wall stage
+*comment (Room 3) and is frozen from the repair stage on, when Room 4 snapshots it. The Whitefold hub calls this on every entry (through wr_street), so any activity that spends time is counted without each scene adding to a second timer.
+*label weight_road_update_delay
+*if ((weight_road_quest_stage = "investigation") or (weight_road_quest_stage = "wall"))
+  *temp wr_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+  *set weight_road_elapsed (wr_now - weight_road_investigation_start_stamp)
+  *set weight_road_delay_level 0
+  *if (weight_road_elapsed > 120)
+    *set weight_road_delay_level 1
+  *if (weight_road_elapsed > 180)
+    *set weight_road_delay_level 2
+  *if (weight_road_elapsed > 240)
+    *set weight_road_delay_level 3
+*return
+
+*comment ── THE COMMON WHILE THE WALL IS FAILING ──
+*comment Replaces wf_street in the Whitefold hub while the quest is active (whitefold.txt). Continuous states only, so a return visit never replays a one-off action; the line follows the delay tier.
+*label wr_street
+*gosub weight_road_update_delay
+*if (weight_road_quest_stage = "investigation")
+  *if (weight_road_delay_level = 0)
+    The common is quieter than it should be. People stand in doorways looking up the Cut road, and a dry grinding of stone carries down from the bend.
+  *elseif (weight_road_delay_level = 1)
+    Brown water has begun to run down the ditch beside the lane, and the grinding from the bend is steady now, with a crack in it every so often.
+  *else
+    Carters are backing their teams out of the lower lane, and a cracking loud enough to turn every head on the common carries down from the bend.
+*return
+
+*comment ── HESSA'S TWO TALLIES (Room 2) ──
+*comment Reached from the Quarry Yard menu (stone_yard.txt) while the stage is investigation. Speaking to Hessa always gives her account and marks the lead reviewed; her notebook against the dispatch tally is the one Investigation check (DC 12, once; advantage
+*comment if the cart was saved, since Hessa then lets the player read both records without guarding them). The Repair Kit does not apply, so check_task_type is not set. A success sets weight_road_hessa_evidence; a failure keeps the account and loses the proof.
+*label wr_hessa
+*set minutes_to_pass 10
+*set time_advance_call_id "wr_hessa_ask"
+*gosub_scene alderford/whitefold/whitefold wf_walk_time
+
+You cross the yard to the weigh platform. Hessa is picking dried grey mud off the cover of her notebook with a thumbnail.
+
+"Hessa," you say. "Edda's asked me to put together what happened to that wall, for the Common. I'd rather hear it from you first."
+
+She keeps her eyes on the notebook. "The wall fell. That's what happened."
+
+"What was on the cart?"
+
+*if (weight_road_cart_saved)
+  Hessa glances up, and her mouth eases a little. "You held it, so I'll tell you straight. Cut blocks for the Factor's Hall weir order, the last big piece of it. We're short on that order, and every cart down that road counts."
+*else
+  "Cut blocks for the Factor's Hall weir order," she says. "The last big piece of it, and some of it's lying down the slope now. We're short on that order, and every cart down that road counts."
+
+"Were the loads heavier than usual?" you ask.
+
+"A block's a block." She turns the notebook over and starts on the back cover. "Some days the carts ran full and some days they didn't. The road takes what it takes."
+
+You nod toward the Cut road. "And the wall?"
+
+"It's been open since the thaw. When the frost pushed it out, the Common's crew pulled down the top courses and stacked the sound stone beside the road to rebuild it. I passed it every day, and it stood." She flicks the last of the mud from her thumb. "Ask the Common why it was still open."
+
+A clean sheet hangs on the weigh-house door behind her, ruled in tidy columns: the dispatch tally for the Factor's Hall. The notebook in her hands is the other record, and its pages are covered in smaller, rougher marks.
+
+*set weight_road_hessa_reviewed true
+*gosub weight_road_count_reviewed
+*choice
+  # Compare Hessa's notebook with the clean dispatch tally.@{show_stat_hints  [Investigation DC 12]|}
+    *goto wr_hessa_compare
+  # Step back from the platform.
+    *goto_scene alderford/whitefold/stone_yard wf_stone_yard
+
+*label wr_hessa_compare
+*set weight_road_hessa_tried true
+*set minutes_to_pass 5
+*set time_advance_call_id "wr_hessa_cmp"
+*gosub_scene alderford/whitefold/whitefold wf_walk_time
+
+"You said the loads vary," you say. "Let me see how much. The notebook against that record, one cart at a time."
+
+*if (weight_road_cart_saved)
+  Hessa looks at the cart standing whole at the far end of the yard, then holds the notebook out to you. "Read it, then. Mind the pages."
+  *set advantage true
+*else
+  Hessa lets you take the tally from its nail but keeps a hand on the notebook, and she takes it back whenever you turn it toward the light.
+
+*gosub_scene dice_engine roll_skill_check 12 "investigation" "" "" "" "" ""
+*if (check_success)
+  You lay the two side by side and go down the dates. The tally gives the same count for every cart, in one tidy hand. In the notebook, the same carts carry a short extra stroke after the count, one more block each time, against cart after cart in the weeks since the wall was opened.
+  *set weight_road_hessa_evidence true
+
+  Hessa watches your finger go down the column. "You read well," she says, and takes the notebook back. "Say what you like to Edda."
+*else
+  The pages are thumbed grey, half the columns smudged and the rest cut short in a shorthand of her own, with the yard's ordinary tallies running through them. You can see the loads weren't all alike. You can't make the marks say why.
+
+  Hessa takes the notebook back. "Loads vary," she says. "I told you."
+
+*goto_scene alderford/whitefold/stone_yard wf_stone_yard
+
+*comment How many of Hessa's, Nerin's and Perrin's leads have been reviewed, counted from the flags every time so a replayed page cannot count one twice. Two open Room 2's commitment.
+*label weight_road_count_reviewed
+*set weight_road_accounts_reviewed 0
+*if (weight_road_hessa_reviewed)
+  *set weight_road_accounts_reviewed + 1
+*if (weight_road_nerin_reviewed)
+  *set weight_road_accounts_reviewed + 1
+*if (weight_road_perrin_reviewed)
+  *set weight_road_accounts_reviewed + 1
+*return
+
+*comment ── NERIN'S FLOCK (Room 2) ──
+*comment Reached from the Fleecefold menu (fleecefold.txt) while the stage is investigation. Speaking to Nerin always gives his account and marks the lead reviewed; inspecting the penned flock is the one Survival check (DC 11, once; advantage if the sheep were
+*comment saved in Room 1, since Nerin then helps pick out the affected animals and their usual route). A success sets weight_road_nerin_evidence; a failure keeps his admission and loses the physical proof.
+*label wr_nerin
+*set minutes_to_pass 10
+*set time_advance_call_id "wr_nerin_ask"
+*gosub_scene alderford/whitefold/whitefold wf_walk_time
+
+You cross the yard to the rail pens, where the flock from the slope stands packed shoulder to shoulder. Nerin works along the rail, lifting a leg and setting it down again.
+*if (weight_road_sheep_saved)
+  Every animal stands on its own feet.
+*else
+  Gaps show along the rail where the missing ones should be.
+
+"Nerin," you say. "Edda's asked me to put together what happened to the wall, for the Common. I'd rather hear it from you first."
+
+"Edda's got her duties and I've got mine." He sets a hoof down and straightens."Ask what you will."
+
+You nod at the grey legs along the rail. "Why were your flocks on the Cut road?"
+
+"Because the high track's shut. The quarry's been tipping spoil down the slope above it since the thaw, and it's narrowed to a goat's width. A flock can't pass that."
+
+"So you brought them down the road."
+
+"The upper folds did, aye. Down to the lower grazing and back up, every day the weather let us." He runs a thumb along a ewe's foreleg and looks at the grey on it. "I told Hessa what it was doing to the soft edge of the road. She told me what the road was doing for the yard's order. We left it there."
+
+"You didn't take it to the Common?"
+
+*if (weight_road_sheep_saved)
+  "You turned the old ewe for me, so I'll answer that plain. No. A word from me would have stopped the yard, and half this village is paid by that order."
+*else
+  "No. A word from me would have stopped the yard, and half this village is paid by that order."
+
+He scrapes the grey off the leg with his thumbnail. "I'm not proud of it. I never walked the ditch down to the drain to see where the mud went."
+
+*set weight_road_nerin_reviewed true
+*gosub weight_road_count_reviewed
+*choice
+  # Inspect the sheep and trace where the upper flocks came down.@{show_stat_hints  [Survival DC 11]|}
+    *goto wr_nerin_inspect
+  # Leave Nerin to his flock.
+    *goto_scene alderford/whitefold/fleecefold wf_fleecefold
+
+*label wr_nerin_inspect
+*set weight_road_nerin_tried true
+*set minutes_to_pass 5
+*set time_advance_call_id "wr_nerin_cmp"
+*gosub_scene alderford/whitefold/whitefold wf_walk_time
+
+"Show me where they walked," you say. "Their legs will tell it better than anyone can."
+
+*if (weight_road_sheep_saved)
+  Nerin starts pulling animals to the rail and naming them as he goes: whose fold, which came down every day, which only a few times.
+  *set advantage true
+*else
+  Nerin lets you work along the rail alone, naming a fold when you ask, though there are gaps in the pens where the ones he knew best should stand.
+
+*gosub_scene dice_engine roll_skill_check 11 "survival" "" "" "" "" ""
+*if (check_success)
+  You go down the rail lifting feet. Every leg is grey to the knee with quarry dust, and under the dust lies the brown clay of the road ditch. The same mud is on sheep with red daubs, blue and green, from three upper folds that never share a lane, and each has the same raw edge on the outer hoof, worn on the stony lip of the road. It wasn't one trip or two.
+  *set weight_road_nerin_evidence true
+
+  "Every flock I've sent down since the thaw," Nerin says. "You can read it off their legs."
+*else
+  Every leg along the rail is grey, and half are cut or bruised from the fall. The mud on them is the same mud the whole slope is made of. You can't tell the road from the rubble, or last week's walking from this morning's.
+
+  "That's the slope you're reading," Nerin says. "It has everything on it now."
+
+*goto_scene alderford/whitefold/fleecefold wf_fleecefold
+
+*comment ── PERRIN'S TIMELINE (Room 2) ──
+*comment Reached from the White Ram menu (white_ram.txt) while the stage is investigation. No check: Perrin is connective evidence, not a culprit protecting himself, so speaking to him sets both weight_road_perrin_reviewed and
+*comment weight_road_perrin_evidence. His timeline (the carters' complaints, the chalk-covered shepherds, the handcart of stacked road stone on the lambing night) points at the unrecorded winter repair and gives advantage
+*comment when Edda is asked about the missing stone. He does not know who agreed to it.
+*label wr_perrin
+*set minutes_to_pass 15
+*set time_advance_call_id "wr_perrin_ask"
+*gosub_scene alderford/whitefold/whitefold wf_walk_time
+
+You wait until Perrin has a free moment and lean on the counter beside him. "Edda's asked me to put together what happened on the Cut road, for the Common. I'm asking everyone who's seen any of it."
+
+"Then you've the right counter. People tell me everything over a bowl, and never in order." He folds the cloth over his shoulder. "I'll give it to you the way it came."
+
+"Start with whatever stuck with you."
+
+"The carters, first. They've been grumbling since the thaw that the quarry loads more on a cart than the axles like. One of them set a cracked axle pin on that rail to show me." He taps the rail by the stove. "Then the upper-fold lads, coming in grey to the thigh and swearing at the quarry and the Cut road both. I fill the bowls and leave the sides to them."
+
+"Was there anything before all that?"
+
+Perrin looks toward the stove for a moment. "One night, back at lambing. The shelter wall behind the Fleecefold went down on the ewes in the wind. Before Edda came in wanting stew for the crew, I stood in that door and watched a handcart go up the lane with pale squared stone stacked on it. Three men from the road crew were pushing it toward the shelter."
+
+"Squared stone," you say. "You're sure where it came from?"
+
+"I've watched that stack sit beside the Cut road since the thaw. There's no other stone like it in the village that isn't Hessa's." He runs his cloth along the counter. "It was lower the next time I went by."
+
+You lean closer. "Did Edda say it could go?"
+
+"She came in after, wanting stew for twelve. I can tell you what went past my door, and who stood in it. Who said yes to it, I couldn't tell you."
+
+*set weight_road_perrin_reviewed true
+*set weight_road_perrin_evidence true
+*gosub weight_road_count_reviewed
+*goto_scene alderford/whitefold/white_ram wf_ram_main
+
+*comment ── THE COMMITMENT: EDDA'S PAPERS, THEN ROOM 3 ──
+*comment Reached from the Fleecefold menu (fleecefold.txt) once any two of the three field leads are reviewed. This is the bottleneck: it closes the remaining interview (the stage leaves investigation), reviews Edda's maintenance papers and makes the
+*comment one Persuasion check (DC 12, once). Perrin's timeline gives advantage; if Perrin was skipped, the site evidence preserved in Room 1 does instead, and the two never stack. Success sets weight_road_edda_evidence (she admits authorizing the
+*comment shelter repair); a failure leaves the omission plain on the page but unadmitted. Every route then goes to the same Room 3 arrival. The clock is recalculated after the quest's own time advance, so a slow investigation still ends in the road lost.
+*label wr_commit
+*set minutes_to_pass 10
+*set time_advance_call_id "wr_commit_papers"
+*gosub_scene alderford/whitefold/whitefold wf_walk_time
+
+Edda looks up from the road papers as you come in and pushes a stool toward you with her boot. "Tell me."
+
+You lay out what you've heard.
+*if (weight_road_hessa_evidence)
+  Hessa's notebook carries one extra block against cart after cart that the dispatch tally leaves out.
+*elseif (weight_road_hessa_reviewed)
+  Hessa says the loads vary, and that the open wall is the Common's to answer for.
+*if (weight_road_nerin_evidence)
+  Nerin's upper flocks have come down the Cut road since the thaw, and the sheep's legs say so.
+*elseif (weight_road_nerin_reviewed)
+  Nerin admits the upper flocks have used the Cut road since the quarry closed the high track.
+*if (weight_road_perrin_reviewed)
+  Perrin watched a handcart of the stacked road stone go up the lane toward the lambing shelter.
+
+Edda listens with both hands flat on the papers. When you stop, she turns the top page toward you. It records the wall: opened at the thaw, the upper courses taken down, the sound stone stacked beside the road. The list ends there.
+
+"This is the Common's account of that wall," she says. "Tell me what's missing from it."
+
+"Your account says the stone was stacked beside the road," you answer. "It doesn't say where it went. What happened to the repair stone?"
+*if (weight_road_perrin_evidence)
+  You set Perrin's timeline beside the page.
+  *set advantage true
+*elseif (weight_road_evidence_preserved)
+  You add that the courses around the drain still lie where they fell, for anyone to read.
+  *set advantage true
+
+*gosub_scene dice_engine roll_skill_check 12 "persuasion" "" "" "" "" ""
+*if (check_success)
+  Edda takes her palm off the page. "I said yes," she says. "The shelter wall was coming down on the ewes, and that stack was the nearest dry stone. I told the crew to take what they needed, and I meant the Common to put it back before the road work started again." She taps the place where the list ends. "It never went in the account. I let that go, and it's mine to answer for."
+  *set weight_road_edda_evidence true
+*else
+  Edda reads the page again, as if the missing line might have been written while you talked. "The account says what it says," she says, and squares the papers. "If the Common wants more from it, it can ask at the Common, and not while that wall is moving."
+
+A long crack comes down the Cut road from the bend, and everyone in the Fleecefold turns toward it. Edda takes her crook off the wall. "Now," she says. "Before it goes."
+
+*comment The clock is checked while the stage is still investigation, so a late commitment collapses the wall while the player is at the Fleecefold, not on the road.
+*gosub weight_road_update_delay
+*if (weight_road_delay_level >= 3)
+  *goto wr_deadline_lost
+*set weight_road_quest_stage "wall"
+*goto wr_room3
+
+*comment ── ROOM 3: THE WALL BENEATH THE ROAD (first half: the reconstruction) ──
+*comment The player returns to the collapse with Edda, Hessa and Nerin there. Reconstructing the physical chain is guaranteed and needs no roll: three places to read in any order (the ditch and the drain's uphill mouth, the rows beside the drain, the fill and the wheel
+*comment rut), and the last one read leads straight to the chain. What each principal says depends on the proof earned in Room 2: nerin_evidence (repeated flock traffic established or only his word), edda_evidence (an admitted authorization or only
+*comment an omission in her papers, with Perrin's timeline able to corroborate it), hessa_evidence (she concedes the heavy loads were deliberate or calls them variation), and the Room 1 site evidence (the fall readable or pieced together).
+*comment The clock is recalculated after every quest-controlled time advance; more than 240 minutes ends in wr_deadline_lost.
+*label wr_room3
+*set minutes_to_pass 15
+*set time_advance_call_id "wr_room3_walk"
+*gosub_scene alderford/whitefold/whitefold wf_walk_time
+*gosub weight_road_update_delay
+*if (weight_road_delay_level >= 3)
+  *goto wr_deadline_lost
+
+Edda takes the Cut road at a pace that keeps you half running beside her, all her breath going into the climb.
+*if (weight_road_delay_level = 0)
+  At the bend, the bowed section is still shedding only grit, a thin trickle down its face with every footstep on the road above.
+*elseif (weight_road_delay_level = 1)
+  At the bend, water is bleeding through the bowed section now, brown threads running down its face, and the road moves underfoot when you step onto it.
+*else
+  At the bend, water runs from the bowed section in sheets, the edge of the road above it has begun to slump, and the whole face shifts each time anyone changes their weight.
+
+Hessa Vail stands by the cart, beside the deepest of the wheel ruts. Nerin Bale has come up from the pens and stands where the ditch meets the road. They are thirty paces apart.
+*if (weight_road_evidence_preserved)
+  The hurdles you laid still mark the line, and the fallen blocks lie as they came to rest.
+*else
+  The foot of the slope is trampled and rutted, and half the fallen blocks have been dragged aside, so that some of what the fall might have shown has been moved.
+
+Edda stops at the edge of the road. "You've heard all of us talk," she says. "The wall doesn't care what we say. Read it, and tell me what it says."
+*goto wr_wall
+
+*label wr_wall
+*gosub weight_road_update_delay
+*if (weight_road_delay_level >= 3)
+  *goto wr_deadline_lost
+*temp wr_read_count 0
+*if (weight_road_read_ditch)
+  *set wr_read_count + 1
+*if (weight_road_read_courses)
+  *set wr_read_count + 1
+*if (weight_road_read_fill)
+  *set wr_read_count + 1
+*comment With three read the chain is next; with two read the last place follows without a one-button menu.
+*if (wr_read_count >= 3)
+  *goto wr_chain
+*if (wr_read_count = 2)
+  *if (not(weight_road_read_ditch))
+    *goto wr_read_ditch
+  *if (not(weight_road_read_courses))
+    *goto wr_read_courses
+  *goto wr_read_fill
+
+*if (wr_read_count >= 1)
+  *if (weight_road_delay_level = 0)
+    Grit trickles from the bowed face with every footstep on the road above.
+  *elseif (weight_road_delay_level = 1)
+    Brown water threads down the bowed face, and the road shivers each time anyone shifts their weight.
+  *else
+    Water runs down the bowed face in sheets, and the edge of the road above it has begun to slump.
+*choice
+  *if (not(weight_road_read_ditch))
+    # Read the ditch and the drain's uphill mouth.
+      *goto wr_read_ditch
+  *if (not(weight_road_read_courses))
+    # Read the rows of stone in the standing wall beside the drain.
+      *goto wr_read_courses
+  *if (not(weight_road_read_fill))
+    # Read the road fill and the wheel ruts above the drain.
+      *goto wr_read_fill
+
+*label wr_read_ditch
+*set weight_road_read_ditch true
+*set minutes_to_pass 4
+*set time_advance_call_id "wr_read_ditch"
+*gosub_scene alderford/whitefold/whitefold wf_walk_time
+You follow the ditch along the uphill edge of the road to the place where it ends. Brown water stands in it to the depth of your hand, and at the end of it is the mouth of the covered drain, a square opening in a stone face under a flat slab. Water should be pouring through it. Instead it lies brown and still against a plug of grey mud packed to the top of the opening.
+
+You kneel on the bank and pull at the plug. It comes away in dense handfuls: mud cut with hoof prints, dung, tufts of wool, and chalk dust gone to paste.
+*if (weight_road_nerin_evidence)
+  Nerin has come to stand behind you, and he reads it without being shown. "My flocks," he says. "The whole season of them. Their legs said it, and so does this."
+*else
+  Nerin has come to stand behind you. "I brought them down this road, and I told you so," he says. "I can't say what in that is mine and what the rain washed down the slope." The mud holds wool and dung, but it could be a season's walking or a few days'.
+*gosub weight_road_update_delay
+*goto wr_wall
+
+*label wr_read_courses
+*set weight_road_read_courses true
+*set minutes_to_pass 4
+*set time_advance_call_id "wr_read_courses"
+*gosub_scene alderford/whitefold/whitefold wf_walk_time
+You climb down to the foot of the standing wall beside the gap and walk along its face. Along most of its length, the lower rows are broad flat stones laid tight, and every few feet a long stone reaches back into the road behind it to hold the face in place. Around the drain the wall is different. The stones are shorter and fitted shallow, and not one of them reaches back. Where the long stones should lie, the road fill shows grey between the short ones.
+*if (weight_road_evidence_preserved)
+  The fallen blocks lie below you as they came to rest, and you can follow where each one sat in the wall by the height of its broken end.
+*else
+  Half the fallen blocks have been dragged aside, so you piece the wall together from the face that is left standing.
+*if (weight_road_edda_evidence)
+  Edda has come down beside you. She lays her hand on a short row. "That's the stone I sent to the shelter," she says. "Those long ones would have bound this. I meant them back before anyone touched the wall again."
+*else
+  Edda stays at the top of the bank. "The papers say what was taken down and what was stacked," she says. "They'll be read at the Common."
+  *if (weight_road_perrin_evidence)
+    You think of the handcart Perrin watched go up the lane. The gap in the face is about the size of a handcart's load.
+*gosub weight_road_update_delay
+*goto wr_wall
+
+*label wr_read_fill
+*set weight_road_read_fill true
+*set minutes_to_pass 4
+*set time_advance_call_id "wr_read_fill"
+*gosub_scene alderford/whitefold/whitefold wf_walk_time
+You climb back onto the road and walk the cart track to the edge. The fill behind the wall is dark and soaked right back to the ditch, and the ruts of the loaded carts are cut deep and close together along here. Just above the drain the track has sunk a hand deeper than anywhere else.
+*if (weight_road_hessa_evidence)
+  Hessa stands where the rut is deepest. "One block more," she says, before you can ask. "Every heavy day. I knew the wall was open, and I said it would hold through the last loads." She looks at the sunk track. "It didn't."
+*else
+  Hessa stands where the rut is deepest. "Loads vary," she says. "You've seen the track. That rut is every cart on this road, and not only mine."
+*gosub weight_road_update_delay
+*goto wr_wall
+
+*label wr_chain
+*set minutes_to_pass 3
+*set time_advance_call_id "wr_chain"
+*gosub_scene alderford/whitefold/whitefold wf_walk_time
+*gosub weight_road_update_delay
+*if (weight_road_delay_level >= 3)
+  *goto wr_deadline_lost
+*set weight_road_failure_chain_known true
+
+You call the three of them together at the edge of the road.
+
+"Here's what it says," you tell them. "The long stones that should bind the face weren't in it, so the rows around the drain stood loose. Mud and wool had packed the drain's mouth, so the water couldn't pass. It went into the fill and soaked it through. Then the heaviest cart on the road crossed right over the weak spot."
+
+"Any one of those, and it stands," Edda says.
+
+Hessa looks at the rut, Nerin at the ditch, and Edda at the gap in the rows, each at their own part of it.
+
+"Then it didn't take one hand to put it down," Edda says. "Now the paper."
+*goto wr_room3_contract
+
+*comment ── ROOM 3 (second half): THE CONTRACT AND THE PREPARATION ──
+*comment The player reads Whitefold's own copy of the weir order and the road agreement (no check: the document is plain enough to show the cost of breaking the delivery), then makes the ONE preparation of the room. Each preparation readies one of Room 4's
+*comment plans, and the choice label says which: Investigation 12 for the contracted stone (advantage if the site was preserved), Survival 11 for the pasture bypass (advantage if the sheep were saved), Athletics 12 for the Common's fund (advantage if the cart
+*comment was saved). Past 120 minutes the roll has disadvantage (the ground is moving); advantage and disadvantage cancel in the shared roll. It is made once: a failure costs the matching Room 4 advantage and nothing else, and the menu does not reopen.
+*comment weight_road_preparation records the plan prepared ("contract_stone", "pasture_bypass" or "common_fund") whether the roll succeeded or not.
+*label wr_room3_contract
+*set minutes_to_pass 5
+*set time_advance_call_id "wr_contract"
+*gosub_scene alderford/whitefold/whitefold wf_walk_time
+*gosub weight_road_update_delay
+*if (weight_road_delay_level >= 3)
+  *goto wr_deadline_lost
+*set weight_road_contract_seen true
+
+Edda takes a folded paper from inside her coat. "The Common's copy of the weir order," she says. "I took it off the table on the way out." Hessa and Nerin come close enough to read over your shoulder as she holds it out.
+
+The paper is ruled in tidy columns and sealed at the foot with the Factor's Hall's mark. You read down it.
+
+[i]"Whitefold, by its Common and its Quarry Yard, shall deliver sixty squared blocks of Coldspine limestone, sound in face and edge, to the receiving yard of the Factor's Hall at Alderford by the day written below, for the repair of the weir wall. The price is one hundred and twenty silver marks, paid on receipt of the whole order. Should the order not arrive whole by that day, the Hall may refuse it, and Whitefold shall pay thirty silver marks and the cost of buying the stone elsewhere."[/i]
+
+Under it, in a different hand, is the road agreement. [i]"The Cut road is the shared road of the quarry, the folds and the road households. The Commonwarden's office sets its upkeep, and each seat answers for the damage its own traffic does."[/i]
+
+The day written at the foot is nine days off.
+
+"So if the blocks go into the road, the order is lost," you say, "and Whitefold pays."
+
+"That cart and the stack in the yard are that order," Hessa says. "Break them, and the Hall can refuse the lot."
+
+"They're also the best-cut stone in the valley, and the nearest to hand." Edda folds the paper away. "That face has a little time left in it. Spend it getting ready for whichever way we jump. One thing, not three."
+
+*choice
+  # Mark the sound rows and a new line for the drain, to rebuild in cut stone.@{show_stat_hints  [Investigation DC 12]|}
+    *goto wr_prep_stone
+  # Stake a firm line across the lower grazing ground, for a road through it.@{show_stat_hints  [Survival DC 11]|}
+    *goto wr_prep_bypass
+  # Shore the drain mouth while paid crews and carts are brought up.@{show_stat_hints  [Athletics DC 12]|}
+    *goto wr_prep_fund
+
+*label wr_prep_stone
+*set weight_road_preparation "contract_stone"
+*set minutes_to_pass 15
+*set time_advance_call_id "wr_prep"
+*gosub_scene alderford/whitefold/whitefold wf_walk_time
+"I'll mark what's sound, and where the new drain should run," you tell Edda.
+
+You pick a lump of chalk out of the road dust and go along the standing wall.
+*if (weight_road_evidence_preserved)
+  The fallen blocks still lie where they fell, so every row that is left shows where its neighbours sat.
+  *set advantage true
+*if (weight_road_delay_level >= 1)
+  *set disadvantage true
+  The ground shifts under you as you work.
+*gosub_scene dice_engine roll_skill_check 12 "investigation" "" "" "" "" ""
+*if (check_success)
+  You mark every row that still holds a long stone back into the road, and you run a chalk line down through the fill for a new drain, a hand lower than the old one so that it will run even half choked. Anyone who comes to this wall will know where every stone goes.
+  *set weight_road_preparation_success true
+*else
+  The fill shifts under your feet before you can set the line, and the chalk marks slide down with it. You could mark them again, but not in time to trust them.
+*goto wr_prep_end
+
+*label wr_prep_bypass
+*set weight_road_preparation "pasture_bypass"
+*set minutes_to_pass 15
+*set time_advance_call_id "wr_prep"
+*gosub_scene alderford/whitefold/whitefold wf_walk_time
+"I'll find the firm ground below the road," you tell Nerin. "If we have to go round, I want to know where."
+
+You take a bundle of hurdle stakes from the pile by the cart and head down the slope to the lower grazing ground.
+*if (weight_road_sheep_saved)
+  Nerin comes with you and names the ground as you cross it: where the spring runs under, where the peat is thin, which old boundary walls stand on deep soil.
+  *set advantage true
+*else
+  You cross it alone, with only the old boundary walls to show how the ground lies.
+*if (weight_road_delay_level >= 1)
+  *set disadvantage true
+  The turf gives and shifts under you as you work.
+*gosub_scene dice_engine roll_skill_check 11 "survival" "" "" "" "" ""
+*if (check_success)
+  You walk a long curve across the pasture, testing the ground with every stake and keeping to the gentle contour above the seep. By the time you reach the road beyond the break, a line of stakes runs back across the grass, each one on ground that held your weight.
+  *set weight_road_preparation_success true
+*else
+  Seepage and torn turf hide the firm ground. You set stakes where the grass looks dry, and the first one sinks to its crossbar. You pull them out again. The line will have to be found as the work goes.
+*goto wr_prep_end
+
+*label wr_prep_fund
+*set weight_road_preparation "common_fund"
+*set minutes_to_pass 15
+*set time_advance_call_id "wr_prep"
+*gosub_scene alderford/whitefold/whitefold wf_walk_time
+"I'll shore the drain mouth," you tell Edda, "while you send for crews and carts."
+
+She hands her crook to Nerin and starts sending runners down the lane.
+*if (weight_road_cart_saved)
+  The quarry cart's pole, rope and wheel blocks are all still whole, and you carry them to the drain.
+  *set advantage true
+*else
+  You gather what poles and hurdles you can find and drag them to the drain.
+*if (weight_road_delay_level >= 1)
+  *set disadvantage true
+  The ground shifts under you as you work.
+*gosub_scene dice_engine roll_skill_check 12 "athletics" "" "" "" "" ""
+*if (check_success)
+  You wedge the pole across the drain mouth against the standing wall, chock it with the heaviest stone to hand and lash it to a stake you drive in behind. The fill stops sliding. Whatever the crews do, they will have something to work against.
+  *set weight_road_preparation_success true
+*else
+  The brace slips as the fill settles. Nothing else gives, but the pole is no use now and there isn't time to set another.
+*goto wr_prep_end
+
+*label wr_prep_end
+*gosub weight_road_update_delay
+*if (weight_road_delay_level >= 3)
+  *goto wr_deadline_lost
+*goto wr_bottleneck
+
+*comment ── THE BOTTLENECK INTO ROOM 4: THE ROADSIDE DECISION ──
+*comment A section beside the drain drops, which ends the investigation and the preparation for good, and the workers will not spend stone, ground or public money without a decision. Hessa, Nerin and Edda each say what their part of Whitefold can give and
+*comment what it costs; the four seat holders are brought to the roadside (Edda chairs but does not own the Common's fund). How willing each is follows the Room 1 and Room 2 flags: trust (quarry, folds, Common) means willing help, strong evidence means pressured help,
+*comment neither means resistance. Cooperation changes Room 4's difficulty and never which plans exist, and nothing here settles blame, which is Room 5's job. The delay level is last recalculated here and frozen when the stage becomes repair.
+*label wr_bottleneck
+*set minutes_to_pass 5
+*set time_advance_call_id "wr_bottleneck"
+*gosub_scene alderford/whitefold/whitefold wf_walk_time
+*gosub weight_road_update_delay
+*if (weight_road_delay_level >= 3)
+  *goto wr_deadline_lost
+
+A section beside the drain lets go with a sound like a dropped sack of gravel. Chalky mud pushes through the joints in a slow brown tongue, and the stones above it sag. The crews behind the hurdles take one step back together, and then they stand with their ropes in their hands.
+
+"Whose stone is it?" a voice calls from the rope crew. "Whose ground? Whose money? Tell us who we're pulling for."
+
+Edda sends a runner down the lane. By the time the next crack comes, four people are climbing the Cut road behind him: shepherds in wool-greased coats, a man white to the elbows from the quarry, and two women from the road houses with their sleeves rolled. "The seats," Edda tells you. "Upper folds, lower folds, the yard, the road houses. They'll hear it here."
+*if (weight_road_common_trust)
+  A few of them nod to you as they come up, and one of the road-house women points at the hurdle line you laid.
+*else
+  They keep their eyes on the wall.
+
+"Say it plain, all of you," Edda says. "What you've got, and what it costs."
+
+"What would it take from the yard?" you ask Hessa.
+
+"The best of the stack." Hessa jerks her chin at the cart. "The long tie stones, the drain roof, the facing. The fallen stone would do the rest. But the Hall wants sixty whole, and the moment I cut a block short, I'm short."
+*if (weight_road_quarry_trust)
+  She looks at you. "You held that cart. If you say it goes in the road, it goes."
+*elseif (weight_road_hessa_evidence)
+  Hessa wipes her hands down her coat. "You've read my pages," she says. "If it comes to my stone, I'll hand it over myself, and I'll remember how it came to that."
+*else
+  Her mouth sets hard. "Those blocks are paid for," she says. "I'll want a better reason than a guess before one of them goes in that road."
+
+"And what would the folds lose?" you ask Nerin.
+
+"The grazing below the road, and the walls on it, opened to let a cart road through." Nerin turns his crook in his hand. "A road laid in a hurry stays where it's laid, unless the Common pays to put the old one right. The upper folds lose the lower grazing till then."
+*if (weight_road_folds_trust)
+  He looks down toward the pens. "You turned my flock," he says. "Lay it where you need it."
+*elseif (weight_road_nerin_evidence)
+  He rubs a thumb along the crook. "You read the legs fair," he says. "I'll not argue the ground, and I'll not forget it was taken."
+*else
+  His jaw works. "My grazing and my walls, on a stranger's say-so?" he says. "You'd best be sure."
+
+"And the Common's own box?" you ask Edda.
+
+"The reserve." Edda speaks loud enough for the seats to hear every word. "What the four seats put by for hard winters, for hands hurt on the quarry face, for a bad lambing and a failed harvest. Spend it and it's gone, and Whitefold meets the next bad year with nothing. It isn't mine to open. The seats open it."
+*if (weight_road_common_trust)
+  The road-house woman who pointed at your line says, "They'd hear her, if she says it holds."
+*elseif (weight_road_edda_evidence)
+  She meets the seats' eyes. "And I'll put it to them myself," Edda says, "and ask them to look past what I did."
+*else
+  The seats look at one another and wait.
+
+Edda turns to you. "You've no seat and no stake in this. Choose, and I'll put it to them. They'll back whichever of the three you can make hold."
+
+*gosub weight_road_update_delay
+*if (weight_road_delay_level >= 3)
+  *goto wr_deadline_lost
+*page_break The crews wait on your word…
+*set weight_road_quest_stage "repair"
+*goto wr_room4
+
+*comment ── ROOM 4: THE PRICE OF REPAIR (the plan menu) ──
+*comment The single commitment menu, with all three plans always visible. Before it is shown the three DCs are worked out from the flags the earlier rooms left (nothing here is stored): base 13 for the contracted stone and 12 for the bypass and the fund;
+*comment +1 where that plan's own cooperation is missing (stone: quarry trust or Hessa's evidence; bypass: folds trust or Nerin's evidence; fund: Common trust or Edda's evidence); for the stone, +1 if the cart was left to the villagers and +2 instead if the
+*comment player chose the cart and failed it; for the bypass the same with the sheep; and +1 on every plan if the investigation ran past 180 minutes (weight_road_delay_level 2, frozen when the stage became repair). The fund plan takes no loss surcharge.
+*comment Choosing a plan copies ONLY that plan's DC into weight_road_repair_dc and stores the plan; there is no confirmation page and no way back. A matching Room 3 preparation will grant advantage on the decisive roll (next chunk), and a different one grants nothing.
+*label wr_room4
+*temp wr_stone_dc 13
+*temp wr_bypass_dc 12
+*temp wr_fund_dc 12
+*if (not((weight_road_quarry_trust) or (weight_road_hessa_evidence)))
+  *set wr_stone_dc + 1
+*if (not((weight_road_folds_trust) or (weight_road_nerin_evidence)))
+  *set wr_bypass_dc + 1
+*if (not((weight_road_common_trust) or (weight_road_edda_evidence)))
+  *set wr_fund_dc + 1
+*if (not(weight_road_cart_saved))
+  *if (weight_road_emergency_choice = "cart")
+    *set wr_stone_dc + 2
+  *else
+    *set wr_stone_dc + 1
+*if (not(weight_road_sheep_saved))
+  *if (weight_road_emergency_choice = "sheep")
+    *set wr_bypass_dc + 2
+  *else
+    *set wr_bypass_dc + 1
+*if (weight_road_delay_level = 2)
+  *set wr_stone_dc + 1
+  *set wr_bypass_dc + 1
+  *set wr_fund_dc + 1
+
+The water behind the road is rising. The crews wait with their ropes in their hands, and the four seats stand beside Edda with the whole village below them. There are three ways to spend what Whitefold has, and each of them costs something.
+
+*choice
+  # Break the contracted stone. [~6 Hours | Quarry delivery lost]@{show_stat_hints  [Athletics or Investigation DC ${wr_stone_dc}]|}
+    *set weight_road_repair_plan "contract_stone"
+    *set weight_road_repair_dc wr_stone_dc
+    *goto wr_operation
+  # Cut a road across the pasture. [~4 Hours | Grazing ground lost]@{show_stat_hints  [Survival or Animal Handling DC ${wr_bypass_dc}]|}
+    *set weight_road_repair_plan "pasture_bypass"
+    *set weight_road_repair_dc wr_bypass_dc
+    *goto wr_operation
+  # Open the Common's emergency fund. [~5 Hours | Reserve emptied]@{show_stat_hints  [Persuasion or Insight DC ${wr_fund_dc}]|}
+    *set weight_road_repair_plan "common_fund"
+    *set weight_road_repair_dc wr_fund_dc
+    *goto wr_operation
+
+*comment ── ROOM 4: THE DECISIVE ROLL AND THE THREE OPERATIONS ──
+*comment One irreversible roll, best of two skills at the DC stored by the menu (weight_road_repair_dc): the contracted stone is Athletics or Investigation, the pasture bypass Survival or Animal Handling, the Common's fund Persuasion or Insight. A successful preparation
+*comment for the SAME plan (Room 3) gives advantage; a preparation for another plan grants nothing. Only the stone plan uses check_gear_context "leverage_repair" (an Iron Prybar gives advantage only if Athletics wins, a Repair Kit adds its +1 only if Investigation wins;
+*comment dice_engine.txt); the other two have no carried gear. Guidance works through the shared roll.
+*comment REPLAY GUARD: weight_road_repair_roll_resolved stops any LATER page rolling the climax again, while a refresh of THIS page still runs the block so the shared roll lock replays the same dice, the same winning skill, the same banner and the same prose.
+*comment The work time is charged in wr_op_finish through advance_time's own page-and-id lock, so it is charged once. The result, the resolution and the stage are plain sets.
+*label wr_operation
+*if (weight_road_repair_plan = "contract_stone")
+  *goto wr_op_stone
+*if (weight_road_repair_plan = "pasture_bypass")
+  *goto wr_op_bypass
+*goto wr_op_fund
+
+*label wr_op_stone
+*if ((weight_road_repair_roll_resolved) and (not((roll_locked) and (locked_page_id = page_id))))
+  *goto wr_operation_done
+
+You turn to Hessa. "The cart and the best of the stack," you tell her. "The long tie stones, the drain roof, the facing. Bring them up now."
+
+*if (weight_road_quarry_trust)
+  Hessa raises one hand to the crews at the cart, and the first block is moving down the ramp before her hand has dropped.
+*elseif (weight_road_hessa_evidence)
+  Hessa's mouth sets in a line. She calls the crews to the stack all the same, and each block comes off the cart a little slower than the one before.
+*else
+  Hessa holds her notebook against her chest for a long moment. Then she signals the crews, and they start on the stack in slow, uneven pairs.
+
+*if (weight_road_cart_saved)
+  The cart's whole load comes first, block after block, and the fallen stone follows it up the slope on the rope crews' backs.
+*else
+  What is left of the cart's load comes first, with the yard's reserve after it, fewer blocks than the order called for, and the fallen stone follows on the rope crews' backs.
+
+*if ((weight_road_preparation = "contract_stone") and (weight_road_preparation_success))
+  Your chalk marks show every crew where each stone goes.
+  *set advantage true
+*if (has_iron_crowbar)
+  You take your Iron Prybar to the first of the tie stones.
+*elseif (has_tool_kit)
+  You lay out the hammer, chisel and line from your Repair Kit on the nearest sound block.
+
+*set check_gear_context "leverage_repair"
+*gosub_scene dice_engine roll_skill_check weight_road_repair_dc "athletics" "" "investigation" "" "" ""
+*set weight_road_repair_skill check_skill_id
+*set weight_road_repair_total check_total
+*set weight_road_repair_success check_success
+*set weight_road_repair_roll_resolved true
+*if (check_success)
+  *if (weight_road_repair_skill = "athletics")
+    You take the heavy end yourself. With levers under each tie stone and a team on the rope, the stones go into the wall one at a time, long end back into the fill, and the crews ram packing in behind every one.
+  *else
+    You work from the drain outward: the fall of its floor first, a hand's drop to the mouth, then the roof slabs, then the lean of the wall back into the slope. You call each stone's place as it comes, and the crews set them as you name them.
+  By the time the last facing stone is seated, the ditch water is running through the drain under the road, brown and then clearer, and the standing wall has been tied into the new work. The road surface can be dressed in the days to come. The weir order is short of its best blocks, and everyone on the road knows it.
+  *set weight_road_resolution "road_rebuilt"
+*else
+  *if (weight_road_repair_skill = "athletics")
+    The levers bite on stone that is already moving.
+  *else
+    The line you called runs a hand too steep for the fill.
+  A lower row rolls while the fill is open. The row above follows it, then the remaining face, and the road edge goes down the slope with a long tearing sound, taking the half-built drain and the stacked stone with it. The crews scramble clear, and the road goes on down the slope without them.
+  *set weight_road_resolution "road_lost"
+*set hours_to_pass 6
+*goto wr_op_finish
+
+*label wr_op_bypass
+*if ((weight_road_repair_roll_resolved) and (not((roll_locked) and (locked_page_id = page_id))))
+  *goto wr_operation_done
+
+You turn to Nerin. "The lower grazing," you tell him. "Open the walls along the line, and let the cart road through."
+
+*if (weight_road_folds_trust)
+  Nerin sets his crook against the first wall and begins lifting stones off it himself, and the shepherds fall in beside him.
+*elseif (weight_road_nerin_evidence)
+  Nerin's jaw works. He gives the word all the same, and the shepherds begin taking down their own boundary walls one stone at a time.
+*else
+  Nerin stands with his crook planted for a long moment. Then he nods once, and the shepherds start on the nearest wall as slowly as the work allows.
+
+*if (weight_road_sheep_saved)
+  The flock is penned at the fold gate, well clear of the work.
+*else
+  Scattered sheep still wander the lower ground, and the dogs spend half their time turning them off the line.
+
+*if ((weight_road_preparation = "pasture_bypass") and (weight_road_preparation_success))
+  Your stakes run back across the grass, each one on ground that held your weight.
+  *set advantage true
+
+*gosub_scene dice_engine roll_skill_check weight_road_repair_dc "survival" "" "animal_handling" "" "" ""
+*set weight_road_repair_skill check_skill_id
+*set weight_road_repair_total check_total
+*set weight_road_repair_success check_success
+*set weight_road_repair_roll_resolved true
+*if (check_success)
+  *if (weight_road_repair_skill = "survival")
+    You hold the road to the firm contour above the seep, testing every stake yourself, and the crews lay stone and brush behind you so each cart-length bears before the next is begun.
+  *else
+    You move the flocks and the teams through the work one at a time, the dogs on the sheep's flank and every team led by the head, and nothing crosses the marked line that you haven't turned.
+  By the time the last boundary wall is open and the new track joins the freight road beyond the break, the failed wall stands closed behind hurdles, and a loaded cart rolls the new road without sinking. The folds' grazing is cut in two by a fenced cart track.
+  *set weight_road_resolution "pasture_bypass"
+*else
+  *if (weight_road_repair_skill = "survival")
+    The track you held runs a hand too low on the contour, and the loaded test cart sinks to its axle in the seep.
+  *else
+    A frightened team bolts across the marked line, and the crews scatter after it with the stakes going down under their feet.
+  The work breaks apart. Before another route can be tried, the unsupported road wall gives way behind you and the freight road goes down the slope.
+  *set weight_road_resolution "road_lost"
+*set hours_to_pass 4
+*goto wr_op_finish
+
+*label wr_op_fund
+*if ((weight_road_repair_roll_resolved) and (not((roll_locked) and (locked_page_id = page_id))))
+  *goto wr_operation_done
+
+You turn to the seats. "The Common's reserve," you tell them. "Open the box. Pay for the extra shifts, the replacement carts, the timber, rope and rough stone from the houses. Let the folds, the yard and the road houses each bring hands, and let the Common pay for all of it."
+
+*if (weight_road_common_trust)
+  The road-house woman who pointed at your line is the first to raise her hand, and the seat beside her follows it.
+*elseif (weight_road_edda_evidence)
+  Edda says her piece to them again, short and flat, and the seats look at one another for a long moment before the first hand goes up.
+*else
+  The seats murmur among themselves, and Edda has to pull the talk toward a count.
+
+*if ((weight_road_preparation = "common_fund") and (weight_road_preparation_success))
+  The brace you set at the drain mouth is still holding the fill back, and you point at it.
+  *set advantage true
+
+*gosub_scene dice_engine roll_skill_check weight_road_repair_dc "persuasion" "" "insight" "" "" ""
+*set weight_road_repair_skill check_skill_id
+*set weight_road_repair_total check_total
+*set weight_road_repair_success check_success
+*set weight_road_repair_roll_resolved true
+*if (check_success)
+  *if (weight_road_repair_skill = "persuasion")
+    You hold the seats to one plan and the crews to one voice. The hands go up around the circle, the pay is counted out on a hurdle, and nobody leaves until every crew has its work.
+  *else
+    You say aloud what each seat will give before they can argue it: the upper folds their shepherds' hands, the lower folds their carts, the yard its rough stone and lime, the road houses their timber and rope. Every cost lands where it can be carried, and the circle closes on a single count.
+  Paid crews from every part of Whitefold clear the drain, brace the surviving face and build a rough but serviceable section from timber and uncontracted stone. By the time the water is running under the road again, the Common's box is empty.
+  *set weight_road_resolution "fund_stabilized"
+*else
+  *if (weight_road_repair_skill = "persuasion")
+    The seats argue over who pays first, and the crews stand idle while they do.
+  *else
+    You name the wrong cost to the wrong seat, and the circle splits into three arguments.
+  By the time a count is taken, the brace has shifted. Too few hands and too little material reach it, and the rest of the wall goes down the slope.
+  *set weight_road_resolution "road_lost"
+*set hours_to_pass 5
+*goto wr_op_finish
+
+*comment The work time, charged once (advance_time keeps its own page-and-id lock), then the page boundary to the Common's meeting. The caller has set hours_to_pass.
+*label wr_op_finish
+*set minutes_to_pass 0
+*set time_advance_call_id "wr_operation_work"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break The Common gathers at the Fleecefold…
+*goto wr_operation_done
+
+*comment Every route out of the operation: the stage moves to the reckoning and the player is taken to the Common's meeting. A refresh of the page after the break lands here, not on the roll.
+*label wr_operation_done
+*set weight_road_quest_stage "reckoning"
+*goto wr_room5
+
+*comment ── ROOM 5: THE COMMON'S RECKONING (the meeting and the accounting choice) ──
+*comment The meeting is held at the Fleecefold whatever the hour (the quest overrides the closing time), with the four seats at the long table, Edda in the chair and Hessa, Nerin and Perrin among the households. There is NO new roll in this room. Edda first states the material
+*comment result of Room 4 (which resource was spent, whether the freight road is usable, whether the weir order can still be delivered), then the player gives the outside account, with two consequence-labelled choices (naming one local interest as the debtor was cut on 2026-10-28 to keep a single path to the reward):
+*comment   full    "Enter every concealed decision and require shared safeguards." Needs all three principals' evidence (Hessa, Nerin, Edda), or exactly two PLUS Perrin's timeline AND the site evidence preserved in Room 1 (the two together can corroborate ONE missing
+*comment            admission, never replace two). When it cannot be given it is listed greyed with the reason rather than hidden.
+*comment   shared  "Record the collapse as common fault and preserve the working peace." Always available, including after road_lost.
+*comment weight_road_accounting is stored the moment the choice is made, before any closing prose; the decision is final. The outcomes, the reward transaction and the lock release come in later chunks (the placeholders below).
+*label wr_room5
+*temp wr_principals 0
+*if (weight_road_hessa_evidence)
+  *set wr_principals + 1
+*if (weight_road_nerin_evidence)
+  *set wr_principals + 1
+*if (weight_road_edda_evidence)
+  *set wr_principals + 1
+*temp wr_full_ok false
+*if (wr_principals = 3)
+  *set wr_full_ok true
+*if ((wr_principals = 2) and ((weight_road_perrin_evidence) and (weight_road_evidence_preserved)))
+  *set wr_full_ok true
+
+[b]◈ THE FLEECEFOLD[/b]
+*line_break
+Lamps hang over the weighing floor, and the beam scale throws a long shadow across the boards. The long table from the Common Room has been carried out and set where the sacks are weighed, and the four seats sit along it with Edda at the head. Behind them the barn is packed to the doors: households from the lower lanes, shepherds with wool still on their coats, the quarry crews in a grey knot, and Hessa, Nerin and Perrin each standing among their own.
+*if (((time_period = "Dusk") or (time_period = "Night")) or (time_period = "Pre-Dawn"))
+  The big doors stand open to the dark, though the weighing floor should be shut for the night.
+
+Edda stands. "Before anyone speaks, here is what we have," she says.
+
+*if (weight_road_resolution = "road_rebuilt")
+  "The road is mended where it broke, and carts can use it. The best of the stack is in that wall, so the weir order won't be whole by the day it names. The Hall will want its thirty marks, and Whitefold will owe them."
+*elseif (weight_road_resolution = "pasture_bypass")
+  "The freight road is closed at the break, and the carts run a new track across the lower grazing. The stack is whole, and the weir order can still go down to the Hall. The folds have lost the ground the track sits on, and they'll go on losing it until the Common pays to mend the old road."
+*elseif (weight_road_resolution = "fund_stabilized")
+  "The wall stands, rough but sound enough for carts. The stack is whole, and the weir order can still go down to the Hall. The box is empty. Whatever the winter or the lambing or the quarry face asks of us now, we meet it with nothing put by."
+*else
+  "The road is gone from the bend down, and nothing heavier than a pack animal will cross there for a long season. The weir order can't reach the Hall by the day it names, and Whitefold owes the penalty."
+  *if (not(weight_road_cart_saved))
+    "The blocks that went down the slope are still down it."
+  *if (not(weight_road_sheep_saved))
+    "So are the sheep we lost, and no account brings them back."
+
+She sets her hands flat on the table. "The Common asked for an outside account of how that wall came down. It has one."
+
+All of the barn turns to you.
+
+*choice
+  *if (wr_full_ok)
+    # Enter every concealed decision and require shared safeguards.
+      *goto wr_account_full
+  *else
+    *selectable_if (false) # Enter every concealed decision and require shared safeguards. [Not every decision is proven.]
+      *goto wr_room5
+  # Record the collapse as common fault and preserve the working peace.
+    *goto wr_account_shared
+
+*comment ── ROOM 5: THE FULL AND THE SHARED ACCOUNT ──
+*comment The two accounts the Common can accept, neither of which names a debtor. The accounting choice is stored first and is final. FULL enters Edda's unlisted authorization, Hessa's heavy carts and Nerin's diverted flocks as one chain of fault, and the Common orders three
+*comment safeguards (weight_road_reforms_adopted): withdrawals from the box written down, quarry loads capped until the road is certified, and named people to clear the high track and the road drain. None of the three principals leaves with a spotless name.
+*comment Where a principal's proof is missing, Perrin's timeline and the preserved site carry that link (the only way the gate lets the full account open without it). SHARED states that unfinished repair, heavy traffic and a fouled drain combined, enters no
+*comment concealed decision and names no debtor, and splits the formal burden between the four seats by what the Room 4 result already cost; it creates no new rule and leaves the Common's account short on purpose. Both end at wr_finish (the reward
+*comment transaction and the lock release are written next).
+*label wr_account_full
+*set weight_road_accounting "full"
+*set weight_road_reforms_adopted true
+
+You stand, and the barn goes quiet enough to hear the lamps. "I'll tell it from the winter to the horn," you say, "and every part of it goes in the Common's account, or none of it should."
+
+"That wall was opened at the thaw and the top rows taken down. The sound stone was stacked beside the road to put them back."
+
+*if (weight_road_edda_evidence)
+  "On the night the shelter wall fell, Edda sent that stone to the shelter. She told me so herself. She meant the Common to replace it, and it never went into the account."
+  Edda nods when you reach it, and keeps her eyes on the barn.
+*else
+  "On the night the shelter wall fell, a handcart of that stone went up the lane to the lambing shelter. Perrin saw it, and the rows around the drain were laid short by about that much stone. Nobody wrote down where it went."
+  Edda's hand tightens on the table, with the whole barn looking at her. "It's true," she says. "That was the stone."
+
+"Since the thaw the carts on that road have run heavy."
+
+*if (weight_road_hessa_evidence)
+  "Hessa's notebook carries one block more than the dispatch tally says, cart after cart, for weeks. She knew the wall was open."
+  Hessa's face is still. "Enter it," she says.
+*elseif (weight_road_hessa_reviewed)
+  "The ruts are deepest right over the drain, and the carters told Perrin the quarry was loading more than their axles liked. Hessa says the loads vary. The road says otherwise."
+  Hessa's jaw sets.
+  After a moment she says, "Enter it."
+*else
+  "The ruts are deepest right over the drain, and the carters told Perrin the quarry was loading more than their axles liked."
+  Hessa's jaw sets. After a moment she says, "Enter it."
+
+"And the upper folds came down that road, again and again."
+
+*if (weight_road_nerin_evidence)
+  "The quarry's spoil had closed the high track. The sheep's legs show it, and so does the mud in the drain's mouth, packed to the top with their wool."
+*elseif (weight_road_nerin_reviewed)
+  "The quarry's spoil had closed the high track. Nerin told me so himself, and the drain's mouth was packed with mud and wool."
+*else
+  "The drain's mouth was packed to the top with mud and wool, cut with hoof prints."
+Nerin speaks to the seats rather than to you. "Put my name beside the flocks."
+
+You wait until the barn is quiet again. "Loose rows around the drain, a drain choked with mud and wool, fill soaked through, and a loaded cart on top. Any one of them and that wall stands. All four, and it fell. It wasn't one hand's work, and it shouldn't be one hand's blame."
+
+The seats lean their heads together along the table. When they sit back, Edda reads from a slip in front of her. "The Common orders three things. Every coin taken from the box is written in the Common's book, with who asked for it and why, and two seats sign beside it. The quarry's loads are held to what the road carried before the wall was opened, until two of us have walked the road and signed it sound. And the yard and the folds each name one person, by name, to clear the high track and the road drain, and their names go on the rail."
+
+The three of them stand a little apart from their own people now, and the whole barn watches them.
+*goto wr_account_end
+
+*label wr_account_shared
+*set weight_road_accounting "shared"
+
+You wait for the barn to settle. "I've heard what I could and read what the wall had to say," you say. "I'll give it to you short."
+
+"The wall was opened at the thaw and left open."
+
+*if ((weight_road_edda_evidence) or (weight_road_perrin_evidence))
+  "Its repair stone went to something else, and nobody wrote that down."
+*else
+  "The Common's account doesn't say what became of its repair stone."
+
+"The carts ran heavy on that road. The flocks came down it. The drain's mouth packed with mud and wool. Any one of those and the wall stands. Together, it didn't."
+
+You say it flat, as the Common's own trouble, and the barn lets out its breath. Hessa's shoulders ease. Nerin looks at the floor between his boots.
+
+"Then it goes in the book like that," Edda says, "short and plain. The rest stays with the people who know it."
+*if (weight_road_resolution = "road_rebuilt")
+  The seats agree that the Hall's penalty will be split four ways, with the folds and the road houses taking the larger shares because the yard gave up its stone.
+*elseif (weight_road_resolution = "pasture_bypass")
+  The seats agree that the other three will make good the folds' lost ground between them, in shares, until the old road is mended.
+*elseif (weight_road_resolution = "fund_stabilized")
+  The seats agree that the emptied box will be refilled over the coming seasons by a share from each of the four.
+*else
+  The seats agree that the Hall's penalty and the cost of the closed road will fall on all four equally.
+No names go on the rail, and no new rule is written. The barn empties more quietly than it filled.
+*goto wr_account_end
+
+*comment Both accounts end here: a page boundary, then the finish (the reward transaction and the lock release are written next).
+*label wr_account_end
+*page_break The Common rises…
+*goto wr_finish
+
+*comment ── ROOM 5: THE FINISH (one reward path) ──
+*comment Both accounts end here, behind a page boundary. Everything that changes the world is done once, inside weight_road_reward_claimed (a refresh finds it set and only reprints the prose, the banners included).
+*comment A SUCCESSFUL repair (weight_road_repair_success): stage "resolved"; the permanent weight_road_successful_completion (character_progression.txt counts it once, so quests_finished is never touched here); 5 Silver Marks from the fee the four seats set aside; one completed
+*comment job on the Insignia (hall_jobs_scales, and no gilded_scales_rep: local certification is not standing with the central organization); the White Ram's kitchen and oven for good (wf_ram_kitchen_unlocked, read by crafting.txt cook_site_eval); and the ONE constituency favor the
+*comment physical result earns (folds after the rebuilt road, quarry after the bypass, Common after the fund). Both accountings keep that favor. The favors are flags only: nothing is paid out for them yet.
+*comment A LOST road (road_lost) pays nothing and earns no completion, no job, no kitchen and no favor; the stage becomes "failed". Either way the village lock and the wait lock are released and the player walks back into Whitefold.
+*label wr_finish
+*if (not(weight_road_reward_claimed))
+  *set weight_road_reward_claimed true
+  *set weight_road_resolved true
+  *set weight_road_resolved_day campaign_day
+  *if (weight_road_repair_success)
+    *set weight_road_quest_stage "resolved"
+    *set weight_road_successful_completion true
+    *set currency_add_amount 50
+    *gosub_scene economy currency_add
+    *set hall_jobs_scales + 1
+    *set wf_ram_kitchen_unlocked true
+    *if (weight_road_resolution = "road_rebuilt")
+      *set weight_road_folds_favor true
+    *if (weight_road_resolution = "pasture_bypass")
+      *set weight_road_quarry_favor true
+    *if (weight_road_resolution = "fund_stabilized")
+      *set weight_road_common_favor true
+  *else
+    *set weight_road_quest_stage "failed"
+*gosub weight_road_release_village
+
+*if (weight_road_repair_success)
+  The barn empties slowly. Edda finds you at the foot of the weighing floor and sets five silver marks in a stack on the scale pan, then tips the pan toward you. "The seats put that by for an outside account," she says, "and you gave one."
+
+  She takes the flat grey stone from her coat and holds out her hand for your Insignia. The brass chimes under the stone. "One more job on your page," she says, "signed for by the Common of Whitefold."
+
+  [b][💰 Received: 5 Silver Marks][/b]
+  *line_break
+  [b][🏷️ Insignia: Port Valen page, ${hall_jobs_scales} @{(hall_jobs_scales = 1) job|jobs} finished][/b]
+
+  Perrin is waiting by the door with his cloth over his shoulder. "My kitchen and my oven are yours," he says, "any hour the stove is lit. A road that carries carts carries my flour."
+
+  [b][🍲 The White Ram's kitchen and oven are open to you.][/b]
+
+  *if (weight_road_resolution = "road_rebuilt")
+    Across the barn, Nerin lifts his crook to you once.
+  *elseif (weight_road_resolution = "pasture_bypass")
+    Across the barn, Hessa catches your eye and gives you one short nod.
+  *else
+    As they go, the road-house woman and the seat beside her lift a hand to you.
+*else
+  The barn empties slowly. Edda finds you at the door. "The seats put five silver by for an outside account, if there was still a road," she says. "There isn't, and they'll hold to the letter of it."
+
+  "I know," you answer.
+
+  "You told it straight, and it's in the book." She looks out toward where the Cut road runs. "That's what I can give you."
+
+*goto_scene alderford/whitefold/whitefold whitefold
+
+*comment ── THE DEADLINE COLLAPSE ──
+*comment More than 240 minutes after Room 2 began, the bowed face gives way before a repair can be organized. Every place that recalculates the clock (the Whitefold hub, the commitment, the readings at the wall, the preparation and the roadside decision) sends the quest here.
+*comment The player is never teleported: during the investigation (the stage is still investigation) they are somewhere in Whitefold and hear it and the runner's report; during Room 3 (the stage is wall) they are on the road and it goes under their feet. Either way no roll is made and no plan
+*comment is chosen. The physical result is road_lost with no repair success, and the stage becomes the reckoning, so the Common still meets and the player can still give an account on whatever proof they gathered (the reward is only for a successful repair).
+*label wr_deadline_lost
+*if (weight_road_quest_stage = "wall")
+  The face lets go while you are still on the road. There is no warning but one long crack, and then the whole bowed section folds outward and takes the road edge and the ditch with it. The crews were already backing away, and all of them are clear. The slope below is brown and moving.
+
+  Edda stands at the new edge with her crook planted, looking down at what is left of the road. When she turns to you, her face has the grey of the dust on it. "Fleecefold," she says. "The seats will want to hear what you've got."
+*else
+  A sound comes down the Cut road that reaches you through your feet before it reaches your ears: a long grinding roar, and then a silence that is worse. Every head in Whitefold turns toward the bend.
+
+  A runner comes down the lane a little later with his arms out from his sides, chalk to the thighs. He gets it out in as few words as he can: the face went, the road edge with it, and the crews got clear.
+
+  Edda sends for the seats, and the Common gathers at the Fleecefold.
+*set weight_road_resolution "road_lost"
+*set weight_road_repair_success false
+*page_break The Common gathers at the Fleecefold…
+*set weight_road_quest_stage "reckoning"
+*goto wr_room5
+
+*comment ── AFTER THE QUEST: WHAT WHITEFOLD SHOWS ──
+*comment Two independent layers, kept short so nothing replays the finale: the physical result (one line in the hub's street layer for good, wr_after_tell) and the accounting (a posted sheet after the full account, in fleecefold.txt). The first visit on a LATER day also
+*comment gets one short exchange with Edda (wr_first_return, once; its own page-id lock keeps a refresh printing the same page). The Quarry Yard and the Fleecefold add one line each for the result. No prices, stock or map links change; a lost road does not close Whitefold.
+*label wr_after_tell
+*if (weight_road_resolution = "road_rebuilt")
+  At the bend, the lower face of the Cut road is pale cut stone now, and loaded carts take it at a walk.
+*elseif (weight_road_resolution = "pasture_bypass")
+  A fenced cart track leaves the Cut road above the bend, crosses the lower grazing and joins it again further on, while the old road stands closed behind hurdles.
+*elseif (weight_road_resolution = "fund_stabilized")
+  The wall at the bend is rough mixed stone, quickly laid, and a pair of men walk it with a rod every few days to see whether it has moved.
+*else
+  The Cut road ends at a fence above the bend, and walkers and pack animals come into Whitefold by a track around the slope.
+*return
+
+*label wr_first_return
+*if (not(weight_road_fr_page = page_id))
+  *set weight_road_first_return_now (not(weight_road_first_return_seen))
+  *set weight_road_first_return_seen true
+  *set weight_road_fr_page page_id
+*if (weight_road_first_return_now)
+
+  Edda Cale is crossing the common as you come in, and she turns toward you.
+
+  *if (weight_road_resolution = "road_rebuilt")
+    "Carts are using the new wall," she says. "The Hall hasn't answered about the weir order, and the yard works as if it won't."
+  *elseif (weight_road_resolution = "pasture_bypass")
+    "The new track's carrying every cart," she says. "The folds have started asking when the old road will be mended."
+  *elseif (weight_road_resolution = "fund_stabilized")
+    "The rough wall's holding," she says. "We've put off two purchases the Common meant to make, and nobody is happy about it."
+  *else
+    "The road stays fenced until the Common can pay for a proper rebuild," she says. "The carters come when they can."
+
+  *if (weight_road_accounting = "full")
+    "The new rules are on the rail with two names under them, and people are reading them."
+  *else
+    "The book says it short, as you gave it, and people have left it there."
+
+  *if (weight_road_repair_success)
+    "Glad it's holding," you say.
+
+    "Perrin has asked after you twice," Edda says. "Go and eat."
+  *else
+    "I'm sorry it came to this," you say.
+
+    "You told it straight," Edda says. "That's still worth something here."
+  She goes on across the common.
+*return

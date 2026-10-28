@@ -16,6 +16,8 @@
 *temp wf_fold_first false
 *if (not(wf_fold_seen))
   *set wf_fold_first true
+*comment THE WEIGHT OF THE ROAD: the day the player kept out of the alarm (weight_road_hook_declined_day), Nerin and Edda are away at the broken wall and their conversations are closed.
+*temp wf_away (weight_road_hook_declined_day = campaign_day)
 *set wf_fold_seen true
 [b]◈ THE FLEECEFOLD[/b]
 *line_break
@@ -36,6 +38,10 @@ The Common pays one yard guard to sit by the weighing floor while bales and paym
   A lean human man works at the scale with a fleece balanced across one forearm. His sandy hair has been cut close against the wind, a pale burn scar runs from his wrist to the back of one hand, and loose wool clings to the dark vest over his shirt. He looks up only after he has written the weight down.
 
   "Nerin Bale," he says. "Mind the lambs in the yard and you'll have no quarrel with me."
+*elseif (wf_away)
+  The beam scale hangs level and unused, with a half-weighed fleece folded over the rail beside it.
+*elseif (weight_road_quest_stage = "investigation")
+  Nerin Bale works along the rail pens in the yard, running a hand down the legs of the sheep that came off the slope.
 *else
   Nerin Bale checks the knot on a wool sack beside the scale.
 
@@ -45,13 +51,39 @@ The Common pays one yard guard to sit by the weighing floor while bales and paym
   "Edda Cale," she says. "I hold the Commonwarden's chair. If you've business with Whitefold, say it plainly."
 
   *set wf_common_seen true
+*elseif (wf_away)
+  The Common Room is empty. The notices lie in their four small piles on the long table, and Edda's chair stands pushed back from it.
+*elseif (weight_road_quest_stage = "investigation")
+  Edda Cale sits at the long table in the Common Room with mud drying on her boots, a bundle of road papers squared in front of her.
 *else
   Edda Cale sits at the long table in the Common Room, reading a note while Nerin weighs another sack.
+
+*if (weight_road_resolved)
+  *if (weight_road_accounting = "full")
+    A new sheet hangs on the notice rail in Edda's square hand: three rules, and under them the names Hessa Vail for the yard and Nerin Bale for the folds.
+  *if (weight_road_resolution = "pasture_bypass")
+    The pens along the lower grazing stand half empty since the track took the ground.
+  *elseif (weight_road_resolution = "fund_stabilized")
+    The Common's box sits shut on the long table, and a short list of postponed purchases hangs beside the rail.
 
 *comment Open-world free time: the sidebar's Wait and Rest work on this page (web/mygame/pagegate.js).
 *set wait_ok_page page_id
 *choice
-  *if (not(wf_fold_asked_wool))
+  *comment THE WEIGHT OF THE ROAD, Room 2: Nerin's account, then the inspection of the penned flock (the_weight_of_the_road.txt wr_nerin).
+  *if ((weight_road_quest_stage = "investigation") and (not(weight_road_nerin_reviewed)))
+    # Ask Nerin about the sheep on the Cut road.
+      *goto_scene alderford/whitefold/the_weight_of_the_road wr_nerin
+  *if ((weight_road_quest_stage = "investigation") and ((weight_road_nerin_reviewed) and (not(weight_road_nerin_tried))))
+    # Inspect the sheep and trace where the upper flocks came down.@{show_stat_hints  [Survival DC 11]|}
+      *goto_scene alderford/whitefold/the_weight_of_the_road wr_nerin_inspect
+  *comment THE WEIGHT OF THE ROAD, Room 2's commitment: with two accounts reviewed Edda offers to take them back to the road (the_weight_of_the_road.txt wr_commit). Taking it closes the remaining interview for good.
+  *if ((weight_road_quest_stage = "investigation") and (weight_road_accounts_reviewed = 3))
+    # Bring the accounts back to Edda and return to the broken road.
+      *goto_scene alderford/whitefold/the_weight_of_the_road wr_commit
+  *if ((weight_road_quest_stage = "investigation") and (weight_road_accounts_reviewed = 2))
+    # Bring the accounts back to Edda and return to the broken road. [One account stays unheard.]
+      *goto_scene alderford/whitefold/the_weight_of_the_road wr_commit
+  *if ((not(wf_fold_asked_wool)) and (not(wf_away)))
     # Ask Nerin why one fleece is sent to a different stack.
       *set wf_fold_asked_wool true
       You glance from a clean, pale fleece to a darker one set apart from it. "Why does that one go to a different stack?"
@@ -68,7 +100,7 @@ The Common pays one yard guard to sit by the weighing floor while bales and paym
         # ⇥ [pvgo:home:whitefold]
           *goto wf_fleecefold
         *comment GEN:END place_steps home:whitefold
-  *if (not(wf_fold_asked_weather))
+  *if ((not(wf_fold_asked_weather)) and (not(wf_away)))
     # Ask Nerin how the Coldspine weather treats the flocks.
       *set wf_fold_asked_weather true
       You look toward the closed pen gates. "Do the storms take many sheep?"
@@ -85,7 +117,7 @@ The Common pays one yard guard to sit by the weighing floor while bales and paym
         # ⇥ [pvgo:home:whitefold]
           *goto wf_fleecefold
         *comment GEN:END place_steps home:whitefold
-  *if (not(wf_common_asked_rule))
+  *if ((not(wf_common_asked_rule)) and (not(wf_away)))
     # Ask Edda what has filled the notice rail.
       *set wf_common_asked_rule true
       You step into the low room beside the weighing floor and nod toward the four small piles. "What has you sorting all of that?"
@@ -102,7 +134,7 @@ The Common pays one yard guard to sit by the weighing floor while bales and paym
         # ⇥ [pvgo:home:whitefold]
           *goto wf_fleecefold
         *comment GEN:END place_steps home:whitefold
-  *if (not(wf_common_asked_alderford))
+  *if ((not(wf_common_asked_alderford)) and (not(wf_away)))
     # Ask Edda which matters have to go down to Alderford.
       *set wf_common_asked_alderford true
       You glance at the road leading down from the folds. "What can't be settled at this table?"
