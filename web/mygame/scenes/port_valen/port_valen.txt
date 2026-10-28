@@ -5512,6 +5512,9 @@ The pointer goes back to the chart, and the scribe's nib keeps scratching.
 
 *label pv_workroom_menu
 *choice
+  *if ((found_customs_vellum) and (not(turned_in_customs_vellum)))
+    # Lay the Grey Waterway Toll Register beside her customs ledgers.
+      *goto pv_workroom_toll_register
   *if ((not(ysolde_waterways_told)) and ((ysolde_respect >= 10) or (not(ysolde_charts_asked))))
     # Ask about the charts on the walls.
       *goto pv_workroom_charts
@@ -5529,6 +5532,37 @@ The pointer goes back to the chart, and the scribe's nib keeps scratching.
   *if (vane_independent_operative)
     # ↦ Walk to the district picked on the sidebar. [port_valen]
       *goto port_valen_walk_picked
+
+*label pv_workroom_toll_register
+[b]◈ THE WORKROOM[/b]
+*line_break
+You take the water-stained register from your satchel and lay it beside Ysolde's customs ledgers. The old three-headed hawk seal stops her pointer halfway down the page.
+
+"The Sinks gatehouse register." She draws the vellum closer and turns through the cramped columns. "Morzan's clerks have copies of the current tolls. What they don't have is the old exemptions, the abandoned landings, or thirty years of changes written over them."
+
+She sets two silver marks on the table and passes the register to the scribe. "Salvage rate. Copy every entry that still names a standing wharf, then send the original to the Scales' archive."
+
+*set turned_in_customs_vellum true
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *set ysolde_respect +2
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount 20
+  *gosub_scene economy currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+
+[b][📜 Ysolde's Regard +2][/b]
+*line_break
+[b][💰 Paid by Ysolde: +2 Silver Marks][/b]
+
+*choice
+  # Back to the table.
+    *goto pv_workroom_back
+  *if (vane_independent_operative)
+    # ↦ Walk to the district picked on the sidebar. [port_valen:read]
+      *goto_scene port_valen/port_valen port_valen_walk_picked
 
 *label pv_workroom_charts
 [b]◈ THE WORKROOM[/b]

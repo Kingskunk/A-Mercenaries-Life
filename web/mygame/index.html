@@ -84,6 +84,7 @@ either express or implied.
 <script src="shell.js"></script>
 <link href="../alertify.css" rel="stylesheet" type="text/css">
 <link href="uiart.css" rel="stylesheet" type="text/css">
+<link href="ability_score_icons.css" rel="stylesheet" type="text/css">
 <link href="theme.css" rel="stylesheet" type="text/css">
 <link href="lorebook.css" rel="stylesheet" type="text/css">
 <link href="inventory.css" rel="stylesheet" type="text/css">
@@ -648,7 +649,11 @@ button#statSidebar .turnRow,
 
 /* the six scores as boxed tiles */
 #statSidebar .sbAbil { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 10px 0 2px; }
-#statSidebar .sbAbil > div { text-align: center; padding: 5px 2px; border: 1px solid var(--ch-line); border-radius: 4px; background: rgba(0, 0, 0, 0.3); font-size: 11px; color: var(--ch-dim); }
+#statSidebar .sbAbil > div { position: relative; overflow: hidden; text-align: center; padding: 5px 2px; border: 1px solid var(--ch-line); border-radius: 4px; background: rgba(0, 0, 0, 0.3); font-size: 11px; color: var(--ch-dim); }
+#statSidebar .sbAbilTile::before { content: ""; position: absolute; width: 84%; max-width: 80px; aspect-ratio: 1; top: 50%; left: 50%; transform: translate(-50%, -50%); background: center / contain no-repeat; opacity: 0.3; filter: grayscale(1) brightness(1.4); pointer-events: none; }
+#statSidebar .sbAbilContent { position: relative; display: block; }
+#statSidebar .sbAbilLabel { color: var(--ch-brass); text-shadow: 0 1px 3px #080706, 0 0 5px #080706; }
+#statSidebar .sbAbilMod { color: #e5c792; text-shadow: 0 1px 3px #080706, 0 0 5px #080706; }
 #statSidebar .sbAbil b { display: block; font: 700 16px var(--ch-font-ui); color: var(--ch-text); }
 #statSidebar .sbAbil .boon { display: block; font-size: 10px; line-height: 1.1; margin-bottom: 1px; }
 
@@ -1291,7 +1296,11 @@ button#statSidebar .turnRow,
     else if (s.character_class === "ranger") statsOrbs = miniOrbs(s.ranger_spell_slots, s.ranger_spell_slots_max, "");
     var SB_CASTERS = { wizard: 1, bard: 1, warlock: 1, ranger: 1 };
     var nonprofHtml = (isTruthy(s.armor_nonprof) || isTruthy(s.shield_nonprof)) ? "<div class=\"timePeriod\" title=\"Your class is not trained in this gear: disadvantage on STR and DEX rolls" + (SB_CASTERS[s.character_class] ? ", and no spellcasting while it is worn" : "") + "\" style=\"color:var(--ch-warn);font-style:normal;\">&#9888; " + (isTruthy(s.armor_nonprof) && isTruthy(s.shield_nonprof) ? "Armor &amp; shield" : (isTruthy(s.shield_nonprof) ? "Shield" : "Armor")) + ": not proficient</div>" : "";
-    function abilTile(label, score, boon, mod) { return "<div>" + label + "<b>" + fmt(score) + "</b>" + boon + "<span>" + fmt(mod) + "</span></div>"; }
+    function abilTile(label, score, boon, mod) {
+      return "<div class=\"sbAbilTile\" data-ability=\"" + label + "\"><span class=\"sbAbilContent\">" +
+        "<span class=\"sbAbilLabel\">" + label + "</span><b>" + fmt(score) + "</b>" + boon +
+        "<span class=\"sbAbilMod\">" + fmt(mod) + "</span></span></div>";
+    }
     // The name banner is the switch between the two views. In combat the sidebar stays on Status (the turn order and click-to-target live there), so the banner is
     // plain then and a Stats view left open is put back.
     if (inCombat) sbView = "status";

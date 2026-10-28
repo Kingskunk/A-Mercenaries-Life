@@ -68,6 +68,7 @@ const MAP = {
   h_hat: "Brimmed_Hat_Unfaded_Icon.png",
   h_helm: "Blackplume_Helm_Unfaded_Icon.png",                   // STAND-IN: a plain iron helm
   cloak: "Cloak_B_Unfaded_Icon.png",
+  cloak_talia: "../Generic/Talias_Oiled_Cloak_Generated_Source.png",
   cloak_traveler: "Travelers_cloak.png",                     // Traveler's Cloak (id broadcloth_cloak)
   cloak_storm: "Storm_Cloak.png",                            // Storm Cape
   cloak_winter: "Winter_Cloak.png",
@@ -79,6 +80,7 @@ const MAP = {
   gloves_lined: "Bracers_Barbarian_Unfaded_Icon.png",         // Lined Gloves
   gloves_master: "Spellseeking_Gloves_Unfaded_Icon.png",      // Spellseeker Gloves
   boots: "Boots_Leather_Unfaded_Icon.png",
+  boots_talia: "../Generic/Talias_Deck_Boots_Generated_Source.png",
   boots_iron_heel: "../Generic/Brants_Iron_Heel_Boots_Generated_Source.png", // Brant's shipyard reward
   boots_rain: "Boots_Leather_A_Unfaded_Icon.png",             // Rain Boots
   boots_winter: "Shoes_Barbarian_Unfaded_Icon.png",          // Winter Boots

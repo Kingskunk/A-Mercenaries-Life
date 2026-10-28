@@ -130,10 +130,6 @@ Sergeant Varren stalks between the tent lines, his blackened chainmail clinking 
   *if ((talia_invitation_open) and (not(visited_talia_loft)))
     # [b]Talia's Loft[/b]: climb the timber stairs and accept her invitation.
       *set visited_talia_loft true
-      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
-        *set alder_actions_left - 1
-        *set stat_bump_locked true
-        *set locked_stat_bump_page_id page_id
       *set minutes_to_pass 25
       *set time_advance_call_id "alder_hub_3"
       *gosub_scene calendar advance_time
@@ -266,10 +262,6 @@ Sergeant Varren stalks between the tent lines, his blackened chainmail clinking 
   *if (visited_alder_chapel)
     # [b]The Old Chapel[/b]: climb back up the ridge stair.
       *goto return_to_chapel
-
-  *if (alder_actions_left < 6)
-    # [b]The Squad Camp[/b]: turn in for the night before the crossing.
-      *goto alder_end
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment CHAIN 1: THE CURING SHEDS & BRINE LOFTS
@@ -745,11 +737,12 @@ For a long while, the only sound in the small loft is the rain on the roof and t
 
 *label talia_decision_choice
 *choice
-  # [b]Squeeze her hand[/b]: promise to return after your rounds.
-    You squeeze her warm fingers in return, holding her sea-green gaze before standing to lace your dried boots. "I have evening muster to check on, Talia. But I'll be back when the night sentries take their posts."
-    
-    A soft, radiant smile lights up her face. "My door stays unbarred for you tonight, ${name}. Come back when you're done."
-    *goto talia_loft_done
+  *if (alder_actions_left > 0)
+    # [b]Squeeze her hand[/b]: promise to return after your rounds.
+      You squeeze her warm fingers in return, holding her sea-green gaze before standing to lace your dried boots. "I have evening muster to check on, Talia. But I'll be back when the night sentries take their posts."
+      
+      A soft, radiant smile lights up her face. "My door stays unbarred for you tonight, ${name}. Come back when you're done."
+      *goto talia_loft_done
 
   # Thank Talia for the shelter, cider, and river intelligence, keeping your focus strictly on duty.
     You finish your cup with a respectful nod and stand to lace your dried boots. "Appreciate the fire, the cider, and the warning about Morzan's slips, Talia. Keep your door barred tight tonight."
@@ -757,11 +750,12 @@ For a long while, the only sound in the small loft is the rain on the roof and t
     She smiles softly, squeezing your hand once with genuine warmth before seeing you to the timber stairs. "Take care of yourself out there, ${name}. Come back if you need a dry roof later."
     *goto talia_loft_done
 
-  # Forget the rest of your camp rounds—pull off your weapons belt and stay by the warm hearth tonight.
-    You reach for the buckles of your weapons belt, unfastening the leather and letting the blade rest securely beside the chest. "The company can manage without me for one night. I'm staying right here."
-    
-    Talia's breath catches softly, her eyes widening in sudden, glowing delight. She steps close, taking your hands in hers and leading you toward the warm hearth.
-    *goto talia_intimacy_beat1
+  *if (alder_actions_left <= 0)
+    # Pull off your weapons belt and stay by the warm hearth tonight.
+      You reach for the buckles of your weapons belt, unfastening the leather and letting the blade rest securely beside the chest. "I'm staying right here."
+      
+      Talia's breath catches softly, her eyes widening in sudden, glowing delight. She steps close, taking your hands in hers and leading you toward the warm hearth.
+      *goto talia_intimacy_beat1
 
 *label talia_loft_done
 *page_break Climb down the timber stairs into the night...
@@ -1521,11 +1515,12 @@ She gestures toward the workpiece racks along the wall. "Or take a look through 
     She smiles warmly, giving your shoulder a friendly clap. "Take care of yourself out there on the river, ${name}. Come back if you need dry shelter later."
     *goto smithy_done
 
-  # Forget the rest of your camp rounds—set aside your gear and spend the night here by the warm hearth.
-    You reach for the fastenings of your ${armor_desc}, working them free with a low, steady grin. "The company can manage the camp without me for one night. I'm staying right here."
-    
-    Janna's breath catches softly, her dark eyes flashing in delighted, smoky approval. She takes your hand, leading you past the wool partition curtain into the warm hearth alcove.
-    *goto janna_intimacy_beat1
+  *if (alder_actions_left <= 0)
+    # Set aside your gear and spend the night here by the warm hearth.
+      You reach for the fastenings of your ${armor_desc}, working them free with a low, steady grin. "I'm staying right here."
+      
+      Janna's breath catches softly, her dark eyes flashing in delighted, smoky approval. She takes your hand, leading you past the wool partition curtain into the warm hearth alcove.
+      *goto janna_intimacy_beat1
 
 *label janna_intimacy_beat1
 *set janna_romanced true
@@ -3467,6 +3462,9 @@ You must choose where to take your rest before dawn muster.
 
 *label rest_with_talia
 *set scenery_subplace "prologue_talia_loft"
+*if (not(visited_talia_loft))
+  *set visited_talia_loft true
+  *goto visit_talia_loft
 You make your way through the quiet slips and climb the dry timber stairs above the curing sheds. Pushing open the cedar door, the dry heat of the woodstove and the scent of sweet clove and cedar welcome you out of the cold.
 
 Talia is waiting by the hearth, her thick chestnut hair unpinned and glowing in the firelight.
