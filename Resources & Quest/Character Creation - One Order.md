@@ -2,6 +2,8 @@
 
 **Built as answered:** the class page goes after race, the one-liners stand, picks are "Name. one line", the trial scenes are cut for a short muster, and class titles are the plain class name. **One correction to this document:** the pick text was not copied out per origin branch as I wrote above; each class's picks existed once. The saving came from cutting the three story scenes (996 lines to 369 for the muster, plus a 567-line class page). See the rules entry "Character Creation in One Order".
 
+**Ability-score correction, built 2026-10-27:** background no longer allocates ability scores. Every class owns one optimized `16, 14, 12, 10, 10, 10` spread before racial modifiers: Fighter and Barbarian use STR 16, CON 14, DEX 12; Rogue DEX 16, CON 14, WIS 12; Ranger DEX 16, WIS 14, CON 12; Bard and Warlock CHA 16, DEX 14, CON 12; Wizard INT 16, DEX 14, CON 12. Background retains its narrative, money, reputation and dialogue effects. This replaces both the old fixed origin layouts and the interim origin-array remapping, ensuring that the same class has the same sound base build under every background. The class choices show the complete spread when mechanical hints are enabled. `tools/test_class_stat_priority.js` runs every background/class branch and every racial-modifier branch through the real scene, including the reported Scion Tiefling Warlock.
+
 For you to mark up before anything is built. Anything marked *(invented)* is mine. Answer in place under the QUESTIONS at the end; "your call" means use my suggestion.
 
 ---

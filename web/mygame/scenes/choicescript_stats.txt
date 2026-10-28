@@ -459,6 +459,9 @@ You change into it and settle the fit.
 *if ((character_class = "warlock") or (character_class = "bard"))
   *set ab_casting_mod cha_mod
   *set ab_casting_stat "Charisma"
+*if (character_class = "ranger")
+  *set ab_casting_mod wis_mod
+  *set ab_casting_stat "Wisdom"
 *comment spell_save_dc (startup.txt, update_dnd_stats) is the one durable place this formula lives now --
 *comment ab_spell_dc just displays it, instead of recomputing the same sum a second time.
 *set ab_spell_dc spell_save_dc
@@ -474,7 +477,7 @@ You change into it and settle the fit.
 
 [b]◈ COMBAT & CASTING METRICS[/b]
 *line_break
-• [b]Level & Hit Die:[/b] Level ${character_level} ${class_name} (${hit_die}, full recovery on a Long Rest)
+• [b]Level & Hit Die:[/b] Level ${character_level} ${class_name} (${hit_die}; each level adds ${hit_die_max} + Constitution modifier to maximum HP)
 *line_break
 • [b]Proficiency Bonus:[/b] +${prof_bonus}
 *if (not(ab_casting_stat = "None"))
@@ -485,26 +488,32 @@ You change into it and settle the fit.
   *line_break
   • [b]Spell Attack Modifier: +${ab_spell_atk}[/b]
   *line_break
-  *comment Added 2026-09-28 alongside spell_damage_mod. The dossier already showed the save DC and the
-  *comment attack modifier, both of which are combinations of prof_bonus and the casting modifier, but not
-  *comment the bare modifier itself -- so a player reading this page could see "+5 to hit" and "DC 13" with
-  *comment no way to work out that the piece they share is +3. It is also the number a LEVELED spell's damage
-  *comment adds, which is what made its absence from the page confusing when Magic Missile printed a flat +3.
-  • [b]Spell Damage Modifier: +${ab_casting_mod}[/b] (leveled spells only)
+  *comment Show the bare casting modifier because several effects add it directly, while others do not.
+  • [b]Casting Modifier: +${ab_casting_mod}[/b] (used only by effects that explicitly add it)
+*if (spells_blocked)
+  *line_break
+  • [b]Spellcasting Blocked:[/b] ${spells_blocked_why}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [b]◈ INNATE TRAITS & RACIAL MAGIC[/b]
 *line_break
-• [b]${race_title} — ${race_trait_title}:[/b] ${race_trait_desc}
+*if (race = "human")
+  • [b]Human — Versatile:[/b] Your +1 bonus to all six abilities is already included in your scores. The benefit is permanent rather than activated.
+*if (race = "elf")
+  • [b]Elf — Fey Ancestry:[/b] You gain advantage when a check is specifically tagged as a save against charm or magical sleep.
+*if (race = "dwarf")
+  • [b]Dwarf — Dwarven Resilience:[/b] You gain advantage when a check is specifically tagged as a poison save.
+*if (race = "half_orc")
+  • [b]Half-Orc — Relentless Endurance:[/b] At certain lethal moments, you can endure the blow instead of falling.
+*if (race = "halfling")
+  • [b]Halfling — Lucky:[/b] A natural 1 on a d20 check is rerolled once automatically.
+*if (race = "tiefling")
+  • [b]Tiefling — Infernal Legacy:[/b] Thaumaturgy can amplify your voice, alter your eyes, and move doors during certain social encounters.
+*if (race = "hexblood")
+  • [b]Hexblood — Hex Magic:[/b] You can cast innate Hex once per Long Rest and carry Disguise Self as innate magic.
 *if (race_darkvision)
   *line_break
-  • [b]Darkvision:[/b] You can see in dim light within 60 feet as if it were bright light, and in darkness as if it were dim light (no color, just shades of grey).
-*if (not(race_cantrip = "none"))
-  *line_break
-  • [b]Innate Magic:[/b] ${race_cantrip_desc}
-*if (not(race_cantrip_2 = "none"))
-  *line_break
-  • [b]Innate Magic:[/b] ${race_cantrip_2_desc}
+  • [b]Darkvision:[/b] Dungeon darkness does not impose disadvantage, consume a light source, or prevent explored rooms from appearing on the map.
 
 *if (not(character_class = "none"))
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -520,7 +529,7 @@ You change into it and settle the fit.
       • [b]Fighting Style — ${ab_style_label}:[/b] ${ab_style_desc}
   *if (character_class = "barbarian")
     *line_break
-    • [b]Rage (Bonus Action, ${barbarian_rage_uses}/Long Rest remaining): +${barbarian_rage_damage_bonus} melee damage, resistance to bludgeoning, piercing, and slashing damage, and Advantage on Strength checks and saves while raging.[/b]
+    • [b]Rage (Bonus Action, ${barbarian_rage_uses}/Long Rest remaining): Eligible Strength-based melee weapon hits deal +${barbarian_rage_damage_bonus} damage, and incoming bludgeoning, piercing and slashing damage is halved for the fight.[/b]
     *line_break
     • [b]Unarmored Defense: While not wearing armor, your base Armor Class equals 10 + your Dexterity modifier + your Constitution modifier.[/b]
     *if (character_level >= 2)
@@ -530,7 +539,7 @@ You change into it and settle the fit.
       • [b]Danger Sense: Advantage on Dexterity saving throws.[/b]
   *if (character_class = "rogue")
     *line_break
-    • [b]Sneak Attack (Passive, once per turn): ${rogue_sneak_attack_die} extra damage when you have Advantage on the attack, or are wielding a finesse or ranged weapon with an ally adjacent to your target.[/b]
+    • [b]Sneak Attack (Passive, once per turn): A finesse or ranged weapon hit deals +${rogue_sneak_attack_die} damage when the attack had advantage, or when you had no disadvantage and a living ally was Engaged with the target.[/b]
     *if (character_level >= 2)
       *line_break
       • [b]Cunning Action (Bonus Action): Dash, Disengage or Hide as a bonus action instead of an action.[/b]
@@ -548,7 +557,7 @@ You change into it and settle the fit.
       • [b]Canny:[/b] Double proficiency bonus on ${ranger_expertise_1} checks.
   *if (character_class = "bard")
     *line_break
-    • [b]Bardic Inspiration (Bonus Action, ${bard_inspiration_uses}/${bard_inspiration_max} uses remaining; a short or long rest returns them): Inspire an ally in the fight, or yourself when you stand alone, with a 1d${bard_inspiration_die_sides}. Once, on an attack roll, ability check or saving throw that would fail, the die is added to it, and it is lost either way.[/b]
+    • [b]Bardic Inspiration (Bonus Action, ${bard_inspiration_uses}/${bard_inspiration_max} uses remaining; a short or long rest returns them): In a group fight, an inspired ally adds 1d${bard_inspiration_die_sides} to their next missed attack. When fighting alone, you add it to your next failed d20 check. The die is spent when rolled.[/b]
     *if (character_level >= 2)
       *line_break
       • [b]Jack of All Trades: Half your proficiency bonus, rounded down, on skill checks you are not proficient in.[/b]
@@ -562,15 +571,13 @@ You change into it and settle the fit.
     *line_break
     • [b]Arcane Recovery (on a Short Rest, once per Long Rest): Recover expended spell slots whose combined level is up to half your Wizard level, rounded up.@{wizard_arcane_recovery_used  [Used]| [Ready]}[/b]
     *line_break
-    • [b]Ritual Casting:[/b] You can cast any known wizard spell tagged as a ritual without expending a spell slot, taking 10 extra minutes to cast.
+    • [b]Ritual Casting:[/b] For Detect Magic, Speak with Animals and Unseen Servant, you can spend 10 extra minutes instead of a spell slot when time permits.
     *if ((character_level >= 2) and (not(wizard_expertise_1 = "none")))
       *line_break
       • [b]Scholar:[/b] Double proficiency bonus on ${wizard_expertise_1} checks.
-    *line_break
-    • [b]Spellbook:[/b] Your spells are inscribed in a bound spellbook — losing it without a backup would cost you every spell you haven't already memorized for the day.
   *if (character_class = "warlock")
     *line_break
-    • [b]Pact Magic:[/b] Your spell slots recharge on a Short Rest instead of a Long Rest.
+    • [b]Pact Magic:[/b] All Pact Magic slots return on either a Short or Long Rest.
     *gosub_scene character_progression invocation_info warlock_invocation_1
     *if (not(inv_label = ""))
       *line_break
@@ -649,16 +656,16 @@ You change into it and settle the fit.
   [b]◈ 1ST-LEVEL SPELLS & SLOT TRACKER[/b]
   *if (not(wizard_spell = "none"))
     *line_break
-    • [b]Wizard Spell Slots Remaining: ${wizard_spell_slots} (Long Rest)[/b]
+    • [b]Wizard Spell Slots: ${wizard_spell_slots}/${wizard_spell_slots_max}[/b] — a Short Rest restores half the pool, rounded up; a Long Rest restores all. Arcane Recovery may restore additional slots once per Long Rest.
   *if (not(warlock_spell = "none"))
     *line_break
-    • [b]Warlock Spell Slots Remaining: ${warlock_spell_slots} (Short Rest)[/b]
+    • [b]Warlock Pact Magic Slots: ${warlock_spell_slots}/${warlock_spell_slots_max}[/b] — a Short or Long Rest restores all.
   *if (((not(bard_spell = "none")) or (not(bard_spell_2 = "none"))) or (not(bard_spell_3 = "none")))
     *line_break
-    • [b]Bard Spell Slots Remaining: ${bard_spell_slots} (Long Rest)[/b]
+    • [b]Bard Spell Slots: ${bard_spell_slots}/${bard_spell_slots_max}[/b] — a Short Rest restores half the pool, rounded up; a Long Rest restores all.
   *if (not(ranger_spell = "none"))
     *line_break
-    • [b]Ranger Spell Slots Remaining: ${ranger_spell_slots} / ${ranger_spell_slots_max} (Long Rest)[/b]
+    • [b]Ranger Spell Slots: ${ranger_spell_slots}/${ranger_spell_slots_max}[/b] — a Short Rest restores half the pool, rounded up; a Long Rest restores all.
   *if (not(wizard_spell = "none"))
     *gosub print_ability_card wizard_spell
   *if (not(wizard_spell_2 = "none"))
@@ -689,181 +696,183 @@ You change into it and settle the fit.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment print_ability_card -- shared card renderer for the Abilities &
 *comment Grimoire screen above. One *if branch per known cantrip/spell id
-*comment in this game's actual character-creation data (dawn_trial.txt /
-*comment startup.txt); action-economy/range follow 5E RAW as flavor, but
-*comment every damage/DC/healing number here matches this project's own
-*comment combat.txt implementation exactly (never invented) -- see
-*comment attack_cantrip_dice_sides and the resolve_cast_*/resolve_dissonant_
-*comment whispers subroutines in startup.txt for the source of truth.
+*comment in this game's actual character-creation and level-up data. Every
+*comment Cards below describe combat reach tiers, utility situations,
+*comment real timers, resource costs and recovery behavior.
+*comment Do not copy tabletop ranges or effects into this page.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label print_ability_card
 *params ability_id
+*if (ability_id = "blade_ward")
+  *line_break
+  • [b]Blade Ward — Combat: Bonus Action.[/b] Halves incoming bludgeoning, piercing and slashing weapon damage until the end of your next turn. It cannot be refreshed while active, so it is normally available every other round.
+  A brief warding sign catches steel and claws on invisible resistance.
 *if (ability_id = "fire_bolt")
   *line_break
-  • [b]Fire Bolt — Action, 120 ft, Ranged Spell Attack: 1d10 Fire damage.[/b]
+  • [b]Fire Bolt — Combat: Action · Long Reach · Spell Attack · 1d10 Fire.[/b] Because it is ranged, casting while Engaged imposes disadvantage. Outside combat it can start a camp or crafting fire without a tinderbox.
   A small, precise mote of fire flung on command, more a thrown dagger than a fireball, but undeniably real. It also lights kindling, a candle or a torch that nobody is wearing or carrying, so you can start a camp fire without flint.
 *if (ability_id = "ray_of_frost")
   *line_break
-  • [b]Ray of Frost — Action, 60 ft, Ranged Spell Attack: 1d8 Cold damage, target's speed reduced by 10 ft until your next turn.[/b]
+  • [b]Ray of Frost — Combat: Action · Medium Reach · Spell Attack · 1d8 Cold.[/b] On a hit, the target is Slowed and cannot Dash on its next turn.
   A thin, pale ray of unnatural cold that saps warmth and slows whatever it strikes.
 *if (ability_id = "booming_blade")
   *line_break
-  • [b]Booming Blade — Action, melee weapon: make one melee attack with a weapon in your hand, in place of a normal attack. A foe it hits is sheathed in booming energy: if it moves of its own accord before your next turn ends, it takes 1d8 Thunder damage and the energy fades. Needs a melee weapon in hand.[/b]
+  • [b]Booming Blade — Combat: Action · Engaged melee weapon attack.[/b] A hit sheathes the target in thunder until it moves voluntarily or the fight ends; moving triggers 1d8 Thunder damage. From level 5, the hit itself also gains scaling Thunder damage.
   Thunder drawn tight along the length of a blade, waiting for a reason to break.
 *if (ability_id = "true_strike")
   *line_break
-  • [b]True Strike — Action, weapon range: make one attack with the weapon in your hand, in place of a normal attack, rolling with your spellcasting ability instead of Strength or Dexterity. The blow deals the weapon's own damage or Radiant, your choice. From level 5 it adds 1d6 Radiant (2d6 at level 11, 3d6 at level 17).[/b]
+  • [b]True Strike — Combat: Action · Weapon Reach.[/b] Make one weapon attack using your casting ability instead of Strength or Dexterity, choosing the weapon's normal damage type or Radiant. From level 5 it adds scaling Radiant damage.
   A flash of foresight that shows exactly where the blow should fall.
 *if (ability_id = "shocking_grasp")
   *line_break
-  • [b]Shocking Grasp — Action, Melee Spell Attack: 1d8 Lightning damage. Advantage on the attack roll against a metal-armored target; on a hit, the target cannot take reactions until the next round.[/b]
+  • [b]Shocking Grasp — Combat: Action · Engaged · Spell Attack · 1d8 Lightning.[/b] A hit spends the target's reaction for the round. Targets explicitly marked as metal-armored grant advantage.
   A jolt of violent, crackling lightning channeled through your palm, hungry for iron and steel.
 *if (ability_id = "eldritch_blast")
   *line_break
-  • [b]Eldritch Blast — Action, 120 ft, Ranged Spell Attack: 1d10 Force damage.[/b]
+  • [b]Eldritch Blast — Combat: Action · Long Reach · Spell Attack · 1d10 Force.[/b] Casting while Engaged imposes disadvantage. Agonizing Blast adds Charisma damage; Repelling Blast can drive a Large-or-smaller target back one range step.
   A crackling bolt of raw force that answers when you reach for it, more instinct than spell.
 *if (ability_id = "chill_touch")
   *line_break
-  • [b]Chill Touch — Action, 120 ft, Ranged Spell Attack: 1d8 Necrotic damage; the target can't regain hit points until the start of your next turn.[/b]
+  • [b]Chill Touch — Combat: Action · Medium Reach · Spell Attack · 1d8 Necrotic.[/b]
   A skeletal, ghostly hand of grasping cold that saps warmth and strength, and lingers just long enough to stop a wound from closing.
 *if (ability_id = "vicious_mockery")
   *line_break
-  • [b]Vicious Mockery — Action, 60 ft, Wisdom Save (DC ${spell_save_dc}): 1d4 Psychic damage on a failed save, no effect on a success; a failed target also has disadvantage on its next attack.[/b]
+  • [b]Vicious Mockery — Combat: Action · Medium Reach · Wisdom Save (DC ${spell_save_dc}).[/b] A failed save deals 1d4 Psychic damage and gives disadvantage on the target's next attack; a successful save negates both.
   A cruel, perfectly-aimed insult that rattles its target enough to genuinely throw off their next strike.
 *if (ability_id = "guidance")
   *line_break
-  • [b]Guidance — Action, Touch, up to 1 minute: Add 1d4 to your next ability check. Cast it from the spellbook on the page that offers the check; it does not help in a fight, and it fades if time passes before the roll.[/b]
+  • [b]Guidance — Exploration: cast from the sidebar spellbook.[/b] Your next eligible ability check within 1 minute gains +1d4, then the effect ends. It cannot be cast or used during combat.
   A soft, murmured focusing working that steadies your hand or sharpens your mind for one task.
 *if (ability_id = "mending")
   *line_break
-  • [b]Mending — 1 Minute, Touch:[/b] Repairs a single tear or break in an object. No combat application.
+  • [b]Mending — Repair utility.[/b] Used when repairing damaged equipment and objects. It has no combat effect.
   A slow, tactile working that seals clean breaks, torn leather, or snapped cord with a touch.
 *if (ability_id = "mage_hand")
   *line_break
-  • [b]Mage Hand — Action, 30 ft:[/b] A spectral hand that can manipulate, carry up to 10 pounds, or interact with an object at range.
+  • [b]Mage Hand — Exploration utility.[/b] Used to manipulate suitable objects from a distance. It has no combat action.
   A spectral, disembodied hand that can lift, carry, or fumble with small objects at a distance.
 *if (ability_id = "message")
   *line_break
-  • [b]Message — Action, 120 ft:[/b] A whispered word only the target can hear, who can whisper a reply.
+  • [b]Message — Utility spell.[/b] Carries a quiet message to a distant creature. It has no combat effect.
   A whispered word that travels straight into one chosen listener's ear from well across a room, or a battlefield line.
 *if (ability_id = "minor_illusion")
   *line_break
-  • [b]Minor Illusion — Action, 30 ft:[/b] Creates a harmless illusory sound or image within range.
+  • [b]Minor Illusion — Deception utility.[/b] Used to create distractions or support a deception. It has no combat action.
   A small false sound or image conjured from nothing, useful for a distraction or a moment's cover.
 *if (ability_id = "light")
   *line_break
-  • [b]Light — Action, Touch, 1 Hour:[/b] An object sheds bright light in a 20-foot radius.
+  • [b]Light — Exploration utility.[/b] In dungeon travel it supplies light without consuming torches, preventing darkness disadvantage and allowing explored rooms to appear on the map.
   A small, steady radiance kindled at will, bright as a torch.
 *if (ability_id = "prestidigitation")
   *line_break
-  • [b]Prestidigitation — Action, 10 ft:[/b] A minor magical trick — harmless sparks, colored smoke, a cleaned or soiled surface. It can also light or snuff a candle, a torch or a small camp fire, so you can start a camp fire without flint.
+  • [b]Prestidigitation — Camp and general utility.[/b] It can start camp and crafting fires without a tinderbox and assist with small magical tasks. It has no combat damage action.
   Small, showy magic tricks: harmless sparks, colored smoke, minor sensory flourishes.
 *if (ability_id = "control_flames")
   *line_break
-  • [b]Control Flames — Action, 60 ft, 1 Hour:[/b] You bend an ordinary flame: it spreads, sinks, burns brighter or lower, or goes out. It cannot start a fire. In a fight, a burning foe's flames spread to every other enemy standing on its tile. At camp it banks a fire so the night is warmer, and in the dark it coaxes a guttering torch on for three more steps (once per torch).
+  • [b]Control Flames — Combat and exploration utility.[/b] In combat, spend an action to spread a burning foe's flames to other enemies on the same tile. At camp it banks an existing fire; in a dungeon it extends a torch by three steps once per torch. It cannot start a fire.
   A hand held over a flame, and the flame leaning to meet it.
 *if (ability_id = "poison_spray")
   *line_break
-  • [b]Poison Spray — Action, 30 ft, Constitution Save (DC ${spell_save_dc}): 1d12 Poison damage on a failed save, no effect on a success.[/b]
+  • [b]Poison Spray — Combat: Action · Medium Reach · Constitution Save (DC ${spell_save_dc}).[/b] A failed save deals 1d12 Poison damage; a successful save negates it.
   A puff of noxious gas flung from the palm at a foe.
 *if (ability_id = "thaumaturgy")
   *line_break
-  • [b]Thaumaturgy — Action, 30 ft:[/b] A minor supernatural effect — a booming voice, flickering flame, a slamming door. No mechanical effect.
+  • [b]Thaumaturgy — Social utility.[/b] Used for intimidation and supernatural displays in the prologue, Alderford and Dredge-End. It has no combat action.
   Small, innate parlor tricks of infernal blood: voice booms, eyes flash, doors slam.
 *if (ability_id = "disguise_self")
   *line_break
-  • [b]Disguise Self — Action, Self, 1 Hour:[/b] Changes your appearance — height, features, voice, and clothing — until it ends or you dismiss it.
+  • [b]Disguise Self — Utility spell.[/b] Wraps your face, voice and clothing in an illusory guise. It has no combat effect.
   A verse under your breath blurs your face and voice into someone else's for as long as you need to hold the lie.
 *if (ability_id = "identify")
   *line_break
-  • [b]Identify — 1 Minute, Touch:[/b] Learn the properties and function of one object or spell.
+  • [b]Identify — Utility spell.[/b] A divination for examining the nature of magical objects. It has no combat effect.
   Hold an object or observe a spell for a moment, and its true properties, function, and nature become plain to you.
 *if (ability_id = "feather_fall")
   *line_break
-  • [b]Feather Fall — Reaction, 60 ft, 1 Minute:[/b] Up to five falling creatures descend at 60 feet per round and take no fall damage.
+  • [b]Feather Fall — Utility reaction.[/b] Slows a sudden fall long enough to reach the ground safely. It has no combat action.
   A word and a gesture slow a fall to a drift, turning what should be broken bones into a soft landing.
 *if (ability_id = "comprehend_languages")
   *line_break
-  • [b]Comprehend Languages — Action, Self, 1 Hour:[/b] Understand any spoken or written language.
+  • [b]Comprehend Languages — Utility spell.[/b] Makes unfamiliar speech and writing intelligible for a short time. It has no combat effect.
   For a short while, every language spoken or written around you becomes as plain as your own tongue.
 *if (ability_id = "mage_armor")
   *line_break
-  • [b]Mage Armor — Action, Touch, 8 Hours: While not wearing armor, your base Armor Class becomes 13 + Dexterity modifier.[/b]
+  • [b]Mage Armor — Action · Self · 24 hours.[/b] While wearing cloth body gear and no armored headpiece, base AC becomes 13 + Dexterity modifier. Cast in combat or from the sidebar spellbook; it costs a class spell slot unless Armor of Shadows makes it free.
   A shell of unseen magical force laid over your skin each morning, standing in for the armor a wizard's training never included.
 *if (ability_id = "shield")
   *line_break
-  • [b]Shield — Reaction (when hit or targeted): +5 Armor Class until the start of your next turn, arming automatically against your next incoming hit.[/b]
+  • [b]Shield — Combat reaction.[/b] Arm it for free. When an incoming hit can be turned into a miss by +5 AC, it automatically spends one Wizard slot and your reaction; the +5 AC then lasts until your next turn. It does not waste the slot on an attack that already misses or is too high to stop.
   An instinctive, reflexive barrier of invisible arcane force that flares to life in a split second.
 *if (ability_id = "magic_missile")
   *line_break
-  • [b]Magic Missile — Action, 120 ft: Three darts of force automatically hit for 1d4+1 damage each (3d4+3 total) — no attack roll.[/b]
+  • [b]Magic Missile — Combat: Action · Long Reach.[/b] Allocate three darts among up to three enemies in the sidebar. Each dart automatically hits for 1d4+1 Force damage; no attack roll is made.
   Three luminous darts of unerring magical force that strike with absolute certainty, bypassing armor, cover, and evasive dodges.
 *if (ability_id = "false_life")
   *line_break
-  • [b]False Life — Action, Self, 1 Hour: Gain 1d4+4 Temporary Hit Points.[/b]
+  • [b]False Life — Action · Self · 12 hours.[/b] Gain 1d4+4 temporary HP. Temporary HP does not stack, so it cannot be cast while any remains. Cast in combat or from the sidebar; Fiendish Vigor removes the slot cost.
   A grim, necromantic rite that bolsters your body with a necromantic facsimile of life.
 *if (ability_id = "hex")
   *line_break
-  • [b]Hex — Bonus Action, 90 ft, Concentration (up to 1 hour): Your attacks against the cursed target deal +1d6 Necrotic damage.[/b]
-  A murmured curse bound to one target, making your wounds cut deeper for as long as you hold your concentration on it.
+  • [b]Hex — Combat: Bonus Action · Medium Reach · current fight.[/b] Attack-roll hits against the cursed target deal +1d6 Necrotic damage. Save-based spells and Magic Missile do not trigger it. If the target falls, move Hex with another bonus action at no additional cost.
+  A murmured curse bound to one target, making each landed attack tear in with extra necrotic damage until the fight ends.
 *if (ability_id = "unseen_servant")
   *line_break
-  • [b]Unseen Servant — Action, 60 ft, 1 Hour:[/b] An invisible, mindless force that can fetch, carry, clean, or open things at your command.
+  • [b]Unseen Servant — Exploration utility.[/b] Used in Longshade to fetch, carry, clean, open or manipulate objects. It can be invoked with a spell slot, scroll, free invocation or Wizard ritual.
   An invisible, mindless force you can summon to fetch, carry, clean, or open things at your spoken command.
 *if (ability_id = "armor_of_agathys")
   *line_break
-  • [b]Armor of Agathys — Action, Self, 1 Hour: Gain 5 Temporary Hit Points; while any remain, a creature that hits you with a melee attack takes 5 Cold damage.[/b]
+  • [b]Armor of Agathys — Combat: Action · Self.[/b] Gain 5 temporary HP. During that fight, each melee hit against you deals 5 Cold damage back while those temporary HP remain. The retaliation ends with the fight even if temporary HP remains.
   A spectral rime of frost that sheathes your skin, punishing anyone who lands a blow against you with biting, unnatural cold in return.
 *if (ability_id = "charm_person")
   *line_break
-  • [b]Charm Person — Action, 30 ft, Wisdom Save, 1 Hour:[/b] On a failed save, the target regards you as a friendly acquaintance for the duration.
+  • [b]Charm Person — Social utility.[/b] Used during suitable conversations to soften a person's disposition. It has no combat action.
   A warm, persuasive undertone woven into your words, making a listener genuinely inclined to see things your way.
 *if (ability_id = "healing_word")
   *line_break
-  • [b]Healing Word — Bonus Action, 60 ft: Restore 1d4 + Charisma modifier hit points (minimum 1) to one creature you can see.[/b]
+  • [b]Healing Word — Combat: Bonus Action · anywhere in the current fight.[/b] Restore 1d4 + casting modifier HP, minimum 1, to yourself or a living ally selected in the sidebar.
   A single, sharp word of command, spoken from a distance, that knits a wound shut and puts fight back into a comrade who needs it.
 *if (ability_id = "dissonant_whispers")
   *line_break
-  • [b]Dissonant Whispers — Action, 60 ft, Wisdom Save (DC ${spell_save_dc}): 3d6 Psychic damage on a failed save, half on a success.[/b]
+  • [b]Dissonant Whispers — Combat: Action · Medium Reach · Wisdom Save (DC ${spell_save_dc}).[/b] Deals 3d6 + casting modifier Psychic damage on a failed save, half on a success. It does not force movement.
   A whispered dissonance planted directly in one mind, discordant enough that the target flinches and recoils before it understands why.
 *if (ability_id = "bane")
   *line_break
-  • [b]Bane — Action, 30 ft, up to three targets, Charisma Save (DC ${spell_save_dc}), 10 Rounds: each target that fails subtracts 1d4 (rolled fresh each time) from every attack roll and saving throw it makes for the duration.[/b]
+  • [b]Bane — Combat: Action · up to three living enemies · Charisma Save (DC ${spell_save_dc}) · 10 rounds.[/b] Each failed target subtracts a fresh 1d4 from every attack roll and saving throw. The current implementation selects enemies front-to-back and does not use concentration.
   A thread of ill luck looped around up to three throats at once, souring every blow and every plea they attempt afterward.
 *if (ability_id = "jump")
   *line_break
-  • [b]Jump — Action, Touch, 1 Minute:[/b] A creature's jump distance is tripled for the duration.
+  • [b]Jump — Exploration traversal.[/b] Used for difficult crossings and climbs in the Silt Conduits and Longshade. Its benefit applies to the obstacle being crossed rather than granting a lasting movement bonus. Otherworldly Leap makes those casts free.
   A word and a touch to yourself or another, and a single stride carries three times as far as it should, gravity forgetting the leaper for one heartbeat.
 *if (ability_id = "alarm")
   *line_break
-  • [b]Alarm — 1 Minute (Ritual), 30 ft, 8 Hours:[/b] Ward a door, a tent flap, or a stretch of ground; you're alerted the instant something crosses it uninvited.
+  • [b]Alarm — Utility spell.[/b] Places a warning ward against intrusion. It has no combat effect.
   A quiet ward laid over a doorway or a campsite, silent to everyone but you the instant an uninvited step crosses it.
 *if (ability_id = "detect_magic")
   *line_break
-  • [b]Detect Magic — Action (Ritual), Concentration (up to 10 Minutes), Self (30 ft):[/b] Sense the presence and rough school of any active magic within range.
+  • [b]Detect Magic — Exploration investigation.[/b] Used to inspect magical traces, including those found in Longshade. The examination takes about 5 minutes and spends a slot or scroll; Wizards may instead take 10 extra minutes to cast as a ritual.
   A moment's focus, and every active working nearby—wards, curses, blessings, enchanted steel—reveals itself as a faint shimmer only you can see.
 *if (ability_id = "ensnaring_strike")
   *line_break
-  • [b]Ensnaring Strike — Bonus Action, up to 10 rounds:[/b] The next weapon hit you land calls thorned vines from the blow. The target makes a Strength save (DC ${spell_save_dc}): on a failure it is restrained, takes 1d6 piercing at the start of each of its turns, and attacks against it have advantage. It spends its action on a Strength check against your save DC to tear free, or is held until the ten rounds run out.
+  • [b]Ensnaring Strike — Combat: Bonus Action · armed for up to 10 rounds.[/b] Your next weapon hit forces a Strength save (DC ${spell_save_dc}). On failure the target is restrained, takes 1d6 Piercing at the start of each turn, and grants advantage to attackers; it spends an action attempting to break free.
   Thorned vines burst from the blow and wrap whatever they can reach.
 *if (ability_id = "hunters_mark")
   *line_break
-  • [b]Hunter's Mark — Bonus Action, 90 ft, 10 rounds:[/b] Mark one creature as your quarry. Each weapon hit you land on it deals +1d6 force damage. If it drops, move the mark to a new creature with a bonus action at no cost. Cast with a free cast (proficiency bonus per long rest) or, once those are gone, a spell slot.
+  • [b]Hunter's Mark — Combat: Bonus Action · Medium Reach · 10 rounds.[/b] Each weapon hit against the quarry deals +1d6 Force damage. Moving an orphaned mark costs a bonus action but no cast. New marks use a free cast first, then a Ranger spell slot.
   One creature becomes the point the whole fight turns on, and you do not lose it.
 *if (ability_id = "cause_fear")
   *line_break
-  • [b]Cause Fear — Action, 60 ft, Wisdom Save (DC ${spell_save_dc}), up to 10 rounds:[/b] On a failed save the target is frightened: its attacks have disadvantage and it will not move closer. It repeats the save at the end of each of its turns, and the fear ends on a success.
+  • [b]Cause Fear — Combat: Action · Medium Reach · Wisdom Save (DC ${spell_save_dc}) · up to 10 rounds.[/b] On failure the target's attacks have disadvantage and it will not move closer. It repeats the save after each turn and ends the effect on success.
   A whispered dread, planted straight into one mind.
 *if (ability_id = "hellish_rebuke")
   *line_break
-  • [b]Hellish Rebuke — Reaction, 60 ft, Dexterity Save (DC ${spell_save_dc}):[/b] Arm it as a free declaration. When a foe's attack next wounds you, it takes 2d10 fire damage (half on a successful save), at the cost of a Pact Magic slot and your reaction for the round.
+  • [b]Hellish Rebuke — Combat reaction.[/b] Arm it for free. The next enemy attack that actually wounds you spends one Pact Magic slot and your reaction, then deals 2d10 Fire damage to that attacker, halved by a successful Dexterity save (DC ${spell_save_dc}).
   A vengeful retort held ready behind your teeth, burned back the moment you are hurt.
 *if (ability_id = "arms_of_hadar")
   *line_break
-  • [b]Arms of Hadar — Action, Self (10 ft emanation), Strength Save (DC ${spell_save_dc}):[/b] Every foe within reach takes 2d6 necrotic damage, or half on a successful save, and one that fails cannot take reactions until its next turn.
+  • [b]Arms of Hadar — Combat: Action · every Engaged enemy · Strength Save (DC ${spell_save_dc}).[/b] One 2d6 Necrotic roll is shared across the targets; successful saves take half. A failed target also loses its reaction for the round.
   Black, cold arms of force burst out around you and lash everything close enough to touch.
 *if (ability_id = "speak_with_animals")
   *line_break
-  • [b]Speak with Animals — Action (Ritual), Self, 10 Minutes:[/b] Understand and verbally communicate with beasts for the duration.
+  • [b]Speak with Animals — Exploration interaction.[/b] Used to converse with beasts during travel, in Longshade and in the Silt Conduits. The conversation takes about 5 minutes and spends a slot or scroll; Wizards may instead take 10 extra minutes to cast as a ritual.
   For a short while, every beast's chatter, posture, and warning call resolves into something close enough to words to actually understand.
 *return

@@ -68,6 +68,7 @@
     longshade_forest: "forest", woodroad: "forest", forest: "forest",
     compound: "city", middle_ward: "city", civic_heights: "city", upper_wharves: "city", port_valen: "city", city: "city",
     carrion_compound: "warcamp",
+    prologue_camp_night: "warcamp",
     black_sinks_captured_gatehouse_bivouac: "bivouac",
     black_sinks_gilded_scales_toll_fort: "warcamp",
     stonewatch: "warcamp",
@@ -121,6 +122,7 @@
   var OVERLAY = {
     alderford: [{ all: "watermill_ambience_needs_to_be_layered_on_top_water_and_mill_sound_only", level: 0.34 }],
     generic_village_inn_room: [{ day: "quiet_tavern", night: "crowded_tavern", level: 0.24 }],
+    prologue_camp_night: [{ all: "marshland_night_crickets_shallowwater_ambience", level: 0.24 }],
     black_sinks_causeway_before: [{ day: "marshland_ambience_wind_birds_shallowwater_reeds", night: "marshland_night_crickets_shallowwater_ambience", level: 0.24 }],
     black_sinks_captured_gatehouse_bivouac: [{ all: "wind_against_stone_creeking_timber_distantsound_needstobelayerd", level: 0.22 }],
     black_sinks_gilded_scales_toll_fort: [{ all: "wind_against_stone_creeking_timber_distantsound_needstobelayerd", level: 0.18 }],

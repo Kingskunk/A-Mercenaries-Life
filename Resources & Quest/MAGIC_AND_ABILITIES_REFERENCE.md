@@ -1,186 +1,161 @@
 # Magic & Abilities Reference — The Carrion Company
 
-A developer reference for every racial trait, innate magic, class cantrip, and class spell currently implemented, plus exactly which ones do something mechanical versus which are flavor-only. Keep this updated whenever a new race/class option, cantrip, or spell is added.
+This reference describes what the game currently does. It is not a transcription of tabletop rules. The player-facing version is `choicescript_stats.txt` at `codex_abilities`; its wording must match the runtime mechanics below.
 
 ---
 
-## How the system works
+## Core Rules
 
-- Nothing here uses a real spell-slot economy, prepared-spell tracking, or damage resolution. Every cantrip/spell is a **string flag + a flavor description**, the same pattern used for `class_title`/`race_trait_title` elsewhere.
-- "Slots" (`warlock_spell_slots`, `wizard_spell_slots`, `bard_spell_slots`) are **live**: each holds the remaining count, has a `_max` written by `refresh_class_resource_maxs` (so the maximum follows `character_level`), is shown as `x / _max` in the dossier, and is spent at each cast site (`combat.txt` gates on `*_spell_slots > 0` and the `resolve_*` subroutine does the `- 1`). A long rest refills every pool via `restore_class_resources`; a short rest returns only the Warlock's Pact Magic slots, via `do_short_rest`. There is still no spell-slot *level* economy and no prepared-spell tracking — every spell in the game is first level, so one pool per class covers it.
-- Almost everything below is **flavor-only**: it sets a variable and prints a description, but doesn't alter any dice roll, check, or damage. Where something is a real, working mechanic, it's called out explicitly — don't assume any cantrip/spell "does" anything in code beyond existing as a flag unless it's flagged as MECHANICAL below.
-- All of it is gated behind `show_stat_hints` bracket tags in the choices, consistent with every other mechanical choice in the game.
+- Combat distance uses named tiers: **Engaged**, **Close**, **Mid-Range**, and **Long Range**. Spell reach is **Engaged**, **Medium Reach**, or **Long Reach**; never document it in feet.
+- An ordinary combat turn has one action, one bonus action, one movement, and one reaction. A feature may use another budget only when its implementation explicitly says so.
+- `spell_save_dc` is the shared save DC. Spell attacks use proficiency plus the class casting modifier: Intelligence for Wizard, Charisma for Bard and Warlock, Wisdom for Ranger.
+- Cantrips cost no spell slot. First-level spells spend the caster's class pool unless a racial use, invocation, ritual, scroll, or free Ranger cast explicitly replaces the cost.
+- Untrained armor or a shield can set `spells_blocked`; class spell options then disappear until the equipment problem is removed. Scrolls remain usable.
+- Temporary HP does not stack. Damage resistance halves after rounding down; vulnerability doubles; matching resistance and vulnerability cancel.
 
----
+### Reach Classes
 
-## Racial Traits & Innate Magic
-
-| Race | Ability Bonus | Darkvision | Racial Trait | Innate Magic | Mechanical? |
-|---|---|---|---|---|---|
-| Human | +1 to all six | No | Versatile (no combat effect, pure flavor) | None | No |
-| Elf | +2 DEX | Yes | Fey Ancestry (advantage vs. charmed/sleep saves) | None | **Yes** — see below |
-| Dwarf | +2 CON | Yes | Dwarven Resilience (advantage vs. poison saves; poison damage *resistance* still not wired — no damage system exists) | None | **Partially** — see below |
-| Half-Orc | +2 STR, +1 CON | Yes | Relentless Endurance (cling to 1 HP on lethal blow — wired in `battle_take_damage`) | None | **Yes** — see below |
-| Halfling | +2 DEX | No | Lucky | None | **Yes** — see below |
-| Tiefling | +2 CHA, +1 INT | Yes | Hellish Resistance (fire resistance — *not wired in*). Trait text notes Hellish Rebuke (lvl 3) / Darkness (lvl 5) are real 5e unlocks **not yet earned** — no leveling system exists yet, so these are intentionally absent, not missing. | **Thaumaturgy** (cantrip, `race_cantrip` — wired into `camp_night.txt` intimidation) | **Yes** — see below |
-| Hexblood | +1 CON, +1 CHA | Yes | Hex Magic (umbrella name for the two spells below; "once per long rest" noted in flavor text only, not enforced) | **Disguise Self** (`race_cantrip`) + **Hex** (`race_cantrip_2` — wired into `battle_black_sinks.txt` melee curse) | **Partially** — see below |
-
-**MECHANICAL — Halfling Lucky:** wired into `roll_d20_check`. If a Halfling rolls a natural 1, the engine automatically rerolls once and uses the new result.
-
-**MECHANICAL — Advantage/Disadvantage engine:** `roll_d20_check` now supports real advantage and disadvantage. Set `*set advantage true` (or `disadvantage`) before `*gosub_scene dice_engine roll_d20_check`, and it rolls a second d20 and keeps the higher (advantage) or lower (disadvantage) result — resolved *before* Halfling Lucky checks for a natural 1, matching RAW (Lucky rerolls whichever die was actually used for the check, not both dice). If both flags are true they cancel out and it rolls normally, same as tabletop rules. Both flags — and `save_vs` — **auto-reset to false/`"none"` at the end of every check**, so a future scene never has to remember to clean up after itself; just set what you need immediately before the `*gosub_scene` call. The announcement text also appends `(Advantage)`/`(Disadvantage)` automatically when relevant.
-
-**MECHANICAL — Fey Ancestry (Elf) & Dwarven Resilience (Dwarf):** both now trigger automatically inside `roll_d20_check` via a `save_vs` context tag. A future scene just needs to `*set save_vs "charmed"` (or `"sleep"`, or `"poison"`) immediately before the check — the engine handles granting advantage to the right race on its own. Example: right before a hag tries to charm the player, a scene would do `*set check_stat "wis"` / `*set save_vs "charmed"` / `*gosub_scene dice_engine roll_d20_check`, and an Elf automatically gets advantage without the scene needing to know or care that Elves have Fey Ancestry.
-
-**MECHANICAL — Relentless Endurance (Half-Orc):** wired into `battle_take_damage` in `battle_black_sinks.txt`. When an attack would reduce the player to 0 HP, a Half-Orc's savage tenacity triggers specifically, keeping them on their feet at 1 HP with custom orcish flavor.
-
-**MECHANICAL — Innate Magic in Scenes:** 
-- **Thaumaturgy (Tiefling):** Active option in `camp_night.txt`'s gambling tent for a specialized DC 10 Charisma Intimidation check with brimstone eyes and booming voice.
-- **Hex (Hexblood / Warlock):** Active combat choice in `battle_black_sinks.txt`'s gatehouse melee to curse the lead defender (DC 12 Charisma check).
-
----
-
-## Class Spellcasting
-
-Only three of the seven classes have any spellcasting at level 1 — this matches real 5e entitlement (Fighter/Barbarian/Rogue never get spells this early; Ranger doesn't get spells until level 2, so it correctly has none yet).
-
-| Class | Hit Die | Cantrips Known | Spells Known | Slots |
-|---|---|---|---|---|
-| Fighter | 1d10 | 0 | 0 | 0 |
-| Barbarian | 1d12 | 0 | 0 | 0 |
-| Rogue | 1d8 | 0 | 0 | 0 |
-| Ranger | 1d10 | 0 | 0 | 0 (correctly starts at level 2 in RAW — not implemented, not a bug) |
-| Bard | 1d8 | 2 (from a pool of 5) | 2 (from a pool of 4–5*) | 2, long rest |
-| Warlock | 1d8 | 2 (from a pool of 4) | 1 (from a pool of 4–5*) | 1, **short rest** (Pact Magic) |
-| Wizard | 1d6 | 3 (from a pool of 8) | 1 (from a pool of 7, always) | 2, long rest |
-
-\* **Bard's** and **Warlock's** spell pools shrink by one option for a Hexblood character, since Disguise Self (Bard) and Hex (Warlock) are hidden — the character already has them innately from `race_cantrip`/`race_cantrip_2`, so offering them again as a "new" class spell would be redundant. Dissonant Whispers (Bard) and Armor of Agathys / False Life (Warlock) keep the pool robust for Hexblood characters. Wizard's spell pool never overlaps with Hexblood's innate magic, so it's unaffected. See the `*if (not(race = "hexblood"))` guards in `dawn_trial.txt`.
-
-### Bard
-- **Cantrip pool** (`bard_cantrip`, `bard_cantrip_2` — pick 2, second pick excludes the first): `vicious_mockery`, `minor_illusion`, `message`, `blade_ward`, `mage_hand`, `mending`
-- **`blade_ward` (Blade Ward) is a HOUSE RULE, not RAW.** RAW's Blade Ward costs **1 action**; here it costs the **bonus action**, so it competes with Hex for `combat_player_bonus_max 1` (one bonus action per turn, already enforced by the engine). It is a cantrip, so it costs **no spell slot**. It gives resistance to bludgeoning, piercing and slashing from weapon attacks **until the end of your next turn** — implemented with `blade_ward_active` + `blade_ward_survived_a_turn` and aged by `blade_ward_tick` (`combat.txt`), which is called from exactly one place, `fight_end_player_turn`, because `combat_next_turn` recurses once per combatant. **Re-casting is NOT allowed while it is up or fading (2026-10-01)** — it can only be cast again once it has fully expired, so it covers every other round instead of every round (a caster who could refresh it while it faded was able to trade blows with a fighter). Halved damage rounds down, per 5e, same as Rage and item resistance. A turn lost to a stun still counts as a turn. Available to warlocks, wizards and bards.
-- **Spell pool** (`bard_spell`, `bard_spell_2` — pick 2, second excludes the first): `charm_person`, `healing_word`, `disguise_self` (hidden for Hexblood), `comprehend_languages`, `dissonant_whispers`, `bane` (2026-09-27 — up to three targets, Charisma save vs `spell_save_dc`, -1d4 to a failed target's attack rolls and saving throws for 10 rounds; see `resolve_cast_bane`, startup.txt), `detect_magic`, `speak_with_animals` (2026-09-28 — both flavor-only, narrative-use spells; see the note below the Wizard pool)
-- Framing: these are **not** newly discovered — the narration explicitly frames them as a lifelong knack the character always suspected was more than charm, finally admitted to under stress. Don't write future Bard content as "wow, I have magic now."
-
-### Warlock
-- **Patron** (`warlock_patron`): `archfey`, `fiend`, or `great_old_one` — flavor/identity only, doesn't gate anything else currently.
-- **Cantrip pool** (`warlock_cantrip`, `warlock_cantrip_2` — pick 2, second excludes the first): `eldritch_blast`, `minor_illusion`, `chill_touch`, `blade_ward`, `prestidigitation`
-- **Spell pool** (`warlock_spell`): `hex` (hidden for Hexblood), `comprehend_languages`, `unseen_servant`, `armor_of_agathys`, `false_life`
-- Framing: this **is** meant to read as sudden and new — a pact is a discrete origin event in 5e fiction, so "wow, I have powers now" is the correct tone here, unlike Bard/Wizard.
-
-### Wizard
-- **Cantrip pool** (`wizard_cantrip`, `wizard_cantrip_2`, `wizard_cantrip_3` — pick 3, each pick excludes prior picks): `fire_bolt`, `ray_of_frost`, `shocking_grasp`, `blade_ward`, `mage_hand`, `guidance`, `mending`, `light`, `prestidigitation`
-- **Spell pool** (`wizard_spell`): `identify`, `feather_fall`, `comprehend_languages`, `mage_armor`, `shield`, `magic_missile`, `false_life`, `jump`, `alarm`, `detect_magic` (2026-09-28)
-- Framing: same as Bard — these are years of secret, hidden practice (afraid of the scandal it'd cause if a lord's heir was caught dabbling in real theory), only just being admitted to under pressure, not invented on the spot.
-
-**Narrative-only additions (2026-09-28): `jump`, `alarm`, `detect_magic`, `speak_with_animals`.** Same pattern as `mending`/`identify`/`feather_fall`/`comprehend_languages` — a string flag, a dossier ability card (`print_ability_card`, `choicescript_stats.txt`), and a sidebar `SPELL_DATA` entry (`spell-data.js`); no combat mechanic, no dice, no hook into any existing formula. Placed by real 5e spell-list membership, not offered identically everywhere: `jump` and `alarm` are Wizard-only (not on Bard's list), `detect_magic` is on both lists (added to both, identical flavor text in each, same convention `comprehend_languages` already used), `speak_with_animals` is Bard-only (not on Wizard's list). **Not added to Ranger**, even though `jump`/`speak_with_animals`/`alarm`/`detect_magic` are all real Ranger list spells too — real 5e Rangers get no spells until level 2 (see the Class Spellcasting table above), and no leveling/level-up spell-picking system exists yet to gate a level-2 grant on. The plumbing (dossier card, sidebar data) is in place so opening these to the Ranger at level 2 is just adding the pool to whatever scene ends up granting it, not re-doing this work. Ranger's own house rule — how Favored Enemy should actually work — is a separate, later discussion, not resolved here.
-
-**MECHANICAL — Mage Armor (a real cast since 2026-10-02):** a 24-hour spell, no longer always on. `mage_armor_minutes_left` (`startup.txt`) is set to 1440 by `cast_mage_armor` (`equipment.txt`), counted down by `calendar.txt` `advance_time`, and read by `recalculate_armor_class`, which gives base AC 13 + DEX only while it is above 0, the body slot is "cloth" (traveling robes, scholar robes, the Gilt Needle's Court Coat) and no head piece counts as armor. Donning armor that stops it applying ends it (recalculate_armor_class clears the timer); expiry recomputes AC. A Wizard, Bard, Ranger or Warlock who knows the spell pays one slot from their own pool; the Warlock's **Armor of Shadows** invocation (and an innate Mage Armor from a race) casts it free. `mage_armor_cast_check` reports what a cast would cost and why it cannot happen. Cast from the dossier's **Cast** menu (`choicescript_stats.txt` `codex_cast`); the sidebar AC row shows a "Mage Armor Nh" tag. **Cast in a fight** (2026-10-02): an Action in the combat hub (`combat.txt`, `combat_can_mage_armor` asks `mage_armor_cast_check`, then calls `cast_mage_armor`; the option disappears while the ward is up and costs the action, plus a slot unless it is Armor of Shadows). The Battle HUD keeps a Mage Armor slot for a character who has it, dimmed with a reason ("The ward is already on you", armor worn) when it is not offered. **Spellbook Cast button** (`index.html`, `CASTABLE_OUT_OF_COMBAT`): pinning Mage Armor (or False Life) in the sidebar spellbook shows a Cast button that runs the cast at once: it opens the dossier at a one-shot label (`choicescript_stats.txt` `codex_cast_now_<spell>`), which casts and ends with `*finish`, so you are handed straight back to the page you were on, and the sidebar shows the one-line result as a toast (`spell_cast_toast`). The sidebar never casts itself; the cast is ChoiceScript. The dossier's Cast menu still exists for the full status and for Armor of Shadows / Fiendish Vigor. Another out-of-combat spell is added by writing its check and cast routines, a one-shot `codex_cast_now_<id>` label and a Cast-menu entry, then adding its id and label to that map. A Warlock who has only the Armor of Shadows invocation has no spell row, so casts it from the dossier's Cast menu directly. The equipment panel mirror (`equipment-panel.js`), the AC sync check and the gear catalog's armor warning all read the timer.
-
-**MECHANICAL — Shield:** wired into `battle_black_sinks.txt` before the gatehouse melee (`beat_gatehouse`), providing an emergency reactive barrier that deflects skittering missiles and grants advantage on the approach.
-
-**MECHANICAL — Magic Missile:** wired into `battle_black_sinks.txt` for both the Cadre causeway crossing (`beat_crossing_cadre`) and gatehouse melee (`beat_gatehouse_fight`), providing guaranteed automatic success (no d20 roll needed) to eliminate parapet archers or suppress defenders in the breach.
-
-**MECHANICAL — Shocking Grasp:** wired into the shared combat hub as a touch-range lightning attack with Advantage against metal-armored/chain-wielding defenders. On a hit it spends the target's reaction through `combat_enemyN_oa_used`, so the caster can Fall Back without that target making an opportunity attack; the flag clears at the next round boundary, matching the engine's Arms of Hadar treatment.
-
-**MECHANICAL — False Life (rebuilt 2026-10-02: castable out of combat, lasts 12 hours):** `false_life_cast_check` and `cast_false_life` (`combat_spells.txt`) are the one routine, called by the fight's option (`resolve_cast_false_life`) and by the dossier. A Wizard, Bard, Ranger or Warlock who knows the spell pays one slot from their own pool; the Warlock's Fiendish Vigor invocation casts it free. It gives 1d4 + 4 temporary hit points for **12 hours** (`false_life_minutes_left`, counted down by `calendar.txt` `advance_time`); `false_life_hp` records what it granted, so expiry removes only that (a larger amount that something else has since replaced it with is left alone). It is only castable with no temporary hit points, since they do not stack; a long rest clears it; the sidebar shows a "False Life Nh" tag by the HP while it runs. (The older +5 text above is how the pre-battle preparations in `battle_black_sinks.txt` still grant it.)
-
-**MECHANICAL — Mending:** wired into `battle_black_sinks.txt` bivouac companion interactions (`bivouac_companion_vanguard` to mend Lyra's torn armor seam for bonus regard) and gatehouse search (`bivouac_search` to automatically restore the water-damaged toll ledger).
-
----
-
-## Martial Class Features (Fighter, Barbarian, Rogue, Ranger)
-
-None of these four classes are spellcasters, but they still have real level-1 class features in 5e. Same rule as everything else in this doc: tagged with a flavor description now, and only "wired in" (actually affecting a formula) where it hooks into something that already exists.
-
-| Class | Feature | Tagged? | Wired In? |
-|---|---|---|---|
-| Fighter | Fighting Style (player picks one: Defense, Dueling, Great Weapon Fighting, Protection) | `fighting_style` (chosen during `dawn_trial.txt`) | **Yes / Active** — chosen at dawn trial. `"defense"` gives +1 AC immediately in `update_dnd_stats`. All four styles also gate a dedicated, style-specific melee option (DC 12 STR) in `battle_black_sinks.txt`'s `beat_gatehouse_fight` — Fighter previously had zero class-specific combat choices there, unlike every other class. |
-| Ranger / any class | **Fighting Style, general (2026-10-02)** — one shared `fighting_style` id; names and descriptions live in `fighting_style_info` (`character_progression.txt`). The Ranger picks at level 2 from Archery, Close Combat Shooter, Defense and Great Weapon Fighting (`level_up_ranger_2_style`); the Fighter keeps its Dawn Trial pool. | `fighting_style`, `fs_label`, `fs_desc`, `check_flat_bonus` | **Yes / Active** — **Archery** +2 on ranged weapon attack rolls (`check_flat_bonus`, `dice_engine.txt`; a one-roll flat bonus any later feature can reuse). **Close Combat Shooter** (Grim Hollow, `close_combat`) drops the in-reach disadvantage on ranged weapon attacks and adds +2 damage on a ranged hit at Engaged (`combat.txt`). **Defense** and **Great Weapon Fighting** as before; Great Weapon Fighting now only applies to melee weapons (it used to also fire on two-handed bows). **Dual Shot** (Grim Hollow, `dual_shot`, built 2026-10-02): a hub option for a ranged weapon with two living enemies at the same range tier (the engine's stand-in for "within 10 feet"). It arms the sidebar's dart allocation (Magic Missile's, maximum 2) on `fight_target_dual_shot`; `combat_dual_shot_validate` needs two different creatures at one range. The first shot is the ordinary `resolve_weapon_attack_choice`, and `fight_check_enemy_hp` starts the second on its own page (`*page_break`), so each roll has its own replay lock; both shots take disadvantage and the pair spends one attack. Any "ranged" weapon qualifies, not only bows and crossbows. |
-| Fighter | Second Wind | `fighter_second_wind_uses` (max `fighter_second_wind_max`: 2 at level 1) | **Yes** — `*label second_wind` in `character_progression.txt` is a real, callable subroutine: restores `1d10 + character_level` HP (capped at `hp_max`) and consumes a use. Wired into `battle_black_sinks.txt` before the gatehouse melee. |
-| Barbarian | Rage | `barbarian_rage_uses` (max `barbarian_rage_max`: 2 at level 1), `is_raging`, `barbarian_rage_damage_bonus` (2) | **Partially** — `*label activate_rage` / `*label end_rage` in `character_progression.txt` toggle `is_raging` and spend a use. Wired into `battle_black_sinks.txt` for pre-battle activation and gatehouse frenzy. |
-| Barbarian | Reckless Attack (level 2) | `combat_reckless_active` | **Yes** (2026-10-02) — a free hub option, offered before the first attack of a turn (`combat_can_reckless`, `combat.txt`). Until the player's next turn (cleared in `combat_next_turn`'s player branch) their Strength attack rolls have advantage (`resolve_weapon_attack_choice`), and every enemy attack roll against them has advantage, including the reverse opportunity attack (`combat_dice.txt`). |
-| Barbarian | Danger Sense (level 2) | — | **Hook built, no caller yet** (2026-10-02) — `roll_d20_check` (`dice_engine.txt`) grants advantage when a level 2+ barbarian rolls a Dexterity saving throw, which a scene marks by setting `save_vs "dex"` (the racial-save convention). No scene makes a DEX save yet. The 5e exception for being Incapacitated is not modelled. |
-| Barbarian | Unarmored Defense | `class_feature_2_title`/`_desc` | No — and it's currently **unreachable**: Ashbrook-origin characters always pick real armor at muster, so "unarmored" never actually applies under the current gear flow. Flavor text says as much. |
-| Bard | Bardic Inspiration (level 1, built 2026-10-02; it was dossier text only before) | `bard_inspiration_uses`/`_max` (= Charisma modifier, at least 1; short or long rest, the short rest being a house rule), `bard_inspiration_die_sides` (6, 8 at level 5, 10 at 10, 12 at 15), `combat_inspired_self`, `combat_inspired_ally` | **Yes** — a bonus-action hub option (`combat.txt`, `resolve_bardic_inspiration` in `combat_spells.txt`). The die goes to the first living ally when there is one, otherwise to the Bard (house rule, so it is not dead in solo fights). The Bard's own die is applied in `roll_d20_check` (`dice_engine.txt`), so it covers every player attack roll (weapon and spell), ability check and saving throw: it is rolled only on a roll that would FAIL (never a natural 1 or 20) and added to the total, deciding after the d20 like 5e, and is spent whether or not it is enough; the banner shows it as `+N (Inspiration)`. An inspired ally's die is applied in `resolve_ally_attack` (attack rolls only; allies have no checks or saves). It lasts through the fight; 5e's 10-minute duration is not modelled, and nothing grants the die outside combat yet. |
-| Bard | Jack of All Trades (level 2, built 2026-10-02) | — | **Yes** — in `roll_skill_check` (`dice_engine.txt`): a level 2+ Bard adds half the proficiency bonus, rounded down, to a skill check where the best skill offered is NOT one they are proficient in. It is counted when the best-of-three skill is chosen and carried into the roll as `check_flat_bonus` (cleared after the roll). Only rolls that go through `roll_skill_check` get it, which is every skill check by project rule; initiative and attack rolls do not. |
-| Bard | Expertise (level 2, built 2026-10-02) | `bard_expertise_1`, `bard_expertise_2` (display names, like the Rogue's) | **Yes** — chosen on the level-up page (`level_up_bard_2`, `character_progression.txt`): two skills the Bard is already proficient in (18 skills, only the ones whose `skill_<id>` flag is true are offered; the second pick leaves out the first; a Bard with nothing left to pick is offered a way past). `roll_d20_check` (`dice_engine.txt`) doubles the proficiency bonus on those two, the same block shape as the Rogue's. |
-| Bard | Third spell (level 2, built 2026-10-02) | `bard_spell_3`, `bard_spell_3_desc` | **Yes** — one more pick on the level-up page (`level_up_bard_2_spell`, `character_progression.txt`) from the Bard's eight spells, leaving out the two already taken and Disguise Self for a Hexblood. Every post-prologue gate that asks whether the Bard knows a spell (`combat.txt`, `port_valen.txt`, `port_valen_dredge_end.txt`) now also checks `bard_spell_3`; the prologue gates in `battle_black_sinks.txt` were left alone, since a level 1 Bard never has a third spell. The dossier and sidebar spellbook list it. |
-| Warlock | Eldritch Invocations (level 1: one, picked at the Dawn Trial; level 2: two more on the level-up page; built 2026-10-02) | `warlock_invocation_1/2/3`, derived `inv_<id>` flags (`refresh_invocations`, run by `refresh_known_spells`), `invocation_info` (names and descriptions), `sees_in_dark` | **Yes** — six invocations. **Agonizing Blast**: + Charisma modifier on Eldritch Blast damage (`combat.txt`; needs Eldritch Blast to be offered). **Armor of Shadows**: Mage Armor's AC line also fires for it (`equipment.txt`, `equipment-panel.js`, `tools/check_ac_formula_sync.js`, and the gear warning comes from `tools/gear_catalog.json`, which `compile.js` regenerates into `equipment.txt` — edit the catalog, not that block). **Fiendish Vigor**: False Life with no slot (`combat.txt`, `resolve_cast_false_life`). **Mask of Many Faces**: the Dredge-End Disguise Self option is offered and costs no slot (`port_valen_dredge_end.txt`). **Devil's Sight**: sets `sees_in_dark` (race darkvision OR this); no scene reads it yet, so it is ready for the darkness scenes (`camp_night.txt` still reads `race_darkvision` directly and runs before the invocation exists). **Otherworldly Leap** (level 2+): the Warlock knows Jump (`known_jump`); Jump is narrative and has no slot cost to remove. |
-| Warlock | Arms of Hadar (spell, built 2026-10-02) and the Warlock's second spell (level 2) | `known_arms_of_hadar`, `warlock_spell_2`, `warlock_spell_2_desc` | **Yes** — an Action, one Pact Magic slot, offered when a living enemy is Engaged (the 10 ft emanation). One 2d6 necrotic roll is shared by every Engaged enemy; each makes a Strength save (`resolve_enemy_save`): a failed save takes it all and **cannot take reactions until its next turn** (it sets the existing per-slot reaction flag `combat_enemyN_oa_used`, which `combat_begin_round` clears), a success takes half and keeps its reaction. Added to the Warlock's level 1 pool in `dawn_trial.txt` and to the new level 2 spell pick (`level_up_warlock_2_spell`). The Warlock's remaining single-slot checks (Hex via both slots, Armor of Agathys, False Life, the Charm Person options) now read both slots or `known_<id>`. **Cause Fear** is built (next row). |
-| Wizard, Warlock | Cause Fear (spell, built 2026-10-02) and the **Frightened condition** | `known_cause_fear`, `combat_enemyN_frightened` (rounds left, 0 = none), `combat_fear_banner` | **Yes** — an Action, one slot of the caster's own pool (Wizard or Warlock), offered when the active target is not already frightened. The target makes a Wisdom save against `spell_save_dc`; on a failure it is Frightened for up to 10 rounds, the flat stand-in for concentration (as with Bane). **A frightened enemy:** attacks with disadvantage (`resolve_enemy_attack`), will not close the distance (a branch in `combat_next_turn` ahead of the closing branch; within reach it can still attack), and repeats its Wisdom save at the end of each of its turns, ending the fear on a success; the countdown ticks each turn. The hover card shows "Frightened" (`CONDITION_KEYS`, `index.html`). Offered in the Dawn Trial and the level 2 spell pick for both classes. **Fixed with it:** `resolve_enemy_save` never cleared its per-slot "already rolled" flags between pages, so a target that had saved before could be handed its stale roll when another target stamped the page id; a two-target cast (Bane, Arms of Hadar) reused an old roll (a Round 2 Arms of Hadar showed Round 1's `19` with the dice forced low). It now clears them on a page change. Hellish Rebuke's save uses lock index 0 so it can never collide with the same enemy's repeat Wisdom save on one page. |
-| Warlock | Hellish Rebuke (spell, built 2026-10-02) | `known_hellish_rebuke`, `rebuke_armed`, `combat_rebuke_triggered`, `combat_rebuke_banner`, `combat_rebuke_save_banner`, `combat_save_quiet` | **Yes** — modelled on Shield. A free hub option arms `rebuke_armed` (offered with a slot, an unspent action, an unspent reaction and not already armed); it persists until it fires or the fight ends. It fires in `resolve_enemy_attack` (`combat_dice.txt`) on the first enemy attack that actually damages the player (`combat_enemy_dmg_dealt > 0`): it spends a Pact Magic slot **and the player's reaction** (`player_oa_used`, cleared each round, so at most one Rebuke per round), the attacker makes a Dexterity save against `spell_save_dc`, and takes 2d10 fire (half on a save, through the normal fire resist/vulnerability check). The result lines are printed in order by `fight_narrate_enemy_turn` (`combat_prose.txt`); `resolve_enemy_save` gained `combat_save_quiet` so a caller can keep its banner and print it later. Shield now uses the same reaction budget, preventing either it or an opportunity attack from spending the reaction twice. |
-| Wizard | Arcane Recovery (level 1, built 2026-10-02; it was dossier text only, and the text was wrong) | `wizard_arcane_recovery_used` | **Yes** — on a short rest (`short_rest_preview`/`do_short_rest`, `character_progression.txt`), once between long rests, a Wizard recovers expended slots whose combined level is up to half the Wizard level, rounded up (1 slot at levels 1-2, 2 at levels 3-4; every slot is first level here), capped at what is missing. There is no choice of which slots, because only one slot level exists; when second-level slots arrive it needs a pick. A long rest clears the flag (`restore_class_resources`). |
-| Wizard | Scholar (level 2, built 2026-10-02) | `wizard_expertise_1` (display name, like the other Expertise picks) | **Yes** — chosen on the level-up page (`level_up_wizard_2`, `character_progression.txt`): Expertise in one of Arcana, History, Investigation, Medicine, Nature or Religion that the Wizard is already proficient in (a Wizard's proficiencies are fixed at level 1 in `apply_class_skills`; the pick offers whichever of the six have their `skill_<id>` flag true; a Wizard with none is offered a way past). `roll_d20_check` (`dice_engine.txt`) doubles the proficiency bonus on that skill, the same block shape as the Rogue's and Bard's. |
-| Wizard | Two more spells (level 2, built 2026-10-02; the school pick is deliberately skipped until there are enough spells per school to mean something) | `wizard_spell_2`, `wizard_spell_3` | **Yes** — two picks on the level-up page (`level_up_wizard_2_spell1/2`, `character_progression.txt`) from the Wizard's ten spells, each leaving out what is already in the book. The lone Wizard checks (`(wizard_spell = "x")`) in `combat.txt`, `equipment.txt`, `port_valen.txt` and `port_valen_dredge_end.txt` now read `known_<id>`, so the new slots work for Magic Missile, Shield, False Life, Mage Armor and the Charm Person/Disguise Self options. `equipment-panel.js` (the sidebar's mirror of the AC rule) and `tools/check_ac_formula_sync.js` read `known_mage_armor` too, and `update_dnd_stats` refreshes the flags BEFORE it applies the loadouts, because the AC rule needs them. |
-| Wizard | Ritual Adept / Ritual Casting (level 1) | — | **Not built, and nothing needs it yet.** Dossier text only. The ritual spells in the game (Alarm, Detect Magic, Speak with Animals, Comprehend Languages) are narrative and no scene charges a slot for them, so there is no cost for a ritual to save. When a scene offers one as a choice, the rule is: a Wizard who knows it casts it with no slot and spends 10 extra minutes on the clock; anyone else pays the slot. |
-| Rogue | Sneak Attack | `rogue_sneak_attack_die` ("1d6") | **Yes** — *this table entry was stale; corrected 2026-09-29.* `resolve_player_weapon_hit`/`resolve_weapon_attack_choice` (`combat_dice.txt`/`combat.txt`) already roll it: `combat_sneak_attack_triggered` fires on a finesse or ranged weapon hit with `roll_had_advantage` true, adding `1d6`. The second RAW trigger (2026-10-01) is built too: with no advantage and no disadvantage on the roll (`roll_had_disadvantage`), any living ally at range 0 counts as adjacent to the target (`find_flanking_ally`, `combat.txt` — the same shared-adjacency approximation `find_intercepting_ally` uses, since the engine has no per-pair distance), and the hit prose names that ally. A hidden player's next attack gets advantage (see Hide, `combat_hidden_attack_roll`), which is the first trigger. |
-| Rogue | Expertise (Stealth & Thieves' Tools) | `rogue_expertise_1` ("Stealth"), `rogue_expertise_2` ("Thieves' Tools") | **Yes** — `roll_d20_check` adds `prof_bonus * 2` (+4) to `check_mod` if `check_skill` matches either chosen skill *and* `character_class = "rogue"`. Active in `dawn_trial.txt`. |
-| Rogue | Cunning Action (level 2, per 5e) | — | **Yes** (2026-10-01, built at level 1 and moved back to level 2 the same day) — `combat_cunning` (`combat.txt`) is true while a level 2+ rogue still has the bonus action; it moves Dash, Disengage and Hide onto the bonus budget (label, gate and `fight_bonus_spent`). With the bonus spent they fall back to the ordinary action versions. A rogue with an unspent bonus action always has Dash to spend it on, so their turn does not auto-end. |
-| Ranger | **Hunter's Mark** (the 2024 Favored Enemy: free castings of Hunter's Mark — house rule, replaces Tasha's Favored Foe, 2026-10-02) | `favored_foe_uses`/`_max` (= `prof_bonus`, Long Rest; the variable names kept `favored_foe`), `favored_foe_die_sides` (always 6), `favored_foe_target_slot`/`_expires_round` | **Yes / Active** — see the MECHANICAL note below. The old `ranger_favored_enemy` and `ranger_favored_terrain` variables were removed (2026-10-02). |
-| Ranger | ~~Natural Explorer~~ **Canny** (from Tasha's Deft Explorer, replacing Natural Explorer — house rule, 2026-09-29) | `ranger_expertise_1` ("Survival", hardcoded at chargen — same non-picker shape as Rogue's Expertise below) | **Yes / Active** — extends the exact `roll_d20_check` block (`dice_engine.txt`) Rogue's Expertise already uses: `(character_class = "ranger") and (check_skill = ranger_expertise_1)` doubles `prof_bonus`. Verified live (`check_mod = 6` on a WIS+Survival check: +2 WIS mod, +4 doubled proficiency; a mismatched skill like Perception correctly gets none of it). **Caveat worth knowing, not a bug**: no scene in the game currently rolls a check with `check_skill "Survival"` verbatim — most checks use bespoke flavor names ("Scout's Crossing", "Read the Ground") rather than standard 5e skill strings, and even Rogue's own hardcoded picks (`"Stealth"`/`"Thieves' Tools"`) match zero real checks today either. Correctly wired, currently dormant until a scene's own `check_skill` literally says `"Survival"` — same shape as Favored Enemy was before this pass, just now on the *skill-check* side instead of combat. `ranger_favored_terrain` (the old terrain pick) is retired the same way `ranger_favored_enemy` was. |
-
-**MECHANICAL — Hunter's Mark (Ranger, level 1, 2026-10-02):** a `[BONUS ACTION] Hunter's Mark` hub option (`combat.txt`, `resolve_cast_hunters_mark` in `combat_spells.txt`) marks the active target: `favored_foe_target_slot = combat_active_target`, `favored_foe_expires_round = combat_round + 9` (10 rounds, a flat stand-in for concentration, as Bane uses; nothing in this engine tracks concentration), and spends one free cast (`favored_foe_uses`). It replaced the old `[Mark Favored Foe]` attack option, which marked on a hit. `resolve_player_weapon_hit` (`combat_dice.txt`) adds 1d6 force to ANY weapon hit on the marked slot while `favored_foe_expires_round >= combat_round` (spell attacks do not add it, same as Hex). Only one mark at a time. If the marked creature drops, the hub shows "Hunter's Mark has no quarry" and moving the mark to a new creature is a bonus action that costs no free cast (`combat_hm_state` sets `combat_hm_live`/`combat_hm_orphaned`). The Perception/Survival advantage from the spell is narrative only and not built. **Level 2 (built 2026-10-02):** the Ranger gets `ranger_spell_slots`/`_max` (half-caster table: 2 at level 2, 3 at level 3; long rest), Wisdom as the casting stat (`spell_save_dc`, `character_stats.txt`), and a cast beyond the free ones spends a slot (`resolve_cast_hunters_mark`). The level-up page (`level_up_ranger_2`, `character_progression.txt`) grants `ranger_spell` = Hunter's Mark and offers two picks (`ranger_spell_2`, `ranger_spell_3`, the second excluding the first) from the narrative spells Alarm, Detect Magic, Jump and Speak with Animals; the dossier's spell section and the sidebar spellbook list them. Cure Wounds and other combat spells are not built. Free casts refill on a long rest (`restore_class_resources`); the maximum is a straight read of `prof_bonus`.
-
----
-
-## Actions and Bonus Actions in a Fight
-
-The player has one action and one bonus action each round, and each round refills them (`combat.txt` `combat_begin_round`; the rule is written up in quest/GAMEPLAY_MECHANICS_RULES.md section 6). **Bonus actions:** Second Wind, Rage, Hex and Healing Word. Using one keeps you in the same round with your action still to come, and a second bonus option is not offered until the next round. **Actions:** an attack, a damage spell or cantrip, Armor of Agathys, False Life, Brace, and using an item; the enemies answer once your action is spent. **Shield** is a reaction (an armed flag), not a budget. The limits are variables (`combat_player_actions_max`, `combat_player_bonus_max`), so an effect such as Haste or a feature that grants an extra bonus action only has to change a number for the length of the fight.
-
----
-
-## Class Resource Maximums and Rests
-
-Every class pool has a `_max` variable, set in one place: `refresh_class_resource_maxs` in `character_progression.txt` (moved out of `startup.txt` in the 2026-09-28 file split — this doc previously said `startup.txt`, corrected 2026-09-29), which `update_dnd_stats` calls, so the maximum follows `character_level`. No scene types a pool number. Levels not listed keep the value above them.
-
-| Pool | Level 1 | Steps up |
-|---|---|---|
-| Second Wind (Fighter, 2024 rules) | 2 | 3 at level 4, 4 at level 10 |
-| Rage (Barbarian) | 2 | 3 at level 3, 4 at 6, 5 at 12, 6 at 17 |
-| Pact Magic slots (Warlock) | 1 | 2 at level 2, 3 at 11, 4 at 17 |
-| First-level slots (Wizard, Bard) | 2 | 3 at level 2, 4 at level 3 |
-| First-level slots (Ranger) | 0 | 2 at level 2, 3 at level 3 (half caster; see Hunter's Mark) |
-| Hunter's Mark free casts (Ranger) | = `prof_bonus` (2) | Follows `prof_bonus`'s own table, not a hand-written ladder: 3 at level 5, 4 at level 9, etc. |
-
-**Known spells are one derived flag each (2026-10-02).** `known_<id>` (one per spell in `spell-data.js`) is true when the character knows that spell or cantrip by any route: a class pick, a level-up pick, or innate race magic. `refresh_known_spells` (`character_progression.txt`) computes every flag from the spell slots, and `update_dnd_stats`, `fight_setup` and the end of the level-up page call it. A gate that asks "does the character know X" reads `known_x` and never lists slots, so adding a slot (a fourth Bard spell, a fourth cantrip) is one edit to that label. **To add a spell:** add it to `spell-data.js`, add a `*create known_<id> false` to `startup.txt` and a line to `refresh_known_spells`. Converted so far: every chain of two or more same-spell checks in `combat.txt`, `port_valen.txt` and `port_valen_dredge_end.txt` (38 chains). **Race-only chains are NOT "knows it" (a bug I introduced and fixed 2026-10-02):** a chain such as `(race_cantrip = "disguise_self") or (race_cantrip_2 = "disguise_self")` means the INNATE version specifically (a Hexblood's free cast), but my converter first turned it into `known_disguise_self`, which let a Bard who merely knew the spell cast it free and skipped the slot charge in Dredge-End. The four such lines in `port_valen_dredge_end.txt` (Disguise Self ×2, Thaumaturgy ×2) were restored to their original race-slot checks. Any future conversion must leave a chain alone when its slots are only the race slots. **Deliberately NOT converted:** a lone check such as `(race_cantrip_2 = "hex")`, which means the innate version specifically (a class-agnostic flag would give a non-Hexblood Warlock a free Hex), and the story scenes `alderford.txt`, `camp_night.txt` and `battle_black_sinks.txt` (about 290 checks, left until the owner agrees to touch them).
-
-**Friendly spells and ally distance (2026-10-02).** `combat_allyN_distance` (a tier 0-3, one per ally slot) is each ally's distance from the player, computed by `combat_refresh_ally_distances` (`combat.txt`) each time the combat hub opens and again by friendly targeting. It is the same calculation the sidebar prints (`allyDistanceToPlayer`, `index.html`): the ally's own range to the enemy it picked, against the player's range to that same enemy, as an absolute difference; a scripted check over four squad-fight states found the two always agree. **The sidebar keeps its own live copy on purpose**: it repaints every 400 ms, and a stored variable would lag between hub opens, so the two are mirrors and a change to the formula must be made in both. **Friendly targeting:** a spell arms `combat_friendly_targeting_active`; the sidebar then makes the player's row and each living ally's row clickable and a click writes `combat_friendly_target` (0 = you, else the ally slot). `combat_friendly_reach` is the farthest allowed distance (3 = anywhere, which is what a 60 ft range comes to in this tier model; 0 would be a touch spell such as Cure Wounds). **Healing Word** is the first user: with an ally on the field it opens `fight_target_friendly_healing_word` (default target: you if you are hurt, otherwise the first wounded ally), is offered when you or any living ally is wounded, validates the target before the cast only (never on a replay), and heals the ally's `combat_allyN_hp` capped at its maximum; alone, it heals the caster at once as before.
-
-Wizard and Bard second-level slots (from level 3) and the Warlock's rising slot level are not built: nothing in the game is a second-level spell yet. When they are, each is a new pool added in the same few places (see quest/GAMEPLAY_MECHANICS_RULES.md section 1, *Class Resources Live in One Place*), and no scene that sleeps changes.
-
-**Long rest.** One routine, `restore_class_resources`, refills every pool to its maximum, clears temp HP and readies the Hexblood's Hex. Hit points are not touched (healing stays slow). Every sleeping place calls `calendar.txt` `resolve_sleep`, which calls it, and the prologue rests call it directly.
-
-## Short Rest
-
-The sidebar's **Rest** button (in the Today card, since 2026-10-22 one click, no menu) runs the one-shot `codex_rest_now` in `choicescript_stats.txt` and reports in a toast. A short rest takes one hour of the clock (`advance_time`, so it burns hunger and fatigue like any other hour) and gives back what a short rest gives back: a **Fighter regains one Second Wind use** (2024 rules; a long rest gives them all back) and a **Warlock's Pact Magic slots all come back** (`startup.txt` `short_rest_preview` reports it, `do_short_rest` applies it, guarded by `last_short_rest_stamp` so a replayed page cannot give twice). It does **not** heal: healing stays slow. Rage, Bard slots and Wizard slots come back with sleep. It is refused in a fight, and at 2 HP or less while Starving or Collapsing (an hour can tick a hunger or fatigue point off HP, and a death cannot be handled from inside the dossier). The Middle Ward garret's own one-hour rest (`mw_room_short_rest`) calls `do_short_rest` too and prints `short_rest_banner`, so a new short-rest give-back never touches the garret.
-
-**Short rest cap and slot recovery (2026-10-02).** Only `short_rests_max` (2, the one number to change; `startup.txt`) short rests may be taken between long sleeps, for every class. One that gives something back spends one of `short_rests_left`; `restore_class_resources` (a long rest) refills it. A short rest still takes an hour and never touches the hunger or tiredness clocks. What it gives back (`character_progression.txt` `short_rest_preview` / `do_short_rest`): a **Fighter** one Second Wind use and Action Surge; a **Warlock** all Pact Magic slots; a **Bard** Bardic Inspiration and **half their spell slots, rounded up**; a **Wizard** half their spell slots, rounded up, **plus Arcane Recovery on top** (once between long rests: slots whose combined level is up to half the Wizard level, rounded up); a **Ranger** half their spell slots. Barbarians and Rogues get nothing back yet. At level 1 a Wizard has 2 slots, so half plus Arcane Recovery refills a fully drained one in a single rest. The sidebar shows a "Short Rests" row once one has been spent. This makes the slot cost of Mage Armor (a 24-hour spell) affordable.
-
----
-
-## Guidance Cantrip Engine
-
-`guidance_active` allows any scene or choice where you cast *Guidance* before a check to trigger an active `+1d4` roll.
-- Setting `*set guidance_active true` right before `*gosub_scene dice_engine roll_d20_check` automatically rolls `1d4`, adds it to `check_total`, displays `+X (Guidance)` in the check banner, and auto-resets `guidance_active false` upon return (matching the lifecycle of `advantage` and `disadvantage`).
-
----
-
-## Quick variable index
-
-| Concept | Variables |
+| Reach | Game meaning |
 |---|---|
-| Advantage / Disadvantage / Guidance engine | `advantage`, `disadvantage`, `guidance_active`, `save_vs` (set right before `*gosub_scene dice_engine roll_d20_check` — all auto-reset after) |
-| Race identity | `race`, `race_title`, `race_desc`, `race_darkvision` |
-| Racial trait | `race_trait_title`, `race_trait_desc` |
-| Racial innate magic | `race_cantrip`, `race_cantrip_desc`, `race_cantrip_2`, `race_cantrip_2_desc` |
-| Class identity | `character_class`, `class_title`, `class_assigned`, `hit_die`, `hit_die_max` |
-| Generic class feature (auto-granted) | `class_feature_title`, `class_feature_desc`, `class_feature_2_title`, `class_feature_2_desc` |
-| Fighter | `fighting_style`, `fighter_second_wind_uses`, `fighter_second_wind_max`, `second_wind` (subroutine, `character_progression.txt`) |
-| Barbarian | `barbarian_rage_uses`, `barbarian_rage_max`, `barbarian_rage_damage_bonus`, `is_raging`, `activate_rage`/`end_rage` (subroutines, `character_progression.txt`) |
-| Rogue | `rogue_expertise_1`, `rogue_expertise_2`, `rogue_sneak_attack_die` |
-| Ranger | `ranger_expertise_1`, `favored_foe_uses`/`_max`/`_die_sides`/`_target_slot`/`_expires_round` (Hunter's Mark), `combat_hm_live`/`_orphaned`/`_name` |
-| Warlock | `warlock_patron`, `warlock_patron_title`, `warlock_patron_desc`, `warlock_cantrip(_2)`, `warlock_cantrip(_2)_desc`, `warlock_spell`, `warlock_spell_desc`, `warlock_spell_slots`, `warlock_spell_slots_max` |
-| Wizard | `wizard_cantrip(_2/_3)`, `wizard_cantrip(_2/_3)_desc`, `wizard_spell`, `wizard_spell_desc`, `wizard_spell_slots`, `wizard_spell_slots_max` |
-| Bard | `bard_cantrip(_2)`, `bard_cantrip(_2)_desc`, `bard_spell(_2)`, `bard_spell(_2)_desc`, `bard_spell_slots`, `bard_spell_slots_max` |
+| Engaged | The target is in melee reach. |
+| Medium Reach | The target is no farther than the fight's Mid-Range threshold. |
+| Long Reach | Any target in the current combat lane. |
 
-All of these are `*create`d in `startup.txt` and set during `dawn_trial.txt` (class/magic) or `company_intake.txt`'s `choose_race` label (racial magic). Full dossier display (racial magic, patron, cantrips, spells) lives in `choicescript_stats.txt`'s Soldier Profile block and in `dawn_trial.txt`'s `trial_converge` summary. `camp_night.txt`'s `night_end` dossier only shows racial magic — class magic isn't known yet at that point in the story, since `dawn_trial` hasn't run.
+Ranged spell attacks made while Engaged have disadvantage. Saving-throw spells do not suffer that attack-roll penalty. `tools/spell_catalog.json` owns combat reach tags and `tools/gen_spells.js` writes the generated reach flags.
+
+---
+
+## Racial Mechanics
+
+| Race | Implemented behavior |
+|---|---|
+| Human | +1 to all six abilities. No separate triggered trait. |
+| Elf | Darkvision; advantage when `save_vs` is tagged `charmed` or `sleep`; Perception proficiency. |
+| Dwarf | Darkvision; advantage when `save_vs` is tagged `poison`. Poison-damage resistance is not implemented. |
+| Half-Orc | Darkvision; Intimidation proficiency. Black Sinks uses special endurance narration, but shared combat has no once-per-rest 1 HP trigger. |
+| Halfling | Small size; a natural 1 on a d20 check rerolls once automatically. |
+| Tiefling | Darkvision; Thaumaturgy unlocks authored story choices. Fire resistance is not implemented. |
+| Hexblood | Darkvision; innate Hex is free once per Long Rest. Innate Disguise Self is known but has no generic disguise state. |
+
+Darkvision and Devil's Sight both set `sees_in_dark`. In dungeon travel this prevents darkness disadvantage, avoids light consumption, and allows explored rooms to be added to the map.
+
+---
+
+## Class Features
+
+| Class | Feature | Current mechanic |
+|---|---|---|
+| Fighter | Second Wind | Bonus action; heals `1d10 + level`; a Short Rest returns one use and a Long Rest all uses. |
+| Fighter | Action Surge | From level 2; no action cost; grants one additional action; Short or Long Rest restores uses. |
+| Fighter/Ranger | Fighting Style | `fighting_style_info` is the display source. Styles alter AC, attack, damage, reactions, or attack options as described there. |
+| Barbarian | Rage | Bonus action; eligible Strength-based melee hits gain the rage bonus and incoming bludgeoning, piercing and slashing damage is halved for the fight. Strength-check advantage is not implemented. |
+| Barbarian | Reckless Attack | From level 2; Strength attacks gain advantage until the next turn, while enemy attacks against the Barbarian also gain advantage. |
+| Barbarian | Danger Sense | From level 2; advantage on Dexterity saves when the check is tagged correctly. |
+| Rogue | Sneak Attack | Once per turn on a finesse or ranged weapon hit with advantage, or without disadvantage while a living ally is Engaged with the target. |
+| Rogue | Cunning Action | From level 2; Dash, Disengage, and Hide can use the bonus action budget. |
+| Ranger | Hunter's Mark | Bonus action; free casts equal proficiency bonus per Long Rest, then Ranger slots; marked weapon hits add `1d6` Force for 10 rounds. |
+| Bard | Bardic Inspiration | Bonus action; an ally adds the die to its next missed attack, or a solo Bard adds it to the next failed d20 check. |
+| Wizard | Arcane Recovery | Once per Long Rest, triggered by a Short Rest; restores first-level slots up to half Wizard level, rounded up. |
+| Wizard | Ritual Casting | Only authored story choices tagged as rituals use it; spend 10 extra minutes instead of a slot. |
+| Warlock | Pact Magic | All Pact Magic slots return on a Short or Long Rest. |
+
+### Fighting-Style Terms
+
+- **Close Combat Shooter:** while Engaged, ranged weapon attacks lose their normal disadvantage and ranged hits gain +2 damage.
+- **Dual Shot:** one ranged attack against each of two targets at the same range; both attacks have disadvantage.
+- **Protection:** while holding a shield, impose disadvantage on an attack against a nearby ally.
+
+---
+
+## Spell Status
+
+The player-facing card must identify one of these states:
+
+- **Combat:** directly available in the shared combat hub.
+- **Exploration:** maintained by dungeon, camp, travel, timer, or sidebar-cast systems.
+- **Story:** appears only in authored scene choices; that scene owns its time, cost, check, and outcome.
+- **Narrative:** known and displayed, but no current mechanic calls it.
+
+### Cantrips
+
+| Spell | Status | Implemented effect |
+|---|---|---|
+| Blade Ward | Combat | Bonus action; halves weapon bludgeoning, piercing and slashing damage through the end of the next turn; cannot be refreshed while active. |
+| Booming Blade | Combat | Engaged melee weapon attack; a hit marks the target and voluntary movement triggers Thunder damage. |
+| True Strike | Combat | One weapon attack using the casting ability; choose normal weapon damage or Radiant; gains scaling Radiant dice from level 5. |
+| Fire Bolt | Combat / Exploration | Long Reach spell attack for `1d10` Fire; also starts camp and crafting fires. |
+| Ray of Frost | Combat | Medium Reach spell attack for `1d8` Cold; a hit prevents the target from Dashing on its next turn. |
+| Shocking Grasp | Combat | Engaged spell attack for `1d8` Lightning; a hit spends the target's reaction; metal-armored targets grant advantage when marked as such. |
+| Eldritch Blast | Combat | Long Reach spell attack for `1d10` Force; invocations can add Charisma damage or push one range step. |
+| Chill Touch | Combat | Medium Reach spell attack for `1d8` Necrotic. No healing-prevention rider is implemented. |
+| Vicious Mockery | Combat | Medium Reach Wisdom save; `1d4` Psychic and disadvantage on the next attack on failure. |
+| Poison Spray | Combat | Medium Reach Constitution save; `1d12` Poison on failure. |
+| Control Flames | Combat / Exploration | Spreads fire between enemies on one tile, banks campfires, and extends one torch by three dungeon steps. |
+| Guidance | Exploration | Sidebar cast; next eligible ability check within 1 minute gains `1d4`; unavailable in combat. |
+| Light | Exploration | Supplies dungeon light without torch consumption. |
+| Mending | Story | Authored repair options in travel, quests, and the Black Sinks bivouac. |
+| Mage Hand | Story | Authored remote-manipulation choices. |
+| Minor Illusion | Story | Authored distraction and deception choices. |
+| Prestidigitation | Story / Exploration | Starts camp and crafting fires and appears in authored minor-magic choices. |
+| Thaumaturgy | Story | Authored intimidation and supernatural-display choices. |
+| Message | Narrative | No current mechanical caller. |
+
+### First-Level Spells
+
+| Spell | Status | Implemented effect |
+|---|---|---|
+| Arms of Hadar | Combat | Action; every Engaged enemy makes a Strength save against one shared `2d6` Necrotic roll; failed targets also lose reactions. |
+| Armor of Agathys | Combat | Action; 5 temporary HP and 5 Cold retaliation on melee hits while those HP remain in the current fight. |
+| Bane | Combat | Action; first three living enemies make Charisma saves; failures subtract `1d4` from attacks and saves for 10 rounds. |
+| Cause Fear | Combat | Medium Reach Wisdom save; failed target has disadvantage on attacks and will not approach; repeats the save after its turns. |
+| Dissonant Whispers | Combat | Medium Reach Wisdom save; `3d6 + casting modifier` Psychic, half on success; no forced movement. |
+| Ensnaring Strike | Combat | Bonus action; arms the next weapon hit for up to 10 rounds; failed Strength save restrains and deals recurring `1d6` Piercing. |
+| False Life | Combat / Exploration | Action; `1d4+4` temporary HP for 12 hours; sidebar cast supported; Fiendish Vigor removes slot cost. |
+| Healing Word | Combat | Bonus action; heals self or sidebar-selected ally for `1d4 + casting modifier`, minimum 1, anywhere in the fight. |
+| Hellish Rebuke | Combat | Free to arm; next damaging enemy attack spends reaction and Pact slot, then deals `2d10` Fire, Dexterity save for half. |
+| Hex | Combat | Bonus action, Medium Reach; attack-roll hits add `1d6` Necrotic for the fight; no concentration system. |
+| Hunter's Mark | Combat | Bonus action, Medium Reach; weapon hits add `1d6` Force for 10 rounds; orphaned mark moves without another cast. |
+| Mage Armor | Combat / Exploration | Action; base AC 13 + Dexterity for 24 hours while body gear is cloth and no armored headpiece is worn; sidebar cast supported. |
+| Magic Missile | Combat | Action, Long Reach; three sidebar-allocated darts, each `1d4+1` Force, no attack roll. |
+| Shield | Combat | Free to arm; spends Wizard slot and reaction only when +5 AC converts a hit to a miss; remains through the next turn. |
+| Charm Person | Story | Authored social choices own target, cost, and outcome. |
+| Detect Magic | Story | Authored magical-investigation choices; normal slot/scroll cost or Wizard ritual time. |
+| Jump | Story | Authored traversal choices; no persistent movement multiplier; Otherworldly Leap makes casts free. |
+| Speak with Animals | Story | Authored beast conversations; normal slot/scroll cost or Wizard ritual time. |
+| Unseen Servant | Story | Authored Longshade interactions; normal slot/scroll cost or Wizard ritual time. |
+| Alarm | Narrative | No current camp-watch or intrusion caller. |
+| Comprehend Languages | Narrative | No current language-check caller. |
+| Disguise Self | Narrative | No generic cast action, timer, or disguise state. |
+| Feather Fall | Narrative | No current fall reaction or falling-state caller. |
+| Identify | Narrative | No current item-identification caller. |
+
+---
+
+## Spell Pools and Recovery
+
+| Pool | Recovery |
+|---|---|
+| Wizard | Short Rest restores half, rounded up; Arcane Recovery may add more once per Long Rest; Long Rest restores all. |
+| Bard | Short Rest restores half, rounded up; Long Rest restores all. |
+| Warlock | Short or Long Rest restores all Pact Magic slots. |
+| Ranger | Slots begin at level 2; Short Rest restores half, rounded up; Long Rest restores all. |
+
+`refresh_class_resource_maxs` owns pool maxima. `restore_class_resources` owns Long Rest recovery. `short_rest_preview` and `do_short_rest` own Short Rest recovery. Sleeping naturally restores only a small amount of HP through `calendar.txt resolve_sleep`; a Long Rest does not automatically refill HP.
+
+---
+
+## Sources of Truth
+
+| Subject | Source |
+|---|---|
+| Player-facing reference | `web/mygame/scenes/choicescript_stats.txt` — `codex_abilities`, `print_ability_card` |
+| Spell registry and sidebar order | `web/mygame/spell-data.js` |
+| Spell reach | `tools/spell_catalog.json` and generated block in `combat.txt` |
+| Combat spell gates | `web/mygame/scenes/combat.txt` |
+| Combat spell resolution | `web/mygame/scenes/combat_spells.txt`, `combat_dice.txt` |
+| Story utility spell cost | `web/mygame/scenes/dungeon.txt` — `dg_spell_source`, `dg_spell_cast` |
+| Known-spell flags and resources | `web/mygame/scenes/character_progression.txt` |
+| Timers and sleep | `web/mygame/scenes/calendar.txt` |
+| Armor and Mage Armor | `web/mygame/scenes/equipment.txt` |
+
+Run `node tools/check_abilities_reference.js` after changing the registry or reference. It verifies that every spell in `spell-data.js` has exactly one player-facing card and that tabletop distance units and audited stale phrases have not returned.
