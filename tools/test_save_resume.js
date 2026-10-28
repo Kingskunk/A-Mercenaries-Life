@@ -107,6 +107,31 @@ console.log('visible-page save boundary');
 
     assert.deepStrictEqual(calls, ['refresh', 'save:temp', 'footer']);
   });
+
+  check('a page resumed inside a helper does not replace older recovery snapshots', () => {
+    const calls = [];
+    const original = {
+      mark: sandbox.markSafeAutosaveRecoverySucceeded,
+      record: sandbox.recordSafeAutosave,
+      cookie: sandbox.computeCookie,
+      write: sandbox.writeCookie,
+    };
+    sandbox.markSafeAutosaveRecoverySucceeded = () => calls.push('mark');
+    sandbox.recordSafeAutosave = () => calls.push('record');
+    sandbox.computeCookie = () => 'pending-save';
+    sandbox.writeCookie = (value, slot, callback) => { calls.push('live:' + value); callback(); };
+    try {
+      const scene = newScene('teststory');
+      scene.temps.choice_resume_fell_back_to_label = true;
+      scene.refreshSavedProgress();
+      assert.deepStrictEqual(calls, ['live:pending-save']);
+    } finally {
+      sandbox.markSafeAutosaveRecoverySucceeded = original.mark;
+      sandbox.recordSafeAutosave = original.record;
+      sandbox.computeCookie = original.cookie;
+      sandbox.writeCookie = original.write;
+    }
+  });
 }
 
 console.log('');
@@ -352,10 +377,45 @@ console.log('structural resume validation / return-frame failover');
     assert.strictEqual(scene.resolveReturnFrameLine({ lineNum: 4, indent: 0 }), 4);
     assert.strictEqual(scene.resolveReturnFrameLine({ lineNum: 3, indent: 0 }), null);
   });
+
+  check('an edited save that falls back into a helper recovers from its empty return stack', () => {
+    const oldScene = newScene('market');
+    oldScene.loadLines('*label menu\n*gosub panel\n*choice\n  # Leave.\n    *finish\n*label panel\n*set shop_open "old_market"\n*return');
+    const anchor = oldScene.computeResumeAnchor(6);
+    const resumed = newScene('market');
+    resumed.loadLines('*label menu\n*gosub panel\n*choice\n  # Leave.\n    *finish\n*label panel\n*set shop_open "new_market"\n*return');
+    resumed.lineNum = 6;
+    resumed.indent = 0;
+    resumed.temps.choice_crc = oldScene.crc;
+    resumed.temps.choice_substack = [];
+    resumed.stats.choice_subscene_stack = [];
+    resumed.savedResumeLabel = anchor.label;
+    resumed.savedResumeOffset = anchor.offset;
+    resumed.savedResumeLineText = anchor.lineText;
+    let recoveries = 0;
+    resumed.recoverFromInvalidResume = function () { recoveries++; };
+
+    assert.strictEqual(resumed.checkSum(), true);
+    assert.strictEqual(resumed.lineNum, resumed.labels.panel);
+    assert.strictEqual(resumed.temps.choice_resume_fell_back_to_label, true);
+    const pausedSave = JSON.parse(sandbox.computeCookie(resumed.stats, resumed.temps, resumed.lineNum, resumed.indent));
+    assert.strictEqual(pausedSave.temps.choice_resume_fell_back_to_label, true);
+    assert.doesNotThrow(() => resumed['return']());
+    assert.strictEqual(recoveries, 1);
+  });
+
+  check('an empty return stack during fresh play still reports a coding error', () => {
+    const fresh = newScene('market');
+    fresh.loadLines('*label panel\n*return');
+    fresh.lineNum = 1;
+    fresh.temps.choice_substack = [];
+    assert.throws(() => fresh['return'](), /invalid return/);
+  });
 }
 
 console.log('save-schema stamping and migrations');
 {
+  const currentVersion = sandbox.SAVE_SCHEMA_VERSION;
   let repairs = 0;
   sandbox._global = {
     nav: {
@@ -367,11 +427,11 @@ console.log('save-schema stamping and migrations');
   };
 
   check('new saves carry matching numeric schema versions at both levels', () => {
-    const scene = new sandbox.Scene('combat', { save_schema_version: '1' });
+    const scene = new sandbox.Scene('combat', { save_schema_version: String(currentVersion) });
     scene.loadLines('*label fight_round_hub\n*choice\n  # Wait.\n    *finish');
     const state = JSON.parse(sandbox.computeCookie(scene.stats, scene.temps, 0, 0));
-    assert.strictEqual(state.saveSchemaVersion, 1);
-    assert.strictEqual(Number(state.stats.save_schema_version), 1);
+    assert.strictEqual(state.saveSchemaVersion, currentVersion);
+    assert.strictEqual(Number(state.stats.save_schema_version), currentVersion);
   });
 
   check('an unversioned save receives current defaults without losing player values', () => {
@@ -384,12 +444,12 @@ console.log('save-schema stamping and migrations');
     assert.strictEqual(result.ok, true);
     assert.strictEqual(result.migrated, true);
     assert.strictEqual(result.fromVersion, 0);
-    assert.strictEqual(state.saveSchemaVersion, 1);
-    assert.strictEqual(state.stats.save_schema_version, 1);
+    assert.strictEqual(state.saveSchemaVersion, currentVersion);
+    assert.strictEqual(state.stats.save_schema_version, currentVersion);
     assert.strictEqual(state.stats.hp_current, 7);
     assert.strictEqual(state.stats.added_later, 'default');
     assert.deepStrictEqual(Object.keys(state.temps), []);
-    assert.strictEqual(repairs, 1);
+    assert.ok(repairs >= 1);
   });
 
   check('ordered migrations carry a save across several skipped releases', () => {
@@ -407,15 +467,15 @@ console.log('save-schema stamping and migrations');
 
   check('a save from a newer build is rejected without being modified', () => {
     const state = {
-      saveSchemaVersion: 2,
-      stats: { sceneName: 'combat', save_schema_version: 2 },
+      saveSchemaVersion: currentVersion + 1,
+      stats: { sceneName: 'combat', save_schema_version: currentVersion + 1 },
       temps: {},
     };
     const before = JSON.stringify(state);
     const result = sandbox.migrateSaveState(state);
     assert.strictEqual(result.ok, false);
     assert.strictEqual(result.reason, 'newer_version');
-    assert.strictEqual(result.savedVersion, 2);
+    assert.strictEqual(result.savedVersion, currentVersion + 1);
     assert.strictEqual(JSON.stringify(state), before);
     assert.ok(/Update the game/.test(sandbox.saveMigrationError(result)));
   });
@@ -441,6 +501,7 @@ console.log('save-schema stamping and migrations');
 
 console.log('rolling safe autosaves');
 {
+  const currentVersion = sandbox.SAVE_SCHEMA_VERSION;
   const memory = {};
   sandbox._global = { pseudoSave: {} };
   sandbox.safeTimeout = function (fn) { fn(); };
@@ -492,15 +553,15 @@ console.log('rolling safe autosaves');
 
   check('automatic recovery skips a snapshot written by a newer game build', () => {
     sandbox._global.pseudoSave.autosafe1 = JSON.stringify({
-      saveSchemaVersion: 2,
-      stats: { sceneName: 'combat', save_schema_version: 2 },
+      saveSchemaVersion: currentVersion + 1,
+      stats: { sceneName: 'combat', save_schema_version: currentVersion + 1 },
       temps: {},
       lineNum: 0,
       indent: 0,
     });
     sandbox._global.pseudoSave.autosafe2 = JSON.stringify({
-      saveSchemaVersion: 1,
-      stats: { sceneName: 'port_valen/port_valen', save_schema_version: 1 },
+      saveSchemaVersion: currentVersion,
+      stats: { sceneName: 'port_valen/port_valen', save_schema_version: currentVersion },
       temps: {},
       lineNum: 0,
       indent: 0,

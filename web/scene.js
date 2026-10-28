@@ -826,6 +826,10 @@ Scene.prototype.resumeFromLabelAnchor = function resumeFromLabelAnchor() {
     // the file.
     if (!label || typeof this.labels[label] === "undefined") return false;
     candidate = this.labels[label];
+    // A changed save may now enter a gosub-only label without its caller.
+    // Keep the provenance in temps so it survives a page pause and reload.
+    // A helper may render a choice before reaching its *return.
+    this.temps.choice_resume_fell_back_to_label = true;
   }
   this.lineNum = candidate;
   this.indent = this.getIndent(this.lines[this.lineNum]);
@@ -1252,12 +1256,13 @@ Scene.prototype.refreshSavedProgress = function refreshSavedProgress() {
         this.stats[key] = tempStatWrites[key];
       }
     }
-    // Reaching this point means the page rendered and paused successfully,
-    // making its page-start continuation safe enough for the rolling history.
-    if (typeof markSafeAutosaveRecoverySucceeded === "function") markSafeAutosaveRecoverySucceeded();
+    // A label fallback inside a helper may render a page before its missing
+    // *return. Keep older recovery snapshots until that return is resolved.
+    var recoveryPending = !!this.temps.choice_resume_fell_back_to_label;
+    if (!recoveryPending && typeof markSafeAutosaveRecoverySucceeded === "function") markSafeAutosaveRecoverySucceeded();
     var value = computeCookie(this.stats, this.temps, lineNum, indent);
     writeCookie(value, "", function() {});
-    if (typeof recordSafeAutosave === "function") recordSafeAutosave(value);
+    if (!recoveryPending && typeof recordSafeAutosave === "function") recordSafeAutosave(value);
 };
 
 // *goto labelName
@@ -1378,6 +1383,7 @@ Scene.prototype["return"] = function scene_return() {
         this.recoverFromInvalidResume();
         return;
       }
+      this.temps.choice_resume_fell_back_to_label = false;
       this.indent = (resolvedGosubLine === stackFrame.lineNum) ? stackFrame.indent : this.getIndent(this.lines[resolvedGosubLine]);
       this.lineNum = resolvedGosubLine;
     } else if (this.stats.choice_subscene_stack && this.stats.choice_subscene_stack.length) {
@@ -1415,8 +1421,16 @@ Scene.prototype["return"] = function scene_return() {
         scene.execute();
       }
     } else if (!this.temps.choice_substack && !this.stats.choice_subscene_stack) {
+      if (this.temps.choice_resume_fell_back_to_label) {
+        this.recoverFromInvalidResume();
+        return;
+      }
       throw new Error(this.lineMsg() + "invalid return; gosub has not yet been called");
     } else {
+      if (this.temps.choice_resume_fell_back_to_label) {
+        this.recoverFromInvalidResume();
+        return;
+      }
       throw new Error(this.lineMsg() + "invalid return; we've already returned from the last gosub");
     }
 

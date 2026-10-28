@@ -27,6 +27,7 @@ const LINTERS = [
   'lint_choices',
   'lint_choice_length',
   'lint_gosub_arity',
+  'lint_unsafe_return',
   'lint_blank_landing',
   'lint_dead_space',
   'lint_prose_tics',
