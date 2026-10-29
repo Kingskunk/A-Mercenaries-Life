@@ -186,6 +186,30 @@
       active: function (s) { return ["emergency", "investigation", "wall", "repair", "reckoning"].indexOf(s.weight_road_quest_stage) >= 0; }
     },
     {
+      // Personal-use adaptation, built one chapter at a time under Langston/. Chapter 1 ends with Tomlin as the first lead.
+      id: "wolves_of_langston", title: "The Wolves of Langston",
+      giver: "Mayor Tanya Anathram, Langston meeting hall",
+      place: "Langston",
+      levelProgress: "Counts toward level progress on a successful final resolution.",
+      goal: function (s) {
+        if (Number(s.wol_chapter) === 2) return "Speak with Tomlin at his herb garden on the western edge of Langston.";
+        return "Find what killed Maybelline inside Langston's wall.";
+      },
+      clues: function (s) {
+        var c = [];
+        if (truthy(s.wol_tomlin_crowd_hint)) c.push("Several townspeople treat Tomlin's attention as something contested, even during Maybelline's funeral.");
+        if (truthy(s.wol_tomlin_relief_hint)) c.push("Tomlin's grief looked genuine, but relief showed through it for a moment.");
+        if (truthy(s.wol_roi_change_seen)) c.push("Roi's face briefly took on canine features when he sneezed.");
+        if (truthy(s.wol_roi_magic_suspected)) c.push("Roi's druidic shape is answering an illness or curse without his consent.");
+        if (truthy(s.wol_solaine_hymn_wrong)) c.push("The hymn Solaine attributed to the Book of Passing is not in that book.");
+        if (truthy(s.wol_solaine_tomlin_hint)) c.push("Solaine and Tomlin concealed a familiarity older than the funeral.");
+        if (truthy(s.wol_mayor_history_wrong)) c.push("Mayor Anathram's account of the Battle of Three Rivers contains serious errors.");
+        if (truthy(s.wol_mayor_dog_trained)) c.push("Buttercup is a trained attack and guard dog, not merely an obedient pet.");
+        return c;
+      },
+      active: function (s) { return s.wol_quest_stage === "active"; }
+    },
+    {
       id: "hale_ring", title: "The Hale Ring",
       giver: function (s) { return truthy(s.hale_ring_cassia_spoken) ? "Cassia Rell, the Bright Setting" : "A ring found on the River Road"; },
       levelProgress: "Counts toward level progress when returned to Ressa Hale.",

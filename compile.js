@@ -295,6 +295,7 @@ function compile(){
   verifyFileName("settlement_events.txt");
   verifyFileName("settlement_events/caught_in_wedding.txt");
   verifyFileName("settlement_events/helping_your_elders.txt");
+  verifyFileName("Langston/wolves_of_langston_chapter_1.txt");
   // Middle Ward quests live in their own *goto_scene-only files. The district scene owns
   // their physical triggers and aftermath; each quest file owns its choices and resolutions.
   verifyFileName("port_valen/MiddlewardQuest/dry_lion.txt");

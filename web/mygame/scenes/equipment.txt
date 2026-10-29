@@ -3294,18 +3294,11 @@
 *params gc_item
 *gosub gear_info gc_item
 *set gear_qty 0
-*comment No item id (the discard panel's default, and the quicktest walking discard_gear before any item is picked) owns nothing: without this the name built below is just "has_", which is no variable.
-*if (gc_item = "")
-  *return
 *if (gear_kind = "salvage")
   *set gear_qty {gear_count_var}
 *else
-  *set gear_flag_var ("has_" & gc_item)
-  *if ({gear_flag_var})
-    *set gear_qty 1
-    *if (gear_stack)
-      *set gear_spare_var ("spare_" & gc_item)
-      *set gear_qty (1 + {gear_spare_var})
+  *comment Read through a script, not a built variable name: an empty id (the discard panel before an item is picked, and the quicktest walking discard_gear) would build the name "has_", which is no variable, and an id with no flag simply owns none.
+  *script var held = stats["has_" + stats.gear_id]; var n = (held === true || held === "true") ? 1 : 0; if (n && (stats.gear_stack === true || stats.gear_stack === "true")) { var spare = Number(stats["spare_" + stats.gear_id]); if (spare > 0) n += spare; } stats.gear_qty = n;
 *return
 
 *comment *gosub_scene equipment gear_warning_text   (after gear_info; output gear_warning, "" when there is nothing to warn)
@@ -3468,8 +3461,9 @@
       *if (not(sg_head = "none"))
         *set gear_sold_note "You settle your ${head_prose} back on."
   *if ((((gear_kind = "cloak") or (gear_kind = "hands")) or ((gear_kind = "waist") or (gear_kind = "feet"))) or (gear_kind = "neck"))
-    *set sg_slot_var ("equipped_" & (gear_kind & "_id"))
-    *if ({sg_slot_var} = sg_item)
+    *comment Read through a script, so the quicktest (which walks every branch whatever the kind) never builds a slot name that does not exist, such as equipped_ring_id.
+    *script stats.sg_slot_match = (stats["equipped_" + stats.gear_kind + "_id"] === stats.gear_id);
+    *if (sg_slot_match)
       *gosub origin_clothing gear_kind
       *gosub equip_by_slot gear_kind origin_clothing_id
       *set gear_sold_note "You are back in your ${origin_clothing_name}."
@@ -3587,13 +3581,9 @@ You fill the empty @{(jug_fill_n = 1) jug|jugs} from ${jug_refill_source}, then 
 *comment Uses up one copy of a consumable: a spare if there is one, otherwise the item itself. The caller owns the replay lock (use_consumable's use_locked, or a thrown item's combat_cast_locked in combat_spells.txt resolve_throw_item).
 *label spend_consumable
 *params sc_item
-*set gear_flag_var ("has_" & sc_item)
-*set gear_spare_var ("spare_" & sc_item)
-*temp sc_spare {gear_spare_var}
-*if (sc_spare > 0)
-  *set {gear_spare_var} (sc_spare - 1)
-*else
-  *set {gear_flag_var} false
+*comment Through a script, not built variable names: several callers hand this a variable that is still empty when the quicktest walks them (an unset scroll or item id would build "has_" and "spare_", which do not exist), and an id that is no item simply spends nothing.
+*set gear_id sc_item
+*script var k = String(stats.gear_id); var sp = Number(stats["spare_" + k]); if (sp > 0) { stats["spare_" + k] = sp - 1; } else if (stats["has_" + k] !== undefined) { stats["has_" + k] = false; }
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
