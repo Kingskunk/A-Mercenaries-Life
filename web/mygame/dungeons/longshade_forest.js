@@ -56,7 +56,7 @@
       lsf_r12: { x: 5.8, y: 2.3, kind: "room", name: "The Trampled Clearing" },
       lsf_r13: { x: 4.5, y: 0.1, kind: "room", name: "The Root Hollow" },
       lsf_r14: { x: 7.5, y: 0.2, kind: "room", name: "The Panther's Tree" },
-      lsf_r15: { x: 3.5, y: 0.4, kind: "room", name: "The Burning Grove" }
+      lsf_r15: { x: 3.5, y: 0.4, kind: "room", name: "Flùràlainn's Grove" }
     },
     edges: [["lsf_x1", "lsf_j1"], ["lsf_j1", "lsf_j2"], ["lsf_j2", "lsf_j3"], ["lsf_j3", "lsf_r1"], ["lsf_r1", "lsf_j5"], ["lsf_j5", "lsf_j8"], ["lsf_j8", "lsf_j9"], ["lsf_j9", "lsf_r5"], ["lsf_j8", "lsf_j10"], ["lsf_j10", "lsf_r6"], ["lsf_r5", "lsf_j13"], ["lsf_j13", "lsf_r7"], ["lsf_r7", "lsf_r9", "lsf_bark_accepted"], ["lsf_r9", "lsf_j27"], ["lsf_j27", "lsf_r15"], ["lsf_j2", "lsf_j22"], ["lsf_j22", "lsf_r10"], ["lsf_r10", "lsf_j21"], ["lsf_j21", "lsf_r12"], ["lsf_r12", "lsf_j25"], ["lsf_j25", "lsf_r13"], ["lsf_r12", "lsf_j26"], ["lsf_j26", "lsf_r14"], ["lsf_r12", "lsf_j23"], ["lsf_j23", "lsf_r11"], ["lsf_r11", "lsf_j18"], ["lsf_j18", "lsf_j16"], ["lsf_j16", "lsf_x2"], ["lsf_j16", "lsf_j14"], ["lsf_j14", "lsf_j12"], ["lsf_j12", "lsf_j15", "lsf_glade_open"], ["lsf_j15", "lsf_r8", "lsf_glade_open"], ["lsf_j12", "lsf_j11"], ["lsf_j11", "lsf_r3"], ["lsf_r3", "lsf_j6"], ["lsf_j6", "lsf_r2"], ["lsf_r2", "lsf_j4"], ["lsf_j4", "lsf_j2"], ["lsf_r2", "lsf_j7"],
       ["lsf_r1", "lsf_j24", "lsf_tower_viewed"], ["lsf_j24", "lsf_r7", "lsf_tower_viewed"], ["lsf_j7", "lsf_r4", "lsf_spring_reached"]]

@@ -73,10 +73,24 @@
   *comment It cancels against advantage like any other source, and the flag resets at the end of the roll.
   *if (((armor_nonprof) or (shield_nonprof)) and ((check_stat = "str") or (check_stat = "dex")))
     *set disadvantage true
+  *comment Heroic Inspiration (the sidebar's Use button arms it): spent on the next DC check outside a fight that has no advantage of its own, and it never touches a silent roll or a fight. It turns a plain roll
+  *comment into advantage, or cancels a disadvantage. A roll that already has advantage keeps the point and leaves it armed. This sits in the roll's own lock, so a refresh cannot spend a second point.
+  *temp heroic_used_now false
+  *if ((heroic_inspiration_armed) and ((heroic_inspiration > 0) and ((not(combat_engaged)) and (not(check_silent)))))
+    *if (not(advantage))
+      *set heroic_used_now true
+      *set advantage true
+      *set heroic_inspiration - 1
+      *set heroic_inspiration_armed false
   *if (advantage) and (not(disadvantage))
     *set adv_label " (Advantage)"
   *if (disadvantage) and (not(advantage))
     *set adv_label " (Disadvantage)"
+  *if (heroic_used_now)
+    *if ((advantage) and (not(disadvantage)))
+      *set adv_label " (Advantage — Heroic Inspiration)"
+    *else
+      *set adv_label " (Heroic Inspiration cancels the disadvantage)"
   *comment When the disadvantage came from shooting into melee, name the cause rather than leaving the player to
   *comment wonder what they did wrong -- the enemy-side roll prints "(Disadvantage - in reach)" for the same
   *comment reason (combat_dice.txt's cea_adv_label). combat_reach_pinned is set true by the caller right before
@@ -507,4 +521,33 @@
 *if (not(check_gear_context = ""))
   *set check_task_type "none"
   *set check_gear_context ""
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment HEROIC INSPIRATION AWARD (2026-10-29, the user's design). A quest calls this where the player makes a heroic or right choice that has no reward of its own, with a short plain id for that moment
+*comment (for example "peddler_defended"): *gosub_scene dice_engine heroic_award "peddler_defended". The point is given ONCE per id for the whole game, so a replayed page or a revisited scene cannot pay twice; the
+*comment id is remembered even if the pool is full (that moment has passed). The mutation sits behind a page lock and the banner is printed from the stored result, so a refresh shows the same line and gives nothing more.
+*comment Results (heroic_award_result): "gain" a point was given, "full" the pool was already at its cap, "repeat" this id was paid before (prints nothing).
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label heroic_award
+*params ha_id
+*set heroic_award_id ha_id
+*if (not(heroic_award_locked)) or (not(locked_heroic_award_page_id = page_id))
+  *script stats.heroic_award_result = ((" " + String(stats.heroic_awarded) + " ").indexOf(" " + String(stats.heroic_award_id) + " ") >= 0) ? "repeat" : "new"; if (stats.heroic_award_result === "new") stats.heroic_awarded = (String(stats.heroic_awarded) + " " + String(stats.heroic_award_id)).trim();
+  *if (heroic_award_result = "new")
+    *if (heroic_inspiration < heroic_inspiration_max)
+      *set heroic_inspiration + 1
+      *set heroic_award_result "gain"
+    *else
+      *set heroic_award_result "full"
+  *set heroic_award_locked true
+  *set locked_heroic_award_page_id page_id
+*if (heroic_award_result = "gain")
+  *line_break
+  [b][🌟 Heroic Inspiration +1 | ${heroic_inspiration} / ${heroic_inspiration_max}][/b]
+  *line_break
+*if (heroic_award_result = "full")
+  *line_break
+  [b][🌟 Heroic Inspiration | already full, ${heroic_inspiration} / ${heroic_inspiration_max}][/b]
+  *line_break
 *return

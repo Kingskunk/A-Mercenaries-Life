@@ -38,6 +38,21 @@ You turn off the way you were going and push in under the trees, following a nar
 *gosub_scene dungeon dg_run_begin
 *goto lsf_begin
 
+*comment THE WAY IN FROM THE DEEP LONGSHADE (overworld tile dl, 2026-10-29, the user's call): not a mouth. The tile is hidden on the map until Bark's quest is done (lsf_dubhar_dead, overworld-data.js requires), and the run starts in Flùràlainn's Grove (lsf_r15). The grove's "Walk back out" button
+*comment (lsf_exit_deep below) puts the player back on that tile; the two real mouths still leave onto lf and ua.
+*label lsf_enter_deep
+You follow the clear stream upstream between trunks that grow broader with every step, until the great trees draw back on every side into a ring around one old oak.
+*line_break
+*set dg_mins 10
+*set dg_time_id "enter_lsf_deep"
+*gosub_scene dungeon dg_time
+*set dg_table "longshade_forest"
+*set dg_start "lsf_r15"
+*set dg_daylit true
+*set dg_dev_entry false
+*gosub_scene dungeon dg_run_begin
+*goto lsf_begin
+
 *comment A mouth leaves the dungeon onto its own overworld tile (ow_pos), then the overworld page. The run ends first, which clears the light.
 *label lsf_exit_south
 You work your way back out to the edge of the trees, and the open ground lies ahead.
@@ -49,6 +64,17 @@ You work your way back out to the edge of the trees, and the open ground lies ah
 You work your way back out to the edge of the trees, and the open ground lies ahead.
 
 *set ow_pos "ua"
+*goto_scene overworld/overworld ow_here
+
+*comment The grove's own way out (only offered once Dubhar is dead, which is also what opens the tile): ten minutes down the stream onto the Deep Longshade tile.
+*label lsf_exit_deep
+You leave the ring of trees and follow the stream down between the great trunks, until the wood opens out into the deep forest.
+*line_break
+*set dg_mins 10
+*set dg_time_id "exit_lsf_deep"
+*gosub_scene dungeon dg_time
+*gosub_scene dungeon dg_run_end
+*set ow_pos "dl"
 *goto_scene overworld/overworld ow_here
 
 *label lsf_begin
@@ -3306,10 +3332,8 @@ You settle onto your heels at the edge of the clearing, well clear of the tree, 
 *temp r15_green ((lsf_dubhar_dead) and (not(lsf_dubhar_death_season = r15_season)))
 *if (lsf_tree_state = "burning")
   [b]◈ THE BURNING GROVE[/b]
-*elseif (r15_green)
-  [b]◈ THE GREENING OAK[/b]
 *else
-  [b]◈ THE SCORCHED GROVE[/b]
+  [b]◈ FLÙRÀLAINN'S GROVE[/b]
 *line_break
 *gosub_scene dungeon dg_dark_check
 *if (lsf_tree_state = "burning")
@@ -3429,6 +3453,9 @@ You settle onto your heels at the edge of the clearing, well clear of the tree, 
     *if (not(r15_green))
       # Speak with Flùràlainn. [~5 min]
         *goto_scene longshade/longshade_dryad ld_early
+  *if ((lsf_dubhar_dead) and (not(dg_dev_entry)))
+    # Walk back out to the Deep Longshade. [~10 min]
+      *goto lsf_exit_deep
   *if (lsf_tree_state = "burning")
     # Turn your back on her and go.
       *goto lsf_r15_walk_away

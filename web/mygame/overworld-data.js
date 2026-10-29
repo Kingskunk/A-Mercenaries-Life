@@ -25,6 +25,8 @@
  * on the card ("Forest and hills"). It changes nothing else. kind picks the tile's colour in the panel: "city", "town", "village", "fort", "road", "woodroad", "hills", "forest" (add a kind here and a colour in overworldmap.css). "woodroad" is a made road with the trees close on both sides (the Longshade Edge): for road events and forest events it counts as BOTH a road and a forest (kindIn below), so it meets the stranger, the lamp, the cart and the beasts, and has its own colour so it reads apart from the deep forest.
  * territory (required) is the jurisdiction that holds the tile: an id in TERRITORIES below. Every tile so far belongs to the Valen Reach under the Gilded Scales (the user's call, 2026-10-08). It is data only for now: nothing in the panel or the
  * scenes reads it yet, so it is the place to hang tolls, patrols, escort pay and danger by owner later. A new territory is one entry in TERRITORIES.
+ * requires (optional) is the name of a saved flag (stats.<name>): until it is true the tile is HIDDEN, not just locked. The map does not draw it or its roads, and route() will neither start, end nor pass through it, so the travel button,
+ * the forecast and the scene's own trip check all refuse it (Overworld.isOpen(id) says which). Used for the Deep Longshade, which stays off the map until Bark's quest is done.
  * ford (optional, true): a crossing of running water the road makes here, where a road event (the ford) can happen; the event reads how high the water is from the weather's memory.
  * danger (optional, 0 to 3, default 0) is how rough the LAND is for a caravan before anyone patrols it: 0 safe, 1 uneasy, 2 rough, 3 dangerous. The EFFECTIVE danger is that number plus the patrol of the territory that holds the tile
  * (TERRITORIES below; the Scales' patrol is -1), kept between 0 and 3, and Overworld.dangerOf(id) gives it. The escort (radiant/hall_escort.txt) reads the effective danger for how likely a halt on the tile is to meet an event, which
@@ -367,6 +369,37 @@
       here: "A narrow road of packed earth runs through ash and thorn, the trees close on both sides and the light coming down green and dim. Old ruts hold standing water, and fallen limbs lie at the verges, furred with moss.",
       hereNight: "The trees close out the stars, and the road is a faint pale line between black walls. The forest is a dark held in by sound: the creak of limbs, the drip of water, the slow rustle of leaves.",
       hereStorm: "Wind drives through the crowns and rain follows it, drumming down through the branches. The ruts fill and run, and the road is a shallow stream between the trees."
+    },
+    // Fellgate (2026-10-29, the user's sketch and name): the Scales' border fort at the western end of the Longshade, where the forest runs up against the foot of the Coldspine. Map tile only for now (the user will make its picture; no scene).
+    // It is the frontier post against the lowland lordship to the west; the user's call is that the place and its siting say why it is there, so no text names that neighbour. The text is invented to match Stonewatch and the Black Sinks gatehouse in kind.
+    fg: {
+      name: "Fellgate", kind: "fort", x: -4.0, y: -4.7, region: "The western edge of the Longshade",
+      territory: "scales",
+      danger: 1,
+      climate: -1,
+      walk: "The timber road leaves the upper forest and climbs west along the foot of the mountain, with the ash and pine thinning on the left hand and bare grey slope rising on the right, toward a dark wall of stone across the way.",
+      depart: "The gate opens once the last wagon has been counted, and the timber road runs back east between the mountain's foot and the trees toward Upper Longshade.",
+      arrive: "The road comes out of the last of the trees, and Fellgate stands ahead where forest and mountain meet: a grey stone fort across the way, its gate open, its walls running down into the trees on one side and up the scree on the other.",
+      info: "A Gilded Scales fort at the western end of the Longshade, where the forest runs up against the foot of the Coldspine and the only ground a wagon can use is a narrow strip between trees and stone. The timber road ends under its walls, and Scales militia hold the gate and check travellers before they go on west.",
+      here: "A grey stone fort stands across the narrow strip between the forest and the mountain, its walls running down into the trees on one side and up the scree on the other. The gate faces west, a barrier lies across the road beneath it, and the Scales' black-and-gold banner hangs above the wall.",
+      hereNight: "Torches burn along the wall walks and over the gate. The forest behind the fort is a black mass, and the mountain above it is a darker dark against the stars.",
+      hereStorm: "Rain drives in under the trees and sheets down the scree. The gate is shut, the barrier is down, and the torches over it gutter in the wind."
+    },
+    // The Deep Longshade (2026-10-29, the user's sketch): the way to Flùràlainn's Grove (dungeon room lsf_r15). It is HIDDEN, not just locked, until Bark's quest is done (lsf_dubhar_dead), so nothing on the map hints at the
+    // grove before then: see requires above. Its ways are timed from the dungeon, ten minutes a step: nine steps from the south mouth (The Longshade) and sixteen from the east mouth (West Longshade), so 2 and 3 miles of pathless forest.
+    dl: {
+      name: "Deep Longshade", kind: "forest", x: -3.9, y: -2.6, region: "The Longshade",
+      requires: "lsf_dubhar_dead",
+      territory: "scales",
+      danger: 2,
+      climate: -1,
+      water: "a clear stream",
+      walk: "The way follows deer runs and the low places between great roots, over moss and leaf mould, under trunks that two people together could not reach round.",
+      camp: "A hollow among the roots of an old ash, floored with dry leaf mould and screened by ferns, with a clear stream running a few steps away.",
+      info: "The oldest part of the Longshade, where the trees stand wide apart and the canopy closes high overhead. A clear stream runs through it to Flùràlainn's Grove.",
+      here: "The oldest trees stand wide apart here, their trunks broad as cottage walls and their crowns closed overhead into one green roof. Moss and leaf mould cover the ground, and a clear stream runs between the roots.",
+      hereNight: "The deep wood is black and still beneath the old crowns. The stream is heard running over its stones, and now and then a pale light drifts between the trunks and goes out.",
+      hereStorm: "Rain runs down the great trunks in sheets and drips through the high crowns. The stream has risen and talks loudly among the roots."
     }
   };
 
@@ -406,8 +439,23 @@
     // The timber road: Timbermouth to Northeast Longshade to Upper Longshade (both woodroad tiles), a real road, not pathless.
     ["tm", "le", 5],
     ["ln", "le", 5],
-    ["ua", "lf", 10, "overland"]
+    ["ua", "lf", 10, "overland"],
+    // Fellgate: the timber road runs on west from Upper Longshade to the fort (a real road, so it can be supplied); West Longshade to the fort is pathless forest.
+    ["fg", "ln", 6],
+    ["fg", "ua", 5, "overland"],
+    // The Deep Longshade (hidden until its quest is done): two and three miles of pathless forest, from the dungeon's own step counts to the grove.
+    ["dl", "lf", 2, "overland"],
+    ["dl", "ua", 3, "overland"]
   ];
+
+  // Is a tile on the map yet? A tile with a requires (the name of a saved flag) is hidden, and cannot be routed to or through, until that flag is true. Read from the live stats, so it opens the moment the flag is set.
+  function isOpen(id) {
+    var n = NODES[id];
+    if (!n) return false;
+    if (!n.requires) return true;
+    var v = (root.stats || {})[n.requires];
+    return v === true || v === "true";
+  }
 
   var adj = {};
   Object.keys(NODES).forEach(function (id) { adj[id] = []; });
@@ -420,7 +468,7 @@
 
   // The QUICKEST way from one tile to another (by time, so a mile of pathless forest counts double), by Dijkstra: the map is tiny, so a plain scan is enough.
   function route(from, to) {
-    if (!NODES[from] || !NODES[to]) return { ok: false, path: [], legs: [], miles: 0, minutes: 0 };
+    if (!isOpen(from) || !isOpen(to)) return { ok: false, path: [], legs: [], miles: 0, minutes: 0 };
     var dist = {}, prev = {}, done = {};
     Object.keys(NODES).forEach(function (id) { dist[id] = Infinity; });
     dist[from] = 0;
@@ -430,6 +478,7 @@
       if (cur === null || cur === to) break;
       done[cur] = true;
       adj[cur].forEach(function (n) {
+        if (!isOpen(n.to)) return;
         var d = dist[cur] + n.miles * n.pace;
         if (d < dist[n.to]) { dist[n.to] = d; prev[n.to] = cur; }
       });
@@ -692,7 +741,8 @@
     tm: { place: "the Factor's Hall" },
     af: { place: "the Factor's Hall" },
     bs: { place: "the gatehouse" },
-    sw: { place: "the gate" }
+    sw: { place: "the gate" },
+    fg: { place: "the gate" }
   };
   // count is how many postings a board shows on a given day, rolled between the two numbers from the day and the origin (so a refresh and a return visit show the same board): a city is busiest and a village is
   // sometimes empty (the user's call, 2026-10-11). A COURIER_TILES entry may give its own count: [min, max].
@@ -762,5 +812,5 @@
     return Math.max(Math.floor(full * (beats - lost) / beats), Math.floor(full / 3));
   }
 
-  root.Overworld = { courierCount: courierCount, courierPostings: courierPostings, courierTile: courierTile, haleRingPlan: haleRingPlan, MINUTES_PER_MILE: MINUTES_PER_MILE, features: FEATURES, terrains: TERRAIN, nodes: NODES, edges: EDGES, territories: TERRITORIES, convoyPlan: convoyPlan, convoyNight: convoyNight, convoyFee: convoyFee, coinText: coinText, convoyMaxLegs: CONVOY_MAX_LEGS, dangerOf: function (id) { return dangerOf(NODES[id]); }, mountMinutesPerMile: MOUNT_MINUTES_PER_MILE, convoyPace: CONVOY_PACE, haltEvents: HALT_EVENTS, travelEventPlan: travelEventPlan, travelEvents: TRAVEL_EVENTS, campEventPlan: campEventPlan, campEvents: CAMP_EVENTS, campChance: CAMP_CHANCE, travelCooldownDays: TRAVEL_COOLDOWN_DAYS, travelChance: TRAVEL_CHANCE, route: route, duration: duration, span: span, label: label, travelPlan: travelPlan, north: NORTH };
+  root.Overworld = { isOpen: isOpen, courierCount: courierCount, courierPostings: courierPostings, courierTile: courierTile, haleRingPlan: haleRingPlan, MINUTES_PER_MILE: MINUTES_PER_MILE, features: FEATURES, terrains: TERRAIN, nodes: NODES, edges: EDGES, territories: TERRITORIES, convoyPlan: convoyPlan, convoyNight: convoyNight, convoyFee: convoyFee, coinText: coinText, convoyMaxLegs: CONVOY_MAX_LEGS, dangerOf: function (id) { return dangerOf(NODES[id]); }, mountMinutesPerMile: MOUNT_MINUTES_PER_MILE, convoyPace: CONVOY_PACE, haltEvents: HALT_EVENTS, travelEventPlan: travelEventPlan, travelEvents: TRAVEL_EVENTS, campEventPlan: campEventPlan, campEvents: CAMP_EVENTS, campChance: CAMP_CHANCE, travelCooldownDays: TRAVEL_COOLDOWN_DAYS, travelChance: TRAVEL_CHANCE, route: route, duration: duration, span: span, label: label, travelPlan: travelPlan, north: NORTH };
 })(typeof window !== "undefined" ? window : global);

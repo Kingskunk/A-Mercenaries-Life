@@ -125,7 +125,7 @@
 
   function bounds() {
     var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-    Object.keys(OW.nodes).forEach(function (id) {
+    Object.keys(OW.nodes).filter(OW.isOpen).forEach(function (id) {
       var n = OW.nodes[id];
       var p = P(n);
       minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
@@ -187,7 +187,7 @@
   /* ---------------------------------------------------------------- drawing */
 
   function svg(here, sel) {
-    var ids = Object.keys(OW.nodes), onRoute = {}, defs = "";
+    var ids = Object.keys(OW.nodes).filter(OW.isOpen), onRoute = {}, defs = "";
     if (sel && sel !== here) {
       var r = OW.route(here, sel);
       for (var i = 0; i < r.path.length - 1; i++) { onRoute[r.path[i] + ">" + r.path[i + 1]] = true; onRoute[r.path[i + 1] + ">" + r.path[i]] = true; }
@@ -211,6 +211,7 @@
     });
     function hits(r) { return taken.some(function (t) { return r[0] < t[2] && r[2] > t[0] && r[1] < t[3] && r[3] > t[1]; }); }
     OW.edges.forEach(function (e) {
+      if (!OW.isOpen(e[0]) || !OW.isOpen(e[1])) return;
       var a = OW.nodes[e[0]], b = OW.nodes[e[1]], hot = onRoute[e[0] + ">" + e[1]];
       var pa = P(a), pb = P(b), terrain = e[3] || "road";
       out += "<line class=\"ow-edge" + (terrain !== "road" ? " ow-edge-" + terrain : "") + (hot ? " ow-edge-route" : "") + "\" x1=\"" + pa.x + "\" y1=\"" + pa.y + "\" x2=\"" + pb.x + "\" y2=\"" + pb.y + "\"/>";

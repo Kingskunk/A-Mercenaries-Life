@@ -645,6 +645,7 @@ button#statSidebar .turnRow,
 #statSidebar .orbs { display: inline-flex; gap: 5px; align-items: center; }
 #statSidebar .orb { width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #8fd0ff, #2b6aa8 60%, #123556); border: 1px solid #0b2036; }
 #statSidebar .orb.pact { background: radial-gradient(circle at 35% 30%, #e6b8ff, #8a3fb8 60%, #3b1458); border-color: #25093a; }
+#statSidebar .orb.heroic { background: radial-gradient(circle at 35% 30%, #fff1b8, #d8a521 60%, #6b4a08); border-color: #3e2a03; }
 #statSidebar .orb.used { background: #1a1a1a; border-color: var(--ch-line); }
 
 /* the six scores as boxed tiles */
@@ -1131,6 +1132,17 @@ button#statSidebar .turnRow,
       }
     }
 
+    // Heroic Inspiration (2026-10-29), for every class: up to 4 points earned by heroic choices (dice_engine.txt heroic_award). The Use button arms it through the dossier's one-shot (codex_heroic_arm), the same
+    // route a cast from the spellbook takes; pressing it again puts it away. Nothing to press at 0 points or in a fight.
+    if (Number(s.heroic_inspiration_max) > 0) {
+      var heroicNow = Number(s.heroic_inspiration) || 0, heroicArmed = isTruthy(s.heroic_inspiration_armed);
+      resourceHtml += slotRow("Heroic Inspiration", heroicNow, s.heroic_inspiration_max, " heroic");
+      if ((heroicNow > 0 || heroicArmed) && !isTruthy(s.combat_engaged)) {
+        resourceHtml += "<button type=\"button\" class=\"spellCast heroicUse\" data-spell-cast=\"codex_heroic_arm\"" + (canOpenDossier() ? "" : " disabled") + " title=\"Your next check that has no advantage rolls with advantage, and takes one point. A check that already has advantage keeps the point.\">" +
+          (heroicArmed ? "Armed — put it away" : "Use Heroic Inspiration…") + "</button>";
+      }
+    }
+
     // Short rests left before the next long sleep (2026-10-02), for every class. Only shown once a short rest has been spent, so the row is not noise at full.
     if (Number(s.short_rests_max) > 0 && Number(s.short_rests_left) < Number(s.short_rests_max)) {
       resourceHtml += "<div class=\"statRow\"><span>Short Rests</span><span>" + fmt(s.short_rests_left) + " / " + fmt(s.short_rests_max) + "</span></div>";
@@ -1349,8 +1361,12 @@ button#statSidebar .turnRow,
                 : "<div class=\"sbPanel\">" + foldHtml("today", "Today", "<span class=\"sbSumStack\"><span>" + fmt(s.clock_time) + " &middot; " + dayDisplay + "</span><small>" + fmt(s.time_period) + " &middot; " + weatherDisplay + "</small></span>", bottomSectionHtml) + "</div>") +
       "<div class=\"sbPanel sbSpells\">" + spellSectionHtml() + "</div>" +
       activeQuestHtml +
-      (isTruthy(s.food_buff_active) || isTruthy(s.drink_buff_active) || isTruthy(s.unique_buff1_active) || isTruthy(s.unique_buff2_active) || isTruthy(s.unique_buff3_active) || isTruthy(s.sleep_buff1_active) || isTruthy(s.sleep_buff2_active) || isTruthy(s.guidance_active) ?
+      (isTruthy(s.food_buff_active) || isTruthy(s.drink_buff_active) || isTruthy(s.unique_buff1_active) || isTruthy(s.unique_buff2_active) || isTruthy(s.unique_buff3_active) || isTruthy(s.sleep_buff1_active) || isTruthy(s.sleep_buff2_active) || isTruthy(s.guidance_active) || isTruthy(s.heroic_inspiration_armed) ?
         "<div class=\"sbPanel\">" + foldHtml("effects", "Effects", effectsSummary(s),
+        (isTruthy(s.heroic_inspiration_armed) ?
+          "<div class=\"statRow\"><span>Heroic Inspiration</span><span>armed</span></div>" +
+          "<div class=\"timePeriod\">advantage on your next check that has none</div>"
+          : "") +
         (isTruthy(s.guidance_active) ?
           "<div class=\"statRow\"><span>Guidance</span><span>+1d4</span></div>" +
           "<div class=\"timePeriod\">next ability check" + (Number(s.guidance_minutes_left) > 0 ? ", " + fmt(s.guidance_minutes_left) + "m left" : "") + "</div>"
@@ -1399,7 +1415,7 @@ button#statSidebar .turnRow,
   // "3 active" for the folded Effects header: meals, drinks, boons and rest bonuses that are running.
   function effectsSummary(s) {
     var n = 0;
-    ["food_buff_active", "drink_buff_active", "unique_buff1_active", "unique_buff2_active", "unique_buff3_active", "sleep_buff1_active", "sleep_buff2_active", "guidance_active"].forEach(function (k) { if (isTruthy(s[k])) n++; });
+    ["food_buff_active", "drink_buff_active", "unique_buff1_active", "unique_buff2_active", "unique_buff3_active", "sleep_buff1_active", "sleep_buff2_active", "guidance_active", "heroic_inspiration_armed"].forEach(function (k) { if (isTruthy(s[k])) n++; });
     return n + " active";
   }
   function isTruthy(v) { return v === true || v === "true"; }

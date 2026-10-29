@@ -50,6 +50,19 @@ const ART = global.window.OVERWORLD_ART || {};
   if (!Array.isArray(f.label) || f.label.length !== 2 || !f.label.every(Number.isFinite)) fail("feature " + f.id + " has a label that is not [x, y]");
 });
 const ids = Object.keys(O.nodes);
+// a tile with a "requires" flag is hidden until the flag is true: closed, nothing may route to or through it; open, it must join the map like any other
+ids.filter((id) => O.nodes[id].requires).forEach((id) => {
+  const flag = O.nodes[id].requires;
+  if (!/^[a-z][a-z0-9_]*$/.test(flag)) fail("tile " + id + " requires \"" + flag + "\", which is not a plain flag name");
+  global.window.stats = {};
+  if (O.isOpen(id)) fail("tile " + id + " is open with its flag unset");
+  if (O.route("pv", id).ok || O.route(id, "pv").ok) fail("tile " + id + " can be routed to while hidden");
+  O.edges.forEach((e) => { if ((e[0] === id || e[1] === id)) { const other = e[0] === id ? e[1] : e[0]; if (O.nodes[other].requires === undefined && O.route(other, "pv").ok === false) fail("a hidden tile cut " + other + " off from the map"); } });
+  global.window.stats = {}; global.window.stats[flag] = true;
+  if (!O.isOpen(id)) fail("tile " + id + " stays hidden with its flag set");
+});
+const hiddenFlags = ids.filter((id) => O.nodes[id].requires).map((id) => O.nodes[id].requires);
+global.window.stats = {}; hiddenFlags.forEach((f) => { global.window.stats[f] = true; });
 ids.forEach((id) => { const n = O.nodes[id]; if (n.ford !== undefined && (n.ford !== true || n.kind !== "road")) fail("tile " + id + " has a ford flag that is not true, or is not on a road tile"); });
 const KINDS = ["city", "town", "village", "fort", "road", "woodroad", "hills", "forest"];
 const seenEdges = {};
@@ -81,7 +94,7 @@ ids.forEach((id) => {
 if (!/\*set ow_pos "[a-z0-9_]+"|\*create ow_pos "([a-z0-9_]+)"/.test(startup)) fail("startup.txt does not create ow_pos");
 const start = (startup.match(/^\*create ow_pos "([a-z0-9_]+)"/m) || [])[1];
 if (start && !O.nodes[start]) fail("startup.txt starts ow_pos on \"" + start + "\", which is not a tile");
-["ow_dest", "ow_trip_ok", "ow_trip_locked", "locked_ow_trip_page_id", "ow_legs", "ow_leg_i", "ow_leg_minutes", "ow_leg_pace", "ow_rations_total", "ow_exposure_pct", "ow_can_camp", "ow_camp_ok", "ow_camp_mode", "ow_camp_minutes", "ow_dawn_ok", "ow_dawn_hours", "ow_camp_wet", "ow_camp_locked", "locked_ow_camp_page_id", "exposure_camping", "rations_eaten_last", "ow_water", "climate_shift"].forEach((v) => { if (!new RegExp("^\\*create " + v + " ", "m").test(startup)) fail("startup.txt does not create " + v); });
+["ow_dest", "ow_trip_ok", "ow_trip_locked", "locked_ow_trip_page_id", "ow_legs", "ow_leg_i", "ow_leg_minutes", "ow_leg_pace", "ow_exposure_pct", "ow_can_camp", "ow_camp_ok", "ow_camp_mode", "ow_camp_minutes", "ow_dawn_ok", "ow_dawn_hours", "ow_camp_wet", "ow_camp_locked", "locked_ow_camp_page_id", "exposure_camping", "rations_eaten_last", "ow_water", "climate_shift"].forEach((v) => { if (!new RegExp("^\\*create " + v + " ", "m").test(startup)) fail("startup.txt does not create " + v); });
 if (!/# Travel to the tile you picked on the map\./.test(scene)) fail("overworld.txt has lost its one Travel option (the panel presses it)");
 if (!/# Make camp\./.test(scene)) fail("overworld.txt has lost its camp option (the panel presses it)");
 ids.forEach((a) => ids.forEach((b) => {
