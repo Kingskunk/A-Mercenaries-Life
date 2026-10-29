@@ -93,7 +93,7 @@ function oggOpus(opusHead, packets, samplesPer, endSamples) {
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function withChrome(fn) {
   const page = "file:///" + path.join(ROOT, "ICONS").replace(/\\/g, "/") + "/UiElements/Frame_mid.png";
-  const chrome = spawn(CHROME, ["--headless=new", "--disable-gpu", "--allow-file-access-from-files", "--autoplay-policy=no-user-gesture-required", "--remote-debugging-port=" + PORT, "--no-first-run",
+  const chrome = spawn(CHROME, ["--headless=new", "--disable-gpu", "--no-sandbox", "--disable-dev-shm-usage", "--allow-file-access-from-files", "--autoplay-policy=no-user-gesture-required", "--remote-debugging-port=" + PORT, "--no-first-run",
     "--user-data-dir=" + path.join(os.tmpdir(), "cs-ambience-" + Date.now()), page], { stdio: "ignore" });
   let ws = null;
   try {
@@ -193,11 +193,18 @@ function writeManifest() {
 // ---------------------------------------------------------------- main
 (async () => {
   if (process.argv.includes("--manifest-only")) { writeManifest(); return; }
-  if (process.argv.includes("--check")) {   // exit 1 if a recording in /Sounds has no loop in /ambience or is newer than its loop (node compile.js runs this, then the tool itself if so)
-    const stale = fs.existsSync(SRC) ? fs.readdirSync(SRC).filter((f) => /\.mp3$/i.test(f)).filter((f) => {
+  if (process.argv.includes("--check")) {   // exit 1 if a referenced recording has no loop in /ambience or is newer than its loop (node compile.js runs this, then the tool itself if so)
+    const mapSource = fs.readFileSync(path.join(ROOT, "web", "mygame", "ambience.js"), "utf8");
+    const unused = [], tooShort = [], stale = fs.existsSync(SRC) ? fs.readdirSync(SRC).filter((f) => /\.mp3$/i.test(f)).filter((f) => {
       const key = f.replace(/\.mp3$/i, "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, ""), o = path.join(OUT, key + ".ogg");
+      if (!fs.existsSync(o) && !mapSource.includes('"' + key + '"')) { unused.push(f); return false; }
+      const buf = fs.readFileSync(path.join(SRC, f)), m = mp3Frames(buf), total = m.frames.length * m.spf / m.rate;
+      const first = total > 360 ? 60 : 1, secs = Math.min(SECONDS, Math.floor(total - first - FADE - 3));
+      if (secs < 30) { tooShort.push(f); return false; }
       return !fs.existsSync(o) || fs.statSync(o).mtimeMs < fs.statSync(path.join(SRC, f)).mtimeMs;
     }) : [];
+    if (unused.length) console.log("unreferenced raw sounds kept out of the game build: " + unused.join(", "));
+    if (tooShort.length) console.log("sounds too short to cut into ambience loops (kept as raw sources): " + tooShort.join(", "));
     if (stale.length) { console.log("sounds to cut: " + stale.join(", ")); process.exit(1); }
     console.log("ambience is up to date"); return;
   }
@@ -205,7 +212,11 @@ function writeManifest() {
   const files = fs.readdirSync(SRC).filter((f) => /\.mp3$/i.test(f) && (!ONLY || f.toLowerCase().indexOf(ONLY.toLowerCase()) === 0));
   if (!files.length) { console.error("no matching Sounds/*.mp3"); process.exit(1); }
   fs.mkdirSync(OUT, { recursive: true });
-  await withChrome(async (evaluate) => {
+  // Chrome's debugging requests do not reliably keep Node's event loop alive on Windows. Keep one
+  // ordinary timer referenced until the conversion and browser cleanup have both finished.
+  const keepAlive = setInterval(() => {}, 1000);
+  try {
+    await withChrome(async (evaluate) => {
     for (const f of files) {
       const key = f.replace(/\.mp3$/i, "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
       // a loop that is already cut and newer than its recording is left alone (so adding one recording does not redo the rest); --force redoes everything, and --only always redoes what it names
@@ -243,5 +254,8 @@ function writeManifest() {
       console.log("  gain x" + r.gain.toFixed(1) + ", input peak " + r.peakIn.toFixed(2) + ", " + r.kneePct.toFixed(3) + "% of samples squeezed by the limiter");
       console.log("  wrote ambience/" + key + ".ogg  " + (ogg.length / 1048576).toFixed(2) + " MB, " + v.seconds.toFixed(1) + " s, " + v.channels + " ch; level " + r.rms.toFixed(3) + " RMS; seam step " + v.seamOverTypical.toFixed(1) + "x a normal step (worst step within 5 ms of it " + v.worstStepAcrossSeamOverTypical.toFixed(1) + "x; the same measure elsewhere in the loop: median " + v.windowMedian.toFixed(1) + "x, largest " + v.windowMax.toFixed(1) + "x)");
     }
-  });
+    });
+  } finally {
+    clearInterval(keepAlive);
+  }
 })().catch((e) => { console.error("FAILED: " + e.message); process.exit(1); });

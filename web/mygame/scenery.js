@@ -69,7 +69,7 @@
     "alderford/lower_wharf_market": "town_market",
     "alderford/talia_loft": "talia_loft",
     "alderford/janna_alcove": "janna_hearth_alcove",
-    "port_valen/radiant/hall_pests": "generic_domestic_cellar",
+    "overworld/river_transport": "grey_river_barge",
     "prologue/battle_black_sinks": "siege"
   };
 
@@ -109,13 +109,36 @@
 
   // the rules, tried in order; each gets the stats and returns the name of where the player is, or nothing
   function tile(s) { var O = window.Overworld; return s.ow_on && O && O.nodes ? O.nodes[s.ow_pos] : null; }
+  function escortTile(s) { var O = window.Overworld; return s.sceneName === "port_valen/radiant/hall_escort" && (s.rj_escort_road || s.rj_escort_stage === "done") && O && O.nodes ? O.nodes[s.es_leg_to] : null; }
   // The trade panel's shop_open names an OPEN MARKET (a lane, a green, a trading ground: web/mygame/market-data.generated.js, commodities) outdoors, not a shop counter, and the stat stays set
   // when the player walks on, so it must never choose the shop interior picture or the "shop" place.
   function counterShop(s) { var D = window.MARKET_DEFS; return !!(s.shop_open && !(D && D[s.shop_open] && D[s.shop_open].commodities)); }
+  var BLACK_OATH_PLACES = {
+    black_oath_upstairs_room: "black_oath_upstairs_room",
+    dredge_boat_sheds: "dredge_boat_sheds",
+    dredge_flooded_lower_steps: "dredge_flooded_lower_steps",
+    dredge_lamp_stair: "dredge_lamp_stair"
+  };
   var RULES = [
     function (s) { return s.sceneName === "combat" && s.scenery_combat_place ? s.scenery_combat_place : undefined; }, // a temporary combat scene keeps the location it was entered from
     function (s) { return s.sceneName === "prologue/battle_black_sinks" && s.scenery_subplace === "black_sinks_causeway_before" ? "black_sinks_causeway_before" : undefined; }, // the ruined causeway during the prologue assault
     function (s) { return s.sceneName === "prologue/battle_black_sinks" && s.scenery_subplace === "black_sinks_bivouac" ? "black_sinks_captured_gatehouse_bivouac" : undefined; }, // the company holds the captured gatehouse overnight
+    function (s) { return s.sceneName === "alderford/whitefold/the_weight_of_the_road" && s.weight_road_quest_stage !== "reckoning" && s.weight_road_quest_stage !== "resolved" && s.weight_road_quest_stage !== "failed" ? "whitefold_cut_road_collapse" : undefined; }, // the Cut Road emergency, investigation, wall reading and repair; the Fleecefold reckoning keeps the village backdrop until it has its own art
+    function (s) { return s.sceneName === "port_valen/port_valen" && s.scenery_subplace === "grey_river_barge" ? "grey_river_barge" : undefined; }, // the company's prologue voyage from Alderford to Port Valen
+    function (s) { return s.sceneName === "port_valen/radiant/hall_perform" && s.rj_perf_venue === 1 ? "generic_town_inn" : undefined; }, // Wagoner's Rest common room
+    function (s) { return s.sceneName === "port_valen/radiant/hall_perform" && s.rj_perf_venue === 2 ? "generic_tavern_inn" : undefined; }, // Cleaved Keel taproom
+    function (s) { return s.sceneName === "port_valen/radiant/hall_perform" && s.rj_perf_venue === 3 ? "port_valen_private_supper" : undefined; }, // Middle Ward private supper
+    function (s) { return s.sceneName === "port_valen/radiant/hall_perform" && s.rj_perf_venue === 4 ? "port_valen_wedding_hall" : undefined; }, // hired wedding hall
+    function (s) { return s.sceneName === "port_valen/radiant/hall_perform" && s.rj_perf_venue === 5 ? "port_valen_patrician_gala_salon" : undefined; }, // Patrician Quarter gala salon
+    function (s) { return s.sceneName === "port_valen/radiant/hall_haul" ? "port_valen_middle_ward_house_move" : undefined; }, // the Middle Ward house, stairs, lane and waiting handcart
+    function (s) { return s.sceneName === "port_valen/radiant/hall_watch" ? "port_valen_cargo_warehouse_watch" : undefined; }, // the Cargo Quay warehouse through all three night-watch stretches
+    function (s) { return s.sceneName === "port_valen/radiant/hall_pests" && s.rj_pest_in_cellar ? "generic_domestic_cellar" : undefined; }, // after the player commits to entering the infested cellar or back room
+    function (s) { return s.sceneName === "port_valen/radiant/hall_pests" && s.rj_pest_where === "quarter" ? "patrician_avenue" : undefined; }, // the townhouse approach before entering and after leaving
+    function (s) { return s.sceneName === "port_valen/radiant/hall_pests" && s.rj_pest_where !== "quarter" ? "middle_ward" : undefined; }, // the ordinary house approach before entering and after leaving
+    function (s) { return s.sceneName === "port_valen/radiant/hall_escort" && ((!s.rj_escort_road && s.rj_escort_stage !== "done") || (s.rj_escort_road && Number(s.es_next_leg) === 0)) ? "village_stable_yard" : undefined; }, // every signing/muster yard, and the column's first pull out
+    function (s) { var n = escortTile(s); return n ? n.name : undefined; }, // the current road, named camp ground or destination
+    function (s) { var n = escortTile(s); return n && n.kind === "road" && n.also === "hills" ? "overworld_hilly_road" : undefined; }, // an unnamed hilly road stretch
+    function (s) { var n = escortTile(s); return n ? n.kind : undefined; }, // plain road, wooded road, village or town fallback
     function (s) { return s.sceneName === "prologue/alderford" && s.scenery_subplace === "prologue_talia_loft" ? "talia_loft" : undefined; }, // Talia's private curing-loft home
     function (s) { return s.sceneName === "prologue/alderford" && s.scenery_subplace === "prologue_janna_alcove" ? "janna_hearth_alcove" : undefined; }, // Janna's private hearth alcove behind the smithy
     function (s) { return s.ow_on && s.ow_pos === "bs" ? "black_sinks_gilded_scales_toll_fort" : undefined; }, // repaired Gilded Scales toll fort, reached only after the prologue
@@ -163,6 +186,7 @@
     function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_bathhouse" ? "middle_ward_bathhouse" : undefined; }, // Conduit Baths' tub room
     function (s) { return s.sceneName === "alderford/chapel" ? "saint_althea_chapel" : undefined; }, // Saint Althea's working parish chapel above the weir
     function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_city_street" ? "generic_city_street" : undefined; }, // Trunk Road and Lantern Lane; Conduit Square remains the district view
+    function (s) { return s.sceneName === "port_valen/black_oath/black_oath_night_list" ? BLACK_OATH_PLACES[s.scenery_subplace] : undefined; }, // the handler's upstairs room and the Night List's three existing Dredge-End stops
     function (s) { return s.sceneName === "port_valen/port_valen_dredge_end" && s.scenery_subplace === "dredge_duckboard_market" ? "dredge_duckboard_market" : undefined; }, // market lane and stalls
     function (s) { return s.sceneName === "port_valen/port_valen_dredge_end" && s.scenery_subplace === "dredge_upper_gangways" ? "dredge_upper_gangways" : undefined; }, // elevated tenant walkways
     function (s) { return s.sceneName === "port_valen/port_valen_dredge_end" && s.scenery_subplace === "dredge_boat_sheds" ? "dredge_boat_sheds" : undefined; }, // boatwrights' work-bank and scrap yard

@@ -45,7 +45,9 @@
     forest:        { day: "forest_day", night: "forest_night" },
     city:          { day: "city_day", night: "city_night" },
     harbor:        { all: "medieval_harbour" },
+    boat_travel:   { all: "ship_sea_river_boat_travel_anytimeofday_waves_soft_talking_softboatcreaking_rope" },
     dredge_end:    { all: "medieval_slums" },
+    black_oath_upstairs_room: { all: "medieval_slums", level: 0.18, indoor: true },
     village:       { day: "generic_village", night: "generic_village_town_night" },
     village_room:  { day: "generic_village", night: "generic_village_town_night", level: 0.18, indoor: true },
     woodland:      { day: "woodland_village", night: "generic_village_town_night" },
@@ -55,6 +57,9 @@
     factors_hall:  { all: "city_indoor", indoor: true },
     bathhouse:     { all: "bathhouse_ambience", indoor: true },
     blacksmith:    { all: "village_blacksmith_ambience", indoor: true },
+    private_supper: { all: "interior_palace_or_lage_noblehouse_distantalking_guardpatrol_crackling_fire", level: 0.55, indoor: true },
+    wedding_hall:   { all: "noble_gala_party_talking_glassclinking_softlaughter_nomusic", level: 0.72, indoor: true },
+    patrician_gala: { all: "interior_palace_or_lage_noblehouse_distantalking_guardpatrol_crackling_fire", level: 0.50, indoor: true },
     warcamp:       { all: "military_camp_ambience", indoor: false },
     bivouac:       { all: "military_camp_ambience", indoor: false },
     marshland:     { day: "marshland_ambience_wind_birds_shallowwater_reeds", night: "marshland_night_crickets_shallowwater_ambience" },
@@ -76,6 +81,7 @@
     port_valen_fishmongers_slip: "harbor",
     port_valen_iron_wharves: "harbor",
     port_valen_wreck_bell_pier: "harbor",
+    grey_river_barge: "boat_travel",
     port_valen_weigh_house: "civic_indoor",
     alderford: "village", whitefold: "village", redvein: "village", marlcross: "village", brinewick: "village", barleycross: "village", village: "village",
     village_green: "village",
@@ -115,7 +121,10 @@
     civic_saint_althea_chapel: "civic_indoor",
     civic_tax_windows: "civic_indoor",
     civic_magistrates_court: "civic_indoor",
-    civic_council_gallery: "civic_indoor"
+    civic_council_gallery: "civic_indoor",
+    port_valen_private_supper: "private_supper",
+    port_valen_wedding_hall: "wedding_hall",
+    port_valen_patrician_gala_salon: "patrician_gala"
   };
   // Quiet location-specific layers over a normal place bed. They give a river town its weir,
   // a battle approach its marsh, and exposed forts their wind without replacing the useful base
@@ -127,7 +136,8 @@
     black_sinks_causeway_before: [{ day: "marshland_ambience_wind_birds_shallowwater_reeds", night: "marshland_night_crickets_shallowwater_ambience", level: 0.24 }],
     black_sinks_captured_gatehouse_bivouac: [{ all: "wind_against_stone_creeking_timber_distantsound_needstobelayerd", level: 0.22 }],
     black_sinks_gilded_scales_toll_fort: [{ all: "wind_against_stone_creeking_timber_distantsound_needstobelayerd", level: 0.18 }],
-    stonewatch: [{ all: "wind_against_stone_creeking_timber_distantsound_needstobelayerd", level: 0.24 }]
+    stonewatch: [{ all: "wind_against_stone_creeking_timber_distantsound_needstobelayerd", level: 0.24 }],
+    port_valen_patrician_gala_salon: [{ all: "noble_gala_party_talking_glassclinking_softlaughter_nomusic", level: 0.30 }]
   };
   var OVERWORLD_OPEN = { road: 1, woodroad: 1, hills: 1, forest: 1 };   // ground a rider travels over (not a town, a village or a fort)
 

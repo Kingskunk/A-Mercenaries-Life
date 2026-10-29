@@ -203,7 +203,7 @@ const getJson = (url, timeoutMs) => new Promise((resolve, reject) => {
   // Node's fetch/AbortSignal handles may be unref'ed on Windows; keep the process alive until the browser conversion and cleanup have genuinely finished.
   const keepAlive = setInterval(() => {}, 1000);
   const page = "file:///" + path.join(ROOT, "ICONS").replace(/\\/g, "/") + "/UiElements/Frame_mid.png";   // any file:// page to run in
-  const chrome = spawn(CHROME, ["--headless=new", "--disable-gpu", "--allow-file-access-from-files", "--remote-debugging-port=" + PORT, "--no-first-run",
+  const chrome = spawn(CHROME, ["--headless=new", "--disable-gpu", "--no-sandbox", "--disable-dev-shm-usage", "--allow-file-access-from-files", "--remote-debugging-port=" + PORT, "--no-first-run",
     "--user-data-dir=" + path.join(os.tmpdir(), "cs-uiart-" + Date.now()), page], { stdio: "ignore" });
   let ws = null;
   try {
