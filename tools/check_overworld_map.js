@@ -5,7 +5,7 @@
  * so a bad entry cannot crash a journey or strand a tile:
  *   1. every road joins two tiles that exist and has a length, and no road is listed twice;
  *   2. the map is one connected piece (every tile can reach every other);
- *   3. no two tiles sit on one spot, and every tile has a name, a kind (one the panel has a colour for), a region, an info line and a "here" line;
+ *   3. no two tiles sit on one spot, and every tile has a name, a kind (one the panel has a colour for), an info line and a "here" line;
  *   4. tile ids are plain lowercase words (they go into a saved variable), and the scene still offers its Travel and camp options and the startup variables it needs;
  *   5. every route comes with its legs (the scene charges a journey leg by leg), and the legs add up to the route's miles and minutes.
  * Run: node tools/check_overworld_map.js        Exit code 1 if anything disagrees.
@@ -79,7 +79,7 @@ ids.forEach((id) => {
   const n = O.nodes[id], k = n.x + "," + n.y;
   if (!/^[a-z][a-z0-9_]*$/.test(id)) fail("tile id \"" + id + "\" must be a lowercase word (it is stored in a saved variable)");
   if (spots[k]) fail(id + " and " + spots[k] + " sit on one spot"); spots[k] = id;
-  ["name", "kind", "region", "info", "here"].forEach((f) => { if (!n[f]) fail("tile " + id + " has no " + f); });
+  ["name", "kind", "info", "here"].forEach((f) => { if (!n[f]) fail("tile " + id + " has no " + f); });
   if (n.climate !== undefined && !(Number.isInteger(n.climate) && n.climate >= -3 && n.climate <= 3)) fail("tile " + id + " has a climate that is not a whole number from -3 to 3");
   ["hereNight", "hereStorm"].forEach((f) => { if (n[f] !== undefined && !(typeof n[f] === "string" && n[f])) fail("tile " + id + " has a " + f + " that is not a sentence"); });
   if (n.also !== undefined && (!KINDS.includes(n.also) || n.also === n.kind)) fail("tile " + id + " has an \"also\" of \"" + n.also + "\", which must be a different kind from " + KINDS.join(", "));
@@ -91,6 +91,36 @@ ids.forEach((id) => {
   if (n.kind && !KINDS.includes(n.kind)) fail("tile " + id + " has kind \"" + n.kind + "\", which the panel has no colour for (" + KINDS.join(", ") + ")");
   if (n.kind && !new RegExp("\\.ow-k-" + n.kind + " \\.ow-dot").test(css)) fail("overworldmap.css has no colour for kind \"" + n.kind + "\"");
 });
+// weather zones: every zone rolls by a profile calendar.txt knows, every territory, tile override and district names a zone that exists, and startup.txt creates the stats the swap uses
+{
+  const Z = O.weatherZones || {};
+  if (!O.weatherZones || !O.weatherSync) fail("Overworld exports no weatherZones / weatherSync");
+  if (!Z[O.defaultWeatherZone]) fail("defaultWeatherZone \"" + O.defaultWeatherZone + "\" is not in WEATHER_ZONES");
+  Object.keys(Z).forEach((z) => { if (!(O.weatherProfiles || []).includes(Z[z].profile)) fail("weather zone " + z + " has profile \"" + Z[z].profile + "\", which WEATHER_PROFILES does not list"); });
+  Object.keys(O.territories).forEach((t) => { if (!Z[O.territories[t].weather]) fail("territory " + t + " has weather \"" + O.territories[t].weather + "\", which is not in WEATHER_ZONES"); });
+  Object.keys(O.nodes).forEach((id) => { if (O.nodes[id].weather !== undefined && !Z[O.nodes[id].weather]) fail("tile " + id + " has weather \"" + O.nodes[id].weather + "\", which is not in WEATHER_ZONES"); });
+  Object.keys(O.districtZone || {}).forEach((d) => { if (!Z[O.districtZone[d]]) fail("district " + d + " maps to weather zone \"" + O.districtZone[d] + "\", which is not in WEATHER_ZONES"); });
+  ["wx_zone", "wx_slots", "wx_force_zone", "wx_profile", "wx_more", "wx_cur", "wx_queue", "wx_hold"].forEach((v) => { if (!new RegExp("^\\*create " + v + " ", "m").test(startup)) fail("startup.txt does not create " + v); });
+  // the swap: leaving a zone parks its weather, coming back loads it, and a first visit carries the weather across
+  const st = { ow_on: true, ow_pos: "fg", wx_zone: "reach", wx_slots: "", weather: "Rain", weather_tomorrow: "Fog", forecast_missed: false, rain_streak: 2, dry_streak: 0 };
+  if (O.weatherSync(st)) fail("weatherSync swapped on a tile in the zone the stats already belong to");
+  st.ow_pos = "wv"; if (!O.weatherSync(st) || st.wx_zone !== "vale" || st.weather !== "Rain") fail("weatherSync did not carry the weather into a zone entered for the first time");
+  st.weather = "Clear"; st.weather_tomorrow = "Overcast"; st.rain_streak = 0; st.ow_pos = "fg"; O.weatherSync(st);
+  if (st.wx_zone !== "reach" || st.weather !== "Rain" || st.weather_tomorrow !== "Fog" || st.rain_streak !== 2) fail("weatherSync did not bring a parked zone back as it was left");
+  st.ow_pos = "lg"; O.weatherSync(st); if (st.weather !== "Clear" || st.weather_tomorrow !== "Overcast" || st.rain_streak !== 0) fail("weatherSync did not bring the Vale back as it was left");
+  // the daily roll's plumbing: begin holds the player's weather aside and queues the parked zones, next loads each one (and parks it again), and the last next puts the player's own weather back
+  const rt = { ow_on: true, ow_pos: "lg", wx_zone: "vale", wx_profile: "temperate", wx_slots: JSON.stringify({ reach: { weather: "Fog", tomorrow: "Rain", missed: true, rain: 0, dry: 3 } }), weather: "Clear", weather_tomorrow: "Overcast", forecast_missed: false, rain_streak: 0, dry_streak: 1 };
+  O.weatherRollBegin(rt); O.weatherRollNext(rt);
+  if (!rt.wx_more || rt.wx_cur !== "reach" || rt.weather !== "Fog" || rt.weather_tomorrow !== "Rain" || rt.forecast_missed !== true || rt.dry_streak !== 3) fail("weatherRollNext did not load the parked zone into the weather globals");
+  rt.weather = "Rain"; rt.weather_tomorrow = "Clear"; rt.dry_streak = 4;   // what the day step would have done to it
+  O.weatherRollNext(rt);
+  const parked = JSON.parse(rt.wx_slots).reach;
+  if (rt.wx_more || rt.wx_hold !== "" || rt.wx_cur !== "" || rt.weather !== "Clear" || rt.weather_tomorrow !== "Overcast" || rt.dry_streak !== 1 || rt.forecast_missed !== false) fail("weatherRollNext did not put the player's own weather back after the last zone");
+  if (!parked || parked.weather !== "Rain" || parked.tomorrow !== "Clear" || parked.dry !== 4) fail("weatherRollNext did not park the rolled zone's new weather");
+  const none = { wx_zone: "reach", wx_slots: "", weather: "Fog", weather_tomorrow: "Fog" };
+  O.weatherRollBegin(none); O.weatherRollNext(none);
+  if (none.wx_more || none.weather !== "Fog") fail("weatherRollNext changed the weather when no zone is parked");
+}
 if (!/\*set ow_pos "[a-z0-9_]+"|\*create ow_pos "([a-z0-9_]+)"/.test(startup)) fail("startup.txt does not create ow_pos");
 const start = (startup.match(/^\*create ow_pos "([a-z0-9_]+)"/m) || [])[1];
 if (start && !O.nodes[start]) fail("startup.txt starts ow_pos on \"" + start + "\", which is not a tile");

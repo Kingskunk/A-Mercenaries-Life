@@ -3838,6 +3838,45 @@ window.TRADE_DATA = {
     "trail_rations"
    ]
   },
+  "lgstore": {
+   "title": "The Cord & Kettle",
+   "commodities": false,
+   "buyer": "general",
+   "buy": [
+    "hemp_rope",
+    "pitch_torch",
+    "lamp_oil",
+    "hooded_lantern",
+    "tool_kit",
+    "shovel",
+    "lute",
+    "tinderbox",
+    "water_jug",
+    "cooking_pot",
+    "chalk_sticks",
+    "camp_kit",
+    "waxed_oilcloth",
+    "lye_soap",
+    "trail_rations"
+   ],
+   "sell": [
+    "hemp_rope",
+    "pitch_torch",
+    "lamp_oil",
+    "hooded_lantern",
+    "tool_kit",
+    "shovel",
+    "lute",
+    "tinderbox",
+    "water_jug",
+    "cooking_pot",
+    "chalk_sticks",
+    "camp_kit",
+    "waxed_oilcloth",
+    "lye_soap",
+    "trail_rations"
+   ]
+  },
   "afstore": {
    "title": "Pell's Stores",
    "commodities": false,

@@ -7,7 +7,9 @@
  * LAYER 2, the weather on top: weather_rain (wet), weather_storm (a storm; the rain loop if there is none), weather_thunder (a storm, over the rain), weather_wind (snow) and
  *   weather_blizzard (a blizzard; the wind loop if there is none). They play where a place bed plays, so rain is not heard in a town shop, and an indoor place (an inn, a shop, a
  *   dungeon that is not open air) hears them muffled. A missing file is skipped, so the layers can be added one at a time.
- * LAYER 3, travel: horseback_travel (hooves) plays on the overworld, on open ground, for a player who has a horse. Weather plays over it.
+ * LAYER 3, travel: on the overworld, on open ground, horseback_travel (hooves) plays for a player who has a horse and a softer footsteps loop for one on foot. Weather plays over it.
+ * Roads: every road and wooded-road tile shares one bed, open_road (grassland by day, night nature by night, 2026-10-30; the first road bed had waves against a shore in it). A tile with a stream or river
+ *   (ashrun_mouth, greybank_rise, upper_longshade, west_longshade, deep_longshade) lays river_current_stream softly over it through OVERLAY, so the water is a layer and not part of the bed.
  * The Black Sinks battle plays siege_with_magic for the Cadre and siege_battle for everyone else.
  *
  * TO ADD SOUND: put Name.mp3 (any length) in /Sounds, run  node tools/make_ambience.js  (it cuts a seamless ~1 MB loop into /ambience and rewrites ambience-data.js), then  node compile.js.
@@ -71,14 +73,15 @@
     tavern:        { day: "quiet_tavern", night: "crowded_tavern", indoor: true },   // it fills up as the day ends
     sewer:         { all: "sewer", indoor: true },
     silt_conduits: { all: "sewer", indoor: true },
-    open_road:     { all: "overworld_walking_greymarsh_roads_with_ambience" },
+    open_road:     { day: "grassland_openfields_meadows_daytime", night: "nature_outdoors_night" },
     siege:         { all: "siege_battle" }
   };
   // a place name (from Scenery.placeNames) that plays another kind of place's sound
   var ALIAS = {
-    longshade_forest: "forest", woodroad: "forest", forest: "forest",
-    overworld_forest_road: "forest",
+    longshade_forest: "forest", woodroad: "open_road", forest: "forest",
+    overworld_forest_road: "open_road",   // a wooded road tile is road, not woodland: the Longshade tiles themselves (kind forest) keep the forest bed
     western_vale_road: "open_road",
+    road: "open_road", overworld_hilly_road: "open_road",   // the kind of an overworld tile (Scenery.placeNames ends a tile's names with it)
     generic_town_street: "village",
     langston: "city",
     langston_pickled_hen_funeral: "tavern",
@@ -101,7 +104,8 @@
     generic_village_pasture: "village",
     generic_village_gathering_hall: "lodgings",
     generic_farm_hayloft: "lodgings",
-    timbermouth: "woodland", ashrun_holt: "woodland",
+    timbermouth: "village",   // a working town: talk, wagons and smithing (woodland_village is all nature)
+    ashrun_holt: "woodland",
     ashrun_holt_clearing: "woodland",
     ashrun_holt_hide_yard: "woodland",
     ashrun_holt_work_yards: "woodland",
@@ -116,6 +120,7 @@
     generic_workshop_smithy: "blacksmith",
     generic_tavern_inn: "tavern",
     generic_trade_shop: "shop",
+    generic_trade_shop_open: "shop",   // the same room with the trade panel open (a scene that is a place of its own, like the Cord & Kettle, stops at this name and never falls through to "shop")
     town_warehouse_loft: "lodgings",
     generic_curing_shed: "shop",
     generic_domestic_cellar: "undercroft",
@@ -141,6 +146,11 @@
   // a battle approach its marsh, and exposed forts their wind without replacing the useful base
   // ambience beneath them. Each level is deliberately below a full bed.
   var OVERLAY = {
+    ashrun_mouth: [{ all: "river_current_stream", level: 0.3 }],
+    greybank_rise: [{ all: "river_current_stream", level: 0.3 }],
+    upper_longshade: [{ all: "river_current_stream", level: 0.3 }],
+    west_longshade: [{ all: "river_current_stream", level: 0.3 }],
+    deep_longshade: [{ all: "river_current_stream", level: 0.3 }],
     alderford: [{ all: "watermill_ambience_needs_to_be_layered_on_top_water_and_mill_sound_only", level: 0.34 }],
     generic_village_inn_room: [{ day: "quiet_tavern", night: "crowded_tavern", level: 0.24 }],
     prologue_camp_night: [{ all: "marshland_night_crickets_shallowwater_ambience", level: 0.24 }],
@@ -217,13 +227,14 @@
         else { put(ol.day, d * level); put(ol.night, (1 - d) * level); }
       }
     }
-    // travel: hooves, on open ground on the overworld, for a rider. Camp deliberately retains ow_on
-    // so its weather and supplies resolve against the tile, but the player is stationary there.
+    // travel: hooves for a rider, softer footsteps for a walker, on open ground on the overworld. Camp deliberately
+    // retains ow_on so its weather and supplies resolve against the tile, but the player is stationary there.
     var O = window.Overworld, n = s.ow_on && O && O.nodes ? O.nodes[s.ow_pos] : null;
-    var riding = !!(n && s.has_horse && OVERWORLD_OPEN[n.kind] && s.sceneName !== "overworld/camp");
+    var travelling = !!(n && OVERWORLD_OPEN[n.kind] && s.sceneName !== "overworld/camp"), riding = travelling && !!s.has_horse;
     if (riding) put("horseback_travel", 0.9);
+    else if (travelling) put("footsteps_or_wagon_or_horse_pc_layered", 0.35);
     // weather: where there is a bed to hear it in, or on open ground; muffled indoors and underground
-    if (p || riding) {
+    if (p || travelling) {
       var wet = !!s.weather_wet, cold = !!s.weather_cold && !wet, storm = Number(s.weather_severity) >= 3;
       var indoor = !!(p && p.spec.indoor) || !!(s.dg_in_run && p && p.kind !== "forest" && !p.spec.indoor), k = indoor ? 0.3 : 1;
       if (wet) {

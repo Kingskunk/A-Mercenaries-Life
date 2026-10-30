@@ -207,6 +207,19 @@ ${ow_here_text}
       # White Ram [10m]
         *set ow_direct_entry "wf_inn"
         *goto ow_direct_entry
+  *if (ow_pos = "lg")
+    # Go into Langston.
+      *set ow_on false
+      *set climate_shift 0
+      *goto_scene Langston/langston lg_arrive
+    *if (langston_seen)
+      # Cord & Kettle [10m]
+        *set ow_direct_entry "lg_store"
+        *goto ow_direct_entry
+    *if (langston_seen)
+      # Pickled Hen [10m]
+        *set ow_direct_entry "lg_hen"
+        *goto ow_direct_entry
 
 *comment ── KNOWN-PLACE SHORTCUTS ── Each choice above names a civic or lodging destination the player can reasonably ask for after reaching a settlement once. The shortcut preserves the same approach and in-settlement walking time as entering through the hub, but skips its intermediate choice page. Add a new key here when a future settlement gains a comparable public destination.
 *label ow_direct_entry
@@ -340,6 +353,20 @@ ${ow_here_text}
   *if ((time_period = "Dusk") or (time_period = "Night")) or (time_period = "Pre-Dawn")
     *goto_scene alderford/whitefold/whitefold wf_fold_closed
   *goto_scene alderford/whitefold/fleecefold wf_fleecefold
+*if (ow_direct_entry = "lg_store")
+  *set ow_direct_entry ""
+  *set minutes_to_pass 5
+  *set time_advance_call_id "ow_direct_lg"
+  *gosub_scene Langston/langston lg_walk_time
+  *set current_district "langston"
+  *goto_scene Langston/cord_and_kettle lg_store
+*if (ow_direct_entry = "lg_hen")
+  *set ow_direct_entry ""
+  *set minutes_to_pass 5
+  *set time_advance_call_id "ow_direct_lg"
+  *gosub_scene Langston/langston lg_walk_time
+  *set current_district "langston"
+  *goto_scene Langston/pickled_hen lg_hen
 *comment Defensive fallback for an unknown command key: leave it blank and return to the map.
 *set ow_direct_entry ""
 *goto ow_here
@@ -396,7 +423,7 @@ ${ow_here_text}
     *label ow_leg_loop
     *if (ow_leg_i < ow_legs)
       *comment The incoming tile's climate applies to this road leg. A route node is a map landmark, not a pause in the player's one-click journey.
-      *script var o = window.Overworld; var L = o.route(stats.ow_from, stats.ow_dest).legs[stats.ow_leg_i]; if (L) { stats.ow_leg_miles = L.miles; stats.ow_leg_pace = L.pace || 100; stats.climate_shift = o.nodes[L.to].climate || 0; }
+      *script var o = window.Overworld; var L = o.route(stats.ow_from, stats.ow_dest).legs[stats.ow_leg_i]; if (L) { stats.ow_leg_miles = L.miles; stats.ow_leg_pace = L.pace || 100; stats.climate_shift = o.nodes[L.to].climate || 0; o.weatherSync(stats, L.to); }
       *if (ow_leg_mile_i < ow_leg_miles)
         *comment The weather, the pace, the exposure and the clock for this mile are ONE scene call; it only reports back when the light or the visibility makes walking impossible.
         *gosub_scene calendar travel_step

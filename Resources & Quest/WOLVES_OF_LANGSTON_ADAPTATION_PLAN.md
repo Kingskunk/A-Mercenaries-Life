@@ -69,7 +69,9 @@ Clue totals must always be derived from those flags. They must never be incremen
 - The hub exposes the Pickled Hen through its separate `Langston/pickled_hen.txt` scene. Shops, the chapel, civic buildings, and quest destinations remain unconnected until their own files are built.
 - The Pickled Hen provides ordinary paid meals and 24-hour private rooms. While the Wolves contract is active, Anathram's room-and-board agreement covers the protagonist's room and the two ordinary meals.
 - Harlan Vetch is the Pickled Hen's aproned, balding innkeeper. The inn introduces him on an early visit; otherwise Anathram identifies him as Master Vetch while arranging the investigator's room in Chapter 1.
-- Langston's exact overworld tile is still undecided, so the road exit preserves the map position supplied by its eventual caller.
+- Langston's future general store is named **The Cord & Kettle**. It does not have a scene or hub connection yet.
+- Western Vale trade is distinguished by fibre hemp, wool, wine and horses rather than staple crops common throughout the setting's farming settlements.
+- Langston is overworld tile `lg` (Western Vale Road `wv` joins it to Fellgate, 8 miles each way). The map card's "Go into Langston." enters at `lg_arrive`, and the road exit sets `ow_pos` to `lg`.
 
 ## Deferred Until the World Hook Is Chosen
 

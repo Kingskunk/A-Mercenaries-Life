@@ -20,6 +20,7 @@
 *set langston_seen true
 *set codex_western_vale true
 *gosub_scene calendar update_hub_condition
+*gosub lg_hours
 *return
 
 *label lg_header
@@ -49,13 +50,19 @@
 *comment Open-world free time: the sidebar's Wait and Rest work on this page.
 *set wait_ok_page page_id
 *choice
+  *if (lg_ok_store)
+    # [b]The Cord & Kettle[/b]: general goods for the road and camp. [~5 min]
+      *goto_scene Langston/cord_and_kettle lg_store
+  *if (not(lg_ok_store))
+    # [b]The Cord & Kettle[/b]: ${lg_store_closed_reason}.
+      *goto lg_store_closed
   # [b]The Pickled Hen[/b]: meals and private rooms. [~5 min]
     *goto_scene Langston/pickled_hen lg_hen
   # [b]The roads out of town[/b]: leave Langston.
-    *comment Langston has no assigned overworld tile yet. Preserve the caller's map position until that route is chosen.
+    *set ow_pos "lg"
     *goto_scene overworld/overworld ow_here
 
-*comment The future overworld tile should enter here. The short walk costs five minutes once per arrival.
+*comment The overworld's Langston tile (lg) enters here. The short walk costs five minutes once per arrival.
 *label lg_arrive
 *set minutes_to_pass 5
 *set time_advance_call_id "lg_arrive_1"
@@ -92,7 +99,7 @@
 
   A wide flight of shallow steps climbs from the square toward the older part of town. The town hall stands there in plain dressed stone, smaller than the buildings packed around it but heavier in its construction. Beyond it, a tall chapel tower marks the upper skyline. From the higher lanes, the roofs fall away toward the wall and the open Western Vale beyond: broad pasture and cultivated fields, with the old forest lying along the distant southern horizon.
 
-  Grain dust, horse sweat, hearth smoke and fresh bread mingle in the square. Wheel rims have worn pale tracks across the cobbles between the gate, the fountain and the market bays. Langston may serve the farms surrounding it, but within the walls it feels like a compact trading town rather than a country village.
+  Hemp fibre, horse sweat, hearth smoke and fresh bread mingle in the square. Wheel rims have worn pale tracks across the cobbles between the gate, the fountain and the market bays. Langston may serve the farms surrounding it, but within the walls it feels like a compact trading town rather than a country village.
 *else
   The market square remains Langston's centre: the stone fountain below the stepped upper streets, the gate and wagon bays to one side, and the chapel tower above a dense field of timbered roofs. Traffic from the Western Vale road keeps pale wheel marks on the cobbles.
 *return
@@ -152,11 +159,11 @@
 *return
 
 *label lg_st_day
-Wagons pass between the gate and market bays while porters shift grain sacks and bound hemp from tailboards to covered scales. Townspeople cross the square around them with baskets, tools and folded account sheets, and the militia keep the fountain lane clear enough for through traffic.
+Wagons pass between the gate and market bays while porters shift wool bales, small casks and bound hemp from tailboards to covered scales. Townspeople cross the square around them with baskets, tools and folded account sheets, and the militia keep the fountain lane clear enough for through traffic.
 *return
 
 *label lg_st_market
-The market square is packed with wagons. Grain sacks stand in counted rows beneath the covered bays, hemp bales wait under canvas, and drovers argue over space at the watering trough while clerks carry tallies between the scales and surrounding counting rooms.
+The market square is packed with wagons. Hemp bales and wool bundles stand in counted rows beneath the covered bays, small wine casks wait under canvas, and drovers argue over space at the watering trough while clerks carry tallies between the scales and surrounding counting rooms.
 *return
 
 *label lg_st_rest
@@ -193,3 +200,31 @@ People still cross the square, but few linger. Conversations fall quiet when str
     *set death_cause "exhaustion"
   *goto_scene death death_screen
 *return
+
+*comment The Cord & Kettle follows the established town-store hours: Morning through Dusk,
+*comment closed on Hallowday. This subroutine is also called after trades and on direct entry.
+*label lg_hours
+*set lg_ok_store false
+*set lg_store_closed_reason "closed for the night"
+*if (day_of_week = "Hallowday")
+  *set lg_store_closed_reason "closed for the rest day"
+  *return
+*if ((((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon")) or (time_period = "Dusk"))
+  *set lg_ok_store true
+  *set lg_store_closed_reason ""
+*return
+
+*label lg_store_closed
+*gosub_scene calendar update_hub_condition
+*gosub lg_hours
+*if (lg_ok_store)
+  *goto_scene Langston/cord_and_kettle lg_store_front
+[b]◈ THE CORD & KETTLE[/b]
+*line_break
+*if (day_of_week = "Hallowday")
+  The painted sign hangs above shuttered windows, and a small board beside the door reads: [i]Closed for Hallowday.[/i]
+*else
+  The shopfront is shuttered and the painted cord-and-kettle sign hangs over a locked door. Its posted hours run from morning through dusk.
+*choice
+  # Return to Langston's market square.
+    *goto lg_return

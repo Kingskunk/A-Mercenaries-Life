@@ -296,11 +296,18 @@ function compile(){
   verifyFileName("settlement_events/caught_in_wedding.txt");
   verifyFileName("settlement_events/helping_your_elders.txt");
   verifyFileName("Langston/wolves_of_langston_chapter_1.txt");
+  // Langston's town hub and its two places. Reached by *goto_scene from the overworld's Langston tile and the Dev Hub, never through *scene_list, so each needs its own line here or a compiled build fails
+  // with "scene doesn't exist" the moment the player walks into the town.
+  verifyFileName("Langston/langston.txt");
+  verifyFileName("Langston/cord_and_kettle.txt");
+  verifyFileName("Langston/pickled_hen.txt");
   // Middle Ward quests live in their own *goto_scene-only files. The district scene owns
   // their physical triggers and aftermath; each quest file owns its choices and resolutions.
   verifyFileName("port_valen/MiddlewardQuest/dry_lion.txt");
   verifyFileName("port_valen/MiddlewardQuest/a_key_for_every_door.txt");
   verifyFileName("port_valen/varren_quests/varren_errand.txt");
+  // The Black Oath's Night List: the Dredge-End rope-and-oil house hands the player to it by *goto_scene after dark, once Hask has put their name up, so it is never in *scene_list.
+  verifyFileName("port_valen/black_oath/black_oath_night_list.txt");
   // Radiant Hiring Hall jobs: *goto_scene/*gosub_scene-only files, reached from the wall in port_valen_civic_heights.txt.
   verifyFileName("port_valen/radiant/hall_pests.txt");
   verifyFileName("port_valen/radiant/hall_haul.txt");

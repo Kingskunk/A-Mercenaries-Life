@@ -51,37 +51,21 @@
     *if ((has_horse) and ((not(ow_on)) and (not(rj_escort_road))))
       *gosub horse_upkeep
 
-    *comment Weather is rolled a day ahead. Today's weather is yesterday's forecast
-    *comment (weather_tomorrow) about 80% of the time; otherwise the forecast missed and
-    *comment today is a fresh roll (forecast_missed, so an NPC can grumble about a wrong
-    *comment forecast). Then tomorrow is rolled, so weather_tomorrow is always one true day
-    *comment ahead. Rain and dry streaks are counted from the flags of the weather that just
-    *comment ended and drive ground_state. All of it sits inside the days_to_pass>0 guard on
-    *comment purpose: same replay-safety as the rest of this block and "once per day" for
-    *comment free. The season used is the one at the START of this call (a negligible one-day
-    *comment edge); fix_weather_season converts anything that season cannot produce.
-    *temp weather_input ""
-    *temp weather_rolled ""
-    *temp forecast_roll 0
-    *set weather_input weather
-    *if (weather_wet)
-      *set rain_streak + 1
-      *set dry_streak 0
-    *else
-      *set dry_streak + 1
-      *set rain_streak 0
-    *rand forecast_roll 1 100
-    *if (forecast_roll <= 80)
-      *set forecast_missed false
-      *set weather_rolled weather_tomorrow
-      *gosub fix_weather_season
-    *else
-      *set forecast_missed true
-      *gosub roll_weather
-    *set weather weather_rolled
-    *set weather_input weather
-    *gosub roll_weather
-    *set weather_tomorrow weather_rolled
+    *comment Weather is rolled a day ahead, once per zone (wx_day_step below has the rules). The
+    *comment zone the player is in rolls first; then every other zone the player has been to has its
+    *comment day too (overworld-data.js WEATHER_ZONES), each swapped into the weather globals,
+    *comment rolled by the same step and parked again, so a zone left behind keeps its own weather
+    *comment moving and is not found frozen on return. All of it sits inside the days_to_pass>0 guard
+    *comment on purpose: same replay-safety as the rest of this block and "once per day" for free.
+    *gosub wx_day_step
+    *script if (window.Overworld && window.Overworld.weatherRollBegin) window.Overworld.weatherRollBegin(stats);
+    *label wx_others_loop
+    *script if (window.Overworld && window.Overworld.weatherRollNext) window.Overworld.weatherRollNext(stats);
+    *if (wx_more)
+      *gosub wx_day_step
+      *goto wx_others_loop
+    *comment The loop leaves the player's own zone back in the globals; re-derive its flags (the last parked zone's are showing).
+    *gosub weather_flags_basic
 
   *comment --- Buff timer decay (food / drink / unique boons 1-3) ---
   *comment Each channel decays independently by total_mins_this_call.
@@ -735,6 +719,9 @@
 *comment Not while a journey is being walked (ow_trip_active): neither can change between two miles, they cost a dozen scene calls, and the map page refreshes both on arrival.
 *if (not(ow_trip_active))
   *gosub_scene character_progression refresh_level_up_progress
+  *comment Weather zones (overworld-data.js WEATHER_ZONES): if the player is in another zone than the weather in the globals belongs to, swap it before the flags are derived from it. Every
+  *comment hub entry and every advance_time passes here, so a teleport or a portal needs no call of its own. A journey does its own swap, a leg at a time (overworld.txt ow_leg_loop).
+  *script if (window.Overworld && window.Overworld.weatherSync) window.Overworld.weatherSync(stats);
   *gosub update_weather_flags
 *return
 
@@ -754,6 +741,13 @@
 *comment advance refreshes it. Districts read these and never set them.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label update_weather_flags
+*gosub weather_flags_basic
+*goto wx_street_life
+
+*comment The flags a weather NAME means: severity, visibility, wet and cold. Split out so a zone the
+*comment player is not in can be read the same way as the one they are (wx_day_step counts its
+*comment rain and dry streaks from weather_wet). A new weather name gets its line here.
+*label weather_flags_basic
 *set weather_severity 0
 *set weather_visibility "clear"
 *set weather_wet false
@@ -782,7 +776,9 @@
   *set weather_severity 3
   *set weather_visibility "poor"
   *set weather_cold true
+*return
 
+*label wx_street_life
 *set street_life "normal"
 *if ((weather_severity >= 1) or ((time_period = "Night") or (time_period = "Pre-Dawn")))
   *set street_life "thin"
@@ -877,6 +873,44 @@
   *set ground_state "wet"
 *if ((rain_streak >= 3) or ((rain_streak >= 2) and (weather_wet)))
   *set ground_state "sodden"
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment REUSABLE PRIMITIVE: ONE DAY OF A ZONE'S WEATHER
+*comment Works on the weather globals, whichever zone they currently hold (advance_time runs it for the
+*comment player's zone, then for each parked one). Today's weather is yesterday's forecast
+*comment (weather_tomorrow) about 80% of the time; otherwise the forecast missed and today is a fresh
+*comment roll (forecast_missed, so an NPC can grumble about a wrong forecast). Then tomorrow is rolled,
+*comment so weather_tomorrow is always one true day ahead. Rain and dry streaks are counted from the
+*comment flags of the weather that just ended and drive ground_state. The season used is the one at the
+*comment START of the call (a negligible one-day edge); fix_weather_season converts anything that season
+*comment cannot produce. wx_profile says whose rules roll the days (WEATHER_PROFILES): only "temperate",
+*comment the tables in roll_weather, exists so far; a new profile branches here.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label wx_day_step
+*temp weather_input ""
+*temp weather_rolled ""
+*temp forecast_roll 0
+*gosub weather_flags_basic
+*set weather_input weather
+*if (weather_wet)
+  *set rain_streak + 1
+  *set dry_streak 0
+*else
+  *set dry_streak + 1
+  *set rain_streak 0
+*rand forecast_roll 1 100
+*if (forecast_roll <= 80)
+  *set forecast_missed false
+  *set weather_rolled weather_tomorrow
+  *gosub fix_weather_season
+*else
+  *set forecast_missed true
+  *gosub roll_weather
+*set weather weather_rolled
+*set weather_input weather
+*gosub roll_weather
+*set weather_tomorrow weather_rolled
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -274,7 +274,7 @@
   function card(here, sel, opts) {
     var show = sel || here, n = OW.nodes[show], html = "<div class=\"ow-card\">";
     html += "<div class=\"ow-card-head\"><i class=\"ow-key ow-k-" + esc(n.kind) + "\"></i><b>" + esc(n.name) + "</b></div>";
-    html += "<div class=\"ow-card-sub\">" + esc((KIND_NAME[n.kind] || n.kind) + (n.also && KIND_NAME[n.also] ? " and " + KIND_NAME[n.also].toLowerCase() : "")) + " &middot; " + esc(n.region) + "</div>";
+    html += "<div class=\"ow-card-sub\">" + esc((KIND_NAME[n.kind] || n.kind) + (n.also && KIND_NAME[n.also] ? " and " + KIND_NAME[n.also].toLowerCase() : "")) + " &middot; " + esc((OW.territories[n.territory] || {}).name || "") + "</div>";
     html += "<p>" + esc(n.info) + "</p>";
     if (n.water) html += "<div class=\"ow-card-line\">Fresh water here: " + esc(n.water) + ".</div>";
     if (show === here) {

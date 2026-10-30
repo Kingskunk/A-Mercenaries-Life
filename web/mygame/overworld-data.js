@@ -23,8 +23,9 @@
  * night line), so the approach to a town looks different by lamplight or in a gale; overworld.txt ow_here picks one. Each is a plain sentence or two, no people to be named.
  * also (optional) is a second terrain for a tile that is two things at once (a road through hills, wooded hills): one of the same kinds, drawn as a ring of its colour round the tile's own colour, and named
  * on the card ("Forest and hills"). It changes nothing else. kind picks the tile's colour in the panel: "city", "town", "village", "fort", "road", "woodroad", "hills", "forest" (add a kind here and a colour in overworldmap.css). "woodroad" is a made road with the trees close on both sides (the Longshade Edge): for road events and forest events it counts as BOTH a road and a forest (kindIn below), so it meets the stranger, the lamp, the cart and the beasts, and has its own colour so it reads apart from the deep forest.
- * territory (required) is the jurisdiction that holds the tile: an id in TERRITORIES below. Every tile so far belongs to the Valen Reach under the Gilded Scales (the user's call, 2026-10-08). It is data only for now: nothing in the panel or the
+ * territory (required) is the jurisdiction that holds the tile: an id in TERRITORIES below. Every tile so far belongs to the Valen Reach under the Gilded Scales (the user's call, 2026-10-08). The map card shows its name after the tile's kind ("Road · The Valen Reach"; 2026-10-30, replacing a hand-written region line per tile). It is otherwise data only for now: nothing in the panel or the
  * scenes reads it yet, so it is the place to hang tolls, patrols, escort pay and danger by owner later. A new territory is one entry in TERRITORIES.
+ * weather (optional) names a WEATHER_ZONES zone for a tile whose weather is not its territory's (a high pass, a haunted hollow); the territory's own weather: is the normal way.
  * requires (optional) is the name of a saved flag (stats.<name>): until it is true the tile is HIDDEN, not just locked. The map does not draw it or its roads, and route() will neither start, end nor pass through it, so the travel button,
  * the forecast and the scene's own trip check all refuse it (Overworld.isOpen(id) says which). Used for the Deep Longshade, which stays off the map until Bark's quest is done.
  * ford (optional, true): a crossing of running water the road makes here, where a road event (the ford) can happen; the event reads how high the water is from the weather's memory.
@@ -65,8 +66,28 @@
   // Who holds the land. Add a territory here and give its tiles its id.
   // patrol shifts the danger of every tile the territory holds (see danger above): a negative number is a patrolled road, a positive one a lawless one. The Scales keep the river road patrolled.
   var TERRITORIES = {
-    scales: { name: "The Valen Reach", ruler: "The Gilded Scales", patrol: -1 }
+    scales: { name: "The Valen Reach", ruler: "The Gilded Scales", patrol: -1, weather: "reach" },
+    // The Western Vale (2026-10-29): House Gault's country, west of Fellgate. Unpatrolled by the Scales, so no shift either way for now.
+    gault: { name: "The Western Vale", ruler: "House Gault", patrol: 0, weather: "vale" }
   };
+
+  // WEATHER ZONES (2026-10-30, the user's call: separate weather for the Western Vale, built to take more regions and other planes later). A zone is a place that has its own weather: today's, tomorrow's
+  // forecast and the rain and dry streaks (the globals weather, weather_tomorrow, forecast_missed, rain_streak, dry_streak). The zone the player is in lives in those globals, which is why the 78 scenes that read
+  // the weather never change; every other zone the player has been to is parked in stats.wx_slots (JSON) and swapped in by weatherSync. A territory names its zone (weather:), a tile may override it (weather:
+  // on the tile, for a high pass or a haunted hollow), and a place that is not a tile (a town the player is walking about in) gets one from DISTRICT_ZONE below. profile names the rules that roll the zone's
+  // days: "temperate" is the season tables in calendar.txt roll_weather. A new profile (a wetter Vale, a plane that never rolls, a plane with weather names of its own) needs a branch there, an entry in
+  // WEATHER_PROFILES and, for a new weather name, a line in calendar.txt update_weather_flags (the wet, cold and severity it means); the checker fails a zone that names a profile not listed.
+  // To add a region: one entry here, and point its territory's weather at it. To put the player in a zone by hand (a portal, a plane): set stats.wx_force_zone to its id ("" to stop).
+  var WEATHER_PROFILES = ["temperate"];
+  var WEATHER_ZONES = {
+    reach: { name: "The Valen Reach", profile: "temperate" },
+    vale: { name: "The Western Vale", profile: "temperate" }
+  };
+  var DEFAULT_WEATHER_ZONE = "reach";
+  // A district (stats.current_district) the player is in while NOT on the overworld, where it is not the default zone. Langston is a town, not a tile; a Vale dungeon or farm would be listed here too.
+  var DISTRICT_ZONE = { langston: "vale" };
+  // The fields a zone owns: its key in a parked slot -> the stat it is swapped with.
+  var WEATHER_FIELDS = { weather: "weather", tomorrow: "weather_tomorrow", missed: "forecast_missed", rain: "rain_streak", dry: "dry_streak" };
 
   // How each terrain walks, as a percent of a road mile's time. "blocked" has no pace: it is never walked. name is what the map card calls the ground.
   var TERRAIN = {
@@ -90,7 +111,7 @@
 
   var NODES = {
     pv: {
-      name: "Port Valen", kind: "city", x: 0.0, y: 0.0, region: "The coast",
+      name: "Port Valen", kind: "city", x: 0.0, y: 0.0,
       territory: "scales",
       danger: 1,
       depart: "The head of the column lurches forward, ox by ox, and the wagons take up the weight of their loads with a groan of axles. The yard's gate swings shut behind the tail wagon, and the River Road bends away north along the cuttings above the Grey, paved and rutted and wide enough for two wagons to pass.",
@@ -102,7 +123,7 @@
       here: "The city's wall stands behind you, and the river road runs north from the River Gate along the cuttings of the Grey."
     },
     r1: {
-      name: "The River Road", kind: "road", x: -0.72, y: -0.74, region: "The river cuttings",
+      name: "The River Road", kind: "road", x: -0.72, y: -0.74,
       territory: "scales",
       danger: 1,
       walk: "The paved road runs along the cuttings above the Grey, wide enough for two wagons to pass, with the river sliding by below it.",
@@ -110,7 +131,7 @@
       here: "The road runs straight and paved along the cuttings, rutted by wagon wheels, with the Grey River below it."
     },
     r2: {
-      name: "Ashrun Mouth", kind: "road", x: -0.83, y: -1.83, region: "The river fork",
+      name: "Ashrun Mouth", kind: "road", x: -0.83, y: -1.83,
       territory: "scales",
       danger: 2,
       walk: "The cuttings climb and fall, the river shows between the trees and goes again, and the road comes down to a place where two rivers meet.",
@@ -121,7 +142,7 @@
       here: "The river runs broad and slow beside the road, and the Ashrun comes in from the west over a bar of grey stones, its brown water running beside the clearer water of the Grey for a stretch before the two run as one. A track branches off up the Ashrun's bank into the trees."
     },
     ar1: {
-      name: "The High Grey Road", kind: "road", x: 0.82, y: -0.66, region: "The eastern cuttings",
+      name: "The High Grey Road", kind: "road", x: 0.82, y: -0.66,
       territory: "scales",
       danger: 1,
       walk: "The old imperial paving runs across open cuttings between the eastern gate and the high ground, patched where the grain wagons have worn it down, with the Grey a distant grey line below the slope.",
@@ -130,7 +151,7 @@
       here: "The road runs north-east through open cuttings, its old paving patched with newer stone. The Grey shows far below between the folds of the land."
     },
     ar2: {
-      name: "Greybank Rise", kind: "road", also: "hills", x: 0.32, y: -1.68, region: "The upper Grey hills",
+      name: "Greybank Rise", kind: "road", also: "hills", x: 0.32, y: -1.68,
       territory: "scales",
       danger: 2,
       climate: -1,
@@ -143,7 +164,7 @@
     // Map connection only for now. Alderford's prologue scene is not a returnable town scene,
     // so overworld.txt deliberately has no "Go into Alderford" branch until its own town scene exists.
     af: {
-      name: "Alderford", kind: "town", x: 0.88, y: -2.72, region: "The upper Grey",
+      name: "Alderford", kind: "town", x: 0.88, y: -2.72,
       territory: "scales",
       danger: 1,
       climate: -1,
@@ -159,7 +180,7 @@
       hereStorm: "Spray rises from the weir and the road has turned slick with rain. Alderford's wharves and mill roofs show only in brief, pale intervals through the weather."
     },
     cf: {
-      name: "The Crossfield Road", kind: "road", also: "hills", x: -0.25, y: -3.72, region: "The cross-country uplands",
+      name: "The Crossfield Road", kind: "road", also: "hills", x: -0.25, y: -3.72,
       territory: "scales",
       danger: 2,
       climate: -1,
@@ -171,7 +192,7 @@
       hereStorm: "Rain sweeps unchecked across the upland and fills the road ruts to their rims. The field walls offer little shelter, and the track is only a darker line through the weather."
     },
     rv: {
-      name: "Redvein", kind: "village", also: "hills", x: 1.1, y: -3.62, region: "The Coldspine foothills",
+      name: "Redvein", kind: "village", also: "hills", x: 1.1, y: -3.62,
       territory: "scales",
       danger: 2,
       climate: -1,
@@ -186,7 +207,7 @@
     },
     // Map connection only for now. Whitefold's village scenes will be built in a later pass.
     wf: {
-      name: "Whitefold", kind: "village", also: "hills", x: 2.54, y: -3.56, region: "The Coldspine foothills",
+      name: "Whitefold", kind: "village", also: "hills", x: 2.54, y: -3.56,
       territory: "scales",
       danger: 1,
       climate: -2,
@@ -197,7 +218,7 @@
     },
     // Map-only wilderness node. The ravines run into the southern face of the Coldspine and end there; they are not a route through the range.
     sj: {
-      name: "The Splitjaw Ravines", kind: "hills", x: 2.68, y: -2.85, region: "The Coldspine foothills",
+      name: "The Splitjaw Ravines", kind: "hills", x: 2.68, y: -2.85,
       territory: "scales",
       danger: 3,
       patrol: 0,
@@ -210,7 +231,7 @@
       hereStorm: "Rain runs white over the limestone and gathers beneath the shale. The gullies are slick, loud with water and almost impossible to read."
     },
     lc: {
-      name: "Limestone Cut", kind: "road", also: "hills", x: 1.73, y: -2.50, region: "The Sinks gap",
+      name: "Limestone Cut", kind: "road", also: "hills", x: 1.73, y: -2.50,
       territory: "scales",
       danger: 1,
       climate: -1,
@@ -222,7 +243,7 @@
       hereStorm: "Rain runs down the limestone walls and gathers in the wheel ruts at the junction. The road marker is blurred by the weather, and the eastern track vanishes into driven mist."
     },
     bs: {
-      name: "Black Sinks Gatehouse", kind: "fort", x: 2.58, y: -2.28, region: "The Black Sinks gap",
+      name: "Black Sinks Gatehouse", kind: "fort", x: 2.58, y: -2.28,
       territory: "scales",
       danger: 0,
       climate: -1,
@@ -236,7 +257,7 @@
     },
     // Road-connected village tiles only. Their future place scenes are deliberately not built yet.
     bw: {
-      name: "Brinewick", kind: "village", x: -1.58, y: -0.42, region: "The western tidal flats",
+      name: "Brinewick", kind: "village", x: -1.58, y: -0.42,
       territory: "scales",
       danger: 1,
       info: "A low salt-working village on the western tidal flats. Peat-fired brine sheds and drying racks supply Valen's curing trade; grain comes from the raised fields inland.",
@@ -245,7 +266,7 @@
       hereStorm: "The flats have disappeared under driven rain and tidewater. Brinewick's sheds stand dark and low behind their earthen banks."
     },
     mc: {
-      name: "Marlcross", kind: "village", x: 1.72, y: -1.18, region: "The eastern grainlands",
+      name: "Marlcross", kind: "village", x: 1.72, y: -1.18,
       territory: "scales",
       danger: 1,
       info: "A rye-and-milling village on the eastern high ground: the surrounding high fields feed its Grain Green, windmill, drying floors, and raised stores before the harvest goes on toward Port Valen.",
@@ -254,7 +275,7 @@
       hereStorm: "Rain flattens the rye and turns the farm tracks through Marlcross to pale, clinging mud. The mill has its sails furled and every storehouse door shut."
     },
     r3: {
-      name: "Longshade Edge", kind: "woodroad", also: "hills", x: -1.67, y: -2.5, region: "The edge of the Longshade",
+      name: "Longshade Edge", kind: "woodroad", also: "hills", x: -1.67, y: -2.5,
       territory: "scales",
       danger: 2,
       walk: "The road runs through wooded hills, climbing or falling in long slow steps. The paving is broken stone, and the stone gives way to packed earth with a rut down either side, with the forest close on the far side, dark and near.",
@@ -264,7 +285,7 @@
     },
     // Map connection only for now. This is dense interior forest, not a settlement or a road junction.
     lf: {
-      name: "The Longshade", kind: "forest", x: -2.86, y: -2.76, region: "The Longshade",
+      name: "The Longshade", kind: "forest", x: -2.86, y: -2.76,
       territory: "scales",
       danger: 3,
       climate: -1,
@@ -277,7 +298,7 @@
       hereStorm: "Rain rattles through the high branches and turns the leaf mould black with water. The trees fade into the moving grey, and the spring has spilled across the hollow."
     },
     tm: {
-      name: "Timbermouth", kind: "town", x: -2.0, y: -3.46, region: "The Longshade",
+      name: "Timbermouth", kind: "town", x: -2.0, y: -3.46,
       territory: "scales",
       danger: 1,
       depart: "The line pulls out from the road end past the squat stone watch post, the oxen leaning into their yokes and the wagons groaning behind them, and the clearing falls away behind the tail wagon as the road enters the trees.",
@@ -294,7 +315,7 @@
     // The two satellite villages (quest/TIMBERMOUTH_PLAN.md section 4), added 2026-10-07 as map tiles only: no place scenes yet, so there is no way into either from the road until they are built.
     // Names are provisional and invented. A village is smaller than a town: no camping on it (it has its own barns and roofs), and its own entry option comes with its scene.
     fv: {
-      name: "Barleycross", kind: "village", x: -1.36, y: -4.06, region: "The farm country",
+      name: "Barleycross", kind: "village", x: -1.36, y: -4.06,
       territory: "scales",
       danger: 1,
       walk: "The road runs between low hedged fields of barley and oats, with a ditch on either side, and the sails of a grain mill turn slowly ahead where the farm roads meet.",
@@ -305,7 +326,7 @@
       hereStorm: "Barleycross lies low under the rain, the fields flat and sodden on either side of the road and every shutter closed against the wind."
     },
     fo: {
-      name: "Ashrun Holt", kind: "village", x: -2.94, y: -3.9, region: "The Longshade",
+      name: "Ashrun Holt", kind: "village", x: -2.94, y: -3.9,
       territory: "scales",
       danger: 2,
       water: "the Ashrun",
@@ -317,7 +338,7 @@
     // Stonewatch (2026-10-11, the user picked the name): the fort in the gap of the Coldspine, due north of the Crossfield Road, where the one wagon road to the Highlands passes under its walls. Map tile only for now.
     // Everything in its text is invented to fit the Black Sinks gatehouse beside it in kind (a Scales border fort, militia, a toll check); the Highlands beyond are not on the map yet.
     sw: {
-      name: "Stonewatch", kind: "fort", x: 0.01, y: -4.52, region: "The Coldspine pass",
+      name: "Stonewatch", kind: "fort", x: 0.01, y: -4.52,
       territory: "scales",
       danger: 1,
       climate: -1,
@@ -333,7 +354,7 @@
     // the Ashrun rises; and Northeast Longshade is where the timber road from Timbermouth enters the trees. The last two are "woodroad" tiles (a rutted road with the trees close on both sides), joined to each other and to Timbermouth by road; everything else
     // here is joined by pathless ways. The ids (ua, ln, le) are saved in the player's state and kept from the earlier names. The Old Ash and the Charcoal Camp are inside the village's own clearing, so they are not here.
     ua: {
-      name: "West Longshade", kind: "forest", x: -3.81, y: -3.9, region: "The Longshade",
+      name: "West Longshade", kind: "forest", x: -3.81, y: -3.9,
       territory: "scales",
       danger: 3,
       climate: -1,
@@ -346,7 +367,7 @@
       hereStorm: "Rain drives down through the branches and the brook runs brown and fast over its stones, loud enough to drown the wind. Every bar of gravel is under water."
     },
     ln: {
-      name: "Upper Longshade", kind: "woodroad", x: -3.0, y: -4.66, region: "The Longshade",
+      name: "Upper Longshade", kind: "woodroad", x: -3.0, y: -4.66,
       territory: "scales",
       danger: 2,
       climate: -1,
@@ -359,7 +380,7 @@
       hereStorm: "Rain drums down through the branches and the road is a trough of brown water. The young Ashrun runs loud and swollen beside it."
     },
     le: {
-      name: "Northeast Longshade", kind: "woodroad", x: -2.2, y: -4.25, region: "The Longshade",
+      name: "Northeast Longshade", kind: "woodroad", x: -2.2, y: -4.25,
       territory: "scales",
       danger: 2,
       climate: -1,
@@ -373,7 +394,7 @@
     // Fellgate (2026-10-29, the user's sketch and name): the Scales' border fort at the western end of the Longshade, where the forest runs up against the foot of the Coldspine. Map tile only for now (the user will make its picture; no scene).
     // It is the frontier post against the lowland lordship to the west; the user's call is that the place and its siting say why it is there, so no text names that neighbour. The text is invented to match Stonewatch and the Black Sinks gatehouse in kind.
     fg: {
-      name: "Fellgate", kind: "fort", x: -4.0, y: -4.7, region: "The western edge of the Longshade",
+      name: "Fellgate", kind: "fort", x: -4.0, y: -4.7,
       territory: "scales",
       danger: 1,
       climate: -1,
@@ -388,7 +409,7 @@
     // The Deep Longshade (2026-10-29, the user's sketch): the way to Flùràlainn's Grove (dungeon room lsf_r15). It is HIDDEN, not just locked, until Bark's quest is done (lsf_dubhar_dead), so nothing on the map hints at the
     // grove before then: see requires above. Its ways are timed from the dungeon, ten minutes a step: nine steps from the south mouth (The Longshade) and sixteen from the east mouth (West Longshade), so 2 and 3 miles of pathless forest.
     dl: {
-      name: "Deep Longshade", kind: "forest", x: -3.9, y: -2.6, region: "The Longshade",
+      name: "Deep Longshade", kind: "forest", x: -3.9, y: -2.6,
       requires: "lsf_dubhar_dead",
       territory: "scales",
       danger: 2,
@@ -400,6 +421,34 @@
       here: "The oldest trees stand wide apart here, their trunks broad as cottage walls and their crowns closed overhead into one green roof. Moss and leaf mould cover the ground, and a clear stream runs between the roots.",
       hereNight: "The deep wood is black and still beneath the old crowns. The stream is heard running over its stones, and now and then a pale light drifts between the trunks and goes out.",
       hereStorm: "Rain runs down the great trunks in sheets and drips through the high crowns. The stream has risen and talks loudly among the roots."
+    },
+    // The Western Vale (2026-10-29, the user's sketch): the road west out of Fellgate leaves the Valen Reach and crosses into House Gault's country, a level land of grass and tilled fields. Western Vale Road is the one road tile between the
+    // fort and Langston, and Langston is a walled market town. Both are invented here to the sketch (the 8-mile lengths are the user's sketch at about six miles to a grid unit, the text matches the plan's Chapter 1 road and town). Map tiles only: the
+    // town's entry button is not wired yet (Langston/langston.txt lg_arrive is the label it will enter at).
+    wv: {
+      name: "Western Vale Road", kind: "road", x: -5.26, y: -5.4,
+      territory: "gault",
+      danger: 1,
+      climate: -1,
+      walk: "West of the fort the way drops out of the foothills onto a maintained wagon road of chalk and packed earth, running straight across open grassland between hedgerows and the margins of tilled fields.",
+      camp: "A wide verge where wagons pull off beside a field gate, with a hedgerow on the windward side and a ditch of clear water along the road.",
+      water: "a roadside ditch",
+      info: "The wagon road across the Western Vale, kept up by House Gault: chalk and earth, hedged on both sides, with grassland and fields to the horizon. It runs from the foot of the Coldspine, past Fellgate's western gate, to Langston.",
+      here: "A chalk-and-earth wagon road runs west across level grassland, hedged on both sides, with tilled fields beyond the hedges and the old forest a dark line far to the south. The Coldspine stands behind you.",
+      hereNight: "The pale road runs on between black hedgerows under a wide sky. The fields are quiet, and far ahead a few lights mark a town.",
+      hereStorm: "Rain sweeps across the open grass and the chalk road turns to slick white mud. The hedgerows toss, and the level ground lies open to the wind."
+    },
+    lg: {
+      name: "Langston", kind: "town", x: -6.0, y: -6.47,
+      territory: "gault",
+      danger: 0,
+      climate: -1,
+      depart: "The militia wave the line through the gate, and the wagons rattle out over the cobbles onto the chalk road, turning east toward the foot of the mountains.",
+      arrive: "The road runs on across the fields to a low stone wall, where the gate stands open and town militia keep the arch. Behind the wall, close-set timber houses climb toward a chapel tower.",
+      info: "A prosperous walled market town in House Gault's Western Vale, among open grassland and fertile fields, with the old forest along the southern horizon. Hemp, wool, wine and horses come in on its wagon road.",
+      here: "Langston's low stone wall stands across the fields, its gate open to the wagon road. Timber houses crowd behind it, and a stone chapel tower rises above their steep roofs.",
+      hereNight: "Lamps burn at the gate and along the cobbled street behind it, and the town's walls are a dark line against the stars. Two militia keep the arch.",
+      hereStorm: "Rain streams off the steep roofs and the gate is crowded with wagons waiting under the arch. The chapel tower is a grey shape in the squall."
     }
   };
 
@@ -445,7 +494,10 @@
     ["fg", "ua", 5, "overland"],
     // The Deep Longshade (hidden until its quest is done): two and three miles of pathless forest, from the dungeon's own step counts to the grove.
     ["dl", "lf", 2, "overland"],
-    ["dl", "ua", 3, "overland"]
+    ["dl", "ua", 3, "overland"],
+    // The Western Vale (the user's sketch): Fellgate's western gate, along the wagon road to Langston.
+    ["fg", "wv", 8],
+    ["wv", "lg", 8]
   ];
 
   // Is a tile on the map yet? A tile with a requires (the name of a saved flag) is hidden, and cannot be routed to or through, until that flag is true. Read from the live stats, so it opens the moment the flag is set.
@@ -812,5 +864,70 @@
     return Math.max(Math.floor(full * (beats - lost) / beats), Math.floor(full / 3));
   }
 
-  root.Overworld = { isOpen: isOpen, courierCount: courierCount, courierPostings: courierPostings, courierTile: courierTile, haleRingPlan: haleRingPlan, MINUTES_PER_MILE: MINUTES_PER_MILE, features: FEATURES, terrains: TERRAIN, nodes: NODES, edges: EDGES, territories: TERRITORIES, convoyPlan: convoyPlan, convoyNight: convoyNight, convoyFee: convoyFee, coinText: coinText, convoyMaxLegs: CONVOY_MAX_LEGS, dangerOf: function (id) { return dangerOf(NODES[id]); }, mountMinutesPerMile: MOUNT_MINUTES_PER_MILE, convoyPace: CONVOY_PACE, haltEvents: HALT_EVENTS, travelEventPlan: travelEventPlan, travelEvents: TRAVEL_EVENTS, campEventPlan: campEventPlan, campEvents: CAMP_EVENTS, campChance: CAMP_CHANCE, travelCooldownDays: TRAVEL_COOLDOWN_DAYS, travelChance: TRAVEL_CHANCE, route: route, duration: duration, span: span, label: label, travelPlan: travelPlan, north: NORTH };
+  // The zone a tile is in: the tile's own weather, else its territory's, else the default (a typo falls back to the default; the checker catches it).
+  function weatherZoneOfTile(id) {
+    var n = NODES[id], t = n && TERRITORIES[n.territory], z = (n && n.weather) || (t && t.weather);
+    return WEATHER_ZONES[z] ? z : DEFAULT_WEATHER_ZONE;
+  }
+  // The zone the player is in now, from the state: a forced zone (a portal or plane) first, then the tile on the overworld, then the district they are in. tileId asks about another tile (a leg of a journey).
+  function weatherZoneOf(stats, tileId) {
+    if (tileId) return weatherZoneOfTile(tileId);
+    var forced = String(stats.wx_force_zone || "");
+    if (forced && WEATHER_ZONES[forced]) return forced;
+    if (stats.ow_on) return weatherZoneOfTile(stats.ow_pos);
+    var z = DISTRICT_ZONE[String(stats.current_district || "")];
+    return WEATHER_ZONES[z] ? z : DEFAULT_WEATHER_ZONE;
+  }
+  // Moves the player's weather to the zone they are in. A no-op, safe to call at any time and as often as you like, when the zone has not changed. Otherwise the zone being left is parked in
+  // stats.wx_slots and the one being entered is loaded; a zone entered for the first time starts as a copy of the weather the player brings across (nothing is rolled here: no randomness, so a page
+  // that runs it again from a save comes out the same). The weather flags (weather_wet and the rest) are derived, so the caller refreshes them with calendar.txt update_weather_flags.
+  function weatherSync(stats, tileId) {
+    var to = weatherZoneOf(stats, tileId), from = WEATHER_ZONES[stats.wx_zone] ? String(stats.wx_zone) : DEFAULT_WEATHER_ZONE;
+    if (to === from) { stats.wx_zone = from; return false; }
+    var slots = {}, k;
+    try { slots = JSON.parse(stats.wx_slots || "{}") || {}; } catch (e) { slots = {}; }
+    var leaving = {};
+    for (k in WEATHER_FIELDS) leaving[k] = stats[WEATHER_FIELDS[k]];
+    slots[from] = leaving;
+    if (slots[to]) for (k in WEATHER_FIELDS) if (slots[to][k] !== undefined) stats[WEATHER_FIELDS[k]] = slots[to][k];
+    delete slots[to];
+    stats.wx_zone = to;
+    stats.wx_profile = WEATHER_ZONES[to].profile;
+    stats.wx_slots = JSON.stringify(slots);
+    return true;
+  }
+
+  // THE DAILY ROLL FOR THE ZONES THE PLAYER IS NOT IN (calendar.txt advance_time). The roll itself stays in ChoiceScript (*rand, so a saved page replays the same); these three only move the weather
+  // in and out of the globals so the same wx_day_step can roll each zone. weatherRollBegin holds the player's zone aside and queues the parked ones; weatherRollNext parks the zone just rolled, loads the
+  // next queued one (wx_more true, wx_profile its profile) or, when none are left, puts the player's own weather back (wx_more false). Both are safe to call with nothing parked.
+  function parseJSON(text, fallback) { try { var v = JSON.parse(text); return v === null || v === undefined ? fallback : v; } catch (e) { return fallback; } }
+  function readWeather(stats) { var out = {}, k; for (k in WEATHER_FIELDS) out[k] = stats[WEATHER_FIELDS[k]]; return out; }
+  function writeWeather(stats, from) { for (var k in WEATHER_FIELDS) if (from[k] !== undefined) stats[WEATHER_FIELDS[k]] = from[k]; }
+  function weatherRollBegin(stats) {
+    var slots = parseJSON(stats.wx_slots, {});
+    stats.wx_hold = JSON.stringify({ zone: stats.wx_zone, weather: readWeather(stats) });
+    stats.wx_queue = JSON.stringify(Object.keys(slots));
+    stats.wx_cur = "";
+    stats.wx_more = false;
+  }
+  function weatherRollNext(stats) {
+    var slots = parseJSON(stats.wx_slots, {}), queue = parseJSON(stats.wx_queue, []), next = null;
+    if (stats.wx_cur) { slots[stats.wx_cur] = readWeather(stats); stats.wx_cur = ""; }
+    while (queue.length && !next) { next = queue.shift(); if (!slots[next] || !WEATHER_ZONES[next]) next = null; }
+    if (next) {
+      writeWeather(stats, slots[next]);
+      stats.wx_cur = next;
+      stats.wx_profile = WEATHER_ZONES[next].profile;
+      stats.wx_more = true;
+    } else {
+      var hold = parseJSON(stats.wx_hold, null);
+      if (hold) { writeWeather(stats, hold.weather); stats.wx_profile = (WEATHER_ZONES[hold.zone] || WEATHER_ZONES[DEFAULT_WEATHER_ZONE]).profile; }
+      stats.wx_hold = "";
+      stats.wx_more = false;
+    }
+    stats.wx_slots = JSON.stringify(slots);
+    stats.wx_queue = JSON.stringify(queue);
+  }
+
+  root.Overworld = { weatherZones: WEATHER_ZONES, weatherProfiles: WEATHER_PROFILES, weatherFields: WEATHER_FIELDS, districtZone: DISTRICT_ZONE, defaultWeatherZone: DEFAULT_WEATHER_ZONE, weatherZoneOf: weatherZoneOf, weatherSync: weatherSync, weatherRollBegin: weatherRollBegin, weatherRollNext: weatherRollNext, isOpen: isOpen, courierCount: courierCount, courierPostings: courierPostings, courierTile: courierTile, haleRingPlan: haleRingPlan, MINUTES_PER_MILE: MINUTES_PER_MILE, features: FEATURES, terrains: TERRAIN, nodes: NODES, edges: EDGES, territories: TERRITORIES, convoyPlan: convoyPlan, convoyNight: convoyNight, convoyFee: convoyFee, coinText: coinText, convoyMaxLegs: CONVOY_MAX_LEGS, dangerOf: function (id) { return dangerOf(NODES[id]); }, mountMinutesPerMile: MOUNT_MINUTES_PER_MILE, convoyPace: CONVOY_PACE, haltEvents: HALT_EVENTS, travelEventPlan: travelEventPlan, travelEvents: TRAVEL_EVENTS, campEventPlan: campEventPlan, campEvents: CAMP_EVENTS, campChance: CAMP_CHANCE, travelCooldownDays: TRAVEL_COOLDOWN_DAYS, travelChance: TRAVEL_CHANCE, route: route, duration: duration, span: span, label: label, travelPlan: travelPlan, north: NORTH };
 })(typeof window !== "undefined" ? window : global);

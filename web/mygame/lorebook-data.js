@@ -826,8 +826,8 @@
         tags: ["Western Vale"], aliases: ["Gault", "Dunmow", "lord of Dunmow", "riders", "cavalry", "Western Vale"],
         unlock: "codex_house_gault",
         body: [
-          "The noble house that holds the [[western_vale|Western Vale]] from its walled seat at Dunmow. When the legions left, Gault kept its granaries shut and its gates manned, and it has held Dunmow ever since. It fields mounted riders and archers, who are at home on the open grasslands and far less so in forest or bog. Coombe Gap, the road that takes the vale's wagons east toward the river, is Gault's.",
-          "Gault keeps no harbor and no fleet, so its grain and cloth reach the sea on Scales barges or not at all."
+          "The noble house that holds the [[western_vale|Western Vale]] from its walled seat at Dunmow. When the legions left, Gault kept its storehouses shut and its gates manned, and it has held Dunmow ever since. It fields mounted riders and archers, who are at home on the open grasslands and far less so in forest or bog. Coombe Gap, the road that takes the vale's wagons east toward the river, is Gault's.",
+          "Gault keeps no harbor and no fleet, so its hemp, wool and wine reach the sea on Scales barges or not at all."
         ],
         see: ["western_vale", "stenmark", "grey_marches", "meridian_empire"]
       },
@@ -869,7 +869,7 @@
             held.push("In the north, Baron Karr holds the high valleys and passes of [[stenmark|Stenmark]], and with them the iron.");
           }
           if (truthy(s.codex_house_gault)) {
-            held.push("West of the river, [[house_gault|House Gault]] holds the [[western_vale|Western Vale]] from Dunmow, and with it the grain.");
+            held.push("West of the river, [[house_gault|House Gault]] holds the [[western_vale|Western Vale]] from Dunmow, with its hemp fields, vineyards and horse pastures.");
           }
           if (truthy(s.codex_warlord_skell)) {
             held.push("East of the causeway, [[skell|Warlord Skell]] holds the [[great_sedge|Great Sedge]] from the sinking fort at Gryke, and with it the fuel and the paths through the bog.");
@@ -1126,13 +1126,13 @@
         id: "western_vale", category: "places", title: "The Western Vale",
         link: ["Western Vale"],
         sub: "The farm country west of the river",
-        tags: ["Western Vale", "Trade"], aliases: ["Vale", "the vale", "Dunmow", "Fallowfield", "Coombe Gap", "grasslands", "low chalk rises", "farm country", "grain", "wheat", "hemp", "vineyards", "grapes", "canvas", "horses"],
+        tags: ["Western Vale", "Trade"], aliases: ["Vale", "the vale", "Dunmow", "Fallowfield", "Coombe Gap", "grasslands", "low chalk rises", "farm country", "hemp", "vineyards", "grapes", "wine", "wool", "canvas", "horses"],
         unlock: "codex_western_vale",
         body: function (s) {
           var karr = truthy(s.codex_baron_karr) ? "Baron Karr's" : "the highland lord's";
           var lord = truthy(s.codex_house_gault) ? "[[house_gault|House Gault]]" : "A noble house";
           return [
-            "Open grassland and mostly level, river-fed farm country west of the Grey, broken only by low chalk rises and old forest along its southern edge. " + lord + " rules it from Dunmow. Fallowfield and smaller market towns sit among grain fields, fibre hemp and vineyards, while sheep graze the broad pasture. Coombe Gap leads east to the river; Iron Gap climbs north into the Crags and " + karr + " tolls."
+            "Open grassland and mostly level, river-fed farm country west of the Grey, broken only by low chalk rises and old forest along its southern edge. " + lord + " rules it from Dunmow. Fallowfield and smaller market towns sit among mixed farms, fibre hemp and vineyards, while sheep and horses graze the broad pasture. Coombe Gap leads east to the river; Iron Gap climbs north into the Crags and " + karr + " tolls."
           ];
         },
         see: ["house_gault", "stenmark", "grey_river", "grey_marches", "port_valen"]

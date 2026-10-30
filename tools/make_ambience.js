@@ -30,7 +30,8 @@ const arg = (n, d) => { const i = process.argv.indexOf("--" + n); return i >= 0 
 // Dense noise (rain, wind, a storm, a blizzard) is the hardest thing for a low-bitrate Opus encode: at 64 kbps it crackles (the user heard it 2026-10-16, on loops cut from 128 kbps MP3s, so the sound had been
 // compressed twice). These four get 96 kbps unless --kbps says otherwise; everything else stays at 64.
 const NOISE_BEDS = /^weather_(rain|storm|wind|blizzard)$/;
-const SECONDS = Number(arg("seconds", 150)), KBPS = Number(arg("kbps", 64)), ONLY = arg("only", ""), FADE = 6, TARGET_RMS = 0.07;
+const SECONDS = Number(arg("seconds", 150)), KBPS = Number(arg("kbps", 64)), ONLY = arg("only", ""), FADE = Number(arg("fade", 6)), MIN_LOOP = Number(arg("min", 30)), TARGET_RMS = 0.07;
+// --fade N and --min N: a rhythmic bed (footsteps, a 31 s recording) needs a short crossfade, or two out-of-step walkers blend for the whole seam; and a lower shortest loop than the 30 s default.
 
 // ---------------------------------------------------------------- MP3 frames (no decoding): enough to cut a time window at a frame boundary
 const BR1 = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320], BR2 = [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160];
@@ -200,7 +201,7 @@ function writeManifest() {
       if (!fs.existsSync(o) && !mapSource.includes('"' + key + '"')) { unused.push(f); return false; }
       const buf = fs.readFileSync(path.join(SRC, f)), m = mp3Frames(buf), total = m.frames.length * m.spf / m.rate;
       const first = total > 360 ? 60 : 1, secs = Math.min(SECONDS, Math.floor(total - first - FADE - 3));
-      if (secs < 30) { tooShort.push(f); return false; }
+      if (secs < MIN_LOOP) { tooShort.push(f); return false; }
       return !fs.existsSync(o) || fs.statSync(o).mtimeMs < fs.statSync(path.join(SRC, f)).mtimeMs;
     }) : [];
     if (unused.length) console.log("unreferenced raw sounds kept out of the game build: " + unused.join(", "));
@@ -229,7 +230,7 @@ function writeManifest() {
       // A short recording (under 6 minutes, such as a 3 minute rain loop) has no intro to skip and little to choose from: it starts at 1 s, and the loop is as long as the recording allows (at most
       // SECONDS) with the crossfade and a margin left over. A long one starts a minute in.
       const first = total > 360 ? 60 : 1, secs = Math.min(SECONDS, Math.floor(total - first - FADE - 3));
-      if (secs < 30) { console.log("  too short to make a loop (" + Math.round(total) + " s), skipped"); continue; }
+      if (secs < MIN_LOOP) { console.log("  too short to make a loop (" + Math.round(total) + " s), skipped"); continue; }
       const need = secs + FADE + 2, cands = [];
       for (let k = 0; k < 8; k++) { const t0 = first + k * Math.max(1, Math.min(300, (total - need - first) / 8)); if (t0 + need < total) cands.push(t0); }
       if (!cands.length) cands.push(first);

@@ -44,6 +44,7 @@
     "alderford/drowned_oar": "tavern",
     "timbermouth/split_pine_inn": "generic_town_inn",
     "Langston/pickled_hen": "generic_town_inn",
+    "Langston/cord_and_kettle": "generic_trade_shop",
     "alderford/wagon_lot": "village_stable_yard",
     "timbermouth/wagon_lot": "village_stable_yard",
     "alderford/redvein/red_lantern": "generic_village_inn",
