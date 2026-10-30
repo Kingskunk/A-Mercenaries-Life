@@ -741,6 +741,9 @@
 *comment advance refreshes it. Districts read these and never set them.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label update_weather_flags
+*comment A zone the player has just entered for the first time has no weather of its own yet (Overworld.weatherSync set wx_fresh): roll it before the flags are derived from it.
+*if (wx_fresh)
+  *gosub wx_fresh_roll
 *gosub weather_flags_basic
 *goto wx_street_life
 
@@ -884,8 +887,9 @@
 *comment so weather_tomorrow is always one true day ahead. Rain and dry streaks are counted from the
 *comment flags of the weather that just ended and drive ground_state. The season used is the one at the
 *comment START of the call (a negligible one-day edge); fix_weather_season converts anything that season
-*comment cannot produce. wx_profile says whose rules roll the days (WEATHER_PROFILES): only "temperate",
-*comment the tables in roll_weather, exists so far; a new profile branches here.
+*comment cannot produce. wx_profile says whose rules roll the days (WEATHER_PROFILES): "temperate" is the
+*comment tables in roll_weather as they stand, and every other profile bends them there (open_country).
+*comment replay-ok: only advance_time's days_to_pass > 0 block calls this, and that block is the replay guard (the streak counts below are relative sets).
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label wx_day_step
 *temp weather_input ""
@@ -914,6 +918,26 @@
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment REUSABLE PRIMITIVE: THE FIRST DAYS OF A ZONE THE PLAYER HAS JUST ENTERED
+*comment Today and tomorrow are rolled fresh from the zone's profile (wx_profile), with no carry-over from
+*comment the day before (there is none), no streaks and no missed forecast. Called from update_weather_flags
+*comment while wx_fresh is set, which Overworld.weatherSync sets when a zone has no weather of its own yet.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label wx_fresh_roll
+*temp weather_input ""
+*temp weather_rolled ""
+*set wx_fresh false
+*gosub roll_weather
+*set weather weather_rolled
+*set weather_input weather
+*gosub roll_weather
+*set weather_tomorrow weather_rolled
+*set forecast_missed false
+*set rain_streak 0
+*set dry_streak 0
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment REUSABLE PRIMITIVE: ROLL ONE DAY OF WEATHER
 *comment Input weather_input (the weather to carry on from), output weather_rolled. Table
 *comment weighted by current_season, then persistence: about 55% of the time the input
@@ -924,6 +948,7 @@
 *label roll_weather
 *temp wx_roll 0
 *temp wx_keep_roll 0
+*temp wx_bias_roll 0
 *rand wx_roll 1 100
 *rand wx_keep_roll 1 100
 *if (current_season = "Winter")
@@ -971,7 +996,15 @@
     *set weather_rolled "Fog"
   *else
     *set weather_rolled "Storm"
-*if (wx_keep_roll <= 55)
+*comment The zone's profile (wx_profile, overworld-data.js WEATHER_PROFILES) bends the seasonal table: open_country is the Western Vale's level grassland, so a third of its rain days
+*comment come out overcast and most of its fog clear. Storms, snow and the carry-over below are left as they are.
+*if (wx_profile = "open_country")
+  *rand wx_bias_roll 1 100
+  *if ((weather_rolled = "Rain") and (wx_bias_roll <= 33))
+    *set weather_rolled "Overcast"
+  *elseif ((weather_rolled = "Fog") and (wx_bias_roll <= 60))
+    *set weather_rolled "Clear"
+*if ((wx_keep_roll <= 55) and (weather_input != ""))
   *if (weather_input = "Storm")
     *set weather_rolled "Rain"
   *elseif (weather_input = "Blizzard")

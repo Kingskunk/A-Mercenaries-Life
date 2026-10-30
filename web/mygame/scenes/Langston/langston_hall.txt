@@ -1,0 +1,110 @@
+*comment ====================================================================================
+*comment LANGSTON HALL: House Gault's administrative hall in Langston.
+*comment The Countess of the Western Vale rules from Dunmow and appoints Langston's mayor.
+*comment This file establishes the location and its four reactive description layers. It has no
+*comment hub route, choices, playable counters or visitable rooms yet; those come next.
+*comment ====================================================================================
+
+*label lg_hall
+*temp lg_hall_first false
+*if (not(lg_hall_seen))
+  *set lg_hall_first true
+*set current_district "langston"
+*set scenery_subplace "langston_meeting_hall_office"
+*set lg_hall_seen true
+*gosub_scene calendar update_hub_condition
+*temp lg_hall_dark false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set lg_hall_dark true
+*temp lg_hall_savvy false
+*if ((wisdom >= 13) or (origin = "outlaw"))
+  *set lg_hall_savvy true
+[b]◈ LANGSTON HALL[/b]
+*line_break
+*gosub lg_hall_layers
+*page_break Return to the market square...
+*goto_scene Langston/langston lg_return
+
+*label lg_hall_layers
+*gosub lg_hall_place
+*gosub lg_hall_sky
+*gosub lg_hall_street
+*gosub lg_hall_tell
+*return
+
+*comment ── LAYER 1: PLACE ── Fixed geography, architecture and smell. The long description prints once.
+*label lg_hall_place
+*if (lg_hall_first)
+  Langston Hall occupies the upper side of the market square, reached by a broad flight of shallow steps. It is not much larger than the timber-framed buildings crowded around it, but its plain dressed-stone walls are far heavier. Broad pale blocks marked with worn imperial numbers form the lowest courses; darker stone and a steep tiled roof belong to later rebuilding. A weathered carving of House Gault's arms stands above the oak doors, with a newer tablet beneath it naming this the Countess's hall in Langston.
+
+  The public chamber runs across the front of the building under dark roof beams. Benches face a long table beneath the Gault arms, where the mayor hears petitions and disputes. Along one wall, shuttered counter openings and sloped writing desks serve the town clerks. Boards beside them carry notices of court days, market tolls, road levies and militia service, each sheet bearing the mayor's mark or the Countess's seal.
+
+  Plain doors at the back lead toward the mayor's office and the record rooms. A spear rack for the Langston Watch stands beside the inner passage, close to the bell rope that climbs through the ceiling. The worn floor, orderly desks and shelves of bound accounts give the place the compact, workmanlike weight of a town governed from somewhere larger. The chamber smells of ink, hearth ash, old paper and damp wool.
+*else
+  Langston Hall's public chamber lies behind its heavy oak doors, with the town clerks' shuttered counters along one wall and the mayor's long table beneath the arms of House Gault. Benches fill the worn stone floor between them. The inner passage leads toward the mayor's office, the record rooms and the watch room, while the bell rope hangs beside its spear rack.
+*return
+
+*comment ── LAYER 2: SKY ── Weather and light as experienced indoors, followed by recent-weather memory.
+*label lg_hall_sky
+*if (weather = "Rain")
+  Rain taps against the tall front windows and runs from the tiled roof past the doors, leaving the chamber in shifting grey light.
+*elseif (weather = "Storm")
+  Wind booms against the oak doors, and rain lashes the front windows hard enough to blur the market square beyond them.
+*elseif (weather = "Fog")
+  Fog turns the front windows pale and hides the square below the steps, while lamps burn beneath the dark beams.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Cold grey light comes through the front windows, and meltwater gathers along the outer edge of the threshold.
+*elseif (weather = "Blizzard")
+  Driven snow whitens the front windows and presses at the oak doors while the roof timbers carry the low sound of the wind.
+*elseif (weather = "Clear")
+  *if (lg_hall_dark)
+    The front windows have gone black above the market square, leaving the chamber to its wall lamps and banked hearth.
+  *elseif (time_period = "Dusk")
+    The last clear light reaches through the front windows and lies in long bars across the stone floor.
+  *else
+    Clear light falls through the front windows across the benches, counter shutters and worn flagstones.
+*else
+  *if (lg_hall_dark)
+    Low cloud leaves the windows black, and the wall lamps cast small pools of light across the chamber.
+  *else
+    Flat grey light comes through the front windows and dulls the dark wood of the counters and mayor's table.
+
+*comment WEATHER MEMORY: calendar ground_state, with no people or activity.
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  The threshold stones remain slick after days of rain, and old water darkens the joints nearest the doors.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The flagstones just inside the doors are still dark from the last rain.
+*return
+
+*comment ── LAYER 3: STREET ── Public activity inside the Hall, derived from street_life, time and calendar state.
+*label lg_hall_street
+*if (street_life = "empty")
+  The public counters are shuttered, but the Hall has not turned people back into the dangerous weather. Townspeople wait along the benches with their wet outer layers steaming near the hearth, while Watch officers hold the doors nearly closed and leave a narrow way through.
+*elseif (time_period = "Pre-Dawn")
+  The counters and inner doors are shut. The hearth has burned down to a red bed, and a Watch officer stands at the entrance beneath a single wall lamp.
+*elseif (time_period = "Night")
+  The public chamber is closed for the night. Counter shutters cover the clerks' desks, the benches stand empty, and two Watch officers hold the entrance and inner passage under low lamps.
+*elseif (time_period = "Dusk")
+  Clerks close the counter shutters one by one while the last petitioners leave the benches. Watch officers take the doors as the public business of the Hall winds down.
+*elseif (day_of_week = "Hallowday")
+  The public counters are closed for the rest day. The benches and writing desks stand empty, though a Watch officer still holds the entrance and answers the bell.
+*elseif (street_life = "thin")
+  The Hall remains open through the poor weather, but only a short line waits at the counter. Damp outer layers hang from pegs near the doors, and clerks work through petitions and town accounts behind the open shutters.
+*elseif (day_of_week = "Marketday")
+  Traders and townspeople fill the benches and writing desks. The counter line carries questions about stall places, market tolls and cart access, while clerks move account sheets through the open shutters.
+*elseif (time_period = "Morning")
+  Clerks open the counter shutters and call the first petitioners from the benches. Townspeople wait with folded notices, rent questions and requests for the mayor's hearing.
+*elseif (time_period = "Midday")
+  The chamber is at its busiest. Every writing desk is in use, the counter line reaches the benches, and low voices gather beneath the dark roof beams.
+*else
+  The afternoon line has shortened, leaving open places on the benches while clerks sort the remaining petitions and town accounts behind the counter.
+
+*if ((wol_quest_stage = "offered") or (wol_quest_stage = "active"))
+  A fresh duty slate beside the watch room lists doubled patrols and the names of people questioned about the killing. Reports from the investigation are stacked apart from the ordinary town papers.
+*return
+
+*comment ── LAYER 4: TELL ── A wisdom 13+ or outlaw reading of how the appointed government uses the room.
+*label lg_hall_tell
+*if (lg_hall_savvy)
+  You read the balance of the room quickly. The mayor's chair stands alone under House Gault's arms, facing every public bench; the clerks work behind shutters, and the passage to the watch room lies behind the mayor's table. Authority enters from the inner rooms. Everyone else comes through the same oak doors and remains in view from the moment they cross the threshold.
+*return

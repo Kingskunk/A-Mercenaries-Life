@@ -78,10 +78,12 @@
   // days: "temperate" is the season tables in calendar.txt roll_weather. A new profile (a wetter Vale, a plane that never rolls, a plane with weather names of its own) needs a branch there, an entry in
   // WEATHER_PROFILES and, for a new weather name, a line in calendar.txt update_weather_flags (the wet, cold and severity it means); the checker fails a zone that names a profile not listed.
   // To add a region: one entry here, and point its territory's weather at it. To put the player in a zone by hand (a portal, a plane): set stats.wx_force_zone to its id ("" to stop).
-  var WEATHER_PROFILES = ["temperate"];
+  // temperate: the season tables as they are. open_country (2026-10-30, the Western Vale: level grassland, chalk rises, vineyards and horse pastures, no coast, marsh or river fog): the same tables, then about a
+  // third of the rain days turn overcast and most of the fog turns clear (calendar.txt roll_weather); storms and snow are left as they are.
+  var WEATHER_PROFILES = ["temperate", "open_country"];
   var WEATHER_ZONES = {
     reach: { name: "The Valen Reach", profile: "temperate" },
-    vale: { name: "The Western Vale", profile: "temperate" }
+    vale: { name: "The Western Vale", profile: "open_country" }
   };
   var DEFAULT_WEATHER_ZONE = "reach";
   // A district (stats.current_district) the player is in while NOT on the overworld, where it is not the default zone. Langston is a town, not a tile; a Vale dungeon or farm would be listed here too.
@@ -879,8 +881,9 @@
     return WEATHER_ZONES[z] ? z : DEFAULT_WEATHER_ZONE;
   }
   // Moves the player's weather to the zone they are in. A no-op, safe to call at any time and as often as you like, when the zone has not changed. Otherwise the zone being left is parked in
-  // stats.wx_slots and the one being entered is loaded; a zone entered for the first time starts as a copy of the weather the player brings across (nothing is rolled here: no randomness, so a page
-  // that runs it again from a save comes out the same). The weather flags (weather_wet and the rest) are derived, so the caller refreshes them with calendar.txt update_weather_flags.
+  // stats.wx_slots and the one being entered is loaded. A zone entered for the first time has no slot: nothing is rolled here (no randomness, so a page that runs it again from a save comes out the same),
+  // the globals keep the weather the player brought across for the moment and stats.wx_fresh is set. calendar.txt update_weather_flags sees it and rolls that zone's first days (a fresh today and tomorrow by
+  // its profile, no streaks) before it derives the weather flags, so the first arrival is not the weather the player walked in with. The caller refreshes the flags with update_weather_flags.
   function weatherSync(stats, tileId) {
     var to = weatherZoneOf(stats, tileId), from = WEATHER_ZONES[stats.wx_zone] ? String(stats.wx_zone) : DEFAULT_WEATHER_ZONE;
     if (to === from) { stats.wx_zone = from; return false; }
@@ -889,7 +892,8 @@
     var leaving = {};
     for (k in WEATHER_FIELDS) leaving[k] = stats[WEATHER_FIELDS[k]];
     slots[from] = leaving;
-    if (slots[to]) for (k in WEATHER_FIELDS) if (slots[to][k] !== undefined) stats[WEATHER_FIELDS[k]] = slots[to][k];
+    if (slots[to]) { for (k in WEATHER_FIELDS) if (slots[to][k] !== undefined) stats[WEATHER_FIELDS[k]] = slots[to][k]; }
+    else stats.wx_fresh = true;
     delete slots[to];
     stats.wx_zone = to;
     stats.wx_profile = WEATHER_ZONES[to].profile;

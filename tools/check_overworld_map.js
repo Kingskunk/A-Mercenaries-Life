@@ -100,11 +100,13 @@ ids.forEach((id) => {
   Object.keys(O.territories).forEach((t) => { if (!Z[O.territories[t].weather]) fail("territory " + t + " has weather \"" + O.territories[t].weather + "\", which is not in WEATHER_ZONES"); });
   Object.keys(O.nodes).forEach((id) => { if (O.nodes[id].weather !== undefined && !Z[O.nodes[id].weather]) fail("tile " + id + " has weather \"" + O.nodes[id].weather + "\", which is not in WEATHER_ZONES"); });
   Object.keys(O.districtZone || {}).forEach((d) => { if (!Z[O.districtZone[d]]) fail("district " + d + " maps to weather zone \"" + O.districtZone[d] + "\", which is not in WEATHER_ZONES"); });
-  ["wx_zone", "wx_slots", "wx_force_zone", "wx_profile", "wx_more", "wx_cur", "wx_queue", "wx_hold"].forEach((v) => { if (!new RegExp("^\\*create " + v + " ", "m").test(startup)) fail("startup.txt does not create " + v); });
+  ["wx_zone", "wx_slots", "wx_force_zone", "wx_profile", "wx_fresh", "wx_more", "wx_cur", "wx_queue", "wx_hold"].forEach((v) => { if (!new RegExp("^\\*create " + v + " ", "m").test(startup)) fail("startup.txt does not create " + v); });
   // the swap: leaving a zone parks its weather, coming back loads it, and a first visit carries the weather across
   const st = { ow_on: true, ow_pos: "fg", wx_zone: "reach", wx_slots: "", weather: "Rain", weather_tomorrow: "Fog", forecast_missed: false, rain_streak: 2, dry_streak: 0 };
   if (O.weatherSync(st)) fail("weatherSync swapped on a tile in the zone the stats already belong to");
-  st.ow_pos = "wv"; if (!O.weatherSync(st) || st.wx_zone !== "vale" || st.weather !== "Rain") fail("weatherSync did not carry the weather into a zone entered for the first time");
+  st.ow_pos = "wv"; if (!O.weatherSync(st) || st.wx_zone !== "vale" || st.weather !== "Rain") fail("weatherSync did not move the player into a zone entered for the first time");
+  if (st.wx_fresh !== true || st.wx_profile !== "open_country") fail("weatherSync did not flag a first visit as wx_fresh with the zone's profile");
+  st.wx_fresh = false;   // calendar.txt wx_fresh_roll clears it
   st.weather = "Clear"; st.weather_tomorrow = "Overcast"; st.rain_streak = 0; st.ow_pos = "fg"; O.weatherSync(st);
   if (st.wx_zone !== "reach" || st.weather !== "Rain" || st.weather_tomorrow !== "Fog" || st.rain_streak !== 2) fail("weatherSync did not bring a parked zone back as it was left");
   st.ow_pos = "lg"; O.weatherSync(st); if (st.weather !== "Clear" || st.weather_tomorrow !== "Overcast" || st.rain_streak !== 0) fail("weatherSync did not bring the Vale back as it was left");
