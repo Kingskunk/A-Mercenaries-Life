@@ -9,7 +9,7 @@ The adaptation is implemented one complete chapter at a time. A chapter is not c
 ## Chapter Files
 
 1. `wolves_of_langston_chapter_1.txt` - **The Adventure Begins**: road encounter, Roi's intervention, funeral, first suspect impressions, paid rest, and Mayor Anathram's contract.
-2. `chapter_2.txt` - **Speaking to Tomlin**: not started.
+2. `wolves_of_langston_chapter_2.txt` - **Speaking to Tomlin**: in progress. The magical warning, cottage approach, and doorstep encounter are playable; the interview, tea, and garden investigation remain.
 3. `chapter_3.txt` - **Speaking to Roi**: not started.
 4. `chapter_4.txt` - **Helping Mayor Anathram**: not started.
 5. `chapter_5.txt` - **Speaking with Solaine**: not started.
@@ -31,7 +31,7 @@ Chapter 1 preserves the source scenes, details, and wording except where adaptat
 - The mayor receives in her office during the Hall's public day (the same hours as the counters: Morning to Afternoon, shut on the rest day and in empty-street weather). The Hall's menu lists her door at every hour and says why it is shut. The briefing and the offer happen when the player walks in, whether that is the same evening or a week later.
 - The contract is verbal, as at Whitefold: Anathram states the terms aloud (15 Silver Marks on the threat's end or the killer in custody, a 2-mark advance counted against it, the Pickled Hen room and two meals at the town's cost), the protagonist repeats them, they shake on it, and she writes one line in the Hall's day-book. Nothing is posted on the Contract Board. The room, meals and advance begin at that handshake.
 - The Dev Hub (Quests) has a jump for the stage after the funeral: Langston's square on a clear market morning with the mayor having asked.
-- Accepting the contract makes Tomlin the first lead and hands Chapter 2 a clean entry state.
+- Accepting the contract makes Tomlin the first lead, returns the player to Langston's hub, and adds a daytime cottage visit rather than forcing the Chapter 2 opening immediately.
 
 The adaptation deliberately improves the original structure:
 
@@ -59,6 +59,7 @@ The remaining differences are deliberate: refusing the contract leaves a reversi
 - `wol_quest_stage`: `unstarted`, `asked` (the mayor asked the protagonist to call at her office), `offered` (briefed, declined for now), `active`, and later resolution states. The quest log lists the quest from `asked` onward.
 - `wol_chapter`: `0` before entry, `1` during the opening, and `2` after accepting the contract.
 - `wol_chapter_1_started`, `wol_chapter_1_complete`, and `wol_advance_paid`: replay and re-entry guards.
+- `wol_funeral_day` and `wol_contract_day`: timestamps for time-aware Chapter 2 narration; later scenes must not assume the player visits Tomlin the next day.
 - `wol_road_approach`, `wol_road_composed`, `wol_road_rattled`, and `wol_funeral_drunk_outcome`: route memory.
 - `wol_met_*`: name and relationship discovery.
 - Individual clue flags: `wol_tomlin_*`, `wol_roi_*`, `wol_solaine_*`, and `wol_mayor_*`.

@@ -26,23 +26,7 @@
 *set met_ansel_reed true
 [b]◈ THE CORD & KETTLE[/b]
 *line_break
-The Cord & Kettle occupies a narrow corner shop just off the market square. A painted sign above the frontage shows a coil of cord looped through the handle of a black kettle. Inside, shelves climb to the ceiling between dark timber posts. Rope and cord hang by thickness from pegs, lanterns and pots occupy the upper shelves, and canvas rolls, tool kits and travelling supplies fill the lower racks. The air smells of hemp, lamp oil, soap and seasoned wood.
-
-*if (weather = "Rain")
-  Rain stipples the front windows and darkens the sill beneath them.
-*elseif (weather = "Storm")
-  Rain drums against the shutters while the hanging goods sway slightly on their hooks.
-*elseif (weather = "Fog")
-  The windows show only a pale blur beyond the shelves.
-*elseif ((weather = "Snow") or (weather = "Sleet"))
-  Meltwater gathers on a folded sacking mat inside the threshold.
-*elseif (weather = "Blizzard")
-  The shutters are fastened against the weather, and lamps burn over the counter.
-
-*if (lg_store_first)
-  A broad, greying man stands behind the counter, winding measured cord around a wooden gauge. He finishes the length before setting it aside. "Ansel Reed," he says. "If you need it for the road, the camp, or a small repair, it is probably here. If it is not, I will tell you plainly."
-*else
-  Ansel Reed works behind the counter, measuring cord against the marks cut into its edge.
+*gosub lg_store_layers
 
 *set wait_ok_page page_id
 *choice
@@ -61,6 +45,68 @@ The Cord & Kettle occupies a narrow corner shop just off the market square. A pa
     *set shop_open ""
     *goto_scene Langston/langston lg_return
   *comment GEN:END place_steps home:langston
+
+*comment ── LAYERS: the store uses the same place, sky and activity contract as Langston's hub.
+*label lg_store_layers
+*gosub lg_store_place
+*gosub lg_store_sky
+*gosub lg_store_street
+*return
+
+*comment ── LAYER 1: PLACE ── Permanent shop geography, stock and sensory character.
+*label lg_store_place
+The Cord & Kettle occupies a narrow corner shop just off the market square. A painted sign above the frontage shows a coil of cord looped through the handle of a black kettle. Inside, shelves climb to the ceiling between dark timber posts. Rope and cord hang by thickness from pegs, lanterns and pots occupy the upper shelves, and canvas rolls, tool kits and travelling supplies fill the lower racks. The air smells of hemp, lamp oil, soap and seasoned wood.
+*return
+
+*comment ── LAYER 2: SKY ── Outdoor weather and light as experienced inside, plus weather memory.
+*label lg_store_sky
+*if (weather = "Rain")
+  Rain stipples the front windows and darkens the sill beneath them.
+*elseif (weather = "Storm")
+  Rain drums against the shutters while the hanging goods sway slightly on their hooks.
+*elseif (weather = "Fog")
+  The windows show only a pale blur beyond the shelves.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Meltwater gathers on a folded sacking mat inside the threshold.
+*elseif (weather = "Blizzard")
+  The shutters are fastened against the weather, and lamps burn over the counter.
+*elseif (weather = "Clear")
+  *if (time_period = "Dusk")
+    Low light reaches across the shelves while Ansel lights the counter lamps one by one.
+  *else
+    Clear light through the front windows catches the brass lanterns and pale coils of new cord.
+*else
+  Grey light lies across the counter, leaving the upper shelves in shadow.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Old mud still darkens the sacking mat after days of rain in the square.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  Damp marks remain on the mat and floorboards from the last rain.
+*return
+
+*comment ── LAYER 3: STREET ── Keeper and customer activity by time, weather and the Wolves investigation.
+*label lg_store_street
+*if (lg_store_first)
+  A broad, greying man stands behind the counter, winding measured cord around a wooden gauge. He finishes the length before setting it aside. "Ansel Reed," he says. "If you need it for the road, the camp, or a small repair, it is probably here. If it is not, I will tell you plainly."
+*else
+  Ansel Reed works behind the counter, measuring cord against the marks cut into its edge.
+
+*if (street_life = "empty")
+  No customers have challenged the weather. The shop is quiet except for the shutters and the small sounds of Ansel's work.
+*elseif (street_life = "thin")
+  Only a few customers come in from the poor weather, shaking out outer layers before asking for oil, cord and repair supplies.
+*elseif (time_period = "Morning")
+  Early customers collect lamp oil, tool rolls and measured lengths of rope before beginning their day's work.
+*elseif (time_period = "Midday")
+  The narrow aisles stay busy with townspeople comparing household supplies and wagoners replacing gear worn on the road.
+*elseif (time_period = "Afternoon")
+  Trade comes in short bursts as errands cross the market square and Ansel restores sold goods from the upper shelves.
+*else
+  Dusk thins the shop. Ansel finishes the last measures of cord and begins drawing the most valuable goods away from the windows.
+
+*if (((wol_quest_stage = "asked") or (wol_quest_stage = "offered")) or (wol_quest_stage = "active"))
+  Talk among the customers repeatedly falls back to Maybelline's killing, though voices lower whenever the door opens.
+*return
 
 *label lg_store_stock
 *gosub lg_store_open_panel

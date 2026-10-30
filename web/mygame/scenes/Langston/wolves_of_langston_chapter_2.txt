@@ -1,0 +1,181 @@
+*comment ====================================================================================
+*comment THE WOLVES OF LANGSTON -- CHAPTER 2: SPEAKING TO TOMLIN
+*comment This opening carries the source's magical warning, cottage approach and first doorstep
+*comment exchange. The interview, tea and garden investigation follow in the next implementation pass.
+*comment ====================================================================================
+
+*label wol_ch2_start
+*if (not(wol_quest_stage = "active"))
+  *goto_scene Langston/langston lg_return
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *goto_scene Langston/langston lg_return
+*temp wol_ch2_days_since_funeral 0
+*if (wol_funeral_day > 0)
+  *set wol_ch2_days_since_funeral (campaign_day - wol_funeral_day)
+*elseif (wol_contract_day > 0)
+  *set wol_ch2_days_since_funeral (campaign_day - wol_contract_day)
+*if (wol_ch2_days_since_funeral < 0)
+  *set wol_ch2_days_since_funeral 0
+*if (not(wol_chapter_2_started))
+  *set wol_chapter_2_started true
+  *set wol_chapter 2
+  *set wol_chapter_2_checkpoint "approach"
+*goto wol_ch2_resume
+
+*label wol_ch2_resume
+*if (wol_chapter_2_checkpoint = "approach")
+  *goto wol_ch2_approach
+*if (wol_chapter_2_checkpoint = "cottage")
+  *goto wol_ch2_tomlin_cottage
+*if (wol_chapter_2_checkpoint = "doorstep")
+  *goto wol_ch2_doorstep
+*if (wol_chapter_2_checkpoint = "garden")
+  *goto wol_ch2_garden_opening
+*if (wol_chapter_2_checkpoint = "workroom")
+  *goto wol_ch2_workroom
+*set wol_chapter_2_checkpoint "approach"
+*goto wol_ch2_approach
+
+*label wol_ch2_approach
+*set scenery_subplace "langston"
+
+*if (time_period = "Morning")
+  Langston has come awake to its daily work. Tradespeople hammer, weave, plane boards and draw bread from ovens; shoppers cross the square with baskets and account sheets. Yet the laughter comes too rarely, and the sound of hammers and hoofbeats carries too sharply. Fear and grief have settled beneath the ordinary noise of the town.
+*elseif (time_period = "Dusk")
+  Langston's workday is winding down. Porters cover the last wagon loads, shopkeepers draw in their wares, and the first lamps are being lit. Yet the laughter comes too rarely, and the sound of hammers and hoofbeats carries too sharply. Fear and grief have settled beneath the ordinary noise of the town.
+*else
+  Langston is deep in its daily work. Tradespeople hammer, weave, plane boards and draw bread from ovens; shoppers cross the square with baskets and account sheets. Yet the laughter comes too rarely, and the sound of hammers and hoofbeats carries too sharply. Fear and grief have settled beneath the ordinary noise of the town.
+
+*if (wol_ch2_days_since_funeral <= 1)
+  The flower wagon from Maybelline's funeral still stands where it was left, forlorn against the cobbles.
+*elseif (wol_ch2_days_since_funeral <= 3)
+  The funeral wagon is gone, but fading petals remain caught in the seams between the cobbles where it stood.
+*else
+  The funeral has receded into Langston's recent memory, but the killing has not. People still lower their voices when it is mentioned.
+
+You have a substantial payment waiting at the end of this investigation, but only one clear lead: Maybelline's fiancé, Tomlin.
+
+*if (wol_ch2_days_since_funeral <= 1)
+  "Hey, mercenary!" calls a man's voice behind you. It is the same local who challenged you at the funeral, carrying a bundle of barrel staves. "We've got our eyes on you. Don't think we don't."
+*elseif (wol_ch2_days_since_funeral <= 3)
+  A cooper carrying a bundle of barrel staves recognizes you and calls after you. "You're the mercenary the mayor hired. We've got our eyes on you. Don't think we don't."
+*else
+  A cooper carrying a bundle of barrel staves calls after you. "You're the mercenary the mayor hired, aren't you? We've got our eyes on you. Don't think we don't."
+
+Several people nearby shake their heads, and one gives you an embarrassed look. You will have your work cut out for you here.
+
+*if (known_detect_magic or has_scroll_detect_magic)
+  Something else presses at the edge of your senses: a vast, discordant working spread through Langston itself. It is strong enough that attempting to read it could hurt.
+
+  *choice
+    # Focus on the magic around Langston.@{show_stat_hints  [Detect Magic]|}
+      *set wol_chapter_2_checkpoint "cottage"
+      *set wol_detect_magic_attempted true
+      *set wol_detect_magic_overwhelmed true
+      *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+        *if (hp_current > 1)
+          *set hp_current (hp_current - 1)
+        *set stat_bump_locked true
+        *set locked_stat_bump_page_id page_id
+      A burst of hard white light and pitch darkness strobes through your sight. A rushing hum fills your ears, and pain lances through your head before the sensation recedes.
+
+      [b][-1 HP][/b]
+
+      For one clear instant, you distinguish necromancy and abjuration at war with one another. Then the pressure fades, leaving only the ordinary sounds of Langston.
+      *goto wol_ch2_tomlin_cottage
+    # Leave the working alone and continue to Tomlin's cottage.
+      *set wol_chapter_2_checkpoint "cottage"
+      *goto wol_ch2_tomlin_cottage
+    # Consider the danger, then keep your magic to yourself.
+      *set wol_chapter_2_checkpoint "cottage"
+      You let the discordant pressure pass without reaching for it. Whatever is buried in Langston's magic, there will be safer ways to learn about it.
+      *goto wol_ch2_tomlin_cottage
+*set wol_chapter_2_checkpoint "cottage"
+*goto wol_ch2_tomlin_cottage
+
+*label wol_ch2_tomlin_cottage
+*set scenery_subplace "tomlin_cottage"
+You follow Anathram's directions to the western end of town, but you would have recognized Tomlin's home regardless.
+*gosub_scene Langston/tomlin_cottage lg_tomlin_layers
+
+*choice
+  # Knock at the door.
+    *set wol_tomlin_arrival_choice "knocked"
+    *set wol_chapter_2_checkpoint "doorstep"
+    *goto wol_ch2_doorstep
+  # Take in the garden and surroundings first.
+    *set wol_tomlin_arrival_choice "surveyed"
+    *set wol_chapter_2_checkpoint "garden"
+    *goto wol_ch2_garden_opening
+  # Study the flowerboxes from the lane, then knock.
+    *set wol_tomlin_arrival_choice "frontage_then_knocked"
+    *set wol_chapter_2_checkpoint "doorstep"
+    You take a moment to study the crowded flowerboxes and the care behind them. Nothing in the frontage gives you a reason to delay the interview.
+    *goto wol_ch2_doorstep
+
+*label wol_ch2_doorstep
+You knock. Muffled voices and the sound of heavy furniture shifting answer from within. After a few seconds they stop. You lift your hand to knock again, but the door opens beneath your knuckles.
+
+Tomlin and a young woman stand on the other side. Both have mussed hair and red faces. Tomlin speaks first.
+
+"I saw you at Maybelline's service, didn't I? What—what can I do for you?"
+
+You tell him Mayor Anathram hired you to investigate Maybelline's death.
+
+"If you'll excuse me," the woman says, "I'd best be going."
+
+"Don't forget the medicine," Tomlin says, taking up a sachet of dried herbs and cutting a glance toward you. "For your aunt."
+
+"I'd nearly forgotten," she says. She accepts it gingerly, thanks him, and hurries down the street. Tomlin watches her go, plainly deciding what to say next.
+
+*set wol_tomlin_affair_seen true
+*choice
+  *if (wol_ch2_days_since_funeral <= 1)
+    # Call out Tomlin's behaviour; Maybelline has barely been buried.
+      *goto wol_ch2_rebuke
+  *elseif (wol_ch2_days_since_funeral <= 3)
+    # Call out Tomlin's behaviour; Maybelline's funeral was only days ago.
+      *goto wol_ch2_rebuke
+  *else
+    # Call out Tomlin's behaviour while Maybelline's killing remains unsolved.
+      *goto wol_ch2_rebuke
+  # Ask who the visitor was.
+    *set wol_tomlin_door_choice "asked_visitor"
+    *set wol_tomlin_visitor_questioned true
+    *set wol_chapter_2_checkpoint "workroom"
+    "Oh," he says, pushing his hair back into place. "Pretty routine, really. A young woman collecting medicine for her poor sick aunt."
+
+    He gives a small, embarrassed laugh and glances after her. "She's terribly ill. But such a darling girl, taking such good care of her aunt. Won't you come in?"
+    *goto wol_ch2_workroom
+  # Say nothing and wait for Tomlin to explain himself.
+    *set wol_tomlin_door_choice "silent"
+    *set wol_chapter_2_checkpoint "workroom"
+    You hold your expression still. The awkward silence stretches until Tomlin breaks it.
+
+    "You must be here from the mayor," he says. "Come in. I'm sure you have questions."
+    *goto wol_ch2_workroom
+
+*label wol_ch2_rebuke
+*set wol_tomlin_door_choice "rebuked"
+*set wol_chapter_2_checkpoint "workroom"
+You make your disapproval plain. Tomlin's eyes avoid yours.
+*gosub_scene dice_engine heroic_award "wolves_ch2_tomlin_rebuke"
+
+"Everyone grieves in their own way," he says. After a moment, he regains his composure. "I assume you're the one the mayor has asked to find the killer?"
+
+When you confirm it, he steps aside. "Please. Come in. I'm sure you have many questions."
+*goto wol_ch2_workroom
+
+*label wol_ch2_garden_opening
+The garden is a riot of flowerbeds and medicinal herbs. Bees move lazily from bloom to bloom, and an iridescent butterfly crosses toward a cluster of purple flowers. Climbing vines make a green wall along the trellises. One of the beams anchoring a far corner has fallen, but the rest of the garden looks tended with patient care.
+
+The garden investigation begins with this choice in the source and will be the next Chapter 2 section.
+*finish
+
+*label wol_ch2_workroom
+*set scenery_subplace "tomlin_herbalist_workroom"
+Tomlin closes the door behind you.
+*gosub_scene Langston/tomlin_cottage lg_tomlin_workroom_layers
+
+The interview, tea and garden investigation will continue from here in the next Chapter 2 section.
+*finish

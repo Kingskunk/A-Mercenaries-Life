@@ -5,7 +5,7 @@
 *comment The contract is verbal: the mayor states the terms in her office, the player repeats them, they shake on it and she writes one line in the Hall's day-book. Nothing goes on the Contract Board.
 *comment Nothing is paid for until the contract is accepted: no room, no meals. Declining in the office leaves the stage "offered" and the same office door.
 *comment Entry contract: a world hook may enter at wol_ch1_start after road travel, whether or not the player has visited Langston before.
-*comment No world hook is wired yet. Chapter 2 will begin with Tomlin and is deliberately not stubbed here.
+*comment No world hook is wired yet. On accepting the contract, the player returns to Langston and chooses when to visit Tomlin.
 *comment ====================================================================================
 
 *label wol_ch1_start
@@ -42,6 +42,9 @@ You pick up your pace to put more distance between you and the wilderness in the
       *goto wol_ch1_roi_arrives
     # Sprint for the town.
       *set wol_road_approach "run_for_town"
+      *goto wol_ch1_roi_arrives
+    # Brace yourself and wait for the first wolf to move.
+      *set wol_road_approach "hold_ground"
       *goto wol_ch1_roi_arrives
 *else
   *set wol_road_rattled true
@@ -115,6 +118,7 @@ As you look across the deserted marketplace, a solitary figure in a white robe b
 
 *choice
   # Call out to the cleric.
+    *label wol_ch1_cleric_call_out
     *set wol_solaine_seen_frightened true
     The cleric jolts and turns. For a moment, fear crosses her face as one hand snaps to the holy symbol at her throat. She looks both ways along the empty street before breaking into a wide, kind smile and approaching you.
 
@@ -146,6 +150,8 @@ As you look across the deserted marketplace, a solitary figure in a white robe b
 
     As she enters the tavern, you hear people speaking inside, though their tone is more subdued than it would be in an ordinary common room.
     *goto wol_ch1_pickled_hen_door
+  # Hurry after the cleric and ask where she is going.
+    *goto wol_ch1_cleric_call_out
 
 *label wol_ch1_pickled_hen_door
 *set scenery_subplace "langston"
@@ -170,6 +176,8 @@ As you look across the deserted marketplace, a solitary figure in a white robe b
 
     He enters the tavern and beckons you inside. You follow him in.
     *goto wol_ch1_pickled_hen_common_room
+  # Push the door open and step inside.
+    *goto wol_ch1_pickled_hen_common_room
 
 *label wol_ch1_pickled_hen_common_room
 *set scenery_subplace "langston_pickled_hen_funeral"
@@ -188,6 +196,7 @@ The half-orc crosses her arms and watches both of you carefully. Starting a figh
 
 *choice
   # "There is a mistake. I won't dishonor this funeral with a fight."@{show_stat_hints  [Persuasion DC 12]|}
+    *label wol_ch1_drunk_persuade
     You raise your open hands and calmly assure the man that there must be some kind of mistake. There is no need to fight, and certainly no need to ruin such a somber event.
 
     *gosub_scene dice_engine roll_skill_check 12 "persuasion" "" "" "" "" ""
@@ -219,6 +228,8 @@ The half-orc crosses her arms and watches both of you carefully. Starting a figh
 
       "Yeah, sure, Tanya. I mean Mayor Anathram. I mean... goodbye." The drunk slinks unsteadily out the door. The half-orc's hard stare follows him until the door closes.
     *goto wol_ch1_mayor_intro
+  # "I only came to pay my respects."@{show_stat_hints  [Persuasion DC 12]|}
+    *goto wol_ch1_drunk_persuade
 *label wol_ch1_mayor_intro
 The female half-orc in the tailored suit looks at you, her eyes scanning up and down.
 
@@ -272,6 +283,7 @@ The audience applauds respectfully and murmurs condolences. Right away, however,
 
 *choice
   # Watch the mourners instead of Tomlin.@{show_stat_hints  [Investigation DC 10]|}
+    *label wol_ch1_tomlin_watch_mourners
     *gosub_scene dice_engine roll_skill_check 10 "investigation" "" "" "" "" ""
     *if (check_success)
       *set wol_tomlin_crowd_hint true
@@ -287,6 +299,8 @@ The audience applauds respectfully and murmurs condolences. Right away, however,
     *else
       Though you cannot quite put your finger on what it is, Tomlin has an odd relationship with the town. He is obviously well liked, but there is more to it than that.
     *goto wol_ch1_funeral_roi
+  # Note who in the crowd is whispering about him.@{show_stat_hints  [Investigation DC 10]|}
+    *goto wol_ch1_tomlin_watch_mourners
 
 *label wol_ch1_funeral_roi
 You immediately recognize the next speaker as Roi Sunderhammer, the dwarf you met on the road. He is dressed in hides and homespun cloth, while his hair and beard seem to struggle against the leather cords he has used to style them. He is clean now, but something in his demeanor suggests that this is his version of dressing up.
@@ -309,6 +323,7 @@ He downs his drink along with others in the crowd, but the strange reaction he h
 
 *choice
   # Watch the change rather than the flowers.@{show_stat_hints  [Perception DC 10]|}
+    *label wol_ch1_roi_watch_change
     *gosub_scene dice_engine roll_skill_check 10 "perception" "" "" "" "" ""
     *if (check_success)
       *set wol_roi_change_seen true
@@ -328,6 +343,8 @@ He downs his drink along with others in the crowd, but the strange reaction he h
       *else
         The druid is behaving oddly, but that could just as easily be explained by the strain of the situation. He seems like a happy, well-adjusted person but is somehow a bit off balance.
     *goto wol_ch1_funeral_solaine
+  # Look hard at Roi's face as he finishes the spell.@{show_stat_hints  [Perception DC 10]|}
+    *goto wol_ch1_roi_watch_change
 
 *label wol_ch1_funeral_solaine
 The next speaker is the smallish young human woman in a white robe embroidered with sun motifs whom you recognize from the street. Though she had been standing meekly behind the other speakers, the young sun cleric seems like a different person behind the podium. She speaks clearly and stands straighter. She possesses a confidence you did not see in the sweet, if somewhat scattered, young woman from the street.
@@ -364,6 +381,7 @@ Though the cleric appears earnest and sincere, the difference between the woman 
 
 *choice
   # Compare the hymn with the burial rites you know.@{show_stat_hints  [Religion DC 10]|}
+    *label wol_ch1_solaine_compare_hymn
     *gosub_scene dice_engine roll_skill_check 10 "religion" "" "" "" "" ""
     *if (check_success)
       *set wol_solaine_hymn_wrong true
@@ -379,6 +397,8 @@ Though the cleric appears earnest and sincere, the difference between the woman 
     *else
       Something about Solaine's delivery makes it feel as though she is holding back, but you cannot tell what is bothering you. She does seem to care earnestly about the community under her charge.
     *goto wol_ch1_funeral_mayor
+  # Try to place where you have heard those words before.@{show_stat_hints  [Religion DC 10]|}
+    *goto wol_ch1_solaine_compare_hymn
 
 *label wol_ch1_funeral_mayor
 As Solaine recedes into the background, the half-orc mayor stands rigid with her hands clasped behind her back. At the front of the room, she cuts a powerful figure with her broad shoulders and battle scars, but she maintains an air of sophistication in her well-made, high-collared suit in the noble style. Her Orcish heritage stands out in the mostly human town of Langston, but no one else seems to notice.
@@ -399,6 +419,7 @@ Anathram turns to Maybelline's family. "I am so sorry for your loss," she says. 
 
 *choice
   # Compare her account with what you know of the battle.@{show_stat_hints  [History DC 10]|}
+    *label wol_ch1_mayor_compare_battle
     *gosub_scene dice_engine roll_skill_check 10 "history" "" "" "" "" ""
     *if (check_success)
       *set wol_mayor_history_wrong true
@@ -415,6 +436,8 @@ Anathram turns to Maybelline's family. "I am so sorry for your loss," she says. 
     *else
       Tanya is a little too stoic, a little too tightly controlled, making you think she is holding something back or hiding something. Her dog is also seriously impressive, but that does not help much either.
     *goto wol_ch1_funeral_close
+  # Think about where a woman like her would have served.@{show_stat_hints  [History DC 10]|}
+    *goto wol_ch1_mayor_compare_battle
 
 *label wol_ch1_funeral_close
 *comment The Insignia keeps a page for each government. Anathram reads the Gilded Scales page as a foreigner's word, then opens House Gault's page under her own mark (Insignia.register is safe to run twice).
@@ -454,6 +477,8 @@ You start to thank her, but she cuts you off.
 
 She nods once, though it is unclear whether that is a farewell or an agreement of some kind, and then returns to her duties reassuring the funeral-goers.
 
+*if (wol_funeral_day = 0)
+  *set wol_funeral_day campaign_day
 *set wol_quest_stage "asked"
 
 A figure breaks away from the crowd and moves toward you. It is Tomlin, the village herbalist and fiance of the deceased.
@@ -488,6 +513,7 @@ A cushion and bowl of water have been placed beside the desk. Buttercup lounges 
 
 *choice
   # "Mayor. You wanted me here."
+    *label wol_ch1_office_greet_mayor
     You politely greet the mayor. Buttercup lays her massive head back down on her paws but continues to watch you closely.
 
     "I am glad you came," Anathram says. You assume she is being genuine, but it is impossible to tell from her stony delivery.
@@ -497,6 +523,8 @@ A cushion and bowl of water have been placed beside the desk. Buttercup lounges 
 
     The mayor recommends that if you like your hand attached, you would be wise to remove it from her dog's reach. You believe both of them and pull your hand back intact. Better late than never, you greet the mayor.
     *goto wol_ch1_mayor_briefing
+  # Nod to Anathram and wait for her to speak.
+    *goto wol_ch1_office_greet_mayor
 
 *label wol_ch1_mayor_briefing
 Anathram outlines the problem: a gruesome murder about a week ago. The Watch can handle thieves, brawlers or sheep rustlers, and the militia can meet bandits at the walls, but this requires someone different. Maybelline was mangled as though by a wild beast, yet her body was found within the town. Besides, Roi keeps the woods free of monsters and supernatural hazards.
@@ -517,6 +545,8 @@ Anathram looks up from one of Langston Hall's account books when you return. Two
 *choice
   # Accept the job.
     *set wol_quest_stage "active"
+    *if (wol_contract_day = 0)
+      *set wol_contract_day campaign_day
     *set wol_chapter_1_complete true
     *set wol_chapter 2
     *if (not(wol_advance_paid))
@@ -542,6 +572,8 @@ Anathram looks up from one of Langston Hall's account books when you return. Two
     *goto wol_ch1_complete
   # Decline the job for now.
     *goto wol_ch1_refuse_warning
+  # Ask for more time to think it over.
+    *goto wol_ch1_refuse_warning
 
 *label wol_ch1_refuse_warning
 The mayor nods and gives you a flat stare.
@@ -555,10 +587,12 @@ The mayor nods and gives you a flat stare.
     *set wol_quest_stage "offered"
     *set wol_chapter 1
     *goto_scene Langston/langston_hall lg_hall_front
+  # Ask her to go over the terms again.
+    *goto wol_ch1_mayor_offer
 
 *label wol_ch1_complete
 *set scenery_subplace "langston_meeting_hall_office"
 Anathram returns to her paperwork. Buttercup watches you leave before lowering her head to her paws again.
 
-Outside, Langston's people have not relaxed. Conversations shorten when you pass. You unfold Tomlin's address at the western end of the main road, where crowded roofs give way to garden walls and narrow plots of medicinal herbs.
-*finish
+Outside, Langston's people have not relaxed. Conversations shorten when you pass. You unfold Tomlin's address at the western end of the main road, where crowded roofs give way to garden walls and narrow plots of medicinal herbs. You can call on him during the day, or take care of your own preparations first.
+*goto_scene Langston/langston lg_return

@@ -296,12 +296,16 @@ function compile(){
   verifyFileName("settlement_events/caught_in_wedding.txt");
   verifyFileName("settlement_events/helping_your_elders.txt");
   verifyFileName("Langston/wolves_of_langston_chapter_1.txt");
+  // The Wolves of Langston's first lead is its own scene, reached from the
+  // Langston hub after the Chapter 1 contract rather than through *scene_list.
+  verifyFileName("Langston/wolves_of_langston_chapter_2.txt");
   // Langston's town hub and standalone location files. Reached by *goto_scene from the overworld's Langston tile and the Dev Hub, never through *scene_list, so each needs its own line here or a compiled build fails
   // with "scene doesn't exist" the moment the player walks into the town. Langston Hall is registered as a location shell but remains unlinked until it receives playable business.
   verifyFileName("Langston/langston.txt");
   verifyFileName("Langston/cord_and_kettle.txt");
   verifyFileName("Langston/pickled_hen.txt");
   verifyFileName("Langston/langston_hall.txt");
+  verifyFileName("Langston/tomlin_cottage.txt");
   // Middle Ward quests live in their own *goto_scene-only files. The district scene owns
   // their physical triggers and aftermath; each quest file owns its choices and resolutions.
   verifyFileName("port_valen/MiddlewardQuest/dry_lion.txt");

@@ -84,6 +84,8 @@
     road: "open_road", overworld_hilly_road: "open_road",   // the kind of an overworld tile (Scenery.placeNames ends a tile's names with it)
     generic_town_street: "village",
     langston: "city",
+    tomlin_cottage: "city",
+    tomlin_herbalist_workroom: "shop",
     city_wagon_yard: "city",
     timber_wagon_lot: "village",
     river_carters_lot: "village",
