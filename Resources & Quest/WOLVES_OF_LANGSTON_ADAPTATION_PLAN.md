@@ -8,7 +8,7 @@ The adaptation is implemented one complete chapter at a time. A chapter is not c
 
 ## Chapter Files
 
-1. `wolves_of_langston_chapter_1.txt` - **The Adventure Begins**: road encounter, Roi's intervention, funeral, first suspect impressions, overnight stay, and Mayor Anathram's contract.
+1. `wolves_of_langston_chapter_1.txt` - **The Adventure Begins**: road encounter, Roi's intervention, funeral, first suspect impressions, paid rest, and Mayor Anathram's contract.
 2. `chapter_2.txt` - **Speaking to Tomlin**: not started.
 3. `chapter_3.txt` - **Speaking to Roi**: not started.
 4. `chapter_4.txt` - **Helping Mayor Anathram**: not started.
@@ -22,12 +22,12 @@ The ChoiceScript source directory is `web/mygame/scenes/Langston/`.
 
 Chapter 1 preserves the source scenes, details, and wording except where adaptation is required:
 
-- Langston is introduced as a prosperous walled town beside old forest.
+- Langston is introduced as a prosperous walled town in House Gault's mostly level Western Vale, among open grassland and fertile fields with the region's old forest along the southern horizon.
 - A wolf pack threatens the protagonist on the approach.
 - Roi Sunderhammer intervenes and directs the protagonist to the Pickled Hen.
 - The funeral introduces Maybelline, Tomlin, Roi, Solaine, Mayor Tanya Anathram, and Buttercup.
 - Optional observations seed suspicions about Tomlin's relationships, Roi's involuntary change, Solaine's hymn and familiarity with Tomlin, and Anathram's past and trained dog.
-- The mayor provides a room, briefs the protagonist in the morning, and offers the investigation.
+- The mayor provides a room, briefs the protagonist after a paid rest, and offers the investigation.
 - Accepting the contract makes Tomlin the first lead and hands Chapter 2 a clean entry state.
 
 The adaptation deliberately improves the original structure:
@@ -35,11 +35,14 @@ The adaptation deliberately improves the original structure:
 - The road encounter offers physical, social/animal, and perceptive approaches instead of a single compulsory perception roll.
 - A failed road check has a later consequence: the protagonist carries disadvantage into the confrontation at the funeral.
 - The funeral confrontation allows persuasion, intimidation, or deliberate de-escalation.
+- The opening uses the reusable `western_vale_road` day/night scenery pair: a maintained chalk-and-earth wagon road across open Gault grassland, with no Langston-specific landmarks. Wolves use the hedgerows and field margins rather than an enclosing forest.
+- A protagonist who owns a Contractor's Insignia presents it when identifying themselves as a mercenary available for hire. Anathram verifies the name and rank with a grey seal-stone; a protagonist without one identifies themselves verbally, so the quest remains accessible.
 - The source's three Inspiration awards become replay-safe Heroic Inspiration: observing through the inn window, successfully calming the drunk, and successfully making him back down.
 - Every funeral observation can be declined instead of forcing the protagonist to investigate grieving people.
 - Failed observation checks do not reveal the clue.
 - Declining the contract does not expel the protagonist from town or permanently end the quest. The offer remains at the meeting hall.
 - The Church of the True Sun replaces the PDF's incompatible religious organization.
+- The Battle of Iron Gap replaces the source's Battle of Three Rivers. Anathram presents it as a defense of House Gault's people, while a successful History check recalls that Gault's riders crossed into Stenmark first to break Karr's tollhold.
 - The original 320-gold reward is rescaled to 15 Silver Marks plus an ordinary room and meals. Two Silver Marks are paid as an advance and count against the total.
 
 ## Chapter 1 Source-Fidelity Audit

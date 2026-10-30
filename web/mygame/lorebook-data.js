@@ -689,10 +689,10 @@
         unlock: "codex_baron_karr",
         body: function (s) {
           var out = [
-            "Feudal lord of Karr's Keep in the Highland Crags. His bailiffs collect a grain tax from his highland tenants by force, and they burned Ashbrook during one such collection. Notices bearing his seal offer standing rewards for runaway bond-servants and deserters from his estates."
+            "Feudal lord of Karr's Keep in the Highland Crags. His tax collectors seize grain from his highland tenants by force, and Karr's riders burned Ashbrook during one such collection. Notices bearing his seal offer standing rewards for runaway bond-servants and deserters from his estates."
           ];
           if (truthy(s.codex_stenmark)) {
-            out.push("His title is Baron of [[stenmark|Stenmark]], the valleys and passes under the southern Crags. Like most titles in the Marches, it rests on an imperial patent that nobody has renewed since the legions left. He keeps it with the Iron Bailiffs, who hold the toll gates on both roads out, and he taxes what crosses them: the tenants' grain in autumn and refined steel by the hundredweight all year.");
+            out.push("His title is Baron of [[stenmark|Stenmark]], the valleys and passes under the southern Crags. Like most titles in the Marches, it rests on an imperial patent that nobody has renewed since the legions left. He keeps it with soldiers and riders loyal to his house. Karr's guards hold the toll gates on both roads out, and his tax collectors take the tenants' grain in autumn and refined steel by the hundredweight all year.");
           }
           return out;
         },
@@ -803,17 +803,17 @@
         see: ["port_valen", "dredge_end", "gilded_scales", "port_watch"]
       },
       {
-        id: "iron_bailiffs", category: "factions", title: "The Iron Bailiffs",
-        link: ["Iron Bailiffs"],
-        sub: "Baron Karr's tax collectors",
-        tags: ["Karr", "Highlands"], aliases: ["bailiffs", "tax collectors"],
+        id: "iron_bailiffs", category: "factions", title: "Baron Karr's Forces",
+        link: ["Baron Karr's forces", "Karr's soldiers", "Karr's guards", "Karr's riders", "Karr's tax collectors"],
+        sub: "The soldiers and enforcers of Stenmark",
+        tags: ["Karr", "Highlands"], aliases: ["soldiers", "guards", "riders", "tax collectors", "Karr's forces"],
         unlock: "codex_iron_bailiffs",
         body: function (s) {
           var out = [
-            "Baron Aldous Karr's armed tax collectors and highland enforcers. They wear boiled leather and iron kettle-helms, hold the mountain toll passes, seize tenant harvests, and enforce Karr's edicts with fire and the noose. They also seize contraband along the border."
+            "Baron Aldous Karr rules through soldiers, guards, mounted riders, and tax collectors. His guards hold the mountain toll passes, his riders patrol the border and pursue runaways, and armed tax collectors seize tenant harvests. Together they enforce Karr's edicts with fire and the noose."
           ];
           if (truthy(s.codex_stenmark)) {
-            out.push("Two tolls close Stenmark, and the bailiffs man both: Black Pike Gate on the south road and Iron Gap on the west. Everything the barony sells goes out through one of them, and everything it cannot grow comes in through the other.");
+            out.push("Two tolls close Stenmark, and Karr's guards man both: Black Pike Gate on the south road and Iron Gap on the west. Everything the barony sells goes out through one of them, and everything it cannot grow comes in through the other.");
           }
           return out;
         },
@@ -826,7 +826,7 @@
         tags: ["Western Vale"], aliases: ["Gault", "Dunmow", "lord of Dunmow", "riders", "cavalry", "Western Vale"],
         unlock: "codex_house_gault",
         body: [
-          "The noble house that holds the [[western_vale|Western Vale]] from its walled seat at Dunmow. When the legions left, Gault kept its granaries shut and its gates manned, and it has held Dunmow ever since. It fields mounted riders and archers, who are at home on the open downs and far less so in forest or bog. Coombe Gap, the road that takes the vale's wagons east toward the river, is Gault's.",
+          "The noble house that holds the [[western_vale|Western Vale]] from its walled seat at Dunmow. When the legions left, Gault kept its granaries shut and its gates manned, and it has held Dunmow ever since. It fields mounted riders and archers, who are at home on the open grasslands and far less so in forest or bog. Coombe Gap, the road that takes the vale's wagons east toward the river, is Gault's.",
           "Gault keeps no harbor and no fleet, so its grain and cloth reach the sea on Scales barges or not at all."
         ],
         see: ["western_vale", "stenmark", "grey_marches", "meridian_empire"]
@@ -1065,7 +1065,7 @@
         unlock: "codex_broken_crags",
         body: function (s) {
           var out = [
-            "A northern highland region of steep granite ravines and scrub hills, hard on wagon axles. Baron Karr's bailiffs control it. Its narrow choke points and heavy morning fog make it good ground for an ambush against the company's advance."
+            "A northern highland region of steep granite ravines and scrub hills, hard on wagon axles. Karr's guards control its roads and passes. Its narrow choke points and heavy morning fog make it good ground for an ambush against the company's advance."
           ];
           if (truthy(s.codex_stenmark)) {
             out.push("The Crags are the range. The southern valleys and passes under them are Karr's barony of [[stenmark|Stenmark]], and the furnaces lie deeper in.");
@@ -1082,7 +1082,7 @@
         unlock: "codex_stenmark",
         body: function (s) {
           var out = [
-            "Baron Karr's southern-Crags barony: high valleys, mountain passes and deep forges. [[karrs_keep|Karr's Keep]] stands above Brandreth, its market town. Roads south through Black Pike Gate and west through Iron Gap are guarded by the Baron's bailiffs."
+            "Baron Karr's southern-Crags barony: high valleys, mountain passes and deep forges. [[karrs_keep|Karr's Keep]] stands above Brandreth, its market town. Karr's guards hold the roads south through Black Pike Gate and west through Iron Gap."
           ];
           if (truthy(s.discussed_smiths_past)) {
             out.push("The steel tax has emptied some of the highland shops. [[torvald|Torvald]] left over it: by his own account, the shops could no longer buy coal, feed their hammer-men or pay the ore carters.");
@@ -1115,7 +1115,7 @@
         tags: ["Karr", "Highlands"], aliases: ["burning of Ashbrook"],
         unlock: "codex_ashbrook",
         body: [
-          "A poor tenant-farming village in the high valley foothills. Baron Karr's bailiffs burned it while collecting the grain tax by force, communal salting cellars and all."
+          "A poor tenant-farming village in the high valley foothills. Karr's riders burned it while his tax collectors seized the grain tax by force, communal salting cellars and all."
         ],
         see: ["baron_karr", "iron_bailiffs", "stenmark"]
       },
@@ -1126,13 +1126,13 @@
         id: "western_vale", category: "places", title: "The Western Vale",
         link: ["Western Vale"],
         sub: "The farm country west of the river",
-        tags: ["Western Vale", "Trade"], aliases: ["Vale", "the vale", "Dunmow", "Fallowfield", "Coombe Gap", "downs", "chalk downs", "farm country", "grain", "wheat", "hemp", "canvas", "horses"],
+        tags: ["Western Vale", "Trade"], aliases: ["Vale", "the vale", "Dunmow", "Fallowfield", "Coombe Gap", "grasslands", "low chalk rises", "farm country", "grain", "wheat", "hemp", "vineyards", "grapes", "canvas", "horses"],
         unlock: "codex_western_vale",
         body: function (s) {
           var karr = truthy(s.codex_baron_karr) ? "Baron Karr's" : "the highland lord's";
           var lord = truthy(s.codex_house_gault) ? "[[house_gault|House Gault]]" : "A noble house";
           return [
-            "Chalk downland and river-fed farm country west of the Grey, with old forest along its southern edge. " + lord + " rules it from Dunmow. Fallowfield and smaller market towns sit among the fields, while the downs hold sheep villages. Coombe Gap leads east to the river; Iron Gap climbs north into the Crags and " + karr + " tolls."
+            "Open grassland and mostly level, river-fed farm country west of the Grey, broken only by low chalk rises and old forest along its southern edge. " + lord + " rules it from Dunmow. Fallowfield and smaller market towns sit among grain fields, fibre hemp and vineyards, while sheep graze the broad pasture. Coombe Gap leads east to the river; Iron Gap climbs north into the Crags and " + karr + " tolls."
           ];
         },
         see: ["house_gault", "stenmark", "grey_river", "grey_marches", "port_valen"]

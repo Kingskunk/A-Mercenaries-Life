@@ -71,11 +71,18 @@
     tavern:        { day: "quiet_tavern", night: "crowded_tavern", indoor: true },   // it fills up as the day ends
     sewer:         { all: "sewer", indoor: true },
     silt_conduits: { all: "sewer", indoor: true },
+    open_road:     { all: "overworld_walking_greymarsh_roads_with_ambience" },
     siege:         { all: "siege_battle" }
   };
   // a place name (from Scenery.placeNames) that plays another kind of place's sound
   var ALIAS = {
     longshade_forest: "forest", woodroad: "forest", forest: "forest",
+    overworld_forest_road: "forest",
+    western_vale_road: "open_road",
+    generic_town_street: "village",
+    langston: "city",
+    langston_pickled_hen_funeral: "tavern",
+    langston_meeting_hall_office: "civic_indoor",
     compound: "city", middle_ward: "city", civic_heights: "city", upper_wharves: "city", port_valen: "city", city: "city",
     carrion_compound: "warcamp",
     prologue_camp_night: "warcamp",
