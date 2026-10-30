@@ -1,0 +1,281 @@
+*comment ====================================================================================
+*comment THE PICKLED HEN (Langston): reusable inn, common room and private rented room.
+*comment Source facts retained from Wolves of Langston: a ground-floor tavern, rooms above, and
+*comment an aproned, balding innkeeper. The source does not name him or establish a stable yard.
+*comment A normal key lasts 24 hours. While the Wolves contract is active, Langston pays the
+*comment protagonist's room and ordinary meals under Mayor Anathram's arrangement.
+*comment ====================================================================================
+
+*label lg_hen
+*set minutes_to_pass 5
+*set time_advance_call_id "lg_hen_walk_1"
+*gosub_scene Langston/langston lg_walk_time
+*goto lg_hen_hall
+
+*label lg_hen_hall
+*set scenery_subplace "pickled_hen_hall"
+*temp hen_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+*temp hen_sponsored false
+*if (wol_quest_stage = "active")
+  *set hen_sponsored true
+*if (hen_sponsored)
+  *set lg_hen_room_active true
+*elseif (hen_now >= lg_hen_room_until)
+  *set lg_hen_room_active false
+*temp hen_first false
+*if (not(lg_hen_seen))
+  *set hen_first true
+*set lg_hen_seen true
+*temp hen_state "day"
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set hen_state "night"
+*elseif (time_period = "Morning")
+  *set hen_state "morning"
+*elseif (time_period = "Dusk")
+  *set hen_state "dusk"
+
+[b]◈ THE PICKLED HEN[/b]
+*line_break
+
+*if (hen_first)
+  The Pickled Hen occupies a broad timber-framed house just off the market square. Its painted sign shows a white hen perched on the rim of a green preserving crock. Inside, a long counter faces rows of close-set tables and benches. A wide hearth fills the back wall, with an iron cooking pot on its crane and strings of onions and herbs drying from the beam above it. A narrow stair beside the counter climbs to the rooms on the upper floor. The house smells of bread, broth, lamp oil and beeswax rubbed into old boards.
+*else
+  The Pickled Hen is warm behind its painted sign, with the hearth at the back, close-set tables across the common room and the narrow stair to the rooms beside the counter.
+
+*if (weather_severity >= 3)
+  The shutters are barred against the weather, and every lamp in the common room has been lit.
+*elseif (weather = "Rain")
+  Rain ticks against the windows and darkens the floorboards inside the door.
+*elseif (weather = "Fog")
+  The windows have turned pale with mist, shutting the market streets from view.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Slush melts from boots by the door while the hearth is built high.
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  The windows show only the lamps of the neighbouring streets and their broken reflections on wet cobbles.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Old mud still marks the boards nearest the door after the last long rain.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  Damp footprints cross the boards from the street.
+
+*if (not(met_harlan_vetch))
+  *set met_harlan_vetch true
+  The aproned, balding innkeeper looks up from the cup he is drying and gives you a measured glance.
+  *if (hen_sponsored)
+    "Harlan Vetch," he says. "Mayor Anathram said you would be using the room upstairs. The town is paying for the bed and ordinary meals while you work. Anything beyond that comes from your own purse."
+  *else
+    "Harlan Vetch," he says. "Food or a bed? The kitchen is serving, and a private room is ${lg_hen_rate_copper} copper bits for a day and a night."
+*elseif (hen_sponsored)
+  Harlan gives you a short nod from behind the counter. "Your room is still on the town's account. Food as well, within reason."
+*else
+  Harlan dries cups behind the counter, watching the room and the front door in turn.
+
+*if (hen_state = "morning")
+  Bakers, wagoners and market clerks occupy the tables nearest the hearth, eating quickly before the square reaches its busiest hour.
+*elseif (hen_state = "dusk")
+  The common room fills as the market bays close. Porters claim the benches nearest the fire while late travelers queue at the counter for food and keys.
+*elseif (hen_state = "night")
+  The hearth has been banked low, but a lamp remains lit beside the stairs. A few late drinkers speak quietly at the far tables while the upper floor settles around the occasional creak of a bedframe.
+*elseif (wol_quest_stage = "active")
+  The tables are occupied, but the room never rises above a guarded murmur. People glance toward the door whenever it opens and return quickly to their meals.
+*else
+  Market talk passes from table to table: wagon space, grain weights, hemp prices and which road will carry the next load out of the Vale.
+
+*set wait_ok_page page_id
+*choice
+  *if (hen_sponsored)
+    # [Town Account] Order lamb and barley stew with brown bread. [~20 min]@{show_stat_hints  [+2 Temp HP, +1 CON for 4h]|}
+      *set tavern_item_cost_copper 0
+      *goto lg_hen_stew
+  *elseif ((((gold * 100) + (silver * 10)) + copper) >= 2)
+    # [2 Copper Bits] Buy lamb and barley stew with brown bread. [~20 min]@{show_stat_hints  [+2 Temp HP, +1 CON for 4h]|}
+      *set tavern_item_cost_copper 2
+      *goto lg_hen_stew
+  *if (hen_sponsored)
+    # [Town Account] Order hard cheese, brown bread and pickled onions. [~10 min]@{show_stat_hints  [+1 Temp HP, +1 STR for 4h]|}
+      *set tavern_item_cost_copper 0
+      *goto lg_hen_cold_plate
+  *elseif ((((gold * 100) + (silver * 10)) + copper) >= 1)
+    # [1 Copper Bit] Buy hard cheese, brown bread and pickled onions. [~10 min]@{show_stat_hints  [+1 Temp HP, +1 STR for 4h]|}
+      *set tavern_item_cost_copper 1
+      *goto lg_hen_cold_plate
+  *if (lg_hen_room_active)
+    # Go up to your room.
+      *goto lg_hen_room
+  *elseif ((((gold * 100) + (silver * 10)) + copper) >= lg_hen_rate_copper)
+    # [${lg_hen_rate_copper} Copper Bits] Take a private room for 24 hours.
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+        *set currency_add_amount (0 - lg_hen_rate_copper)
+        *gosub_scene economy currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id page_id
+      *set lg_hen_room_active true
+      *set lg_hen_room_until (hen_now + 1440)
+      You count the price onto the counter. "A room for the night."
+
+      Harlan takes the coins and passes you an iron key. "Top of the stairs, second door. The key is yours until this hour tomorrow."
+      *goto lg_hen_room
+  *else
+    # Ask what a room costs.
+      "What do you charge for a room?" you ask.
+
+      "${lg_hen_rate_copper} copper bits for a day and a night," Harlan says. "Paid before I hand over the key."
+      *choice
+        # Step back from the counter.
+          *goto lg_hen_hall
+  # Step back out into Langston.
+    *goto_scene Langston/langston lg_return
+
+*label lg_hen_stew
+*set tavern_item_hp_heal 0
+*set tavern_item_temp_hp 2
+*set tavern_item_type "food"
+*set tavern_item_buff_name "Vale Stew"
+*set tavern_item_buff_desc "+1 CON"
+*set tavern_item_buff_stat "con"
+*set tavern_item_buff_bonus 1
+*set tavern_item_buff_minutes 240
+*gosub_scene economy buy_tavern_item
+*set hours_to_pass 0
+*set minutes_to_pass 20
+*set time_advance_call_id "lg_hen_stew"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "exhaustion"
+  *goto_scene death death_screen
+Harlan sets down a deep wooden bowl filled with lamb, barley, leeks and carrots, with a thick piece of brown bread resting across the rim. The broth is rich and hot enough to warm your hands through the bowl.
+
+[b][Hot Stew Eaten: +2 Temporary HP | Vale Stew (+1 CON for 4 Hours) | HP: ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}][/b]
+*goto lg_hen_after_meal
+
+*label lg_hen_cold_plate
+*set tavern_item_hp_heal 0
+*set tavern_item_temp_hp 1
+*set tavern_item_type "food"
+*set tavern_item_buff_name "Market Plate"
+*set tavern_item_buff_desc "+1 STR"
+*set tavern_item_buff_stat "str"
+*set tavern_item_buff_bonus 1
+*set tavern_item_buff_minutes 240
+*gosub_scene economy buy_tavern_item
+*set hours_to_pass 0
+*set minutes_to_pass 10
+*set time_advance_call_id "lg_hen_cold_plate"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "exhaustion"
+  *goto_scene death death_screen
+Harlan lays a wedge of hard yellow cheese beside brown bread, a small heap of pickled onions and a spoonful of mustard. It is plain market food, sharp and filling.
+
+[b][Market Plate Eaten: +1 Temporary HP | Market Plate (+1 STR for 4 Hours) | HP: ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}][/b]
+*goto lg_hen_after_meal
+
+*label lg_hen_after_meal
+*choice
+  # Order something else.
+    *goto lg_hen_hall
+  # Step back out into Langston.
+    *goto_scene Langston/langston lg_return
+  *if (lg_hen_room_active)
+    # Go up to your room.
+      *goto lg_hen_room
+
+*label lg_hen_room
+*set scenery_subplace "pickled_hen_room"
+*temp hen_room_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+*temp hen_room_sponsored false
+*if (wol_quest_stage = "active")
+  *set hen_room_sponsored true
+*if (hen_room_sponsored)
+  *set lg_hen_room_active true
+*elseif (hen_room_now >= lg_hen_room_until)
+  *set lg_hen_room_active false
+*if (not(lg_hen_room_active))
+  *goto lg_hen_hall
+*set wait_ok_page page_id
+[b]◈ YOUR ROOM: THE PICKLED HEN[/b]
+*line_break
+The room is small and clean. A plank bed with a straw mattress stands beneath the sloped roof, covered by a heavy wool blanket. A tin basin and water jug sit on a narrow table beside the door, with a peg rail above them for clothes and equipment. The shuttered window looks down into a narrow lane behind the inn. The common room reaches you only as a muffled rise and fall beneath the floorboards.
+
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  A thin line of lamplight shows beneath the door, and the lane beyond the shutter is quiet.
+*elseif (time_period = "Dusk")
+  The last light enters through the shutter gaps while the common room grows busier below.
+*else
+  Daylight lies across the foot of the bed in narrow bands from the shutter.
+
+*if (weather_severity >= 3)
+  Wind presses at the shutter and sends rain or driven snow against the roof.
+*elseif (weather = "Rain")
+  Rain taps steadily above the bed and runs through a gutter outside the window.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Cold gathers around the shutter, though the room itself remains dry.
+
+*choice
+  # Train in your room. [~${training_hours} Hours]
+    *gosub_scene character_progression inn_room_training "pickled_hen"
+    *page_break Back to your room…
+    *goto lg_hen_room
+  # Bar the door and sleep in the bed. [~8 Hours]
+    *goto lg_hen_sleep
+  # Wash in the basin. [~10 min]
+    *goto lg_hen_wash
+  # Walk back out into Langston.
+    *goto_scene Langston/langston lg_return
+  # Go back down to the common room.
+    *goto lg_hen_hall
+
+*label lg_hen_sleep
+*set hours_to_pass 8
+*set minutes_to_pass 0
+*set time_advance_call_id "lg_hen_sleep"
+*gosub_scene calendar advance_time
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*set sleep_location_id "langston_pickled_hen"
+*set sleep_is_shared false
+*set sleep_is_permanent_home false
+*set sleep_is_paid_inn true
+*set sleep_tier_name "none"
+*set sleep_tier_stat1 "none"
+*set sleep_tier_bonus1 0
+*set sleep_tier_stat2 "none"
+*set sleep_tier_bonus2 0
+*gosub_scene calendar resolve_sleep
+You set your gear within reach, bar the door and settle beneath the heavy wool blanket. The voices below thin to silence as sleep takes you.
+*if ((time_period = "Morning") or (time_period = "Pre-Dawn"))
+  The first movement in the common room wakes you: the hearth being stirred, bowls set on the counter and quiet steps on the stairs. You feel rested.
+*elseif (time_period = "Dusk")
+  You wake as the common room fills below and late light fades from the shutter. The ache of travel has eased.
+*elseif (time_period = "Night")
+  You wake in darkness to a floorboard creaking somewhere beyond the barred door. Your fatigue has cleared.
+*else
+  Daylight reaches the foot of the bed when you wake, and the common room carries on below. Your mind is clear.
+*if (not(sleep_gear_note = ""))
+  *line_break
+  ${sleep_gear_note}
+*if (hen_room_sponsored)
+  The room remains yours while you are working for Langston.
+*else
+  The key remains yours until this hour tomorrow.
+*goto lg_hen_room
+
+*label lg_hen_wash
+*set hours_to_pass 0
+*set minutes_to_pass 10
+*set time_advance_call_id "lg_hen_wash"
+*gosub_scene calendar advance_time
+*set minutes_since_wash 0
+*set hygiene_stage "Clean"
+*gosub_scene calendar update_hub_condition
+You pour water into the basin and wash away the road dust with the coarse soap left beside the jug. The towel is rough but clean.
+*line_break
+[b][🧼 Washed Up: Hygiene Restored to Clean][/b]
+*choice
+  # Set the basin aside.
+    *goto lg_hen_room

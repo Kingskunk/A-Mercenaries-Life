@@ -1,0 +1,195 @@
+*comment ====================================================================================
+*comment LANGSTON: reusable town hub for the Western Vale.
+*comment This first pass owns the town-level view, arrival, repeat visits and road exit only.
+*comment Inns, shops, civic buildings, the chapel and quest locations remain separate future files.
+*comment ====================================================================================
+
+*label langston
+*gosub lg_enter
+*gosub lg_header
+*gosub lg_layers
+*goto lg_menu
+
+*comment Shared setup keeps direct hub visits and later overworld arrivals in the same state.
+*label lg_enter
+*temp lg_first_hub false
+*if (not(langston_seen))
+  *set lg_first_hub true
+*set current_district "langston"
+*set scenery_subplace "langston"
+*set langston_seen true
+*set codex_western_vale true
+*gosub_scene calendar update_hub_condition
+*return
+
+*label lg_header
+[b]◈ LANGSTON[/b]
+*line_break
+*return
+
+*label lg_layers
+*gosub lg_place
+*gosub lg_sky
+*gosub lg_street
+*return
+
+*comment Future town locations return here without repeating the full town description.
+*label lg_return
+*gosub lg_enter
+*gosub lg_header
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  You return to the market square beneath the lamps and dark upper stories.
+*elseif (time_period = "Dusk")
+  You return to the market square as the town settles behind its walls.
+*else
+  You return to Langston's market square.
+*goto lg_menu
+
+*label lg_menu
+*comment Open-world free time: the sidebar's Wait and Rest work on this page.
+*set wait_ok_page page_id
+*choice
+  # [b]The Pickled Hen[/b]: meals and private rooms. [~5 min]
+    *goto_scene Langston/pickled_hen lg_hen
+  # [b]The roads out of town[/b]: leave Langston.
+    *comment Langston has no assigned overworld tile yet. Preserve the caller's map position until that route is chosen.
+    *goto_scene overworld/overworld ow_here
+
+*comment The future overworld tile should enter here. The short walk costs five minutes once per arrival.
+*label lg_arrive
+*set minutes_to_pass 5
+*set time_advance_call_id "lg_arrive_1"
+*gosub lg_walk_time
+*temp lg_first_arrival false
+*if (not(langston_arrival_seen))
+  *set lg_first_arrival true
+*set langston_arrival_seen true
+*gosub lg_enter
+*gosub lg_header
+
+*if (lg_first_arrival)
+  *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+    The road reaches Langston beneath a low stone wall. The gate stands open for foot traffic, though heavy timber doors wait against the inner wall and two town militia keep the arch by lantern light. Beyond them, close-set timber houses rise above a cobbled street that climbs toward the market square and the dark outline of the chapel tower.
+  *elseif (time_period = "Dusk")
+    The road meets Langston at a low stone wall and a broad gate busy with the last wagons of the day. Town militia guide the traffic beneath the arch while lamps appear along a cobbled street between close-set timber houses. Higher within the walls, the chapel tower catches the final light.
+  *else
+    The road reaches a broad gate in Langston's low stone wall. Town militia keep wagon traffic moving beneath the arch, and the cobbled street beyond runs between close-set timber houses toward a crowded market square. A stone chapel tower rises above the steep roofs near the town's upper side.
+*else
+  *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+    The militia wave you through Langston's lantern-lit gate, and the cobbled street climbs into the sleeping town.
+  *elseif (time_period = "Dusk")
+    You pass beneath Langston's gate among the last wagons admitted before dark.
+  *else
+    You pass beneath Langston's gate with the steady traffic from the road.
+
+*gosub lg_layers
+*goto lg_menu
+
+*comment ── LAYER 1: PLACE ── Fixed geography only. The long description prints once.
+*label lg_place
+*if (lg_first_hub)
+  Langston stands close within its stone wall. Two- and three-storey timber-framed houses crowd the cobbled streets, their upper floors jutting over shopfronts, covered passages and narrow side lanes. The main street opens into a broad market square built around a weathered stone fountain. Covered stalls and wagon bays occupy the gateward side, while the surrounding buildings rise in uneven rows of white plaster, dark beams and steep tiled roofs.
+
+  A wide flight of shallow steps climbs from the square toward the older part of town. The town hall stands there in plain dressed stone, smaller than the buildings packed around it but heavier in its construction. Beyond it, a tall chapel tower marks the upper skyline. From the higher lanes, the roofs fall away toward the wall and the open Western Vale beyond: broad pasture and cultivated fields, with the old forest lying along the distant southern horizon.
+
+  Grain dust, horse sweat, hearth smoke and fresh bread mingle in the square. Wheel rims have worn pale tracks across the cobbles between the gate, the fountain and the market bays. Langston may serve the farms surrounding it, but within the walls it feels like a compact trading town rather than a country village.
+*else
+  The market square remains Langston's centre: the stone fountain below the stepped upper streets, the gate and wagon bays to one side, and the chapel tower above a dense field of timbered roofs. Traffic from the Western Vale road keeps pale wheel marks on the cobbles.
+*return
+
+*comment ── LAYER 2: SKY ── Weather and light only, followed by the ground's recent-weather state.
+*label lg_sky
+*temp lg_dark false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set lg_dark true
+*if (weather = "Rain")
+  Rain darkens the timber frames and rattles on the tiled roofs, running down the stepped lanes toward the gate drains.
+*elseif (weather = "Storm")
+  Wind drives rain across the square and sends water spilling from the roof gutters in sheets. The chapel tower disappears whenever the weather closes in.
+*elseif (weather = "Fog")
+  Mist fills the lower streets and softens the upper storeys, leaving the chapel tower suspended above the roofs.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Wet snow gathers along the rooflines and stair edges while grey slush fills the wheel tracks around the fountain.
+*elseif (weather = "Blizzard")
+  Driven snow sweeps between the buildings and hides the far side of the square behind a shifting white curtain.
+*elseif (weather = "Clear")
+  *if (lg_dark)
+    Clear starlight outlines the chapel tower and steep roofs while lanterns burn along the main street and around the fountain.
+  *elseif (time_period = "Dusk")
+    The last light catches the upper windows and chapel tower while the square below settles into shadow.
+  *else
+    Clear light falls across the pale cobbles, white plaster and dark timber fronts around the square.
+*else
+  *if (lg_dark)
+    A starless sky hangs above the roofs, leaving the upper streets to window light and the town's lanterns.
+  *else
+    Flat grey light lies over the roofs and brings out the dark lines of every timbered frontage.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Water still runs from the upper lanes after days of rain, and the wheel tracks around the square remain full.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The cobbles are still dark from the last rain, with shallow water gathered around the fountain curb.
+*return
+
+*comment ── LAYER 3: STREET ── Current town activity. Murder-state unease supersedes ordinary traffic.
+*label lg_street
+*if (street_life = "empty")
+  *gosub lg_st_empty
+*elseif ((wol_quest_stage = "offered") or (wol_quest_stage = "active"))
+  *gosub lg_st_uneasy
+*elseif (time_period = "Pre-Dawn")
+  *gosub lg_st_predawn
+*elseif (time_period = "Night")
+  *gosub lg_st_night
+*elseif (time_period = "Dusk")
+  *gosub lg_st_dusk
+*elseif (day_of_week = "Hallowday")
+  *gosub lg_st_rest
+*elseif (day_of_week = "Marketday")
+  *gosub lg_st_market
+*else
+  *gosub lg_st_day
+*return
+
+*label lg_st_day
+Wagons pass between the gate and market bays while porters shift grain sacks and bound hemp from tailboards to covered scales. Townspeople cross the square around them with baskets, tools and folded account sheets, and the militia keep the fountain lane clear enough for through traffic.
+*return
+
+*label lg_st_market
+The market square is packed with wagons. Grain sacks stand in counted rows beneath the covered bays, hemp bales wait under canvas, and drovers argue over space at the watering trough while clerks carry tallies between the scales and surrounding counting rooms.
+*return
+
+*label lg_st_rest
+Most shutters remain closed for the rest day, and families cross the square in their better clothes as the chapel bell sounds above the roofs. A few food sellers work beneath the covered bays, serving people who have come in from the surrounding farms.
+*return
+
+*label lg_st_dusk
+Porters rope the last wagon covers while stallholders carry boxes beneath the market awnings. The militia narrow the gate traffic to one lane, and lamplighters move outward from the square as upper windows begin to glow.
+*return
+
+*label lg_st_night
+The market bays are shuttered and the fountain carries louder than the remaining voices. Pairs of militia walk between the gate and upper steps while light and muted conversation escape from a few late-closing public rooms.
+*return
+
+*label lg_st_predawn
+The town is dark except for gate lanterns, watch lamps and the first glow from bakehouse windows. A few wagons wait outside the market bays while their drivers sleep beneath the carts or tend quiet teams.
+*return
+
+*label lg_st_empty
+The market awnings have been tied down and the square left almost bare. Shutters cover the lower windows, and the militia keep to the shelter of the gate arch and stepped passages while the weather moves through the town.
+*return
+
+*label lg_st_uneasy
+People still cross the square, but few linger. Conversations fall quiet when strangers pass, doors close earlier than their owners intend, and militia patrol in pairs between the gate, market bays and upper streets while Langston waits for word about the killing.
+*return
+
+*label lg_walk_time
+*set hours_to_pass 0
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return

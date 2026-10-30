@@ -43,6 +43,7 @@
   var SCENE_PLACES = {
     "alderford/drowned_oar": "tavern",
     "timbermouth/split_pine_inn": "generic_town_inn",
+    "Langston/pickled_hen": "generic_town_inn",
     "alderford/wagon_lot": "village_stable_yard",
     "timbermouth/wagon_lot": "village_stable_yard",
     "alderford/redvein/red_lantern": "generic_village_inn",
@@ -184,6 +185,7 @@
     function (s) { return counterShop(s) && s.shop_open !== "trapper" && s.shop_open !== "halda" ? "generic_trade_shop_open" : undefined; }, // unobstructed shop counters; Halda has a scoped forge rule above and the forest trapper stays outdoors
     function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_inn_room" ? "generic_town_inn_room" : undefined; }, // Wagoner's Rest guest room and Kess's rented chamber
     function (s) { return s.sceneName === "timbermouth/split_pine_inn" && s.scenery_subplace === "town_inn_room" ? "generic_town_inn_room" : undefined; }, // Split Pine guest room
+    function (s) { return s.sceneName === "Langston/pickled_hen" && s.scenery_subplace === "pickled_hen_room" ? "generic_town_inn_room" : undefined; }, // Pickled Hen guest room
     function (s) { return s.scenery_subplace === "village_inn_room" && (s.sceneName === "alderford/drowned_oar" || s.sceneName === "alderford/redvein/red_lantern" || s.sceneName === "alderford/whitefold/white_ram" || s.sceneName === "port_valen/brinewick/reedhouse" || s.sceneName === "port_valen/marlcross/wayfarers_rest") ? "generic_village_inn_room" : undefined; }, // village inns and Maura's Drowned Oar rooms
     function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_lodgings" ? "generic_quiet_lodgings" : undefined; }, // Terrace Lodgings' ground-floor entry hall
     function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_tavern" ? "generic_town_inn" : undefined; }, // the Wagoner's Rest hall and rooms

@@ -62,11 +62,20 @@ The remaining differences are deliberate: refusing the contract leaves a reversi
 
 Clue totals must always be derived from those flags. They must never be incremented as permanent counters.
 
+## Langston Town Hub
+
+- `web/mygame/scenes/Langston/langston.txt` owns Langston's reusable town-level view, first and repeat arrival prose, weather and street-life layers, and road exit.
+- `langston_seen` keeps the full fixed town description from repeating; `langston_arrival_seen` keeps the long Western Vale road arrival from repeating.
+- The hub exposes the Pickled Hen through its separate `Langston/pickled_hen.txt` scene. Shops, the chapel, civic buildings, and quest destinations remain unconnected until their own files are built.
+- The Pickled Hen provides ordinary paid meals and 24-hour private rooms. While the Wolves contract is active, Anathram's room-and-board agreement covers the protagonist's room and the two ordinary meals.
+- Harlan Vetch is the Pickled Hen's aproned, balding innkeeper. The inn introduces him on an early visit; otherwise Anathram identifies him as Master Vetch while arranging the investigator's room in Chapter 1.
+- Langston's exact overworld tile is still undecided, so the road exit preserves the map position supplied by its eventual caller.
+
 ## Deferred Until the World Hook Is Chosen
 
 - Langston's exact map location and travel route.
 - The trigger that offers the journey to Langston.
 - Langston Lorebook and NPC entries.
-- A town hub, general store, repeatable inn, and post-quest state.
+- A general store, remaining local town destinations, and post-quest state.
 - Final payment, level-progress credit, unique rewards, accusation outcomes, and aftermath.
 - Whether Langston remains the settlement's final name.
