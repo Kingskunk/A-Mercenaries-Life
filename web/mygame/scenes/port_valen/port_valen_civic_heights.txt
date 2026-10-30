@@ -697,8 +697,7 @@ The clerk lifts a blank disc out of the dish, asks your name, and writes it into
 *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
   *set currency_add_amount (0 - 10)
   *gosub_scene economy currency_add
-  *set has_hall_insignia true
-  *set hall_insignia_rank "open"
+  *script window.Insignia.register(stats, "scales");
   *set currency_txn_locked true
   *set locked_currency_txn_page_id page_id
 
@@ -707,9 +706,17 @@ The clerk lifts a blank disc out of the dish, asks your name, and writes it into
 *goto pv_ch_seals_back
 
 *label pv_ch_seals_show
+*comment A disc bought elsewhere (Langston Hall sells it too) carries no Port Valen page: the Seals window opens one, free, because the disc is already paid for. Otherwise the clerk reads the page as it stands.
+*temp pv_page_new false
+*if (not(hall_scales_registered))
+  *set pv_page_new true
 [b]◈ THE HIRING HALL: THE SEALS WINDOW[/b]
 *line_break
-You hold the brass up to the grille. The clerk passes a flat grey stone over it, and the insignia chimes. He reads it off without looking. "Rank, Open. Port Valen page, ${hall_jobs_scales} @{(hall_jobs_scales = 1) job|jobs} finished."
+*if (pv_page_new)
+  *script window.Insignia.register(stats, "scales");
+  You hold the brass up to the grille. The clerk passes a flat grey stone over it, and the insignia chimes. He reads it off without looking. "House Gault's page, from the Vale. Nothing from us." He takes a second stone from the dish and presses it to the brass beside the first. The metal warms, and a new page opens under your name. "Open. Port Valen page, no jobs finished. No charge. The disc's already paid for."
+*else
+  You hold the brass up to the grille. The clerk passes a flat grey stone over it, and the insignia chimes. He reads it off without looking. "Rank, $!{hall_insignia_rank_scales}. Port Valen page, ${hall_jobs_scales} @{(hall_jobs_scales = 1) job|jobs} finished."
 *page_break Step back from the window…
 *goto pv_ch_seals_back
 

@@ -1537,12 +1537,11 @@
       weight: 0.2,
       name: "Contractor's Insignia",
       description: function (s) {
-        var n = Number(s.hall_jobs_scales) || 0;
-        return "A palm-sized brass contractor's disc. Your name, rank and the terms of what you sign are set into the metal, where any reader can pass over it and tell. Port Valen page: " + n + (n === 1 ? " job" : " jobs") + " finished.";
+        var pages = insignia().pages(s).map(function (p) { return p.page + " page: " + p.rankName + ", " + p.jobs + (p.jobs === 1 ? " job" : " jobs") + " finished."; });
+        return "A palm-sized brass contractor's disc. Your name, rank and the terms of what you sign are set into the metal, where any reader can pass over it and tell; the signature in it is yours alone. It keeps a separate page for each government that has registered you. " + pages.join(" ");
       },
       badge: function (s) {
-        var r = String(s.hall_insignia_rank || "open");
-        return r.charAt(0).toUpperCase() + r.slice(1);
+        return insignia().pages(s).map(function (p) { return p.rankName; }).join(" · ");
       }
     },
     {
@@ -1558,6 +1557,75 @@
     // (Saint Althea's phial, Ambrose's liniment and draught come from the catalog, in the generated block above.)
   ]
 };
+
+function insignia() { return (typeof window !== "undefined" ? window : global).Insignia; }
+
+/*
+ * THE CONTRACTOR'S INSIGNIA, one page for each government (2026-10-30, the user's design). The Insignia is a single global item, a contractor's resume: its magical signature is unique and cannot
+ * be faked, so an employer reads it at a glance. It keeps a separate page per government, each with its own job count and its own rank; a rank from one government grants no authority in another
+ * (a Gilded Scales rank means nothing to House Gault). A page's rank is DERIVED, never stored by hand: Insignia.refresh walks the page's ladder and stops at the first rung not yet met. A rung asks
+ * for a number of finished jobs (jobs), a story flag (flag: a promotion scene, or a grant from the ruler), or both. A page is "none" until the player is registered with it.
+ * The disc and its pages are separate: any hall that sells the disc calls Insignia.issue (the three Gilded Scales sales call register, which issues and opens the Scales page; Langston Hall issues it and
+ * opens the Gault page), and a hall opens its page on a disc the player already carries with Insignia.register. Scenes call Insignia.register(stats, id) when a government first registers the player, and Insignia.credit(stats, id) when a job for it is finished (from *script: the callers keep their own replay
+ * guards). A new government is one entry in PAGES and its stats in startup_parts/23: <jobs>, <rank>, and the flags its ladder names. The numbers below are first guesses to tune.
+ * The ranks are the user's: Gilded Scales Open > Bonded > Sealed > Named (commercial reliability and access to sensitive contracts); House Gault Listed > Proven > Vouched > Commissioned (service,
+ * noble sponsorship and delegated authority; Commissioned is granted by the Countess and never earned by repetition, and it does not make the player noble or a retainer).
+ */
+(typeof window !== "undefined" ? window : global).Insignia = (function () {
+  var PAGES = {
+    scales: {
+      government: "The Gilded Scales", page: "Port Valen", jobs: "hall_jobs_scales", rank: "hall_insignia_rank_scales",
+      registered: function (s) { return truthy(s.has_hall_insignia) && truthy(s.hall_scales_registered); },
+      register: function (s) { s.has_hall_insignia = true; s.hall_scales_registered = true; },
+      ladder: [{ id: "open" }, { id: "bonded", jobs: 5 }, { id: "sealed", jobs: 15, flag: "hall_scales_sealed" }, { id: "named", flag: "hall_scales_named" }]
+    },
+    gault: {
+      government: "House Gault", page: "House Gault", jobs: "hall_jobs_gault", rank: "hall_insignia_rank_gault",
+      registered: function (s) { return truthy(s.has_hall_insignia) && truthy(s.hall_gault_registered); },
+      register: function (s) { s.hall_gault_registered = true; },
+      ladder: [{ id: "listed" }, { id: "proven", jobs: 3 }, { id: "vouched", jobs: 6, flag: "hall_gault_vouched" }, { id: "commissioned", flag: "hall_gault_commissioned" }]
+    }
+  };
+  function jobsOf(s, id) { return Number(s[PAGES[id].jobs]) || 0; }
+  function rankOf(s, id) {
+    var page = PAGES[id], rank = "none";
+    if (!page.registered(s)) return rank;
+    for (var i = 0; i < page.ladder.length; i++) {
+      var rung = page.ladder[i];
+      if (rung.jobs !== undefined && jobsOf(s, id) < rung.jobs) break;
+      if (rung.flag !== undefined && !truthy(s[rung.flag])) break;
+      rank = rung.id;
+    }
+    return rank;
+  }
+  function refresh(s) { for (var id in PAGES) s[PAGES[id].rank] = rankOf(s, id); }
+  return {
+    pages: function (s) {
+      var out = [];
+      for (var id in PAGES) {
+        var r = rankOf(s, id);
+        if (r !== "none") out.push({ id: id, government: PAGES[id].government, page: PAGES[id].page, rank: r, rankName: r.charAt(0).toUpperCase() + r.slice(1), jobs: jobsOf(s, id) });
+      }
+      return out;
+    },
+    ids: function () { return Object.keys(PAGES); },
+    ladder: function (id) { return PAGES[id].ladder.map(function (r) { return r.id; }); },
+    // what the page's next rung still asks for, for a clerk to read out: { next: rung id ("" at the top or unregistered), jobsLeft: jobs still to finish, flagNeeded: a promotion or grant is also required }
+    next: function (s, id) {
+      var page = PAGES[id], r = rankOf(s, id), at = -1;
+      for (var i = 0; i < page.ladder.length; i++) if (page.ladder[i].id === r) at = i;
+      if (r === "none" || at < 0 || at >= page.ladder.length - 1) return { next: "", jobsLeft: 0, flagNeeded: false };
+      var rung = page.ladder[at + 1];
+      return { next: rung.id, jobsLeft: rung.jobs !== undefined ? Math.max(0, rung.jobs - jobsOf(s, id)) : 0, flagNeeded: rung.flag !== undefined && !truthy(s[rung.flag]) };
+    },
+    refresh: refresh,
+    // issue: a government's hall sells the blank disc. It opens no page by itself; register does.
+    issue: function (s) { s.has_hall_insignia = true; refresh(s); },
+    register: function (s, id) { PAGES[id].register(s); refresh(s); },
+    // finishing a job writes it on the employer's page, so a page that was never opened is opened first
+    credit: function (s, id) { if (!PAGES[id].registered(s)) PAGES[id].register(s); s[PAGES[id].jobs] = jobsOf(s, id) + 1; refresh(s); }
+  };
+})();
 
 // Shared with lorebook-data.js's own local copy of this idea (core.truthy in
 // lorebook.js) -- kept here too so this file has no load-order dependency on it.

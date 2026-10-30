@@ -231,8 +231,7 @@ She writes it into the air above the brass with the silver stylus. The metal clo
 *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
   *set currency_add_amount (0 - 10)
   *gosub_scene economy currency_add
-  *set has_hall_insignia true
-  *set hall_insignia_rank "open"
+  *script window.Insignia.register(stats, "scales");
   *set currency_txn_locked true
   *set locked_currency_txn_page_id page_id
 
@@ -246,7 +245,15 @@ She writes it into the air above the brass with the silver stylus. The metal clo
   *comment GEN:END place_steps home:timbermouth
 
 *label tm_hall_seals_show
-You hold the brass up to the grille. The young clerk passes a flat grey stone over it, and the insignia chimes once. She reads the rank off its face, nods, and slides it back across the rail: Open.
+*comment A disc bought elsewhere carries no Port Valen page: the grille opens one, free. Otherwise the clerk reads the rank as it stands.
+*temp tm_page_new false
+*if (not(hall_scales_registered))
+  *set tm_page_new true
+*if (tm_page_new)
+  *script window.Insignia.register(stats, "scales");
+  You hold the brass up to the grille. The young clerk passes a flat grey stone over it, and the insignia chimes once. "A page from the Vale," she says, "and none from us." She lays a second stone against the brass beside the first, and a Port Valen page opens under your name. "Open. No charge for the page." She slides it back across the rail.
+*else
+  You hold the brass up to the grille. The young clerk passes a flat grey stone over it, and the insignia chimes once. She reads the rank off its face, nods, and slides it back across the rail: $!{hall_insignia_rank_scales}.
 *choice
   # Step back from the grille.
     *goto tm_hall_counter

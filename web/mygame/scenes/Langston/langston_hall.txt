@@ -1,11 +1,20 @@
 *comment ====================================================================================
 *comment LANGSTON HALL: House Gault's administrative hall in Langston.
 *comment The Countess of the Western Vale rules from Dunmow and appoints Langston's mayor.
-*comment This file establishes the location and its four reactive description layers. It has no
-*comment hub route, choices, playable counters or visitable rooms yet; those come next.
+*comment The town hub's Langston Hall option enters here. The public chamber has four reactive
+*comment description layers and a menu at the clerks' counters: present a Contractor's Insignia to
+*comment be listed on House Gault's page, and have a clerk read that page. The Contract Board, the
+*comment mayor's office and the record rooms are still to come.
 *comment ====================================================================================
 
+*comment The short walk up the steps from the market square costs five minutes once per entry.
 *label lg_hall
+*set minutes_to_pass 5
+*set time_advance_call_id "lg_hall_walk_1"
+*gosub_scene Langston/langston lg_walk_time
+*goto lg_hall_front
+
+*label lg_hall_front
 *temp lg_hall_first false
 *if (not(lg_hall_seen))
   *set lg_hall_first true
@@ -22,8 +31,176 @@
 [b]◈ LANGSTON HALL[/b]
 *line_break
 *gosub lg_hall_layers
-*page_break Return to the market square...
-*goto_scene Langston/langston lg_return
+*goto lg_hall_menu
+
+*comment The clerks' counters follow the Hall's public day: Morning through Afternoon, shut on the rest day and when weather empties the street. The chamber itself is described at every hour.
+*label lg_hall_hours
+*set lg_hall_open false
+*set lg_hall_closed_reason "shuttered for the night"
+*if (day_of_week = "Hallowday")
+  *set lg_hall_closed_reason "shuttered for the rest day"
+  *return
+*if (street_life = "empty")
+  *set lg_hall_closed_reason "shuttered against the weather"
+  *return
+*if (time_period = "Dusk")
+  *set lg_hall_closed_reason "the clerks are closing their shutters"
+  *return
+*if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
+  *set lg_hall_open true
+  *set lg_hall_closed_reason ""
+*return
+
+*comment The public chamber's menu. The clerks' counters are a place of their own along the wall (lg_hall_counters); the Contract Board and the mayor's office will be options here too.
+*label lg_hall_menu
+*gosub lg_hall_hours
+*choice
+  *if (lg_hall_open)
+    # Go to the clerks' counters.
+      *goto lg_hall_counters
+  *if (not(lg_hall_open))
+    # The clerks' counters: ${lg_hall_closed_reason}.
+      *goto lg_hall_counters_shut
+  # Return to the market square.
+    *goto_scene Langston/langston lg_return
+
+*comment The counters along the wall. The heading prints once; every answer comes back to lg_hall_counters_menu on the same page. If the hour turns while the player is here, the shutters come down and the menu goes back to the chamber.
+*label lg_hall_counters
+[b]◈ LANGSTON HALL: THE COUNTERS[/b]
+*line_break
+The counters run along the wall beneath the notice boards, each behind its shutter and sloped writing desk. Clerks work through the open shutters, pens scratching over account sheets and bound petitions.
+
+*label lg_hall_counters_menu
+*gosub lg_hall_hours
+*if (not(lg_hall_open))
+  Shutters come down along the counters one after another, and the line drifts back toward the doors.
+
+  *goto lg_hall_menu
+*choice
+  *if ((has_hall_insignia) and (not(hall_gault_registered)))
+    # Present your Insignia at the counter. [~10 min]
+      *goto lg_hall_present
+  *if (not(has_hall_insignia))
+    *selectable_if ((((gold * 100) + (silver * 10)) + copper) >= 10) # Buy a Contractor's Insignia. [1 Silver Mark]
+      *goto lg_hall_buy
+  *if (not(has_hall_insignia))
+    # Ask a clerk what the Hall wants in a contractor.
+      *goto lg_hall_no_insignia
+  *if (hall_gault_registered)
+    # Ask a clerk to read your House Gault page. [~5 min]
+      *goto lg_hall_read_page
+  # Step back into the chamber.
+    *goto lg_hall_front
+
+*comment House Gault opens its page on the player's Insignia here (Insignia.register is safe to run twice). Free: the Countess wants to know who is hired in her Vale (invented 2026-10-30).
+*label lg_hall_present
+*set minutes_to_pass 10
+*set time_advance_call_id "lg_hall_present_1"
+*gosub_scene Langston/langston lg_walk_time
+*script window.Insignia.register(stats, "gault");
+[b]◈ LANGSTON HALL: THE COUNTERS[/b]
+*line_break
+You lay your Contractor's Insignia on the sloped desk at the nearest open shutter. "I'm looking for work in the Vale," you tell the clerk behind it. "Can the Hall put my name down?"
+
+She turns the disc over with an ink-stained finger, then passes a flat grey seal-stone across the brass. It chimes, and a line of script gathers on its face. "Gilded Scales," she reads. "Port Valen page." She sets the stone aside. "That tells me the disc is yours and nobody forged it. Past that it's worth nothing here. This is the Countess's Vale."
+
+From a drawer she takes a second stone, its face cut with the arms of House Gault, and presses it to the metal beside the first until the brass warms under your thumb. A new page opens on the disc with your name at the head of it.
+
+"Listed," she says. "There's no fee. The Countess likes to know who's hired in her Vale." She writes your name in the Hall's book and turns the disc back to you. "That's all the word means. The Hall knows you, and you can take the ordinary work posted here. Finish it well and the Hall remembers."
+
+You tuck the Insignia away and ask where the work gets posted. "By the doors, when there's any," she says, and nods toward the boards along the wall. "Read them before you ask us."
+
+*goto lg_hall_counters_menu
+
+*comment A clerk reads the player's House Gault page, and what the next rung of it needs, out of Insignia.next. Reading it costs a few minutes at the counter.
+*label lg_hall_read_page
+*set minutes_to_pass 5
+*set time_advance_call_id "lg_hall_read_1"
+*gosub_scene Langston/langston lg_walk_time
+*script var n = window.Insignia.next(stats, "gault"); stats.lg_hall_next = n.next; stats.lg_hall_jobs_left = n.jobsLeft; stats.lg_hall_flag_needed = n.flagNeeded;
+[b]◈ LANGSTON HALL: THE COUNTERS[/b]
+*line_break
+"Would you read my page?" you ask, and set the Insignia on the desk.
+
+The clerk passes her grey stone over the brass. It chimes, and the House Gault page rises in script under her fingers.
+
+*if (hall_jobs_gault = 0)
+  "${name}," she reads. "$!{hall_insignia_rank_gault}. No work closed under the Hall's seal yet."
+*else
+  "${name}," she reads. "$!{hall_insignia_rank_gault}. ${hall_jobs_gault} @{(hall_jobs_gault = 1) job|jobs} closed under the Hall's seal."
+
+*if (lg_hall_next = "proven")
+  "Close ${lg_hall_jobs_left} more @{(lg_hall_jobs_left = 1) job|jobs} under the Hall's seal and I'll mark you Proven," she says. "A person who finishes what the Hall posts is worth knowing."
+*elseif (lg_hall_next = "vouched")
+  *if (lg_hall_jobs_left > 0)
+    "Vouched is the next word, after ${lg_hall_jobs_left} more @{(lg_hall_jobs_left = 1) job|jobs}," she says. "Then the mayor or the steward has to stand up in front of the clerks and say your name. Work alone doesn't buy that."
+  *else
+    "You've done the work for Vouched," she says. "What's left is the mayor or the steward standing up in front of the clerks and saying your name. Ask them. I can't."
+*elseif (lg_hall_next = "commissioned")
+  "Past Vouched there's one more word, and it isn't mine to give," she says. "The Countess grants it from Dunmow, by her own hand and seal."
+*else
+  "Commissioned," she says, and her voice drops a little. "That's the Countess's seal on your page. It's no title and no post. It means the Hall acts on your word when you show it."
+
+*if (hall_insignia_rank_scales != "none")
+  She taps the Port Valen page with a fingernail. "This one the Hall notes and leaves be. It tells me what the Gilded Scales think of you, and their opinion stops at the Reach."
+
+*goto lg_hall_counters_menu
+
+*comment The Hall sells the same disc the Gilded Scales' halls sell, for the same Silver Mark (the user's call, 2026-10-30), and opens its own House Gault page on it. The disc comes with the Gault page only; a Gilded
+*comment Scales hall opens a Port Valen page on it later, free. The payment sits under the refresh-safe currency lock like the other three Insignia sales.
+*label lg_hall_buy
+*set minutes_to_pass 10
+*set time_advance_call_id "lg_hall_buy_1"
+*gosub_scene Langston/langston lg_walk_time
+[b]◈ LANGSTON HALL: THE COUNTERS[/b]
+*line_break
+"I need a Contractor's Insignia," you tell the clerk at the nearest open shutter. "Does the Hall sell them?"
+
+"We do." She lifts a blank brass disc out of a dish under the counter and asks your name.
+
+You give it. She writes it into the air above the brass with a silver stylus, and the metal clouds and warms as a seal and your name work themselves into its face. She presses a stone cut with the arms of House Gault to it, and a page opens under your name. The disc chimes once.
+
+"Listed," she says, and slides it across the sloped desk. "One Silver Mark for the disc. The Hall's page comes with it."
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount (0 - 10)
+  *gosub_scene economy currency_add
+  *script window.Insignia.issue(stats); window.Insignia.register(stats, "gault");
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+
+[b][🏷️ Acquired: Contractor's Insignia (Listed)][/b]
+
+*goto lg_hall_counters_menu
+
+*comment The answer is quoted once and described afterwards.
+*label lg_hall_no_insignia
+*temp lg_hall_ask_first false
+*if (not(lg_hall_asked))
+  *set lg_hall_ask_first true
+*set lg_hall_asked true
+[b]◈ LANGSTON HALL: THE COUNTERS[/b]
+*line_break
+"What does the Hall want in a contractor?" you ask the nearest clerk.
+
+*if (lg_hall_ask_first)
+  She looks up from her sums. "A Contractor's Insignia. We sell the disc here, a Silver Mark, and the Hall's page comes with it." She taps the sloped desk. "The Gilded Scales sell the same disc in the Reach and put a page of their own on it. Any hall will open its page on a disc you already carry. Then you can read the notices and hope."
+*else
+  The clerk gives you the same answer as before: the Hall sells the disc for a Silver Mark and opens its page on it, and any hall will do the same for a disc you already carry.
+
+*goto lg_hall_counters_menu
+
+*comment The counters are shut. Text only, no time, then straight back to the menu on the same page.
+*label lg_hall_counters_shut
+*if (day_of_week = "Hallowday")
+  You rap on a shuttered counter. A Watch officer by the doors points you to the boards along the wall. The clerks are home for the rest day and will be back at their desks when the working days begin.
+*elseif (street_life = "empty")
+  The shutters are down against the weather. A Watch officer by the doors tells you the clerks will lift them when the weather eases.
+*elseif (time_period = "Dusk")
+  The last shutter comes down as you reach the counter. A clerk waves you off with her pen. "Come back in the morning."
+*else
+  The counters stand dark behind their shutters. A Watch officer at the entrance shakes his head toward the door; the clerks return with the morning.
+
+*goto lg_hall_menu
 
 *label lg_hall_layers
 *gosub lg_hall_place
