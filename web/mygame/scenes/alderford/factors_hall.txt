@@ -299,15 +299,16 @@ She writes it into the air over the brass with a silver stylus. The disc clouds 
   *comment GEN:END place_steps home:alderford
 
 *label af_hall_seals_show
+You hold the brass up to the grille. The junior clerk passes the grey stone over it; the insignia chimes once.
 *comment A disc bought elsewhere carries no Port Valen page: the grille opens one, free. Otherwise the clerk reads the rank as it stands.
 *temp af_page_new false
 *if (not(hall_scales_registered))
   *set af_page_new true
 *if (af_page_new)
   *script window.Insignia.register(stats, "scales");
-  You hold the brass up to the grille. The junior clerk passes the grey stone over it; the insignia chimes once. "A Gault page," she says, "and none of ours." She sets a second stone to the brass, and a Port Valen page opens beside it. "Open. No charge, the disc's yours." She slides it back.
+  "A Gault page," she says, "and none of ours." She sets a second stone to the brass, and a Port Valen page opens beside it. "Open. No charge, the disc's yours." She slides it back.
 *else
-  You hold the brass up to the grille. The junior clerk passes the grey stone over it; the insignia chimes once. She reads its face, nods, and slides it back. "$!{hall_insignia_rank_scales}," she says. "Still yours."
+  She reads its face, nods, and slides it back. "$!{hall_insignia_rank_scales}," she says. "Still yours."
 *choice
   # Step back from the grille.
     *goto af_hall_counter
@@ -341,13 +342,18 @@ The board beside the door has three columns: weather and water, road and customs
 
 [i]"CUSTOMS. Goods landed below the weir are declared at the upper yard before road carriage. No wagon crosses the weir with an unsealed cargo."[/i]
 
-*if ((not(rj_escort_stage = "active")) and ((day_of_week = "Ironday") or (day_of_week = "Greyday")))
+*comment The wagon line is read from Overworld CARAVAN_LINES (hall_escort.txt es_set_line): the sheet shows on the day an Alderford line makes up, whatever lines the yard runs.
+*set es_start "af"
+*gosub_scene port_valen/radiant/hall_escort es_set_line
+*if ((not(rj_escort_stage = "active")) and (day_of_week = es_ctx_dow))
   *temp af_pno (6000 + ((campaign_day - (campaign_day modulo 7)) / 7))
   [b]POSTING No. ${af_pno}[/b]
   *line_break
-  [i]Sealed: a carriers' company and the City. Work: wagon escort to @{(day_of_week = "Greyday") Timbermouth|Port Valen}. Pay: the fee named at the lot. Term: two days out. Apply: the carters' lot, beside the Lower Wharf Market.[/i]
+  [i]${es_ctx_notice}[/i]
 *else
   The contracts column is bare but for nail holes and the faded square where a notice was recently taken down. Nothing has replaced it yet.
+*comment The board links to the wagon lot (alderford/wagon_lot.txt) while a line is making up today or a job taken here is still to ride (hall_courier.txt cr_read); the lot is not a hub choice.
+*script stats.cr_lot_link = window.Overworld.lotShows(stats, "af");
 *comment The courier postings (port_valen/radiant/hall_courier.txt, 2026-10-11): the courier postings follow the board's other notices, and the player comes back here (cr_back) if there is nothing to take.
 *set cr_origin "af"
 *set cr_inline true

@@ -7,6 +7,8 @@
 "use strict";
 const fs = require("fs"), path = require("path"), cp = require("child_process");
 const reg = require("./gen_city_settlements.js");
+global.window = global; require(path.join(__dirname, "..", "web", "mygame", "overworld-data.js"));
+const ONLY = (process.argv.find(x => /^--service=/.test(x)) || "").slice(10);   // e.g. --service=lot: measure one kind of route
 
 const ROOT = path.join(__dirname, "..");
 const TMP = path.join(require("os").tmpdir(), "city_settlements_check");
@@ -17,8 +19,9 @@ function clock(out) { const m = /clock_time = "(\d\d):(\d\d)"/.exec(out); return
 const extras = {}, rows = [];
 Object.keys(reg.SETTLEMENTS).forEach(id => {
   const def = reg.SETTLEMENTS[id];
-  reg.SERVICES.forEach(svc => {
-    const base = { scene: def.startScene, label: def.start, preset: "Vanguard Line Fighter", weather: "Clear", time: "Morning", day: "Ironday", refresh: false,
+  reg.servicesOf(def).forEach(svc => {
+    if (ONLY && svc !== ONLY) return;
+    const base = { scene: def.startScene, label: def.start, preset: "Vanguard Line Fighter", weather: "Clear", time: "Morning", day: svc === "lot" ? (global.Overworld.caravanLines.find(l => l.from === def.services.lot.yard) || {}).dow || "Ironday" : "Ironday", refresh: false,
       stats: { name: "Corin", intake_completed: true, vane_independent_operative: true, pv_re_last_day: 1, campaign_day: 1, met_ysolde: true, met_orlov: true }, watch: ["clock_time"] };
     // A step may leave the scene it starts in, and a script ends there, so the route is walked one step at a time: each run starts where the last one ended (the exit line names the scene and label,
     // a step inside the scene starts at the label it went to) and the minutes are the clock after the last arrival less the clock at the start. The destination's own arrival time counts.
@@ -54,5 +57,13 @@ console.log("settlement".padEnd(14) + "service".padEnd(8) + "route".padEnd(8) + 
 rows.forEach(r => console.log(r.id.padEnd(14) + r.svc.padEnd(8) + (r.ok ? "ok" : "FAILED").padEnd(8) + String(r.extra).padEnd(10) + r.note));
 const bad = rows.filter(r => !r.ok);
 console.log("\n" + rows.length + " routes, " + bad.length + " could not be taken");
-if (WRITE) { fs.writeFileSync(path.join(__dirname, "city_settlements_extra.json"), JSON.stringify(extras, null, 1) + "\n"); console.log("wrote tools/city_settlements_extra.json"); }
+if (WRITE) {
+  const file = path.join(__dirname, "city_settlements_extra.json");
+  let out = extras;
+  if (ONLY) {   // one kind of route measured: keep every other measurement as it was
+    out = {}; try { out = JSON.parse(fs.readFileSync(file, "utf8")); } catch (e) { /* none yet */ }
+    Object.keys(extras).forEach(id => { out[id] = Object.assign(out[id] || {}, extras[id]); });
+  }
+  fs.writeFileSync(file, JSON.stringify(out, null, 1) + "\n"); console.log("wrote tools/city_settlements_extra.json");
+}
 process.exit(bad.length ? 1 : 0);

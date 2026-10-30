@@ -1,0 +1,125 @@
+*comment ====================================================================================
+*comment THE SHARED WAGON LOT: the lot of any yard that has no scene of its own (Langston's, so far). The Port Valen wagon yard (hall_escort.txt es_yard), the Timbermouth lot (timbermouth/wagon_lot.txt) and
+*comment the Alderford carters' lot (alderford/wagon_lot.txt) each have prose of their own; this is the same page for a yard whose words are DATA instead: Overworld CARAVAN_YARDS (overworld-data.js) gives its
+*comment heading, the first paragraph (placeLong), the name of the far end of the lot (endName), the road beside it (roadWord), what lies beyond the rails (horizon), the choice that walks back (leaveText), the
+*comment hand's answer when nothing is making up (idle) and the page for a caravan that left without the player (missed, in hall_escort.txt es_missed). The sky and the life of the lot are written once here, with
+*comment those words dropped in, so a new town is a yard, its lines and a stub label that sets es_start, calls hall_escort es_set_line, walks in and comes here (see Langston/langston.txt lg_lot).
+*comment The state of the lot is hall_escort.txt es_lot_state; the offer, the signing, the muster and the road are that scene's own labels. The page returns here through es_back (place "glot").
+*comment ====================================================================================
+
+*label cl_main
+*gosub_scene port_valen/radiant/hall_escort es_lot_state
+*if (es_lot_state = "gone")
+  *goto_scene port_valen/radiant/hall_escort es_missed
+*temp cl_life 1
+*rand cl_life 1 3
+*script var Y = window.Overworld.caravanYard(String(stats.es_start)); stats.cl_heading = Y.heading; stats.cl_place = Y.placeLong; stats.cl_end = Y.endName; stats.cl_road = Y.roadWord; stats.cl_horizon = Y.horizon; stats.cl_leave = Y.leaveText;
+
+[b]◈ ${cl_heading}[/b]
+*line_break
+${cl_place}
+
+*gosub cl_sky
+
+*if (weather_severity >= 3)
+  The oxen have been led under the lean-to at the ${cl_end} and stand with their backs to the weather, and the hands have crowded in beside them. Every wagon is sheeted down where it stands.
+*elseif (es_lot_state = "muster")
+  Four wagons stand nose to tail along the rails with their tarps lashed down over their goods. Oxen shift in their yokes, a hand walks the column tapping each hub with a mallet, and a lead horse stamps at the ${cl_end}.
+*elseif (time_period = "Morning")
+  *if (cl_life = 1)
+    Hands rake straw under the lean-to while a boy carries water to the oxen in two buckets on a yoke.
+  *elseif (cl_life = 2)
+    A wagon stands with a wheel off while a wheelwright and his apprentice argue over a split felloe, and a hand keeps the ox from wandering.
+  *else
+    Bundles are carried up a plank into a wagon bed, and a hand counts them as they go past.
+*elseif ((time_period = "Midday") or (time_period = "Afternoon"))
+  *if (cl_life = 1)
+    A hand shoes an ox in a sling at the ${cl_end}, with the animal's foot tied up and its eyes rolling.
+  *elseif (cl_life = 2)
+    Two hands grease an axle with a paddle from a bucket of black fat, and a third lies asleep in the straw with his hat over his face.
+  *else
+    A wagon rolls in off the ${cl_road}, its team steaming, and the hands come out to meet it and unhitch the beasts.
+*else
+  *if (cl_life = 1)
+    Teams are led in off the road one by one and rubbed down, and a cookfire is lit under the lean-to.
+  *elseif (cl_life = 2)
+    A hand walks the rails with a lantern and counts the carts under it, touching each one as he passes.
+  *else
+    A carter sits on an upturned bucket mending a harness strap by the last of the light, while an ox noses at his pocket.
+
+*comment ── The master's presence follows the state of the job. ──
+*if (es_lot_state = "waiting")
+  The wagon master is at the ${cl_end}, going over a list with a hand. The carts stand ready for tomorrow's start.
+*elseif (es_lot_state = "offer")
+  A caravan is being made up. The wagons stand along the rails with their goods already roped, and the caravan master walks their length, checking ropes and wheels.
+
+*choice
+  # Look over the wagons and the teams.
+    The wagons are the long, high-sided kind, with iron-tired wheels as tall as a man's chest and a brake lever on the near side. Their beds are piled with sacked and bundled goods roped under tarps that have been oiled until they shine. Oxen are yoked in pairs, broad, slow and patient, with the brand of the carrier on their flanks. A pair of lean horses stands at the ${cl_end}, with a saddle thrown over the rail beside them.
+    *page_break Turn back to the lot…
+    *goto cl_main
+  *if (es_lot_state = "offer")
+    # Speak to the wagon master.
+      *goto_scene port_valen/radiant/hall_escort es_offer
+  *if (es_lot_state = "waiting")
+    # Ask the caravan master when the caravan rolls.
+      *goto_scene port_valen/radiant/hall_escort es_when
+  *if (es_lot_state = "muster")
+    # Report to the wagon master.
+      *goto_scene port_valen/radiant/hall_escort es_muster
+  *if (es_lot_state = "idle")
+    # Ask a hand about work.
+      *goto cl_idle
+  # ${cl_leave}
+    *goto cl_leave
+
+*comment ── The sky: weather and light only, no people. ──
+*label cl_sky
+*temp cl_night false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set cl_night true
+*if (weather = "Rain")
+  Rain drums on the tarps and the lean-to roof and turns the lot to a field of brown puddles.
+*elseif (weather = "Storm")
+  A gale tears at the rails and drives the rain flat across the lot.
+*elseif (weather = "Fog")
+  Mist hangs over the lot, blurring the far rails and ${cl_horizon}.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Wet snow settles on the tarps and the rails, and melts in the ruts.
+*elseif (weather = "Blizzard")
+  Snow drives across the lot in a freezing gale and piles against the rails.
+*elseif (weather = "Clear")
+  *if (cl_night)
+    Starlight silvers the rails and the wet edges of the ruts.
+  *elseif (time_period = "Dusk")
+    The low sun lays the long shadows of the wagons across the lot.
+  *else
+    Sunlight lies across the lot and dries the top of the mud.
+*else
+  *comment Overcast
+  A flat grey sky sits low over the lot and drains the color from the tarps.
+
+*comment ── WEATHER MEMORY (calendar ground_state, strictly no people) ──
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  After days of rain the ruts stand full of brown water, and the lot is a churned mire from rail to rail.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The ruts still hold puddles from the last rain.
+*return
+
+*comment ── The hand's answer when nothing is making up. The question is quoted, the answer is the yard's own (CARAVAN_YARDS idle). ──
+*label cl_idle
+*script stats.cl_idle = window.Overworld.caravanYard(String(stats.es_start)).idle;
+You stop beside a hand with a bucket. "Any work going out today?"
+
+${cl_idle}
+*page_break Turn back to the lot…
+*goto cl_main
+
+*comment ── Back to the town: the one table of where each shared lot walks back to. A new shared lot is one block here. ──
+*label cl_leave
+*if (es_start = "lg")
+  *set minutes_to_pass 5
+  *set time_advance_call_id "cl_leave_1"
+  *gosub_scene Langston/langston lg_walk_time
+  *goto_scene Langston/langston lg_return
+*goto_scene port_valen/port_valen_middle_ward mw_river_gate

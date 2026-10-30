@@ -66,9 +66,9 @@
   // Who holds the land. Add a territory here and give its tiles its id.
   // patrol shifts the danger of every tile the territory holds (see danger above): a negative number is a patrolled road, a positive one a lawless one. The Scales keep the river road patrolled.
   var TERRITORIES = {
-    scales: { name: "The Valen Reach", ruler: "The Gilded Scales", patrol: -1, weather: "reach" },
+    scales: { name: "The Valen Reach", ruler: "The Gilded Scales", patrol: -1, weather: "reach", government: "scales" },
     // The Western Vale (2026-10-29): House Gault's country, west of Fellgate. Unpatrolled by the Scales, so no shift either way for now.
-    gault: { name: "The Western Vale", ruler: "House Gault", patrol: 0, weather: "vale" }
+    gault: { name: "The Western Vale", ruler: "House Gault", patrol: 0, weather: "vale", government: "gault" }
   };
 
   // WEATHER ZONES (2026-10-30, the user's call: separate weather for the Western Vale, built to take more regions and other planes later). A zone is a place that has its own weather: today's, tomorrow's
@@ -304,11 +304,11 @@
       territory: "scales",
       danger: 1,
       depart: "The line pulls out from the road end past the squat stone watch post, the oxen leaning into their yokes and the wagons groaning behind them, and the clearing falls away behind the tail wagon as the road enters the trees.",
-      departVia: { fv: "The line pulls out from the wagon lot beside the Market, the oxen leaning into their yokes and the wagons groaning behind them, and turns off the main street onto the farm road, past the last stacked ranks of ash. The sawmill's whine falls away behind the tail wagon, and the hedged fields of the farm country open ahead." },
-      walkVia: { fv: "The farm road runs down between hedges and ditches, and then the fields give way to stacked ash and the long clearing opens ahead, with smoke over it and the whine of the saw frame carrying up the road." },
+      departVia: { le: "The line pulls out from the wagon lot beside the Market, the oxen leaning into their yokes and the wagons groaning behind them, and takes the narrow northern road out of the clearing between the last stacked ranks of ash and the first thorn. The sawmill's whine falls away behind the tail wagon, and the trees close in on both sides.", fv: "The line pulls out from the wagon lot beside the Market, the oxen leaning into their yokes and the wagons groaning behind them, and turns off the main street onto the farm road, past the last stacked ranks of ash. The sawmill's whine falls away behind the tail wagon, and the hedged fields of the farm country open ahead." },
+      walkVia: { le: "The narrow road runs down between close ash and thorn, and then the trees thin and the long clearing opens ahead, with smoke over it and the whine of the saw frame carrying up the road.", fv: "The farm road runs down between hedges and ditches, and then the fields give way to stacked ash and the long clearing opens ahead, with smoke over it and the whine of the saw frame carrying up the road." },
       walk: "The road runs down out of the hills and the forest closes in on both sides, and then the trees thin and the sky opens, and the road runs straight into a long clearing with smoke over it.",
       arrive: "The caravan comes down off the last of the hill into the clearing at the road's end, where a squat stone watch post stands beside the road and the roofs of Timbermouth rise beyond it.",
-      arriveVia: { fv: "The caravan comes in along the farm road from Barleycross, between the stacked ranks of ash and the first shingled roofs, with the saw frame's thin whine rising ahead, and the wagons turn in at the wagon lot beside the Market." },
+      arriveVia: { le: "The caravan comes down the narrow northern road through ash and thorn into the clearing, with the sawmill's whine rising ahead, and the wagons turn in at the wagon lot beside the Market.", fv: "The caravan comes in along the farm road from Barleycross, between the stacked ranks of ash and the first shingled roofs, with the saw frame's thin whine rising ahead, and the wagons turn in at the wagon lot beside the Market." },
       info: "A road town at the mouth of the Longshade, up from the Grey River, where three smaller roads meet the road from the river.",
       here: "The road comes out of the trees onto cleared ground, and Timbermouth lies ahead at the mouth of the forest: grey shingled roofs, long ranks of stacked ash on the near side, and a thread of smoke over the sawmill. The thin whine of the saw frame carries up the road, and the smell of cut pine comes with it.",
       hereNight: "Timbermouth is a low scatter of lamplight at the mouth of the forest. A single lantern burns at the road end, and the stacked ash behind it is only a darker dark. The saw frame is silent, and the smell of cut pine hangs in the cold air.",
@@ -796,7 +796,8 @@
     af: { place: "the Factor's Hall" },
     bs: { place: "the gatehouse" },
     sw: { place: "the gate" },
-    fg: { place: "the gate" }
+    fg: { place: "the gate" },
+    lg: { place: "the town hall", setting: "town", region: "any" }
   };
   // count is how many postings a board shows on a given day, rolled between the two numbers from the day and the origin (so a refresh and a return visit show the same board): a city is busiest and a village is
   // sometimes empty (the user's call, 2026-10-11). A COURIER_TILES entry may give its own count: [min, max].
@@ -866,6 +867,91 @@
     return Math.max(Math.floor(full * (beats - lost) / beats), Math.floor(full / 3));
   }
 
+  // ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  // THE CARAVAN YARDS AND LINES (radiant/hall_escort.txt), 2026-10-30. A YARD is a place where a wagon line is made up and signed: the Port Valen wagon yard, the Timbermouth lot, the Alderford carters' lot. A LINE
+  // is one route a yard runs on one day of the week (prose never names the day), told with the opening phrase the master uses, the place text and the road talk. The road itself is not here: the caravan walks
+  // the legs of Overworld.route(from, to), and its prose comes from the tiles' walk, camp, depart and arrive fields. To add a town: one entry in CARAVAN_YARDS (place is the key hall_escort.txt es_back and es_missed
+  // answer to, seed and setting make the wagon master's face, one seed per yard so nobody stands at two), one entry per line it runs in CARAVAN_LINES (a yard's FIRST line is what its master describes on a
+  // day with no line), and the labels that bring the player in and out (see es_back, es_arrive_at and the town's own lot scene). A line that runs on the same day of the week as another line of its yard is a
+  // mistake: the yard would offer only one of them. A yard with its own lot scene (the Timbermouth lot, the Alderford carters' lot, Port Valen's yard) needs only the five fields above; a yard that uses the shared lot
+  // scene (port_valen/radiant/caravan_lot.txt, place "glot") adds the words that scene prints: heading, placeLong (the first paragraph), endName ("gate end"), roadWord, horizon, leaveText (the choice that walks
+  // back, with its minutes) and the hand's reply (idle) and the page for a missed line (missed). notice is the line as a sheet on a board (hall_escort.txt es_set_line copies it to es_ctx_notice); postingNo is the number a board that numbers by line gives it (Port Valen's Hiring Hall), the others number by week.
+  // ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  var CARAVAN_YARDS = {
+    pv: { place: "yard", seed: 5000, setting: "middle_ward" },
+    tm: { place: "lot", seed: 6000, setting: "town" },
+    af: { place: "alot", seed: 7000, setting: "town" },
+    lg: { place: "glot", seed: 8000, setting: "town", walkMinutes: 5,
+      heading: "THE WAGON LOT", endName: "gate end", roadWord: "chalk road", horizon: "the pale line of the fields", leaveText: "Walk back to the square. [~5 min]",
+      placeLong: "Just outside Langston's gate, a long lot of trodden chalk has been fenced off with rails and opened onto the wagon road. Wagons stand in it nose to tail, with ox yokes and spare wheels hung from the rails and a picket line of beasts running down one end. Hemp bales and bundles of wool wait along the fence under tarps, and the ground is churned to a pale slurry wherever the carts turn. The air smells of dung, wet wool, hemp and hot iron.",
+      idle: "The hand sets the bucket down and wipes his hands on his apron. \"Nothing making up today,\" he says. \"The carriers go when they have goods. The Contract Board at the Hall carries the posting when one is open, and the wagon master pays only the ones who walk with the column.\"",
+      missed: "The lot is nearly empty. A few hands rake straw under the lean-to, and a long double rut leads out past the last rail and away along the chalk road. A hand tells you the caravan pulled out this morning without you, and that the wagon master pays only the ones who walk with the column." }
+  };
+  var CARAVAN_LINES = [
+    { from: "pv", to: "tm", dow: "Forgeday", postingNo: "0381",
+      notice: "Sealed: a coal and iron carrier and the City. Work: wagon escort to Timbermouth. Pay: the fee named at the yard. Term: two days out. Apply: the wagon yard.",
+      opens: "the gate opens",
+      placeText: "the wagon yard outside the River Gate",
+      roadTalk: "tips a hand toward the north-west. \"River road to the fork, then up the west bank. The first night is the Ashrun's mouth, with water and flat ground. After that the road climbs, and the forest comes down to the edge. Carriers lose what they lose on the second day, when the wagons are tired and the road is narrow.\"" },
+    { from: "pv", to: "af", dow: "Marketday", postingNo: "0340",
+      notice: "Sealed: a carters' company and the City. Work: wagon escort to Alderford. Pay: the fee named at the yard. Term: two days out. Apply: the wagon yard.",
+      opens: "the gate opens",
+      placeText: "the wagon yard outside the River Gate",
+      roadTalk: "tips a hand toward the east. \"Round under the wall to the Charter Gate and up the old paving. The first night is on the High Grey Road, on the verge past the trough, with the wind and no cover. The second day is the climb to the weir, and Alderford is at the top of it. Mind the drop on the Rise.\"" },
+    { from: "tm", to: "pv", dow: "Tideday",
+      notice: "Sealed: a carriers' company and the City. Work: wagon escort to Port Valen. Pay: the fee named at the lot. Term: two days out. Apply: the wagon lot, beside the Market.",
+      opens: "the Market opens",
+      placeText: "the wagon lot beside the Market in Timbermouth",
+      roadTalk: "tips a hand toward the south-east. \"Down off the hills by the west bank, then the river road to the fork and the cuttings to the city. The first night is the Ashrun's mouth, with water and flat ground. The second day is the easy one, if the first went well.\"" },
+    { from: "tm", to: "af", dow: "Hearthday",
+      notice: "Sealed: a carriers' company and the City. Work: wagon escort to Alderford. Pay: the fee named at the lot. Term: two days out. Apply: the wagon lot, beside the Market.",
+      opens: "the Market opens",
+      placeText: "the wagon lot beside the Market in Timbermouth",
+      roadTalk: "tips a hand toward the north-east. \"Out by the farm road to Barleycross, then the Crossfield Road east over the uplands. The first night is on the verge by the old field wall, with water in the ditch and no wood. The second day is the long pull down to the weir, and Alderford sits above it. Carriers lose what they lose on the upland, where the ruts are deep and the wind has nothing to stop it.\"" },
+    { from: "tm", to: "lg", dow: "Ironday",
+      notice: "Sealed: a carriers' company and the City. Work: wagon escort to Langston. Pay: the fee named at the lot. Term: two days out. Apply: the wagon lot, beside the Market.",
+      opens: "the Market opens",
+      placeText: "the wagon lot beside the Market in Timbermouth",
+      roadTalk: "tips a hand toward the north. \"Out by the narrow road through the ash and thorn, then up along the Ashrun under the foot of the mountain. The first night is at Fellgate, under the fort's wall, with a trough in the yard and a gate that shuts. The second day is the straight chalk road across the Vale, with hedges and tilled fields on both hands, and Langston sits at the end of it behind its low wall. Carriers lose what they lose on the first day, in the thin air under the mountain, where the road climbs and the wind comes down off the scree.\"" },
+    { from: "af", to: "pv", dow: "Ironday",
+      notice: "Sealed: a carriers' company and the City. Work: wagon escort to Port Valen. Pay: the fee named at the lot. Term: two days out. Apply: the carters' lot, beside the Lower Wharf Market.",
+      opens: "the Market opens",
+      placeText: "the carters' lot beside the Lower Wharf Market in Alderford",
+      roadTalk: "tips a hand toward the south. \"Up out of the weir by the palisade gate and down the High Grey Road, over the Rise, with the Grey on your right hand. The first night is on the verge past the trough, with the wind and no cover. The second day is all downhill, if the first went well.\"" },
+    { from: "af", to: "tm", dow: "Greyday",
+      notice: "Sealed: a carriers' company and the City. Work: wagon escort to Timbermouth. Pay: the fee named at the lot. Term: two days out. Apply: the carters' lot, beside the Lower Wharf Market.",
+      opens: "the Market opens",
+      placeText: "the carters' lot beside the Lower Wharf Market in Alderford",
+      roadTalk: "tips a hand toward the north-west. \"Out by the palisade gate and west over the upland on the Crossfield Road, with the ruts deep under a loaded wagon. The first night is at Barleycross, on a farmer's headland by the road, with a trough at the gate and the village dogs for company. The second day is the short way in, down the farm road to Timbermouth, and the saw frame will be the first thing you hear.\"" },
+    { from: "lg", to: "tm", dow: "Marketday",
+      notice: "Sealed: a carriers' company and Langston Hall. Work: wagon escort to Timbermouth. Pay: the fee named at the lot. Term: two days out. Apply: the wagon lot, outside the gate.",
+      opens: "the gate opens",
+      placeText: "the wagon lot outside Langston's gate",
+      roadTalk: "tips a hand toward the east. \"East along the chalk road, straight across the Vale, to Fellgate and the foot of the mountain. The first night is under the fort's wall, with a trough in the yard and a gate that shuts. The second day is the timber road down through the Longshade, with the Ashrun running beside it, and Timbermouth is the clearing at the end. Carriers lose what they lose on the second day, when the wagons are tired and the forest comes down to the edge of the road.\"" }
+  ];
+  function caravanYard(id) { return CARAVAN_YARDS[id] || CARAVAN_YARDS.pv; }
+  // The line a yard runs on this day of the week, or its first when it runs none, with the facts hall_escort.txt es_set_line copies into the es_ctx_* stats.
+  // Whether a yard's lot has anything for the player today: a line of CARAVAN_LINES making up on today's weekday while no job is taken, or a job taken here that has not yet ridden. The one rule the towns' lot doors, the
+  // Town card's grey, and the notice boards' lot links all read (the hand-written weekday lists it replaced went stale when the Timbermouth to Langston line was added).
+  function lotShows(s, from) {
+    if (String(s.rj_escort_stage) === "active") return String(s.rj_escort_from) === from && Number(s.campaign_day) <= Number(s.rj_escort_until);
+    return CARAVAN_LINES.some(function (l) { return l.from === from && l.dow === String(s.day_of_week); });
+  }
+  function caravanLine(from, dow) {
+    var mine = CARAVAN_LINES.filter(function (l) { return l.from === from; });
+    var line = mine.filter(function (l) { return l.dow === dow; })[0] || mine[0];
+    if (!line) return null;
+    var r = route(line.from, line.to);
+    return { from: line.from, to: line.to, place: caravanYard(from).place, destName: NODES[line.to].name, opens: line.opens, dow: line.dow, placeText: line.placeText, roadTalk: line.roadTalk, notice: line.notice, postingNo: line.postingNo || "",
+             miles: r.miles, feeText: coinText(convoyFee(r.miles, 0, 0)) };
+  }
+
+  // The government whose Insignia page a job taken at this tile credits (inventory-data.js Insignia ids): the id its territory names. Anything unknown credits the Gilded Scales, as every job did before the Vale.
+  function governmentOf(id) {
+    var n = NODES[id], t = n && TERRITORIES[n.territory];
+    return (t && t.government) || "scales";
+  }
+
   // The zone a tile is in: the tile's own weather, else its territory's, else the default (a typo falls back to the default; the checker catches it).
   function weatherZoneOfTile(id) {
     var n = NODES[id], t = n && TERRITORIES[n.territory], z = (n && n.weather) || (t && t.weather);
@@ -876,6 +962,8 @@
     if (tileId) return weatherZoneOfTile(tileId);
     var forced = String(stats.wx_force_zone || "");
     if (forced && WEATHER_ZONES[forced]) return forced;
+    // a caravan on the road is in the zone of the leg it is walking (es_w_node, set before each leg by hall_escort.txt es_walk), not of the town it left
+    if (stats.rj_escort_road && stats.es_w_node) return weatherZoneOfTile(String(stats.es_w_node));
     if (stats.ow_on) return weatherZoneOfTile(stats.ow_pos);
     var z = DISTRICT_ZONE[String(stats.current_district || "")];
     return WEATHER_ZONES[z] ? z : DEFAULT_WEATHER_ZONE;
@@ -933,5 +1021,5 @@
     stats.wx_queue = JSON.stringify(queue);
   }
 
-  root.Overworld = { weatherZones: WEATHER_ZONES, weatherProfiles: WEATHER_PROFILES, weatherFields: WEATHER_FIELDS, districtZone: DISTRICT_ZONE, defaultWeatherZone: DEFAULT_WEATHER_ZONE, weatherZoneOf: weatherZoneOf, weatherSync: weatherSync, weatherRollBegin: weatherRollBegin, weatherRollNext: weatherRollNext, isOpen: isOpen, courierCount: courierCount, courierPostings: courierPostings, courierTile: courierTile, haleRingPlan: haleRingPlan, MINUTES_PER_MILE: MINUTES_PER_MILE, features: FEATURES, terrains: TERRAIN, nodes: NODES, edges: EDGES, territories: TERRITORIES, convoyPlan: convoyPlan, convoyNight: convoyNight, convoyFee: convoyFee, coinText: coinText, convoyMaxLegs: CONVOY_MAX_LEGS, dangerOf: function (id) { return dangerOf(NODES[id]); }, mountMinutesPerMile: MOUNT_MINUTES_PER_MILE, convoyPace: CONVOY_PACE, haltEvents: HALT_EVENTS, travelEventPlan: travelEventPlan, travelEvents: TRAVEL_EVENTS, campEventPlan: campEventPlan, campEvents: CAMP_EVENTS, campChance: CAMP_CHANCE, travelCooldownDays: TRAVEL_COOLDOWN_DAYS, travelChance: TRAVEL_CHANCE, route: route, duration: duration, span: span, label: label, travelPlan: travelPlan, north: NORTH };
+  root.Overworld = { weatherZones: WEATHER_ZONES, weatherProfiles: WEATHER_PROFILES, weatherFields: WEATHER_FIELDS, districtZone: DISTRICT_ZONE, defaultWeatherZone: DEFAULT_WEATHER_ZONE, weatherZoneOf: weatherZoneOf, weatherSync: weatherSync, governmentOf: governmentOf, caravanLine: caravanLine, lotShows: lotShows, caravanYard: caravanYard, caravanYards: CARAVAN_YARDS, caravanLines: CARAVAN_LINES, weatherRollBegin: weatherRollBegin, weatherRollNext: weatherRollNext, isOpen: isOpen, courierCount: courierCount, courierPostings: courierPostings, courierTile: courierTile, haleRingPlan: haleRingPlan, MINUTES_PER_MILE: MINUTES_PER_MILE, features: FEATURES, terrains: TERRAIN, nodes: NODES, edges: EDGES, territories: TERRITORIES, convoyPlan: convoyPlan, convoyNight: convoyNight, convoyFee: convoyFee, coinText: coinText, convoyMaxLegs: CONVOY_MAX_LEGS, dangerOf: function (id) { return dangerOf(NODES[id]); }, mountMinutesPerMile: MOUNT_MINUTES_PER_MILE, convoyPace: CONVOY_PACE, haltEvents: HALT_EVENTS, travelEventPlan: travelEventPlan, travelEvents: TRAVEL_EVENTS, campEventPlan: campEventPlan, campEvents: CAMP_EVENTS, campChance: CAMP_CHANCE, travelCooldownDays: TRAVEL_COOLDOWN_DAYS, travelChance: TRAVEL_CHANCE, route: route, duration: duration, span: span, label: label, travelPlan: travelPlan, north: NORTH };
 })(typeof window !== "undefined" ? window : global);

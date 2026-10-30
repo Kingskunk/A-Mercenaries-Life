@@ -245,15 +245,16 @@ She writes it into the air above the brass with the silver stylus. The metal clo
   *comment GEN:END place_steps home:timbermouth
 
 *label tm_hall_seals_show
+You hold the brass up to the grille. The young clerk passes a flat grey stone over it, and the insignia chimes once.
 *comment A disc bought elsewhere carries no Port Valen page: the grille opens one, free. Otherwise the clerk reads the rank as it stands.
 *temp tm_page_new false
 *if (not(hall_scales_registered))
   *set tm_page_new true
 *if (tm_page_new)
   *script window.Insignia.register(stats, "scales");
-  You hold the brass up to the grille. The young clerk passes a flat grey stone over it, and the insignia chimes once. "A page from the Vale," she says, "and none from us." She lays a second stone against the brass beside the first, and a Port Valen page opens under your name. "Open. No charge for the page." She slides it back across the rail.
+  "A page from the Vale," she says, "and none from us." She lays a second stone against the brass beside the first, and a Port Valen page opens under your name. "Open. No charge for the page." She slides it back across the rail.
 *else
-  You hold the brass up to the grille. The young clerk passes a flat grey stone over it, and the insignia chimes once. She reads the rank off its face, nods, and slides it back across the rail: $!{hall_insignia_rank_scales}.
+  She reads the rank off its face, nods, and slides it back across the rail: $!{hall_insignia_rank_scales}.
 *choice
   # Step back from the grille.
     *goto tm_hall_counter
@@ -282,16 +283,21 @@ The board by the door is divided into three columns, each headed in the same squ
 *comment ── JOB SLOT: the Timbermouth job board goes here. It is EMPTY on purpose: no job exists yet, so the column says so and nothing is generated. Port Valen's radiant postings
 *comment (port_valen/radiant/) are the model: rank-gated by the Contractor's Insignia, a board of three real jobs per settlement, several at once, silent lapse. ──
 *temp tm_posted false
-*if ((not(rj_escort_stage = "active")) and ((day_of_week = "Tideday") or (day_of_week = "Hearthday")))
+*comment The wagon line is read from Overworld CARAVAN_LINES (hall_escort.txt es_set_line): the sheet shows on the day a Timbermouth line makes up, whatever lines the yard runs.
+*set es_start "tm"
+*gosub_scene port_valen/radiant/hall_escort es_set_line
+*if ((not(rj_escort_stage = "active")) and (day_of_week = es_ctx_dow))
   *set tm_posted true
   *temp tm_pno (5000 + ((campaign_day - (campaign_day modulo 7)) / 7))
   [b]POSTING No. ${tm_pno}[/b]
   *line_break
-  [i]Sealed: a carriers' company and the City. Work: wagon escort to @{(day_of_week = "Hearthday") Alderford|Port Valen}. Pay: the fee named at the lot. Term: two days out. Apply: the wagon lot, beside the Market.[/i]
+  [i]${es_ctx_notice}[/i]
 *if (peddler_stage = "none")
   *set tm_posted true
 *if (not(tm_posted))
   The third column is bare but for a few pins and a scrap of torn paper.
+*comment The board links to the wagon lot (timbermouth/wagon_lot.txt) while a line is making up today or a job taken here is still to ride (hall_courier.txt cr_read); the lot is not a hub choice.
+*script stats.cr_lot_link = window.Overworld.lotShows(stats, "tm");
 *comment THE OVERDUE PEDDLER: the neutral settlement board renderer prints its named notice beside Timbermouth's courier contracts.
 *if (peddler_stage = "none")
   *set cr_origin "tm"

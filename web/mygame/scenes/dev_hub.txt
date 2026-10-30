@@ -586,6 +586,37 @@ Jump into a quest:
     *gosub dev_chapter3_after_vane
     *gosub dev_reset_wolves_chapter_1
     *goto_scene Langston/wolves_of_langston_chapter_1 wol_ch1_start
+  # 🐺 The Wolves of Langston: the mayor has asked -- the funeral is over and Langston's square waits on a clear market morning; call at the Hall's office (Langston/langston_hall.txt)
+    *gosub dev_town_morning
+    *gosub dev_reset_wolves_chapter_1
+    *set wol_chapter_1_started true
+    *set wol_chapter 1
+    *set wol_quest_stage "asked"
+    *set wol_met_mayor true
+    *set met_harlan_vetch true
+    *set langston_seen true
+    *set langston_arrival_seen true
+    *set lg_hen_seen true
+    *set lg_hen_room_active false
+    *set lg_hen_room_until 0
+    *set ow_pos "lg"
+    *goto_scene Langston/langston langston
+  # 🚚 Wagon escort: Langston to Timbermouth -- a Marketday morning at Langston's wagon lot with the line making up, an Insignia carrying both pages (Langston/langston.txt lg_lot, port_valen/radiant/hall_escort.txt)
+    *gosub dev_escort_marketday
+    *gosub dev_escort_fixture
+    *set langston_seen true
+    *set langston_arrival_seen true
+    *set current_district "langston"
+    *set ow_pos "lg"
+    *goto_scene Langston/langston lg_lot
+  # 🚚 Wagon escort: Timbermouth to Langston -- an Ironday morning at Timbermouth's wagon lot with the line making up, an Insignia carrying both pages (timbermouth/wagon_lot.txt, port_valen/radiant/hall_escort.txt)
+    *gosub dev_escort_ironday
+    *gosub dev_escort_fixture
+    *set timbermouth_seen true
+    *set tm_watch_seen true
+    *set current_district "timbermouth"
+    *set ow_pos "tm"
+    *goto_scene timbermouth/wagon_lot tm_lot
   # ← Back to the categories
     *goto dev_scene_select
 
@@ -703,6 +734,35 @@ Jump to a system's test harness:
 *set dredge_end_open true
 *set middle_ward_open true
 *set pv_pois_open true
+*return
+
+*comment Wagon escort testers (the Quests menu): the day of the week is a function of campaign_day, so each sets the day, then dev_escort_fixture gives a clear 08:00 morning, no job taken, and an Insignia with
+*comment both the Port Valen and House Gault pages (so either line's credit can be read). The lot is entered at its own label, past the hub, as the Contract Board does.
+*label dev_escort_marketday
+*set campaign_day 10
+*set calendar_day 23
+*set calendar_date "23rd of Scorpio, 428 IR"
+*set day_of_week "Marketday"
+*return
+
+*label dev_escort_ironday
+*set campaign_day 8
+*set calendar_day 21
+*set calendar_date "21st of Scorpio, 428 IR"
+*set day_of_week "Ironday"
+*return
+
+*label dev_escort_fixture
+*gosub dev_chapter3_after_vane
+*set clock_hour 8
+*set clock_minute 0
+*set clock_time "08:00"
+*set time_period "Morning"
+*set weather "Clear"
+*set rj_escort_stage "none"
+*set rj_escort_road false
+*set es_offer_day 0
+*script window.Insignia.issue(stats); window.Insignia.register(stats, "scales"); window.Insignia.register(stats, "gault");
 *return
 
 *comment Clean fixture for the Dev Hub's Wolves of Langston Chapter 1 jump. Reset every chapter-owned flag and

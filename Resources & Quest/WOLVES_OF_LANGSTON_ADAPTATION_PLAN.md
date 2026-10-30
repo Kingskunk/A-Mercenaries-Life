@@ -27,7 +27,10 @@ Chapter 1 preserves the source scenes, details, and wording except where adaptat
 - Roi Sunderhammer intervenes and directs the protagonist to the Pickled Hen.
 - The funeral introduces Maybelline, Tomlin, Roi, Solaine, Mayor Tanya Anathram, and Buttercup.
 - Optional observations seed suspicions about Tomlin's relationships, Roi's involuntary change, Solaine's hymn and familiarity with Tomlin, and Anathram's past and trained dog.
-- The mayor provides a room, briefs the protagonist after a paid rest, and offers the investigation.
+- The funeral ends with the mayor's request, not a hiring: she names no day and tells the protagonist to ask the aide for her at Langston Hall. There is no forced sleep and no free room. The protagonist is returned to the town square and rests wherever they choose, at their own cost.
+- The mayor receives in her office during the Hall's public day (the same hours as the counters: Morning to Afternoon, shut on the rest day and in empty-street weather). The Hall's menu lists her door at every hour and says why it is shut. The briefing and the offer happen when the player walks in, whether that is the same evening or a week later.
+- The contract is verbal, as at Whitefold: Anathram states the terms aloud (15 Silver Marks on the threat's end or the killer in custody, a 2-mark advance counted against it, the Pickled Hen room and two meals at the town's cost), the protagonist repeats them, they shake on it, and she writes one line in the Hall's day-book. Nothing is posted on the Contract Board. The room, meals and advance begin at that handshake.
+- The Dev Hub (Quests) has a jump for the stage after the funeral: Langston's square on a clear market morning with the mayor having asked.
 - Accepting the contract makes Tomlin the first lead and hands Chapter 2 a clean entry state.
 
 The adaptation deliberately improves the original structure:
@@ -53,7 +56,7 @@ The remaining differences are deliberate: refusing the contract leaves a reversi
 
 ## Chapter 1 State
 
-- `wol_quest_stage`: `unstarted`, `offered`, `active`, and later resolution states.
+- `wol_quest_stage`: `unstarted`, `asked` (the mayor asked the protagonist to call at her office), `offered` (briefed, declined for now), `active`, and later resolution states. The quest log lists the quest from `asked` onward.
 - `wol_chapter`: `0` before entry, `1` during the opening, and `2` after accepting the contract.
 - `wol_chapter_1_started`, `wol_chapter_1_complete`, and `wol_advance_paid`: replay and re-entry guards.
 - `wol_road_approach`, `wol_road_composed`, `wol_road_rattled`, and `wol_funeral_drunk_outcome`: route memory.

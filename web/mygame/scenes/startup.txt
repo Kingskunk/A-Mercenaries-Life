@@ -967,7 +967,21 @@
 *comment The courier job (radiant/hall_courier.txt, 2026-10-11). crp1_* to crp3_* are the three postings on the Hiring Hall board today (worked out by cr_board_prepare from Overworld.courierPostings; crpN_taken is the
 *comment day's flag, reset when cr_p_day changes), crs1_* to crs3_* are the three parcels in the satchel (no arrays: three fixed slots, taken first-free), cr_pick is the posting being taken and cr_free the first free slot.
 *comment Courier deliveries since the last full set of three; every third adds one job to the Insignia's page (hall_courier.txt cr_deliver).
-*create cr_credit 0
+*create cr_credit_scales 0
+*comment Each page counts its courier deliveries toward its next finished job in its creditVar (cr_credit_scales, cr_credit_gault: Insignia PAGES); a parcel's page is the one of the board that issued it (crsN_gov).
+*comment cr_gov is the page of the board being read (Overworld.governmentOf(cr_origin)) and cr_can whether the player may take its work (Insignia.canTake). cr_need_text, cr_dgov (the page of the parcel being delivered), cr_credit_line and es_credit_line are text the scenes print from the page's fields.
+*create cr_credit_gault 0
+*create cr_gov "scales"
+*create cr_can false
+*create cr_lot_link false
+*create lg_lot_show false
+*create lg_lot_none true
+*create tm_lot_none true
+*create af_lot_none true
+*create cr_need_text ""
+*create cr_dgov "scales"
+*create cr_credit_line ""
+*create es_credit_line ""
 *create cr_pick 0
 *comment The settlement whose board is being read or taken from (a tile id), and the keys (origin:day:number, each followed by a bar) of today's postings already taken.
 *create cr_origin "pv"
@@ -1083,6 +1097,7 @@
 *create crs1_sex "m"
 *create crs1_look ""
 *create crs1_seed 0
+*create crs1_gov "scales"
 *create crs2_on false
 *create crs2_to ""
 *create crs2_to_name ""
@@ -1097,6 +1112,7 @@
 *create crs2_sex "m"
 *create crs2_look ""
 *create crs2_seed 0
+*create crs2_gov "scales"
 *create crs3_on false
 *create crs3_to ""
 *create crs3_to_name ""
@@ -1111,6 +1127,7 @@
 *create crs3_sex "m"
 *create crs3_look ""
 *create crs3_seed 0
+*create crs3_gov "scales"
 *create rj_done_block 0
 *comment Vermin in the House (radiant/hall_pests.txt): rj_pest_stage is "none", "active" or "done"; where, house and creature are picked from the five-day block by rj_pest_select.
 *comment rj_has_job: a signed job is open (set by radiant_hub.txt rh_check). rh_from: where the player pressed "Your posting", "road" (Trunk Road) or "avenue" (Patrician Avenue).
@@ -1158,6 +1175,21 @@
 *comment The master's name, look and sex are stored at signing (the five-day block seed can change between signing and muster). rj_escort_pos is the place in the line ("head", "middle", "rear").
 *comment es_offer_day is the day the offer was last spoken in full, so a repeat visit describes it instead of quoting it again. es_yard_seen unlocks the Lorebook entry.
 *create rj_escort_stage "none"
+*comment rj_escort_gov is the Insignia page the job credits when it is paid: the government of the yard it was signed at (Overworld.governmentOf, set in es_accept).
+*create rj_escort_gov "scales"
+*comment es_lot_state is what the wagon yard the player is in is doing (hall_escort.txt es_lot_state): offer, waiting, muster, gone or idle.
+*create es_lot_state "idle"
+*comment es_ctx_notice is the sheet a board pins for the line the yard in es_start runs today (hall_escort.txt es_set_line). cl_* are the words the shared wagon lot prints for a yard (caravan_lot.txt, from Overworld CARAVAN_YARDS).
+*create es_ctx_notice ""
+*create es_ctx_no ""
+*create cl_heading ""
+*create cl_place ""
+*create cl_end ""
+*create cl_road ""
+*create cl_horizon ""
+*create cl_leave ""
+*create cl_idle ""
+*create cl_missed ""
 *create rj_escort_until 0
 *create rj_escort_block 0
 *create rj_escort_master ""
@@ -6462,6 +6494,7 @@
 *comment The White Ram kitchen and oven, unlocked on any successful repair.
 *create wf_ram_kitchen_unlocked false
 *comment Wolves of Langston personal-use adaptation state. Chapter files live under Langston/.
+*comment wol_quest_stage: "unstarted", "asked" (the mayor asked the player to call at her office in Langston Hall), "offered" (she briefed them and they declined for now), "active", then the resolution states.
 *create wol_quest_stage "unstarted"
 *create wol_chapter 0
 *create wol_resolution ""

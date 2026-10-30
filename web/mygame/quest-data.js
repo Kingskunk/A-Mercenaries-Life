@@ -79,20 +79,9 @@
       active: function (s) { return s.rj_perf_stage === "active" && Number(s.campaign_day) <= Number(s.rj_perf_until); }
     },
     {
-      id: "hall_escort_tm", title: "Wagon Escort to Timbermouth", place: escortPlace,
-      active: function (s) { return s.rj_escort_stage === "active" && s.rj_escort_to === "tm" && (truthy(s.rj_escort_road) || Number(s.campaign_day) <= Number(s.rj_escort_until)); }
-    },
-    {
-      id: "hall_escort_pv", title: "Wagon Escort to Port Valen", place: escortPlace,
-      active: function (s) { return s.rj_escort_stage === "active" && s.rj_escort_to === "pv" && s.rj_escort_from === "tm" && (truthy(s.rj_escort_road) || Number(s.campaign_day) <= Number(s.rj_escort_until)); }
-    },
-    {
-      id: "hall_escort_af", title: "Wagon Escort to Alderford", place: escortPlace,
-      active: function (s) { return s.rj_escort_stage === "active" && s.rj_escort_to === "af" && (truthy(s.rj_escort_road) || Number(s.campaign_day) <= Number(s.rj_escort_until)); }
-    },
-    {
-      id: "hall_escort_pv_af", title: "Wagon Escort to Port Valen", place: escortPlace,
-      active: function (s) { return s.rj_escort_stage === "active" && s.rj_escort_to === "pv" && s.rj_escort_from === "af" && (truthy(s.rj_escort_road) || Number(s.campaign_day) <= Number(s.rj_escort_until)); }
+      // One entry for every wagon line (Overworld CARAVAN_LINES): the title names the destination the line gave (rj_escort_dest_name, set when the work is taken), so a new town or line needs no entry here.
+      id: "hall_escort", title: function (s) { return "Wagon Escort to " + s.rj_escort_dest_name; }, place: escortPlace,
+      active: function (s) { return s.rj_escort_stage === "active" && (truthy(s.rj_escort_road) || Number(s.campaign_day) <= Number(s.rj_escort_until)); }
     },
     courierEntry(1), courierEntry(2), courierEntry(3),
     {
@@ -192,6 +181,7 @@
       place: "Langston",
       levelProgress: "Counts toward level progress on a successful final resolution.",
       goal: function (s) {
+        if (s.wol_quest_stage === "asked" || s.wol_quest_stage === "offered") return "Call on Mayor Anathram at Langston Hall during the day and hear her terms.";
         if (Number(s.wol_chapter) === 2) return "Speak with Tomlin at his herb garden on the western edge of Langston.";
         return "Find what killed Maybelline inside Langston's wall.";
       },
@@ -207,7 +197,8 @@
         if (truthy(s.wol_mayor_dog_trained)) c.push("Buttercup is a trained attack and guard dog, not merely an obedient pet.");
         return c;
       },
-      active: function (s) { return s.wol_quest_stage === "active"; }
+      // "asked": the mayor asked the player to call at her office; "offered": she briefed them and they declined for now; "active": the contract is taken
+      active: function (s) { return s.wol_quest_stage === "active" || s.wol_quest_stage === "asked" || s.wol_quest_stage === "offered"; }
     },
     {
       id: "hale_ring", title: "The Hale Ring",

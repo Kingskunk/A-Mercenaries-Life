@@ -91,6 +91,15 @@ ids.forEach((id) => {
   if (n.kind && !KINDS.includes(n.kind)) fail("tile " + id + " has kind \"" + n.kind + "\", which the panel has no colour for (" + KINDS.join(", ") + ")");
   if (n.kind && !new RegExp("\\.ow-k-" + n.kind + " \\.ow-dot").test(css)) fail("overworldmap.css has no colour for kind \"" + n.kind + "\"");
 });
+// governments: a territory names the Insignia page its jobs credit (inventory-data.js Insignia), and every tile resolves to a real one
+{
+  global.window = global;
+  require(path.join(GAME, "inventory-data.js"));
+  const ids = global.Insignia.ids();
+  Object.keys(O.territories).forEach((t) => { if (!ids.includes(O.territories[t].government)) fail("territory " + t + " has government \"" + O.territories[t].government + "\", which is not an Insignia page (" + ids.join(", ") + ")"); });
+  Object.keys(O.nodes).forEach((id) => { if (!ids.includes(O.governmentOf(id))) fail("tile " + id + " resolves to government \"" + O.governmentOf(id) + "\", which is not an Insignia page"); });
+  if (O.governmentOf("lg") !== "gault" || O.governmentOf("tm") !== "scales") fail("governmentOf does not split the Vale (gault) from the Reach (scales)");
+}
 // weather zones: every zone rolls by a profile calendar.txt knows, every territory, tile override and district names a zone that exists, and startup.txt creates the stats the swap uses
 {
   const Z = O.weatherZones || {};
@@ -135,6 +144,33 @@ ids.forEach((a) => ids.forEach((b) => {
   const m = r.legs.reduce((t, l) => t + l.miles, 0), t = r.legs.reduce((x, l) => x + l.minutes, 0);
   if (r.legs.length !== r.path.length - 1 || m !== r.miles || t !== r.minutes) fail("the legs of " + a + " to " + b + " do not add up to the route");
 }));
+// the sidebar's quest log: every wagon line of CARAVAN_LINES, once taken (hall_escort.txt es_accept copies the line's facts to rj_escort_*), must show exactly one "Wagon Escort to <destination>" entry, before the caravan
+// rolls and on the road, and none after the term is over. The log has one data-driven entry for them all (quest-data.js hall_escort), so a new line needs nothing there.
+{
+  global.window = global;
+  require(path.join(GAME, "quest-data.js"));
+  const live = (st) => global.QUESTLOG.filter((q) => /^hall_escort/.test(q.id) && q.active(st));
+  const text = (v, st) => (typeof v === "function" ? v(st) : v);
+  O.caravanLines.forEach((ln) => {
+    const L = O.caravanLine(ln.from, ln.dow), tag = "wagon line " + ln.from + " to " + ln.to;
+    if (L.to !== ln.to) { fail(tag + " is not what caravanLine returns for its own day"); return; }
+    const st = { campaign_day: 5, rj_escort_stage: "active", rj_escort_from: ln.from, rj_escort_to: L.to, rj_escort_dest_name: L.destName, rj_escort_place_text: L.placeText, rj_escort_opens: L.opens, rj_escort_until: 6, rj_escort_road: false };
+    let q = live(st);
+    if (q.length !== 1) { fail(tag + " shows " + q.length + " sidebar quest entries before the caravan rolls (want 1)"); return; }
+    if (text(q[0].title, st) !== "Wagon Escort to " + O.nodes[ln.to].name) fail(tag + " is titled \"" + text(q[0].title, st) + "\" in the sidebar");
+    if (!text(q[0].place, st) || /undefined|NaN/.test(text(q[0].place, st))) fail(tag + " has a broken second line in the sidebar: " + text(q[0].place, st));
+    st.rj_escort_road = true; st.campaign_day = 7;
+    q = live(st); if (q.length !== 1 || /undefined|NaN/.test(text(q[0].place, st))) fail(tag + " does not show once on the road");
+    st.rj_escort_road = false; st.campaign_day = 9;
+    if (live(st).length) fail(tag + " is still in the sidebar after its term");
+    // every yard's lot door reads the same table: the lot shows on the day of each of its lines, and on no other day
+    const days = ["Ironday", "Tideday", "Marketday", "Hearthday", "Forgeday", "Greyday", "Hallowday"];
+    days.forEach((d) => {
+      const want = O.caravanLines.some((x) => x.from === ln.from && x.dow === d), got = O.lotShows({ rj_escort_stage: "none", day_of_week: d }, ln.from);
+      if (want !== got) fail(tag + ": lotShows says " + got + " on " + d + ", the table says " + want);
+    });
+  });
+}
 if (!/# Deliver \$\{crs1_item\}/.test(scene)) fail("overworld.txt has lost its courier Deliver options (the panel offers them as buttons; radiant/hall_courier.txt)");
 if (/\*set ow_dest "/.test(scene)) fail("overworld.txt sets ow_dest by hand: the panel writes it, and the scene lists no tiles");
 

@@ -315,6 +315,7 @@ function compile(){
   verifyFileName("port_valen/radiant/hall_watch.txt");
   verifyFileName("port_valen/radiant/hall_perform.txt");
   verifyFileName("port_valen/radiant/hall_escort.txt");
+  verifyFileName("port_valen/radiant/caravan_lot.txt");   // the shared wagon lot (Langston's, so far): a yard whose words are data (overworld-data.js CARAVAN_YARDS)
   verifyFileName("port_valen/radiant/hall_courier.txt");
   verifyFileName("port_valen/radiant/notice_board.txt");
   verifyFileName("overworld/camp.txt");

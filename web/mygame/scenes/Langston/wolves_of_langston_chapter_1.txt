@@ -1,6 +1,9 @@
 *comment ====================================================================================
 *comment THE WOLVES OF LANGSTON -- CHAPTER 1: THE ADVENTURE BEGINS
-*comment Personal-use adaptation. This file owns the return to Langston, the funeral, the overnight rest and the contract.
+*comment Personal-use adaptation. This file owns the return to Langston, the funeral and the contract.
+*comment The funeral ends with the mayor's request (wol_quest_stage "asked"): she names no day, and the player goes to her office in Langston Hall (langston_hall.txt lg_hall_menu) when they choose, during the Hall's public day.
+*comment The contract is verbal: the mayor states the terms in her office, the player repeats them, they shake on it and she writes one line in the Hall's day-book. Nothing goes on the Contract Board.
+*comment Nothing is paid for until the contract is accepted: no room, no meals. Declining in the office leaves the stage "offered" and the same office door.
 *comment Entry contract: a world hook may enter at wol_ch1_start after road travel, whether or not the player has visited Langston before.
 *comment No world hook is wired yet. Chapter 2 will begin with Tomlin and is deliberately not stubbed here.
 *comment ====================================================================================
@@ -9,8 +12,8 @@
 *set scenery_subplace "western_vale_road"
 *if (wol_chapter_1_complete)
   *goto wol_ch1_complete
-*if (wol_quest_stage = "refused")
-  *goto wol_ch1_refused
+*if (wol_quest_stage = "asked")
+  *goto wol_ch1_mayor_office
 *if (wol_quest_stage = "offered")
   *goto wol_ch1_return_offer
 *set wol_chapter_1_started true
@@ -438,20 +441,20 @@ Anathram turns to Maybelline's family. "I am so sorry for your loss," she says. 
 Between her rumbling Orcish accent and deadpan delivery, it is impossible to tell what she actually thinks of you. She makes a sweeping gesture toward the bar and starts off. This stern woman is obviously not one for pleasantries.
 
 *if (met_harlan_vetch)
-  As you follow, she stops to speak to Harlan Vetch behind the bar. "Harlan, the town will pay the investigator's room and board. This is acceptable?"
+  As you follow, she stops beside Harlan Vetch behind the bar. He glances at you, then back at her, and nods once.
 *else
-  As you follow, she stops before the aproned, balding innkeeper. "This is Harlan Vetch, proprietor of the Pickled Hen," Anathram tells you. She turns to him. "Harlan, the town will pay the investigator's room and board. This is acceptable?"
+  As you follow, she stops before the aproned, balding innkeeper. "This is Harlan Vetch, proprietor of the Pickled Hen," Anathram tells you. Harlan glances at you and nods.
   *set met_harlan_vetch true
 
-Harlan glances at you but nods. Their business concluded, Mayor Anathram returns with a key to your room.
-
-"I know your type. Mercenary. Hero for hire. It does not matter what you call yourself. The people are scared and they need someone, so I am hiring you. And since you are an outsider, if you fail it will not reflect badly on the town."
+"I know your type. Mercenary. Hero for hire. It does not matter what you call yourself. The people are scared and they need someone, so I may be hiring you. And since you are an outsider, if you fail it will not reflect badly on the town."
 
 You start to thank her, but she cuts you off.
 
-"I have not worked with you before," she says, holding up one hand. "And I may not get time to learn what you are capable of if this killer gets to you next. You are here for the people and for me. As long as you are investigating this young woman's murder, we will pay for your stay. The funeral is not the place to discuss the details of the case. Rest first, then come to the town hall."
+"I have not worked with you before," she says, holding up one hand. "And I may not get time to learn what you are capable of if this killer gets to you next. You are here for the people and for me. The funeral is not the place to discuss the details of the case. Come to Langston Hall when you are ready and ask the aide for me. I will see you when the day's petitions allow."
 
 She nods once, though it is unclear whether that is a farewell or an agreement of some kind, and then returns to her duties reassuring the funeral-goers.
+
+*set wol_quest_stage "asked"
 
 A figure breaks away from the crowd and moves toward you. It is Tomlin, the village herbalist and fiance of the deceased.
 
@@ -461,7 +464,7 @@ You explain that Roi directed you to the funeral and that the mayor has now requ
 
 He looks you over and nods as if you passed some sort of assessment. "Then thank you very much for doing this for us. Please, come to my home for whatever you need. I want—no, I need to know what happened to my Maybelline."
 
-You bid the grieving man farewell, and he gives you a smile that is dazzling despite its sadness. He moves on to speak to other guests as you make your way toward your room.
+You bid the grieving man farewell, and he gives you a smile that is dazzling despite its sadness. He moves on to speak to other guests as you make your way toward the door.
 
 *set hours_to_pass 4
 *set minutes_to_pass 0
@@ -473,42 +476,13 @@ You bid the grieving man farewell, and he gives you a smile that is dazzling des
     *set death_cause "exhaustion"
   *goto_scene death death_screen
 
-*page_break Take the room upstairs...
+*comment The funeral hands the player back to the town square. No room is rented and no sleep is skipped: where they rest is their own affair until the contract is taken.
+*goto_scene Langston/langston lg_return
 
-*label wol_ch1_sleep
-The rented room is small, clean, and already paid for. A heavy wool blanket covers the bed. You bar the door, place your things where a waking hand can find them, and lie down while the last funeral voices fade beneath the floorboards.
-
-*set hours_to_pass 8
-*set minutes_to_pass 0
-*set time_advance_call_id "wol_ch1_pickled_hen_sleep"
-*gosub_scene calendar advance_time
-*if (hp_current <= 0)
-  *set death_cause "starvation"
-  *if (neglect_damage_fatigue > neglect_damage_hunger)
-    *set death_cause "exhaustion"
-  *goto_scene death death_screen
-*set sleep_location_id "langston_pickled_hen"
-*set sleep_is_shared false
-*set sleep_is_permanent_home false
-*set sleep_is_paid_inn true
-*set sleep_tier_name "none"
-*set sleep_tier_stat1 "none"
-*set sleep_tier_bonus1 0
-*set sleep_tier_stat2 "none"
-*set sleep_tier_bonus2 0
-*gosub_scene calendar resolve_sleep
-
-*if (not(sleep_gear_note = ""))
-  ${sleep_gear_note}
-
-You wake in a soft bed to a hot meal cooling outside your door. This is much better living than camping beside the road, so it is probably time to meet your benefactor.
-
-The inn's common room is a bustle of activity as quiet townspeople load flowers from the funeral into a wagon in front of the inn. Maybelline's body is already gone. After weaving through the workers, you step outside, where passersby deliberately ignore the wagonful of blossoms.
-
-You make your way through the streets to the town hall. It is a multistory building but not much larger than the surrounding structures. Unlike the timber-framed buildings around it, the town hall is made of sturdy stone, so it likely predates the town's growth. The door stands open.
-
+*comment The mayor's office, entered from the Hall's chamber (langston_hall.txt lg_hall_menu) while the stage is "asked", or by the wol_ch1_start hook.
+*label wol_ch1_mayor_office
 *set scenery_subplace "langston_meeting_hall_office"
-An aide in brass-rimmed spectacles greets you and shows you to the mayor in a large but simply appointed office at the back of the building. A large, dark-stained wooden desk dominates the room, and Mayor Anathram works behind it with a quill and inkpot. An unlit hearth occupies one wall, and two orderly bookshelves hold ledgers and lawbooks. You can see no personal effects.
+An aide in brass-rimmed spectacles hears your name, nods as if it was expected, and shows you to the mayor in a large but simply appointed office at the back of the building. A large, dark-stained wooden desk dominates the room, and Mayor Anathram works behind it with a quill and inkpot. An unlit hearth occupies one wall, and two orderly bookshelves hold ledgers and lawbooks. You can see no personal effects.
 
 A cushion and bowl of water have been placed beside the desk. Buttercup lounges there, watching you intently as you enter.
 
@@ -516,7 +490,7 @@ A cushion and bowl of water have been placed beside the desk. Buttercup lounges 
   # "Mayor. You wanted me here."
     You politely greet the mayor. Buttercup lays her massive head back down on her paws but continues to watch you closely.
 
-    "I am grateful for your service," Anathram says. You assume she is being genuine, but it is impossible to tell from her stony delivery.
+    "I am glad you came," Anathram says. You assume she is being genuine, but it is impossible to tell from her stony delivery.
     *goto wol_ch1_mayor_briefing
   # Hold out a hand low enough for Buttercup to scent it.
     Buttercup growls, moving her considerable jowls out of the way to bare her teeth.
@@ -535,7 +509,7 @@ The town will pay fifteen silver marks when the threat is ended or the killer is
 
 *label wol_ch1_return_offer
 *set scenery_subplace "langston_meeting_hall_office"
-Anathram looks up from the meeting hall's account book when you return. Two silver marks sit beside her inkpot.
+Anathram looks up from one of Langston Hall's account books when you return. Two silver marks sit beside her inkpot.
 
 "Have you decided whether you are taking Langston's work?" she asks.
 
@@ -549,39 +523,38 @@ Anathram looks up from the meeting hall's account book when you return. Two silv
       *set wol_advance_paid true
       *set currency_add_amount 20
       *gosub_scene economy currency_add
-    "Excellent," Anathram says in a gravelly tone you can only assume means she is pleased. "Let us begin. Please speak to Maybelline's fiance. He is an herbalist who lives on the western edge of town, where he tends his garden and makes medicines for the townsfolk."
+    "Excellent," Anathram says in a gravelly tone you can only assume means she is pleased. She does not reach for a form. "Then we settle it here, aloud. Langston does not need paper for a plain bargain, and a mayor's word in her own office stands in the Hall as well as any posting."
+
+    She lays down her quill and states the terms the way a clerk reads a sentence, looking you in the eye. "Fifteen silver marks from the town when the threat is ended or the killer is in my custody. Two marks now, counted against the fifteen. Your room and your two meals at the Pickled Hen are the town's while you work this. Harlan Vetch has my word on it. Say it back."
+
+    You repeat the terms. She nods once, rises, and offers a scarred hand across the desk. Her grip is short and hard, and it ends the matter. Then she sits, opens the Hall's thick day-book, and writes a single line in it. "That is the contract," she says. "My hand in the day-book is the town's seal. Nothing goes on the board, and nothing needs to."
+
+    She blows the line dry. "Please speak to Maybelline's fiance. He is an herbalist who lives on the western edge of town, where he tends his garden and makes medicines for the townsfolk."
 
     You thank the mayor and prepare to leave, but she holds up one hand.
 
-    "I have also made an arrangement with our general store. You may go there to resupply whenever you need to do so. It does not have as many goods as a big city, but it will likely have whatever you need. Here is an advance to make whatever purchases you may need."
+    "I have also made an arrangement with our general store. You may go there to resupply whenever you need to do so. It does not have as many goods as a big city, but it will likely have whatever you need. Here is the advance."
 
-    She counts two silver marks onto the desk and writes Tomlin's address on a scrap torn from a used page. You thank her for the gesture, and she grunts in response before returning to the paperwork on her desk.
+    She counts two silver marks onto the desk and writes Tomlin's address on a scrap torn from a used page. You thank her for the gesture, and she grunts in response.
 
     [b][Received: 2 Silver Marks][/b]
 
     *goto wol_ch1_complete
-  # Reject the job.
+  # Decline the job for now.
     *goto wol_ch1_refuse_warning
 
 *label wol_ch1_refuse_warning
 The mayor nods and gives you a flat stare.
 
-"I understand. However, I also hope you understand that this is not a time for an armed outsider to remain in Langston without taking the town's side. The town has still paid for your room, but if you will not help, you must leave immediately."
+"Then it remains Langston's problem," Anathram says. "The town's room and board are for the one who takes the work. Until then, you make your own arrangements like any other traveler. If you change your mind, come to Langston Hall and ask for me."
 
 *choice
   # Reconsider and accept Langston's work.
     *goto wol_ch1_mayor_offer
-  # Gather your things and leave town.
-    *set wol_quest_stage "refused"
+  # Leave the mayor's office.
+    *set wol_quest_stage "offered"
     *set wol_chapter 1
-    *goto wol_ch1_refused
-
-*label wol_ch1_refused
-*set scenery_subplace "langston"
-Anathram calls an officer of the Langston Watch in from outside with a small bell. The officer rests one hand on the short club hanging from her belt as she escorts you back to the inn to gather your belongings. She then accompanies you to the edge of town and leaves you there without saying a word.
-
-Your work in Langston is over. Keep whatever rewards you have gained and move on.
-*finish
+    *goto_scene Langston/langston_hall lg_hall_front
 
 *label wol_ch1_complete
 *set scenery_subplace "langston_meeting_hall_office"

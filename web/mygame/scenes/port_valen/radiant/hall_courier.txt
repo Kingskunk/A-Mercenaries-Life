@@ -3,7 +3,7 @@
 *comment move the player anywhere: it is taken at the Hiring Hall board and delivered from the map card of the destination, so the player walks wherever and whenever they like inside the term.
 *comment
 *comment Design (the user agreed, 2026-10-11): delivery is on the OVERWORLD MAP CARD ("Deliver ..." beside the tile's other buttons, offered by overworld.txt ow_here), not inside each village, so a
-*comment new town, village or fort needs no edit here. Pay is about half a copper bit a mile with a floor; every third delivery (cr_credit counts them) adds one to the Insignia's page (hall_jobs_scales); a late parcel simply lapses,
+*comment new town, village or fort needs no edit here. Pay is about half a copper bit a mile with a floor; every third delivery (the page's creditVar counts them, Insignia.courierDelivered) adds one to the page of the board that issued the parcel (hall_jobs_scales for the Gilded Scales, hall_jobs_gault for House Gault); a late parcel simply lapses,
 *comment no penalty and no message (radiant_hub.txt rh_check). Letters, sealed contracts and small parcels only: more valuable work is for the higher Insignia ranks (not built), and a posting already carries
 *comment a grade (always 1) for that.
 *comment
@@ -49,6 +49,7 @@
   *set crs3_on false
 *gosub cr_free_slot
 *script var o = window.Overworld, G = window.NameGen, org = String(stats.cr_origin); var P = o.courierPostings(org, Number(stats.campaign_day)); for (var i = 1; i <= 3; i++) { var p = P[i - 1], k = "crp" + i + "_"; stats[k + "on"] = !!p; if (!p) continue; stats[k + "key"] = org + ":" + Number(stats.campaign_day) + ":" + i; stats[k + "taken"] = String(stats.cr_taken_log).indexOf("|" + stats[k + "key"] + "|") >= 0; var race = G.pickRace(p.seed, p.setting); var made = G.make(race, "any", p.region, p.seed); var seen = G.look(race, "any", p.seed, "clothes hands"); stats[k + "to"] = p.to; stats[k + "to_name"] = p.toName; stats[k + "place"] = p.place; stats[k + "kind"] = p.kind; stats[k + "item"] = p.item; stats[k + "miles"] = p.miles; stats[k + "fee"] = p.fee; stats[k + "fee_text"] = o.coinText(p.fee); stats[k + "term"] = p.term; stats[k + "seed"] = p.seed; stats[k + "no"] = p.no; stats[k + "who"] = made.full; stats[k + "sex"] = made.gender; stats[k + "look"] = seen.phrase; }
+*script stats.cr_gov = window.Overworld.governmentOf(stats.cr_origin); stats.cr_can = window.Insignia.canTake(stats, stats.cr_gov);
 *set crp1_open ((crp1_on) and ((not(crp1_taken)) and (cr_free > 0)))
 *set crp2_open ((crp2_on) and ((not(crp2_taken)) and (cr_free > 0)))
 *set crp3_open ((crp3_on) and ((not(crp3_taken)) and (cr_free > 0)))
@@ -71,7 +72,10 @@
 *temp cpl_term {(cpl_p & "term")}
 [b]POSTING No. ${cpl_no}[/b]
 *line_break
-[i]Work: courier, carrying ${cpl_item} to ${cpl_who}, ${cpl_look}, at ${cpl_place} in ${cpl_to}. Pay: ${cpl_pay}, paid on delivery. Term: ${cpl_term} days from signing. Apply: this frame.[/i]
+*if (cr_origin = "lg")
+  [i]Patron: Langston Hall, under the mayor's counterseal. Work: courier, carrying ${cpl_item} to ${cpl_who}, ${cpl_look}, at ${cpl_place} in ${cpl_to}. Pay: ${cpl_pay}, paid on delivery. Term: ${cpl_term} days from signing. Open to: a House Gault page, Listed or above. Apply: this frame.[/i]
+*else
+  [i]Work: courier, carrying ${cpl_item} to ${cpl_who}, ${cpl_look}, at ${cpl_place} in ${cpl_to}. Pay: ${cpl_pay}, paid on delivery. Term: ${cpl_term} days from signing. Apply: this frame.[/i]
 
 *return
 
@@ -106,6 +110,7 @@
     *set {(ct_dst & "sex")} {(ct_src & "sex")}
     *set {(ct_dst & "look")} {(ct_src & "look")}
     *set {(ct_dst & "seed")} {(ct_src & "seed")}
+    *set {(ct_dst & "gov")} cr_gov
     *temp ct_term {(ct_src & "term")}
     *set {(ct_dst & "until")} (campaign_day + ct_term)
     *set {((("crp" & cr_pick) & "_") & "taken")} true
@@ -149,7 +154,8 @@ You reach for the posting and stop. Three parcels is what the satchel and the Ha
 *label cr_need
 [b]◈ THE COURIER POSTING[/b]
 *line_break
-You reach for the posting, and the seal at its foot is the Hall's, not a village's. The work goes to a bearer of a Contractor's Insignia, and the Seals window in Port Valen sells one, once.
+*script stats.cr_need_text = window.Insignia.needText(stats.cr_gov);
+${cr_need_text}
 *page_break Step back from the notices…
 *if ((((cr_origin = "tm") or (cr_origin = "fv")) and (peddler_stage = "none")))
   *goto_scene port_valen/radiant/notice_board nb_read
@@ -162,7 +168,13 @@ You reach for the posting, and the seal at its foot is the Hall's, not a village
 *comment if there is nothing to take the page breaks first so the hall does not run on after the notices. It is cleared as soon as it is read, and every other way in (taking a posting, no insignia) arrives on a fresh page.
 *label cr_read
 *gosub cr_board_prepare
+*temp cr_lot_here false
+*if (((cr_origin = "lg") or ((cr_origin = "tm") or (cr_origin = "af"))) and (cr_lot_link))
+  *set cr_lot_here true
+*temp cr_any true
 *if (not((crp1_open) or ((crp2_open) or ((crp3_open) or ((crp1_full) or ((crp2_full) or (crp3_full)))))))
+  *set cr_any false
+*if ((not(cr_lot_here)) and (not(cr_any)))
   *if (cr_inline)
     *set cr_inline false
     *page_break Step back…
@@ -176,12 +188,22 @@ You reach for the posting, and the seal at its foot is the Hall's, not a village
   *set cr_where "Beside the board of cords"
 *elseif (cr_origin = "wf")
   *set cr_where "Beside the notice rail"
+*elseif (cr_origin = "lg")
+  *set cr_where "Below the forecast"
+*temp cr_head "THE COURIER POSTINGS"
+*temp cr_seal "the city's"
+*if (cr_origin = "lg")
+  *set cr_head "LANGSTON HALL: THE CONTRACT BOARD"
+  *set cr_seal "the Hall's counterseal"
 *if (not(cr_inline))
-  [b]◈ THE COURIER POSTINGS[/b]
+  [b]◈ ${cr_head}[/b]
   *line_break
 *set cr_inline false
 
-${cr_where}, a few sheets are ruled like forms, each headed with a posting number and sealed twice, the patron's in wax and the city's pressed beside it.
+*if (cr_any)
+  ${cr_where}, a few sheets are ruled like forms, each headed with a posting number and sealed twice, the patron's in wax and ${cr_seal} pressed beside it.
+*else
+  No courier sheet is left on the board for you.
 
 *if ((crp1_on) and (not(crp1_taken)))
   *gosub cr_post_line 1
@@ -190,41 +212,54 @@ ${cr_where}, a few sheets are ruled like forms, each headed with a posting numbe
 *if ((crp3_on) and (not(crp3_taken)))
   *gosub cr_post_line 3
 *choice
-  *if ((crp1_open) and (has_hall_insignia))
+  *if ((crp1_open) and (cr_can))
     # Press your insignia to the posting and take the courier job to ${crp1_to_name}.
       *set cr_pick 1
       *goto cr_sign
-  *if ((crp1_open) and (not(has_hall_insignia)))
+  *if ((crp1_open) and (not(cr_can)))
     # Take the courier job to ${crp1_to_name}.
       *goto cr_need
   *if (crp1_full)
     # Take the courier job to ${crp1_to_name}.
       *goto cr_full
-  *if ((crp2_open) and (has_hall_insignia))
+  *if ((crp2_open) and (cr_can))
     # Press your insignia to the posting and take the courier job to ${crp2_to_name}.
       *set cr_pick 2
       *goto cr_sign
-  *if ((crp2_open) and (not(has_hall_insignia)))
+  *if ((crp2_open) and (not(cr_can)))
     # Take the courier job to ${crp2_to_name}.
       *goto cr_need
   *if (crp2_full)
     # Take the courier job to ${crp2_to_name}.
       *goto cr_full
-  *if ((crp3_open) and (has_hall_insignia))
+  *if ((crp3_open) and (cr_can))
     # Press your insignia to the posting and take the courier job to ${crp3_to_name}.
       *set cr_pick 3
       *goto cr_sign
-  *if ((crp3_open) and (not(has_hall_insignia)))
+  *if ((crp3_open) and (not(cr_can)))
     # Take the courier job to ${crp3_to_name}.
       *goto cr_need
   *if (crp3_full)
     # Take the courier job to ${crp3_to_name}.
       *goto cr_full
+  *if (cr_lot_here)
+    # Walk over to the wagon lot, where the line is making up.
+      *goto cr_lot_go
   # Step back from the notices.
     *goto cr_back
 
+*comment ── the wagon lot a board links to (cr_lot_link, set by the board's page): the one table of where each board's lot is. A new town with a lot is one line here. ──
+*label cr_lot_go
+*if (cr_origin = "tm")
+  *goto_scene timbermouth/wagon_lot tm_lot
+*if (cr_origin = "af")
+  *goto_scene alderford/wagon_lot af_lot
+*goto_scene Langston/langston lg_lot
+
 *comment ── where each place returns to: the one table of where a board was reached from. A new settlement is one line here. ──
 *label cr_back
+*if (cr_origin = "lg")
+  *goto_scene Langston/langston_hall lg_hall_front
 *if (cr_origin = "tm")
   *goto_scene timbermouth/factors_hall tm_hall_floor
 *if (cr_origin = "af")
@@ -269,6 +304,7 @@ ${cr_where}, a few sheets are ruled like forms, each headed with a posting numbe
 *temp cd_fee {(cd_p & "fee")}
 *temp cd_fee_text {(cd_p & "fee_text")}
 *temp cd_seed {(cd_p & "seed")}
+*temp cd_gov {(cd_p & "gov")}
 *temp cd_v (cd_seed modulo 3)
 *set minutes_to_pass 10
 *set time_advance_call_id (("cr_deliver_" & cd_n) & "_1")
@@ -305,20 +341,17 @@ Then @{(cd_sex = "f") she|he} counts your fee out of a purse, and the work is do
 *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
   *set currency_add_amount cd_fee
   *gosub_scene economy currency_add
-  *set cr_credit + 1
-  *if (cr_credit >= 3)
-    *set cr_credit 0
-    *script window.Insignia.credit(stats, "scales");
+  *set cr_dgov cd_gov
+  *script window.Insignia.courierDelivered(stats, stats.cr_dgov);
   *set {(cd_p & "on")} false
   *set currency_txn_locked true
   *set locked_currency_txn_page_id page_id
 
 [b][💰 Paid: ${cd_fee_text}.][/b]
 *line_break
-*comment cr_credit is 0 only on the delivery that completed a set of three (it was reset in the locked block), so this reads the same on a replay.
-*if (cr_credit = 0)
-  [b][🏷️ Insignia: Port Valen page, ${hall_jobs_scales} @{(hall_jobs_scales = 1) job|jobs} finished][/b]
-*else
-  [b][🏷️ Insignia: courier work, ${cr_credit} of 3 deliveries toward the next job on the Port Valen page][/b]
+*comment The count is 0 only on the delivery that completed a set of three (it was reset in the locked block), so this reads the same on a replay (Insignia.courierLine).
+*set cr_dgov cd_gov
+*script stats.cr_credit_line = window.Insignia.courierLine(stats, stats.cr_dgov);
+[b][🏷️ ${cr_credit_line}][/b]
 *line_break
 *return

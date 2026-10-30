@@ -44,11 +44,23 @@ eq(s.hall_insignia_rank_scales, "named", "Gault credits must not change the Scal
 eq(I.pages({ has_hall_insignia: true, hall_scales_registered: true, hall_jobs_scales: 1 }).length, 1, "an Insignia with one registered page lists one page");
 eq(I.pages(s).length, 2, "an Insignia with both pages lists both");
 
+// what a scene asks a page instead of naming a government
+const q = { has_hall_insignia: true, hall_scales_registered: false, hall_gault_registered: false, hall_jobs_scales: 0, hall_jobs_gault: 0 };
+eq(I.canTake(q, "scales"), true, "any disc may take a Gilded Scales board's work"); eq(I.canTake(q, "gault"), false, "a disc with no Gault page may not take House Gault's work");
+q.hall_gault_registered = true; eq(I.canTake(q, "gault"), true, "a Gault page may take House Gault's work");
+eq(I.canTake({ has_hall_insignia: false }, "scales"), false, "no disc, no Scales work");
+eq(typeof I.needText("gault"), "string", "House Gault has a need text"); eq(I.needText("nowhere"), I.needText("scales"), "an unknown government reads as the Gilded Scales");
+eq(I.line({ hall_jobs_gault: 1 }, "gault"), "Insignia: House Gault page, 1 job finished", "the credit line of one job"); eq(I.line({ hall_jobs_scales: 5 }, "scales"), "Insignia: Port Valen page, 5 jobs finished", "the credit line of five jobs");
+const c = { has_hall_insignia: true, hall_gault_registered: true, hall_jobs_gault: 0, cr_credit_gault: 0 };
+I.courierDelivered(c, "gault"); eq(c.cr_credit_gault, 1, "one delivery counts one"); eq(c.hall_jobs_gault, 0, "one delivery finishes no job"); eq(I.courierLine(c, "gault"), "Insignia: courier work, 1 of 3 deliveries toward the next job on the House Gault page", "the count line");
+I.courierDelivered(c, "gault"); I.courierDelivered(c, "gault"); eq(c.cr_credit_gault, 0, "the third delivery resets the count"); eq(c.hall_jobs_gault, 1, "the third delivery finishes one job"); eq(I.courierLine(c, "gault"), "Insignia: House Gault page, 1 job finished", "the line after a set");
+
 // every stat a page names must be created in startup.txt
 const created = (v) => new RegExp("^\\*create " + v + " ", "m").test(startup);
 I.ids().forEach((id) => {
-  ["hall_jobs_" + id, "hall_insignia_rank_" + id].forEach((v) => { if (!created(v)) fail("startup.txt does not create " + v); });
+  ["hall_jobs_" + id, "hall_insignia_rank_" + id, "cr_credit_" + id, "hall_" + id + "_registered"].forEach((v) => { if (!created(v)) fail("startup.txt does not create " + v); });
 });
+["cr_need_text", "cr_dgov", "cr_credit_line", "es_credit_line", "cr_gov", "cr_can"].forEach((v) => { if (!created(v)) fail("startup.txt does not create " + v); });
 ["has_hall_insignia", "hall_scales_registered", "hall_gault_registered", "hall_gault_vouched", "hall_gault_commissioned", "hall_scales_sealed", "hall_scales_named"].forEach((v) => { if (!created(v)) fail("startup.txt does not create " + v); });
 
 // no scene bumps a count or sets a rank by hand
@@ -58,6 +70,7 @@ walk(path.join(GAME, "scenes"), []).forEach((f) => {
   fs.readFileSync(f, "utf8").split(/\r?\n/).forEach((line, i) => {
     if (/^\s*\*set\s+hall_jobs_[a-z]+\s*[+-]/.test(line)) fail(path.relative(ROOT, f) + ":" + (i + 1) + " bumps a job count by hand; call Insignia.credit: " + line.trim());
     if (/^\s*\*set\s+hall_insignia_rank/.test(line)) fail(path.relative(ROOT, f) + ":" + (i + 1) + " sets a rank by hand; ranks are derived (Insignia.refresh): " + line.trim());
+    if (/(cr_gov|cd_gov|cr_dgov|rj_escort_gov)\s*=\s*"/.test(line) && !/^\s*\*(comment|set|script)/.test(line)) fail(path.relative(ROOT, f) + ":" + (i + 1) + " branches on a government by name; ask the page (Insignia.canTake / needText / line / courierLine): " + line.trim());
     if (/hall_insignia_rank\b(?!_)/.test(line)) fail(path.relative(ROOT, f) + ":" + (i + 1) + " still reads the old single hall_insignia_rank: " + line.trim());
   });
 });

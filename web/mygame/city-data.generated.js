@@ -518,7 +518,8 @@ window.CITY_SETTLEMENTS = {
    "af_menu:af_hall",
    "af_hall_floor:af_hall_board",
    "af_menu:af_oar",
-   "af_menu:ow_here"
+   "af_menu:ow_here",
+   "af_menu:af_lot"
   ],
   "services": [
    {
@@ -564,6 +565,20 @@ window.CITY_SETTLEMENTS = {
     "stepMin": [
      0
     ]
+   },
+   {
+    "id": "lot",
+    "name": "The carters' lot",
+    "seen": "",
+    "lock": "af_lot_none",
+    "lockReason": "No line is making up",
+    "done": "You are at the carters' lot.",
+    "steps": [
+     "af_menu:af_lot"
+    ],
+    "stepMin": [
+     5
+    ]
    }
   ]
  },
@@ -573,7 +588,8 @@ window.CITY_SETTLEMENTS = {
    "tm_menu:tm_hall",
    "tm_hall_floor:tm_hall_board",
    "tm_menu:tm_inn",
-   "tm_menu:ow_here"
+   "tm_menu:ow_here",
+   "tm_menu:tm_lot"
   ],
   "services": [
    {
@@ -618,6 +634,90 @@ window.CITY_SETTLEMENTS = {
     ],
     "stepMin": [
      0
+    ]
+   },
+   {
+    "id": "lot",
+    "name": "The wagon lot",
+    "seen": "",
+    "lock": "tm_lot_none",
+    "lockReason": "No line is making up",
+    "done": "You are at the wagon lot.",
+    "steps": [
+     "tm_menu:tm_lot"
+    ],
+    "stepMin": [
+     5
+    ]
+   }
+  ]
+ },
+ "langston": {
+  "name": "Langston",
+  "keys": [
+   "lg_menu:lg_hall",
+   "lg_hall_menu:lg_hall_board",
+   "lg_menu:lg_hen",
+   "lg_menu:ow_here",
+   "lg_menu:lg_lot"
+  ],
+  "services": [
+   {
+    "id": "board",
+    "name": "Contract Board",
+    "seen": "lg_hall_seen",
+    "lock": "",
+    "lockReason": "",
+    "done": "You are at the Contract Board.",
+    "steps": [
+     "lg_menu:lg_hall",
+     "lg_hall_menu:lg_hall_board"
+    ],
+    "stepMin": [
+     5,
+     5
+    ]
+   },
+   {
+    "id": "inn",
+    "name": "The Pickled Hen",
+    "seen": "lg_hen_seen",
+    "lock": "",
+    "lockReason": "",
+    "done": "You are at the Pickled Hen.",
+    "steps": [
+     "lg_menu:lg_hen"
+    ],
+    "stepMin": [
+     5
+    ]
+   },
+   {
+    "id": "leave",
+    "name": "Leave Langston",
+    "seen": "",
+    "lock": "",
+    "lockReason": "",
+    "done": "You take the road out of Langston.",
+    "steps": [
+     "lg_menu:ow_here"
+    ],
+    "stepMin": [
+     0
+    ]
+   },
+   {
+    "id": "lot",
+    "name": "The wagon lot",
+    "seen": "",
+    "lock": "lg_lot_none",
+    "lockReason": "No line is making up",
+    "done": "You are at the wagon lot.",
+    "steps": [
+     "lg_menu:lg_lot"
+    ],
+    "stepMin": [
+     5
     ]
    }
   ]

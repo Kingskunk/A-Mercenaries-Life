@@ -45,8 +45,9 @@
     "timbermouth/split_pine_inn": "generic_town_inn",
     "Langston/pickled_hen": "generic_town_inn",
     "Langston/cord_and_kettle": "generic_trade_shop",
-    "alderford/wagon_lot": "village_stable_yard",
-    "timbermouth/wagon_lot": "village_stable_yard",
+    "alderford/wagon_lot": "river_carters_lot",
+    "timbermouth/wagon_lot": "timber_wagon_lot",
+    "port_valen/radiant/caravan_lot": "vale_gate_wagon_lot",
     "alderford/redvein/red_lantern": "generic_village_inn",
     "alderford/whitefold/white_ram": "generic_village_inn",
     "port_valen/brinewick/reedhouse": "generic_village_inn",
@@ -112,6 +113,7 @@
   // the rules, tried in order; each gets the stats and returns the name of where the player is, or nothing
   function tile(s) { var O = window.Overworld; return s.ow_on && O && O.nodes ? O.nodes[s.ow_pos] : null; }
   function escortTile(s) { var O = window.Overworld; return s.sceneName === "port_valen/radiant/hall_escort" && (s.rj_escort_road || s.rj_escort_stage === "done") && O && O.nodes ? O.nodes[s.es_leg_to] : null; }
+  var ESCORT_YARD_PLACES = { pv: "city_wagon_yard", tm: "timber_wagon_lot", af: "river_carters_lot", lg: "vale_gate_wagon_lot" };
   // The trade panel's shop_open names an OPEN MARKET (a lane, a green, a trading ground: web/mygame/market-data.generated.js, commodities) outdoors, not a shop counter, and the stat stays set
   // when the player walks on, so it must never choose the shop interior picture or the "shop" place.
   function counterShop(s) { var D = window.MARKET_DEFS; return !!(s.shop_open && !(D && D[s.shop_open] && D[s.shop_open].commodities)); }
@@ -142,7 +144,7 @@
     function (s) { return s.sceneName === "port_valen/radiant/hall_pests" && s.rj_pest_in_cellar ? "generic_domestic_cellar" : undefined; }, // after the player commits to entering the infested cellar or back room
     function (s) { return s.sceneName === "port_valen/radiant/hall_pests" && s.rj_pest_where === "quarter" ? "patrician_avenue" : undefined; }, // the townhouse approach before entering and after leaving
     function (s) { return s.sceneName === "port_valen/radiant/hall_pests" && s.rj_pest_where !== "quarter" ? "middle_ward" : undefined; }, // the ordinary house approach before entering and after leaving
-    function (s) { return s.sceneName === "port_valen/radiant/hall_escort" && ((!s.rj_escort_road && s.rj_escort_stage !== "done") || (s.rj_escort_road && Number(s.es_next_leg) === 0)) ? "village_stable_yard" : undefined; }, // every signing/muster yard, and the column's first pull out
+    function (s) { return s.sceneName === "port_valen/radiant/hall_escort" && ((!s.rj_escort_road && s.rj_escort_stage !== "done") || (s.rj_escort_road && Number(s.es_next_leg) === 0)) ? ESCORT_YARD_PLACES[s.es_start] : undefined; }, // each town's signing/muster yard, and the column's first pull out
     function (s) { var n = escortTile(s); return n ? n.name : undefined; }, // the current road, named camp ground or destination
     function (s) { var n = escortTile(s); return n && n.kind === "road" && n.also === "hills" ? "overworld_hilly_road" : undefined; }, // an unnamed hilly road stretch
     function (s) { var n = escortTile(s); return n ? n.kind : undefined; }, // plain road, wooded road, village or town fallback

@@ -1567,21 +1567,28 @@ function insignia() { return (typeof window !== "undefined" ? window : global).I
  * for a number of finished jobs (jobs), a story flag (flag: a promotion scene, or a grant from the ruler), or both. A page is "none" until the player is registered with it.
  * The disc and its pages are separate: any hall that sells the disc calls Insignia.issue (the three Gilded Scales sales call register, which issues and opens the Scales page; Langston Hall issues it and
  * opens the Gault page), and a hall opens its page on a disc the player already carries with Insignia.register. Scenes call Insignia.register(stats, id) when a government first registers the player, and Insignia.credit(stats, id) when a job for it is finished (from *script: the callers keep their own replay
- * guards). A new government is one entry in PAGES and its stats in startup_parts/23: <jobs>, <rank>, and the flags its ladder names. The numbers below are first guesses to tune.
+ * guards). A new government is one entry in PAGES and its stats in startup_parts/23: <jobs>, <rank>, <creditVar> (its courier count), its registered flag and the flags its ladder names. Scenes never name a
+ * government to say or decide something about its page: they ask canTake, needText, line, courierDelivered and courierLine, which read the page's fields. The numbers below are first guesses to tune.
  * The ranks are the user's: Gilded Scales Open > Bonded > Sealed > Named (commercial reliability and access to sensitive contracts); House Gault Listed > Proven > Vouched > Commissioned (service,
  * noble sponsorship and delegated authority; Commissioned is granted by the Countess and never earned by repetition, and it does not make the player noble or a retainer).
  */
 (typeof window !== "undefined" ? window : global).Insignia = (function () {
   var PAGES = {
     scales: {
-      government: "The Gilded Scales", page: "Port Valen", jobs: "hall_jobs_scales", rank: "hall_insignia_rank_scales",
+      government: "The Gilded Scales", page: "Port Valen", jobs: "hall_jobs_scales", rank: "hall_insignia_rank_scales", creditVar: "cr_credit_scales", registeredVar: "hall_scales_registered",
       registered: function (s) { return truthy(s.has_hall_insignia) && truthy(s.hall_scales_registered); },
+      // any Insignia may take a Gilded Scales board's work: finishing the first job opens the Port Valen page (credit)
+      canTake: function (s) { return truthy(s.has_hall_insignia); },
+      needText: "You reach for the posting, and the seal at its foot is the Hall's, not a village's. The work goes to a bearer of a Contractor's Insignia, and the Seals window in Port Valen sells one, once.",
       register: function (s) { s.has_hall_insignia = true; s.hall_scales_registered = true; },
       ladder: [{ id: "open" }, { id: "bonded", jobs: 5 }, { id: "sealed", jobs: 15, flag: "hall_scales_sealed" }, { id: "named", flag: "hall_scales_named" }]
     },
     gault: {
-      government: "House Gault", page: "House Gault", jobs: "hall_jobs_gault", rank: "hall_insignia_rank_gault",
+      government: "House Gault", page: "House Gault", jobs: "hall_jobs_gault", rank: "hall_insignia_rank_gault", creditVar: "cr_credit_gault", registeredVar: "hall_gault_registered",
       registered: function (s) { return truthy(s.has_hall_insignia) && truthy(s.hall_gault_registered); },
+      // House Gault's work is open to a Gault page, Listed or above
+      canTake: function (s) { return truthy(s.has_hall_insignia) && truthy(s.hall_gault_registered); },
+      needText: "You reach for the posting, and the counterseal at its foot is the mayor's. The work goes to a bearer of a House Gault page. The clerks at the Hall's counters open one on a Contractor's Insignia, or sell you the Insignia with the page already on it.",
       register: function (s) { s.hall_gault_registered = true; },
       ladder: [{ id: "listed" }, { id: "proven", jobs: 3 }, { id: "vouched", jobs: 6, flag: "hall_gault_vouched" }, { id: "commissioned", flag: "hall_gault_commissioned" }]
     }
@@ -1599,6 +1606,8 @@ function insignia() { return (typeof window !== "undefined" ? window : global).I
     return rank;
   }
   function refresh(s) { for (var id in PAGES) s[PAGES[id].rank] = rankOf(s, id); }
+  function pageOf(id) { return PAGES[id] || PAGES.scales; }   // anything unknown is a Gilded Scales job, as every job was before the Vale
+  var COURIER_SET = 3;   // courier deliveries that make one finished job on a page
   return {
     pages: function (s) {
       var out = [];
@@ -1619,6 +1628,19 @@ function insignia() { return (typeof window !== "undefined" ? window : global).I
       return { next: rung.id, jobsLeft: rung.jobs !== undefined ? Math.max(0, rung.jobs - jobsOf(s, id)) : 0, flagNeeded: rung.flag !== undefined && !truthy(s[rung.flag]) };
     },
     refresh: refresh,
+    // what a scene needs to say or decide about a page, so none of them names a government: whether the player may take a board's work, the message when they may not, the "Insignia:" line after a job, and the
+    // courier's count (every COURIER_SET deliveries credit one job; courierLine says where the count stands, or the finished jobs on the delivery that completed a set)
+    canTake: function (s, id) { return !!pageOf(id).canTake(s); },
+    needText: function (id) { return pageOf(id).needText; },
+    line: function (s, id) { var p = pageOf(id), n = Number(s[p.jobs]) || 0; return "Insignia: " + p.page + " page, " + n + (n === 1 ? " job" : " jobs") + " finished"; },
+    courierDelivered: function (s, id) {
+      var p = pageOf(id), key = Object.keys(PAGES).filter(function (k) { return PAGES[k] === p; })[0], c = (Number(s[p.creditVar]) || 0) + 1;
+      if (c >= COURIER_SET) { s[p.creditVar] = 0; this.credit(s, key); } else s[p.creditVar] = c;
+    },
+    courierLine: function (s, id) {
+      var p = pageOf(id), c = Number(s[p.creditVar]) || 0;
+      return c === 0 ? this.line(s, id) : "Insignia: courier work, " + c + " of " + COURIER_SET + " deliveries toward the next job on the " + p.page + " page";
+    },
     // issue: a government's hall sells the blank disc. It opens no page by itself; register does.
     issue: function (s) { s.has_hall_insignia = true; refresh(s); },
     register: function (s, id) { PAGES[id].register(s); refresh(s); },

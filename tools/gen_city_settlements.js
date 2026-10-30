@@ -24,8 +24,9 @@ const fs = require("fs"), path = require("path");
 const core = require("./gen_city_places.js");
 const { ind, stripBlocks, optionsOf, cloneLines, SCENES, MARK } = core;
 
-// A route step: [page label, target label, scene file]. The first step of every route is on the hub page.
-function S(page, target, file) { return [page, target, file]; }
+// A route step: [page label, target label, scene file, own]. The first step of every route is on the hub page. own is true for a step whose hidden option "⇥ [pvgo:<page>:<target>]" is WRITTEN BY HAND in the scene (a
+// place the hub no longer shows as a choice, like a wagon lot): this script then clones nothing, and only checks the option is there.
+function S(page, target, file, own) { return own ? [page, target, file, true] : [page, target, file]; }
 const SETTLEMENTS = {
   alderford: {
     name: "Alderford", start: "alderford", startScene: "alderford/alderford", hubFile: "alderford/alderford.txt", hubLabels: ["alderford", "af_menu", "af_return", "af_market_return"],
@@ -33,7 +34,9 @@ const SETTLEMENTS = {
     services: {
       board: { name: "Notice board", seen: "af_hall_seen", steps: [S("af_menu", "af_hall", "alderford/alderford.txt"), S("af_hall_floor", "af_hall_board", "alderford/factors_hall.txt")], done: "You are at the notice board." },
       inn: { name: "The Drowned Oar Taphouse", seen: "af_oar_seen", steps: [S("af_menu", "af_oar", "alderford/alderford.txt")], done: "You are at the Drowned Oar." },
-      leave: { name: "Leave Alderford", steps: [S("af_menu", "ow_here", "alderford/alderford.txt")], done: "You take the road out of Alderford." }
+      leave: { name: "Leave Alderford", steps: [S("af_menu", "ow_here", "alderford/alderford.txt")], done: "You take the road out of Alderford." },
+      // The carters' lot is not a hub choice (the user's call, 2026-10-30): its hidden option is written by hand in alderford.txt under the old guard, and af_lot_none (set with af_lot_show) greys the card button.
+      lot: { name: "The carters' lot", steps: [S("af_menu", "af_lot", "alderford/alderford.txt", true)], done: "You are at the carters' lot.", yard: "af", lock: "af_lot_none", lockReason: "No line is making up" }
     }
   },
   timbermouth: {
@@ -42,7 +45,18 @@ const SETTLEMENTS = {
     services: {
       board: { name: "Notice board", seen: "tm_hall_seen", steps: [S("tm_menu", "tm_hall", "timbermouth/timbermouth.txt"), S("tm_hall_floor", "tm_hall_board", "timbermouth/factors_hall.txt")], done: "You are at the notice board." },
       inn: { name: "The Split Pine Inn", seen: "tm_inn_seen", steps: [S("tm_menu", "tm_inn", "timbermouth/timbermouth.txt")], done: "You are at the Split Pine Inn." },
-      leave: { name: "Leave Timbermouth", steps: [S("tm_menu", "ow_here", "timbermouth/timbermouth.txt")], done: "You take the road out of Timbermouth." }
+      leave: { name: "Leave Timbermouth", steps: [S("tm_menu", "ow_here", "timbermouth/timbermouth.txt")], done: "You take the road out of Timbermouth." },
+      lot: { name: "The wagon lot", steps: [S("tm_menu", "tm_lot", "timbermouth/timbermouth.txt", true)], done: "You are at the wagon lot.", yard: "tm", lock: "tm_lot_none", lockReason: "No line is making up" }
+    }
+  },
+  langston: {
+    name: "Langston", start: "langston", startScene: "Langston/langston", hubFile: "Langston/langston.txt", hubLabels: ["langston", "lg_menu", "lg_return"],
+    files: ["Langston/pickled_hen.txt", "Langston/langston_hall.txt", "Langston/cord_and_kettle.txt"],
+    services: {
+      board: { name: "Contract Board", seen: "lg_hall_seen", steps: [S("lg_menu", "lg_hall", "Langston/langston.txt"), S("lg_hall_menu", "lg_hall_board", "Langston/langston_hall.txt")], done: "You are at the Contract Board." },
+      inn: { name: "The Pickled Hen", seen: "lg_hen_seen", steps: [S("lg_menu", "lg_hen", "Langston/langston.txt")], done: "You are at the Pickled Hen." },
+      leave: { name: "Leave Langston", steps: [S("lg_menu", "ow_here", "Langston/langston.txt")], done: "You take the road out of Langston." },
+      lot: { name: "The wagon lot", steps: [S("lg_menu", "lg_lot", "Langston/langston.txt", true)], done: "You are at the wagon lot.", yard: "lg", lock: "lg_lot_none", lockReason: "No line is making up" }
     }
   },
   brinewick: {
@@ -104,6 +118,9 @@ const SETTLEMENTS = {
 };
 
 const SERVICES = ["board", "inn", "leave"];
+// A settlement may also carry a "lot" service (its wagon lot): listed on the card, greyed with its reason while nothing is making up (lock/lockReason), and its hub option is a hand-written hidden one (own steps).
+const OPTIONAL = ["lot"];
+const servicesOf = def => SERVICES.concat(OPTIONAL.filter(s => def.services[s]));
 
 function readLines(file) { return fs.readFileSync(path.join(SCENES, file), "utf8").replace(/\r\n/g, "\n").split("\n"); }
 function labelsOf(L) { const out = []; L.forEach(l => { const m = /^\*label (\S+)/.exec(l); if (m) out.push(m[1]); }); return out; }
@@ -146,6 +163,10 @@ function applyFile(id, def, file, stepsHere, home, dry) {
   const add = (b, k, lines) => { (ins[b.endLine] = ins[b.endLine] || []).push({ k: k, lines: lines }); made++; };
   stepsHere.forEach(st => {
     const page = st[0], target = st[1];
+    if (st[2]) {   // an own step: the hidden option is in the scene already, written by hand
+      if (!raw.includes("[pvgo:" + page + ":" + target + "]")) throw new Error(file + ": settlement " + id + ": no hand-written hidden option [pvgo:" + page + ":" + target + "]");
+      return;
+    }
     let n = 0;
     optionsOf(L, page, file).forEach(b => {
       b.opts.filter(o => o.target === target).forEach(o => { add(b, page + ":" + target, cloneLines(o, page, target, b.indent + 2)); n++; });
@@ -183,17 +204,17 @@ function run(opts) {
     SERVICES.forEach(s => { if (!def.services[s] || !def.services[s].steps || !def.services[s].steps.length) throw new Error("settlement " + id + " has no " + s + " (every settlement needs a notice board, an inn and a way out)"); });
     // files: the place files, the hub's file and every file a route passes through
     const files = new Set([def.hubFile].concat(def.files));
-    SERVICES.forEach(s => def.services[s].steps.forEach(st => files.add(st[2])));
+    servicesOf(def).forEach(s => def.services[s].steps.forEach(st => files.add(st[2])));
     const home = homeLevels(def, def.files.concat([def.hubFile]));
     const keys = new Set();
     files.forEach(f => {
       const stepsHere = [];
-      SERVICES.forEach(s => def.services[s].steps.forEach(st => { if (st[2] === f && !stepsHere.some(x => x[0] === st[0] && x[1] === st[1])) stepsHere.push([st[0], st[1]]); }));
+      servicesOf(def).forEach(s => def.services[s].steps.forEach(st => { if (st[2] === f && !stepsHere.some(x => x[0] === st[0] && x[1] === st[1])) stepsHere.push([st[0], st[1], !!st[3]]); }));
       applyFile(id, def, f, stepsHere, def.files.indexOf(f) >= 0 || f === def.hubFile ? home : null, !!opts.dry);
     });
-    const services = SERVICES.map(s => {
+    const services = servicesOf(def).map(s => {
       def.services[s].steps.forEach(st => keys.add(st[0] + ":" + st[1]));
-      if (s !== "leave" && !def.services[s].seen) throw new Error("settlement " + id + " " + s + " has no seen flag (the Town card greys it until the player has been there)");
+      if (s !== "leave" && s !== "lot" && !def.services[s].seen) throw new Error("settlement " + id + " " + s + " has no seen flag (the Town card greys it until the player has been there)");
       return { id: s, name: def.services[s].name, seen: def.services[s].seen || "", lock: def.services[s].lock || "", lockReason: def.services[s].lockReason || "", done: def.services[s].done, steps: def.services[s].steps.map(st => st[0] + ":" + st[1]), stepMin: (measured[id] && measured[id][s]) ? measured[id][s] : def.services[s].steps.map(() => 0) };
     });
     out[id] = { name: def.name, keys: Array.from(keys), services: services };
@@ -201,7 +222,7 @@ function run(opts) {
   return out;
 }
 
-module.exports = { run: run, SETTLEMENTS: SETTLEMENTS, SERVICES: SERVICES };
+module.exports = { run: run, SETTLEMENTS: SETTLEMENTS, SERVICES: SERVICES, servicesOf: servicesOf };
 
 if (require.main === module) {
   const res = run({ dry: process.argv.indexOf("--dry") >= 0 });
