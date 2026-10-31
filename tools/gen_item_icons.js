@@ -164,6 +164,8 @@ const MAP = {
   raw_hide: "../Generic/Raw_Hide_Generated_Source.png",                 // a skinned beast's hide, from the Longshade's boar and elk
   boar_tusk: "../Generic/Boar_Tusk_Generated_Source.png",
   elk_antler: "../Generic/Elk_Antler_Generated_Source.png",
+  scrapling_claw: "../Generic/Scrapling_Claw_Generated_Source.png",         // Chapter 2: the claw Tomlin gives you from the garden
+  philter_remembrance: "../Generic/Philter_of_Remembrance_Generated_Source.png", // Chapter 2: Tomlin's wedding-gift scent
   venison: "FOOD_Raw_Steak_Unfaded_Icon.png",                                   // an elk's haunch (STAND-IN: no wild-meat art yet)
   heartwood_fruit: "FOOD_Goodberry_Unfaded_Icon.png",                   // Bark's reward
   honeycomb: "FOOD_Honey_Comb_Unfaded_Icon.png",                    // the Longshade bee tree

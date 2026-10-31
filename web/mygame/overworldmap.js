@@ -297,7 +297,7 @@
         r.legs.forEach(function (l) { if (l.terrain && l.terrain !== "road") rough[l.terrain] = (rough[l.terrain] || 0) + l.miles; });
         Object.keys(rough).forEach(function (t) {
           var T = (OW.terrains || {})[t] || { name: t, pace: 100 };
-          html += "<div class=\"ow-card-warn\">" + rough[t] + " mile" + (rough[t] === 1 ? "" : "s") + " of " + esc(T.name) + ": " + (T.pace === 200 ? "twice as slow as a road" : (T.pace + "% of a road mile's time")) + ".</div>";
+          html += "<div class=\"ow-card-warn\">" + rough[t] + " mile" + (rough[t] === 1 ? "" : "s") + " of " + esc(T.name) + ": " + (T.pace === 200 ? "twice as slow as a road" : (T.pace === 100 ? "walked at road pace" : (T.pace + "% of a road mile's time"))) + ".</div>";
         });
         html += "<div class=\"ow-card-line\"><b>Estimated arrival:</b> " + esc(arrivalDate(statsNow(), plan.arrivalDayOffset) + " at " + clockText(plan.arrivalMinute)) + ".</div>";
         if (plan.duskMiles) html += "<div class=\"ow-card-warn\">" + plan.duskMiles + " mile" + (plan.duskMiles === 1 ? "" : "s") + " at dusk: slower pace.</div>";

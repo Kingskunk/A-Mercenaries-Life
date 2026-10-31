@@ -241,6 +241,15 @@
       use: true
     },
     {
+      id: "philter_of_remembrance", category: "consumables", owned: "has_philter_of_remembrance",
+      weight: 0.3, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_philter_of_remembrance) || 0); return "Philter of Remembrance" + (n > 1 ? " ×" + n : ""); },
+      description: "A small rope-necked flask of scent that stirs vivid memories in whoever breathes it.",
+      badge: function (s) { return "+1 CHA for 4 hours" + (function (s) { for (var n = 1; n <= 3; n++) { var a = s["unique_buff" + n + "_active"]; if ((a === true || a === "true") && s["unique_buff" + n + "_name"] === "Philter of Remembrance") return true; } return false; }(s) ? " · active, using it refreshes" : ""); },
+      useLabel: function (s) { return function (s) { for (var n = 1; n <= 3; n++) { var a = s["unique_buff" + n + "_active"]; if ((a === true || a === "true") && s["unique_buff" + n + "_name"] === "Philter of Remembrance") return true; } return false; }(s) ? "Refresh" : "Use"; },
+      use: true
+    },
+    {
       id: "althea_phial", category: "consumables", owned: "has_althea_phial",
       weight: 0.5, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_althea_phial) || 0); return "Saint Althea's Water" + (n > 1 ? " ×" + n : ""); },
@@ -1331,6 +1340,13 @@
       name: function (s) { return "Viper Venom (" + Number(s.viper_venom) + ")"; },
       description: "Venom milked from a giant viper.",
       badge: "Sells to a herbalist"
+    },
+    {
+      id: "scrapling_claw", category: "provisions",
+      weight: 0.5,
+      owned: function (s) { return Number(s.scrapling_claw) > 0; },
+      name: function (s) { return "Scrapling Claw (" + Number(s.scrapling_claw) + ")"; },
+      description: "A hooked claw of knotted wood, still sharp. Roi Sunderhammer may know what to make of it."
     },
     {
       id: "grave_ichor", category: "provisions",

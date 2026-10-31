@@ -1,7 +1,7 @@
 *comment ====================================================================================
 *comment THE WOLVES OF LANGSTON -- CHAPTER 2: SPEAKING TO TOMLIN
-*comment This opening carries the source's magical warning, cottage approach and first doorstep
-*comment exchange. The interview, tea and garden investigation follow in the next implementation pass.
+*comment This section carries the source through Tomlin's interview, tea, and garden search,
+*comment through the scrapling fight and Tomlin's gifts, and it ends by sending the player back into Langston.
 *comment ====================================================================================
 
 *label wol_ch2_start
@@ -33,6 +33,14 @@
   *goto wol_ch2_garden_opening
 *if (wol_chapter_2_checkpoint = "workroom")
   *goto wol_ch2_workroom
+*if (wol_chapter_2_checkpoint = "interview")
+  *goto wol_ch2_interview
+*if (wol_chapter_2_checkpoint = "fight")
+  *goto wol_ch2_scrapling_attack
+*if (wol_chapter_2_checkpoint = "fight_won")
+  *goto wol_ch2_fight_won
+*if (wol_chapter_2_checkpoint = "gift")
+  *goto wol_ch2_gift
 *set wol_chapter_2_checkpoint "approach"
 *goto wol_ch2_approach
 
@@ -105,8 +113,9 @@ You follow Anathram's directions to the western end of town, but you would have 
     *goto wol_ch2_doorstep
   # Take in the garden and surroundings first.
     *set wol_tomlin_arrival_choice "surveyed"
-    *set wol_chapter_2_checkpoint "garden"
-    *goto wol_ch2_garden_opening
+    *set wol_chapter_2_checkpoint "doorstep"
+    You pause at the lane and study the crowded beds, the vine-covered trellises, and the fallen beam at the far side of the garden. The plants look carefully tended despite the damage. Nothing visible from here gives you a reason to delay speaking with Tomlin.
+    *goto wol_ch2_doorstep
   # Study the flowerboxes from the lane, then knock.
     *set wol_tomlin_arrival_choice "frontage_then_knocked"
     *set wol_chapter_2_checkpoint "doorstep"
@@ -167,15 +176,360 @@ When you confirm it, he steps aside. "Please. Come in. I'm sure you have many qu
 *goto wol_ch2_workroom
 
 *label wol_ch2_garden_opening
-The garden is a riot of flowerbeds and medicinal herbs. Bees move lazily from bloom to bloom, and an iridescent butterfly crosses toward a cluster of purple flowers. Climbing vines make a green wall along the trellises. One of the beams anchoring a far corner has fallen, but the rest of the garden looks tended with patient care.
+*set scenery_subplace "tomlin_cottage"
+*set wol_chapter_2_checkpoint "garden"
+*if (not(wol_garden_started))
+  *set wol_garden_started true
+  Tomlin leads you around the cottage and stops at the edge of his garden.
 
-The garden investigation begins with this choice in the source and will be the next Chapter 2 section.
-*finish
+  The garden is a riot of flowerbeds and medicinal herbs. Bees move lazily from bloom to bloom, and an iridescent butterfly crosses toward a cluster of purple flowers. Climbing vines make a green wall along the trellises. One of the beams anchoring a far corner has fallen, and several patches of flowers have been flattened or torn up.
+
+  "This was not like this yesterday," Tomlin says. "I thought it might be an animal, but I cannot make sense of it. Would you look?"
+*else
+  You return your attention to the damage in Tomlin's garden.
+*gosub_scene Langston/tomlin_cottage lg_tomlin_sky
+*goto wol_ch2_garden_menu
 
 *label wol_ch2_workroom
 *set scenery_subplace "tomlin_herbalist_workroom"
+*set wol_chapter_2_checkpoint "workroom"
 Tomlin closes the door behind you.
 *gosub_scene Langston/tomlin_cottage lg_tomlin_workroom_layers
 
-The interview, tea and garden investigation will continue from here in the next Chapter 2 section.
-*finish
+He clears a place for you at the worktable and pours two cups from the kettle. "Tea? It is only a restorative blend. This has been a difficult time for everyone."
+
+*choice
+  # Accept the tea.
+    *set wol_tomlin_tea_choice "drank"
+    *goto wol_ch2_tea_drink
+  # Decline it politely.
+    *set wol_tomlin_tea_choice "refused"
+    *goto wol_ch2_tea_refuse
+  # Examine the tea before deciding.
+    *set wol_tomlin_tea_checked true
+    *goto wol_ch2_tea_assess
+
+*label wol_ch2_tea_assess
+The drink smells floral and slightly bitter. Steam curls over a clear amber surface while Tomlin waits with his own cup in hand.
+
+*choice
+  # Identify the plants by scent and colour.@{show_stat_hints  [Nature DC 15]|}
+    *gosub_scene dice_engine roll_skill_check 15 "nature" "" "" "" "" ""
+    *if (check_success)
+      *set wol_tomlin_tea_safe_known true
+      *set wol_tomlin_wolfsbane_seen true
+      The tea itself is harmless: a mild blend meant to settle fatigue. The purple flowers at the window are another matter. They are wolfsbane, poisonous if mishandled, and the orange liquid still moving through the filtration bench is concentrated enough that you would not drink it unfinished.
+    *else
+      You recognize several soothing herbs, but the crowded scents and Tomlin's half-finished preparations keep you from ruling out every risk.
+    *goto wol_ch2_tea_decision
+  # Judge whether the brew shows signs of poison.@{show_stat_hints  [Medicine DC 15]|}
+    *gosub_scene dice_engine roll_skill_check 15 "medicine" "" "" "" "" ""
+    *if (check_success)
+      *set wol_tomlin_tea_safe_known true
+      *set wol_tomlin_wolfsbane_seen true
+      Nothing in the cup suggests poison. The dangerous materials are elsewhere: purple wolfsbane at the window and the orange preparation on the filtration bench, still concentrated and not yet ready for use.
+    *else
+      The colour and scent give you no obvious warning, but neither is enough to prove the drink harmless.
+    *goto wol_ch2_tea_decision
+  # Stop examining it and make your decision.
+    *goto wol_ch2_tea_decision
+
+*label wol_ch2_tea_decision
+*choice
+  # Drink the tea.
+    *set wol_tomlin_tea_choice "drank_after_check"
+    *goto wol_ch2_tea_drink
+  # Refuse the tea.
+    *set wol_tomlin_tea_choice "refused_after_check"
+    *goto wol_ch2_tea_refuse
+  # Take one cautious sip, then finish the cup.
+    *set wol_tomlin_tea_choice "cautious_drink"
+    *goto wol_ch2_tea_drink
+
+*label wol_ch2_tea_drink
+The tea is warming and unexpectedly invigorating. The ache of the road eases from your limbs, and your thoughts settle into sharper order.
+*gosub_scene character_progression free_short_rest
+*gosub_scene character_progression free_short_rest_banner
+*gosub_scene dice_engine heroic_award "wolves_ch2_tomlin_tea"
+*set wol_chapter_2_checkpoint "interview"
+*goto wol_ch2_interview
+
+*label wol_ch2_tea_refuse
+You leave the cup untouched. Tomlin gives a small shrug and drinks from his own before setting it beside the kettle.
+*set wol_chapter_2_checkpoint "interview"
+*goto wol_ch2_interview
+
+*label wol_ch2_interview
+*set scenery_subplace "tomlin_herbalist_workroom"
+*set wol_chapter_2_checkpoint "interview"
+
+Tomlin settles against the edge of the worktable. "Ask what you need to ask. I want Maybelline's killer found."
+
+*choice
+  *if (not(wol_tomlin_asked_maybelline))
+    # Ask Tomlin about Maybelline and their engagement.
+      *set wol_tomlin_asked_maybelline true
+      *set minutes_to_pass 5
+      *set time_advance_call_id "wol_ch2_tomlin_maybelline"
+      *gosub_scene calendar advance_time
+      Tomlin describes Maybelline as patient, generous, and eager to build a quiet life with him. His grief sounds genuine, but he speaks more easily about the wedding they planned than about the woman herself.
+
+      "We were to be married soon," he says. "Solaine had agreed to conduct the ceremony. Maybelline wanted daisies everywhere."
+      *goto wol_ch2_interview
+  *if (not(wol_tomlin_asked_alibi))
+    # Ask where he was when Maybelline died.
+      *set wol_tomlin_asked_alibi true
+      *set wol_tomlin_alibi_tavern true
+      *set wol_roi_left_sick true
+      *set wol_solaine_tomlin_past true
+      *set minutes_to_pass 5
+      *set time_advance_call_id "wol_ch2_tomlin_alibi"
+      *gosub_scene calendar advance_time
+      "At the Pickled Hen," Tomlin says. "There were plenty of people there who saw me. Solaine passed through, and Roi was there until he left early. He was sneezing and burning warm."
+
+      He hesitates when you ask why Solaine was involved in the wedding. "She was to officiate. We were close once, before Maybelline. That ended long ago."
+      *goto wol_ch2_interview
+  *if (not(wol_tomlin_asked_enemies))
+    # Press him on anyone who might have wanted Maybelline harmed.@{show_stat_hints  [Persuasion DC 10]|}
+      *set wol_tomlin_asked_enemies true
+      *set minutes_to_pass 5
+      *set time_advance_call_id "wol_ch2_tomlin_enemies"
+      *gosub_scene calendar advance_time
+      *gosub_scene dice_engine roll_skill_check 10 "persuasion" "" "" "" "" ""
+      *if (check_success)
+        *set wol_tomlin_enemies_revealed true
+        *set wol_mayor_argued_maybelline true
+        Tomlin insists Maybelline had no enemies, then concedes that she argued with Mayor Anathram shortly before her death. He also admits that Solaine and Maybelline never became comfortable with one another.
+
+        "That does not make either of them a killer," he says quickly. "But you asked for quarrels. Those are the only ones I know."
+      *else
+        Tomlin's expression closes. "Maybelline had no enemies. Whatever killed her was not someone who knew her."
+      *goto wol_ch2_interview
+  *if (not(wol_tomlin_asked_strange))
+    # Ask what else has changed around Langston.
+      *set wol_tomlin_asked_strange true
+      *set wol_wolves_louder_hint true
+      *set wol_strangers_camp_hint true
+      *set minutes_to_pass 5
+      *set time_advance_call_id "wol_ch2_tomlin_strange"
+      *gosub_scene calendar advance_time
+      Tomlin says the wolves have been howling more often and much closer to town. Farmers have reported small thefts from sheds and fields, and several strangers have made camp north of Langston instead of taking rooms at the Pickled Hen.
+      *goto wol_ch2_interview
+  # Tell Tomlin you have enough for now and ask to see the damaged garden.
+    *goto wol_ch2_interview_close
+  # Summarize the useful points aloud, then turn to the damage outside.
+    *goto wol_ch2_interview_close
+  # Ask Tomlin to show you where he noticed trouble in the garden.
+    *goto wol_ch2_interview_close
+
+*label wol_ch2_interview_close
+"There is one more thing," Tomlin says as you prepare to leave the workroom. "Something tore through my garden. It may be nothing, but with everything happening in Langston... I would feel better if you looked."
+*set wol_chapter_2_checkpoint "garden"
+*goto wol_ch2_garden_opening
+
+*label wol_ch2_garden_menu
+*choice
+  *if (not(wol_garden_flowers_checked))
+    # Study the trampled flowerbeds.@{show_stat_hints  [Survival DC 15]|}
+      *goto wol_ch2_garden_flowers
+  *else
+    # Recheck the trampled flowerbeds, then widen the search.
+      *goto wol_ch2_garden_from_flowers
+  *if (not(wol_garden_trellis_checked))
+    # Search the trellises and garden perimeter.@{show_stat_hints  [Perception DC 15]|}
+      *goto wol_ch2_garden_trellis
+  *else
+    # Reconsider the fence line, then inspect the remaining ground.
+      *goto wol_ch2_garden_from_trellis
+  *if (not(wol_garden_beam_checked))
+    # Lift the fallen beam and inspect beneath it.@{show_stat_hints  [Athletics DC 15 with Tomlin's help]|}
+      *goto wol_ch2_garden_beam
+  *else
+    # Review the fallen beam with Tomlin, then check what remains.
+      *goto wol_ch2_garden_from_beam
+
+*label wol_ch2_garden_from_flowers
+*if (not(wol_garden_trellis_checked))
+  Nothing new appears among the broken flowers, so you widen the search to the garden's edge.
+  *goto wol_ch2_garden_trellis
+*if (not(wol_garden_beam_checked))
+  Nothing new appears among the broken flowers, so you turn to the fallen beam.
+  *goto wol_ch2_garden_beam
+*set wol_scraplings_spotted false
+*set wol_scrapling_surprise true
+*goto wol_ch2_scrapling_attack
+
+*label wol_ch2_garden_from_trellis
+*if (not(wol_garden_beam_checked))
+  The fence line yields nothing new, so you return to the fallen beam.
+  *goto wol_ch2_garden_beam
+*if (not(wol_garden_flowers_checked))
+  The fence line yields nothing new, so you return to the damaged flowers.
+  *goto wol_ch2_garden_flowers
+*set wol_scraplings_spotted false
+*set wol_scrapling_surprise true
+*goto wol_ch2_scrapling_attack
+
+*label wol_ch2_garden_from_beam
+*if (not(wol_garden_flowers_checked))
+  The beam offers no new angle, so you trace the damage back through the flowerbeds.
+  *goto wol_ch2_garden_flowers
+*if (not(wol_garden_trellis_checked))
+  The beam offers no new angle, so you widen the search to the garden's edge.
+  *goto wol_ch2_garden_trellis
+*set wol_scraplings_spotted false
+*set wol_scrapling_surprise true
+*goto wol_ch2_scrapling_attack
+
+*label wol_ch2_garden_flowers
+*set wol_garden_flowers_checked true
+*gosub_scene dice_engine roll_skill_check 15 "survival" "" "" "" "" ""
+*if (check_success)
+  *set wol_garden_flower_trail true
+  The damage is too low and narrow for a wolf, boar, or deer. Whatever passed through the beds did not stop to feed. It crushed stems in a broken line that ends beside two dead-looking shrubs.
+
+  One of the shrubs shifts against the air.
+  *set wol_scraplings_spotted true
+  *set wol_scrapling_surprise false
+  *goto wol_ch2_scrapling_attack
+You find torn stems and shallow impressions, but the soft soil has been disturbed too thoroughly to preserve a useful trail.
+*goto wol_ch2_garden_menu
+
+*label wol_ch2_garden_trellis
+*set wol_garden_trellis_checked true
+*gosub_scene dice_engine roll_skill_check 15 "perception" "" "" "" "" ""
+*if (check_success)
+  Near the perimeter, two dry shrubs move in short, deliberate jerks. Their twig limbs separate from the surrounding branches as they begin to creep toward you.
+  *set wol_scraplings_spotted true
+  *set wol_scrapling_surprise false
+  *goto wol_ch2_scrapling_attack
+You search the fence line and dense trellises without spotting anything beyond wind-stirred leaves and old breaks in the vines.
+*goto wol_ch2_garden_menu
+
+*label wol_ch2_garden_beam
+*set wol_garden_beam_checked true
+*set advantage true
+*gosub_scene dice_engine roll_skill_check 15 "athletics" "" "" "" "" ""
+*if (not(check_success))
+  Even with Tomlin bracing the other end, the water-heavy beam shifts only far enough to show churned earth beneath it. It settles back before you can see more.
+  *goto wol_ch2_garden_menu
+*set wol_garden_dead_scrapling true
+With Tomlin hauling beside you, you raise the beam and roll it clear. Beneath it lies a small thing made of roots, bark, and sharpened twigs. The fall crushed it flat, but its clawed limbs and thorny mouth were shaped to move and kill.
+
+The garden goes very still.
+
+*choice
+  # Search the nearby plants for more creatures.@{show_stat_hints  [Perception or Insight DC 15 with Advantage]|}
+    *set advantage true
+    *gosub_scene dice_engine roll_skill_check 15 "perception" "" "insight" "" "" ""
+    *goto wol_ch2_beam_awareness_result
+  # Read the dead creature's position and anticipate where its companions would hide.@{show_stat_hints  [Insight or Perception DC 15 with Advantage]|}
+    *set advantage true
+    *gosub_scene dice_engine roll_skill_check 15 "insight" "" "perception" "" "" ""
+    *goto wol_ch2_beam_awareness_result
+  # Warn Tomlin and prepare for movement without exposing your back.
+    *set wol_scraplings_spotted true
+    *set wol_scrapling_surprise false
+    *goto wol_ch2_scrapling_attack
+
+*label wol_ch2_beam_awareness_result
+*if (check_success)
+  *set wol_scraplings_spotted true
+  *set wol_scrapling_surprise false
+  You catch the unnatural stillness of two nearby shrubs before either can spring. Both are hunched creatures like the one beneath the beam, their thorn-claws already lifting.
+*else
+  *set wol_scraplings_spotted false
+  *set wol_scrapling_surprise true
+  You are still studying the crushed creature when dry branches scrape rapidly across the soil behind you.
+*goto wol_ch2_scrapling_attack
+
+*label wol_ch2_scrapling_attack
+*set scenery_subplace "tomlin_cottage"
+*set wol_chapter_2_checkpoint "fight"
+*if (wol_scrapling_surprise)
+  Two thorny figures burst from the beds before you can choose your ground. Tomlin shouts a warning and snatches up a pitchfork.
+*else
+  Two thorny figures tear themselves free of the garden. Because you saw them in time, you and Tomlin are ready when they rush.
+
+Tomlin catches one against the earth with the pitchfork, using all his weight to keep its clawing limbs pinned. The second scrapling turns its thorn-lined mouth toward you and charges.
+
+*comment THE SCRAPLING FIGHT (source: Chapter 2, section 64). One duel: Tomlin keeps the other scrapling pinned and is never rolled for. The library's twig_blight is the same creature (7 HP, AC 14, vulnerable to fire,
+*comment 1d4+2 slashing) renamed, with the source's +4 to hit. Surprise is the enemy's opening strike. There is no running: Tomlin is in the garden with the other one, so it ends in a win or a death.
+*set combat_is_nonlethal false
+*set combat_no_flee true
+*set combat_lib_1 "twig_blight"
+*set combat_enemy_name_override "Scrapling"
+*set combat_enemy_epithet_override "the scrapling"
+*set combat_enemy_atk_override 4
+*if (wol_scrapling_surprise)
+  *set combat_enemy_advantage true
+*set combat_player_can_die true
+*gosub_scene combat fight_library
+*set combat_player_can_die false
+*if (combat_outcome = "player_died")
+  *goto wol_ch2_fight_death
+*goto wol_ch2_fight_won
+
+*label wol_ch2_fight_death
+Claws rake through your guard and you fall into the turned earth of the garden. The dry clatter of wooden limbs seems to move away from you, or the dark closing in is only your sight failing.
+
+Tomlin screams your name as the world goes out.
+*set death_cause "combat"
+*set death_location_name "Tomlin's Garden"
+*set death_enemy_epithet "the scrapling"
+*goto_scene death death_screen
+
+*label wol_ch2_fight_won
+*set wol_chapter_2_checkpoint "fight_won"
+The scrapling folds around the wound and goes still, its limbs knocking against the soil.
+
+Behind you Tomlin is still shouting. He wrenches the pitchfork out of the earth and drives it down again and again into the one he pinned, until the thing is splinters and the rusty tines are bent crooked. He shoves the hair out of his eyes and spits on the wreckage. When he looks up, the easy smile is back on his face.
+
+"Well. Glad that's over with." He prods a severed arm with his boot, works it loose from the pile and holds it out to you by the thin end, claws still hooked. "Souvenir?"
+
+You take it. The wood is dry and light, and the claws are sharp enough to catch on your skin.
+
+*if (not(wol_tomlin_claw_given))
+  *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+    *gosub_scene equipment grant_gear "scrapling_claw" 1
+    *set wol_tomlin_claw_given true
+    *set stat_bump_locked true
+    *set locked_stat_bump_page_id page_id
+
+[b][🎁 Received: Scrapling Claw][/b]
+
+Tomlin rubs the back of his neck and looks at the torn beds. "I know plants," he says. "I don't know plant creatures. Roi Sunderhammer will. Show him that and tell him where it came from."
+
+He glances toward the cottage, and some of the brightness goes out of him. "Before you go, come inside a moment. There's something I'd like you to have."
+
+*set wol_chapter_2_checkpoint "gift"
+*page_break Follow Tomlin inside…
+*goto wol_ch2_gift
+
+*label wol_ch2_gift
+*set scenery_subplace "tomlin_herbalist_workroom"
+Tomlin leaves the pitchfork leaning against the doorframe and goes straight to a shelf at the back of the workroom. He comes back with three small round flasks, each bound at the neck with rope and swirling pink and violet inside.
+
+"It was a wedding gift for Maybelline," he says. "I made it for her. I can't stand to have it in the house now, and you might find a use for it." He sets the flasks in your hands. "A few drops on your wrists and throat and people remember something good about you, a doorway, a laugh, whatever it is for them. It holds for a few hours, or until you wash it off."
+
+*if (not(wol_tomlin_philters_given))
+  *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+    *gosub_scene equipment grant_gear "philter_of_remembrance" 3
+    *set wol_tomlin_philters_given true
+    *set stat_bump_locked true
+    *set locked_stat_bump_page_id page_id
+
+[b][🎁 Received: Philter of Remembrance x3][/b]
+
+You tell him it's a kind thing to give away. He straightens a jar on the shelf, then another.
+
+"Am I a terrible person for feeling some relief?" he asks, and a smile crosses his mouth and is gone. You tell him people feel all sorts of things after a loss. "I suppose that's natural," he says. "We were together till death did us part."
+
+His eyes go past you to the window, to the purple flowers hanging in it. You thank him for his help, and he nods without looking round.
+
+*set wol_chapter_2_complete true
+*set wol_chapter_2_checkpoint "complete"
+*set minutes_to_pass 5
+*set time_advance_call_id "wol_ch2_walk_back"
+*gosub_scene Langston/langston lg_walk_time
+*goto_scene Langston/langston lg_return

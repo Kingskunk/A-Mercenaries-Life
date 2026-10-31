@@ -1705,7 +1705,11 @@
   $!{combat_enemy_epithet} breaks away before you can make the opening count.
   *line_break
   [b][💨 Opportunity Attack Misses][/b]
-*line_break
+*comment Ends on a break unless the blow ended the fight (fight_victory opens with its own; a second would print an empty line). The caller repeats the sync and the check.
+*gosub fight_sync_target_out
+*gosub fight_check_all_dead
+*if (not(combat_all_enemies_dead))
+  *line_break
 *return
 
 *label resolve_reverse_oa_ally
@@ -2220,7 +2224,9 @@
 *comment round doesn't add that break again on every redisplay.
 *if (not(combat_hub_shown_once))
   *set combat_hub_shown_once true
-  *line_break
+  *comment When the player acts first nothing has printed since the Turn Order line (announce_turn_order ends on a blank line), so a break here would be an empty line.
+  *if (not(combat_turn_kind_1 = "player"))
+    *line_break
 *comment Shield's +5 reaches the player's printed AC only after the reaction has actually fired. While it is
 *comment merely armed, the caster is still on their ordinary AC and is waiting to see a hit that the +5 can
 *comment deflect. This keeps the round banner and sidebar honest without writing the temporary bonus into
@@ -4801,7 +4807,12 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     [b][🌿 ${combat_enemy_name} is restrained: 1d6 piercing at the start of each of its turns, attacks against it have advantage, until it tears free (up to 10 rounds)][/b]
   *else
     [b][💨 ${combat_enemy_name} tears clear of the vines][/b]
-*line_break
+*comment The attack's last banner ends here with a break, unless this blow ended the fight: fight_victory opens with its own break, so a second one would print an empty line. The sync and the dead check are
+*comment repeated by fight_check_enemy_hp below and change nothing a second time.
+*gosub fight_sync_target_out
+*gosub fight_check_all_dead
+*if (not(combat_all_enemies_dead))
+  *line_break
 *comment The one and only entry point for both weapon and sidearm attacks -- flagging it here, right before the
 *comment shared fight_check_enemy_hp tail every damage option uses, is how that tail knows to spend an ATTACK
 *comment instead of an action for this specific one.

@@ -209,6 +209,10 @@
 *set rest_can_gain false
 *if (short_rests_left <= 0)
   *return
+*goto short_rest_scan
+
+*comment What a short rest WOULD give back, ignoring the cap. short_rest_preview reaches it once a use is left; free_short_rest calls it directly.
+*label short_rest_scan
 *temp sr_piece ""
 *if (character_class = "fighter")
   *if (fighter_second_wind_uses < fighter_second_wind_max)
@@ -247,40 +251,7 @@
 *gosub short_rest_preview
 *temp sr_stamp (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
 *if ((rest_can_gain) and (not(sr_stamp = last_short_rest_stamp)))
-  *if (character_class = "fighter")
-    *if (fighter_second_wind_uses < fighter_second_wind_max)
-      *set fighter_second_wind_uses + 1
-    *set fighter_action_surge_uses fighter_action_surge_max
-  *if (character_class = "warlock")
-    *set warlock_spell_slots warlock_spell_slots_max
-  *if (character_class = "bard")
-    *set bard_inspiration_uses bard_inspiration_max
-  *comment Half of the spell slots, rounded up (all slots are first level here, so that many slots), capped at what is missing. Each pool is written out by name: the quicktest walks every branch,
-  *comment so a variable name built from the class (it would be "none_spell_slots" for a class-less character) fails there.
-  *temp sr_half 0
-  *if (character_class = "wizard")
-    *set sr_half ((wizard_spell_slots_max + (wizard_spell_slots_max modulo 2)) / 2)
-    *if (sr_half > (wizard_spell_slots_max - wizard_spell_slots))
-      *set sr_half (wizard_spell_slots_max - wizard_spell_slots)
-    *set wizard_spell_slots + sr_half
-  *if (character_class = "bard")
-    *set sr_half ((bard_spell_slots_max + (bard_spell_slots_max modulo 2)) / 2)
-    *if (sr_half > (bard_spell_slots_max - bard_spell_slots))
-      *set sr_half (bard_spell_slots_max - bard_spell_slots)
-    *set bard_spell_slots + sr_half
-  *if (character_class = "ranger")
-    *set sr_half ((ranger_spell_slots_max + (ranger_spell_slots_max modulo 2)) / 2)
-    *if (sr_half > (ranger_spell_slots_max - ranger_spell_slots))
-      *set sr_half (ranger_spell_slots_max - ranger_spell_slots)
-    *set ranger_spell_slots + sr_half
-  *if (((character_class = "wizard") and (not(wizard_arcane_recovery_used))) and (wizard_spell_slots < wizard_spell_slots_max))
-    *comment Arcane Recovery, on top of the half above: slots whose combined level is up to half the Wizard level, rounded up. Every slot is first level, so that is this many slots, capped at what is still missing.
-    *temp sr_ar ((character_level + (character_level modulo 2)) / 2)
-    *temp sr_missing (wizard_spell_slots_max - wizard_spell_slots)
-    *if (sr_ar > sr_missing)
-      *set sr_ar sr_missing
-    *set wizard_spell_slots + sr_ar
-    *set wizard_arcane_recovery_used true
+  *gosub short_rest_apply
   *set short_rests_left - 1
   *set last_short_rest_stamp sr_stamp
 *comment The report variables are scratch: clear them once applied, so a replay of the calling page (which would find nothing left to gain) leaves the same values behind.
@@ -288,9 +259,73 @@
 *set rest_can_gain false
 *return
 
+*comment FREE SHORT REST (2026-10-30): the effects of a short rest from a source that is not a rest (Tomlin's tea; any future tonic, meal or charm), with NO short-rest use spent, no hour passing and
+*comment the cap ignored. A scene calls it where the item is taken: *gosub_scene character_progression free_short_rest, then *gosub_scene character_progression free_short_rest_banner. It gives exactly what
+*comment do_short_rest would (the same short_rest_scan / short_rest_apply), so a new class give-back is added there once. A page lock (like heroic_award) stops a replayed page giving a second Second Wind;
+*comment a scene that can be reached twice guards the call with its own story flag. free_rest_gave holds the words of what was given ("" when the pools were full).
+*label free_short_rest
+*if (not(free_rest_locked)) or (not(locked_free_rest_page_id = page_id))
+  *gosub refresh_class_resource_maxs
+  *set rest_gave ""
+  *set rest_can_gain false
+  *gosub short_rest_scan
+  *if (rest_can_gain)
+    *gosub short_rest_apply
+  *set short_rest_gave_text rest_gave
+  *set free_rest_locked true
+  *set locked_free_rest_page_id page_id
+  *set rest_gave ""
+  *set rest_can_gain false
+*return
+
+*comment Gives back what a short rest gives. Callers have already checked that something can be gained.
+*label short_rest_apply
+*if (character_class = "fighter")
+  *if (fighter_second_wind_uses < fighter_second_wind_max)
+    *set fighter_second_wind_uses + 1
+  *set fighter_action_surge_uses fighter_action_surge_max
+*if (character_class = "warlock")
+  *set warlock_spell_slots warlock_spell_slots_max
+*if (character_class = "bard")
+  *set bard_inspiration_uses bard_inspiration_max
+*comment Half of the spell slots, rounded up (all slots are first level here, so that many slots), capped at what is missing. Each pool is written out by name: the quicktest walks every branch,
+*comment so a variable name built from the class (it would be "none_spell_slots" for a class-less character) fails there.
+*temp sr_half 0
+*if (character_class = "wizard")
+  *set sr_half ((wizard_spell_slots_max + (wizard_spell_slots_max modulo 2)) / 2)
+  *if (sr_half > (wizard_spell_slots_max - wizard_spell_slots))
+    *set sr_half (wizard_spell_slots_max - wizard_spell_slots)
+  *set wizard_spell_slots + sr_half
+*if (character_class = "bard")
+  *set sr_half ((bard_spell_slots_max + (bard_spell_slots_max modulo 2)) / 2)
+  *if (sr_half > (bard_spell_slots_max - bard_spell_slots))
+    *set sr_half (bard_spell_slots_max - bard_spell_slots)
+  *set bard_spell_slots + sr_half
+*if (character_class = "ranger")
+  *set sr_half ((ranger_spell_slots_max + (ranger_spell_slots_max modulo 2)) / 2)
+  *if (sr_half > (ranger_spell_slots_max - ranger_spell_slots))
+    *set sr_half (ranger_spell_slots_max - ranger_spell_slots)
+  *set ranger_spell_slots + sr_half
+*if (((character_class = "wizard") and (not(wizard_arcane_recovery_used))) and (wizard_spell_slots < wizard_spell_slots_max))
+  *comment Arcane Recovery, on top of the half above: slots whose combined level is up to half the Wizard level, rounded up. Every slot is first level, so that is this many slots, capped at what is still missing.
+  *temp sr_ar ((character_level + (character_level modulo 2)) / 2)
+  *temp sr_missing (wizard_spell_slots_max - wizard_spell_slots)
+  *if (sr_ar > sr_missing)
+    *set sr_ar sr_missing
+  *set wizard_spell_slots + sr_ar
+  *set wizard_arcane_recovery_used true
+*return
+
 *comment The one-line banner a resting place prints after do_short_rest. It reads the pools, so a replay prints the same line, and a
 *comment new short-rest give-back is added here and never at the resting place.
 *label short_rest_banner
+*gosub short_rest_pools_banner
+*line_break
+[b][🕐 Short rests left before you sleep | ${short_rests_left} / ${short_rests_max}][/b]
+*return
+
+*comment Just the pool lines of the banner. free_short_rest_banner prints these alone: a free short rest spends no use, so it has no "rests left" line.
+*label short_rest_pools_banner
 *if (character_class = "fighter")
   *line_break
   [b][🕐 Short Rest | Second Wind ${fighter_second_wind_uses} / ${fighter_second_wind_max}@{(fighter_action_surge_max > 0)  · Action Surge ${fighter_action_surge_uses} / ${fighter_action_surge_max}|}][/b]
@@ -306,8 +341,10 @@
 *if ((character_class = "ranger") and (ranger_spell_slots_max > 0))
   *line_break
   [b][🕐 Short Rest | Spell slots ${ranger_spell_slots} / ${ranger_spell_slots_max}][/b]
-*line_break
-[b][🕐 Short rests left before you sleep | ${short_rests_left} / ${short_rests_max}][/b]
+*return
+
+*label free_short_rest_banner
+*gosub short_rest_pools_banner
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

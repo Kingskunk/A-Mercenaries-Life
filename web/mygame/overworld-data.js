@@ -91,10 +91,12 @@
   // The fields a zone owns: its key in a parked slot -> the stat it is swapped with.
   var WEATHER_FIELDS = { weather: "weather", tomorrow: "weather_tomorrow", missed: "forecast_missed", rain: "rain_streak", dry: "dry_streak" };
 
+  // "track" (2026-10-30, the user's sketch of Roi's Grove): a seldom-used dirt road, walked at road pace but drawn dotted on the map, so it reads as a lesser way than the wagon road.
   // How each terrain walks, as a percent of a road mile's time. "blocked" has no pace: it is never walked. name is what the map card calls the ground.
   var TERRAIN = {
     road: { name: "road", pace: 100 },
     overland: { name: "pathless forest", pace: 200 },
+    track: { name: "dirt track", pace: 100 },
     blocked: { name: "impassable ground", pace: 0 }
   };
 
@@ -424,6 +426,23 @@
       hereNight: "The deep wood is black and still beneath the old crowns. The stream is heard running over its stones, and now and then a pale light drifts between the trunks and goes out.",
       hereStorm: "Rain runs down the great trunks in sheets and drips through the high crowns. The stream has risen and talks loudly among the roots."
     },
+    // Roi's Grove (2026-10-30, the user's sketch): a forest tile south-west of Langston, joined to the town and to Western Vale Road by seldom-used dirt tracks. It is HIDDEN until the visit to Tomlin is done
+    // (wol_chapter_2_complete), the same way the Deep Longshade is hidden: see requires above. Map tile and tracks only; no scene yet. Position and lengths are read off the sketch at about six miles to a grid unit. The
+    // prose is invented to that sketch and says nothing about what stands in the grove.
+    rg: {
+      name: "Roi's Grove", kind: "forest", x: -6.43, y: -5.57,
+      requires: "wol_chapter_2_complete",
+      territory: "gault",
+      danger: 0,
+      climate: -1,
+      water: "a stream",
+      walk: "The track is two ruts and a strip of grass, hardly more than a farm lane, and it narrows to a footpath where the trees close in.",
+      camp: "A patch of level ground beside the track under old trees, with leaf litter underfoot and a stream within earshot.",
+      info: "A grove of old trees south-west of Langston, off the Western Vale's wagon road. Seldom-used dirt tracks run to it from the town and from Western Vale Road.",
+      here: "Old trees stand close around a patch of open ground, and the seldom-used track runs out between them. The air smells of leaf litter and wet bark, and the vale's fields lie out of sight behind the trunks.",
+      hereNight: "The grove is dark under its trees. Leaves move overhead, a stream runs somewhere nearby, and the track is only a paler strip between the trunks.",
+      hereStorm: "Rain hammers the canopy and drips through in heavy drops. The ruts of the track have filled with water, and the trunks creak in the wind."
+    },
     // The Western Vale (2026-10-29, the user's sketch): the road west out of Fellgate leaves the Valen Reach and crosses into House Gault's country, a level land of grass and tilled fields. Western Vale Road is the one road tile between the
     // fort and Langston, and Langston is a walled market town. Both are invented here to the sketch (the 8-mile lengths are the user's sketch at about six miles to a grid unit, the text matches the plan's Chapter 1 road and town). Map tiles only: the
     // town's entry button is not wired yet (Langston/langston.txt lg_arrive is the label it will enter at).
@@ -499,7 +518,10 @@
     ["dl", "ua", 3, "overland"],
     // The Western Vale (the user's sketch): Fellgate's western gate, along the wagon road to Langston.
     ["fg", "wv", 8],
-    ["wv", "lg", 8]
+    ["wv", "lg", 8],
+    // Roi's Grove (hidden until the visit to Tomlin is done): a seldom-used dirt track to Langston and another to Western Vale Road.
+    ["lg", "rg", 6, "track"],
+    ["rg", "wv", 7, "track"]
   ];
 
   // Is a tile on the map yet? A tile with a requires (the name of a saved flag) is hidden, and cannot be routed to or through, until that flag is true. Read from the live stats, so it opens the moment the flag is set.

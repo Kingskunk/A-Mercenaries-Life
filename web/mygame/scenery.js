@@ -153,6 +153,7 @@
     function (s) { return s.sceneName === "prologue/alderford" && s.scenery_subplace === "prologue_talia_loft" ? "talia_loft" : undefined; }, // Talia's private curing-loft home
     function (s) { return s.sceneName === "prologue/alderford" && s.scenery_subplace === "prologue_janna_alcove" ? "janna_hearth_alcove" : undefined; }, // Janna's private hearth alcove behind the smithy
     function (s) { return s.ow_on && s.ow_pos === "bs" ? "black_sinks_gilded_scales_toll_fort" : undefined; }, // repaired Gilded Scales toll fort, reached only after the prologue
+    function (s) { return s.ow_on && s.ow_pos === "rg" ? "rois_grove" : undefined; }, // Roi's Grove overworld tile uses its wildflower clearing and rock-overhang home
     function (s) { return s.sceneName === "overworld/camp" && s.has_camp_kit ? "generic_camp_tent_interior" : undefined; }, // the player-owned solo tent, never a company bivouac
     function (s) { return s.sceneName === "timbermouth/workshops" && s.shop_open === "works" ? "generic_workshop_smithy" : undefined; }, // Roan's enclosed trade bench; the lane remains Timbermouth
     function (s) { return s.sceneName === "alderford/timber_smithy" && s.shop_open === "torvald" ? "generic_workshop_smithy" : undefined; }, // Torvald trades from the Timber Smithy's waterwheel forge, not a generic shop counter

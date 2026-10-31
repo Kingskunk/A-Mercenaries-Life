@@ -306,6 +306,8 @@ function compile(){
   verifyFileName("Langston/pickled_hen.txt");
   verifyFileName("Langston/langston_hall.txt");
   verifyFileName("Langston/tomlin_cottage.txt");
+  // Roi's Grove: the forest tile south-west of Langston, reached by *goto_scene from the overworld's "Go into the grove" button and the Dev Hub, never through *scene_list.
+  verifyFileName("Langston/roi_grove.txt");
   // Middle Ward quests live in their own *goto_scene-only files. The district scene owns
   // their physical triggers and aftermath; each quest file owns its choices and resolutions.
   verifyFileName("port_valen/MiddlewardQuest/dry_lion.txt");
