@@ -462,8 +462,9 @@ Roi lies on the stones by the outcropping in his wolf shape, sneezing now and th
   *if (ch_can_forage)
     # Search the woods for the herbs, with Roi to guide you.
       *goto wol_ch3_forage_start
-  # Leave the grove.
-    *goto_scene overworld/overworld ow_here
+  *if (not(wol_ch3_missing = ""))
+    # Take the recipe to Tomlin in Langston for what is missing.
+      *goto wol_ch3_errand_go
 
 *comment The herbs still missing, as one phrase in wol_ch3_missing: "sage", "sage and wolfsbane", "sage, hornwort and wolfsbane". Empty when the pack holds all three.
 *label wol_ch3_missing_list
@@ -596,7 +597,20 @@ Wolfsbane should be in season, but given how toxic it is, Roi is unlikely to gro
 *page_break Go on…
 *goto wol_ch3_forage_menu
 
-*comment ── TOMLIN'S ERRAND (source 104, 114, 108, 112, 129) ── A CLOSED event, entered from the town hub through tomlin_cottage.lg_tomlin while the recipe is held, the errand is not yet done and the pack lacks a herb. It covers every herb the pack lacks, in one visit: sage (the trellis),
+*comment The walk to Langston from the grove (30 minutes), straight to Tomlin's door. The chapter has no map moves and no town hub between here and the cure.
+*label wol_ch3_errand_go
+*set scenery_subplace "rois_grove"
+You fold the recipe into your pack. Roi's ears follow you to the edge of the clearing, and he lays his head back down on his paws as you step onto the track.
+
+The ruts carry you out of the trees, across the fields and in through Langston's wall, where the lane narrows toward Tomlin's flowered windows.
+*set minutes_to_pass 30
+*set time_advance_call_id "wol_ch3_errand_walk_1"
+*gosub_scene Langston/langston lg_walk_time
+*page_break Knock on Tomlin's door…
+*goto wol_ch3_tomlin_errand
+
+*comment ── TOMLIN'S ERRAND (source 104, 114, 108, 112, 129) ── A CLOSED event (the user's call, 2026-10-31: from the moment the player goes to Roi there is no way out of the chapter). It is entered from the cure hub (wol_ch3_errand_go: a walk to Langston), not from the town, and it ends with the walk back to the cure hub.
+*comment It covers every herb the pack lacks, in one visit: sage (the trellis),
 *comment hornwort (pay, or persuade; a player who cannot pay is never stranded) and wolfsbane (a careful hand; a slip leaves the player Poisoned for an hour). Every task ends with the herb in hand, only the price differs. Each task costs time. It ends in Tomlin's shop.
 *label wol_ch3_tomlin_errand
 *set scenery_subplace "tomlin_herbalist_workroom"
@@ -738,9 +752,15 @@ Instead he leads you to the window and points at the bundles drying there on a s
 *label wol_ch3_errand_end
 *set wol_tomlin_errand_done true
 *set scenery_subplace "tomlin_herbalist_workroom"
-Tomlin dusts his hands and gives a satisfied nod. "That's everything on your list. Take it to Roi while it's fresh, and tell him I wish him a quick recovery." His smile returns. "The shelves are open if you need anything else."
-*page_break Tomlin's workroom…
-*goto_scene Langston/tomlin_shop lg_tshop
+Tomlin dusts his hands and gives a satisfied nod. "That's everything on your list. Take it to Roi while it's fresh, and tell him I wish him a quick recovery." His smile returns as he sees you to the door.
+*page_break Walk back to Roi…
+*set scenery_subplace "rois_grove"
+You carry the bundles back out through the wall and along the fields. The track runs into the trees again, and the clearing opens ahead of you with Roi lifting his head from the stones.
+*set minutes_to_pass 30
+*set time_advance_call_id "wol_ch3_errand_walk_2"
+*gosub_scene Langston/langston lg_walk_time
+*page_break Go on…
+*goto wol_ch3_cure_hub
 
 *comment A plain ability check with no skill behind it (the source's "Dexterity check"): the ability's modifier and nothing else.
 *label wol_ch3_roll_dex

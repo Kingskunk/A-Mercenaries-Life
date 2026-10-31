@@ -50,12 +50,52 @@ Past the last field the track turns into the trees. It is two ruts with a strip 
   The ground is soft underfoot from recent rain.
 *return
 
-*comment ── THE GROVE ── Placeholder for the next piece (Roi's meeting). A later entry opens on the sky layer; the first one comes straight from the cold open, which has just given it.
+*comment ── THE GROVE ── Every entry after Chapter 3 opens on the sky layer, then the clearing, then Roi (rg_roi). Roi has no conversation menu yet; the grove is a look-in.
 *label rg_grove
 *set scenery_subplace "rois_grove"
 *gosub rg_sky
 
 *label rg_grove_edge
-The old trees stand back from a clear patch of ground, and the track runs out into it. Under the rock overhang the druid lies curled in his bed of hides, sleeping off his illness, and you leave him to it.
+The old trees stand back from a clear patch of ground, and the track runs out into it. A rock overhang shelters a bed of hides and a ring of blackened stones.
+*gosub rg_roi
 *page_break Walk back to the track…
 *goto_scene overworld/overworld ow_here
+
+*comment ── WHERE ROI IS TODAY ── Sets roi_where from the campaign day alone, so a day reads the same on every look and after a reload. h cycles through 0..15 (5 is coprime to 16, so the away days are scattered, never in a run):
+*comment h under 4 is a wandering day (one in four); h = 0 is a market day (one in sixteen: he walks to Langston and back). Used by rg_roi here and by the market square in langston.txt (lg_roi_sighting). replay-ok: sets a display variable.
+*label rg_roi_where
+*temp roi_h (((campaign_day * 5) + 2) modulo 16)
+*set roi_where "grove"
+*if (roi_h < 4)
+  *set roi_where "wandering"
+*if (roi_h = 0)
+  *set roi_where "market"
+*return
+
+*comment ── LAYER 3: ROI'S DAY ── Where the druid is and what he is doing, by the hour; his own hours, invented (the source gives him none). Wet or stormy weather sends him under the overhang through the day, and the night finds him asleep whatever
+*comment the sky does. Every line is a continuous activity (no one-off gestures), so a return on any day reads true. Roi is cured on every path to this label (rg_arrive sends the player to Chapter 3 until it is complete). replay-ok: display only.
+*label rg_roi
+*gosub rg_roi_where
+*if (roi_where != "grove")
+  Ash lies grey and cold in the fire ring, the hides are folded flat on the rock shelf, and the hook where the bark basket hangs at the edge of the overhang is bare. A narrow trail of bent ferns leads off between the trunks.
+  *return
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  Roi lies curled in his bed of hides beneath the overhang, one arm flung over a bundle of dried stems. His breath comes slow and even, and the stones of the fire ring give off a last dull red.
+  *return
+*if ((weather_severity >= 3) or weather_wet)
+  *if (time_period = "Dusk")
+    Roi sits close to the fire under the overhang with the hides pulled round his shoulders, feeding it split sticks one at a time.
+  *else
+    Roi sits under the overhang with a heap of bark across his knees, tearing it into long strips and twisting them into cord. A pot of something green ticks on the coals beside him.
+  *return
+*if (time_period = "Morning")
+  Roi crouches at the edge of the clearing among the saplings, one palm flat against a trunk. A pot of something green steams on the fire behind him.
+*elseif (time_period = "Midday")
+  Roi sits cross-legged on the flat rock at the centre of the clearing with leaves spread over his knees, sorting them into bundles by size and tying each with a twist of grass.
+*elseif (time_period = "Dusk")
+  Roi kneels at the fire ring under the overhang, banking the coals with ash and laying the day's bundles along the rock wall to dry.
+*else
+  Roi works his way along the edge of the clearing with a bark basket on his arm, stopping at the roots of the older trunks to turn over the leaf litter.
+*if (time_period != "Dusk")
+  He lifts a hand as you stop at the edge of the trees, and returns to his work.
+*return

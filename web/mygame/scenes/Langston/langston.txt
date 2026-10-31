@@ -22,7 +22,6 @@
 *gosub_scene calendar update_hub_condition
 *gosub lg_hours
 *gosub_scene Langston/tomlin_cottage lg_tomlin_hours
-*gosub_scene Langston/tomlin_cottage lg_tomlin_errand_check
 *gosub lg_lot_hours
 *return
 
@@ -77,12 +76,8 @@
     # [b]Tomlin's cottage[/b]: ${lg_tomlin_closed_reason}.
       *goto_scene Langston/tomlin_cottage lg_tomlin_closed
   *if ((wol_chapter_2_complete) and (lg_tomlin_open))
-    *if (wol_tomlin_errand_open)
-      # [b]Tomlin's workroom[/b]: ask after the herbs for Roi's cure. [~5 min]
-        *goto_scene Langston/tomlin_cottage lg_tomlin
-    *else
-      # [b]Tomlin's workroom[/b]: herbs, tonics and his own scent. [~5 min]
-        *goto_scene Langston/tomlin_cottage lg_tomlin
+    # [b]Tomlin's workroom[/b]: herbs, tonics and his own scent. [~5 min]
+      *goto_scene Langston/tomlin_cottage lg_tomlin
   *if ((wol_chapter_2_complete) and (not(lg_tomlin_open)))
     # [b]Tomlin's workroom[/b]: ${lg_tomlin_closed_reason}.
       *goto_scene Langston/tomlin_cottage lg_tomlin_closed
@@ -208,6 +203,20 @@
   *gosub lg_st_market
 *else
   *gosub lg_st_day
+*gosub lg_roi_sighting
+*return
+
+*comment A rare daytime sighting: on a market day of Roi's (Langston/roi_grove.txt rg_roi_where, one day in sixteen) the cured druid walks the square; shown after Chapter 3 only, in daytime, with the stalls open. replay-ok: display only.
+*label lg_roi_sighting
+*if (not(wol_chapter_3_complete))
+  *return
+*if (not(((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon")))
+  *return
+*if ((street_life = "empty") or ((day_of_week = "Hallowday") or (weather_severity >= 3)))
+  *return
+*gosub_scene Langston/roi_grove rg_roi_where
+*if (roi_where = "market")
+  Near the covered bays Roi moves slowly between the stalls with a bark basket on his arm, rubbing a pinch of dried leaf between finger and thumb at each one.
 *return
 
 *label lg_st_day
