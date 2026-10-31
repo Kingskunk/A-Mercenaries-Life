@@ -183,6 +183,15 @@
 *create weapon_reach "long"
 *comment Ammunition type enables relevant combat options; the starting weapon keeps its own copy.
 *create weapon_ammo ""
+*comment WEAPON PROPERTIES (2026-10-31, the user: weapon immunity as close to RAW as possible). weapon_magic is the +N of a magic weapon (+0 to +3, added to its attack rolls AND its damage rolls); weapon_magical is true for any weapon with the magic property, with or without a bonus (a +N weapon is always magical); weapon_silvered and weapon_adamantine are the two other properties a creature's "nonmagical weapons" immunity or resistance names as exceptions. Set by apply_weapon_loadout from the catalog's loadout (magic, magical, silvered, adamantine) and reset there first, so a swap never leaves the last weapon's properties behind. The sidearm_* twins are applied by apply_sidearm_loadout and become the weapon_* ones when the two swap.
+*create weapon_magic 0
+*create weapon_magical false
+*create weapon_silvered false
+*create weapon_adamantine false
+*create sidearm_magic 0
+*create sidearm_magical false
+*create sidearm_silvered false
+*create sidearm_adamantine false
 *create starting_weapon_ammo ""
 *create sidearm_reach "long"
 *create combat_reach_medium 2
@@ -588,11 +597,11 @@
 *create hp_current 12
 *create hp_max 12
 *create armor_class 13
-*comment Up to two resistance and vulnerability types, set by race or attuned gear. combat_dice.txt resolves them.
-*create player_resist_type_1 ""
-*create player_resist_type_2 ""
-*create player_vulnerable_type_1 ""
-*create player_vulnerable_type_2 ""
+*comment The player's damage-type defenses (2026-10-31, the user: any number of types): three lists of damage-type words with spaces between ("fire poison"), set by race or gear and tested by combat_dice.txt defense_flags, the same way an enemy's and an ally's are.
+*comment Rage, Blade Ward and Brine Antivenom are added in code by adjust_incoming_damage_packet. A future "nonmagical weapons" defense for the player is player_nonmagic ("resist" or "immune") with player_nonmagic_silvered and _adamantine; defense_flags reads them if they exist.
+*create player_resist_types ""
+*create player_vulnerable_types ""
+*create player_immune_types ""
 
 *comment Ability scores, modifiers, buffs, and currency.
 *create strength 10
@@ -2322,6 +2331,8 @@
 *create unique_buff3_stat "none"
 *create unique_buff3_bonus 0
 *create unique_buff3_minutes_left 0
+*comment Poisoned (2026-10-31, the user): minutes left on the condition. While above 0 every d20 roll the player makes has disadvantage (dice_engine.txt roll_d20_check), which cancels against any advantage into a straight roll. Counted down with the clock in calendar.txt advance_time. Start it with *gosub_scene character_buffs apply_poisoned <minutes>.
+*create poisoned_minutes_left 0
 *create taphouse_dice_bankroll 30
 *create taphouse_dice_bankroll_max 30
 
@@ -2522,10 +2533,9 @@
 *comment to something else. combat_player_dmg_type is set by combat.txt's own
 *comment attack/spell *choice options (or hardcoded inside a spell's own
 *comment resolve_* primitive when that spell always deals one fixed type, e.g.
-*comment Magic Missile). combat_enemy_resist_type_1/_2 and _vulnerable_type_1/
-*comment _2 are this ENEMY's own resistances (set by apply_enemy_type or a
-*comment fight_<name> label, mirroring player_resist_type_1/_2's shape) --
-*comment see apply_outgoing_damage_resist_vuln.
+*comment Magic Missile). combat_enemy_resist_types, _vulnerable_types and _immune_types
+*comment are this ENEMY's own defenses, each a list of damage-type words (set by apply_enemy_type,
+*comment a fight_<name> label or an override) -- see adjust_outgoing_damage_packet.
 *create combat_enemy_dmg_type "bludgeoning"
 *comment Optional second damage packet. 0 dice sides means no packet; when populated, the packet is rolled and
 *comment resisted/vulnerable independently from the primary attack (e.g. 1d4+2 piercing + 1d2+3 poison).
@@ -2801,10 +2811,12 @@
 *create combat_difficult_terrain_blocks_dash false
 *create combat_move_touched_difficult_terrain false
 *create combat_player_dmg_type "bludgeoning"
-*create combat_enemy_resist_type_1 ""
-*create combat_enemy_resist_type_2 ""
-*create combat_enemy_vulnerable_type_1 ""
-*create combat_enemy_vulnerable_type_2 ""
+*create combat_enemy_resist_types ""
+*create combat_enemy_vulnerable_types ""
+*create combat_enemy_immune_types ""
+*create combat_enemy_nonmagic ""
+*create combat_enemy_nonmagic_silvered false
+*create combat_enemy_nonmagic_adamantine false
 *comment Ability scores (2026-09-27, groundwork for initiative rolls and later saving throws/stat-modifying
 *comment spells): same scratch-then-per-slot-storage shape as hp/ac/atk_bonus/dmg_type above. Default 10 (average,
 *comment +0 on score_to_mod's ladder) -- a hand-authored fight that never sets these gets an unremarkable human,
@@ -2896,6 +2908,37 @@
 *comment copies it onto every slot as each is built, so a multi-enemy ambush grants it to all of them, not just
 *comment slot 1. fight_cleanup clears this bare copy afterward so it can't leak into a fight that never set it.
 *create combat_enemy_advantage false
+*comment Scratch for the defense rules (combat_dice.txt adjust_outgoing_damage_packet): combat_packet_is_weapon is true only while a weapon's damage packet is being adjusted; combat_packet_blocked and combat_packet_defense_text report that a packet was nullified and why; combat_weapon_blocked and combat_weapon_defense_text keep that for the weapon packet of the blow just struck (the print code and the prose read them); combat_flavor_weapon_blocked is the blocked-blow line; combat_defense_prefix names the slot an override is being applied to.
+*create combat_packet_is_weapon false
+*create combat_packet_blocked false
+*create combat_packet_defense_text ""
+*create combat_weapon_blocked false
+*create combat_weapon_defense_text ""
+*create combat_flavor_weapon_blocked ""
+*create combat_defense_prefix ""
+*comment The defense core (combat_dice.txt adjust_damage_packet) reads the DEFENDER by field prefix ("combat_enemy_", "combat_enemy3_", "combat_ally2_", "player_") and the ATTACKER's weapon through these scratch flags, which a caller sets just before it
+*comment sets combat_packet_is_weapon true: combat_atk_magical, _silvered and _adamantine. combat_extra_resist is true when code outside the lists grants resistance to the type (Rage, Blade Ward, Brine Antivenom). combat_def_* are what defense_flags found.
+*create combat_atk_magical false
+*create combat_atk_silvered false
+*create combat_atk_adamantine false
+*create combat_extra_resist false
+*create combat_def_prefix ""
+*create combat_def_nonmagic ""
+*create combat_def_silvered false
+*create combat_def_adamantine false
+*create combat_incoming_blocked false
+*comment Weapon property tags for the fight menu (combat.txt combat_weapon_tags): " [Magic +1, Silvered]" after an attack option, " (magic +1, silvered)" inside the Swap Weapons sentence, for the weapon in hand and the sidearm. Empty for a plain weapon.
+*create combat_weapon_tag ""
+*create combat_sidearm_tag ""
+*create combat_weapon_note ""
+*create combat_sidearm_note ""
+*comment True when the ally blow just resolved (an ally striking an enemy, or an enemy striking an ally) landed and was nullified by immunity; fight_narrate_ally_attack reads it.
+*create combat_ally_blow_blocked false
+*create combat_flavor_incoming_blocked ""
+*create combat_defense_type ""
+*create combat_def_immune false
+*create combat_def_resist false
+*create combat_def_vulnerable false
 *comment Condition-on-hit (Frightened/Poisoned): a fight_<name> label sets
 *comment these three to make its enemy's hit inflict disadvantage on the
 *comment player's next roll, purely for flavor/status-line naming -- the
@@ -3005,6 +3048,11 @@
 *create combat_enemy_epithet_override ""
 *comment Optional size override for a named use of a broad library type (for example a Small giant centipede drawn
 *comment from the generic beast block). "" means use the type's own size. Consumed by fight_setup.
+*comment ENEMY DEFENSES (2026-10-31, the user: as close to RAW as possible). Each enemy slot has three LISTS of damage types, written as words with spaces between ("fire poison cold"): resist_types (half), vulnerable_types (double) and immune_types (none), any number of each, tested by combat_dice.txt defense_list_flags; and nonmagic: "" or "resist" or "immune", its defense against NONMAGICAL WEAPON attacks of bludgeoning, piercing and slashing damage. A weapon attack beats the nonmagic defense when the weapon is magical (weapon_magical), or is silvered and nonmagic_silvered is true, or is adamantine and nonmagic_adamantine is true; spells are magical, so they never meet it. A werewolf is nonmagic "immune" with nonmagic_silvered true. defense_known is set the first time a blow learns it. A scene sets them with combat_enemy_nonmagic_override ("immune silvered adamantine": the mode, then the exceptions) and combat_enemy_immune_override, combat_enemy_resist_override and combat_enemy_vulnerable_override (each a list such as "poison cold"), and the combat_enemy2_ ... combat_enemy6_ versions for the other slots.
+*create combat_enemy_nonmagic_override ""
+*create combat_enemy_immune_override ""
+*create combat_enemy_resist_override ""
+*create combat_enemy_vulnerable_override ""
 *create combat_enemy_size_override ""
 *comment Optional encounter-specific taxonomy override. Use only when a named reuse of an archetype genuinely
 *comment belongs to another creature type; consumed by fight_setup like the size override.
@@ -3063,26 +3111,46 @@
 *create combat_enemy2_hp_override 999
 *create combat_enemy2_ac_override 999
 *create combat_enemy2_atk_override 999
+*create combat_enemy2_nonmagic_override ""
+*create combat_enemy2_immune_override ""
+*create combat_enemy2_resist_override ""
+*create combat_enemy2_vulnerable_override ""
 *create combat_enemy2_size_override ""
 *create combat_enemy2_creature_type_override ""
 *create combat_enemy3_hp_override 999
 *create combat_enemy3_ac_override 999
 *create combat_enemy3_atk_override 999
+*create combat_enemy3_nonmagic_override ""
+*create combat_enemy3_immune_override ""
+*create combat_enemy3_resist_override ""
+*create combat_enemy3_vulnerable_override ""
 *create combat_enemy3_size_override ""
 *create combat_enemy3_creature_type_override ""
 *create combat_enemy4_hp_override 999
 *create combat_enemy4_ac_override 999
 *create combat_enemy4_atk_override 999
+*create combat_enemy4_nonmagic_override ""
+*create combat_enemy4_immune_override ""
+*create combat_enemy4_resist_override ""
+*create combat_enemy4_vulnerable_override ""
 *create combat_enemy4_size_override ""
 *create combat_enemy4_creature_type_override ""
 *create combat_enemy5_hp_override 999
 *create combat_enemy5_ac_override 999
 *create combat_enemy5_atk_override 999
+*create combat_enemy5_nonmagic_override ""
+*create combat_enemy5_immune_override ""
+*create combat_enemy5_resist_override ""
+*create combat_enemy5_vulnerable_override ""
 *create combat_enemy5_size_override ""
 *create combat_enemy5_creature_type_override ""
 *create combat_enemy6_hp_override 999
 *create combat_enemy6_ac_override 999
 *create combat_enemy6_atk_override 999
+*create combat_enemy6_nonmagic_override ""
+*create combat_enemy6_immune_override ""
+*create combat_enemy6_resist_override ""
+*create combat_enemy6_vulnerable_override ""
 *create combat_enemy6_size_override ""
 *create combat_enemy6_creature_type_override ""
 *comment Per-slot ability-score overrides (2026-09-27): same pattern as hp/ac/atk above, but for the six scores
@@ -3765,10 +3833,13 @@
 *create combat_enemy1_move2_inflicts_condition false
 *create combat_enemy1_move2_condition_name ""
 *create combat_enemy1_move2_condition_icon ""
-*create combat_enemy1_resist_type_1 ""
-*create combat_enemy1_resist_type_2 ""
-*create combat_enemy1_vulnerable_type_1 ""
-*create combat_enemy1_vulnerable_type_2 ""
+*create combat_enemy1_resist_types ""
+*create combat_enemy1_vulnerable_types ""
+*create combat_enemy1_immune_types ""
+*create combat_enemy1_nonmagic ""
+*create combat_enemy1_nonmagic_silvered false
+*create combat_enemy1_nonmagic_adamantine false
+*create combat_enemy1_defense_known false
 *comment Ability scores (2026-09-27): slot 1's real, permanent storage (fight_setup snapshots the bare
 *comment combat_enemy_<score> names into these, same as every field above).
 *create combat_enemy1_strength 10
@@ -3837,10 +3908,13 @@
 *create combat_enemy2_move2_inflicts_condition false
 *create combat_enemy2_move2_condition_name ""
 *create combat_enemy2_move2_condition_icon ""
-*create combat_enemy2_resist_type_1 ""
-*create combat_enemy2_resist_type_2 ""
-*create combat_enemy2_vulnerable_type_1 ""
-*create combat_enemy2_vulnerable_type_2 ""
+*create combat_enemy2_resist_types ""
+*create combat_enemy2_vulnerable_types ""
+*create combat_enemy2_immune_types ""
+*create combat_enemy2_nonmagic ""
+*create combat_enemy2_nonmagic_silvered false
+*create combat_enemy2_nonmagic_adamantine false
+*create combat_enemy2_defense_known false
 *create combat_enemy2_strength 10
 *create combat_enemy2_dexterity 10
 *create combat_enemy2_constitution 10
@@ -3927,10 +4001,13 @@
 *create combat_enemy3_move2_inflicts_condition false
 *create combat_enemy3_move2_condition_name ""
 *create combat_enemy3_move2_condition_icon ""
-*create combat_enemy3_resist_type_1 ""
-*create combat_enemy3_resist_type_2 ""
-*create combat_enemy3_vulnerable_type_1 ""
-*create combat_enemy3_vulnerable_type_2 ""
+*create combat_enemy3_resist_types ""
+*create combat_enemy3_vulnerable_types ""
+*create combat_enemy3_immune_types ""
+*create combat_enemy3_nonmagic ""
+*create combat_enemy3_nonmagic_silvered false
+*create combat_enemy3_nonmagic_adamantine false
+*create combat_enemy3_defense_known false
 *create combat_enemy3_strength 10
 *create combat_enemy3_dexterity 10
 *create combat_enemy3_constitution 10
@@ -3999,10 +4076,13 @@
 *create combat_enemy4_move2_inflicts_condition false
 *create combat_enemy4_move2_condition_name ""
 *create combat_enemy4_move2_condition_icon ""
-*create combat_enemy4_resist_type_1 ""
-*create combat_enemy4_resist_type_2 ""
-*create combat_enemy4_vulnerable_type_1 ""
-*create combat_enemy4_vulnerable_type_2 ""
+*create combat_enemy4_resist_types ""
+*create combat_enemy4_vulnerable_types ""
+*create combat_enemy4_immune_types ""
+*create combat_enemy4_nonmagic ""
+*create combat_enemy4_nonmagic_silvered false
+*create combat_enemy4_nonmagic_adamantine false
+*create combat_enemy4_defense_known false
 *create combat_enemy4_strength 10
 *create combat_enemy4_dexterity 10
 *create combat_enemy4_constitution 10
@@ -4071,10 +4151,13 @@
 *create combat_enemy5_move2_inflicts_condition false
 *create combat_enemy5_move2_condition_name ""
 *create combat_enemy5_move2_condition_icon ""
-*create combat_enemy5_resist_type_1 ""
-*create combat_enemy5_resist_type_2 ""
-*create combat_enemy5_vulnerable_type_1 ""
-*create combat_enemy5_vulnerable_type_2 ""
+*create combat_enemy5_resist_types ""
+*create combat_enemy5_vulnerable_types ""
+*create combat_enemy5_immune_types ""
+*create combat_enemy5_nonmagic ""
+*create combat_enemy5_nonmagic_silvered false
+*create combat_enemy5_nonmagic_adamantine false
+*create combat_enemy5_defense_known false
 *create combat_enemy5_strength 10
 *create combat_enemy5_dexterity 10
 *create combat_enemy5_constitution 10
@@ -4143,10 +4226,13 @@
 *create combat_enemy6_move2_inflicts_condition false
 *create combat_enemy6_move2_condition_name ""
 *create combat_enemy6_move2_condition_icon ""
-*create combat_enemy6_resist_type_1 ""
-*create combat_enemy6_resist_type_2 ""
-*create combat_enemy6_vulnerable_type_1 ""
-*create combat_enemy6_vulnerable_type_2 ""
+*create combat_enemy6_resist_types ""
+*create combat_enemy6_vulnerable_types ""
+*create combat_enemy6_immune_types ""
+*create combat_enemy6_nonmagic ""
+*create combat_enemy6_nonmagic_silvered false
+*create combat_enemy6_nonmagic_adamantine false
+*create combat_enemy6_defense_known false
 *create combat_enemy6_strength 10
 *create combat_enemy6_dexterity 10
 *create combat_enemy6_constitution 10
@@ -4679,10 +4765,12 @@
 *create combat_enemy0_move2_inflicts_condition false
 *create combat_enemy0_move2_condition_name ""
 *create combat_enemy0_move2_condition_icon ""
-*create combat_enemy0_resist_type_1 ""
-*create combat_enemy0_resist_type_2 ""
-*create combat_enemy0_vulnerable_type_1 ""
-*create combat_enemy0_vulnerable_type_2 ""
+*create combat_enemy0_resist_types ""
+*create combat_enemy0_vulnerable_types ""
+*create combat_enemy0_immune_types ""
+*create combat_enemy0_nonmagic ""
+*create combat_enemy0_nonmagic_silvered false
+*create combat_enemy0_nonmagic_adamantine false
 *create combat_enemy0_strength 10
 *create combat_enemy0_dexterity 10
 *create combat_enemy0_constitution 10
@@ -4971,32 +5059,42 @@
 *create locked_combat_summon_page_id 0
 *comment Slot 0 is the placeholder the quicktest and the library walk with (combat_apply_ally_slot starts at 0), so it carries the same fields as slots 1 to 4.
 *create combat_ally0_flavor_type ""
-*create combat_ally0_resist_type_1 ""
-*create combat_ally0_resist_type_2 ""
-*create combat_ally0_vulnerable_type_1 ""
-*create combat_ally0_vulnerable_type_2 ""
+*create combat_ally0_resist_types ""
+*create combat_ally0_vulnerable_types ""
+*create combat_ally0_immune_types ""
+*create combat_ally0_magical false
+*create combat_ally0_silvered false
+*create combat_ally0_adamantine false
 *create combat_ally1_flavor_type ""
+*create combat_ally1_resist_types ""
+*create combat_ally1_vulnerable_types ""
+*create combat_ally1_immune_types ""
+*create combat_ally1_magical false
+*create combat_ally1_silvered false
+*create combat_ally1_adamantine false
 *create combat_ally2_flavor_type ""
+*create combat_ally2_resist_types ""
+*create combat_ally2_vulnerable_types ""
+*create combat_ally2_immune_types ""
+*create combat_ally2_magical false
+*create combat_ally2_silvered false
+*create combat_ally2_adamantine false
 *create combat_ally3_flavor_type ""
+*create combat_ally3_resist_types ""
+*create combat_ally3_vulnerable_types ""
+*create combat_ally3_immune_types ""
+*create combat_ally3_magical false
+*create combat_ally3_silvered false
+*create combat_ally3_adamantine false
 *create combat_ally4_flavor_type ""
+*create combat_ally4_resist_types ""
+*create combat_ally4_vulnerable_types ""
+*create combat_ally4_immune_types ""
+*create combat_ally4_magical false
+*create combat_ally4_silvered false
+*create combat_ally4_adamantine false
 *comment combat_dubhar_blights: how many Twig Blights stand with the mage in fight_dubhar (0 to 2); the Burning Grove sets it from who helped, the dev hub sets it by hand. combat_allyN_resist_type_1/_2 and _vulnerable_type_1/_2: the damage types an ally takes half or double of from an enemy attack (resolve_enemy_attack_on_ally); an ally type sets them and fight_cleanup clears them. Nothing else about an ally reads them yet, and allies suffer no conditions (enemy conditions land on the player only).
 *create combat_dubhar_blights 0
-*create combat_ally1_resist_type_1 ""
-*create combat_ally1_resist_type_2 ""
-*create combat_ally1_vulnerable_type_1 ""
-*create combat_ally1_vulnerable_type_2 ""
-*create combat_ally2_resist_type_1 ""
-*create combat_ally2_resist_type_2 ""
-*create combat_ally2_vulnerable_type_1 ""
-*create combat_ally2_vulnerable_type_2 ""
-*create combat_ally3_resist_type_1 ""
-*create combat_ally3_resist_type_2 ""
-*create combat_ally3_vulnerable_type_1 ""
-*create combat_ally3_vulnerable_type_2 ""
-*create combat_ally4_resist_type_1 ""
-*create combat_ally4_resist_type_2 ""
-*create combat_ally4_vulnerable_type_1 ""
-*create combat_ally4_vulnerable_type_2 ""
 *comment --- REPLAY LOCKS & SUBROUTINE PARAMETERS ---
 *create currency_txn_locked false
 *create locked_currency_txn_page_id 0
@@ -5246,6 +5344,7 @@
 *create has_scroll_jump false
 *create has_scroll_speak_with_animals false
 *create has_scroll_charm_person false
+*create has_scroll_remove_curse false
 *create has_cooking_pot false
 *create has_dripping_roasted_boar false
 *create has_onion_seared_venison false
@@ -5298,6 +5397,7 @@
 *create has_leather false
 *create has_wool false
 *create has_wool_cloth false
+*create has_scrapling_claw_weapon false
 *create has_grease_flask false
 *create has_alchemists_fire false
 *create has_fire_arrow false
@@ -5315,6 +5415,7 @@
 *create has_clearhead_tea false
 *create has_winterward_tea false
 *create has_surestep_cordial false
+*create has_pickled_hen_tankard false
 *create has_gem_agate false
 *create has_gem_citrine false
 *create has_gem_quartz false
@@ -5394,6 +5495,7 @@
 *create spare_scroll_jump 0
 *create spare_scroll_speak_with_animals 0
 *create spare_scroll_charm_person 0
+*create spare_scroll_remove_curse 0
 *create spare_cooking_pot 0
 *create spare_dripping_roasted_boar 0
 *create spare_onion_seared_venison 0
@@ -5440,6 +5542,7 @@
 *create spare_leather 0
 *create spare_wool 0
 *create spare_wool_cloth 0
+*create spare_scrapling_claw_weapon 0
 *create spare_grease_flask 0
 *create spare_alchemists_fire 0
 *create spare_fire_arrow 0
@@ -5456,6 +5559,7 @@
 *create spare_clearhead_tea 0
 *create spare_winterward_tea 0
 *create spare_surestep_cordial 0
+*create spare_pickled_hen_tankard 0
 *create spare_gem_agate 0
 *create spare_gem_citrine 0
 *create spare_gem_quartz 0
@@ -5471,6 +5575,7 @@
 *create spare_jewelry_gold_necklace 0
 *create spare_jewelry_emerald_pearl_necklace 0
 *create spare_jewelry_ruby_pearl_necklace 0
+*create magic_until_scrapling_claw_weapon 0
 *create recipe_dripping_roasted_boar false
 *create recipe_onion_seared_venison false
 *create recipe_pot_braised_chicken false
@@ -5557,6 +5662,7 @@
 *create stow_saddlebags_scroll_jump 0
 *create stow_saddlebags_scroll_speak_with_animals 0
 *create stow_saddlebags_scroll_charm_person 0
+*create stow_saddlebags_scroll_remove_curse 0
 *create stow_saddlebags_cooking_pot 0
 *create stow_saddlebags_dripping_roasted_boar 0
 *create stow_saddlebags_onion_seared_venison 0
@@ -5609,6 +5715,7 @@
 *create stow_saddlebags_leather 0
 *create stow_saddlebags_wool 0
 *create stow_saddlebags_wool_cloth 0
+*create stow_saddlebags_scrapling_claw_weapon 0
 *create stow_saddlebags_grease_flask 0
 *create stow_saddlebags_alchemists_fire 0
 *create stow_saddlebags_fire_arrow 0
@@ -5626,6 +5733,7 @@
 *create stow_saddlebags_clearhead_tea 0
 *create stow_saddlebags_winterward_tea 0
 *create stow_saddlebags_surestep_cordial 0
+*create stow_saddlebags_pickled_hen_tankard 0
 *create stow_saddlebags_gem_agate 0
 *create stow_saddlebags_gem_citrine 0
 *create stow_saddlebags_gem_quartz 0
@@ -5657,6 +5765,7 @@
 *create cart_buy_shield 0
 *create cart_buy_warming_liniment 0
 *create cart_buy_clear_head_draught 0
+*create cart_buy_philter_of_remembrance 0
 *create cart_buy_linen_bandage 0
 *create cart_buy_lye_soap 0
 *create cart_buy_trail_rations 0
@@ -5697,6 +5806,7 @@
 *create cart_buy_scroll_jump 0
 *create cart_buy_scroll_speak_with_animals 0
 *create cart_buy_scroll_charm_person 0
+*create cart_buy_scroll_remove_curse 0
 *create cart_buy_cooking_pot 0
 *create cart_buy_chalk_sticks 0
 *create cart_buy_camp_kit 0
@@ -5735,6 +5845,9 @@
 *create cart_buy_leather 0
 *create cart_buy_wool 0
 *create cart_buy_wool_cloth 0
+*create cart_buy_sage 0
+*create cart_buy_hornwort 0
+*create cart_buy_wolfsbane 0
 *create cart_buy_raw_hide 0
 *create cart_buy_boar_tusk 0
 *create cart_buy_elk_antler 0
@@ -5817,6 +5930,7 @@
 *create cart_sell_scroll_jump 0
 *create cart_sell_scroll_speak_with_animals 0
 *create cart_sell_scroll_charm_person 0
+*create cart_sell_scroll_remove_curse 0
 *create cart_sell_cooking_pot 0
 *create cart_sell_chalk_sticks 0
 *create cart_sell_camp_kit 0
@@ -5924,6 +6038,9 @@
 *create centipede_gland 0
 *create viper_venom 0
 *create scrapling_claw 0
+*create sage 0
+*create hornwort 0
+*create wolfsbane 0
 *create grave_ichor 0
 *comment Game parts (2026-10-23, the Longshade's wild beasts): counted salvage sold to the trapper's bench and the hide yard by the piece (catalog gamePiece); the hide is shared by every skinned beast.
 *comment The Inventory panel's bag layout (2026-10-23, the user: drag items to arrange the pack, saved with each game): ONE string, "id:cell,id:cell", written by web/mygame/inventory.js and read nowhere in ChoiceScript.
@@ -6579,11 +6696,46 @@
 *create wol_scraplings_spotted false
 *create wol_scrapling_surprise false
 *create wol_tomlin_claw_given false
-*comment Roi's Grove wolf cold open (Langston/roi_grove.txt).
+*comment Chapter 3: Speaking to Roi (Langston/wolves_of_langston_chapter_3.txt); the wolf cold open on the track to the grove.
+*create wol_chapter_3_started false
+*create wol_chapter_3_complete false
+*create wol_chapter_3_checkpoint ""
 *create wol_grove_cold_open_seen false
 *create wol_wolf_choice ""
 *create wol_wolf_tracks_found false
 *create wol_wolf_hair_found false
+*comment Chapter 3, past the cold open: the clearing's stirges (spotted before they struck), the attack on Roi in wolf form (one check, an else), and the polypox recipe in hand.
+*create wol_stirge_spotted false
+*create wol_chapter_3_roi_fought false
+*create wol_polypox_recipe false
+*comment Roi cured: releases the keep tag on sage, hornwort and wolfsbane (the herbs held for his cure), and lets the herbalist buy them.
+*create wol_roi_cured false
+*comment Foraging with Roi (Chapter 3): one try at each herb; "" not tried, "found", or "missed" (then Tomlin is the fallback). wol_ch3_missing is the phrase naming what the pack still lacks.
+*create wol_forage_sage ""
+*create wol_forage_hornwort ""
+*create wol_forage_wolfsbane ""
+*create wol_ch3_missing ""
+*comment Tomlin's errand (Chapter 3): done once he has supplied every herb the pack lacked. wol_tomlin_errand_open is worked out by the town hub (tomlin_cottage.txt lg_tomlin_errand_check).
+*comment The Silverstar (Roi's gift): a keepsake with one charge of Remove Curse. silverstar_charged is renewed by reading a Remove Curse scroll (equipment.txt use_consumable); nothing spends it yet, the curse it is for comes later.
+*create has_silverstar false
+*create silverstar_charged false
+*create wol_roi_silverstar_given false
+*create wol_roi_tea_shared false
+*comment Roi's last questions (Chapter 3): each asked once. wol_roi_claw_bound: the scrapling claw was bound into a weapon. wol_roi_night_gap: Roi truly cannot remember the night Maybelline died (a successful Insight read). wol_tankard_taken: the damaged Pickled Hen tankard. wol_ch3_note_read: the mayor's note, delivered on the first Langston hub after the chapter.
+*create wol_roi_asked_sick false
+*create wol_roi_sick_new_moon false
+*create wol_roi_claw_not_scrapling false
+*create wol_hall_called false
+*create wol_roi_claw_bound false
+*create wol_roi_asked_night false
+*create wol_roi_night_gap false
+*create wol_tankard_taken false
+*create wol_ch3_note_read false
+*create wol_tomlin_errand_done false
+*create wol_tomlin_errand_open false
+*comment Tomlin's workroom shop (Langston/tomlin_shop.txt): met once, and whether the player carries anything the herbalist buys.
+*create lg_tshop_met false
+*create lg_tshop_has_sale false
 *create wol_tomlin_philters_given false
 *comment --- GAME SETTINGS ---
 *comment The real first choice of the game, reached the instant the *create preamble above finishes. Everything

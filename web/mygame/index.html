@@ -1108,6 +1108,9 @@ button#statSidebar .turnRow,
       if (isTruthy(s.dressing_on)) extraChips += "<span class=\"sbCond good\" title=\"Wounds dressed: the bandage adds HP to your next sleep.\">Wounds dressed</span>";
       if (extraChips) condChipsHtml += "<div class=\"sbConds\">" + extraChips + "</div>";
     }
+    // Poisoned (2026-10-31): a condition of its own, shown wherever the player is, with the time that is left.
+    var poisonLeft = Number(s.poisoned_minutes_left) || 0;
+    if (poisonLeft > 0) condChipsHtml += "<div class=\"sbConds\"><span class=\"sbCond bad\" title=\"Poisoned: disadvantage on every d20 roll. About " + (poisonLeft >= 60 ? Math.ceil(poisonLeft / 60) + " hour" + (Math.ceil(poisonLeft / 60) === 1 ? "" : "s") : poisonLeft + " minutes") + " left.\">Poisoned</span></div>";
     var resourceHtml = "";
     if (s.character_class === "wizard") {
       resourceHtml = slotRow("Spell Slots", s.wizard_spell_slots, s.wizard_spell_slots_max, "");
@@ -1730,6 +1733,21 @@ button#statSidebar .turnRow,
     if (darts > 0) out.push("<div class=\"tExtra darts\">" + darts + (darts === 1 ? " dart" : " darts") + " assigned</div>");
     var sub = combatantSubLine(s, kind, slot);
     if (sub) out.push("<div class=\"tExtra\">" + sub + "</div>");
+    // DEFENSES (2026-10-31): once a blow has met one of an enemy's defenses (defense_known), its card says what it is immune to, resists and is vulnerable to, so the player can plan the next swing.
+    if (kind === "enemy" && (s["combat_enemy" + slot + "_defense_known"] === true || s["combat_enemy" + slot + "_defense_known"] === "true")) {
+      var dp = "combat_enemy" + slot + "_", dl = [];
+      function words(k) { return String(s[dp + k] || "").replace(/\s+/g, " ").trim(); }
+      function yes(k) { return s[dp + k] === true || s[dp + k] === "true"; }
+      var nm = String(s[dp + "nonmagic"] || "");
+      if (nm === "immune" || nm === "resist") {
+        var ex = (yes("nonmagic_silvered") ? (yes("nonmagic_adamantine") ? ", unless silvered or adamantine" : ", unless silvered") : (yes("nonmagic_adamantine") ? ", unless adamantine" : ""));
+        dl.push((nm === "immune" ? "Immune to" : "Resists") + " nonmagical weapons" + ex);
+      }
+      if (words("immune_types")) dl.push("Immune: " + words("immune_types").split(" ").join(", "));
+      if (words("resist_types")) dl.push("Resists: " + words("resist_types").split(" ").join(", "));
+      if (words("vulnerable_types")) dl.push("Vulnerable: " + words("vulnerable_types").split(" ").join(", "));
+      for (var di = 0; di < dl.length; di++) out.push("<div class=\"tExtra defenses\">" + esc(dl[di]) + "</div>");
+    }
     return out;
   }
   function combatantInfo(kind, slot) {

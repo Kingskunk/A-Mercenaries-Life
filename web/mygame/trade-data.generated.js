@@ -1876,6 +1876,31 @@ window.TRADE_DATA = {
     "countVar": ""
    }
   },
+  "scroll_remove_curse": {
+   "name": "remove curse scroll",
+   "title": "Remove Curse Scroll",
+   "kind": "consumable",
+   "group": "",
+   "tier": "",
+   "retail": 120,
+   "weight": 0.05,
+   "minutes": 5,
+   "hint": "Read to renew the Silverstar, or to lift a curse where one lies",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 0,
+    "countVar": ""
+   }
+  },
   "gem_agate": {
    "name": "agate",
    "title": "Agate",
@@ -2624,6 +2649,106 @@ window.TRADE_DATA = {
     "herbalistPiece": 0,
     "gamePiece": 0,
     "countVar": ""
+   }
+  },
+  "philter_of_remembrance": {
+   "name": "philter of remembrance",
+   "title": "Philter of Remembrance",
+   "kind": "consumable",
+   "group": "",
+   "tier": "",
+   "retail": 30,
+   "weight": 0.3,
+   "minutes": 5,
+   "hint": "+1 CHA for 4h, until you wash",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 0,
+    "countVar": ""
+   }
+  },
+  "sage": {
+   "name": "sage",
+   "title": "Sage",
+   "kind": "salvage",
+   "group": "",
+   "tier": "",
+   "retail": 6,
+   "weight": 0.1,
+   "minutes": 10,
+   "hint": "",
+   "slot": "",
+   "stack": false,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 0,
+    "countVar": "sage"
+   }
+  },
+  "hornwort": {
+   "name": "hornwort",
+   "title": "Hornwort",
+   "kind": "salvage",
+   "group": "",
+   "tier": "",
+   "retail": 10,
+   "weight": 0.1,
+   "minutes": 10,
+   "hint": "",
+   "slot": "",
+   "stack": false,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 0,
+    "countVar": "hornwort"
+   }
+  },
+  "wolfsbane": {
+   "name": "wolfsbane",
+   "title": "Wolfsbane",
+   "kind": "salvage",
+   "group": "",
+   "tier": "",
+   "retail": 8,
+   "weight": 0.1,
+   "minutes": 10,
+   "hint": "",
+   "slot": "",
+   "stack": false,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 0,
+    "countVar": "wolfsbane"
    }
   },
   "fish": {
@@ -3673,7 +3798,8 @@ window.TRADE_DATA = {
     "scroll_detect_magic",
     "scroll_jump",
     "scroll_speak_with_animals",
-    "scroll_charm_person"
+    "scroll_charm_person",
+    "scroll_remove_curse"
    ],
    "sell": [
     "scroll_magic_missile",
@@ -3684,7 +3810,8 @@ window.TRADE_DATA = {
     "scroll_detect_magic",
     "scroll_jump",
     "scroll_speak_with_animals",
-    "scroll_charm_person"
+    "scroll_charm_person",
+    "scroll_remove_curse"
    ]
   },
   "jeweler": {
@@ -3836,6 +3963,44 @@ window.TRADE_DATA = {
     "waxed_oilcloth",
     "lye_soap",
     "trail_rations"
+   ]
+  },
+  "tomlin": {
+   "title": "Tomlin's Workroom",
+   "commodities": false,
+   "buyer": "herbalist",
+   "buy": [
+    "philter_of_remembrance",
+    "sage",
+    "hornwort",
+    "wolfsbane",
+    "warming_liniment",
+    "clear_head_draught",
+    "linen_bandage",
+    "alchemists_fire",
+    "mortar_pestle",
+    "empty_potion_vial",
+    "portable_burner"
+   ],
+   "sell": [
+    "frog_slime",
+    "centipede_gland",
+    "viper_venom",
+    "grave_ichor",
+    "sluice_moss",
+    "brinecap",
+    "pale_crackroot",
+    "cistern_spores",
+    "glowmold",
+    "silverleaf",
+    "oakheart_balsam",
+    "shadefern",
+    "acorn_truffle",
+    "brambleberry",
+    "alchemists_fire",
+    "mortar_pestle",
+    "empty_potion_vial",
+    "portable_burner"
    ]
   },
   "lgstore": {

@@ -59,6 +59,13 @@ items.forEach(function (it) {
   if (!it.hint) it.hint = "Full meal, +1 " + rec.stat.toUpperCase() + " for " + tier.hours + " hours, " + tier.tempHp + " temporary HP";
 });
 
+// A weapon's magic, silvered and adamantine properties are named in its hint, so the shop, the pack and the dossier all show them without the catalog repeating them by hand.
+items.forEach(function (it) {
+  if (it.kind !== "weapon" || !it.loadout) return;
+  var t = weaponPropsText(it.loadout);
+  if (t) it.hint = (it.hint ? it.hint + ", " : "") + t;
+});
+
 // A trade marked "commodities" (an open market: a village lane, a town's trading ground) deals in EVERY item tagged with a commodity (tools/gear_catalog.json, item.commodity.makers), on both its
 // shops, so a new trade good is one tagged item and no market list is edited by hand. The items it already lists keep their place; the rest follow in catalog order.
 (CATALOG.trades || []).forEach(function (t) {
@@ -140,6 +147,8 @@ function genCreates() {
   var buys = tradeIds("buy"), sells = tradeIds("sell");
   var L = items.filter(makesFlag).map(function (it) { return "*create " + flag(it) + " false"; });
   items.forEach(function (it) { if (stackable(it)) L.push("*create spare_" + it.id + " 0"); });
+  // A weapon whose magic fades (loadout.fadesDays): the last campaign day its magic holds, set by whatever hands the weapon over (0 = never granted, so already faded).
+  items.forEach(function (it) { if (it.kind === "weapon" && it.loadout && it.loadout.fadesDays) L.push("*create magic_until_" + it.id + " 0"); });
   // What the character has learned to cook (the Craft view's Recipes list reads recipe_<id>; the first success sets it): one flag per cooking recipe, so a new dish needs no startup edit.
   ((CRAFT.CRAFT_RECIPES || {}).cooking || []).forEach(function (r) { L.push("*create recipe_" + r.id + " false"); });
   // SPELL SOURCES (2026-10-20): dungeon.txt dg_spell_source reads has_scroll_<spell id> for ANY spell it is asked about, so the flag exists for every spell of level 1 and up even before its scroll does (the scroll items above create their own).
@@ -333,6 +342,8 @@ function loadoutBlock(kind) {
       L.push('  *set weapon_prose ' + q(o.prose));
       if (o.reach) L.push('  *set weapon_reach ' + q(o.reach));
       if (o.ammo) L.push('  *set weapon_ammo ' + q(o.ammo));
+      weaponProps(o).forEach(function (kv) { L.push('  *set weapon_' + kv[0] + ' ' + kv[1]); });
+      if (o.fadesDays) { L.push('  *if (campaign_day > magic_until_' + it.id + ')'); L.push('    *set weapon_magic 0'); L.push('    *set weapon_magical false'); }
     } else if (kind === "ring") {
       need(o, ["desc", "prose"]);
       L.push('*if (item_id = ' + q(it.id) + ')');
@@ -356,6 +367,39 @@ function loadoutBlock(kind) {
 }
 
 // A weapon can also sit in the sidearm slot (swap_active_sidearm), so every catalog weapon gets a sidearm branch.
+// WEAPON PROPERTIES (2026-10-31, the user): a loadout may carry  magic: N (a +N weapon, 1 to 3: bonus to its attack and damage rolls, and magical),  magical: true (the magic property with no bonus),
+// silvered: true  and  adamantine: true. These are the three things a creature's "nonmagical weapons" defense can name as exceptions (combat.txt combat_weapon_beats_defense).
+function weaponProps(o) {
+  var out = [], n = o.magic || 0;
+  if (n < 0 || n > 3 || n !== Math.floor(n)) throw new Error("loadout magic must be a whole number from 0 to 3");
+  if (n > 0) out.push(["magic", n]);
+  if (n > 0 || o.magical) out.push(["magical", "true"]);
+  if (o.silvered) out.push(["silvered", "true"]);
+  if (o.adamantine) out.push(["adamantine", "true"]);
+  return out;
+}
+function weaponPropsText(o) {
+  var out = [], n = o.magic || 0;
+  if (n > 0) out.push("Magic +" + n + (o.fadesDays ? ", fades after " + (o.fadesDays === 7 ? "a week" : o.fadesDays + " days") : "")); else if (o.magical) out.push("Magical" + (o.fadesDays ? ", fades after " + (o.fadesDays === 7 ? "a week" : o.fadesDays + " days") : ""));
+  if (o.silvered) out.push("Silvered");
+  if (o.adamantine) out.push("Adamantine");
+  return out.join(", ");
+}
+
+// The label that switches off the magic of a fading weapon once its last day has passed, without re-applying the whole loadout (a dev fixture or a quest may have set other weapon fields by hand).
+function genTimedMagic() {
+  var L = [];
+  items.filter(function (it) { return it.kind === "weapon" && it.loadout && it.loadout.fadesDays; }).forEach(function (it) {
+    L.push('*if ((equipped_weapon_id = ' + q(it.id) + ') and (campaign_day > magic_until_' + it.id + '))');
+    L.push('  *set weapon_magic 0');
+    L.push('  *set weapon_magical false');
+    L.push('*if ((equipped_sidearm_id = ' + q(it.id) + ') and (campaign_day > magic_until_' + it.id + '))');
+    L.push('  *set sidearm_magic 0');
+    L.push('  *set sidearm_magical false');
+  });
+  return L;
+}
+
 function genSidearms() {
   var L = [];
   items.filter(function (it) { return it.kind === "weapon" && it.loadout; }).forEach(function (it) {
@@ -370,6 +414,8 @@ function genSidearms() {
     L.push('  *set sidearm_hands ' + q(o.hands));
     L.push('  *set sidearm_prose ' + q(o.prose));
     if (o.reach) L.push('  *set sidearm_reach ' + q(o.reach));
+    weaponProps(o).forEach(function (kv) { L.push('  *set sidearm_' + kv[0] + ' ' + kv[1]); });
+    if (o.fadesDays) { L.push('  *if (campaign_day > magic_until_' + it.id + ')'); L.push('    *set sidearm_magic 0'); L.push('    *set sidearm_magical false'); }
   });
   return L;
 }
@@ -453,8 +499,8 @@ function genShop(shop) {
     var t = shop.prefix + "_" + it.id;
     var cond, fn;
     if (shop.type === "buy") {
-      // A stackable item is always for sale; a one-of-a-kind item disappears once owned.
-      cond = stackable(it) ? "" : "not(" + flag(it) + ")";
+      // A stackable item is always for sale; a one-of-a-kind item disappears once owned. Counted salvage (a herb, a hide) has no has_ flag and is bought by the piece, so it is always for sale too.
+      cond = (stackable(it) || (it.kind === "salvage" && it.sell && it.sell.countVar)) ? "" : "not(" + flag(it) + ")";
       if (ref.when) cond = cond ? "(" + ref.when + ") and (" + cond + ")" : ref.when;
       fn = 'gear_buy_label ' + q(it.id);
     } else {
@@ -710,6 +756,7 @@ setRegion(F.equipment, "gear_info_items", genGearInfo());
 setRegion(F.equipment, "armor_items", loadoutBlock("armor"));
 setRegion(F.equipment, "weapon_items", loadoutBlock("weapon"));
 setRegion(F.equipment, "sidearm_items", genSidearms());
+setRegion(F.equipment, "timed_weapon_magic", genTimedMagic());
 setRegion(F.equipment, "head_items", loadoutBlock("head"));
 setRegion(F.equipment, "ring_items", loadoutBlock("ring"));
 CLOTHING.forEach(function (k) { setRegion(F.equipment, k + "_items", loadoutBlock(k)); });

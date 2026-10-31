@@ -183,7 +183,10 @@
   [b][✨ Shield Up (+5 AC) | 💨 ${combat_enemy_name} Misses][/b]
 *else
   *if (combat_enemy_hit_success)
-    ${fnet_hit}
+    *if (combat_incoming_blocked)
+      ${combat_flavor_incoming_blocked}
+    *else
+      ${fnet_hit}
     *line_break
     *if (combat_agathys_triggered)
       *if (combat_agathys_shattered)
@@ -344,6 +347,14 @@
       *set fnaa_line "$!{combat_attacker_epithet} overreaches, and ${combat_defender_epithet} slips the strike."
     *if (fnaa_v = 5)
       *set fnaa_line "$!{combat_attacker_epithet} can't find a way past ${combat_defender_epithet}'s guard this time."
+*comment A blow that landed on a target immune to it (2026-10-31): the line says what the fighters see, whichever side struck.
+*if ((fnaa_hit) and (combat_ally_blow_blocked))
+  *if (fnaa_v <= 2)
+    *set fnaa_line "$!{combat_attacker_epithet}'s blow lands squarely on ${combat_defender_epithet} and skates off as if it had struck stone."
+  *elseif (fnaa_v <= 4)
+    *set fnaa_line "$!{combat_attacker_epithet} strikes true, and ${combat_defender_epithet} shrugs the blow away like a drop of rain."
+  *else
+    *set fnaa_line "The blow from ${combat_attacker_epithet} sinks into ${combat_defender_epithet} and fades, leaving the hide whole."
 *line_break
 ${fnaa_line}
 *comment Trailing line_break (2026-09-28, same reasoning as fight_narrate_enemy_turn above): this label's
@@ -2480,3 +2491,62 @@ ${fnaa_line}
   *set fdh "You loose at the neck, and the shot takes ${combat_enemy_epithet} clean through, and ${combat_enemy_epithet} thrashes once and drops."
 *return
 
+*comment BLOCKED BLOWS (2026-10-31, the user: tell the player what is happening, in the prose). A weapon blow that lands and does no damage because the target is immune to it: sets combat_flavor_weapon_blocked, picked now, inside the hit's lock, by the weapon's damage type and whether it is shot or swung.
+*comment Written to be read as the fighter's own sense of the blow, the metal and the hide, never as a rule.
+*label pick_weapon_blocked_flavor
+*temp pwb_v 1
+*rand pwb_v 1 4
+*if (weapon_type = "ranged")
+  *if (pwb_v = 1)
+    *set combat_flavor_weapon_blocked "The shot strikes ${combat_enemy_epithet} squarely and drops away, spent, as if it had hit a wall of stone."
+  *if (pwb_v = 2)
+    *set combat_flavor_weapon_blocked "Your shot lands, and the missile glances off the hide with a bright ring and tumbles into the dirt."
+  *if (pwb_v = 3)
+    *set combat_flavor_weapon_blocked "The shot sinks in, and the flesh pushes it out again; it falls whole and clean at ${combat_enemy_epithet}'s feet."
+  *if (pwb_v = 4)
+    *set combat_flavor_weapon_blocked "The missile hits and its head flattens against the hide, as if it had struck an anvil."
+  *return
+*if (weapon_damage_type = "slashing")
+  *if (pwb_v = 1)
+    *set combat_flavor_weapon_blocked "Your ${weapon} bites into ${combat_enemy_epithet}'s flank, and the edge skates away as if it had struck wet iron; the hide seals smooth behind it."
+  *if (pwb_v = 2)
+    *set combat_flavor_weapon_blocked "The stroke lands squarely, and your ${weapon} rings like a struck bell, leaving a bright scratch on the hide that closes as you watch."
+  *if (pwb_v = 3)
+    *set combat_flavor_weapon_blocked "You hew at the shoulder, and the edge slides off the hide in a shower of sparks; the wound it should have opened is whole again before your eyes."
+  *if (pwb_v = 4)
+    *set combat_flavor_weapon_blocked "The cut parts the fur, and the flesh beneath knits shut as the edge leaves it, the way water closes behind a thrown stone."
+  *return
+*if (weapon_damage_type = "piercing")
+  *if (pwb_v = 1)
+    *set combat_flavor_weapon_blocked "The point of your ${weapon} finds ${combat_enemy_epithet}'s side and skids along the hide as if it were glass, leaving the fur whole."
+  *if (pwb_v = 2)
+    *set combat_flavor_weapon_blocked "You drive the thrust in true, and the tip meets something like stone and turns, and the hide shrugs the steel away."
+  *if (pwb_v = 3)
+    *set combat_flavor_weapon_blocked "Your ${weapon} sinks a finger's width, and then the flesh pushes it out again, smooth and unmarked by any wound."
+  *if (pwb_v = 4)
+    *set combat_flavor_weapon_blocked "The thrust lands, and the point flattens against the hide with a sound like a struck anvil."
+  *return
+*if (pwb_v = 1)
+  *set combat_flavor_weapon_blocked "Your ${weapon} cracks against ${combat_enemy_epithet}'s ribs, and the blow sinks into the flesh as into a sack of wet sand and rebounds."
+*if (pwb_v = 2)
+  *set combat_flavor_weapon_blocked "The blow lands with a crack, and ${combat_enemy_epithet} stands firm as a rooted tree, the weight of it draining away into the hide."
+*if (pwb_v = 3)
+  *set combat_flavor_weapon_blocked "You swing hard, and your ${weapon} jars in your hands as if you had struck an old stump, and the flesh closes over the dent."
+*if (pwb_v = 4)
+  *set combat_flavor_weapon_blocked "The impact thuds home, and the bruise it should have left blooms and fades in a breath."
+*return
+
+
+*comment THE PLAYER IMMUNE TO A BLOW (2026-10-31): the enemy's attack lands and the damage type is one the player takes none of. Picked inside the enemy attack's own lock (combat_dice.txt resolve_enemy_attack), read when the turn prints.
+*label pick_incoming_blocked_flavor
+*temp pib_v 1
+*rand pib_v 1 4
+*if (pib_v = 1)
+  *set combat_flavor_incoming_blocked "The blow lands, and the ${combat_enemy_dmg_type} drains off you like water off oiled leather."
+*if (pib_v = 2)
+  *set combat_flavor_incoming_blocked "$!{combat_enemy_epithet} strikes true, and the ${combat_enemy_dmg_type} breaks against you and scatters, leaving you whole."
+*if (pib_v = 3)
+  *set combat_flavor_incoming_blocked "The ${combat_enemy_dmg_type} crashes over you and rolls on past, as harmless as a wave on a stone."
+*if (pib_v = 4)
+  *set combat_flavor_incoming_blocked "It hits, and the ${combat_enemy_dmg_type} sinks into you and fades like a fire into wet sand."
+*return

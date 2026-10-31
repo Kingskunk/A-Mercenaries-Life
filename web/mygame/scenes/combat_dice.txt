@@ -35,81 +35,37 @@
 *comment doublings, which would give the wrong answer when both apply.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment Adjusts combat_enemy_dmg_dealt (an enemy's hit against the player) by
-*comment combat_enemy_dmg_type against the player's own player_resist_type_1/
-*comment _2 and player_vulnerable_type_1/_2 (equipment/race-granted). Barbarian
+*comment combat_enemy_dmg_type against the player's own player_resist_types,
+*comment _vulnerable_types and _immune_types (equipment/race-granted). Barbarian
 *comment Rage's RAW resistance to the three physical damage types folds into
 *comment this same check -- not a separate halving elsewhere -- so it
 *comment correctly cancels against an item-granted vulnerability to the same
 *comment type instead of silently compounding with it.
 *comment replay-ok: the callers (resolve_enemy_attack) are inside their own once-per-page locks, and the halving reads a roll made in the same lock.
 *label apply_incoming_damage_resist_vuln
-*comment Own suffix var (combat_incoming_dmg_suffix), never combat_outgoing_
-*comment dmg_suffix -- resolve_enemy_attack can call BOTH this AND the
-*comment outgoing check in the same invocation (an enemy's own hit, then its
-*comment Agathys retaliation), and the enemy-hit banner (combat.txt) prints
-*comment after both have run. Sharing one suffix var would let the later
-*comment (outgoing/Agathys) call silently clobber the earlier (incoming/enemy
-*comment hit) one before its own banner ever reads it.
-*set combat_incoming_dmg_suffix ""
-*temp aidrv_resisted (((combat_enemy_dmg_type = player_resist_type_1) and (not(player_resist_type_1 = ""))) or ((combat_enemy_dmg_type = player_resist_type_2) and (not(player_resist_type_2 = ""))))
-*if ((character_class = "barbarian") and (is_raging))
-  *if (((combat_enemy_dmg_type = "bludgeoning") or (combat_enemy_dmg_type = "piercing")) or (combat_enemy_dmg_type = "slashing"))
-    *set aidrv_resisted true
-*comment Blade Ward (house rule bonus-action version) is the same three physical types, folded into
-*comment this same check rather than halving damage anywhere else, so it cancels correctly against a
-*comment same-type vulnerability and can never double-halve. It needs no "weapon attacks" gate of its
-*comment own: this label has exactly ONE caller (resolve_enemy_attack, the enemy hitting the player),
-*comment and bludgeoning/piercing/slashing only ever reach it from an enemy weapon -- every spell
-*comment damage type here is cold/fire/lightning/etc. The hunger debt (calendar.txt) and the scripted
-*comment hazard (battle_black_sinks.txt) apply their own `hp_current -` and bypass this label entirely,
-*comment which is exactly right for both.
-*if (blade_ward_active)
-  *if (((combat_enemy_dmg_type = "bludgeoning") or (combat_enemy_dmg_type = "piercing")) or (combat_enemy_dmg_type = "slashing"))
-    *set aidrv_resisted true
-*comment Brine Antivenom (2026-10-23): resistance to poison damage for its four hours, folded into this same check like Rage and Blade Ward.
-*if ((combat_enemy_dmg_type = "poison") and (brine_minutes_left > 0))
-  *set aidrv_resisted true
-*temp aidrv_vulnerable (((combat_enemy_dmg_type = player_vulnerable_type_1) and (not(player_vulnerable_type_1 = ""))) or ((combat_enemy_dmg_type = player_vulnerable_type_2) and (not(player_vulnerable_type_2 = ""))))
-*if ((aidrv_resisted) and (aidrv_vulnerable))
-  *comment Cancel out -- normal damage, no banner tag.
-*elseif (aidrv_resisted)
-  *set combat_enemy_dmg_dealt (combat_enemy_dmg_dealt - (combat_enemy_dmg_dealt modulo 2)) / 2
-  *set combat_incoming_dmg_suffix " | 🛡️ Resisted"
-*elseif (aidrv_vulnerable)
-  *set combat_enemy_dmg_dealt combat_enemy_dmg_dealt * 2
-  *set combat_incoming_dmg_suffix " | 💥 Vulnerable"
+*comment Own suffix var (combat_incoming_dmg_suffix), never combat_outgoing_dmg_suffix -- resolve_enemy_attack can call BOTH this AND the outgoing check in the same invocation (an enemy's own hit, then its Agathys retaliation), and the
+*comment enemy-hit banner (combat_prose.txt) prints after both have run. The arithmetic and the lists live in adjust_damage_packet; combat_incoming_blocked is true when the player is immune to the blow.
+*gosub adjust_incoming_damage_packet combat_enemy_dmg_dealt combat_enemy_dmg_type
+*set combat_enemy_dmg_dealt combat_packet_damage
+*set combat_incoming_dmg_suffix combat_packet_suffix
+*set combat_incoming_blocked combat_packet_blocked
 *return
 
 *comment Adjusts combat_player_dmg_dealt (damage the player just dealt) by
 *comment combat_player_dmg_type against the ACTIVE enemy's combat_enemy_
-*comment resist_type_1/_2 and combat_enemy_vulnerable_type_1/_2 --
+*comment resist_types and combat_enemy_vulnerable_types --
 *comment fight_sync_target_in (combat.txt) already mirrored whichever slot is
 *comment active into these scratch names, same as every other combat_enemy_*
 *comment field, so this never needs to know which slot it's reading. Own
 *comment suffix var (combat_outgoing_dmg_suffix) for the same reason as above.
 *comment replay-ok: every caller sits inside a once-per-page lock (combat_player_hit_locked, combat_weapon_hit_locked, crt_page, cb_page) or a spent flag (booming), and halves a roll made in the same lock.
 *label apply_outgoing_damage_resist_vuln
+*comment Whole-total version, kept for the many callers that adjust combat_player_dmg_dealt in one go: it hands the total to adjust_outgoing_damage_packet (below), the one place the defenses are worked out.
+*comment A caller whose total is a weapon's damage sets combat_packet_is_weapon first (resolve_player_weapon_hit), so the nonmagical-weapon defense is tested; a spell never does.
 *set combat_outgoing_dmg_suffix ""
-*temp aodrv_resisted (((combat_player_dmg_type = combat_enemy_resist_type_1) and (not(combat_enemy_resist_type_1 = ""))) or ((combat_player_dmg_type = combat_enemy_resist_type_2) and (not(combat_enemy_resist_type_2 = ""))))
-*comment WET (the user, 2026-10-19): a soaked target resists fire and is vulnerable to cold and lightning, on top of whatever it already has; resistance and vulnerability on the same type still cancel.
-*temp aodrv_wet 0
-*if (combat_active_target > 0)
-  *set aodrv_wet {(("combat_enemy" & combat_active_target) & "_wet")}
-*if (aodrv_wet > 0)
-  *if (combat_player_dmg_type = "fire")
-    *set aodrv_resisted true
-*temp aodrv_vulnerable (((combat_player_dmg_type = combat_enemy_vulnerable_type_1) and (not(combat_enemy_vulnerable_type_1 = ""))) or ((combat_player_dmg_type = combat_enemy_vulnerable_type_2) and (not(combat_enemy_vulnerable_type_2 = ""))))
-*if (aodrv_wet > 0)
-  *if ((combat_player_dmg_type = "cold") or (combat_player_dmg_type = "lightning"))
-    *set aodrv_vulnerable true
-*if ((aodrv_resisted) and (aodrv_vulnerable))
-  *comment Cancel out -- normal damage, no banner tag.
-*elseif (aodrv_resisted)
-  *set combat_player_dmg_dealt (combat_player_dmg_dealt - (combat_player_dmg_dealt modulo 2)) / 2
-  *set combat_outgoing_dmg_suffix " | 🛡️ Resisted"
-*elseif (aodrv_vulnerable)
-  *set combat_player_dmg_dealt combat_player_dmg_dealt * 2
-  *set combat_outgoing_dmg_suffix " | 💥 Vulnerable"
+*gosub adjust_outgoing_damage_packet combat_player_dmg_dealt combat_player_dmg_type
+*set combat_player_dmg_dealt combat_packet_damage
+*set combat_outgoing_dmg_suffix combat_packet_suffix
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -125,57 +81,109 @@
 *comment explicitly -- there's no default that would silently let a save-based spell through.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label adjust_incoming_damage_packet
-*comment Applies the player's resistance/vulnerability to ONE optional damage packet. Unlike the legacy incoming
-*comment helper above, inputs/outputs are neutral scratch fields so a piercing bite and its poison rider can be
-*comment resolved separately in the same hit.
+*comment The player as defender: ONE damage packet through the shared core, so a piercing bite and its poison rider are resolved separately in the same hit. Rage and Blade Ward (the three physical types) and Brine Antivenom (poison)
+*comment are resistances granted in code, not in the lists, so they ride in on combat_extra_resist and cancel against a vulnerability to the same type like any other.
 *params aidp_amount aidp_type
-*set combat_packet_damage aidp_amount
-*set combat_packet_suffix ""
-*temp aidp_resisted (((aidp_type = player_resist_type_1) and (not(player_resist_type_1 = ""))) or ((aidp_type = player_resist_type_2) and (not(player_resist_type_2 = ""))))
+*set combat_extra_resist false
 *if ((character_class = "barbarian") and (is_raging))
   *if (((aidp_type = "bludgeoning") or (aidp_type = "piercing")) or (aidp_type = "slashing"))
-    *set aidp_resisted true
+    *set combat_extra_resist true
 *if (blade_ward_active)
   *if (((aidp_type = "bludgeoning") or (aidp_type = "piercing")) or (aidp_type = "slashing"))
-    *set aidp_resisted true
+    *set combat_extra_resist true
 *if ((aidp_type = "poison") and (brine_minutes_left > 0))
-  *set aidp_resisted true
-*temp aidp_vulnerable (((aidp_type = player_vulnerable_type_1) and (not(player_vulnerable_type_1 = ""))) or ((aidp_type = player_vulnerable_type_2) and (not(player_vulnerable_type_2 = ""))))
-*if ((aidp_resisted) and (aidp_vulnerable))
-  *comment Same type both resisted and vulnerable: normal damage.
-*elseif (aidp_resisted)
-  *set combat_packet_damage (combat_packet_damage - (combat_packet_damage modulo 2)) / 2
-  *set combat_packet_suffix " | 🛡️ Resisted"
-*elseif (aidp_vulnerable)
-  *set combat_packet_damage combat_packet_damage * 2
-  *set combat_packet_suffix " | 💥 Vulnerable"
+  *set combat_extra_resist true
+*gosub adjust_damage_packet "player_" aidp_amount aidp_type 0
+*set combat_extra_resist false
 *return
 
-*label adjust_outgoing_damage_packet
-*comment Enemy-side twin of adjust_incoming_damage_packet. Future flaming weapons, arrows, and spell riders can
-*comment call this after their primary packet has resolved; each type tests the target's defenses independently.
-*params aodp_amount aodp_type
-*set combat_packet_damage aodp_amount
+*comment THE DEFENSE CORE (2026-10-31, the user: any defender, any number of types, as close to RAW as possible). defense_flags reads one defender's three damage-type lists, written as words with spaces between ("fire poison cold"), for one
+*comment damage type, by the defender's field PREFIX: "combat_enemy_" (the active target's scratch), "combat_enemy3_" (one slot), "combat_ally2_" or "player_". It sets combat_def_immune, combat_def_resist, combat_def_vulnerable and, when the defender has
+*comment them, combat_def_nonmagic ("resist" or "immune"), combat_def_silvered and combat_def_adamantine. A word matches only whole (fire does not match firebolt). A script because ChoiceScript has no lists. replay-ok: it only reads and sets scratch flags.
+*label defense_flags
+*params dfl_prefix dfl_type
+*set combat_def_prefix dfl_prefix
+*set combat_defense_type dfl_type
+*script var p = String(stats.combat_def_prefix), t = " " + String(stats.combat_defense_type) + " "; function norm(v) { return " " + String(v || "").replace(/\s+/g, " ").trim() + " "; } function yes(v) { return v === true || v === "true"; } stats.combat_def_immune = norm(stats[p + "immune_types"]).indexOf(t) >= 0; stats.combat_def_resist = norm(stats[p + "resist_types"]).indexOf(t) >= 0; stats.combat_def_vulnerable = norm(stats[p + "vulnerable_types"]).indexOf(t) >= 0; stats.combat_def_nonmagic = String(stats[p + "nonmagic"] || ""); stats.combat_def_silvered = yes(stats[p + "nonmagic_silvered"]); stats.combat_def_adamantine = yes(stats[p + "nonmagic_adamantine"]);
+*return
+
+*comment adjust_damage_packet <defender prefix> <amount> <damage type> <enemy slot>: ONE damage packet of one type against one defender. The slot (0 for an ally or the player) is the enemy whose "wet" state and defense_known apply.
+*comment   immune (a listed type, or nonmagical weapons not beaten by the attacker's weapon): the packet is 0, and immunity beats resistance and vulnerability;
+*comment   resistant: half, rounded down; vulnerable: double; resistant and vulnerable together cancel.
+*comment NONMAGICAL WEAPONS: only while combat_packet_is_weapon is true and the type is bludgeoning, piercing or slashing. The defender's nonmagic defense is beaten by a magical weapon (combat_atk_magical), a silvered one against a defender that names
+*comment silver, or an adamantine one against a defender that names adamantine. Whoever sets combat_packet_is_weapon also sets those three combat_atk_* flags (the player from weapon_*, an ally from its own fields). combat_extra_resist adds a resistance the lists do not hold.
+*comment Outputs: combat_packet_damage, combat_packet_suffix, combat_packet_blocked (true when immunity made it 0) and combat_packet_defense_text (what it is immune to, for the banner). The first blow that meets an enemy's defense marks its defense_known.
+*label adjust_damage_packet
+*params adp_prefix adp_amount adp_type adp_slot
+*set combat_packet_damage adp_amount
 *set combat_packet_suffix ""
-*temp aodp_resisted (((aodp_type = combat_enemy_resist_type_1) and (not(combat_enemy_resist_type_1 = ""))) or ((aodp_type = combat_enemy_resist_type_2) and (not(combat_enemy_resist_type_2 = ""))))
-*temp aodp_wet 0
-*if (combat_active_target > 0)
-  *set aodp_wet {(("combat_enemy" & combat_active_target) & "_wet")}
-*if (aodp_wet > 0)
-  *if (aodp_type = "fire")
-    *set aodp_resisted true
-*temp aodp_vulnerable (((aodp_type = combat_enemy_vulnerable_type_1) and (not(combat_enemy_vulnerable_type_1 = ""))) or ((aodp_type = combat_enemy_vulnerable_type_2) and (not(combat_enemy_vulnerable_type_2 = ""))))
-*if (aodp_wet > 0)
-  *if ((aodp_type = "cold") or (aodp_type = "lightning"))
-    *set aodp_vulnerable true
-*if ((aodp_resisted) and (aodp_vulnerable))
+*set combat_packet_blocked false
+*set combat_packet_defense_text ""
+*gosub defense_flags adp_prefix adp_type
+*temp adp_phys (((adp_type = "bludgeoning") or (adp_type = "piercing")) or (adp_type = "slashing"))
+*temp adp_nonmagic ""
+*if ((combat_packet_is_weapon) and (adp_phys))
+  *set adp_nonmagic combat_def_nonmagic
+  *if (combat_atk_magical)
+    *set adp_nonmagic ""
+  *if ((combat_atk_silvered) and (combat_def_silvered))
+    *set adp_nonmagic ""
+  *if ((combat_atk_adamantine) and (combat_def_adamantine))
+    *set adp_nonmagic ""
+*temp adp_immune combat_def_immune
+*temp adp_resisted combat_def_resist
+*temp adp_vulnerable combat_def_vulnerable
+*if (combat_extra_resist)
+  *set adp_resisted true
+*temp adp_wet 0
+*if (adp_slot > 0)
+  *set adp_wet {(("combat_enemy" & adp_slot) & "_wet")}
+*if (adp_wet > 0)
+  *if (adp_type = "fire")
+    *set adp_resisted true
+  *if ((adp_type = "cold") or (adp_type = "lightning"))
+    *set adp_vulnerable true
+*temp adp_nm_text "nonmagical weapons"
+*if (combat_def_silvered)
+  *if (combat_def_adamantine)
+    *set adp_nm_text "nonmagical weapons, unless silvered or adamantine"
+  *else
+    *set adp_nm_text "nonmagical weapons, unless silvered"
+*elseif (combat_def_adamantine)
+  *set adp_nm_text "nonmagical weapons, unless adamantine"
+*temp adp_learned false
+*if (adp_nonmagic = "resist")
+  *set adp_resisted true
+  *set adp_learned true
+*if (adp_nonmagic = "immune")
+  *set combat_packet_damage 0
+  *set combat_packet_blocked true
+  *set combat_packet_defense_text adp_nm_text
+  *set combat_packet_suffix " | 🚫 Immune"
+  *set adp_learned true
+*elseif (adp_immune)
+  *set combat_packet_damage 0
+  *set combat_packet_blocked true
+  *set combat_packet_defense_text adp_type
+  *set combat_packet_suffix " | 🚫 Immune"
+  *set adp_learned true
+*elseif ((adp_resisted) and (adp_vulnerable))
   *comment Same type both resisted and vulnerable: normal damage.
-*elseif (aodp_resisted)
+*elseif (adp_resisted)
   *set combat_packet_damage (combat_packet_damage - (combat_packet_damage modulo 2)) / 2
   *set combat_packet_suffix " | 🛡️ Resisted"
-*elseif (aodp_vulnerable)
+*elseif (adp_vulnerable)
   *set combat_packet_damage combat_packet_damage * 2
   *set combat_packet_suffix " | 💥 Vulnerable"
+*if (adp_learned)
+  *if (adp_slot > 0)
+    *set {(("combat_enemy" & adp_slot) & "_defense_known")} true
+*return
+
+*comment The enemy as defender: the active target's scratch fields, with its slot for wet and defense_known. Every player attack and spell packet comes through here.
+*label adjust_outgoing_damage_packet
+*params aodp_amount aodp_type
+*gosub adjust_damage_packet "combat_enemy_" aodp_amount aodp_type combat_active_target
 *return
 
 *comment The Poisoner's Robes' rider: while they are worn, poison damage from a SPELL gets 1d4 more poison, resisted or doubled like any other poison packet. Reads combat_player_dmg_type (the spell's damage type); adds to combat_player_dmg_dealt and extends combat_player_dmg_roll_banner. Call it from a spell's damage code only, inside that code's own once-per-page lock.
@@ -203,15 +211,15 @@
     *set cph_bonus_str "${combat_player_dmg_bonus}"
   *temp cph_extra_str ""
   *temp cph_running (cph_roll + combat_player_dmg_bonus)
-  *comment Hex only enhances an attack roll that hit its marked creature. Save-based spells pass false here, so they cannot trigger it.
+  *set combat_player_dmg_roll_banner "[b][🎲 Damage: ${cph_roll} ${cph_bonus_str}${cph_extra_str} = ${cph_running}][/b]"
+  *gosub apply_outgoing_damage_resist_vuln
+  *comment Hex only enhances an attack roll that hit its marked creature. Save-based spells pass false here, so they cannot trigger it. It is its own necrotic packet, so a defense against the spell's own type leaves it standing.
   *if (((hex_active) and (rph_is_attack_roll)) and ((hex_target_slot > 0) and (hex_target_slot = combat_active_target)))
     *temp cph_hex_die 0
     *rand cph_hex_die 1 6
-    *set combat_player_dmg_dealt + cph_hex_die
-    *set cph_extra_str "${cph_extra_str} +${cph_hex_die} (Hex)"
-    *set cph_running + cph_hex_die
-  *set combat_player_dmg_roll_banner "[b][🎲 Damage: ${cph_roll} ${cph_bonus_str}${cph_extra_str} = ${cph_running}][/b]"
-  *gosub apply_outgoing_damage_resist_vuln
+    *gosub adjust_outgoing_damage_packet cph_hex_die "necrotic"
+    *set combat_player_dmg_dealt + combat_packet_damage
+    *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} [b][+ ${cph_hex_die} necrotic (Hex) = ${combat_packet_damage}${combat_packet_suffix}][/b]"
   *if (combat_player_extra_dmg_dice_sides > 0)
     *temp cph_packet_roll 0
     *comment Quicktest walks this body even when the rider is off (sides 0); *rand needs max above min, so the range is clamped to at least 2. A real rider is always 4 or more.
@@ -246,6 +254,8 @@ ${combat_player_dmg_roll_banner}
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_player_weapon_hit
 *if (not(combat_weapon_hit_locked)) or (not(locked_combat_weapon_hit_page_id = page_id))
+  *set combat_weapon_blocked false
+  *set combat_weapon_defense_text ""
   *temp cwh_roll 0
   *rand cwh_roll 1 combat_player_dmg_dice_sides
   *if (((fighting_style = "great_weapon") and (weapon_hands = "two_handed")) and (not(weapon_type = "ranged")))
@@ -284,25 +294,35 @@ ${combat_player_dmg_roll_banner}
     *set combat_player_dmg_dealt + cwh_sneak_die
     *set cwh_extra_str "${cwh_extra_str} +${cwh_sneak_die} (Sneak Attack)"
     *set cwh_running + cwh_sneak_die
-  *comment Weapon attacks are attack rolls, but Hex still applies only against its chosen creature.
+  *comment HEX AND HUNTER'S MARK are not part of the weapon's damage (the user approved the split, 2026-10-31, RAW): each is its own packet, rolled below after the weapon's, with its own type (Hex necrotic, Hunter's Mark force in the 2024 rules this game follows), so a target that is immune to
+  *comment the weapon's damage still takes them. Sneak Attack IS the weapon's damage type and stays in its packet.
+  *set combat_player_dmg_roll_banner "[b][🎲 Weapon Damage: ${cwh_roll} ${cwh_bonus_str}${cwh_extra_str} = ${cwh_running}][/b]"
+  *set combat_atk_magical weapon_magical
+  *set combat_atk_silvered weapon_silvered
+  *set combat_atk_adamantine weapon_adamantine
+  *set combat_packet_is_weapon true
+  *gosub apply_outgoing_damage_resist_vuln
+  *set combat_packet_is_weapon false
+  *set combat_atk_magical false
+  *set combat_atk_silvered false
+  *set combat_atk_adamantine false
+  *set combat_weapon_blocked combat_packet_blocked
+  *set combat_weapon_defense_text combat_packet_defense_text
+  *comment Hex: only against its chosen creature (a weapon attack is an attack roll).
   *if (((hex_active) and (hex_target_slot > 0)) and (hex_target_slot = combat_active_target))
     *temp cwh_hex_die 0
     *rand cwh_hex_die 1 6
-    *set combat_player_dmg_dealt + cwh_hex_die
-    *set cwh_extra_str "${cwh_extra_str} +${cwh_hex_die} (Hex)"
-    *set cwh_running + cwh_hex_die
-  *comment Hunter's Mark (see startup.txt's *create comment): only the CURRENTLY marked slot benefits, unlike Hex's global
-  *comment flag, since only one creature can be marked at a time. favored_foe_target_slot > 0 rules out the unmarked default
-  *comment (slot 0 never exists); expires_round >= combat_round is the flat 10-round/no-concentration duration check. The mark
-  *comment is cast as its own bonus action, so it is already live when the first weapon hit lands.
+    *gosub adjust_outgoing_damage_packet cwh_hex_die "necrotic"
+    *set combat_player_dmg_dealt + combat_packet_damage
+    *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} [b][+ ${cwh_hex_die} necrotic (Hex) = ${combat_packet_damage}${combat_packet_suffix}][/b]"
+  *comment Hunter's Mark (see startup.txt's *create comment): only the CURRENTLY marked slot benefits, unlike Hex's global flag, since only one creature can be marked at a time. favored_foe_target_slot > 0 rules out the unmarked
+  *comment default (slot 0 never exists); expires_round >= combat_round is the flat 10-round/no-concentration duration check. The mark is cast as its own bonus action, so it is already live when the first weapon hit lands.
   *if (((favored_foe_target_slot > 0) and (favored_foe_target_slot = combat_active_target)) and (favored_foe_expires_round >= combat_round))
     *temp cwh_ff_die 0
     *rand cwh_ff_die 1 favored_foe_die_sides
-    *set combat_player_dmg_dealt + cwh_ff_die
-    *set cwh_extra_str "${cwh_extra_str} +${cwh_ff_die} (Hunter's Mark)"
-    *set cwh_running + cwh_ff_die
-  *set combat_player_dmg_roll_banner "[b][🎲 Weapon Damage: ${cwh_roll} ${cwh_bonus_str}${cwh_extra_str} = ${cwh_running}][/b]"
-  *gosub apply_outgoing_damage_resist_vuln
+    *gosub adjust_outgoing_damage_packet cwh_ff_die "force"
+    *set combat_player_dmg_dealt + combat_packet_damage
+    *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} [b][+ ${cwh_ff_die} force (Hunter's Mark) = ${combat_packet_damage}${combat_packet_suffix}][/b]"
   *if (combat_player_extra_dmg_dice_sides > 0)
     *temp cwh_packet_roll 0
     *comment Quicktest walks this body even when the rider is off (sides 0); *rand needs max above min, so the range is clamped to at least 2. A real rider is always 4 or more.
@@ -618,6 +638,8 @@ ${combat_player_dmg_roll_banner}
     *comment Barbarian Rage's physical-damage resistance is folded into this
     *comment same check now -- see apply_incoming_damage_resist_vuln's header.
     *gosub apply_incoming_damage_resist_vuln
+    *if (combat_incoming_blocked)
+      *gosub_scene combat_prose pick_incoming_blocked_flavor
     *comment Optional rider packet (poison, fire, lightning, etc.). It is deliberately resolved after the primary
     *comment packet so a resistance to piercing never suppresses a separate poison rider, and vice versa.
     *if (combat_enemy_extra_dmg_dice_sides > 0)
@@ -833,6 +855,7 @@ ${combat_player_dmg_roll_banner}
   *set {(reao_atk_bannername)} "[b][🎲 ${combat_enemy_name} Attack Roll: ${reao_roll} ${reao_bonus_str}${combat_high_ground_attack_label}${reao_adv_label}${reao_bane_str} = ${reao_total} vs AC ${reao_target_ac}${reao_ac_str} — ${reao_verdict}][/b]"
   *set {(reao_bannername)} ""
   *set combat_enemy_dmg_on_ally_dealt 0
+  *set combat_ally_blow_blocked false
   *if (combat_enemy_atk_on_ally_hit)
     *temp reao_dmg 0
     *rand reao_dmg 1 combat_enemy_dmg_dice_sides
@@ -843,22 +866,11 @@ ${combat_player_dmg_roll_banner}
       *set reao_dmg_bonus_str "${combat_enemy_dmg_bonus}"
     *temp reao_dmg_total (reao_dmg + combat_enemy_dmg_bonus)
     *set {(reao_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${reao_dmg} ${reao_dmg_bonus_str} = ${reao_dmg_total}][/b]"
-    *comment An ally's own resistances and vulnerabilities (combat_allyN_resist_type_1/_2, _vulnerable_type_1/_2): the blight twig takes double fire, halved by a matching resistance, cancelled if both. Half rounds down; a banner tag says which.
-    *temp reao_rt1 {(reao_ap & "resist_type_1")}
-    *temp reao_rt2 {(reao_ap & "resist_type_2")}
-    *temp reao_vt1 {(reao_ap & "vulnerable_type_1")}
-    *temp reao_vt2 {(reao_ap & "vulnerable_type_2")}
-    *temp reao_res (((combat_enemy_dmg_type = reao_rt1) and (not(reao_rt1 = ""))) or ((combat_enemy_dmg_type = reao_rt2) and (not(reao_rt2 = ""))))
-    *temp reao_vul (((combat_enemy_dmg_type = reao_vt1) and (not(reao_vt1 = ""))) or ((combat_enemy_dmg_type = reao_vt2) and (not(reao_vt2 = ""))))
-    *temp reao_tag ""
-    *if ((reao_res) and (reao_vul))
-      *set reao_tag ""
-    *elseif (reao_res)
-      *set reao_dmg_total ((reao_dmg_total - (reao_dmg_total modulo 2)) / 2)
-      *set reao_tag " | 🛡️ Resisted"
-    *elseif (reao_vul)
-      *set reao_dmg_total (reao_dmg_total * 2)
-      *set reao_tag " | 💥 Vulnerable"
+    *comment An ally's own defenses (combat_allyN_resist_types, _vulnerable_types, _immune_types): the blight twig takes double fire; an ally can be resistant or immune to any number of types, through the same core the player and the enemies use.
+    *gosub adjust_damage_packet reao_ap reao_dmg_total combat_enemy_dmg_type 0
+    *temp reao_tag combat_packet_suffix
+    *set combat_ally_blow_blocked combat_packet_blocked
+    *set reao_dmg_total combat_packet_damage
     *set {(reao_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${reao_dmg} ${reao_dmg_bonus_str} = ${reao_dmg_total}${reao_tag}][/b]"
     *set combat_enemy_dmg_on_ally_dealt reao_dmg_total
     *set {(reao_ap & "hp")} - reao_dmg_total
@@ -1039,6 +1051,7 @@ ${combat_player_dmg_roll_banner}
   *set {(raa_atk_bannername)} "[b][🎲 ${raa_name} Attack Roll: ${raa_roll} ${raa_bonus_str}${combat_high_ground_attack_label}${raa_ins_str}${raa_adv_label} = ${raa_total} vs AC ${raa_target_ac}${raa_ac_str} — ${raa_verdict}][/b]"
   *set {(raa_dmg_bannername)} ""
   *set combat_ally_dmg_dealt 0
+  *set combat_ally_blow_blocked false
   *if (combat_ally_atk_hit)
     *temp raa_dmg 0
     *if (raa_knifed)
@@ -1053,9 +1066,25 @@ ${combat_player_dmg_roll_banner}
     *else
       *set raa_dmg_bonus_str "${raa_dmg_bonus}"
     *temp raa_dmg_total (raa_dmg + raa_dmg_bonus)
-    *set {(raa_dmg_bannername)} "[b][🎲 ${raa_name} Damage: ${raa_dmg} ${raa_dmg_bonus_str} = ${raa_dmg_total}][/b]"
-    *set combat_ally_dmg_dealt raa_dmg_total
-    *set {(raa_ep & "hp")} - raa_dmg_total
+    *comment An ally's blow meets the enemy's defenses like any other (2026-10-31): its damage type (the sidearm's when it quick-drew the knife), as a weapon packet, with the ally's own magical, silvered and adamantine flags.
+    *temp raa_type {(raa_ap & "dmg_type")}
+    *if (raa_knifed)
+      *set raa_type {(raa_ap & "sidearm_dmg_type")}
+    *set combat_atk_magical {(raa_ap & "magical")}
+    *set combat_atk_silvered {(raa_ap & "silvered")}
+    *set combat_atk_adamantine {(raa_ap & "adamantine")}
+    *set combat_packet_is_weapon true
+    *gosub adjust_damage_packet raa_ep raa_dmg_total raa_type raa_e_slot
+    *set combat_packet_is_weapon false
+    *set combat_atk_magical false
+    *set combat_atk_silvered false
+    *set combat_atk_adamantine false
+    *temp raa_dmg_after combat_packet_damage
+    *set combat_ally_blow_blocked combat_packet_blocked
+    *temp raa_dmg_tag combat_packet_suffix
+    *set {(raa_dmg_bannername)} "[b][🎲 ${raa_name} Damage: ${raa_dmg} ${raa_dmg_bonus_str} = ${raa_dmg_total}${raa_dmg_tag}][/b]"
+    *set combat_ally_dmg_dealt raa_dmg_after
+    *set {(raa_ep & "hp")} - raa_dmg_after
     *if ({(raa_ep & "hp")} < 0)
       *set {(raa_ep & "hp")} 0
   *set {(raa_lockname)} true

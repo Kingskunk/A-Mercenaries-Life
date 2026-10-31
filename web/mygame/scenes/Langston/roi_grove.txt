@@ -1,17 +1,16 @@
 *comment ====================================================================================
 *comment ROI'S GROVE: the forest tile south-west of Langston (overworld-data.js "rg").
-*comment Reached from the map's "Go into the grove" button (overworld.txt). The first entry plays the wolf cold open: something follows the player along the track and shows itself
-*comment on a bank, a forest version of the night scene on the inn roof in the source (Chapter 2, sections 60-96): the hunched shape with the outstretched arm, "He's mine!", the laugh,
-*comment the claw marks and the hair that crumbles into a shimmer. There is no fight and no sleep. After it, the player reaches the grove's edge. Roi's meeting is the next piece.
-*comment This is an open-world scene: it can be entered at any hour in any weather, so every layer (place, sky, light on the shape) branches on time_period and weather.
+*comment Reached from the map's "Go into the grove" button (overworld.txt). While the Wolves of Langston is active and Chapter 3 is not complete, the button hands the player to the
+*comment Chapter 3 file (wolves_of_langston_chapter_3.txt: the silent wood, the wolf cold open, the stirges, the grove and Roi), whose resume point picks up from the saved checkpoint. This file owns the place itself: the track
+*comment and trees (rg_place), the sky under the canopy (rg_sky, which Chapter 3 reuses) and the grove. This is an open-world place that can be entered at any hour in any weather.
 *comment ====================================================================================
 
 *label rg_arrive
-*set scenery_subplace "roi_grove"
+*set scenery_subplace "rois_grove"
 *gosub_scene calendar update_hub_condition
-*if (wol_grove_cold_open_seen)
-  *goto rg_grove
-*goto rg_cold_open
+*if ((wol_quest_stage = "active") and ((wol_chapter_2_complete) and (not(wol_chapter_3_complete))))
+  *goto_scene Langston/wolves_of_langston_chapter_3 wol_ch3_start
+*goto rg_grove
 
 *comment ── LAYER 1: PLACE ── The track and the trees, always true.
 *label rg_place
@@ -51,107 +50,12 @@ Past the last field the track turns into the trees. It is two ruts with a strip 
   The ground is soft underfoot from recent rain.
 *return
 
-*comment ── LAYER 3: THE LIGHT ON THE SHAPE ── How the same figure looks in each hour and weather. Never names the sun at night or a moon under cloud.
-*label rg_shape_light
-*if (weather_severity >= 3)
-  The weather tears at the branches, and each time they thrash apart you see it again, outlined and still.
-*elseif (weather = "Fog")
-  Mist hangs between you and the bank, and the shape stands half inside it.
-*elseif ((weather = "Snow") or (weather = "Sleet"))
-  Snow sifts down on its shoulders and lies there without melting.
-*elseif (weather = "Rain")
-  Rain runs down the bank and over the shape, and it does not shake the water off.
-*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
-  *if (weather = "Clear")
-    The moon has found a gap in the canopy and rims the shape in silver.
-  *else
-    There is no moon to see it by, only a darker outline against the dark trunks.
-*elseif (time_period = "Dusk")
-  The last low light runs along its outline like the edge of a coal.
-*elseif (weather = "Clear")
-  Sunlight through the leaves rims it in gold and leaves its face in shadow.
-*else
-  The flat grey light shows its outline and nothing of its face.
-*return
-
-*label rg_cold_open
-*gosub rg_place
-*gosub rg_sky
-
-You have walked some way along it when you notice that the wood is following you. A branch sways that the wind did not move. A patch of leaf litter ahead of you is pressed flat, and when you reach it the print is gone. Twice, something keeps pace with you off to your left, always just out of sight. Each time you stop and turn, the trees are only trees.
-
-Then the track bends round a bank of earth and roots, and you stop for a third time.
-
-Something stands on top of the bank ten paces ahead: a hunched, hairy shape, bigger than any dog and too upright for a wolf. One long arm is stretched toward you, and it waits there as if you ought to take what it is offering.
-
-*gosub rg_shape_light
-Its eyes burn gold.
-
-*choice
-  # Call out to it.
-    *set wol_wolf_choice "called_out"
-    You call out and ask what it wants. The arm lowers, and the shape keeps its powerful body close to the top of the bank, bristling with hair that may be hide or may be its own.
-
-    "He's mine!" it snarls, with the force of a whip cracking.
-
-    A low growl rolls through the trees, and the shape drops back over the bank. It does not show itself again.
-    *goto rg_after_wolf
-  # Shout for help.
-    *set wol_wolf_choice "called_for_help"
-    You shout for anyone who can hear you. The golden eyes narrow, and you brace for it to come down the bank. Instead its shoulders start to shake. It is laughing at you.
-
-    It slips back over the bank while your own voice dies among the trunks. Nobody answers.
-    *goto rg_after_wolf
-  # Go after it.@{show_stat_hints  [Athletics or Survival DC 12]|}
-    *set wol_wolf_choice "gave_chase"
-    *goto rg_climb
-
-*comment After a call, the player can still go up the bank or walk on; after a chase the climb is the first thing they do.
-*label rg_after_wolf
-*choice
-  # Climb the bank to where it stood.@{show_stat_hints  [Athletics or Survival DC 12]|}
-    *goto rg_climb
-  # Walk on toward the grove.
-    *goto rg_walk_on
-  # Stay where you are and watch the trees for a while.
-    The wood settles around you. Small sounds come back one at a time: dripping, creaking, leaves shifting, and nothing else moves among the trunks. When you have waited long enough to be sure, you let out your breath.
-    *goto rg_walk_on
-
-*label rg_climb
-*gosub_scene dice_engine roll_skill_check 12 "athletics" "" "survival" "" "" ""
-*set minutes_to_pass 10
-*set time_advance_call_id "rg_climb_1"
-*gosub_scene Langston/langston lg_walk_time
-*if (check_success)
-  The bank is steep and loose with roots, but you find footholds in the tangle and haul yourself over the top to where the shape was standing.
-
-  Long claw marks are gouged down the bark of the nearest trunk, at the height of your head. There are none on any other tree.
-
-  *set wol_wolf_tracks_found true
-  You look closer for anything else it left.
-  *gosub_scene dice_engine roll_skill_check 10 "investigation" "" "" "" "" ""
-  *if (check_success)
-    *set wol_wolf_hair_found true
-    A few tufts of coarse animal hair are caught in the splintered bark, and only there. When you pick one free and roll it between your fingers, it crumbles into a shimmer like light on moving water and is gone.
-  *else
-    You turn over the roots and the bark around the marks, but find nothing more than the gouges themselves.
-  *goto rg_walk_on
-*else
-  The roots are slick and the earth gives way under your boots. By the time you scrabble over the top there is only trampled leaf litter that leads off in three directions at once, and the trail goes cold.
-  *goto rg_walk_on
-
-*label rg_walk_on
-*set wol_grove_cold_open_seen true
-You go on along the track. Whatever it is has marked out this ground, and the feeling of being watched stays between your shoulder blades until the trees thin ahead and open onto the grove.
-*page_break Come to the grove…
-*goto rg_grove_edge
-
 *comment ── THE GROVE ── Placeholder for the next piece (Roi's meeting). A later entry opens on the sky layer; the first one comes straight from the cold open, which has just given it.
 *label rg_grove
-*set scenery_subplace "roi_grove"
+*set scenery_subplace "rois_grove"
 *gosub rg_sky
 
 *label rg_grove_edge
-The old trees stand back from a clear patch of ground, and the track runs out into it. You wait at the edge of the trees, but nobody comes out to meet you.
+The old trees stand back from a clear patch of ground, and the track runs out into it. Under the rock overhang the druid lies curled in his bed of hides, sleeping off his illness, and you leave him to it.
 *page_break Walk back to the track…
 *goto_scene overworld/overworld ow_here

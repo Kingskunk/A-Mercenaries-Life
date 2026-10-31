@@ -46,6 +46,7 @@
     "Langston/pickled_hen": "generic_town_inn",
     "Langston/cord_and_kettle": "generic_trade_shop",
     "Langston/tomlin_cottage": "tomlin_cottage",
+    "Langston/tomlin_shop": "tomlin_herbalist_workroom",
     "alderford/wagon_lot": "river_carters_lot",
     "timbermouth/wagon_lot": "timber_wagon_lot",
     "port_valen/radiant/caravan_lot": "vale_gate_wagon_lot",
@@ -126,8 +127,10 @@
   };
   var RULES = [
     function (s) { return s.sceneName === "combat" && s.scenery_combat_place ? s.scenery_combat_place : undefined; }, // a temporary combat scene keeps the location it was entered from
+    function (s) { return s.dg_in_run && s.dg_table === "longshade_forest" && s.scenery_subplace ? s.scenery_subplace : undefined; }, // Longshade's landmark rooms and the Burning Grove's state variants; ordinary trails fall through to the forest pair
     function (s) { return s.sceneName === "Langston/wolves_of_langston_chapter_1" && s.scenery_subplace ? s.scenery_subplace : undefined; }, // Chapter 1 moves between the forest road, Langston streets, the Pickled Hen funeral and the mayor's office
     function (s) { return s.sceneName === "Langston/wolves_of_langston_chapter_2" && s.scenery_subplace ? s.scenery_subplace : undefined; }, // Chapter 2 moves from Langston's streets to Tomlin's cottage and workroom
+    function (s) { return (s.sceneName === "Langston/wolves_of_langston_chapter_3" || s.sceneName === "Langston/roi_grove") && s.scenery_subplace ? s.scenery_subplace : undefined; }, // Chapter 3 moves from the forest track to the clearing, Roi's grove and the home under his rock
     function (s) { return s.sceneName === "prologue/battle_black_sinks" && s.scenery_subplace === "black_sinks_causeway_before" ? "black_sinks_causeway_before" : undefined; }, // the ruined causeway during the prologue assault
     function (s) { return s.sceneName === "prologue/battle_black_sinks" && s.scenery_subplace === "black_sinks_bivouac" ? "black_sinks_captured_gatehouse_bivouac" : undefined; }, // the company holds the captured gatehouse overnight
     function (s) { return s.sceneName === "alderford/whitefold/the_weight_of_the_road" && s.weight_road_quest_stage !== "reckoning" && s.weight_road_quest_stage !== "resolved" && s.weight_road_quest_stage !== "failed" ? "whitefold_cut_road_collapse" : undefined; }, // the Cut Road emergency, investigation, wall reading and repair; the Fleecefold reckoning keeps the village backdrop until it has its own art

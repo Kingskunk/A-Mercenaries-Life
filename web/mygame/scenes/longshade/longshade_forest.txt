@@ -200,6 +200,8 @@ You scrape a bold cross into the bark at head height, so you will know this junc
 
 *label lsf_here
 *gosub_scene dungeon dg_chalk_check
+*comment Scenery: every move clears a prior landmark so ordinary rooms and trails keep the shared forest pair. The four bespoke room labels below set their own backdrop, including when a test or a returning library scene enters the label directly.
+*set scenery_subplace ""
 *comment Stable dungeon recovery point: the last move/encounter is complete and dg_pos can safely dispatch the room again.
 *save_checkpoint autosafe_checkpoint
 *if (dg_pos = "lsf_x1")
@@ -1235,6 +1237,7 @@ You find the first handholds in the rock and test each before you trust it.
     *goto lsf_wait
 
 *label lsf_n_r1
+*set scenery_subplace "longshade_watchtower"
 
 [b]◈ THE WATCHTOWER[/b]
 *line_break
@@ -2124,6 +2127,7 @@ The notes give three formulas: Green Honey Mash, made from shadefern and honeyco
     *goto lsf_wait
 
 *label lsf_n_r8
+*set scenery_subplace "longshade_barks_glade"
 
 [b]◈ BARK'S GLADE[/b]
 *line_break
@@ -2925,6 +2929,7 @@ You walk the edge of the clearing and study the raked trunks and the ground at t
 *comment DC 12, ten minutes, ONE TRY PER REFILL on a miss: dg_lsf_bear_tried; or Speak with Animals, no roll, which also tells of her missing cub) and every way to heal her. Honey and the learned Green Honey Mash need no reading; a spell or Saint Althea's Water
 *comment need the reading first. Healed is for good (lsf_bear_healed). PART TWO, after Room 14 is built: the cub comes home to her, and a button to sleep in the den (the forest has no long rest of its own).
 *label lsf_n_r13
+*set scenery_subplace "longshade_root_hollow"
 
 [b]◈ THE ROOT HOLLOW[/b]
 *line_break
@@ -3307,6 +3312,13 @@ You settle onto your heels at the edge of the clearing, well clear of the tree, 
 *comment pass saves it too. A miss means the dryad puts it out herself and has no time to help later (lsf_dryad_busy). The oak is always saved. A player who saves it is the dryad's friend (lsf_dryad_friend, +5 and advantage on Persuasion with her). The only way out while it burns is the walk-away button, which fails
 *comment Bark's quest for good (lsf_bark_failed; Room 7 closes behind the player, lsf_gap_sealed). lsf_grove_mins counts the minutes spent in this room, for the sprites' difficulty later. CHUNK 5 (the dryad's talk, the search for Dubhar, his speech and the fight, lsf_r15_bridge to lsf_r15_dubhar_down) is built; NOTHING PAST HIS FALL IS WRITTEN YET (the user: wait for the word).
 *label lsf_n_r15
+*comment The grove has three scenery states: burning; freshly charred through the season Dubhar dies; and green again in any later season.
+*if (lsf_tree_state = "burning")
+  *set scenery_subplace "longshade_burning_grove_burning"
+*elseif ((lsf_dubhar_dead) and (not(lsf_dubhar_death_season = ((calendar_year * 4) + (((calendar_month_num - 1) - ((calendar_month_num - 1) modulo 3)) / 3)))))
+  *set scenery_subplace "longshade_fluralainns_grove_regrowth"
+*else
+  *set scenery_subplace "longshade_burning_grove_charred"
 
 *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
   *set lsf_r15_first (not(lsf_grove_seen))
@@ -3557,6 +3569,8 @@ You choose the line where the grass ends and start tearing it up, then the roots
 *goto lsf_r15_done
 
 *label lsf_r15_done
+*comment Every fire route has now extinguished the oak. Update the backdrop before the thanks and Dubhar sequence rather than leaving the burning picture behind until the player next re-enters the room dispatcher.
+*set scenery_subplace "longshade_burning_grove_charred"
 *line_break
 *set dg_mins 5
 *set dg_time_id "lsf_r15_route"

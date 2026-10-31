@@ -22,6 +22,7 @@
 *gosub_scene calendar update_hub_condition
 *gosub lg_hours
 *gosub_scene Langston/tomlin_cottage lg_tomlin_hours
+*gosub_scene Langston/tomlin_cottage lg_tomlin_errand_check
 *gosub lg_lot_hours
 *return
 
@@ -55,6 +56,9 @@
 *goto lg_menu
 
 *label lg_menu
+*comment The mayor's note after Chapter 3 (Langston/wolves_of_langston_chapter_3.txt wol_ch3_note), delivered once on the first hub after the chapter.
+*if ((wol_chapter_3_complete) and (not(wol_ch3_note_read)))
+  *goto_scene Langston/wolves_of_langston_chapter_3 wol_ch3_note
 *comment Open-world free time: the sidebar's Wait and Rest work on this page.
 *set wait_ok_page page_id
 *choice
@@ -71,6 +75,16 @@
       *goto_scene Langston/tomlin_cottage lg_tomlin
   *if (((wol_quest_stage = "active") and (not(wol_chapter_2_complete))) and (not(lg_tomlin_open)))
     # [b]Tomlin's cottage[/b]: ${lg_tomlin_closed_reason}.
+      *goto_scene Langston/tomlin_cottage lg_tomlin_closed
+  *if ((wol_chapter_2_complete) and (lg_tomlin_open))
+    *if (wol_tomlin_errand_open)
+      # [b]Tomlin's workroom[/b]: ask after the herbs for Roi's cure. [~5 min]
+        *goto_scene Langston/tomlin_cottage lg_tomlin
+    *else
+      # [b]Tomlin's workroom[/b]: herbs, tonics and his own scent. [~5 min]
+        *goto_scene Langston/tomlin_cottage lg_tomlin
+  *if ((wol_chapter_2_complete) and (not(lg_tomlin_open)))
+    # [b]Tomlin's workroom[/b]: ${lg_tomlin_closed_reason}.
       *goto_scene Langston/tomlin_cottage lg_tomlin_closed
   # [b]Langston Hall[/b]: petitions, notices and the town clerks. [~5 min]
     *goto_scene Langston/langston_hall lg_hall

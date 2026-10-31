@@ -306,8 +306,12 @@ function compile(){
   verifyFileName("Langston/pickled_hen.txt");
   verifyFileName("Langston/langston_hall.txt");
   verifyFileName("Langston/tomlin_cottage.txt");
+  // Tomlin's workroom shop: reached by *goto_scene from lg_tomlin once Chapter 2 is complete, never through *scene_list.
+  verifyFileName("Langston/tomlin_shop.txt");
   // Roi's Grove: the forest tile south-west of Langston, reached by *goto_scene from the overworld's "Go into the grove" button and the Dev Hub, never through *scene_list.
   verifyFileName("Langston/roi_grove.txt");
+  // Chapter 3 (Speaking to Roi): reached by *goto_scene from the grove tile, never through *scene_list.
+  verifyFileName("Langston/wolves_of_langston_chapter_3.txt");
   // Middle Ward quests live in their own *goto_scene-only files. The district scene owns
   // their physical triggers and aftermath; each quest file owns its choices and resolutions.
   verifyFileName("port_valen/MiddlewardQuest/dry_lion.txt");

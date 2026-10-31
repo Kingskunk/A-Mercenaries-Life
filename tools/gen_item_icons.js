@@ -164,8 +164,13 @@ const MAP = {
   raw_hide: "../Generic/Raw_Hide_Generated_Source.png",                 // a skinned beast's hide, from the Longshade's boar and elk
   boar_tusk: "../Generic/Boar_Tusk_Generated_Source.png",
   elk_antler: "../Generic/Elk_Antler_Generated_Source.png",
+  pickled_hen_tankard: "ALCH_Mug_of_Beer_Unfaded_Icon.png",              // the chewed tankard in Roi's grass (STAND-IN: a beer mug, no tankard art yet)
+  scrapling_claw_weapon: "../Generic/Scrapling_Claw_Weapon_Generated_Source.png",   // Chapter 3: the claw as Roi binds it, a +1 club for a week
   scrapling_claw: "../Generic/Scrapling_Claw_Generated_Source.png",         // Chapter 2: the claw Tomlin gives you from the garden
   philter_remembrance: "../Generic/Philter_of_Remembrance_Generated_Source.png", // Chapter 2: Tomlin's wedding-gift scent
+  sage: "../Generic/Sage_Generated_Source.png",                             // Chapter 3: the polypox cure herbs
+  hornwort: "../Generic/Hornworth_Generated_Source.png",
+  wolfsbane: "../Generic/Wolfsbane_Generated_Source.png",
   venison: "FOOD_Raw_Steak_Unfaded_Icon.png",                                   // an elk's haunch (STAND-IN: no wild-meat art yet)
   heartwood_fruit: "FOOD_Goodberry_Unfaded_Icon.png",                   // Bark's reward
   honeycomb: "FOOD_Honey_Comb_Unfaded_Icon.png",                    // the Longshade bee tree
@@ -243,6 +248,8 @@ const MAP = {
   scroll_jump: "Scroll_of_Jump_Unfaded_Icon.png",
   scroll_charm_person: "Scroll_of_Charm_Person_Unfaded_Icon.png",
   scroll_speak_with_animals: "Scroll_of_Speak_with_Animals_Unfaded_Icon.png",
+  scroll_remove_curse: "Scroll_of_Remove_Curse_Unfaded_Icon.png",
+  silverstar: "../Generic/Silverstar_Generated_Source.png",                    // Chapter 3: Roi's gift from Solaine, a brooch holding one Remove Curse
   water_jug: "../Generic/Filled_Water_Jug_Generated_Source.png",   // the user's own art (2026-10-19): the water jug, one icon for empty and full
   note: "Book_Note_A_Item_Icon.png",
   letter: "Book_Parchment_A_Item_Icon.png",

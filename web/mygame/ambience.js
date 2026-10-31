@@ -79,6 +79,8 @@
   // a place name (from Scenery.placeNames) that plays another kind of place's sound
   var ALIAS = {
     longshade_forest: "forest", woodroad: "open_road", forest: "forest",
+    longshade_watchtower: "forest", longshade_barks_glade: "forest", longshade_root_hollow: "forest",
+    longshade_burning_grove_burning: "forest", longshade_burning_grove_charred: "forest", longshade_fluralainns_grove_regrowth: "forest",
     overworld_forest_road: "open_road",   // a wooded road tile is road, not woodland: the Longshade tiles themselves (kind forest) keep the forest bed
     western_vale_road: "open_road",
     road: "open_road", overworld_hilly_road: "open_road",   // the kind of an overworld tile (Scenery.placeNames ends a tile's names with it)

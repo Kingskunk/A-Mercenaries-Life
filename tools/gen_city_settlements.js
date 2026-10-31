@@ -51,7 +51,7 @@ const SETTLEMENTS = {
   },
   langston: {
     name: "Langston", start: "langston", startScene: "Langston/langston", hubFile: "Langston/langston.txt", hubLabels: ["langston", "lg_menu", "lg_return"],
-    files: ["Langston/pickled_hen.txt", "Langston/langston_hall.txt", "Langston/cord_and_kettle.txt"],
+    files: ["Langston/pickled_hen.txt", "Langston/langston_hall.txt", "Langston/cord_and_kettle.txt", "Langston/tomlin_shop.txt"],
     services: {
       board: { name: "Contract Board", seen: "lg_hall_seen", steps: [S("lg_menu", "lg_hall", "Langston/langston.txt"), S("lg_hall_menu", "lg_hall_board", "Langston/langston_hall.txt")], done: "You are at the Contract Board." },
       inn: { name: "The Pickled Hen", seen: "lg_hen_seen", steps: [S("lg_menu", "lg_hen", "Langston/langston.txt")], done: "You are at the Pickled Hen." },

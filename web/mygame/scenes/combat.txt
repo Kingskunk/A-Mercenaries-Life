@@ -79,6 +79,7 @@
 *comment ============================================================================
 
 *label fight_setup
+*gosub_scene equipment expire_timed_weapon_magic
 *gosub_scene character_progression refresh_class_resource_maxs
 *comment STALE SLOTS (2026-10-21, from the dev hub: summoned Blight Twigs showed in the next fight, and enemies of a fight the player fled did too). A slot beyond this fight's count keeps whatever hit points the last fight left in it, and the sidebar lane and anything that scans every slot see a living combatant there. Zero every ally and enemy slot above the counts before the fight is built; the slots in use are filled by the library or the hand-authored setup as always.
 *temp fss_e combat_enemy_count
@@ -192,6 +193,8 @@
   *set combat_enemy_dmg_dice_sides combat_enemy_dmg_sides_override
 *if (not(combat_enemy_dmg_type_override = ""))
   *set combat_enemy_dmg_type combat_enemy_dmg_type_override
+*set combat_defense_prefix "combat_enemy_"
+*gosub apply_defense_override
 *set combat_enemy_dmg_sides_override 0
 *set combat_enemy_dmg_type_override ""
 *set combat_enemy_hp_override 999
@@ -283,10 +286,12 @@
 *set combat_enemy1_move2_inflicts_condition combat_enemy_move2_inflicts_condition
 *set combat_enemy1_move2_condition_name combat_enemy_move2_condition_name
 *set combat_enemy1_move2_condition_icon combat_enemy_move2_condition_icon
-*set combat_enemy1_resist_type_1 combat_enemy_resist_type_1
-*set combat_enemy1_resist_type_2 combat_enemy_resist_type_2
-*set combat_enemy1_vulnerable_type_1 combat_enemy_vulnerable_type_1
-*set combat_enemy1_vulnerable_type_2 combat_enemy_vulnerable_type_2
+*set combat_enemy1_resist_types combat_enemy_resist_types
+*set combat_enemy1_vulnerable_types combat_enemy_vulnerable_types
+*set combat_enemy1_immune_types combat_enemy_immune_types
+*set combat_enemy1_nonmagic combat_enemy_nonmagic
+*set combat_enemy1_nonmagic_silvered combat_enemy_nonmagic_silvered
+*set combat_enemy1_nonmagic_adamantine combat_enemy_nonmagic_adamantine
 *set combat_active_target 1
 *comment Existing content remains on its authored four-band scale until a fight explicitly sets expanded6. The
 *comment six-band lane has room for terrain and manoeuvre without silently turning old "Long Range (3)" starts
@@ -331,6 +336,12 @@
 *gosub announce_turn_order
 *return
 
+*comment ENEMY DEFENSE OVERRIDES (2026-10-31): applies <prefix>nonmagic_override ("immune", "resist", then any of "silvered" and "adamantine" as the exceptions) and the <prefix>resist_override, _vulnerable_override and _immune_override lists (any number of damage types) to the slot named by combat_defense_prefix
+*comment ("combat_enemy_" for slot 1 before its snapshot, "combat_enemyN_" for the rest), then puts both overrides back to empty. A script because the strings are split into words. replay-ok: the overrides are emptied here, so a replay finds them empty and changes nothing.
+*label apply_defense_override
+*script var p = String(stats.combat_defense_prefix); var nm = String(stats[p + "nonmagic_override"] || "").split(/\s+/).filter(Boolean); if (nm.length) { stats[p + "nonmagic"] = nm[0]; stats[p + "nonmagic_silvered"] = nm.indexOf("silvered") > 0; stats[p + "nonmagic_adamantine"] = nm.indexOf("adamantine") > 0; } ["resist", "vulnerable", "immune"].forEach(function (k) { var w = String(stats[p + k + "_override"] || "").split(/\s+/).filter(Boolean); if (w.length) stats[p + k + "_types"] = w.join(" "); stats[p + k + "_override"] = ""; }); stats[p + "nonmagic_override"] = "";
+*return
+
 *label apply_slot_stat_override
 *comment One slot's hp/ac/atk override, applied and reset, via name indirection instead of a hand-copied block
 *comment per slot (see fight_setup, which calls this for every slot from 2 to combat_enemy_slot_cap; slot 1 keeps
@@ -359,6 +370,8 @@
   *set {(aso_p & "size")} aso_size_ov
 *if (not(aso_creature_type_ov = ""))
   *set {(aso_p & "creature_type")} aso_creature_type_ov
+*set combat_defense_prefix aso_p
+*gosub apply_defense_override
 *set {(aso_p & "hp_override")} 999
 *set {(aso_p & "ac_override")} 999
 *set {(aso_p & "atk_override")} 999
@@ -781,10 +794,12 @@
 *comment true from whatever earlier fight used it last.
 *set combat_enemy_advantage false
 *set combat_player_dmg_type "bludgeoning"
-*set combat_enemy_resist_type_1 ""
-*set combat_enemy_resist_type_2 ""
-*set combat_enemy_vulnerable_type_1 ""
-*set combat_enemy_vulnerable_type_2 ""
+*set combat_enemy_resist_types ""
+*set combat_enemy_vulnerable_types ""
+*set combat_enemy_immune_types ""
+*set combat_enemy_nonmagic ""
+*set combat_enemy_nonmagic_silvered false
+*set combat_enemy_nonmagic_adamantine false
 *set combat_incoming_dmg_suffix ""
 *set combat_outgoing_dmg_suffix ""
 *comment The scratch resets above only clear the "active slot" mirror --
@@ -853,10 +868,13 @@
   *set {(fc_p & "restrain_page")} 0
   *set {(fc_p & "restrain_res")} 0
   *set {(fc_p & "reach")} "long"
-  *set {(fc_p & "resist_type_1")} ""
-  *set {(fc_p & "resist_type_2")} ""
-  *set {(fc_p & "vulnerable_type_1")} ""
-  *set {(fc_p & "vulnerable_type_2")} ""
+  *set {(fc_p & "resist_types")} ""
+  *set {(fc_p & "vulnerable_types")} ""
+  *set {(fc_p & "immune_types")} ""
+  *set {(fc_p & "nonmagic")} ""
+  *set {(fc_p & "nonmagic_silvered")} false
+  *set {(fc_p & "nonmagic_adamantine")} false
+  *set {(fc_p & "defense_known")} false
   *set {(fc_p & "flavor_type")} ""
   *comment Bane (see resolve_cast_bane, combat_spells.txt): 0 means "not Baned." Reset per-slot here so a future fight's
   *comment slot never inherits an earlier fight's still-ticking duration.
@@ -927,10 +945,12 @@
   *set {(("combat_ally" & fc_a_i) & "_behavior_profile")} "guardian"
   *set {(("combat_ally" & fc_a_i) & "_target")} 0
   *set {(("combat_ally" & fc_a_i) & "_flavor_type")} ""
-  *set {(("combat_ally" & fc_a_i) & "_resist_type_1")} ""
-  *set {(("combat_ally" & fc_a_i) & "_resist_type_2")} ""
-  *set {(("combat_ally" & fc_a_i) & "_vulnerable_type_1")} ""
-  *set {(("combat_ally" & fc_a_i) & "_vulnerable_type_2")} ""
+  *set {(("combat_ally" & fc_a_i) & "_resist_types")} ""
+  *set {(("combat_ally" & fc_a_i) & "_vulnerable_types")} ""
+  *set {(("combat_ally" & fc_a_i) & "_immune_types")} ""
+  *set {(("combat_ally" & fc_a_i) & "_magical")} false
+  *set {(("combat_ally" & fc_a_i) & "_silvered")} false
+  *set {(("combat_ally" & fc_a_i) & "_adamantine")} false
   *set {("combat_ally_lib_" & fc_a_i)} ""
   *comment Reaction asymmetry (2026-09-29, plan §4.5/Phase 5) -- same leftover-state reason as the enemy-side
   *comment oa_used reset above.
@@ -1083,10 +1103,12 @@
 *set combat_enemy_move2_inflicts_condition {(fti_p & "move2_inflicts_condition")}
 *set combat_enemy_move2_condition_name {(fti_p & "move2_condition_name")}
 *set combat_enemy_move2_condition_icon {(fti_p & "move2_condition_icon")}
-*set combat_enemy_resist_type_1 {(fti_p & "resist_type_1")}
-*set combat_enemy_resist_type_2 {(fti_p & "resist_type_2")}
-*set combat_enemy_vulnerable_type_1 {(fti_p & "vulnerable_type_1")}
-*set combat_enemy_vulnerable_type_2 {(fti_p & "vulnerable_type_2")}
+*set combat_enemy_resist_types {(fti_p & "resist_types")}
+*set combat_enemy_vulnerable_types {(fti_p & "vulnerable_types")}
+*set combat_enemy_immune_types {(fti_p & "immune_types")}
+*set combat_enemy_nonmagic {(fti_p & "nonmagic")}
+*set combat_enemy_nonmagic_silvered {(fti_p & "nonmagic_silvered")}
+*set combat_enemy_nonmagic_adamantine {(fti_p & "nonmagic_adamantine")}
 *comment Ability scores: synced in like every other field above, so a saving-throw check (resolve_enemy_save)
 *comment can read the bare combat_enemy_<score> for whichever slot is currently active, same as HP/AC/atk_bonus.
 *set combat_enemy_strength {(fti_p & "strength")}
@@ -1641,6 +1663,15 @@
     *set combat_oa_against_kind "ally"
 *return
 
+*comment A MAGIC WEAPON'S ATTACK BONUS (the user, 2026-10-31, RAW): a +N weapon adds N to every attack roll made with it, on top of the usual modifiers, and the roll says so. Called right before a weapon attack roll, after any terrain label has been
+*comment set (it adds to that label rather than replacing it). The matching +N on the damage is added where each weapon hit builds combat_player_dmg_bonus. weapon_* is whichever weapon is in hand now, a swapped sidearm included.
+*comment replay-ok: called only from inside the weapon attack's own lock (combat_weapon_attack_locked) and from the opportunity attack's turn, once per attack, and check_flat_bonus is cleared by the roll that follows.
+*label combat_apply_weapon_magic_attack
+*if (weapon_magic > 0)
+  *set check_flat_bonus + weapon_magic
+  *set check_flat_bonus_label "${check_flat_bonus_label} +${weapon_magic} (magic weapon)"
+*return
+
 *label resolve_reverse_oa_player
 *comment The player's own opportunity attack against the enemy currently retreating (combat_active_target is
 *comment already that enemy -- fight_sync_target_in already ran for this slot this turn, so combat_enemy_ac etc.
@@ -1668,7 +1699,9 @@
 *set check_skill "Opportunity Attack"
 *set check_dc combat_enemy_ac
 *set check_add_prof_bonus true
+*gosub combat_apply_weapon_magic_attack
 *gosub_scene dice_engine roll_d20_check
+*set check_flat_bonus 0
 *if (check_success)
   *set combat_player_dmg_type weapon_damage_type
   *if (weapon_type = "finesse")
@@ -1692,11 +1725,16 @@
         *set combat_player_dmg_bonus + barbarian_rage_damage_bonus
     *else
       *set combat_player_dmg_bonus + barbarian_rage_damage_bonus
+  *set combat_player_dmg_bonus + weapon_magic
   *gosub_scene combat_dice resolve_player_weapon_hit
   *if (combat_enemy_hp <= 0)
     $!{combat_enemy_epithet} takes the opening and drops, cut down mid-retreat.
     *line_break
     [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
+  *elseif (combat_weapon_blocked)
+    You catch ${combat_enemy_epithet} pulling back, and your ${weapon} lands true, then skates off the hide as if it had struck stone.
+    *line_break
+    [b][🚫 ${combat_enemy_name} is immune to ${combat_weapon_defense_text} | ${combat_player_dmg_dealt} damage][/b]
   *else
     You catch ${combat_enemy_epithet} pulling back, and the opening costs it.
     *line_break
@@ -2183,7 +2221,13 @@
 *comment THE ROUND HUB (shared choice skeleton)
 *comment ============================================================================
 
+*comment WEAPON PROPERTY TAGS (2026-10-31): the fight menu says which of the two weapons is magical, silvered or adamantine, because that decides what it can hurt. Rebuilt at every hub, after any swap. replay-ok: it only sets display strings.
+*label combat_weapon_tags
+*script function tag(m, mg, sv, ad) { var a = []; if (Number(m) > 0) a.push("Magic +" + Number(m)); else if (mg === true || mg === "true") a.push("Magical"); if (sv === true || sv === "true") a.push("Silvered"); if (ad === true || ad === "true") a.push("Adamantine"); return a; } var w = tag(stats.weapon_magic, stats.weapon_magical, stats.weapon_silvered, stats.weapon_adamantine), d = tag(stats.sidearm_magic, stats.sidearm_magical, stats.sidearm_silvered, stats.sidearm_adamantine); stats.combat_weapon_tag = w.length ? " [" + w.join(", ") + "]" : ""; stats.combat_weapon_note = w.length ? " (" + w.join(", ").toLowerCase() + ")" : ""; stats.combat_sidearm_tag = d.length ? " [" + d.join(", ") + "]" : ""; stats.combat_sidearm_note = d.length ? " (" + d.join(", ").toLowerCase() + ")" : "";
+*return
+
 *label fight_round_hub
+*gosub combat_weapon_tags
 *comment A spell scroll's id (combat_scroll_id) lives only from the Read option to the end of its page; the hub clears it, so an ordinary cast never spends a scroll.
 *set combat_scroll_id ""
 *comment fight_setup sets combat_turn_needs_advance true, so THIS *goto fight_round_hub (every fight_<name>
@@ -2224,8 +2268,8 @@
 *comment round doesn't add that break again on every redisplay.
 *if (not(combat_hub_shown_once))
   *set combat_hub_shown_once true
-  *comment When the player acts first nothing has printed since the Turn Order line (announce_turn_order ends on a blank line), so a break here would be an empty line.
-  *if (not(combat_turn_kind_1 = "player"))
+  *comment When the player acts first nothing has printed since the Turn Order line (announce_turn_order ends on a blank line), so a break here would be an empty line. The same holds after an ambush: the enemies' opening turns end in the "Hold your ground..." page break, which leaves the hub at the top of a fresh page.
+  *if ((not(combat_turn_kind_1 = "player")) and (not(combat_turn_advanced_this_page)))
     *line_break
 *comment Shield's +5 reaches the player's printed AC only after the reaction has actually fired. While it is
 *comment merely armed, the caster is still on their ordinary AC and is waiting to see a hit that the +5 can
@@ -2939,7 +2983,7 @@
 
 *choice
   *if ((combat_can_attack) and ((combat_wpn_far_ok) or (combat_primary_reach)))
-    # [b][ACTION][/b] [b][Attack with your ${weapon}][/b].
+    # [b][ACTION][/b] [b][Attack with your ${weapon}][/b]${combat_weapon_tag}.
       *if (not(weapon_type = "ranged"))
         *gosub_scene combat_movement fight_weapon_reach_check
         *if (not(combat_reach_ok))
@@ -3001,7 +3045,7 @@
   *comment Swap Weapons (2026-10-23, the user: a solo adventure, so as many free swaps as they like): the weapon and the sidearm trade places (equipment.txt swap_active_sidearm, the same swap the Inventory's button makes). No action, no limit, and it
   *comment is not counted in what keeps a turn alive. A swap flips two ids, so a replay of the page must not flip them back: the lock is the page's own number, the same shape as combat_weapon_attack_locked. The Battle HUD shows it as a button by the name.
   *if (not(equipped_sidearm_id = "none"))
-    # [b][NO COST][/b] [b][Swap Weapons][/b] Put away your ${weapon_prose} and take up your ${sidearm_prose}, as often as you like.
+    # [b][NO COST][/b] [b][Swap Weapons][/b] Put away your ${weapon_prose}${combat_weapon_note} and take up your ${sidearm_prose}${combat_sidearm_note}, as often as you like.
       *if (not(combat_swap_locked)) or (not(locked_combat_swap_page_id = page_id))
         *set combat_swap_old_prose weapon_prose
         *gosub_scene equipment swap_active_sidearm
@@ -3034,7 +3078,7 @@
       *goto fight_target_dual_shot
 
   *if (((combat_can_attack) and (not(equipped_sidearm_id = "none"))) and ((combat_side_far_ok) or (combat_sidearm_reach)))
-    # [b][ACTION][/b] [b][Attack with your ${sidearm}][/b].
+    # [b][ACTION][/b] [b][Attack with your ${sidearm}][/b]${combat_sidearm_tag}.
       *if (not(sidearm_type = "ranged"))
         *gosub_scene combat_movement fight_sidearm_reach_check
         *if (not(combat_reach_ok))
@@ -4617,6 +4661,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *comment A fire arrow is a fire attack, so a greased target gives advantage (combat_attack_edge reads the tag).
   *if (combat_arrow_used = "fire")
     *set combat_attack_tag "fire"
+  *gosub combat_apply_weapon_magic_attack
   *gosub combat_hidden_attack_roll
   *gosub_scene dice_engine roll_d20_check
   *set check_flat_bonus 0
@@ -4672,7 +4717,11 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
             *set combat_player_dmg_bonus + barbarian_rage_damage_bonus
         *else
           *set combat_player_dmg_bonus + barbarian_rage_damage_bonus
+    *comment A magic weapon's +N is a bonus to the damage roll as well as the attack roll (RAW).
+    *set combat_player_dmg_bonus + weapon_magic
     *gosub_scene combat_dice resolve_player_weapon_hit
+    *if (combat_weapon_blocked)
+      *gosub_scene combat_prose pick_weapon_blocked_flavor
     *gosub combat_ensnare_apply
     *gosub combat_arrow_apply
     *if ((not(combat_sneak_attack_triggered)) and (combat_enemy_hp <= 0))
@@ -4680,7 +4729,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *set combat_weapon_attack_locked true
   *set locked_combat_weapon_attack_page_id page_id
 *if (check_success)
-  *if (combat_sneak_attack_triggered)
+  *if ((combat_sneak_attack_triggered) and (not(combat_weapon_blocked)))
     *comment Sneak Attack RAW requires finesse or ranged (see the gate in
     *comment startup.txt), so this line is at least as likely to be seen
     *comment on a bow/crossbow build as a melee one -- needs both. Already
@@ -4737,6 +4786,10 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     ${fdh}
     *line_break
     [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
+  *elseif (combat_weapon_blocked)
+    ${combat_flavor_weapon_blocked}
+    *line_break
+    [b][🚫 ${combat_enemy_name} is immune to ${combat_weapon_defense_text} | ${combat_player_dmg_dealt} damage][/b]
   *else
     ${fwh}
     *line_break
@@ -6228,6 +6281,44 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *set combat_enemy_atk_override 5
 *set combat_terrain_layout "random_standard"
 *set combat_multiattack_slot 1
+*goto fight_library
+
+*comment WEAPON IMMUNITY TEST FOES (2026-10-31, dev hub only; no story scene calls these). Each is a library "beast" with a defense set by the override variables, short enough to finish in a few rounds. What to try with each is in Resources & Quest/GAMEPLAY_MECHANICS_RULES.md,
+*comment "Damage Defenses". The prep menu hands out the Scrapling Claw (a +1 magical club) as the magic weapon; silvered and adamantine weapons are tested by setting weapon_silvered / weapon_adamantine in a script.
+*label fight_dev_warded_wolf_test
+*comment A werewolf's defense: immune to nonmagical weapons unless silvered (a magical weapon always works). Nothing else.
+*set combat_is_nonlethal false
+*set combat_no_flee true
+*set combat_lib_1 "beast"
+*set combat_enemy_name_override "Warded Wolf"
+*set combat_enemy_epithet_override "the warded wolf"
+*set combat_enemy_hp_override 24
+*set combat_enemy_nonmagic_override "immune silvered"
+*goto fight_library
+
+*label fight_dev_hollow_shade_test
+*comment A ghost's defense: RESISTS nonmagical weapons with no exception (even silver does not help), and is immune to poison and cold.
+*set combat_is_nonlethal false
+*set combat_no_flee true
+*set combat_lib_1 "beast"
+*set combat_enemy_name_override "Hollow Shade"
+*set combat_enemy_epithet_override "the hollow shade"
+*set combat_enemy_hp_override 24
+*set combat_enemy_nonmagic_override "resist"
+*set combat_enemy_immune_override "poison cold"
+*goto fight_library
+
+*label fight_dev_many_defenses_test
+*comment Many typed defenses at once: immune to five types, resistant to three, vulnerable to radiant. Cast something of each type and read the banner.
+*set combat_is_nonlethal false
+*set combat_no_flee true
+*set combat_lib_1 "beast"
+*set combat_enemy_name_override "Ember Colossus"
+*set combat_enemy_epithet_override "the ember colossus"
+*set combat_enemy_hp_override 40
+*set combat_enemy_immune_override "fire poison necrotic psychic cold"
+*set combat_enemy_resist_override "acid lightning thunder"
+*set combat_enemy_vulnerable_override "radiant"
 *goto fight_library
 
 *label fight_dev_fire_test

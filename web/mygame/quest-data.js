@@ -182,6 +182,10 @@
       levelProgress: "Counts toward level progress on a successful final resolution.",
       goal: function (s) {
         if (s.wol_quest_stage === "asked" || s.wol_quest_stage === "offered") return "Call on Mayor Anathram at Langston Hall during the day and hear her terms.";
+        if (truthy(s.wol_ch3_note_read) || truthy(s.wol_hall_called)) return "Call at Langston Hall: the mayor has sent word of a new lead.";
+        if (truthy(s.wol_roi_cured)) return "Return to Langston; the mayor may have word for you.";
+        if (truthy(s.wol_polypox_recipe)) return "Bring Roi Sunderhammer sage, hornwort and wolfsbane so he can brew his cure, from the woods with him or from Tomlin in Langston.";
+        if (Number(s.wol_chapter) === 3) return "Follow the track southwest of Langston into the druid's grove and speak with Roi Sunderhammer.";
         if (Number(s.wol_chapter) === 2) return "Speak with Tomlin at his herb garden on the western edge of Langston.";
         return "Find what killed Maybelline inside Langston's wall.";
       },
@@ -191,6 +195,12 @@
         if (truthy(s.wol_tomlin_relief_hint)) c.push("Tomlin's grief looked genuine, but relief showed through it for a moment.");
         if (truthy(s.wol_roi_change_seen)) c.push("Roi's face briefly took on canine features when he sneezed.");
         if (truthy(s.wol_roi_magic_suspected)) c.push("Roi's druidic shape is answering an illness or curse without his consent.");
+        if (truthy(s.wol_wolf_hair_found)) c.push("The coarse hair you found on the track crumbled into a shimmer like light on moving water.");
+        if (s.wol_wolf_choice === "called_out") c.push("Something huge snarled \"He's mine!\" from the bank above the track to Roi's grove.");
+        if (truthy(s.wol_roi_cured)) c.push("Roi Sunderhammer, the druid of the grove, was shifting into a wolf against his will: polypox, a shapechangers' disease. Tea of sage, hornwort and wolfsbane cured it.");
+        if (truthy(s.wol_roi_sick_new_moon)) c.push("Roi first felt unwell around the new moon, two weeks before the full moon of Maybelline's death.");
+        if (truthy(s.wol_roi_claw_not_scrapling)) c.push("Roi says Maybelline was mauled by beasts much larger than a scrapling.");
+        if (truthy(s.wol_roi_night_gap)) c.push("Roi honestly cannot remember where he was the night Maybelline died.");
         if (truthy(s.wol_solaine_hymn_wrong)) c.push("The hymn Solaine attributed to the Book of Passing is not in that book.");
         if (truthy(s.wol_solaine_tomlin_hint)) c.push("Solaine and Tomlin concealed a familiarity older than the funeral.");
         if (truthy(s.wol_mayor_history_wrong)) c.push("Mayor Anathram's account of the Battle of Three Rivers contains serious errors.");

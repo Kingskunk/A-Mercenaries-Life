@@ -1,0 +1,955 @@
+*comment ====================================================================================
+*comment THE WOLVES OF LANGSTON -- CHAPTER 3: SPEAKING TO ROI
+*comment This section carries the source's walk to the druid's grove (sections 102 to 150): the silent wood and, as a cold open, the hunched shape that follows the player along the track (a forest version of the
+*comment night scene on the inn roof in Chapter 2's source: the shape with the outstretched arm, "He's mine!", the laugh, the claw marks and the hair that crumbles into a shimmer); the clearing and two stirges (the source's
+*comment one, doubled for the challenge; no blood drain); the grove and the reddish wolf; and the polypox recipe. Roi in wolf form is never a fight: attacking him is ONE skill check with an else (source 130 -> 123 or 141, both
+*comment converging on 119), and the peaceful routes (ration, plain speech, Speak with Animals) end at 131. Both reach the recipe in hand (wol_polypox_recipe) and wol_ch3_cure_hub, where the herbs (sage, hornwort, wolfsbane
+*comment through flags, not items) are the next piece. Entered from Langston/roi_grove.txt rg_arrive; wol_ch3_resume dispatches on the saved checkpoint.
+*comment Open world: any hour, any weather. The place and sky layers live in roi_grove.txt and are reused; the silence, the light on the shape and the open-sky layer branch here.
+*comment ====================================================================================
+
+*label wol_ch3_start
+*if (not(wol_chapter_3_started))
+  *set wol_chapter_3_started true
+  *set wol_chapter 3
+  *set wol_chapter_3_checkpoint "wood"
+*goto wol_ch3_resume
+
+*label wol_ch3_resume
+*if (wol_chapter_3_checkpoint = "wood")
+  *goto wol_ch3_wood
+*if (wol_chapter_3_checkpoint = "clearing")
+  *goto wol_ch3_clearing
+*if (wol_chapter_3_checkpoint = "stirge")
+  *goto wol_ch3_stirge_attack
+*if (wol_chapter_3_checkpoint = "stirge_won")
+  *goto wol_ch3_stirge_won
+*if (wol_chapter_3_checkpoint = "grove")
+  *goto wol_ch3_grove
+*if (wol_chapter_3_checkpoint = "recipe")
+  *goto wol_ch3_cure_hub
+*if (wol_chapter_3_checkpoint = "cured")
+  *goto wol_ch3_cured_hub
+*set wol_chapter_3_checkpoint "wood"
+*goto wol_ch3_wood
+
+*comment ── SOUND LAYER ── The wood has gone quiet. Written for the hour and the weather so it never names a bird at night or a hum in a gale.
+*label wol_ch3_silence
+*if (weather_severity >= 3)
+  Even through the noise of the weather, the wood feels held still around you.
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  No owl calls, and nothing small stirs in the leaf litter.
+*elseif (weather_wet)
+  No birds call from the dripping branches, and the wood gives back no sound but the rain.
+*elseif (weather_cold)
+  No birds call, and the snow muffles every other sound.
+*else
+  No birds are singing. No insects hum in the undergrowth, and not even a raven calls from far off.
+*return
+
+*comment ── THE LIGHT ON THE SHAPE ── How the same figure looks in each hour and weather. Never names the sun at night or a moon under cloud.
+*label wol_ch3_shape_light
+*if (weather_severity >= 3)
+  The weather tears at the branches, and each time they thrash apart you see it again, outlined and still.
+*elseif (weather = "Fog")
+  Mist hangs between you and the bank, and the shape stands half inside it.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Snow sifts down on its shoulders and lies there without melting.
+*elseif (weather = "Rain")
+  Rain runs down the bank and over the shape, and it does not shake the water off.
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *if (weather = "Clear")
+    The moon has found a gap in the canopy and rims the shape in silver.
+  *else
+    There is no moon to see it by, only a darker outline against the dark trunks.
+*elseif (time_period = "Dusk")
+  The last low light runs along its outline like the edge of a coal.
+*elseif (weather = "Clear")
+  Sunlight through the leaves rims it in gold and leaves its face in shadow.
+*else
+  The flat grey light shows its outline and nothing of its face.
+*return
+
+*comment ── OPEN SKY ── The clearing and the grove's pasture lie open to the weather, so the canopy layer in roi_grove.txt does not apply. One sentence, by weather and hour.
+*label wol_ch3_open_sky
+*if (weather_severity >= 3)
+  *if (weather_cold)
+    Snow drives across the open ground in sheets.
+  *else
+    Wind and rain sweep across the open ground in long gusts.
+*elseif (weather = "Fog")
+  Mist lies on the grass and swallows the far edge of the open ground.
+*elseif (weather = "Rain")
+  Rain falls steadily on the open grass.
+*elseif (weather = "Sleet")
+  Sleet rattles down on the open grass and bounces off the stones.
+*elseif (weather = "Snow")
+  Snow settles on the open grass in a thin, even layer.
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *if (weather = "Clear")
+    Moonlight lies over the open ground, bright enough to throw shadows.
+  *else
+    Cloud covers the sky above the open ground, and the dark lies close.
+*elseif (time_period = "Dusk")
+  The last low light stretches the shadows of the trees across the grass.
+*elseif (weather = "Clear")
+  Sunlight pours onto the open grass.
+*else
+  Grey light spreads evenly over the open grass.
+*return
+
+*label wol_ch3_wood
+*set scenery_subplace "forest"
+*gosub_scene Langston/roi_grove rg_place
+*gosub_scene Langston/roi_grove rg_sky
+*gosub wol_ch3_silence
+
+Your own steps are the loudest thing in the wood, and after a while you notice that something is keeping pace with them. A branch sways that the wind did not move. A patch of leaf litter ahead of you is pressed flat, and when you reach it the print is gone. Twice, something moves off to your left, always just out of sight. Each time you stop and turn, the trees are only trees.
+
+Then the track bends round a bank of earth and roots, and you stop for a third time.
+
+Something stands on top of the bank ten paces ahead: a hunched, hairy shape, bigger than any dog and too upright for a wolf. One long arm is stretched toward you, and it waits there as if you ought to take what it is offering.
+
+*gosub wol_ch3_shape_light
+Its eyes burn gold.
+
+*choice
+  # Call out to it.
+    *set wol_wolf_choice "called_out"
+    You call out and ask what it wants. The arm lowers, and the shape keeps its powerful body close to the top of the bank, bristling with hair that may be hide or may be its own.
+
+    "He's mine!" it snarls, with the force of a whip cracking.
+
+    A low growl rolls through the trees, and the shape drops back over the bank. It does not show itself again.
+    *goto wol_ch3_after_wolf
+  # Shout for help.
+    *set wol_wolf_choice "called_for_help"
+    You shout for anyone who can hear you. The golden eyes narrow, and you brace for it to come down the bank. Instead its shoulders start to shake. It is laughing at you.
+
+    It slips back over the bank while your own voice dies among the trunks. Nobody answers.
+    *goto wol_ch3_after_wolf
+  # Go after it.@{show_stat_hints  [Athletics or Survival DC 12]|}
+    *set wol_wolf_choice "gave_chase"
+    *goto wol_ch3_climb
+
+*comment After a call, the player can still go up the bank or walk on; after a chase the climb is the first thing they do.
+*label wol_ch3_after_wolf
+*choice
+  # Climb the bank to where it stood.@{show_stat_hints  [Athletics or Survival DC 12]|}
+    *goto wol_ch3_climb
+  # Walk on toward the grove.
+    *goto wol_ch3_walk_on
+  # Stay where you are and watch the trees for a while.
+    The wood settles around you. Small sounds come back one at a time: dripping, creaking, leaves shifting, and nothing else moves among the trunks. When you have waited long enough to be sure, you let out your breath.
+    *goto wol_ch3_walk_on
+
+*label wol_ch3_climb
+*gosub_scene dice_engine roll_skill_check 12 "athletics" "" "survival" "" "" ""
+*set minutes_to_pass 10
+*set time_advance_call_id "wol_ch3_climb_1"
+*gosub_scene Langston/langston lg_walk_time
+*if (check_success)
+  The bank is steep and loose with roots, but you find footholds in the tangle and haul yourself over the top to where the shape was standing.
+
+  Long claw marks are gouged down the bark of the nearest trunk, at the height of your head. There are none on any other tree.
+
+  *set wol_wolf_tracks_found true
+  You look closer for anything else it left.
+  *gosub_scene dice_engine roll_skill_check 10 "investigation" "" "" "" "" ""
+  *if (check_success)
+    *set wol_wolf_hair_found true
+    A few tufts of coarse animal hair are caught in the splintered bark, and only there. When you pick one free and roll it between your fingers, it crumbles into a shimmer like light on moving water and is gone.
+  *else
+    You turn over the roots and the bark around the marks, but find nothing more than the gouges themselves.
+  *goto wol_ch3_walk_on
+*else
+  The roots are slick and the earth gives way beneath you. By the time you scrabble over the top there is only trampled leaf litter that leads off in three directions at once, and the trail goes cold.
+  *goto wol_ch3_walk_on
+
+*label wol_ch3_walk_on
+*set wol_grove_cold_open_seen true
+*set wol_chapter_3_checkpoint "clearing"
+You go on along the track. Whatever it is has marked out this ground, and the feeling of being watched stays between your shoulder blades until the trees stand back on either side.
+*page_break Come to the clearing…
+*goto wol_ch3_clearing
+
+*comment ── THE CLEARING (source 122) ── A spot-check for threats. Nature or Perception 15: spotted, the stirges are dozing and the player strikes first; missed, they drop out of the tree.
+*label wol_ch3_clearing
+*set scenery_subplace "forest"
+*set wol_chapter_3_checkpoint "clearing"
+The track runs on south through the silent trees, then opens into a patch of bare light. For a moment you take it for the druid's grove, but it is only a place where the canopy has parted and the grass has crept in to fill the gap.
+
+*gosub wol_ch3_open_sky
+
+Your legs would welcome a halt here, but the quiet prickles at the back of your neck, so you look the place over before you stop.
+
+*gosub_scene dice_engine roll_skill_check 15 "nature" "" "perception" "" "" ""
+*if (check_success)
+  *set wol_stirge_spotted true
+  Two small shapes hang from a low branch at the edge of the clearing: leathery wings folded over round bodies, clawed feet hooked into the bark, long needle snouts drooping as they doze. Stirges. Both are asleep, and you have your weapon ready before either stirs.
+
+*else
+  *set wol_stirge_spotted false
+  You are still scanning the edge of the grass when leathery wings snap open above you.
+
+*goto wol_ch3_stirge_attack
+
+*comment ── THE STIRGES (source 144) ── Two elderly stirges (3 HP, AC 14, +4 to hit) as the library's beast: d6+1 piercing against the source's 1d4+2, the same average. No blood drain. They cannot be outrun in the air, so the fight ends in a win or a death.
+*label wol_ch3_stirge_attack
+*set scenery_subplace "forest"
+*set wol_chapter_3_checkpoint "stirge"
+*if (wol_stirge_spotted)
+  The nearer one wakes first, and the other follows a heartbeat later. They come off the branch together, but you are already moving.
+*else
+  Two tiny creatures drop out of the branches on leathery wings, each a lunging proboscis and six clawed feet, and they are on you before you can pick your ground.
+
+The stirges are some unholy union of bat and mosquito, and they look worse for wear. Their wings are haggard, their edges ragged, and their bodies have the washed-out look of something starved. They are ravenous, and they fight to the death.
+
+*set combat_is_nonlethal false
+*set combat_no_flee true
+*set combat_lib_1 "beast"
+*set combat_enemy_name_override "Elderly Stirge"
+*set combat_enemy_epithet_override "the elderly stirge"
+*set combat_enemy_hp_override 3
+*set combat_enemy_ac_override 14
+*set combat_enemy_atk_override 4
+*set combat_enemy_size_override "tiny"
+*set combat_lib_2 "beast"
+*set combat_enemy2_name_override "Elderly Stirge"
+*set combat_enemy2_epithet_override "the elderly stirge"
+*set combat_enemy2_hp_override 3
+*set combat_enemy2_ac_override 14
+*set combat_enemy2_atk_override 4
+*set combat_enemy2_size_override "tiny"
+*if (wol_stirge_spotted)
+  *set combat_player_surprise true
+*else
+  *set combat_enemy_advantage true
+*set combat_player_can_die true
+*gosub_scene combat fight_library
+*set combat_player_can_die false
+*if (combat_outcome = "player_died")
+  *goto wol_ch3_stirge_death
+*goto wol_ch3_stirge_won
+
+*label wol_ch3_stirge_death
+The blood loss is too much. Your knees fold, and the grass of the clearing rises to meet you. You are so tired, and a short rest is all you need. You close your eyes for a moment, certain you will be fine after a short rest.
+*set death_cause "combat"
+*set death_location_name "Roi's Grove"
+*set death_enemy_epithet "the elderly stirge"
+*goto_scene death death_screen
+
+*label wol_ch3_stirge_won
+*set wol_chapter_3_checkpoint "stirge_won"
+You knock the last little bloodsucker out of the air. It drops to the ground, twitches a couple of times, and lies still.
+
+The clearing is a good place to catch your breath, so you sit on a fallen log and let your pulse settle. As you rest, the hush stays pressed on the woods. The stirges were not what silenced it.
+*gosub_scene character_progression free_short_rest
+*gosub_scene character_progression free_short_rest_banner
+
+When you are ready to move on, you shoulder your pack and follow the track south.
+*set wol_chapter_3_checkpoint "grove"
+*page_break Come to the grove…
+*goto wol_ch3_grove
+
+*comment ── THE GROVE (source 150, 143, 137, 116, 156) ── The pasture, the rock home and the reddish wolf. Sneaking is a Stealth check: seen feeding it can be struck first, lost it comes out to meet you.
+*label wol_ch3_grove
+*set scenery_subplace "rois_grove"
+*set wol_chapter_3_checkpoint "grove"
+After a few more twists through the woods, you reach the edge of the trees above what can only be the druid's home.
+
+The woods open into a pasture dotted with wildflowers.
+*gosub wol_ch3_open_sky
+A craggy outcropping of stone juts up from the centre, and under an overhang you can make out a small kitchen, a hammock, a table and a chest. It looks like a cottage that has kept most of its walls in the rock. The druid is out of sight.
+
+Someone does live here, though. Near the outcropping stands a medium-sized wolf, stocky and rusty red in colour. It is looking elsewhere, though it lifts its head to sniff the air from time to time.
+
+*choice
+  # Sneak into the grove.@{show_stat_hints  [Stealth DC 13]|}
+    *goto wol_ch3_sneak
+  # Stride into the grove.
+    *goto wol_ch3_stride
+
+*label wol_ch3_sneak
+*gosub_scene dice_engine roll_skill_check 13 "stealth" "" "" "" "" ""
+*if (check_success)
+  You slip off the track into the nearby woods, stepping on the soft moss, and circle the grove until you see the wolf from a different angle. It is chewing at something in the grass. The wolf is absorbed in its meal as you get closer, and you can now see that it is a dead rabbit.
+
+  Something is odd about its movements. It eats gingerly, as if the taste is strange to it, and even whimpers a little. It picks at the haunches and passes over the choicest innards.
+  *choice
+    # Strike while it feeds.@{show_stat_hints  [Athletics or Acrobatics DC 9]|}
+      *goto wol_ch3_attack_ambush
+    # Make your presence known.
+      *goto wol_ch3_stride
+*else
+  You slip off the track and creep toward the grove, but loose gravel scuffles underfoot. You glance down at the offending patch of ground, and when you look up again the wolf has vanished.
+
+  You look behind you and all around the grove, but the animal is nowhere to be seen. Then the wolf trots out from behind the rocky outcropping, its muzzle covered in the blood of what it had been eating. It stretches and looks at you intently, standing quite still.
+  *goto wol_ch3_wolf_choice
+
+*label wol_ch3_stride
+You walk openly into the grove. The druid clearly enjoys the sun, for the grove is a wide clearing, with clumps of flowers both wild and cultivated around the stone outcropping that stands at its centre as a cabin.
+
+As you approach, the wolf stalks into view from behind the druid's home. Its head is low and its hackles are up, but its lips stay down over its teeth. As you and the wolf look at each other, you see that its muzzle is smeared and speckled with fresh blood.
+*goto wol_ch3_wolf_choice
+
+*comment ── THE WOLF (source 110, 130, 145, 134, 118) ── Peaceful routes all lead to the druid's home (131). The attack is ONE check with an else.
+*label wol_ch3_wolf_choice
+*choice
+  *if (has_trail_rations) # Set out a ration for it.
+    *goto wol_ch3_ration
+  # Speak to it plainly.
+    *goto wol_ch3_speak
+  *if (known_speak_with_animals) # Speak to it with Speak with Animals.
+    *goto wol_ch3_speak_animals
+  # Attack the wolf.@{show_stat_hints  [Athletics or Acrobatics DC 12]|}
+    *goto wol_ch3_attack
+
+*label wol_ch3_ration
+You pull a ration out of your pack and set it on the ground. The wolf sniffs at it and takes a bite, then nods in appreciation as it snaps and snuffles through the meal. When it has finished it sits on its haunches, licking its lips, and looks to you expectantly.
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *gosub_scene equipment spend_consumable "trail_rations"
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+*gosub_scene dice_engine heroic_award "wolves_ch3_ration"
+*choice
+  # Speak to it plainly.
+    *goto wol_ch3_speak
+  *if (known_speak_with_animals) # Speak to it with Speak with Animals.
+    *goto wol_ch3_speak_animals
+
+*label wol_ch3_speak
+The wolf seems unusually intent on you and responsive to your actions. You wonder out loud whether it can understand you.
+
+It nods.
+
+You ask what the wolf is and why it can understand you. It trots over to the living area under the outcropping and noses around a pile of tattered clothes. A moment later it comes trotting back with a wooden druidic holy symbol and drops it at your feet.
+
+You have found the druid.
+
+*goto wol_ch3_home
+
+*label wol_ch3_speak_animals
+You open your mouth to speak, but the wolf cuts you off.
+
+"Oh, thank the gods," it says in a gravelly voice you are sure you have heard before. "You've come at just the right time, adventurer. Visit the herbalist Tomlin and ask him for a polypox cure. He'll know what to do, and I'll help you with whatever you need when I'm myself again."
+
+You ask who he is.
+
+"Well, I'm the druid of this grove," he says, and barks out a laugh. "Roi Sunderhammer. Normally a dwarf, but since I seem to have come down with a case of polypox, I have even more hair than usual. I don't know how long this spell of yours will last, and it's taking a lot of effort besides. The blasted polypox is making it hard to think in terms of language."
+*gosub_scene dice_engine heroic_award "wolves_ch3_speak_animals"
+
+The druid in the form of a shaggy wolf goes quiet but keeps his attention on you.
+
+*goto wol_ch3_home
+
+*comment ── THE DRUID'S HOME (source 131) ── Inside the rock overhang: the wolf leads, finds the polypox page in a box of scrolls, and the recipe is in hand.
+*label wol_ch3_home
+*set scenery_subplace "rois_grove_shelter"
+You ask the druid to take his dwarven shape again, but he shakes his head with a woeful look. He trots toward the home built under the outcropping and plainly wants you to follow.
+
+Inside, the home is as joyfully sloppy as the dwarf himself. The wolf pads around for a few minutes until he jams his snout into a box of scrolls. After he has lifted a few out and you have unfurled them, he places a paw on one.
+
+The page is headed [i]Polypox; or, Doppelganger's Curse[/i]. It describes a bloodborne disease that afflicts those who can change their shape: doppelgangers, dragons if they contract it, and even unfortunate members of Druidic Circles. It causes sporadic, uncontrollable shapeshifts that last as long as the disease itself, which can run for weeks. In extreme cases, delirium and even memory loss can follow.
+
+Beneath the description is a recipe for a decoction of wolfsbane, sage and hornwort. You ask whether these herbs grow nearby, and the druid nods. You ask whether the herbalist will have them too, and he gives another emphatic nod. You ask whether you may take the page from the book, and the wolf nods again.
+
+*goto wol_ch3_recipe
+
+*comment ── THE ATTACK (source 130, 123, 141, 119) ── One check, an else. Striking first from the grass makes it easier. Both outcomes converge on Roi's laughter and the page.
+*label wol_ch3_attack
+*gosub_scene dice_engine roll_skill_check 12 "athletics" "" "acrobatics" "" "" ""
+*goto wol_ch3_attack_result
+
+*label wol_ch3_attack_ambush
+*gosub_scene dice_engine roll_skill_check 9 "athletics" "" "acrobatics" "" "" ""
+*goto wol_ch3_attack_result
+
+*label wol_ch3_attack_result
+*set wol_chapter_3_roi_fought true
+The wolf straightens for a moment, then seems to smile. It puts its head down, tail wagging furiously, and charges you.
+
+*if (check_success)
+  You meet it with everything you have and strike it hard. It collapses into the grass and struggles to rise once before falling back.
+
+  Then its fur starts to recede. Muscle and sinew warp and shift until a battered red-haired dwarf lies there in its place. He is fully clothed: his garments seem to grow out of his skin as he changes, buckles and all.
+
+  You leap forward to lend aid, but stop short when he starts roaring with laughter.
+
+  "Did you know?" he asks, wiping tears of mirth from his eyes.
+
+  Your puzzled expression says it all, and he laughs even harder. He whispers a short incantation and lays a hand over his more serious wounds. A green glow seeps from between his fingers, and he sighs with relief.
+
+  "Better to be lucky than good, eh?" he says, giving your shoulder a stinging slap. "Never would have occurred to me that if I killed the wolf's body, I'd return to my own. Guess it didn't really occur to you either."
+
+*else
+  Though the wolf has been unusually slow and clumsy, it still manages to bite and scratch you into the ground. You black out.
+
+  After an unknown stretch of darkness, you come to with a gasp. In front of you an injured dwarf with red hair is pulling his hands back from you. You feel the fading tingle of healing magic, and you know now that you have found the druid. You are as groggy as you would expect after a brush with death, and the dwarf looks as though he has been in a fight too, clutching an obviously broken arm to his side.
+
+  *if (hp_current > 1)
+    *set hp_current 1
+
+  [b][❤ You are at 1 HP.][/b]
+
+  At the sight of your confusion, he belly-laughs loud enough to echo off the trees.
+
+  "You're half lucky, adventurer," he says. "Stroke of accidental genius, trying to kill me like that!"
+
+  It dawns on you that this is the wolf you fought. The realisation must have shown on your face, for the dwarf nods and grins.
+
+  "But only half lucky, because even when I was pulling my punches, I managed to put you down. Still got it, eh? Eh?" He bobs and weaves behind upraised fists before wincing and cradling his broken arm again. "But you helped me figure out that if I killed the wolf, I'd return. Not an ideal solution, but it did the trick."
+*page_break Roi laughs…
+*goto wol_ch3_roi_laughs
+
+*label wol_ch3_roi_laughs
+*set scenery_subplace "rois_grove"
+Roi the druid laughs for a solid minute.
+
+"I don't know if you're the smartest or the luckiest adventurer in the world," he says. "But I thank the stars for your help in returning me to my original form. Never thought I'd miss my tangled beard so much!"
+
+He claps you on the back a little too hard.
+
+"You're all right, adventurer," he booms, then lets out a sneeze that echoes. "But I'm afraid my relief may be short-lived. I've got polypox, a terrible disease for shapeshifters that makes it impossible to hold our shape. It's not usually dangerous, but it's been known to cause some pretty nasty fevers, even to the point of delirium. It's all here."
+
+He hands you a sheet of paper headed [i]Polypox; or, Doppelganger's Curse[/i]. It describes a bloodborne disease that afflicts those who can innately change their shape: doppelgangers, dragons if they contract it, and even unfortunate members of Druidic Circles. It causes sporadic, uncontrollable shapeshifts that last as long as the disease itself, which can run for weeks. In extreme cases, delirium and even memory loss can follow.
+
+As if to prove his point, he breaks into a sneezing fit. With each outburst, Roi's features shift subtly. His hair bristles, his ears sharpen into points, and his face lengthens slightly. When it stops, he shakes himself like a wet dog and returns to normal.
+
+"Lucky for me, that cure's pretty simple," he says. "A tea of steeped hornwort, sage and wolfsbane should do the trick. You can find these here in the woods if you know where to look, or get them from Tomlin in town. If you can help me with that, I can help you with whatever it is you came to me for."
+
+Then Roi starts to sneeze, and this time he keeps going. He sneezes violently, with a shake each time, as more of his dwarven appearance fades and the wolf reasserts itself.
+
+You back up, knowing you probably cannot catch the illness but taking no chances. With one final sneeze and a shiver, the same shaggy, reddish wolf is looking up at you. Roi sits on his haunches and whines.
+
+*goto wol_ch3_recipe
+
+*comment ── THE RECIPE ── Every route ends here with the page in hand. The herbs are flags, not items (the user's call), and come next.
+*label wol_ch3_recipe
+*set wol_polypox_recipe true
+*set wol_chapter_3_checkpoint "recipe"
+
+[b][📜 Received: Polypox cure recipe][/b]
+
+*set scenery_subplace "rois_grove"
+*goto wol_ch3_cure_hub
+
+*comment ── THE CURE HUB ── Roi waits in wolf form. The player forages with him (below), fetches from Tomlin in town, and brews here once all three herbs are in the pack. Every visit lands here until the cure is brewed.
+*label wol_ch3_cure_hub
+*set scenery_subplace "rois_grove"
+*set wol_chapter_3_checkpoint "recipe"
+*gosub wol_ch3_open_sky
+*gosub wol_ch3_missing_list
+*temp ch_can_forage false
+*if ((sage < 1) and (wol_forage_sage = ""))
+  *set ch_can_forage true
+*if ((hornwort < 1) and (wol_forage_hornwort = ""))
+  *set ch_can_forage true
+*if ((wolfsbane < 1) and (wol_forage_wolfsbane = ""))
+  *set ch_can_forage true
+Roi lies on the stones by the outcropping in his wolf shape, sneezing now and then and watching you with patient eyes.
+*if (wol_ch3_missing = "")
+  Everything the tea needs is in your pack.
+*else
+  The tea for his cure still needs ${wol_ch3_missing}.
+*if ((not(ch_can_forage)) and (not(wol_ch3_missing = "")))
+  The woods have given up what they will with Roi's help, and the rest waits in town, with the herbalist Tomlin.
+
+*choice
+  *if (wol_ch3_missing = "")
+    # Brew the tea for Roi's cure.
+      *goto wol_ch3_brew
+  *if (ch_can_forage)
+    # Search the woods for the herbs, with Roi to guide you.
+      *goto wol_ch3_forage_start
+  # Leave the grove.
+    *goto_scene overworld/overworld ow_here
+
+*comment The herbs still missing, as one phrase in wol_ch3_missing: "sage", "sage and wolfsbane", "sage, hornwort and wolfsbane". Empty when the pack holds all three.
+*label wol_ch3_missing_list
+*set wol_ch3_missing ""
+*temp ml_n 0
+*if (sage < 1)
+  *set ml_n + 1
+*if (hornwort < 1)
+  *set ml_n + 1
+*if (wolfsbane < 1)
+  *set ml_n + 1
+*temp ml_left ml_n
+*if (sage < 1)
+  *set ml_left - 1
+  *set wol_ch3_missing "sage"
+*if (hornwort < 1)
+  *set ml_left - 1
+  *if (wol_ch3_missing = "")
+    *set wol_ch3_missing "hornwort"
+  *elseif (ml_left = 0)
+    *set wol_ch3_missing (wol_ch3_missing & " and hornwort")
+  *else
+    *set wol_ch3_missing (wol_ch3_missing & ", hornwort")
+*if (wolfsbane < 1)
+  *set ml_left - 1
+  *if (wol_ch3_missing = "")
+    *set wol_ch3_missing "wolfsbane"
+  *elseif (ml_left = 0)
+    *set wol_ch3_missing (wol_ch3_missing & " and wolfsbane")
+  *else
+    *set wol_ch3_missing (wol_ch3_missing & ", wolfsbane")
+*return
+
+*comment ── FORAGING WITH ROI (source 146, 125, 120, 133) ── One closed outing, a free order, ONE try at each herb with advantage because Roi's nose is helping. A miss finds nothing and Tomlin is the fallback; every try costs time.
+*label wol_ch3_forage_start
+*set scenery_subplace "forest"
+The wolf tosses his head toward the trees and trots off, and you follow. He leads you to a patch of woods where the ground rises out of the undergrowth, and there he sits and yips. Clearly this is where you are meant to start. His nose goes to the ground, and his heightened senses will be worth a great deal in finding what he needs, while you are there to do the harvesting.
+*gosub_scene Langston/roi_grove rg_sky
+*goto wol_ch3_forage_menu
+
+*label wol_ch3_forage_menu
+*set scenery_subplace "forest"
+*temp fm_any false
+*if ((sage < 1) and (wol_forage_sage = ""))
+  *set fm_any true
+*if ((hornwort < 1) and (wol_forage_hornwort = ""))
+  *set fm_any true
+*if ((wolfsbane < 1) and (wol_forage_wolfsbane = ""))
+  *set fm_any true
+*if (not(fm_any))
+  Roi gives one long look at the trees, then turns and pads back toward the grove with his head low.
+  *page_break Return to the grove…
+  *goto wol_ch3_cure_hub
+*choice
+  *if ((sage < 1) and (wol_forage_sage = ""))
+    # Look for wild sage.@{show_stat_hints  [Survival or Nature DC 10, with advantage]|}
+      *goto wol_ch3_forage_sage
+  *if ((hornwort < 1) and (wol_forage_hornwort = ""))
+    # Look for hornwort.@{show_stat_hints  [Survival or Nature DC 12, with advantage]|}
+      *goto wol_ch3_forage_hornwort
+  *if ((wolfsbane < 1) and (wol_forage_wolfsbane = ""))
+    # Look for wolfsbane.@{show_stat_hints  [Survival or Nature DC 15, with advantage]|}
+      *goto wol_ch3_forage_wolfsbane
+  # Go back to the grove.
+    *goto wol_ch3_cure_hub
+
+*label wol_ch3_forage_sage
+You and the druid work together to find wild sage. Roi snuffles along the foot of a bank of stones while you turn over the leaf litter beside him.
+*set advantage true
+*gosub_scene dice_engine roll_skill_check 10 "survival" "" "nature" "" "" ""
+*set minutes_to_pass 30
+*set time_advance_call_id "wol_ch3_forage_sage_1"
+*gosub_scene Langston/langston lg_walk_time
+*if (check_success)
+  *set wol_forage_sage "found"
+  Roi stops and paws at the ground, and you uncover a patch of wild sage in the shelter of the stones. You harvest enough to brew a tea.
+  *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+    *gosub_scene equipment grant_gear "sage" 1
+    *set stat_bump_locked true
+    *set locked_stat_bump_page_id page_id
+
+  [b][🌿 Gathered: Sage][/b]
+*else
+  *set wol_forage_sage "missed"
+  Despite your best efforts, you cannot find the wild sage you need. Roi sneezes at the dust of the dry leaves and gives a shrug.
+*page_break Go on…
+*goto wol_ch3_forage_menu
+
+*label wol_ch3_forage_hornwort
+The druid leads you to a shallow pond that you never would have noticed without him. It looks a good place for wild hornwort, so you wade into the water and search the weed for the feathery stems.
+*set advantage true
+*gosub_scene dice_engine roll_skill_check 12 "survival" "" "nature" "" "" ""
+*set minutes_to_pass 30
+*set time_advance_call_id "wol_ch3_forage_hornwort_1"
+*gosub_scene Langston/langston lg_walk_time
+*if (check_success)
+  *set wol_forage_hornwort "found"
+  You find hornwort growing thick below the surface. You gather enough for the cure and set it, dripping, in your pack.
+  *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+    *gosub_scene equipment grant_gear "hornwort" 1
+    *set stat_bump_locked true
+    *set locked_stat_bump_page_id page_id
+
+  [b][🌿 Gathered: Hornwort][/b]
+*else
+  *set wol_forage_hornwort "missed"
+  Despite your best efforts, you cannot find the hornwort you need. You come out of the pond soaked to the knees and with nothing to show for it.
+*page_break Go on…
+*goto wol_ch3_forage_menu
+
+*label wol_ch3_forage_wolfsbane
+Wolfsbane should be in season, but given how toxic it is, Roi is unlikely to grow it near the grove. You need a bright clearing farther into the woods, so the two of you push on along a deer path, the wolf ranging ahead with his nose down.
+*set advantage true
+*gosub_scene dice_engine roll_skill_check 15 "survival" "" "nature" "" "" ""
+*set minutes_to_pass 45
+*set time_advance_call_id "wol_ch3_forage_wolfsbane_1"
+*gosub_scene Langston/langston lg_walk_time
+*if (check_success)
+  *set wol_forage_wolfsbane "found"
+  Roi finds it first: tall stems with hooded blue flowers, nodding in a clearing where the canopy lets the light through. You cut a number of stems with care, keeping the sap off your eyes and face.
+  *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+    *gosub_scene equipment grant_gear "wolfsbane" 1
+    *set stat_bump_locked true
+    *set locked_stat_bump_page_id page_id
+
+  [b][🌿 Gathered: Wolfsbane][/b]
+*else
+  *set wol_forage_wolfsbane "missed"
+  You search every sunny opening along the path, but cannot find the wolfsbane you need.
+*page_break Go on…
+*goto wol_ch3_forage_menu
+
+*comment ── TOMLIN'S ERRAND (source 104, 114, 108, 112, 129) ── A CLOSED event, entered from the town hub through tomlin_cottage.lg_tomlin while the recipe is held, the errand is not yet done and the pack lacks a herb. It covers every herb the pack lacks, in one visit: sage (the trellis),
+*comment hornwort (pay, or persuade; a player who cannot pay is never stranded) and wolfsbane (a careful hand; a slip leaves the player Poisoned for an hour). Every task ends with the herb in hand, only the price differs. Each task costs time. It ends in Tomlin's shop.
+*label wol_ch3_tomlin_errand
+*set scenery_subplace "tomlin_herbalist_workroom"
+*gosub wol_ch3_missing_list
+Tomlin looks up from the filtration bench as you come in, and the easy smile reaches his eyes. You tell him about the polypox cure and what Roi's tea still needs: ${wol_ch3_missing}.
+
+"Ah, well, that shouldn't be too hard," he says, wiping his fingers on a cloth. "Let's see what I can do."
+*page_break Follow Tomlin…
+*goto wol_ch3_errand_sage
+
+*label wol_ch3_errand_sage
+*if (sage > 0)
+  *goto wol_ch3_errand_hornwort
+*set scenery_subplace "tomlin_cottage"
+"I have sage growing in the garden," Tomlin says, "but part of the trellis has fallen into that plot." He takes a hammer and a few nails from a hook by the door and presses them into your hands. "Many hands make light work. If you could help me fix that bit of fence, you can take all the sage you want."
+
+He leads you out to the garden and shows you the sagging lattice. He cannot stay and help, for he has something very delicate brewing and must be near his filtration bench, so he leaves you to it.
+*set minutes_to_pass 20
+*set time_advance_call_id "wol_ch3_errand_sage_1"
+*gosub_scene Langston/langston lg_walk_time
+*gosub wol_ch3_roll_dex 10 "Dexterity"
+*if (check_success)
+  You get the trellis standing in short order. Tomlin appears at your elbow just as you drive the last nail into the lattice, and he runs a thumb along the joint with a nod.
+
+  He cuts the sage himself and ties it in a bundle for you.
+*else
+  The trellis fights you every step of the way. A nail bends, the hammer slips, and a post comes down across your shin. You get the fence standing in the end, but you are battered, bruised and scraped.
+
+  [b][❤ You take 1 damage.][/b]
+*comment One lock for everything this page changes: the herb and, on a slip, the bruise.
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *if (not(check_success))
+    *if (hp_current > 1)
+      *set hp_current - 1
+  *gosub_scene equipment grant_gear "sage" 1
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+
+[b][🌿 Received: Sage][/b]
+*page_break Back to the workroom…
+*goto wol_ch3_errand_hornwort
+
+*label wol_ch3_errand_hornwort
+*if (hornwort > 0)
+  *goto wol_ch3_errand_wolfsbane
+*set scenery_subplace "tomlin_herbalist_workroom"
+Hornwort is a water plant, so Tomlin cannot grow it himself and has to get it from his stock. He is expecting a shipment, but it is in high demand, and he asks you to help him cover the cost of collecting it.
+
+"One silver mark will do it," he says, with an apologetic look. "Or, if you would rather not, you could make your case to me."
+*choice
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 10)
+    # Pay Tomlin 1 silver mark for the hornwort.
+      *goto wol_ch3_errand_hornwort_pay
+  # Make your case for the herb.@{show_stat_hints  [Persuasion DC 12]|}
+    *goto wol_ch3_errand_hornwort_persuade
+
+*label wol_ch3_errand_hornwort_pay
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount -10
+  *gosub_scene economy currency_add
+  *gosub_scene equipment grant_gear "hornwort" 1
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+You count a silver mark onto the bench, and Tomlin thanks you warmly for understanding. He fetches the hornwort from a cool crock under the table and wraps it in wet cloth.
+*set minutes_to_pass 10
+*set time_advance_call_id "wol_ch3_errand_hornwort_1"
+*gosub_scene Langston/langston lg_walk_time
+
+[b][💰 Paid: 1 Silver Mark][/b]
+
+[b][🌿 Received: Hornwort][/b]
+*page_break Back to the workroom…
+*goto wol_ch3_errand_wolfsbane
+
+*label wol_ch3_errand_hornwort_persuade
+You lay it out for him: what you did in his garden, whose cure this is, and how little it would cost the world if the herb were a gift.
+*gosub_scene dice_engine roll_skill_check 12 "persuasion" "" "" "" "" ""
+*set minutes_to_pass 10
+*set time_advance_call_id "wol_ch3_errand_hornwort_2"
+*gosub_scene Langston/langston lg_walk_time
+*if (check_success)
+  Tomlin sees your point and presses the herb into your hands without another word about the price.
+  *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+    *gosub_scene equipment grant_gear "hornwort" 1
+    *set stat_bump_locked true
+    *set locked_stat_bump_page_id page_id
+
+  [b][🌿 Received: Hornwort][/b]
+  *page_break Back to the workroom…
+  *goto wol_ch3_errand_wolfsbane
+*else
+  Tomlin is kind and apologetic, but he holds firm. "I'm sorry," he says. "I truly am. The price is the price."
+
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 10)
+    *page_break Pay him…
+    *goto wol_ch3_errand_hornwort_pay
+  *else
+    You count out what you have and find too little to meet it. Tomlin watches you count, then sighs, and the apologetic look softens. "Oh, take it. You can set it against the next time I'm in your debt."
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+      *gosub_scene equipment grant_gear "hornwort" 1
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id page_id
+
+    [b][🌿 Received: Hornwort][/b]
+    *page_break Back to the workroom…
+    *goto wol_ch3_errand_wolfsbane
+
+*label wol_ch3_errand_wolfsbane
+*if (wolfsbane > 0)
+  *goto wol_ch3_errand_end
+*set scenery_subplace "tomlin_herbalist_workroom"
+"Ah, I have plenty of dried wolfsbane," Tomlin says, "but I can't handle it right now." He holds up a bandaged hand. "I hurt myself in the fight against the scraplings. It's a poisonous flower, and I wouldn't want any of its toxins in an open wound."
+
+Instead he leads you to the window and points at the bundles drying there on a string, inviting you to take what you need yourself. You wrap a cloth around your hand and lift down a bundle of purple blooms, taking care with every stem.
+*set minutes_to_pass 15
+*set time_advance_call_id "wol_ch3_errand_wolfsbane_1"
+*gosub_scene Langston/langston lg_walk_time
+*gosub_scene dice_engine roll_skill_check 15 "medicine" "" "sleight_of_hand" "" "" ""
+*if (check_success)
+  Under Tomlin's watchful eye, you pick out the stems and wrap the bundle in oiled paper without letting a drop of sap near your skin.
+*else
+  Your fingers are clumsy at the wrong moment. A stem snaps, the sap runs over the cloth and then, somehow, across your lips. The workroom swims, and Tomlin's hands are on your arms, steering you to a stool.
+
+  "Oh, bad luck," he says. "Sit, and drink this." He puts a cup of water in your hands. "It'll pass in an hour or so. I'd give you antitoxin if I had any, but I'm all out."
+
+  [b][☠ You are Poisoned for about an hour.][/b]
+*comment One lock for everything this page changes: the herb and, on a slip, the poison.
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *if (not(check_success))
+    *gosub_scene character_buffs apply_poisoned 60
+  *gosub_scene equipment grant_gear "wolfsbane" 1
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+
+[b][🌿 Received: Wolfsbane][/b]
+*page_break Back to the workroom…
+*goto wol_ch3_errand_end
+
+*label wol_ch3_errand_end
+*set wol_tomlin_errand_done true
+*set scenery_subplace "tomlin_herbalist_workroom"
+Tomlin dusts his hands and gives a satisfied nod. "That's everything on your list. Take it to Roi while it's fresh, and tell him I wish him a quick recovery." His smile returns. "The shelves are open if you need anything else."
+*page_break Tomlin's workroom…
+*goto_scene Langston/tomlin_shop lg_tshop
+
+*comment A plain ability check with no skill behind it (the source's "Dexterity check"): the ability's modifier and nothing else.
+*label wol_ch3_roll_dex
+*params rd_dc rd_name
+*set check_stat "dex"
+*set check_dc rd_dc
+*set check_skill rd_name
+*set check_add_prof_bonus false
+*gosub_scene dice_engine roll_d20_check
+*return
+
+*comment ── THE BREW (source 140) ── No roll and no Craft menu: a plain choice once the pack holds all three herbs. The three herbs are used up, Roi drinks, and the hour that follows is a rest. The free short rest comes only if the player drinks a cup too (the weak second steeping, sage and hornwort and little else).
+*comment Ends with Roi himself again (wol_roi_cured, which also releases the keep tag on the herbs) and stops where his gift would begin; the gift is the next piece.
+*label wol_ch3_brew
+*set scenery_subplace "rois_grove_shelter"
+Roi pads ahead of you into his home and noses a battered teapot out of a cubby by the fire. You lay out what you have gathered. The sage and the hornwort go into the water first, and the wolfsbane last, one stem at a time, with the sap kept well away from your skin. The steam that rises is bitter and green.
+*set minutes_to_pass 10
+*set time_advance_call_id "wol_ch3_brew_1"
+*gosub_scene Langston/langston lg_walk_time
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *set sage - 1
+  *set hornwort - 1
+  *set wolfsbane - 1
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+
+The only vessel within reach is a bowl of questionable cleanliness, so you pour the steaming brew into that and set it on the floor. The druid has plainly drunk from worse. He laps up the medicine, grimaces, and laps up the rest.
+
+A little pale liquor is left in the pot from the second steeping, thin and mild.
+*choice
+  # Pour yourself a cup of the weak second steeping.
+    *set wol_roi_tea_shared true
+    You find a wooden cup in the chest and drink the second steeping. It tastes of dust and green leaves, but it warms you from the inside.
+
+    *goto wol_ch3_brew_wait
+  # Sit down without drinking.
+    *set wol_roi_tea_shared false
+    *goto wol_ch3_brew_wait
+
+*label wol_ch3_brew_wait
+Roi finishes the bowl and lies down by the fire. You lower yourself onto the ground beside him, and the quiet of the grove settles over you both.
+*if (wol_roi_tea_shared)
+  *gosub_scene character_progression free_short_rest
+  *gosub_scene character_progression free_short_rest_banner
+
+*set minutes_to_pass 60
+*set time_advance_call_id "wol_ch3_brew_2"
+*gosub_scene Langston/langston lg_walk_time
+After about an hour, the wolf's form starts to ripple and shift. Roi gets up and paces, a low whine escaping his throat. With a sound like wind in tall grass, the fur recedes into his skin. His limbs groan and pop as they shorten and twist back into their natural shape. Eventually Roi ceases to be a wolf and changes back into a dwarf, who smiles broadly at you despite a red nose and watery eyes.
+
+"I'm myself again," he says, and sneezes into a cloth. "Thank you. Truly."
+*set wol_roi_cured true
+*set wol_chapter_3_checkpoint "cured"
+*page_break Roi's gratitude…
+*goto wol_ch3_gift
+
+*comment ── ROI'S GIFT (source 140) ── The Silverstar, from Solaine of the Radiant Order, holding one charge of Remove Curse. Given once (wol_roi_silverstar_given); a reload shows the same page. No attunement: the brooch simply holds its charge.
+*label wol_ch3_gift
+*set scenery_subplace "rois_grove_shelter"
+He thanks you again, and more loudly, and says he wants to return the favor. He unclasps the silver starburst brooch from his chest and presses it into your palm.
+
+"This is the Silverstar," he says. "A gift from Solaine. The Radiant Order has a knack for dispelling dark magic, and since we druids have trouble removing curses, she thought it would be helpful. I've never used it, but maybe you can find a use for it."
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *if (not(wol_roi_silverstar_given))
+    *set wol_roi_silverstar_given true
+    *set has_silverstar true
+    *set silverstar_charged true
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+
+[b][🎁 Received: The Silverstar][/b]
+
+The brooch is warm from his chest and weighs almost nothing. A single charge of Remove Curse waits inside it, to be spent at a touch, and it glows brightly and sheds star-like motes when it is. A second Remove Curse working would fill it again.
+*page_break Roi's grove…
+*goto wol_ch3_cured_hub
+
+*comment ── ROI CURED, HIS LAST QUESTIONS (source 140, 111, 127, 132, 128, 106, 124, 117) ── A repeating menu, each question once: when he fell ill (Heroic Inspiration), the scrapling claw (Roi binds it into a +1 club that holds for a week), where he was the night Maybelline died
+*comment (an Insight read), then rest and the way out, past the damaged tankard. Ends the chapter: wol_chapter_3_complete, and the mayor's note waits for the next Langston hub (wol_ch3_note).
+*label wol_ch3_cured_hub
+*set scenery_subplace "rois_grove"
+*set wol_chapter_3_checkpoint "cured"
+*gosub wol_ch3_open_sky
+Roi sits on a flat stone by the outcropping in his dwarven shape, red hair loose over his shoulders, dabbing at his nose and grinning at you through watery eyes. He is happy to have you back anytime you need anything, but at the moment he badly needs a rest. Before you start back for Langston, you can ask him a few last questions.
+*goto wol_ch3_questions
+
+*label wol_ch3_questions
+*set scenery_subplace "rois_grove"
+*choice
+  *if (not(wol_roi_asked_sick))
+    # Ask when he first fell ill.
+      *goto wol_ch3_q_sick
+  *if ((scrapling_claw > 0) and (not(wol_roi_claw_bound)))
+    # Show him the scrapling claw from Tomlin's garden.
+      *goto wol_ch3_q_claw
+  *if (not(wol_roi_asked_night))
+    # Ask where he was the night Maybelline died.@{show_stat_hints  [Insight DC 12]|}
+      *goto wol_ch3_q_night
+  # Let him rest, and start back for Langston.
+    *goto wol_ch3_rest
+
+*label wol_ch3_q_sick
+*set wol_roi_asked_sick true
+"I can't rightly say when I got sick," he says. "But I'm pretty sure I started feeling a bit sniffly around the new moon. Took a couple weeks to start sneezing, though."
+
+You ask whether he has lost any time, any gaps in his memory.
+
+"Far as I can tell, there's no gaps in my memory. Wasn't even sneezing or anything by the time the moon was full. Only just today did I have the first uncontrollable change."
+
+"Am I a suspect now?" But he doesn't wait for an answer, just throws his head back and laughs.
+
+"Any shapechanger can get polypox. It's called Doppelganger's Curse for a reason. Some will just be a carrier, though. Like someone cursed with polymorph or lycanthropy. It's tough to say. But I do know it's a bloodborne disease. Probably that old stirge in the woods infected me. It got me pretty good one time."
+*gosub_scene dice_engine heroic_award "wolves_ch3_roi_sick"
+*set wol_roi_sick_new_moon true
+*set minutes_to_pass 5
+*set time_advance_call_id "wol_ch3_q_sick_1"
+*gosub_scene Langston/langston lg_walk_time
+*page_break Go on…
+*goto wol_ch3_questions
+
+*label wol_ch3_q_claw
+*set wol_roi_claw_bound true
+You ask whether a scrapling could have been the killer, and hold out the hooked limb Tomlin pulled from the wreckage in his garden.
+
+Roi shakes his head. "Not a chance. This is a wee little thing. You should look at what's left of the girl. You'll see that the poor victim was mauled by some beasts much larger than this."
+
+He turns the claw over in his big hands, and his eyes narrow. "But this could still be of some use." He asks for it.
+
+You hand it over, and Roi binds the claws with a strip of leather from a nearby peg, chanting softly in the Druidic tongue as he works. Light-yellow motes of energy gather around the limb until the claws are tightly bound, and then he hands it back.
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *set scrapling_claw - 1
+  *gosub_scene equipment grant_gear "scrapling_claw_weapon" 1
+  *set magic_until_scrapling_claw_weapon (campaign_day + 7)
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+
+[b][🎁 Received: Scrapling Claw][/b]
+
+The bound limb sits in your hand like a short, hooked club, and it hums faintly against your palm.
+
+"It'll bite harder than it has any right to for about a week," Roi says. "Then the magic fades, and it's a stick again. I hope it helps you for a bit, adventurer. Now, until I see you next, I must rest."
+*set wol_roi_claw_not_scrapling true
+*set minutes_to_pass 5
+*set time_advance_call_id "wol_ch3_q_claw_1"
+*gosub_scene Langston/langston lg_walk_time
+*page_break Go on…
+*goto wol_ch3_questions
+
+*label wol_ch3_q_night
+*set wol_roi_asked_night true
+When you ask Roi where he was on the night Maybelline was killed, he cocks his head and frowns.
+
+"That was the night of the full moon, right?" he asks, tugging at his beard in consternation. "Well, I was… Where was I that night?"
+
+He turns his gaze to the ground and paces short, nervous laps in front of you, rubbing at his nose and grumbling to himself under his breath.
+*gosub_scene dice_engine roll_skill_check 12 "insight" "" "" "" "" ""
+*set minutes_to_pass 5
+*set time_advance_call_id "wol_ch3_q_night_1"
+*gosub_scene Langston/langston lg_walk_time
+*if (check_success)
+  *set wol_roi_night_gap true
+  Roi is telling the truth that he doesn't remember, and it seems to have thrown a shadow of self-doubt over the gregarious dwarf. He looks past you as he tries to recall the events of the evening, shaking his head from time to time.
+
+  "I don't remember," he says finally. "I'm sorry, but I don't. I must just be tired. That must be it. Maybe that's it."
+
+  He is plainly troubled by the gap, and goes quiet.
+*else
+  Roi is plainly confused by the question, but you cannot tell whether the confusion is genuine or an act to hide something. He goes quiet, scratching his chin through his beard.
+*page_break Go on…
+*goto wol_ch3_questions
+
+*label wol_ch3_rest
+Roi retires to his enclosure under the rock, where you see him lie down in a bed of animal hides barely covered by the overhang. He burrows into it like a small animal and is soon asleep.
+
+As you make your way out of the glade, your foot hits something hidden in the grass with a dull clank, and a silver flash catches the light. A pewter tankard lies there, warped and punctured as if some wild beast has been chewing on it. A hole is punched through the words stamped into its side, "The Pickled Hen," partly obscuring them.
+
+Turning the mug over, you let a bit of rainwater leak out of it. Only mud and a few scraps of leaf litter lie inside.
+*choice
+  # Pick up the tankard.
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+      *if (not(wol_tankard_taken))
+        *set wol_tankard_taken true
+        *gosub_scene equipment grant_gear "pickled_hen_tankard" 1
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id page_id
+
+    [b][🎁 Received: Damaged Pickled Hen Tankard][/b]
+
+    *goto wol_ch3_leave
+  # Leave it where it lies.
+    *goto wol_ch3_leave
+
+*label wol_ch3_leave
+Behind you, the sound of Roi's snoring carries across the glade. It has been a tiring day for you as well, and the track back to Langston lies waiting.
+*set wol_chapter_3_complete true
+*set wol_chapter_3_checkpoint "complete"
+*page_break Leave the grove…
+*goto_scene overworld/overworld ow_here
+
+*comment ── THE MAYOR'S NOTE (source 157) ── Delivered on the first Langston hub after the chapter, whichever way the player comes back (langston.txt lg_menu calls it). In the open world there is no forced evening at the inn: a Watch officer crosses the square with a note a runner left at the gate. Sets wol_ch3_note_read and
+*comment wol_hall_called, and returns the player to the hub. What the new lead is belongs to the next chapter.
+*label wol_ch3_note
+*set wol_ch3_note_read true
+*set wol_hall_called true
+*set current_district "langston"
+*set scenery_subplace "langston"
+A Watch officer crosses the square toward you with a hand raised. "You're the one the mayor engaged," she says. "A runner from the Hall left this at the gatehouse while you were out. She said it seemed important."
+
+She passes you a crisply folded note. It is sealed with the plain wax of the Hall.
+
+The note is short. A new lead has come to the mayor, and she asks you to come to Langston Hall when you can and have the aide fetch her. You turn the paper over, and the back is blank. The officer waits until you have read it twice, nods, and goes back to her post.
+*page_break Back to the square…
+*goto_scene Langston/langston lg_return

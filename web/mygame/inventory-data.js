@@ -541,6 +541,14 @@
       badge: "Read where a conversation offers Charm Person: it stands in for the spell, once"
     },
     {
+      id: "scroll_remove_curse", category: "consumables", owned: "has_scroll_remove_curse",
+      weight: 0.05, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_scroll_remove_curse) || 0); return "Remove Curse Scroll" + (n > 1 ? " ×" + n : ""); },
+      description: "Pale scroll sealed with white wax stamped with a broken chain.",
+      badge: "Read to renew the Silverstar, or to lift a curse where one lies",
+      use: true
+    },
+    {
       id: "cooking_pot", category: "provisions", owned: "has_cooking_pot",
       weight: 4, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_cooking_pot) || 0); return "Iron Cooking Pot" + (n > 1 ? " ×" + n : ""); },
@@ -942,6 +950,15 @@
       description: "Bolt of close-woven wool cloth, ready for a tailor."
     },
     {
+      id: "scrapling_claw_weapon", category: "weapons", owned: "has_scrapling_claw_weapon", slot: "Weapon",
+      weight: 1, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_scrapling_claw_weapon) || 0); return "Scrapling Claw" + (n > 1 ? " ×" + n : ""); },
+      description: "Knotted wooden limb with its claws bound in a leather strap.",
+      traits: "1d4 Bludgeoning, One-Handed, Magic +1, fades after a week",
+      badge: function (s) { return s.equipped_weapon_id === "scrapling_claw_weapon" ? "Equipped" : ""; },
+      equip: { slot: "weapon", id: "scrapling_claw_weapon" }
+    },
+    {
       id: "grease_flask", category: "consumables", owned: "has_grease_flask",
       weight: 1, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_grease_flask) || 0); return "Grease Flask" + (n > 1 ? " ×" + n : ""); },
@@ -1064,6 +1081,12 @@
       description: "A stoppered vial of sweet, deep-purple cordial with a trace of truffle.",
       badge: "For 8 hours: +3 to footing checks on slick stone, fords, wet timber and loose scree",
       use: true
+    },
+    {
+      id: "pickled_hen_tankard", category: "valuables", owned: "has_pickled_hen_tankard",
+      weight: 1, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_pickled_hen_tankard) || 0); return "Damaged Tankard" + (n > 1 ? " ×" + n : ""); },
+      description: "Chewed pewter tankard stamped with the Pickled Hen's name."
     },
     {
       id: "gem_agate", category: "valuables", owned: "has_gem_agate",
@@ -1290,6 +1313,13 @@
       equip: { slot: "ring", id: "althea_votive_ring" }
     },
     {
+      id: "silverstar", category: "accessories", owned: "has_silverstar",
+      weight: 0.1,
+      name: "The Silverstar",
+      description: "A silver starburst brooch from Solaine of the Radiant Order, made to protect common folk and monster hunters. It holds a single charge of Remove Curse, touch, and glows brightly when it discharges. A Remove Curse working renews it; it holds one charge at a time.",
+      badge: function (s) { return truthy(s.silverstar_charged) ? "One charge held" : "Spent, renew with Remove Curse"; }
+    },
+    {
       id: "hearthstone_talisman", category: "accessories", owned: "has_hearthstone_talisman",
       weight: 1,
       name: "Torvald's Hearthstone Talisman",
@@ -1347,6 +1377,27 @@
       owned: function (s) { return Number(s.scrapling_claw) > 0; },
       name: function (s) { return "Scrapling Claw (" + Number(s.scrapling_claw) + ")"; },
       description: "A hooked claw of knotted wood, still sharp. Roi Sunderhammer may know what to make of it."
+    },
+    {
+      id: "sage", category: "provisions",
+      weight: 0.1,
+      owned: function (s) { return Number(s.sage) > 0; },
+      name: function (s) { return "Sage (" + Number(s.sage) + ")"; },
+      description: "Grey-green leaves, soft as felt, that smell of dust and warm resin."
+    },
+    {
+      id: "hornwort", category: "provisions",
+      weight: 0.1,
+      owned: function (s) { return Number(s.hornwort) > 0; },
+      name: function (s) { return "Hornwort (" + Number(s.hornwort) + ")"; },
+      description: "A dripping handful of feathery water-weed, dark green and slick to hold."
+    },
+    {
+      id: "wolfsbane", category: "provisions",
+      weight: 0.1,
+      owned: function (s) { return Number(s.wolfsbane) > 0; },
+      name: function (s) { return "Wolfsbane (" + Number(s.wolfsbane) + ")"; },
+      description: "Hooded blue flowers on a bundled stem. Every part of it is poison, and Tomlin handles it with gloves."
     },
     {
       id: "grave_ichor", category: "provisions",
