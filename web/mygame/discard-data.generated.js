@@ -155,7 +155,7 @@ window.DISCARD_DATA = {
   "clearhead_tea": {"kind":"consumable"},
   "winterward_tea": {"kind":"consumable"},
   "surestep_cordial": {"kind":"consumable"},
-  "moonshard": {"kind":"weapon"},
+  "moonshard": {"kind":"weapon","keep":{"reason":"You may need magic for the werewolf before this is over.","until":"wol_chapter_6_complete"}},
   "lesser_amulet_of_the_beast": {"kind":"neck"},
   "iron_gap_poster": {"kind":"valuable","keep":{"reason":"This may matter when the killer is named, and you have not settled what it means.","until":"wol_chapter_6_complete"}},
   "solaines_unfinished_letter": {"kind":"valuable","keep":{"reason":"This may matter when the killer is named, and you have not settled what it means.","until":"wol_chapter_6_complete"}},

@@ -4,7 +4,8 @@
  * `node tools/gen_equipment_data.js`, or just run `node compile.js`, which does it
  * automatically before bundling play_game.html.
  *
- * Shape: window.EQUIPMENT_CATALOG.<slot> is an array of { ids: [...], fields: {...} }.
+ * Shape: window.EQUIPMENT_CATALOG.<slot> is an array of { ids: [...], fields: {...}, fade?: { until, fields } }.
+ * A fade block (a timed-magic weapon) applies its fields once campaign_day is past the stat named in until.
  * Each field value is either { type: "literal", value } or { type: "statRef", value }
  * -- a statRef means "read this off window.stats at apply-time" (used by the
  * "starting" weapon/sidearm entries, which copy from starting_weapon_desc etc.
@@ -50,6 +51,26 @@ window.EQUIPMENT_CATALOG = {
           "type": "statRef",
           "value": "starting_weapon"
         },
+        "weapon_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "weapon_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_flimsy": {
+          "type": "literal",
+          "value": false
+        },
         "weapon_reach": {
           "type": "literal",
           "value": "long"
@@ -88,6 +109,26 @@ window.EQUIPMENT_CATALOG = {
         "weapon_prose": {
           "type": "literal",
           "value": "hewing axe"
+        },
+        "weapon_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "weapon_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_flimsy": {
+          "type": "literal",
+          "value": false
         },
         "weapon_reach": {
           "type": "literal",
@@ -132,6 +173,26 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "stiletto"
         },
+        "weapon_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "weapon_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_flimsy": {
+          "type": "literal",
+          "value": false
+        },
         "weapon_reach": {
           "type": "literal",
           "value": "long"
@@ -175,6 +236,26 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "club"
         },
+        "weapon_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "weapon_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_flimsy": {
+          "type": "literal",
+          "value": false
+        },
         "weapon_reach": {
           "type": "literal",
           "value": "long"
@@ -217,6 +298,26 @@ window.EQUIPMENT_CATALOG = {
         "weapon_prose": {
           "type": "literal",
           "value": "rough spear"
+        },
+        "weapon_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "weapon_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_flimsy": {
+          "type": "literal",
+          "value": false
         },
         "weapon_reach": {
           "type": "literal",
@@ -265,6 +366,26 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "medium"
         },
+        "weapon_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "weapon_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_flimsy": {
+          "type": "literal",
+          "value": false
+        },
         "weapon_ammo": {
           "type": "literal",
           "value": ""
@@ -308,6 +429,26 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "arrow"
         },
+        "weapon_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "weapon_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_flimsy": {
+          "type": "literal",
+          "value": false
+        },
         "weapon_reach": {
           "type": "literal",
           "value": "long"
@@ -346,6 +487,26 @@ window.EQUIPMENT_CATALOG = {
         "weapon_prose": {
           "type": "literal",
           "value": "ash quarterstaff"
+        },
+        "weapon_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "weapon_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_flimsy": {
+          "type": "literal",
+          "value": false
         },
         "weapon_reach": {
           "type": "literal",
@@ -389,6 +550,26 @@ window.EQUIPMENT_CATALOG = {
         "weapon_prose": {
           "type": "literal",
           "value": "Longshade spear"
+        },
+        "weapon_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "weapon_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_flimsy": {
+          "type": "literal",
+          "value": false
         },
         "weapon_reach": {
           "type": "literal",
@@ -437,9 +618,232 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "arrow"
         },
+        "weapon_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "weapon_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_flimsy": {
+          "type": "literal",
+          "value": false
+        },
         "weapon_reach": {
           "type": "literal",
           "value": "long"
+        }
+      }
+    },
+    {
+      "ids": [
+        "flimsy_jeweled_dagger"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "jeweled dagger"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Flimsy Jeweled Dagger"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1d4 piercing"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "finesse"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "jeweled dagger"
+        },
+        "weapon_flimsy": {
+          "type": "literal",
+          "value": true
+        },
+        "weapon_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "weapon_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_reach": {
+          "type": "literal",
+          "value": "long"
+        },
+        "weapon_ammo": {
+          "type": "literal",
+          "value": ""
+        }
+      }
+    },
+    {
+      "ids": [
+        "scrapling_claw_weapon"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "scrapling claw"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Scrapling Claw"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1d4 bludgeoning"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "bludgeoning"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "melee"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "scrapling claw"
+        },
+        "weapon_magic": {
+          "type": "literal",
+          "value": 1
+        },
+        "weapon_magical": {
+          "type": "literal",
+          "value": true
+        },
+        "weapon_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_flimsy": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_reach": {
+          "type": "literal",
+          "value": "long"
+        },
+        "weapon_ammo": {
+          "type": "literal",
+          "value": ""
+        }
+      },
+      "fade": {
+        "indent": 2,
+        "until": "magic_until_scrapling_claw_weapon",
+        "fields": {
+          "weapon_magic": {
+            "type": "literal",
+            "value": 0
+          },
+          "weapon_magical": {
+            "type": "literal",
+            "value": false
+          }
+        }
+      }
+    },
+    {
+      "ids": [
+        "moonshard"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "moonshard"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Moonshard"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1d4 piercing"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "finesse"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "moonshard"
+        },
+        "weapon_magic": {
+          "type": "literal",
+          "value": 1
+        },
+        "weapon_magical": {
+          "type": "literal",
+          "value": true
+        },
+        "weapon_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_flimsy": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_reach": {
+          "type": "literal",
+          "value": "long"
+        },
+        "weapon_ammo": {
+          "type": "literal",
+          "value": ""
         }
       }
     },
@@ -475,6 +879,26 @@ window.EQUIPMENT_CATALOG = {
         "weapon_prose": {
           "type": "literal",
           "value": "spear"
+        },
+        "weapon_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "weapon_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_flimsy": {
+          "type": "literal",
+          "value": false
         },
         "weapon_reach": {
           "type": "literal",
@@ -519,6 +943,26 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "broadaxe"
         },
+        "weapon_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "weapon_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_flimsy": {
+          "type": "literal",
+          "value": false
+        },
         "weapon_reach": {
           "type": "literal",
           "value": "long"
@@ -561,6 +1005,26 @@ window.EQUIPMENT_CATALOG = {
         "weapon_prose": {
           "type": "literal",
           "value": "dagger"
+        },
+        "weapon_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "weapon_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_flimsy": {
+          "type": "literal",
+          "value": false
         },
         "weapon_reach": {
           "type": "literal",
@@ -609,6 +1073,26 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "crossbow"
         },
+        "weapon_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "weapon_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_flimsy": {
+          "type": "literal",
+          "value": false
+        },
         "weapon_ammo": {
           "type": "literal",
           "value": ""
@@ -647,6 +1131,26 @@ window.EQUIPMENT_CATALOG = {
         "weapon_prose": {
           "type": "literal",
           "value": "bare fists"
+        },
+        "weapon_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "weapon_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_flimsy": {
+          "type": "literal",
+          "value": false
         },
         "weapon_reach": {
           "type": "literal",
@@ -693,6 +1197,26 @@ window.EQUIPMENT_CATALOG = {
           "type": "statRef",
           "value": "starting_weapon"
         },
+        "sidearm_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "sidearm_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_flimsy": {
+          "type": "literal",
+          "value": false
+        },
         "sidearm_reach": {
           "type": "literal",
           "value": "long"
@@ -731,6 +1255,26 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_prose": {
           "type": "literal",
           "value": "spear"
+        },
+        "sidearm_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "sidearm_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_flimsy": {
+          "type": "literal",
+          "value": false
         },
         "sidearm_reach": {
           "type": "literal",
@@ -771,6 +1315,26 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "felling axe"
         },
+        "sidearm_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "sidearm_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_flimsy": {
+          "type": "literal",
+          "value": false
+        },
         "sidearm_reach": {
           "type": "literal",
           "value": "long"
@@ -809,6 +1373,26 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_prose": {
           "type": "literal",
           "value": "dagger"
+        },
+        "sidearm_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "sidearm_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_flimsy": {
+          "type": "literal",
+          "value": false
         },
         "sidearm_reach": {
           "type": "literal",
@@ -852,6 +1436,26 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_prose": {
           "type": "literal",
           "value": "crossbow"
+        },
+        "sidearm_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "sidearm_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_flimsy": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -887,6 +1491,26 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_prose": {
           "type": "literal",
           "value": "hewing axe"
+        },
+        "sidearm_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "sidearm_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_flimsy": {
+          "type": "literal",
+          "value": false
         },
         "sidearm_reach": {
           "type": "literal",
@@ -927,6 +1551,26 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "stiletto"
         },
+        "sidearm_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "sidearm_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_flimsy": {
+          "type": "literal",
+          "value": false
+        },
         "sidearm_reach": {
           "type": "literal",
           "value": "long"
@@ -966,6 +1610,26 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "club"
         },
+        "sidearm_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "sidearm_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_flimsy": {
+          "type": "literal",
+          "value": false
+        },
         "sidearm_reach": {
           "type": "literal",
           "value": "long"
@@ -1004,6 +1668,26 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_prose": {
           "type": "literal",
           "value": "rough spear"
+        },
+        "sidearm_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "sidearm_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_flimsy": {
+          "type": "literal",
+          "value": false
         },
         "sidearm_reach": {
           "type": "literal",
@@ -1047,6 +1731,26 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_reach": {
           "type": "literal",
           "value": "medium"
+        },
+        "sidearm_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "sidearm_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_flimsy": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -1082,6 +1786,26 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_prose": {
           "type": "literal",
           "value": "hunting bow"
+        },
+        "sidearm_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "sidearm_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_flimsy": {
+          "type": "literal",
+          "value": false
         },
         "sidearm_reach": {
           "type": "literal",
@@ -1122,6 +1846,26 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "ash quarterstaff"
         },
+        "sidearm_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "sidearm_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_flimsy": {
+          "type": "literal",
+          "value": false
+        },
         "sidearm_reach": {
           "type": "literal",
           "value": "long"
@@ -1160,6 +1904,26 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_prose": {
           "type": "literal",
           "value": "Longshade spear"
+        },
+        "sidearm_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "sidearm_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_flimsy": {
+          "type": "literal",
+          "value": false
         },
         "sidearm_reach": {
           "type": "literal",
@@ -1200,6 +1964,217 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "Longshade shortbow"
         },
+        "sidearm_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "sidearm_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_flimsy": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_reach": {
+          "type": "literal",
+          "value": "long"
+        }
+      }
+    },
+    {
+      "ids": [
+        "flimsy_jeweled_dagger"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "jeweled dagger"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Sheathed Flimsy Jeweled Dagger"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d4 piercing"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "finesse"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "jeweled dagger"
+        },
+        "sidearm_flimsy": {
+          "type": "literal",
+          "value": true
+        },
+        "sidearm_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "sidearm_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_reach": {
+          "type": "literal",
+          "value": "long"
+        }
+      }
+    },
+    {
+      "ids": [
+        "scrapling_claw_weapon"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "scrapling claw"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Hung Scrapling Claw"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d4 bludgeoning"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "bludgeoning"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "melee"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "scrapling claw"
+        },
+        "sidearm_magic": {
+          "type": "literal",
+          "value": 1
+        },
+        "sidearm_magical": {
+          "type": "literal",
+          "value": true
+        },
+        "sidearm_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_flimsy": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_reach": {
+          "type": "literal",
+          "value": "long"
+        }
+      },
+      "fade": {
+        "indent": 2,
+        "until": "magic_until_scrapling_claw_weapon",
+        "fields": {
+          "sidearm_magic": {
+            "type": "literal",
+            "value": 0
+          },
+          "sidearm_magical": {
+            "type": "literal",
+            "value": false
+          }
+        }
+      }
+    },
+    {
+      "ids": [
+        "moonshard"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "moonshard"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Sheathed Moonshard"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d4 piercing"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "finesse"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "moonshard"
+        },
+        "sidearm_magic": {
+          "type": "literal",
+          "value": 1
+        },
+        "sidearm_magical": {
+          "type": "literal",
+          "value": true
+        },
+        "sidearm_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_flimsy": {
+          "type": "literal",
+          "value": false
+        },
         "sidearm_reach": {
           "type": "literal",
           "value": "long"
@@ -1238,6 +2213,26 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_prose": {
           "type": "literal",
           "value": "empty hand"
+        },
+        "sidearm_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "sidearm_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_flimsy": {
+          "type": "literal",
+          "value": false
         },
         "sidearm_reach": {
           "type": "literal",
@@ -2403,6 +3398,21 @@ window.EQUIPMENT_CATALOG = {
         "neck_prose": {
           "type": "literal",
           "value": "silvertongue cravat"
+        }
+      }
+    },
+    {
+      "ids": [
+        "lesser_amulet_of_the_beast"
+      ],
+      "fields": {
+        "neck_desc": {
+          "type": "literal",
+          "value": "Lesser Amulet of the Beast"
+        },
+        "neck_prose": {
+          "type": "literal",
+          "value": "lesser amulet of the beast"
         }
       }
     },

@@ -687,6 +687,13 @@
 *set combat_player_surprise false
 *set combat_opens_engaged false
 *set combat_no_flee false
+*set combat_cure_kind ""
+*set combat_philter_stuns false
+*set combat_philter_dc 14
+*set combat_save_disadv false
+*set combat_philter_turns 0
+*set combat_silver_hit false
+*set combat_silver_bloodied false
 *set combat_summon_locked false
 *set combat_summon_n 0
 *set combat_dubhar_blights 0
@@ -857,6 +864,12 @@
   *set {(fc_p & "greased")} 0
   *set {(fc_p & "grease_until")} 0
   *set {(fc_p & "prone")} false
+  *set {(fc_p & "stunned")} 0
+  *set {(fc_p & "stun_left")} 0
+  *set {(fc_p & "stun_page")} 0
+  *set {(fc_p & "stun_kind")} ""
+  *set {(fc_p & "stun_v")} 1
+  *set {(fc_p & "stun_last_round")} 0
   *set {(fc_p & "grease_page")} 0
   *set {(fc_p & "grease_res")} 0
   *set {(fc_p & "burning")} 0
@@ -1310,7 +1323,7 @@
 *gosub_scene combat_dice combat_attack_edge combat_enemy_range combat_active_target cha_tag
 *if (combat_edge_adv)
   *set advantage true
-  [b][🧴 ${combat_enemy_name}: ${combat_edge_label}. Your attack has advantage.][/b]
+  [b][🎯 ${combat_enemy_name}: ${combat_edge_label}. Your attack has advantage.][/b]
   *line_break
 *if (combat_player_hidden)
   *set combat_player_hidden false
@@ -3986,8 +3999,18 @@
       # [b][ACTION][/b] [b][Throw: Water Jug][/b] Fling the water at ${combat_med_epithet}.@{show_stat_hints  [Thrown: a hit leaves a foe Wet for 3 turns]|}
         *set use_item_id "water_jug"
         *goto fight_throw_item
+  *comment UNIQUE ITEM USES (2026-11-01, the user's design): the Silverstar's touch and the Philter of Remembrance are item uses, so they are "Items: <name>" and sit on the HUD's Items button, not in the Action or Bonus sections. Each still costs the action. The scene decides when they apply:
+  *comment combat_cure_kind (a curse the Silverstar can lift) and combat_philter_stuns (the Philter works on this foe), both reset by fight_cleanup.
+  *if (((has_silverstar) and (silverstar_charged)) and (not(combat_cure_kind = "")))
+    *if ((combat_player_actions_left > 0) and (combat_melee_reach))
+      # [b][ACTION][/b] [b][Items: Silverstar][/b] Press the brooch against ${combat_reach_epithet}.@{show_stat_hints  [Touch attack, at disadvantage unless the foe is stunned or at half health; a hit lifts the curse]|}
+        *goto fight_silverstar_touch
+  *if (((has_philter_of_remembrance) and (combat_philter_stuns)) and (combat_in_medium))
+    *if (combat_player_actions_left > 0)
+      # [b][ACTION][/b] [b][Items: Philter of Remembrance][/b] Hurl the flask at ${combat_med_epithet}.@{show_stat_hints  [Thrown: a foe that fails a Wisdom save is stunned for 1d4 turns]|}
+        *goto fight_throw_philter
   *if (combat_can_summon_blights)
-    # [b][ACTION][/b] [b][Bramble Heart][/b] Press the gnarled heart to your chest and call up one or two Blight Twigs to fight at your side.@{show_stat_hints  [Once a day]|}
+    # [b][ACTION][/b] [b][Items: Bramble Heart][/b] Press the gnarled heart to your chest and call up one or two Blight Twigs to fight at your side.@{show_stat_hints  [Once a day]|}
       *goto fight_summon_blights
   *if (cu_any)
     # Use an item from your satchel.
@@ -4040,7 +4063,7 @@
     *set combat_turn_advanced_this_page false
     *goto fight_end_player_turn
 
-*comment THE GNARLED BRAMBLE HEART (the user, 2026-10-20): an ACTION, once a campaign day (bramble_heart_day), that raises 1d2 Blight Twigs as allies for the rest of the fight. They are ordinary ally-library creatures (blight_twig, combat_types.txt) seated into the next free ally slots on the player's own lane tile and added to the END of the turn order (so they act last this round and in their place after it). The count is rolled and the allies built inside one page lock, so a replay (the dossier closing) prints the same page and builds nothing twice. Fewer than the roll arrive if the ally slots run short.
+*comment THE GNARLED BRAMBLE HEART (the user, 2026-10-20): an ACTION under the HUD's Items fly-out, once a campaign day (bramble_heart_day), that raises 1d2 Blight Twigs as allies for the rest of the fight. Future unique combat items join that fly-out by using "Items: <name>" in their action label and an items_<name> entry in gen_action_icons.js. The Blight Twigs are ordinary ally-library creatures (blight_twig, combat_types.txt) seated into the next free ally slots on the player's own lane tile and added to the END of the turn order (so they act last this round and in their place after it). The count is rolled and the allies built inside one page lock, so a replay (the dossier closing) prints the same page and builds nothing twice. Fewer than the roll arrive if the ally slots run short.
 *label fight_summon_blights
 *if (not(combat_summon_locked)) or (not(locked_combat_summon_page_id = page_id))
   *temp fsb_roll 1
@@ -4138,6 +4161,104 @@ You press the gnarled heart to your chest. It beats once against your palm, slow
     *line_break
     *goto fight_round_hub
 *gosub_scene combat_spells resolve_throw_item use_item_id
+*goto fight_action_spent
+
+*comment THE SILVERSTAR'S TOUCH (2026-11-01, the user's design). A touch attack (Strength or Dexterity, whichever is higher, plus proficiency) against the foe's AC, used from the Items button; the foe must be Engaged. It is made at DISADVANTAGE unless the foe is stunned or at half health or less; a stunned foe is easy to hit anyway
+*comment (combat_attack_edge), so the two cancel into a plain roll. A hit spends the charge (silverstar_charged false; a Remove Curse scroll renews it) and ENDS THE FIGHT as a cure: combat_outcome "cured", with the foe's hit points left as they are. A miss costs the action and keeps the charge. The calling scene writes what the cure looks like.
+*label fight_silverstar_touch
+*gosub_scene combat_movement fight_reach_check
+*if (not(combat_reach_ok))
+  ${combat_reach_msg}
+  *line_break
+  *goto fight_round_hub
+*if (not(combat_cantrip_choice_locked)) or (not(locked_combat_cantrip_choice_page_id = page_id))
+  *gosub_scene combat_movement fight_pick_target
+  *gosub_scene combat_movement fight_retarget_to_reach
+  *temp fst_p (("combat_enemy" & combat_active_target) & "_")
+  *temp fst_stun {(fst_p & "stunned")}
+  *temp fst_stun_round {(fst_p & "stun_last_round")}
+  *temp fst_hp {(fst_p & "hp")}
+  *temp fst_max {(fst_p & "max_hp")}
+  *set combat_silver_bloodied false
+  *if ((fst_hp * 2) <= fst_max)
+    *set combat_silver_bloodied true
+  *set check_stat "str"
+  *if (dex_mod > str_mod)
+    *set check_stat "dex"
+  *set check_dc combat_enemy_ac
+  *set check_skill "Silverstar"
+  *set check_add_prof_bonus true
+  *gosub combat_hidden_attack_roll
+  *comment Unless the foe is stunned (just lost a turn, or still has some to lose) or at half health, the curse fights the brooch.
+  *if (((fst_stun <= 0) and (combat_round > (fst_stun_round + 1))) and (not(combat_silver_bloodied)))
+    *set disadvantage true
+  *gosub_scene dice_engine roll_d20_check
+  *set combat_silver_hit false
+  *if (check_success)
+    *set combat_silver_hit true
+    *set silverstar_charged false
+  *set combat_cantrip_choice_locked true
+  *set locked_combat_cantrip_choice_page_id page_id
+*if (combat_silver_hit)
+  You drive the Silverstar against ${combat_reach_epithet}. The brooch bites cold, and its light pours out into them and locks you both in place.
+  *line_break
+  [b][✨ Silverstar: Hit | the curse on ${combat_enemy_name} breaks][/b]
+  *goto fight_cured
+*else
+  ${combat_reach_epithet} twists out from under the brooch, and the cold light of the Silverstar skates off empty air.
+  *line_break
+  [b][💨 Silverstar: Miss][/b]
+  *line_break
+  *goto fight_action_spent
+
+*comment A cure ends the fight like a victory, without the foe having fallen (combat_outcome "cured"). Callers that never offer the Silverstar never see it.
+*label fight_cured
+*line_break
+*set combat_outcome "cured"
+*gosub fight_cleanup
+*return
+
+*comment THE PHILTER OF REMEMBRANCE, THROWN (2026-11-01, the user's design): an item use on the Items button. The flask is thrown at a foe within Mid-Range; the foe makes a Wisdom save (combat_philter_dc, rolled with disadvantage) and, on a failure, is stunned for 1d4 of its turns by a scent that sends it into
+*comment a memory. It works only in a fight whose scene sets combat_philter_stuns, and only on that fight's foe. The flask is used up, hit or miss.
+*label fight_throw_philter
+*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
+  *gosub_scene combat_movement fight_pick_target
+  *temp ftp_reach combat_reach_medium
+  *gosub_scene combat_movement fight_retarget_to_range ftp_reach
+  *if (combat_enemy_range > ftp_reach)
+    Nothing is close enough to throw at. Close the distance first.
+    *line_break
+    *goto fight_round_hub
+  *gosub_scene equipment spend_consumable "philter_of_remembrance"
+  *temp ftp_p (("combat_enemy" & combat_active_target) & "_")
+  *temp ftp_old spell_save_dc
+  *set combat_throw_name combat_enemy_name
+  *set combat_throw_epithet combat_enemy_epithet
+  *set spell_save_dc combat_philter_dc
+  *set combat_save_disadv true
+  You pull the stopper and hurl the philter at ${combat_enemy_epithet}.
+  *line_break
+  *gosub_scene combat_dice resolve_enemy_save ftp_p "wisdom" "Wisdom" combat_active_target
+  *set combat_save_disadv false
+  *set spell_save_dc ftp_old
+  *set combat_throw_failed check_success
+  *set combat_philter_turns 0
+  *if (combat_throw_failed)
+    *rand combat_philter_turns 1 4
+    *set {(ftp_p & "stunned")} combat_philter_turns
+    *set {(ftp_p & "stun_kind")} "memory"
+    *set {(ftp_p & "stun_page")} 0
+  *set combat_cast_locked true
+  *set locked_combat_cast_page_id page_id
+*if (combat_throw_failed)
+  The flask bursts, and pink-and-violet vapor curls up around ${combat_throw_epithet}'s head. They breathe it in and stop, eyes unfocused, as if a door has opened on a warm afternoon.
+  *line_break
+  [b][💫 ${combat_throw_name} is Stunned for ${combat_philter_turns} turn(s): lost in a memory][/b]
+*else
+  The flask bursts, and ${combat_throw_epithet} jerks back from the sweet vapor, shaking their head hard until the scent thins out and the pull of it goes.
+  *line_break
+  [b][💨 ${combat_throw_name} shakes off the scent (DC ${combat_philter_dc})][/b]
+*line_break
 *goto fight_action_spent
 
 *comment ALCHEMIST'S FIRE (2026-10-12): a thrown ATTACK, not a save. Dexterity + proficiency against AC, the same ranged-attack penalties and advantages as Fire Bolt (and, being fire, advantage on a greased target through combat_attack_tag), 1d4 fire damage, +2 on a greased target,
@@ -5198,6 +5319,53 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *set combat_turn_advanced_this_page true
 *return
 
+*comment STUN GATE (2026-11-01). Called at the start of an enemy's turn: when combat_enemyN_stunned is above 0 the enemy loses the turn, the count drops by one, and combat_stun_stop is true. The finished result is stored against the page id (_stun_page, _stun_left, _stun_v), so a replay of the page
+*comment prints the same line and never counts a second turn. _stun_last_round marks the round of the last lost turn, which combat_attack_edge (combat_dice.txt) reads. The lines depend on _stun_kind: "memory" is the Philter of Remembrance.
+*label combat_stun_gate
+*params sg_slot
+*set combat_stun_stop false
+*temp sg_p (("combat_enemy" & sg_slot) & "_")
+*temp sg_n {(sg_p & "stunned")}
+*temp sg_page {(sg_p & "stun_page")}
+*temp sg_left 0
+*temp sg_v 1
+*temp sg_kind {(sg_p & "stun_kind")}
+*if (sg_page = page_id)
+  *set sg_left {(sg_p & "stun_left")}
+  *set sg_v {(sg_p & "stun_v")}
+  *set combat_stun_stop true
+*elseif (sg_n > 0)
+  *set sg_left (sg_n - 1)
+  *rand sg_v 1 3
+  *set {(sg_p & "stunned")} sg_left
+  *set {(sg_p & "stun_left")} sg_left
+  *set {(sg_p & "stun_v")} sg_v
+  *set {(sg_p & "stun_page")} page_id
+  *set {(sg_p & "stun_last_round")} combat_round
+  *set combat_stun_stop true
+*if (combat_stun_stop)
+  *if (sg_kind = "memory")
+    *if (sg_v = 1)
+      $!{combat_enemy_epithet} stares at nothing, lips moving around a name, and the turn slips away.
+    *if (sg_v = 2)
+      $!{combat_enemy_epithet} sits back on their heels and rocks gently, lost in a scent that is not in the room.
+    *if (sg_v = 3)
+      A whimper rises from ${combat_enemy_epithet} as they reach for someone who is not there, and they make no move at you.
+  *else
+    *if (sg_v = 1)
+      $!{combat_enemy_epithet} stands dazed and swaying, and the turn goes by.
+    *if (sg_v = 2)
+      $!{combat_enemy_epithet} blinks at nothing and does not move.
+    *if (sg_v = 3)
+      $!{combat_enemy_epithet} shakes a heavy head and cannot gather itself to act.
+  *line_break
+  *if (sg_left > 0)
+    [b][💫 ${combat_enemy_name} is Stunned — turn lost | ${sg_left} more turn(s)][/b]
+  *else
+    [b][💫 ${combat_enemy_name} is Stunned — turn lost | the daze is lifting][/b]
+  *line_break
+*return
+
 *label combat_grease_gate
 *comment GREASE GATE (2026-10-12). Called at the start of an enemy's turn when it is greased or prone, with whether the enemy means to move this turn. Prints what happens and sets combat_grease_stop true when the turn is spent.
 *comment Prone: it stands up (its movement), and the turn is spent if it meant to move; one that only wanted to swing gets up and swings. Greased and moving: DC 10 Dexterity check; a pass scrapes the grease off and it moves normally, a miss drops it prone with the turn lost and one fewer attempt on the grease
@@ -5477,19 +5645,24 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
       *elseif (((combat_enemy_range > 0) and (cnt_frightened <= 0)) and (not((combat_ai_terrain_hold_position) and (combat_ai_terrain_step_reason = "chokepoint"))))
         *set cnt_wants_move true
     *comment ENSNARING STRIKE: a held enemy takes the thorns and either struggles (if it meant to move) or fights from where it stands. The hold runs out after the spell's last round.
+    *comment STUN (2026-11-01): a stunned enemy loses its turn before anything else is rolled for it (combat_stun_gate prints it and counts it down once per page).
+    *temp cnt_stun_stop false
+    *if (not((combat_player_surprise) and (cnt_first_pass)))
+      *gosub combat_stun_gate cnt_slot
+      *set cnt_stun_stop combat_stun_stop
     *temp cnt_restrain_stop false
     *temp cnt_restrained {(("combat_enemy" & cnt_slot) & "_restrained_until")}
     *if ((cnt_restrained > 0) and (combat_round > cnt_restrained))
       *set {(("combat_enemy" & cnt_slot) & "_restrained_until")} 0
       *set cnt_restrained 0
-    *if ((cnt_restrained > 0) and (not((combat_player_surprise) and (cnt_first_pass))))
+    *if (((cnt_restrained > 0) and (not(cnt_stun_stop))) and (not((combat_player_surprise) and (cnt_first_pass))))
       *gosub combat_restrain_tick cnt_slot cnt_wants_move
       *if (combat_burn_killed)
         *goto cnt_boom_tail
       *set cnt_restrain_stop combat_restrain_stop
     *temp cnt_greased {(("combat_enemy" & cnt_slot) & "_greased")}
     *temp cnt_prone {(("combat_enemy" & cnt_slot) & "_prone")}
-    *if ((((cnt_prone) or (cnt_greased > 0)) and (not(cnt_restrain_stop))) and (not((combat_player_surprise) and (cnt_first_pass))))
+    *if (((((cnt_prone) or (cnt_greased > 0)) and (not(cnt_restrain_stop))) and (not(cnt_stun_stop))) and (not((combat_player_surprise) and (cnt_first_pass))))
       *gosub combat_grease_gate cnt_slot cnt_wants_move
       *set cnt_grease_stop combat_grease_stop
     *if (combat_player_surprise) and (cnt_first_pass)
@@ -5505,6 +5678,9 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
       *line_break
       [b][😲 ${combat_enemy_name} Surprised — turn lost][/b]
       *line_break
+      *set combat_turn_advanced_this_page true
+    *elseif (cnt_stun_stop)
+      *comment The stun gate has already printed it; the turn is spent.
       *set combat_turn_advanced_this_page true
     *elseif (cnt_restrain_stop)
       *comment The thorns tick has already printed it (struggling, or tearing free); the turn is spent.
@@ -6327,6 +6503,19 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *comment WEAPON IMMUNITY TEST FOES (2026-10-31, dev hub only; no story scene calls these). Each is a library "beast" with a defense set by the override variables, short enough to finish in a few rounds. What to try with each is in Resources & Quest/GAMEPLAY_MECHANICS_RULES.md,
 *comment "Damage Defenses". The prep menu hands out the Scrapling Claw (a +1 magical club) as the magic weapon; silvered and adamantine weapons are tested by setting weapon_silvered / weapon_adamantine in a script.
 *comment Dev-hub only: a zombie (Undead Fortitude), to try the save, a natural 20 and radiant damage (the Warded Wolf's neighbour).
+*comment Dev-hub only (2026-11-01): a cursed beast to try the unique item uses on the Items button: the Silverstar's touch (combat_cure_kind) and the Philter of Remembrance (combat_philter_stuns). It is immune to nonmagical weapons unless silvered, like the Warded Wolf. The hub gives the Silverstar and three philters.
+*label fight_dev_curse_test
+*set combat_is_nonlethal false
+*set combat_no_flee true
+*set combat_lib_1 "beast"
+*set combat_enemy_name_override "Cursed Wolf"
+*set combat_enemy_epithet_override "the cursed wolf"
+*set combat_enemy_hp_override 40
+*set combat_enemy_nonmagic_override "immune silvered"
+*set combat_cure_kind "lycanthropy"
+*set combat_philter_stuns true
+*goto fight_library
+
 *label fight_dev_zombie_test
 *set combat_is_nonlethal false
 *set combat_no_flee true

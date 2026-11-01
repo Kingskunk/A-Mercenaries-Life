@@ -38,8 +38,13 @@ const MAP = {
   throw_grease_flask: "Item/Consumable/Grenade/GRN_Grease_Bottle_Unfaded_Icon.png",
   throw_alchemists_fire: "Item/Consumable/Grenade/GRN_Alchemist's_Fire_Unfaded_Icon.png",
   throw_water_jug: "Generic/Filled_Water_Jug_Generated_Source.png",
-  bramble_heart: "Generic/Gnarled_Bramble_Heart_Generated_Source.png",   // the Bramble Heart's summon button
-  // Each spell scroll's own art on the Read fly-out, keyed read_<slug of its title> (battlehud.js variantArt); the plain Read button has no art yet (the user to choose), so it shows its letter.
+  // Unique combat items share one Items button. Each "Items: <name>" choice uses items_<slug of its name> in the fly-out.
+  items: "Item/Miscellaneous_item/Container/Backpack_A_Unfaded_Icon.webp",
+  items_bramble_heart: "Generic/Gnarled_Bramble_Heart_Generated_Source.png",
+  items_silverstar: "Generic/Silverstar_Generated_Source.png",
+  items_philter_of_remembrance: "Generic/Philter_of_Remembrance_Generated_Source.png",
+  // Each spell scroll's own art on the Read fly-out, keyed read_<slug of its title> (battlehud.js variantArt).
+  read: "Item/Consumable/Scroll/BOOK_SignedTradeVisa_Unfaded_Icon.png",
   read_magic_missile_scroll: "Item/Consumable/Scroll/Scroll_of_Magic_Missile_Unfaded_Icon.png",
   read_healing_word_scroll: "Item/Consumable/Scroll/Scroll_of_Healing_Word_Unfaded_Icon.png",
   read_mage_armor_scroll: "Item/Consumable/Scroll/Scroll_of_Mage_Armour_Unfaded_Icon.png",

@@ -936,6 +936,12 @@ ${combat_player_dmg_roll_banner}
 *if ((cae_prone) and (cae_distance <= 1))
   *set combat_edge_adv true
   *set combat_edge_label "Prone"
+*comment A stunned target (the Philter of Remembrance, 2026-11-01) is easy to hit from anywhere while it still has turns to lose, and for the round after its last one.
+*temp cae_stun {(("combat_enemy" & cae_slot) & "_stunned")}
+*temp cae_stun_last {(("combat_enemy" & cae_slot) & "_stun_last_round")}
+*if ((cae_stun > 0) or ((cae_stun_last > 0) and (combat_round <= (cae_stun_last + 1))))
+  *set combat_edge_adv true
+  *set combat_edge_label "Stunned"
 *comment A restrained target (Ensnaring Strike) is easy to hit from anywhere, for as long as the vines hold.
 *temp cae_restrained {(("combat_enemy" & cae_slot) & "_restrained_until")}
 *if ((cae_restrained > 0) and (cae_restrained >= combat_round))
@@ -1168,6 +1174,14 @@ ${combat_player_dmg_roll_banner}
   *temp res_mod sm_mod
   *temp res_roll 0
   *rand res_roll 1 20
+  *temp res_dis_note ""
+  *comment combat_save_disadv (the Philter of Remembrance, 2026-11-01): roll twice and keep the lower.
+  *if (combat_save_disadv)
+    *temp res_roll_b 0
+    *rand res_roll_b 1 20
+    *if (res_roll_b < res_roll)
+      *set res_roll res_roll_b
+    *set res_dis_note " (disadvantage)"
   *temp res_total (res_roll + res_mod)
   *temp res_bane_str ""
   *temp res_bane_expires {(res_prefix & "bane_expires_round")}
@@ -1186,7 +1200,7 @@ ${combat_player_dmg_roll_banner}
   *temp res_verdict "SAVED"
   *if (check_success)
     *set res_verdict "FAILED"
-  *set res_banner "[b][🎲 ${res_name} Saving Throw: ${res_stat_label} (DC ${spell_save_dc}) | Roll: ${res_roll} ${res_mod_str}${res_bane_str} = ${res_total} — ${res_verdict}][/b]"
+  *set res_banner "[b][🎲 ${res_name} Saving Throw: ${res_stat_label} (DC ${spell_save_dc}) | Roll: ${res_roll}${res_dis_note} ${res_mod_str}${res_bane_str} = ${res_total} — ${res_verdict}][/b]"
   *set {(res_successname)} check_success
   *set {(res_bannername)} res_banner
   *set {(res_lockname)} true

@@ -46,6 +46,10 @@
     { id: "bonus",  groups: ["bonus", "free"], cols: 4 },
     { id: "other",  groups: ["other"], cols: 4 }
   ];
+  // Read and Items still cost an action, but they are utility menus rather than attacks or spells.
+  // Lay their parent buttons out with Flee and End turn without changing their action colouring,
+  // availability checks, or the ChoiceScript options their fly-outs submit.
+  var UTILITY_ACTIONS = { read: true, items: true };
   var MIN_ROWS = 3;       // empty cells fill each grid to at least this many rows
   var KIND = { action: "Action", bonus: "Bonus action", free: "Free", move: "Movement", tactic: "Tactical movement", other: "" };
 
@@ -241,7 +245,10 @@
     var moves = seen.filter(function (e) { return e.group === "move"; });
     if (moves.length) html += "<div class=\"bhud-moves\">" + moves.map(moveHtml).join("") + "</div>";
     SECTIONS.forEach(function (sec) {
-      var rows = seen.filter(function (e) { return sec.groups.indexOf(e.group) >= 0; });
+      var rows = seen.filter(function (e) {
+        if (UTILITY_ACTIONS[e.id]) return sec.id === "other";
+        return sec.groups.indexOf(e.group) >= 0;
+      });
       rows = rows.filter(function (e) { return e.id !== "primary_attack" && e.id !== "sidearm_attack"; });
       if (!rows.length) return;
       var cells = Math.max(sec.cols * MIN_ROWS, Math.ceil(rows.length / sec.cols) * sec.cols);
@@ -332,7 +339,9 @@
     if (e.id === "throw") return (window.ACTION_ICONS || {})["throw_" + slug(v.label)] || "";
     // Shoot: Fire Arrow / Ice Arrow ... -- each special arrow wears its own art (ACTION_ICONS shoot_<item>).
     if (e.id === "shoot") return (window.ACTION_ICONS || {})["shoot_" + slug(v.label)] || "";
-    // Read: Magic Missile Scroll / Bane Scroll ... -- each spell scroll wears its own art (ACTION_ICONS read_<slug of its title>); the plain Read button has none yet.
+    // Items: Bramble Heart / future unique combat items -- one backpack button, each fly-out choice wearing its own art.
+    if (e.id === "items") return (window.ACTION_ICONS || {})["items_" + slug(v.label)] || "";
+    // Read: Magic Missile Scroll / Bane Scroll ... -- each spell scroll wears its own art (ACTION_ICONS read_<slug of its title>).
     if (e.id === "read") return (window.ACTION_ICONS || {})["read_" + slug(v.label)] || "";
     if (e.id !== "booming_blade") return "";
     var st = statsNow(), art = window.ACTION_ICONS || {}, lab = String(v.label).toLowerCase();

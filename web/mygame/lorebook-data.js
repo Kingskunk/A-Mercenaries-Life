@@ -1251,7 +1251,7 @@
           }
           return out;
         },
-        see: ["sun_father", "saint_althea", "cathedral"]
+        see: ["sun_father", "saint_althea", "veyra_dawn_warden", "cathedral"]
       },
       {
         id: "saint_althea", category: "lore", title: "Saint Althea the Mender",
@@ -1262,7 +1262,7 @@
         body: [
           "Across the cold mud of the frontier marches, common folk, weavers, and watermen pray to <b>Saint Althea of the Shroud</b>, the daughter of the Sun-Father and a saint of the Church of the True Sun. She is the patroness of needle, loom, herb, and bandage, the saint of those who mend what violence tears apart. Rivermen leave river pebbles polished smooth by the current at her altar before they cast off on the downriver run, and trust her for safe passage."
         ],
-        see: ["church_true_sun", "sun_father", "sanctuary_charter", "corbel", "alley_shrine"]
+        see: ["church_true_sun", "sun_father", "veyra_dawn_warden", "sanctuary_charter", "corbel", "alley_shrine"]
       },
       {
         id: "sun_father", category: "lore", title: "The Sun-Father",
@@ -1273,7 +1273,21 @@
         body: [
           "In the great limestone cathedral of Port Valen, the Church of the True Sun sings choral litanies to the <b>Sun-Father</b> in his golden plate. The church honors many gods and saints, but holds him highest in matters of oaths, rulers, and high justice. Out in the marches, common folk often pray first to his daughter, Saint Althea."
         ],
-        see: ["church_true_sun", "saint_althea"]
+        see: ["church_true_sun", "saint_althea", "veyra_dawn_warden"]
+      },
+      {
+        id: "veyra_dawn_warden", category: "lore", title: "Veyra the Dawn-Warden",
+        link: ["Veyra the Dawn-Warden", "Veyra's seal", "Veyra's sworn keepers", "Veyra"],
+        sub: "Lesser goddess of burial and sacred boundaries",
+        tags: ["Faith"], aliases: ["Dawn-Warden", "burial", "graves", "dead", "Order of Radiant Light"],
+        unlock: function (s) {
+          return truthy(s.wol_solaine_hymn_wrong) || truthy(s.wol_ch5_tapestry_lore) || truthy(s.wol_ch5_asked_temple);
+        },
+        body: [
+          "Within the Church of the True Sun, <b>Veyra the Dawn-Warden</b> is the lesser goddess who guards the boundary between the living and the dead. Her sign is a closed dark doorway before a rising golden sun. Burial prayers ask her to guide the dead beyond the last threshold and hold it shut against their return.",
+          "The Order of Radiant Light maintains old wards in her name. At Langston, its temple stands over land once ruled by the dead. Its rites are meant to keep the graves still while one of Veyra's sworn caretakers remains at the temple."
+        ],
+        see: ["church_true_sun", "sun_father", "saint_althea"]
       },
       {
         id: "the_drowned", category: "lore", title: "The Drowned — {{warlock_patron_title}}",

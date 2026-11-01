@@ -28,6 +28,7 @@
   var EQ = window.EquipmentEngine = window.EquipmentEngine || {};
 
   function truthy(v) { return v === true || v === "true"; }
+  function num(v) { var n = Number(v); return isNaN(n) ? 0 : n; }
 
   function catalog() { return (window.EQUIPMENT_CATALOG || {}); }
 
@@ -62,6 +63,12 @@
       var value = resolveFieldValue(entry.fields[fieldName], s);
       s[fieldNameForSlot(bucket, fieldName, ringSlot)] = value;
     });
+    // A timed-magic weapon (the scrapling claw): once the campaign day is past the day its magic held to, equipping it brings the plain stats back, as equipment.txt's nested check does.
+    if (entry.fade && num(s.campaign_day) > num(s[entry.fade.until])) {
+      Object.keys(entry.fade.fields).forEach(function (fieldName) {
+        s[fieldNameForSlot(bucket, fieldName, ringSlot)] = resolveFieldValue(entry.fade.fields[fieldName], s);
+      });
+    }
     return true;
   }
 

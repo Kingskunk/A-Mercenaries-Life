@@ -74,6 +74,7 @@ function parseLoadoutLabel(lines, labelName, idVar) {
   var body = extractLabelBody(lines, labelName);
   var entries = [];
   var current = null;
+  var fade = null;     // the open timed-magic block under the current entry: { indent, until, fields }
   var defaults = [];   // column-0 *set lines BEFORE the first id *if: the resets a swap starts from (weapon_reach "long", weapon_ammo ""); an entry overrides them
   var idPatt = idVar === "item_id"
     ? /item_id\s*=\s*"([^"]+)"/g
@@ -114,6 +115,27 @@ function parseLoadoutLabel(lines, labelName, idVar) {
         continue;
       }
       break;
+    }
+    var indentWidth = raw.length - raw.replace(/^\s+/, "").length;
+    // The one nested shape that IS supported: a timed-magic weapon (gen_gear.js "fadesDays"), whose magic ends after a campaign day held in magic_until_<id>:
+    //   *if (campaign_day > magic_until_<id>)
+    //     *set weapon_magic 0
+    //     *set weapon_magical false
+    // It is kept as entry.fade = { until, fields } and evaluated at equip time (equipment-panel.js applyCatalogEntry), so equipping the weapon after its week cannot bring the magic back.
+    // Any other nested *if still fails loudly.
+    var fadeMatch = /^\*if\s*\(\s*campaign_day\s*>\s*(magic_until_\w+)\s*\)\s*$/.exec(trimmed);
+    if (fadeMatch && indented && current) {
+      if (current.fade) throw new Error("gen_equipment_data: two timed-magic blocks in " + labelName + "'s \"" + current.ids.join(",") + "\" entry");
+      fade = { indent: indentWidth, until: fadeMatch[1], fields: {} };
+      current.fade = fade;
+      continue;
+    }
+    if (fade && indentWidth <= fade.indent) fade = null;
+    if (fade && /^\*set\s+/.test(trimmed)) {
+      var fm = /^\*set\s+(\w+)\s+(.+)$/.exec(trimmed);
+      if (!fm) throw new Error("gen_equipment_data: unparseable *set in " + labelName + ": " + trimmed);
+      fade.fields[fm[1]] = parseValue(fm[2]);
+      continue;
     }
     if (/^\*set\s+/.test(trimmed)) {
       if (!current) throw new Error("gen_equipment_data: *set before any *if in " + labelName + ": " + trimmed);
@@ -176,7 +198,8 @@ function generate() {
     " * `node tools/gen_equipment_data.js`, or just run `node compile.js`, which does it\n" +
     " * automatically before bundling play_game.html.\n" +
     " *\n" +
-    " * Shape: window.EQUIPMENT_CATALOG.<slot> is an array of { ids: [...], fields: {...} }.\n" +
+    " * Shape: window.EQUIPMENT_CATALOG.<slot> is an array of { ids: [...], fields: {...}, fade?: { until, fields } }.\n" +
+    " * A fade block (a timed-magic weapon) applies its fields once campaign_day is past the stat named in until.\n" +
     " * Each field value is either { type: \"literal\", value } or { type: \"statRef\", value }\n" +
     " * -- a statRef means \"read this off window.stats at apply-time\" (used by the\n" +
     " * \"starting\" weapon/sidearm entries, which copy from starting_weapon_desc etc.\n" +

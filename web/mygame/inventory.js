@@ -195,7 +195,7 @@
   // The picture on one doll slot: the worn piece's own icon, or a dim stand-in for the kind of slot when nothing is worn.
   function slotIconKey(bucket, ringSlot, s) {
     var EQ = window.EquipmentEngine, id = "";
-    if (EQ && bucket !== "shield" && bucket !== "sidearm") { try { id = EQ.getEquippedId(bucket, ringSlot) || ""; } catch (e) { id = ""; } }
+    if (EQ && bucket !== "shield") { try { id = EQ.getEquippedId(bucket, ringSlot) || ""; } catch (e) { id = ""; } }
     if (id && ID_ICON[id]) return ID_ICON[id];
     if (bucket === "weapon") return weaponIcon(s.weapon_desc);
     if (bucket === "sidearm") return weaponIcon(s.sidearm_desc);
