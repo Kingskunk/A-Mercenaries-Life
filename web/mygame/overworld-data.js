@@ -108,7 +108,7 @@
   var FEATURES = [
     {
       id: "coldspine", name: "The Coldspine", kind: "range", art: "coldspine", label: [-1.5, -5.18],
-      info: "A broken mountain barrier that runs east and west across the whole north, between the Highlands and the lowlands the Gilded Scales hold. Its southern foothills hold the mines and quarries of Redvein and Whitefold, and its last low spur turns south to the Black Sinks.",
+      info: "A broken mountain barrier that runs east and west across the whole north, between the Highlands and the lowlands the Gilded Scales hold. Its southern foothills hold the mines and quarries of Redvein and Whitefold, and its last low spur turns south to the Black Sinks. In the west the range bends away to the north, past Langston, into country no road reaches.",
       line: "Closed to travel on foot. The one way over it is the pass at Stonewatch."
     }
   ];
