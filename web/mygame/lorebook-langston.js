@@ -96,7 +96,7 @@
       see: ["langston"]
     },
     {
-      id: "true_sun_temple", category: "places", title: "The True Sun Temple",
+      id: "true_sun_temple", category: "places", title: "The Sun Temple",
       sub: "The limestone temple on Langston's eastern edge",
       tags: ["Langston", "Faith"], aliases: ["chapel", "chapel tower", "temple", "sun temple", "spire", "rotunda", "mausoleum", "cemetery"],
       link: ["True Sun temple", "True Sun Temple"],

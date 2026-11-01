@@ -2,7 +2,7 @@
 
 ## Status
 
-Planning document only. None of the village names, map positions, characters, markets, quests, commodity additions, or political arrangements proposed below are implemented canon until they are approved and added to the game.
+Planning document only. None of the village names, map positions, characters, markets, quests, commodity additions, or political arrangements proposed below are implemented canon until they are approved and added to the game. Do not take or implement any infomation from this file unless stritcly permitted to do so. Anything and everything in this file could change on a time / and this entire file can be deleted at will.
 
 The four-place limit is a design constraint for each village. Two of those four places must be governmental or otherwise belong to House Gault's authority. The G.U.A.R.D.S. categories are functions to cover, not a requirement for six separate destinations.
 

@@ -500,6 +500,54 @@
       here: "Langston's low stone wall stands across the fields, its gate open to the wagon road. Timber houses crowd behind it, and a stone chapel tower rises above their steep roofs.",
       hereNight: "Lamps burn at the gate and along the cobbled street behind it, and the town's walls are a dark line against the stars. Two militia keep the arch.",
       hereStorm: "Rain streams off the steep roofs and the gate is crowded with wagons waiting under the arch. The chapel tower is a grey shape in the squall."
+    },
+    // PLACEHOLDERS north and north-west of Langston (the user, 2026-11-01): a road tile and a village tile, positions read off the user's drawing (grey circle = the road, olive circle = the village). The names and the prose are mine and
+    // are stand-ins, to be renamed and written when these places are built; nothing is built there yet, so each is a map connection only (no "Go into" branch in overworld.txt).
+    nw: {
+      name: "The Northwest Road", kind: "road", x: -7.08, y: -7.2,
+      territory: "gault",
+      danger: 2,
+      climate: -1,
+      walk: "The road leaves Langston's fields and runs north-west over rough grassland, a narrow carters' way kept up by House Gault's levy and little used beyond the town.",
+      camp: "A flat shoulder of grass beside a field wall gives room for a small camp, with the road empty in both directions.",
+      info: "A road leaving Langston to the north-west, over open grassland. Few travellers use it, and little is known of where it leads.",
+      here: "The road runs over open grassland between low stone walls, with Langston behind and nothing ahead but the long line of the grass.",
+      hereNight: "The road is a pale line between dark walls, and Langston's lamps have sunk out of sight behind the rise.",
+      hereStorm: "Rain sweeps over the open grassland and the road runs with water between its walls. There is no shelter in sight."
+    },
+    nv: {
+      name: "Northfold", kind: "village", x: -6.29, y: -7.55,
+      territory: "gault",
+      danger: 1,
+      climate: -1,
+      walk: "The track climbs north out of Langston's fields over pasture and low rises, with the dark line of the mountains standing off to the east.",
+      info: "A village north of Langston under House Gault's hand, set in pasture below the western arm of the Coldspine.",
+      here: "A cluster of low roofs stands among stone-walled pastures, with the mountains a long way off to the east and smoke rising from a few chimneys.",
+      hereNight: "A few window lamps show in the dark pasture, and a dog barks from somewhere behind the walls.",
+      hereStorm: "Rain drives across the pastures and runs off the low roofs. The lanes between the walls are streams, and every door is shut."
+    },
+    // Two more placeholder villages north-west of the road tile (the user, 2026-11-01, two gold circles), joined to it and to each other as drawn. Names and prose are my stand-ins, as for the two above.
+    tb: {
+      name: "Thornby", kind: "village", x: -7.79, y: -8.56,
+      territory: "gault",
+      danger: 1,
+      climate: -1,
+      walk: "The road climbs north-west over rough grazing, between thorn hedges grown wide and shaggy where nobody has cut them back.",
+      info: "A village far out on Langston's north-western road, among thorn-hedged pastures. Little is known of it in the town.",
+      here: "Thorn hedges run in untidy lines round a handful of low houses, and sheep stand in the lanes between them, watching the road.",
+      hereNight: "The hedges are black shapes against the stars, and one lit window shows low among the roofs.",
+      hereStorm: "Rain flattens the grass and drips from the thorn hedges in long strings. The sheep have crowded against the lee of the walls."
+    },
+    fm: {
+      name: "Fallowmere", kind: "village", x: -8.4, y: -7.27,
+      territory: "gault",
+      danger: 1,
+      climate: -1,
+      walk: "The road runs west over flat, damp ground, past fields left fallow and ditches full of reeds.",
+      info: "A village on the western edge of Langston's farmland, where the ground turns wet and the fields lie fallow.",
+      here: "Low roofs stand on a rise above flat, reedy fields, with ditches shining between the strips and a few geese picking along the lane.",
+      hereNight: "Mist lies over the fallow fields, and a lantern swings once at the far end of the lane and goes out.",
+      hereStorm: "Rain turns the ditches to brown water and the lane to a trench of mud. The geese have vanished, and every shutter is closed."
     }
   };
 
@@ -556,6 +604,17 @@
     ["lg", "rg", 6, "track"],
     // Westwood (hidden until the mayor's map is in hand): forest paths from Langston's west side.
     ["lg", "ww", 6, "track"],
+    // The placeholder road to the north-west and village to the north (the user, 2026-11-01): real roads, 8 and 7 miles (my numbers; pulled in to about 70% of the drawn distance at the user's request, 2026-11-01).
+    ["lg", "nw", 8],
+    ["lg", "nv", 7],
+    // The roads drawn between the new places (the user, 2026-11-01): Northfold to the road tile, and the road tile to Thornby and Fallowmere, which join each other; miles from the drawn lengths (my numbers).
+    ["nw", "nv", 5],
+    ["nw", "tb", 10],
+    ["tb", "fm", 9],
+    ["fm", "nw", 8],
+    // The small forest trails drawn through Westwood (the user, 2026-11-01): from the road tile down to Westwood, and on to Roi's Grove (both hidden until their flags are set, like the tracks to them).
+    ["nw", "ww", 5, "track"],
+    ["ww", "rg", 6, "track"],
     ["rg", "wv", 7, "track"]
   ];
 
@@ -866,7 +925,10 @@
     bs: { place: "the gatehouse" },
     sw: { place: "the gate" },
     fg: { place: "the gate" },
-    lg: { place: "the town hall", setting: "town", region: "any" }
+    lg: { place: "the town hall", setting: "town", region: "any" },
+    nv: { place: "the village", setting: "village", region: "marches", count: [0, 0] },   // placeholder villages (2026-11-01): no board of their own yet
+    tb: { place: "the village", setting: "village", region: "marches", count: [0, 0] },
+    fm: { place: "the village", setting: "village", region: "marches", count: [0, 0] }
   };
   // count is how many postings a board shows on a given day, rolled between the two numbers from the day and the origin (so a refresh and a return visit show the same board): a city is busiest and a village is
   // sometimes empty (the user's call, 2026-10-11). A COURIER_TILES entry may give its own count: [min, max].
