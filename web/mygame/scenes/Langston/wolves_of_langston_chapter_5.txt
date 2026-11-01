@@ -1,0 +1,1120 @@
+*comment ====================================================================================
+*comment THE WOLVES OF LANGSTON -- CHAPTER 5: SPEAKING WITH SOLAINE
+*comment Source sections 229 to 302, built a chunk at a time (the plan is in WOLVES_OF_LANGSTON_ADAPTATION_PLAN.md). THIS FILE (chunks 1 to 5: the temple, the wings, the rotunda's clues, the cemetery and the risen corpse, the mayor's debrief and the patrol): the temple's arrival and rotunda (229, 272, 296), the wait (270, 294), Solaine's return and her conversation
+*comment (282, 248, 268) and her giving way over the body (289). A CLOSED run, like Chapters 3 and 4 (the user: this is not an open-world area): the Langston hub button (langston.txt, true_sun_temple.txt lg_temple) lands in wol_ch5_start until
+*comment wol_chapter_5_complete, and there is no way out partway (the only exit so far is the temporary stop at the cemetery gate, wol_ch5_cemetery_stub). The temple is open at any hour and the door is never locked; the pictures and prose change with the hour and weather.
+*comment The Order of Radiant Light is the part of the True Sun church that built and guards the temple (the user's call), so Solaine is of both. The wings (library, quarters, dining hall), the rotunda's clues and the cemetery are the next chunks.
+*comment The source's "morning sun", "early" and "tomorrow's burial" are dropped or made neutral (open world: the hour is the player's); the burial is "soon", as in the mayor's letter.
+*comment ====================================================================================
+
+*label wol_ch5_start
+*if (not(wol_chapter_5_started))
+  *set wol_chapter_5_started true
+  *set wol_chapter 5
+*if (wol_chapter_5_checkpoint = "rotunda")
+  *goto wol_ch5_rotunda
+*if (wol_chapter_5_checkpoint = "hub")
+  *goto wol_ch5_hub
+*if (wol_chapter_5_checkpoint = "talk")
+  *goto wol_ch5_talk
+*if (wol_chapter_5_checkpoint = "wait")
+  *goto wol_ch5_wait_menu
+*if (wol_chapter_5_checkpoint = "library")
+  *goto wol_ch5_library_menu
+*if (wol_chapter_5_checkpoint = "quarters")
+  *goto wol_ch5_door_menu
+*if (wol_chapter_5_checkpoint = "dining")
+  *goto wol_ch5_hub
+*if (wol_chapter_5_checkpoint = "cemetery")
+  *goto wol_ch5_cemetery
+*if (wol_chapter_5_checkpoint = "mausoleum")
+  *goto wol_ch5_mausoleum
+*if (wol_chapter_5_checkpoint = "after_fight")
+  *goto wol_ch5_corpse_menu
+*if (wol_chapter_5_checkpoint = "solaine_back")
+  *goto wol_ch5_solaine_back
+*if (wol_chapter_5_checkpoint = "mayor")
+  *goto wol_ch5_mayor
+*goto wol_ch5_arrive
+
+*label wol_ch5_arrive
+*set wol_chapter_5_checkpoint "arrive"
+*set scenery_subplace "langston_true_sun_temple_exterior"
+*gosub_scene Langston/true_sun_temple tst_place
+*gosub_scene Langston/true_sun_temple tst_sky
+
+*gosub_scene Langston/true_sun_temple tst_courtyard
+
+A single large door is the obvious way in. When you push against it, it swings open easily.
+*page_break Go inside…
+*goto wol_ch5_rotunda
+
+*label wol_ch5_rotunda
+*set wol_chapter_5_checkpoint "rotunda"
+*set scenery_subplace "langston_true_sun_temple_rotunda"
+Beyond the door is a round room with benches around its walls. Passages branch off from it toward the other points of the compass.
+*if (weather_severity >= 3)
+  *if (weather_cold)
+    Driven snow rasps against the tall windows, and the orbs set in the ceiling burn warm against the dark glass.
+  *else
+    The storm mutters against the tall windows, and the orbs set in the ceiling burn warm against the dark glass.
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  Recessed orbs set in the ceiling give off a soft golden glow that leaves the far walls in shadow.
+*else
+  Light falls through the tall windows and across the floor.
+
+However, the cleric is nowhere in sight, though you were told you would find her here.
+*choice
+  # Call out.
+    Your voice echoes down the corridors and through the empty temple, but no one replies. It seems you are alone, and you will have to look around to be sure.
+    *goto wol_ch5_hub
+  # Look down the passages for her.
+    You step into the middle of the room and look down each passage in turn.
+    *goto wol_ch5_hub
+  # Check the benches and the floor.
+    You walk the ring of benches and look at the stone underfoot. Dust lies thin on everything, and the stone holds only your own footprints.
+    *goto wol_ch5_hub
+
+*label wol_ch5_hub
+*set wol_chapter_5_checkpoint "hub"
+*set scenery_subplace "langston_true_sun_temple_rotunda"
+From where you stand in the central hall, the passage to the north seems to lead to a library of some kind, and the passage to the south opens into a dining hall. That means the eastern passage must lead to a rectory or a row of chambers.
+*choice
+  *if (not(wol_ch5_library_done))
+    # Explore the library.
+      *goto wol_ch5_library
+  *if (not(wol_ch5_quarters_done))
+    # Explore the living quarters.
+      *goto wol_ch5_quarters
+  *if (not(wol_ch5_dining_done))
+    # Explore the dining hall.
+      *goto wol_ch5_dining
+  # Sit and wait for the cleric.
+    You take a seat on a bench.
+    *goto wol_ch5_wait
+  *if ((wol_ch5_library_done) and ((wol_ch5_quarters_done) and (wol_ch5_dining_done)))
+    # Pace the hall until she returns.
+      You pace slow circuits around the room, with one ear on the doors.
+      *goto wol_ch5_wait
+  *if ((wol_ch5_library_done) and ((wol_ch5_quarters_done) and (wol_ch5_dining_done)))
+    # Settle where you can watch the doors.
+      You settle on the bench that faces the main doors and keep your eyes on them.
+      *goto wol_ch5_wait
+
+*comment ── THE WAIT (270, 290, 233, 257, 271, 284, 241, 250, 283, 274, 259, 235, 285, 278, 265, 294) ── Solaine comes back after the player waits. While they wait they can study the rotunda's tapestries and its mosaic (each once). The mosaic hides a sunburst-shaped indent the size of a hand: it can be found by eye,
+*comment worked with tools or probed with something hard, and pressing it sets off a small flash of magic (Dexterity save DC 10 or 1d4 radiant damage; Heroic Inspiration for pressing it) before the mechanism seals itself: it needs some key or object. Waiting costs 15 minutes at first, each study 10, and the last stretch 30.
+*label wol_ch5_wait
+*set scenery_subplace "langston_true_sun_temple_rotunda"
+You wait for a while, even looking down the passages to see whether she somehow slipped past you. The cleric stays away.
+
+You pass the time by looking around. The gold-inlaid mosaic on the floor is spectacular. You nudge the gold with a foot and find that it has been magically fused to the stone in the sunburst pattern used throughout the temple.
+
+Higher up, aging tapestries hang on the walls and show some epic event of holy magic and evil undead. They rise up the walls of the tower in turn with the windows.
+*set minutes_to_pass 15
+*set time_advance_call_id "wol_ch5_wait_1"
+*gosub_scene Langston/langston lg_walk_time
+*goto wol_ch5_wait_menu
+
+*label wol_ch5_wait_menu
+*set wol_chapter_5_checkpoint "wait"
+*set scenery_subplace "langston_true_sun_temple_rotunda"
+*choice
+  *if (not(wol_ch5_tapestries_done))
+    # Examine the tapestries.
+      *goto wol_ch5_tapestries
+  *if (not(wol_ch5_mosaic_done))
+    # Take a closer look at the mosaic.
+      *goto wol_ch5_mosaic
+  # Keep waiting for the cleric.
+    *goto wol_ch5_wait_last
+  *if ((wol_ch5_tapestries_done) and (wol_ch5_mosaic_done))
+    # Pace the hall until she returns.
+      You pace slow circuits around the room, with one ear on the doors.
+      *goto wol_ch5_wait_last
+  *if ((wol_ch5_tapestries_done) and (wol_ch5_mosaic_done))
+    # Settle where you can watch the doors.
+      You settle on the bench that faces the main doors and keep your eyes on them.
+      *goto wol_ch5_wait_last
+
+*label wol_ch5_wait_last
+*set minutes_to_pass 30
+*set time_advance_call_id "wol_ch5_wait_2"
+*gosub_scene Langston/langston lg_walk_time
+*page_break Keep waiting…
+*goto wol_ch5_return
+
+*label wol_ch5_tapestries
+*set scenery_subplace "langston_true_sun_temple_rotunda"
+These tapestries show a holy order of sun clerics raising the temple and banishing the undead.
+
+The story begins in darkness, with skeletons and other undead monsters rising out of the ground to devour the common folk. Then glowing holy figures appear in the next hanging, impaling the restless dead on the beams that radiate from them.
+
+The next tapestry shows white-robed figures standing in a ring, summoning a shaft of light down from the sun to strike the earth, and the deep darkness of the ground gives way to a ring of green plants.
+
+The last tapestry shows the temple you are standing in, amid houses and other buildings, with the sun in a bright blue sky behind it. Beneath the bright scene runs a band of dark earth, and in it float dark red eyes lying in wait.
+*choice
+  # Compare what you are seeing to what you know.@{show_stat_hints  [History or Religion DC 15]|}
+    *gosub_scene dice_engine roll_skill_check 15 "history" "" "religion" "" "" ""
+    *if (check_success)
+      *goto wol_ch5_tapestries_lore
+    *else
+      *goto wol_ch5_tapestries_blank
+  # Study the details for a message in the weaving.@{show_stat_hints  [Investigation DC 15]|}
+    *gosub_scene dice_engine roll_skill_check 15 "investigation" "" "" "" "" ""
+    *if (check_success)
+      *goto wol_ch5_tapestries_lore
+    *else
+      *goto wol_ch5_tapestries_blank
+  # Step back from the tapestries.
+    *goto wol_ch5_wait_menu
+
+*label wol_ch5_tapestries_lore
+*set wol_ch5_tapestries_done true
+*set wol_ch5_tapestry_lore true
+*set minutes_to_pass 10
+*set time_advance_call_id "wol_ch5_tapestries_1"
+*gosub_scene Langston/langston lg_walk_time
+The tapestries show an ancient order of sun worshippers. They raised this tower hundreds or even thousands of years ago to hold back some dark magic or an undead plague.
+
+Going by other, similar tales, as long as one of their order remains present and dedicated to the light, the area is sanctified, and no monsters will rise from the grave.
+*goto wol_ch5_wait_menu
+
+*label wol_ch5_tapestries_blank
+*set wol_ch5_tapestries_done true
+*set minutes_to_pass 10
+*set time_advance_call_id "wol_ch5_tapestries_2"
+*gosub_scene Langston/langston lg_walk_time
+The tapestries show holy figures wielding brightly shining light against some undead menace, but you lack the context for the events you are seeing.
+*goto wol_ch5_wait_menu
+
+*label wol_ch5_mosaic
+*set scenery_subplace "langston_true_sun_temple_rotunda"
+At first you think it is a beautiful bit of tilework, the same sun symbol that adorns the rest of the temple, surrounded by concentric rings of sunbeams and rays. It takes a moment to realize that the floor is seamless, so either the whole of it was carved from a single enormous stone or magic went into the building's construction.
+
+Lost in the shining patterns, you catch your foot on something as you walk around. The central holy symbol is not perfectly flat. It is slightly indented, and the shape of the indent is a much smaller sunburst, about the size of a gnome's hand with its fingers outstretched.
+*goto wol_ch5_mosaic_menu
+
+*label wol_ch5_mosaic_menu
+*choice
+  # Examine the hollow closely.@{show_stat_hints  [Investigation or Perception DC 15]|}
+    You crouch over the hollow and study it from several angles.
+    *gosub_scene dice_engine roll_skill_check 15 "investigation" "" "perception" "" "" ""
+    *if (check_success)
+      *set wol_ch5_indent_amulet true
+      Hairline cracks radiate out from the hollow, even and manufactured, as if the floor might open. On closer inspection it is the right size and shape to hold a sun-shaped amulet like the one you saw the cleric wearing during the funeral.
+      *goto wol_ch5_mosaic_press
+    *else
+      The hollow is still a mystery to you.
+      *goto wol_ch5_mosaic_press
+  *if ((has_lockpick_set) or (has_tool_kit))
+    # Work at the recess with your tools.@{show_stat_hints  [Dexterity DC 10]|}
+      You take a slim tool from your kit and feel around the edges of the recess.
+      *gosub wol_ch5_roll_dex 10 "Dexterity"
+      *if (check_success)
+        *goto wol_ch5_mosaic_open
+      *else
+        *goto wol_ch5_mosaic_thrum
+  # Probe the hollow with something hard.@{show_stat_hints  [Dexterity DC 15]|}
+    You work something hard and narrow from your gear into the recess, tapping at the stone. You can feel the mechanism shudder, so something is happening.
+    *gosub wol_ch5_roll_dex 15 "Dexterity"
+    *if (check_success)
+      *goto wol_ch5_mosaic_open
+    *else
+      *goto wol_ch5_mosaic_thrum
+  # Leave the sunburst alone for now.
+    *goto wol_ch5_wait_menu
+
+*comment The indent has been seen but nothing has been done to it yet (source 250 and 283: press it or leave it).
+*label wol_ch5_mosaic_press
+*choice
+  # Press on the sunburst shape.
+    *goto wol_ch5_mosaic_flash
+  # Lay a fingertip on the center of the sunburst.
+    You lay one fingertip on the center of the sunburst and lean in a little.
+    *goto wol_ch5_mosaic_flash
+  # Leave it alone.
+    *goto wol_ch5_mosaic_sealed
+
+*comment The cracks open for a moment along the lines of the concentric circles (source 235): a mechanism that would sink into the floor.
+*label wol_ch5_mosaic_open
+Cracks open momentarily along the lines of the concentric circles. It looks like a mechanism that would sink into the floor.
+*choice
+  # Press the sunburst shape.
+    *goto wol_ch5_mosaic_flash
+  # Leave it alone.
+    *goto wol_ch5_mosaic_sealed
+  # Back away from the cracks.
+    *goto wol_ch5_mosaic_sealed
+
+*label wol_ch5_mosaic_flash
+*set wol_ch5_mosaic_pressed true
+As you press into the sunburst, you feel a buildup of magical energy.
+*gosub wol_ch5_radiant_save
+*gosub_scene dice_engine heroic_award "wolves_ch5_mosaic"
+With a faint click, the sun-shaped opening returns to its hidden state. The seams vanish entirely, and something beneath the floor grinds into place.
+
+Despite your best efforts to find it, the hollow has vanished from the floor. It needs some key or object to open, and your curiosity will have to wait.
+*goto wol_ch5_mosaic_end
+
+*label wol_ch5_mosaic_thrum
+You feel a thrum of magic energy run through you.
+*gosub wol_ch5_radiant_save
+*choice
+  # Leave it alone and back away.
+    *goto wol_ch5_mosaic_sealed
+  # Step back from the floor.
+    You take a long step back from the floor.
+    *goto wol_ch5_mosaic_sealed
+  # Hold still until the thrum fades.
+    You hold still, and the thrum fades from your arms and chest.
+    *goto wol_ch5_mosaic_sealed
+
+*label wol_ch5_mosaic_sealed
+As you back away, you shift your weight and unstick whatever mechanism holds the recess partly open. With a faint click, the sun-shaped opening returns to its hidden state. The seams vanish entirely, and something in the floor grinds into place.
+
+Despite your best efforts, the hollow has vanished completely.
+*goto wol_ch5_mosaic_end
+
+*label wol_ch5_mosaic_end
+*set wol_ch5_mosaic_done true
+*set minutes_to_pass 10
+*set time_advance_call_id "wol_ch5_mosaic_1"
+*gosub_scene Langston/langston lg_walk_time
+*page_break Back to waiting…
+*goto wol_ch5_wait_menu
+
+*comment A Dexterity saving throw against DC 10 against the mosaic's flash; a failed save costs 1d4 radiant damage (the player cannot be killed by it: hit points stop at 1). One lock for the damage on this page.
+*label wol_ch5_radiant_save
+*set save_vs "dex"
+*gosub wol_ch5_roll_dex 10 "Dexterity saving throw"
+*set save_vs ""
+*if (not(check_success))
+  *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+    *rand wol_ch5_radiant_dmg 1 4
+    *if (hp_current > wol_ch5_radiant_dmg)
+      *set hp_current - wol_ch5_radiant_dmg
+    *else
+      *set hp_current 1
+    *set stat_bump_locked true
+    *set locked_stat_bump_page_id page_id
+
+  [b][☀ You take ${wol_ch5_radiant_dmg} radiant damage.][/b]
+*return
+
+*comment A plain ability check or save with no skill behind it: the ability's modifier and nothing else.
+*label wol_ch5_roll_dex
+*params rd_dc rd_name
+*set check_stat "dex"
+*set check_dc rd_dc
+*set check_skill rd_name
+*set check_add_prof_bonus false
+*gosub_scene dice_engine roll_d20_check
+*return
+
+*label wol_ch5_return
+*set wol_chapter_5_checkpoint "talk"
+*set scenery_subplace "langston_true_sun_temple_rotunda"
+Solaine finally comes in through the main doors, her face ashen, muttering under her breath. The hem of her white robe is stained black with what looks like soil, and some of it falls in clumps from her slippers.
+
+You startle her when you stand to greet her.
+
+"Oh!" A flash of fear and anger crosses her face before she composes herself and goes on in a more measured, even cheerful tone. "What can I do for you?"
+
+You tell her that the mayor sent you.
+
+"Ah, yes, of course," she says with a warming smile. "Of course. Have you been waiting long?"
+
+You tell her how long you have waited.
+
+"That's good," the cleric says, obviously not having listened to your reply. "It's not often I receive guests, so is there anything I can do for you before we get to the business at hand?"
+
+Solaine asks what you need to know, and she looks at you expectantly. She radiates an obvious, earnest desire for some conversation.
+*goto wol_ch5_talk
+
+*label wol_ch5_talk
+*set wol_chapter_5_checkpoint "talk"
+*set scenery_subplace "langston_true_sun_temple_rotunda"
+*choice
+  *if (not(wol_ch5_asked_tomlin))
+    # Ask about Tomlin.
+      *set wol_ch5_asked_tomlin true
+      You ask her about Tomlin.
+
+      "Ah, Tomlin," Solaine says, her features falling for a moment before she puts a sad smile back on her face. "Well, it's common knowledge that we were lovers at one point. Though that's hardly an exclusive honor I have."
+
+      She gives a bright laugh and checks to see whether you are laughing too.
+
+      "Still, he said that he would wait for me, and that I was his only love. Then I was called back to my order's enclave."
+
+      The cleric takes a moment to collect herself. "The pilgrimage back to the Order of Radiant Light was difficult, but thinking of him made this lonely temple more bearable. Sadly, it was not to be..."
+
+      She takes another deep breath.
+
+      "I returned to find the man I loved betrothed to another. It was devastating. But I overcame it. After all, my duty is to all of Langston and its people."
+
+      You ask why she is telling you all of this.
+
+      "This is all common knowledge around town," she says with an unusually broad smile. "Better you hear it from me than from the town gossip. So with that out of the way, what can I do for you?"
+      *goto wol_ch5_talk
+  *if (not(wol_ch5_asked_temple))
+    # Ask how the dead might be connected to this place.
+      *set wol_ch5_asked_temple true
+      You ask how the dead might be connected to this place.
+
+      Solaine looks shocked for a moment and studies your face carefully as she brushes at her dirty robes. Apparently satisfied with what she sees, the young cleric takes a deep breath and gestures to the tapestries hanging around you both.
+
+      "As the story goes, this temple was raised hundreds of years ago, long before Langston was here. These lands were ruled by the dead. The Order of Radiant Light consecrated these grounds to prevent the dead from rising."
+
+      She pauses and clenches a fist, struggling with some overwhelming emotion. When she continues, her voice shakes slightly.
+
+      "So, to protect the land, a caretaker was installed. As long as the power of the Order of Radiant Light remains here, the dead will be still. It is our duty to keep these lands safe, as much as it is Roi's."
+
+      You thank Solaine for the story.
+
+      "But you aren't here for a history lesson. What can I do for you?"
+      *goto wol_ch5_talk
+  *if (not(wol_ch5_asked_alone))
+    # Ask why she is alone here.
+      *set wol_ch5_asked_alone true
+      You ask why she is here alone.
+
+      "Apparently, there was a time when being caretaker here wasn't a solitary post. There was a whole community full of protectors. But that... just isn't the case anymore."
+
+      You ask how that changed so much over time.
+
+      "Most people don't even know why this place is here anymore," she says, gesturing up at the tapestries. "But the temple is why Langston is here. The temple keeps the dead in their graves."
+
+      She trails off, and you are about to ask more before she looks back at you with an unusually big smile.
+
+      "There used to be clerics and acolytes. Families, even. But the magic only needs one of us to fulfill the terms of the spell with the necessary rituals. So I'm here alone, only seeing other members of my order when I make the occasional pilgrimage to my order's enclave and return before the magic can fade."
+
+      She pauses, rubbing her hands on her robe but still smiling at you. "I won't lie, though. It does get lonely from time to time, so thank you so much for stopping by. What else can I do for you?"
+      *goto wol_ch5_talk
+  # Ask to see Maybelline's body.
+    *goto wol_ch5_body
+
+*label wol_ch5_body
+You tell her you are here to examine Maybelline's body. The mayor says the burial cannot wait much longer, and this may well be your last chance to gather clues about the killer.
+
+"No," Solaine says with an emphatic shake of her head. "Definitely not. It's... it's just not necessary, and it's an affront to the family of the deceased. I'm very sorry, but I can't let you do that."
+
+Since this was the purpose of your visit, you produce the mayor's letter. She takes it and reads with a slight scowl. Finally Solaine sighs.
+
+"I suppose I have no choice in the matter, then. You'll find Maybelline in the cemetery's mausoleum. The altar inside is enchanted to preserve her until her burial."
+
+She hands the letter back and turns her attention to the tapestries overhead. After a moment's silence she gives you directions to the cemetery, distractedly.
+
+"Be careful, adventurer," Solaine says as you cross the hall.
+*if (not(wol_ch5_letter_shown))
+  *set wol_ch5_letter_shown true
+*page_break Head to the cemetery…
+*goto wol_ch5_cemetery
+
+*comment ── THE LIBRARY (source 258, 281, 256, 288, 251, 279, 230, 239, 254, 261, 292, 243, 249) ── The north passage. Two books to look at, in either order, then back to the hall (the wing is done once the player leaves it). The black tome *Turning from the Light* is Infernal (a tiefling's
+*comment language: lang_infernal, character_stats.txt apply_race_languages); anyone else reads it by Comprehend Languages (a spell or the scroll), by puzzling at the script (Arcana or Religion DC 15), or sees only its pictures. The curse compendium hides Solaine's unfinished letter to Tomlin (an item the player may take).
+*label wol_ch5_library
+*set wol_chapter_5_checkpoint "library"
+*set scenery_subplace "langston_true_sun_temple_library"
+*set minutes_to_pass 5
+*set time_advance_call_id "wol_ch5_library_1"
+*gosub_scene Langston/langston lg_walk_time
+A large door to the north opens into a sizable library with several reading tables in the middle of the room. Bookshelves cover the three walls you can see. A small stack of books and scrolls rests on one table, and the room is empty.
+
+You go through the pile, which is mostly religious texts and rituals, with a few tomes of history. It looks like what you would expect a cleric to consult around the time of a funeral, including the source Solaine drew on in the ceremony and a treatise on the treatment of common curses.
+
+One book stands out among the leather-bound tomes: a single black volume bound in some other skin, with a tarnished metal lock lying open on it. Its title is written in a script other than Common.
+*goto wol_ch5_library_menu
+
+*label wol_ch5_library_menu
+*set scenery_subplace "langston_true_sun_temple_library"
+*choice
+  *if (not(wol_ch5_curses_done))
+    # Read the book on curses.
+      *goto wol_ch5_curses
+  *if (not(wol_ch5_tome_done))
+    # Examine the black book.
+      *goto wol_ch5_tome
+  *if ((wol_ch5_curses_done) or (wol_ch5_tome_done))
+    # Leave the library and look elsewhere in the temple.
+      *set wol_ch5_library_done true
+      *page_break Back to the hall…
+      *goto wol_ch5_hub
+
+*label wol_ch5_curses
+*set minutes_to_pass 10
+*set time_advance_call_id "wol_ch5_curses_1"
+*gosub_scene Langston/langston lg_walk_time
+The book is titled simply *Compendium of Curses: 17th Edition*. It is bound in leather and is ridiculously thick, with hundreds or even thousands of entries. The scribe who wrote it included helpful illustrations of the curses' effects, diagrams of wards against them, and embellished sections that outline cures where any could be had.
+*choice
+  # Open the book at random to a curse.
+    The first curse you turn to is *Hildebrand's Horrendous Hiccups*, which is never-ending hiccups for the rest of your life. The cure, apparently, is a dram of water from the Shadow Plane.
+
+    The next is *Primordial Rot*, a creeping incursion from one of the elemental planes. An arm slowly burns, or a leg turns to stone. Opening your mouth might send winds gusting from your lungs or acrid water spraying from your stomach. The symptoms vary widely and are all horrific, and the cure is a special ritual for a divine magic user.
+
+    You keep turning from curse to curse. *Temporal Slide*. *Lovebane*. *Century Sleep*. You become so engrossed in the sometimes comical, sometimes devastating effects that you nearly miss the sheet of paper tucked between two pages.
+    *goto wol_ch5_letter_find
+  # Try to work out what the cleric was looking for.
+    You leaf through the book for the pages that show the most wear. The spine falls open of its own accord toward the middle, where a sheet of paper has been tucked between two pages.
+    *goto wol_ch5_letter_find
+  # Check the margins for her notes.
+    You run a thumb down the margins. Most are clean, but one page is soft from handling, and a folded sheet marks it.
+    *goto wol_ch5_letter_find
+
+*label wol_ch5_letter_find
+*set wol_ch5_curses_done true
+On a page that holds *Lwelyn's Grim Visage* and lycanthropy, you find a single sheet of paper with a note in an elegant, looping hand. Some words are crossed out in jagged strokes, and small watermarks mar others. It looks as though the writer was crying as they wrote.
+
+The letter says:
+
+[i]"Dearest Tomlin,[/i]
+
+[i]I write to you now as a truly changed woman. I returned from my pilgrimage needing you and your love more than ever. I needed your strength.[/i]
+
+[i]Yet when I arrived in Langston, instead of a lover, I had a wedding to officiate. And while I can find it in my heart to love and forgive you, the darkness blooming in my heart will not forgive her. However, I have found a new kind of strength.[/i]
+
+[i]I must tell you—"[/i]
+
+The letter ends there. A few words are scribbled out in some powerful emotion and are completely illegible.
+*choice
+  # Keep the letter.
+    *goto wol_ch5_letter_keep
+  # Fold the letter into your pack.
+    You fold the sheet along its old creases and slip it into your pack.
+    *goto wol_ch5_letter_keep
+  # Put it back.
+    You decide to respect the cleric's privacy and let her finish the letter someday.
+    *goto wol_ch5_library_menu
+
+*label wol_ch5_letter_keep
+*set wol_ch5_letter_taken true
+*if (not(wol_ch5_letter_granted))
+  *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+    *set wol_ch5_letter_granted true
+    *gosub_scene equipment grant_gear "solaines_unfinished_letter" 1
+    *set stat_bump_locked true
+    *set locked_stat_bump_page_id page_id
+
+[b][💌 Received: Solaine's Unfinished Letter][/b]
+*goto wol_ch5_library_menu
+
+*label wol_ch5_tome
+*set minutes_to_pass 10
+*set time_advance_call_id "wol_ch5_tome_1"
+*gosub_scene Langston/langston lg_walk_time
+The black tome is bound in something like leather, but rougher, almost like sharkskin with irregular spines and bumps. It smells faintly of brimstone and is oily to the touch, though your fingers come away dry.
+
+The title is written in a language very distant from Common, an unsettlingly deep red in jagged symbols.
+*if (lang_infernal)
+  You know the tongue at a glance. It is Infernal, and the title reads *Turning from the Light*.
+
+  You open the tome and start reading quickly.
+  *page_break Read it…
+  *goto wol_ch5_tome_read
+*if (lang_celestial)
+  It is not Celestial, and its meaning stays closed to you. Still, you see twisted echoes of Celestial in the text as you flip through the book.
+*if (lang_abyssal)
+  It is not Abyssal, and its meaning stays closed to you, though there are similarities. The text is more orderly and structured than the language of demons.
+*choice
+  *if ((known_comprehend_languages) or (has_scroll_comprehend_languages))
+    # Use magic to read the script.
+      *goto wol_ch5_tome_magic
+  # Puzzle out the script.@{show_stat_hints  [Arcana or Religion DC 15]|}
+    You hold the page at an angle and work at the jagged characters, looking for a pattern you know.
+    *gosub_scene dice_engine roll_skill_check 15 "arcana" "" "religion" "" "" ""
+    *if (check_success)
+      The shape of the lines comes clear at last. This is Infernal, and the book is called *Turning from the Light*. You can read it.
+      *page_break Read it…
+      *goto wol_ch5_tome_read
+    *else
+      The characters slide away from every pattern you try, and the book keeps its meaning to itself. You can only look at its pages.
+      *page_break Look at its pictures…
+      *goto wol_ch5_tome_pictures
+  # Open the book anyway.
+    *goto wol_ch5_tome_pictures
+
+*label wol_ch5_tome_magic
+*if (not(known_comprehend_languages))
+  *if (has_scroll_comprehend_languages)
+    You unroll the scroll and read its line over the page. The jagged script settles into plain words as the spell takes hold.
+    *gosub_scene equipment sell_gear "scroll_comprehend_languages"
+*else
+  You speak the words of the spell, and the jagged script settles into plain words.
+With your new-found clarity you know the book is written in Infernal and is called *Turning from the Light*.
+*page_break Read it…
+*goto wol_ch5_tome_read
+
+*label wol_ch5_tome_read
+*set wol_ch5_tome_done true
+*set wol_ch5_tome_state "read"
+The book begins by describing in great detail how to regain divine powers after turning from a light- or sun-based deity. It goes to great lengths to describe the situations in which one's actions do not carry the same spiritual consequences, such as under magical compulsion or a curse.
+
+It goes on to describe rites and rituals for a pact with infernal forces, including which sacrifices to make and which tools to use. The tools are illustrated in graphic detail as jagged, horrific implements of pain and terror.
+
+A long section describes the anatomy of humanoids for the purpose of either killing them or keeping them alive, with a step-by-step for an effective autopsy. The same section has instructions for creating and modifying undead servants, though some parts are beyond your understanding.
+
+As you leaf through, you find a small scrap of paper written in Common. It says "This one." and marks an entry with images of several undead and how to destroy them, including zombies, ghouls and vampires.
+*goto wol_ch5_library_menu
+
+*label wol_ch5_tome_pictures
+*set wol_ch5_tome_done true
+*set wol_ch5_tome_state "pictures"
+The pictures in the book include various forms of dark moon iconography, circles surrounded by glyphs unfamiliar to you, and diagrams of nasty-looking tools that could be weapons, torture implements or specialized butcher's tools. A whole section seems devoted to the study of corpses or bones.
+
+As you leaf through, you find a small scrap of paper written in Common. It says "This one." and marks an entry with images of what seem to be animated corpses.
+
+The walking dead appear in every state, from bare skeletons to corpses with their rotting flesh intact. Ghouls hunch over other corpses and feed on the flesh. The text itself stays beyond your reading, but the illustrations are ominous enough.
+*goto wol_ch5_library_menu
+
+*comment ── THE LIVING QUARTERS (source 245, 253, 240, 263, 287, 295, 231, 242, 275, 299, 260, 238, 300, 247) ── The east passage: a hall of empty cells and one shut door at the end, the cleric's room. The room: the bed and the worn envelope (Tomlin's poem), the wardrobe of vestments and the lavender ribbon behind it.
+*comment The ribbon is the item Bloodstained Lavender Ribbon. Moving the wardrobe is Strength DC 12 (an Iron Crowbar gives advantage), or Mage Hand fetches the ribbon (the source's "spell or ability"). The room is the picture langston_solaine_quarters.
+*label wol_ch5_quarters
+*set wol_chapter_5_checkpoint "quarters"
+*set scenery_subplace "langston_solaine_quarters"
+*set minutes_to_pass 5
+*set time_advance_call_id "wol_ch5_quarters_1"
+*gosub_scene Langston/langston lg_walk_time
+You find several empty monastic cells with their doors standing open. A quick count shows thirteen rooms, six on each side of the hall and one at the far end. Only the door at the end of the hall is shut, presumably the cleric's room. You head toward it.
+*if (weather_severity >= 3)
+  *if (weather_cold)
+    A skylight runs the length of the hall, and driven snow scrapes across it.
+  *else
+    A skylight runs the length of the hall, and the storm drums on it.
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  The orbs set into the vaulted ceiling give a thin golden light, and a skylight that runs the length of the hall shows black sky.
+*else
+  A skylight runs the length of the hall and lets in the light of the day.
+
+The floors and walls are the same light-colored stone as the outside of the temple. They are smoother than the weathered outside, yet they hold little luster, and the floor looks unpolished for a lifetime. Dust and cobwebs lurk in the corners.
+
+Some of the open doors reveal aging furniture collecting dust, and others are as stark and bare as prison cells. Your footsteps make echoes of echoes that come and go from room to room. The air smells of dust.
+
+You come to the door at the end of the hall.
+*goto wol_ch5_door_menu
+
+*label wol_ch5_door_menu
+*choice
+  # Knock on the door.
+    *set minutes_to_pass 1
+    *set time_advance_call_id "wol_ch5_knock_1"
+    *gosub_scene Langston/langston lg_walk_time
+    You knock. A hollow silence answers.
+    *goto wol_ch5_door_menu
+  # Open the door and walk in.
+    *goto wol_ch5_room
+  *if (not(wol_ch5_door_checked))
+    # Examine the door and the area around it.@{show_stat_hints  [Investigation DC 15]|}
+      *set wol_ch5_door_checked true
+      You take a closer look at the door and the area around it. At a glance the entrance looks ordinary: a wooden door set in a stone frame with bronze hinges.
+      *gosub_scene dice_engine roll_skill_check 15 "investigation" "" "" "" "" ""
+      *if (check_success)
+        *set wol_ch5_door_scratched true
+        The only things out of place are the door's latch, which is unusually scratched and a little bent. It looks as though someone both unusually strong and unfamiliar with the latch had grown frustrated with the door. The scratches could be claw marks or tool marks, and you cannot tell which.
+      *else
+        You poke around the door, its latch and the frame, and find all three ordinary.
+      *goto wol_ch5_door_menu
+
+*label wol_ch5_room
+*set scenery_subplace "langston_solaine_quarters"
+The door is unlocked and swings open easily. The room is sparse. It holds a single bed, a bare chair, a bedside table with an envelope on it, and a wardrobe of pale wood.
+*goto wol_ch5_room_menu
+
+*label wol_ch5_room_menu
+*choice
+  *if (not(wol_ch5_bed_done))
+    # Examine the bed and the bedside table.
+      *set wol_ch5_bed_done true
+      The single bed has linen sheets and a thick wool blanket, and it is neatly made. It is so neat that you wonder whether it was slept in last night. It looks like a perfectly normal bed, even if it does not look comfortable.
+
+      An envelope lies on the nightstand. It is worn, especially along the crease, and has clearly been opened many times.
+      *choice
+        # Read what is inside.
+          *set wol_ch5_poem_read true
+          It is a love letter written in cringeworthy verse to express affection for Solaine. Little more than an overdone limerick, the tract is titled *A Thyme for Love in the Sun* and is signed by Tomlin.
+
+          It includes lines like "your toes are dainty as the red rose" and "putting pansies forever into your handsies," and you can manage only a scan of the poem. There seems no value in taking it, and it is surprising that Solaine keeps it at all. Every line is worse than the last, and you feel dumber for having read it once. You put the poetry back in the envelope and return it to the nightstand. Tomlin's talents lie elsewhere, and he has hidden depths of soppiness.
+          *goto wol_ch5_room_menu
+        # Leave the envelope where it lies.
+          You leave the envelope on the nightstand, exactly as you found it.
+          *goto wol_ch5_room_menu
+        # Turn the envelope over without opening it.
+          You tip the envelope in your fingers. The paper is soft with handling, and Tomlin's name is written on the back.
+          *goto wol_ch5_room_menu
+  *if (not(wol_ch5_wardrobe_done))
+    # Look closely at the wardrobe.
+      *goto wol_ch5_wardrobe
+  *if (not(wol_ch5_door_checked))
+    # Close the door and examine the entrance for clues.
+      *goto wol_ch5_door_menu
+  # Return to the front hall.
+    *set wol_ch5_quarters_done true
+    *page_break Back to the hall…
+    *goto wol_ch5_hub
+
+*label wol_ch5_wardrobe
+*set wol_ch5_wardrobe_seen true
+The wardrobe is full of religious vestments. One of the robes shows evidence of recent repair. It looks as though the vestments were torn apart at the seams and then restitched.
+
+You also notice that the wardrobe stands out from the wall, and something that seems to have fallen or been kicked sits behind the heavy piece of furniture.
+*goto wol_ch5_wardrobe_menu
+
+*label wol_ch5_wardrobe_menu
+*choice
+  *if (not(wol_ch5_ribbon_found))
+    # Move the wardrobe to look behind it.@{show_stat_hints  [Strength DC 12; a crowbar gives advantage]|}
+      You set your shoulder to the wardrobe and push.
+      *if (has_iron_crowbar)
+        *set advantage true
+      *gosub_scene dice_engine roll_skill_check 12 "athletics" "" "" "" "" ""
+      *if (check_success)
+        *goto wol_ch5_ribbon
+      *else
+        The wardrobe refuses to budge, however hard you push.
+        *set wol_ch5_wardrobe_stuck true
+        *goto wol_ch5_wardrobe_menu
+  *if ((not(wol_ch5_ribbon_found)) and (known_mage_hand))
+    # Use Mage Hand to retrieve the object.
+      You send a spectral hand behind the wardrobe and draw out whatever has fallen there.
+      *goto wol_ch5_ribbon
+  # Step back from the wardrobe.
+    *set wol_ch5_wardrobe_done true
+    *goto wol_ch5_room_menu
+
+*label wol_ch5_ribbon
+*set wol_ch5_ribbon_found true
+*set wol_ch5_wardrobe_done true
+*if (not(wol_ch5_ribbon_granted))
+  *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+    *set wol_ch5_ribbon_granted true
+    *gosub_scene equipment grant_gear "bloodstained_lavender_ribbon" 1
+    *set stat_bump_locked true
+    *set locked_stat_bump_page_id page_id
+The wardrobe grates against the floor as you move it, and you retrieve a single ribbon that had fallen behind it. You push the furniture back into place and take a closer look at your find.
+
+The ribbon is a lavender strip of silk, like one a girl or young woman might wear in her hair, tied tightly into a double bow. It is relatively free of dust, which suggests it has lain behind the wardrobe only a short while. It is also visibly stained with blood.
+
+[b][🎀 Received: Bloodstained Lavender Ribbon][/b]
+*goto wol_ch5_room_menu
+
+*comment ── THE DINING HALL AND KITCHEN (source 267, 277, 280, 244, 269, 255, 237, 266, 232) ── The south passage: a dusty dining hall (the picture langston_true_sun_temple_refectory), and beyond it the kitchen with its stove and its larder. The stove holds charred holy vestments (the item Burnt Holy Vestments);
+*comment the larder holds fresh meat with ragged bite marks. The source's "morning sunlight" in the windows follows the hour.
+*label wol_ch5_dining
+*set wol_chapter_5_checkpoint "dining"
+*set scenery_subplace "langston_true_sun_temple_refectory"
+*set minutes_to_pass 5
+*set time_advance_call_id "wol_ch5_dining_1"
+*gosub_scene Langston/langston lg_walk_time
+The south passage is a foyer leading to a pair of double doors, one left open on stuck hinges. Inside is a large dining hall with five large round tables of smooth wood, each surrounded by eight chairs. The walls are bare except for tall windows of frosted glass.
+*if (weather_severity >= 3)
+  *if (weather_cold)
+    Driven snow hisses against the frosted glass and the orbs burn warm above.
+  *else
+    The storm hisses against the frosted glass and the orbs burn warm above.
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  The orbs set in the ceiling lay a warm gold light over the tables.
+*else
+  The frosted glass lets in a soft light from outside.
+
+Each table is neatly stowed in a state of disuse. A layer of dust lies on all the furniture, and the tables have gone untouched for a very long time. The sense of loneliness in the unused space is palpable, and Solaine is absent from it.
+
+At the far end of the room a door leads to an adjoining kitchen. Through the open door you can see a kitchen that is windowless yet well lit.
+*choice
+  # Look in the kitchen.
+    *goto wol_ch5_kitchen
+  # Walk the length of the dining hall.
+    You walk between the tables to the far door, trailing a finger through the dust on one of them, and step through into the kitchen.
+    *goto wol_ch5_kitchen
+  # Return to the main entrance.
+    *set wol_ch5_dining_done true
+    *page_break Back to the hall…
+    *goto wol_ch5_hub
+
+*label wol_ch5_kitchen
+*set scenery_subplace "langston_true_sun_temple_kitchen"
+The kitchen is windowless, but glowing orbs set into the ceiling give a warm, yellow light. It holds an indoor water pump over a washbasin, a dark iron stove, and a single setting of plate, bowl and cutlery stacked neatly beside the washbasin.
+
+The stove is stacked with one pot and one pan, and a cauldron hangs in the unlit hearth. The stove looks little used, with patches of rust on its top, but ash and soot around the door show that someone has lit it recently. A heavy wooden door set in a darker granite frame looks like it could be a larder or cool storage of some kind.
+*goto wol_ch5_kitchen_menu
+
+*label wol_ch5_kitchen_menu
+*choice
+  *if (not(wol_ch5_stove_done))
+    # Take a closer look at the stove.
+      *goto wol_ch5_stove
+  *if (not(wol_ch5_larder_done))
+    # Inspect the larder.
+      *goto wol_ch5_larder
+  # Go back through the dining hall.
+    *set wol_ch5_dining_done true
+    *page_break Back to the hall…
+    *goto wol_ch5_hub
+
+*label wol_ch5_stove
+*set minutes_to_pass 5
+*set time_advance_call_id "wol_ch5_stove_1"
+*gosub_scene Langston/langston lg_walk_time
+The stovetop looks unused for some time, with dust lying on it. There is, however, a considerable amount of ash on the floor, and when you look inside the stove you find the charred remains of articles of clothing.
+*choice
+  # Examine the clothes more carefully.@{show_stat_hints  [Perception DC 10]|}
+    *goto wol_ch5_stove_check
+  # Sift through the ash with your fingers.@{show_stat_hints  [Investigation DC 10]|}
+    *gosub_scene dice_engine roll_skill_check 10 "investigation" "" "" "" "" ""
+    *if (check_success)
+      *goto wol_ch5_vestments_good
+    *else
+      *goto wol_ch5_vestments_poor
+  # Put them back.
+    You figure there must be a good reason for burnt clothes in the kitchen of a sun temple, and you leave them where you found them.
+    *set wol_ch5_stove_done true
+    *goto wol_ch5_kitchen_menu
+
+*label wol_ch5_stove_check
+You take a closer look at the burnt clothes.
+*gosub_scene dice_engine roll_skill_check 10 "perception" "" "" "" "" ""
+*if (check_success)
+  *goto wol_ch5_vestments_good
+*else
+  *goto wol_ch5_vestments_poor
+
+*label wol_ch5_vestments_good
+*set wol_ch5_vestments_found true
+*set wol_ch5_stove_done true
+These are almost certainly burned holy vestments, but they were not in good condition when they went into the fire. Many of the seams burst long ago, as you can see in the charred threads. On one cuff you find a few droplets of what could be blood.
+*goto wol_ch5_vestments_take
+
+*label wol_ch5_vestments_poor
+*set wol_ch5_vestments_found true
+*set wol_ch5_stove_done true
+The clothes seem to be made of white cloth, now charred and blackened. You also find some fresh-looking stitches here and there but cannot quite make out the pattern.
+*goto wol_ch5_vestments_take
+
+*label wol_ch5_vestments_take
+*if (not(wol_ch5_vestments_granted))
+  *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+    *set wol_ch5_vestments_granted true
+    *gosub_scene equipment grant_gear "burnt_holy_vestments" 1
+    *set stat_bump_locked true
+    *set locked_stat_bump_page_id page_id
+
+[b][🧵 Received: Burnt Holy Vestments][/b]
+*goto wol_ch5_kitchen_menu
+
+*label wol_ch5_larder
+*set wol_ch5_larder_done true
+*set minutes_to_pass 5
+*set time_advance_call_id "wol_ch5_larder_1"
+*gosub_scene Langston/langston lg_walk_time
+You open the larder, and it is noticeably cooler in here. Despite the cool darkness you can see wilted vegetables and sprouting potatoes. A moldy heel of bread sits alone on a shelf as if forgotten.
+
+Several large cuts of meat hang from hooks, wrapped in rough cloth: beef, a goat's leg and two whole chickens. Given the state of the rest of the food, they look surprisingly fresh. As you look closer, the raw meat seems to carry small, ragged bite marks.
+
+Her unusual diet is a puzzle of its own, but where she has gone is still unknown to you, so you keep looking.
+*goto wol_ch5_kitchen_menu
+
+*comment ── THE CEMETERY AND THE MAUSOLEUM (source 293, 264, 276, 286, 297, 246, 262, 234, 291, 298, 236, 273) ── Solaine gives directions; the player enters the cemetery from the south, may look at the dug-up grave, and goes into the mausoleum, where Maybelline's body rises. The fight is the library type "zombie" (the source's
+*comment Risen Corpse: 22 HP, AC 8, Slam +3 for 1d6+1, poison immune), whose UNDEAD FORTITUDE is RAW (combat.txt fight_undead_fortitude: a Constitution save at DC 5 + damage keeps it at 1 HP unless the blow is radiant or a natural 20). The source's divine-spellcaster option (a spent slot makes it fail) is not built.
+*comment After the fight: the corpse's claw marks and Tomlin's crushed daisies, then back to Solaine (who sends the player to the mayor) and the chunk ends at the temple door. The source's bright morning is the hour and weather here.
+*label wol_ch5_cemetery
+*set wol_chapter_5_checkpoint "cemetery"
+*set scenery_subplace "langston_true_sun_cemetery"
+*set minutes_to_pass 10
+*set time_advance_call_id "wol_ch5_cemetery_1"
+*gosub_scene Langston/langston lg_walk_time
+Following Solaine's directions, you enter the cemetery from the south.
+*if (weather_severity >= 3)
+  *if (weather_cold)
+    Driven snow scours the headstones and drifts across the flagstone paths between the graves.
+  *else
+    The storm bends the grass between the graves, and rain streams over the flagstone paths between the headstones.
+*elseif (weather = "Sleet")
+  Sleet ticks against the headstones and gathers in the joints of the wet flagstone paths.
+*elseif (weather = "Snow")
+  Snow rests on the headstones and lies in a thin layer over the grass and flagstone paths.
+*elseif (weather = "Rain")
+  Rain beads on the headstones, and wet flagstone paths wind between rows of graves under the grass.
+*elseif (weather = "Fog")
+  Fog drifts among the headstones and hides the farther turns of the flagstone paths.
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *if (weather = "Clear")
+    The moon and stars pick out the edges of the headstones in silver, and flagstone paths wind between rows of graves under the grass.
+  *else
+    The headstones are pale shapes in the dark, and flagstone paths wind between rows of graves under the grass.
+*elseif (time_period = "Dusk")
+  *if (weather = "Clear")
+    The low light limns the hard edges of the headstones in gold, and flagstone paths wind between rows of graves under the grass.
+  *else
+    The last dim light catches the headstones, and flagstone paths wind between rows of graves under the grass.
+*elseif (weather = "Clear")
+  Bright sun streams across the whole graveyard, limning the hard edges of the headstones in golden light, and flagstone paths wind between rows of graves covered with green grass.
+*else
+  Grey light lies across the graveyard, and flagstone paths wind between rows of graves covered with green grass.
+
+From what you can see, the mausoleum stands at the center of the graveyard. It is built of the same light-colored stone as the temple and stands vigil over the more varied headstones and monuments that mark individual resting places. Flowers in various stages of freshness dot headstones and plots throughout the cemetery, with a larger, fresher collection on the mausoleum steps.
+*if ((weather = "Snow") or (weather = "Blizzard"))
+  Snow partly buries the flowers nearest the ground, though the fresher offerings on the steps still show through.
+
+Off to the left, one of the graves has been disturbed in a strange eruption of dark fresh soil. It looks more like an eruption than a dug grave, though you cannot tell from here what it is.
+*goto wol_ch5_cemetery_menu
+
+*label wol_ch5_cemetery_menu
+*choice
+  *if (not(wol_ch5_grave_seen))
+    # Inspect the dug-up grave.
+      *goto wol_ch5_grave
+  # Head straight to the mausoleum.
+    *goto wol_ch5_mausoleum
+  # Follow the flagstone path to the mausoleum steps.
+    You follow the flagstone path between the graves to the mausoleum steps.
+    *goto wol_ch5_mausoleum
+
+*label wol_ch5_grave
+*set wol_ch5_grave_seen true
+*set minutes_to_pass 5
+*set time_advance_call_id "wol_ch5_grave_1"
+*gosub_scene Langston/langston lg_walk_time
+As you approach, you see that the grave has been hastily dug open to expose a body wrapped in a pale shroud soiled with dirt. The headstone bears a name you do not recognize and a recent date. The ragged edges of the fresh grave make it look as though it was dug up in great haste, or by some huge beast.
+
+Odd as it is, the grave looks harmless and has given up every secret it had. It is time to do what you came to do and examine Maybelline's body.
+*page_break Enter the mausoleum…
+*goto wol_ch5_mausoleum
+
+*label wol_ch5_mausoleum
+*set wol_chapter_5_checkpoint "mausoleum"
+*set scenery_subplace "langston_true_sun_mausoleum"
+The mausoleum is a stone structure with a large white limestone altar in the middle of the room. It has no windows, but recessed orbs set into the ceiling cast bright light throughout.
+
+The body of a young woman lies on the white slab. Even at this distance you can see deep gouges across her face, neck and forearms. She clutches a ragged bouquet of pink flowers in her hands. A white sheet, presumably used to cover her, lies on the ground at the base of the altar.
+
+You freeze as the body slowly turns its mangled face to look at you.
+
+With a snarl, Maybelline's corpse sits up from the altar and begins to stagger toward you.
+*choice
+  # Defend yourself.
+    *goto wol_ch5_corpse_fight
+  # Ready yourself to meet it.
+    You plant your feet and ready yourself as the corpse closes the distance.
+    *goto wol_ch5_corpse_fight
+  # Give ground and look for room to fight.
+    You back along the wall and look for room to fight in the narrow stone room.
+    *goto wol_ch5_corpse_fight
+
+*label wol_ch5_corpse_fight
+*set wol_chapter_5_checkpoint "mausoleum"
+You must stop this creature before it reaches the town, so you meet it in battle. The undead creature drops the bouquet as it reaches for you.
+
+You fight the risen corpse.
+*set combat_is_nonlethal false
+*set combat_no_flee true
+*set combat_lib_1 "zombie"
+*set combat_enemy_name_override "Risen Corpse"
+*set combat_enemy_epithet_override "the risen corpse"
+*set combat_enemy_immune_override "poison"
+*set combat_player_can_die true
+*gosub_scene combat fight_library
+*set combat_player_can_die false
+*if (combat_outcome = "player_died")
+  *goto wol_ch5_corpse_death
+*goto wol_ch5_corpse_won
+
+*label wol_ch5_corpse_death
+*set death_cause "combat"
+*set death_location_name "the True Sun cemetery"
+*set death_enemy_epithet "the risen corpse"
+You are overwhelmed by the animated corpse's final blow, and you fall to the ground. As the dark closes in, you can only hope that it overtakes you before the creature starts to feed.
+*goto_scene death death_screen
+
+*label wol_ch5_corpse_won
+*set wol_chapter_5_checkpoint "after_fight"
+*set wol_ch5_corpse_fought true
+*set scenery_subplace "langston_true_sun_mausoleum"
+You defeat the undead creature, and what remains of it falls to the ground lifeless once again.
+*goto wol_ch5_corpse_menu
+
+*label wol_ch5_corpse_menu
+*choice
+  *if (not(wol_ch5_marks_seen))
+    # Examine the corpse for older injuries.
+      *goto wol_ch5_marks
+  *if (not(wol_ch5_daisies_seen))
+    # Look at the bouquet she dropped.
+      *goto wol_ch5_daisies
+  # Return to the temple to inform Solaine.
+    *goto wol_ch5_solaine_back
+  *if ((wol_ch5_marks_seen) and (wol_ch5_daisies_seen))
+    # Cover the body with the white sheet and go.
+      You lift the white sheet from the floor, lay it over the still body, and go.
+      *goto wol_ch5_solaine_back
+  *if ((wol_ch5_marks_seen) and (wol_ch5_daisies_seen))
+    # Stand a moment over her, then go.
+      You stand a moment over the still body before you turn for the door.
+      *goto wol_ch5_solaine_back
+
+*label wol_ch5_marks
+*set wol_ch5_marks_seen true
+*set minutes_to_pass 5
+*set time_advance_call_id "wol_ch5_marks_1"
+*gosub_scene Langston/langston lg_walk_time
+Besides the wounds you inflicted, the body was mauled by a wild animal. The claw marks are broad and deep, not what you would expect from bony claws or even most beasts of the forest.
+
+There is a rage to the pattern of the marks as well, with many crisscrossing and seemingly at random.
+*goto wol_ch5_corpse_menu
+
+*label wol_ch5_daisies
+*set wol_ch5_daisies_seen true
+It is a bouquet of daisies, a simple bunch of pretty pink flowers, and they are the only ones here in the mausoleum. You check the tag, and it reads, "Rest well, Maybelline." It is signed by Tomlin with great care.
+
+The flowers are crushed and broken, but otherwise undamaged. It looks as though clumsy hands squeezed them too tight.
+*goto wol_ch5_corpse_menu
+
+*label wol_ch5_solaine_back
+*set wol_chapter_5_checkpoint "solaine_back"
+*set scenery_subplace "langston_true_sun_temple_rotunda"
+*set minutes_to_pass 10
+*set time_advance_call_id "wol_ch5_back_1"
+*gosub_scene Langston/langston lg_walk_time
+Solaine is still in the front entry hall, staring up at a tapestry of holy warriors radiating sunbeams that destroy an army of skeletons. She jumps and stifles a shriek when you rush into the hall.
+
+"You're... back? So soon, I mean? What did you learn?"
+
+You tell her what you just saw, and that you had to kill poor Maybelline a second time.
+
+"It shouldn't be possible," Solaine whispers over and over, clutching her holy symbol.
+
+She stops answering you, and the silence stretches into an awkward length of time.
+*choice
+  # Interrupt her reverie.
+    *goto wol_ch5_interrupt
+  # Wait for her to snap out of it.
+    *goto wol_ch5_solaine_wait
+  # Leave the temple.
+    *goto wol_ch5_mayor
+
+*label wol_ch5_interrupt
+Your voice startles Solaine, and she stares at you in deadpan horror.
+
+"The dead shouldn't be rising. They can't. Not while I... Not while there is a member of the Order of Radiant Light in the temple."
+
+You tell her that the mayor needs to know so that Langston can be protected.
+
+"Of course, yes," Solaine says, still staring off into the middle distance. "If you would, please, let the mayor know. That would be very helpful."
+
+You open your mouth to ask more, but she cuts you off.
+
+"Now, if you wouldn't mind, I need to return to the library. And you need to speak to the mayor. Thank you so much."
+
+Solaine lingers in the temple entrance for a moment, staring at the floor, before she blinks and rushes down the corridor toward the library.
+
+Alone in the silence of the entry hall, you are left with one task: to return to the mayor at the town hall.
+*page_break Go to the town hall…
+*goto wol_ch5_mayor
+
+*label wol_ch5_solaine_wait
+Solaine stands in relative silence for a moment before she looks up at you, seemingly startled that you are still there.
+
+"You should speak to the mayor," she says. "And I must return to my studies. Yes, the answer should be in there. It must be in there."
+
+She hesitates, lost in thought. Then she looks at you as if noticing you for the first time and rushes down the northern passage, and the door bangs shut behind her.
+
+With the temple quiet again, you shrug and make your way to the town hall to speak to the mayor.
+*page_break Go to the town hall…
+*goto wol_ch5_mayor
+
+*comment ── THE MAYOR'S DEBRIEF AND THE PATROL (source 252, 301, 302) ── The player reports to the mayor, who orders the militia to the graveyard and a proclamation posted, and asks for help on the night rounds. The patrol is OPTIONAL (the user's call, 2026-10-31, no forced night):
+*comment accepting is a short closed scene (about six hours on the streets and along the graveyard wall, nothing found), worth Heroic Inspiration and a free short rest; declining is two ways of saying so. The source's night at the inn and next morning's breakfast are dropped. The chapter ends here:
+*comment wol_chapter_5_complete (+1 to the quest total via count_finished_wolves) and wol_ch5_done_day. Chapter 6 (The Accusation, source 303: the mayor at the tavern table) is not built, so the run ends with the player back in Langston's square.
+*label wol_ch5_mayor
+*set wol_chapter_5_checkpoint "mayor"
+*set scenery_subplace "langston_meeting_hall_office"
+*set ow_pos "lg"
+*set current_district "langston"
+*set minutes_to_pass 20
+*set time_advance_call_id "wol_ch5_mayor_walk_1"
+*gosub_scene Langston/langston lg_walk_time
+*gosub_scene Langston/langston_hall lg_hall_hours
+You leave Solaine anxiously talking to herself at the temple and hurry back to the town hall.
+*if (lg_hall_open)
+  The aide's desk is empty, so you make your way to the mayor's office on your own.
+*else
+  A Watch officer holds the barred inner passage and, hearing your news, lets you through to the mayor's lamp-lit office.
+
+"Did you learn anything new?" the mayor says instead of a greeting, writing in a document with a wooden ink pen.
+
+You tell her that Maybelline's corpse rose to attack you. The mayor sets down her pen and gives you her whole attention. You explain everything you saw in the cemetery.
+
+"That shouldn't be possible," the mayor says flatly. "The temple and its cleric are meant to protect the town. Is the magic fading? What of Solaine? What is she doing about it?"
+
+You say that you left her in the temple, and it isn't clear what she will do next.
+
+The mayor calls out, and a burly citizen with a heavy cudgel at his belt arrives a minute later.
+
+"Call up the militia to patrol the graveyard, especially after dark," she tells him. "And post this proclamation announcing the accusation of Maybelline's murderer."
+
+He nods sharply and takes the parchment the mayor hands him. He leaves the office grumbling. "Sounds like clerk's work to me."
+
+"We could use your help on the night rounds," the mayor says to you. "If you can manage after your ordeal."
+*choice
+  # Go on patrol with the militia.
+    *goto wol_ch5_patrol
+  # Tell her you need to rest first.
+    You tell her you need to recover first, and she nods once.
+    *goto wol_ch5_declined
+  # Say you will walk the rounds another time.
+    You tell her you will take a turn on the rounds another time, and she accepts that with a grunt.
+    *goto wol_ch5_declined
+
+*label wol_ch5_declined
+"Then rest," the mayor says. "The militia will hold the graveyard." She bends to her document again, and you are dismissed.
+*goto wol_ch5_complete
+
+*label wol_ch5_patrol
+*set wol_ch5_patrol_walked true
+*set exposure_base_mins 360
+*gosub_scene calendar calc_exposure
+*set minutes_to_pass 360
+*set time_advance_call_id "wol_ch5_patrol_1"
+*gosub_scene Langston/langston lg_walk_time
+You accept, and you join the militia as they guard the town against the undead.
+
+Fortunately for you and your group of club- and pitchfork-wielding companions, the rounds turn up no more of the dead. You walk the streets and the graveyard wall in a long loop.
+*if (weather_severity >= 3)
+  *if (weather_cold)
+    Wind and driven snow scour the streets, swallowing footsteps and forcing the patrol to shout whenever it changes direction.
+  *else
+    Wind and rain batter the streets, swallowing footsteps and forcing the patrol to shout whenever it changes direction.
+*elseif (weather = "Sleet")
+  Sleet rattles on roofs and shields, while boots grind slush across the cobbles.
+*elseif (weather = "Snow")
+  Snow muffles the streets until the patrol's footsteps and occasional complaints sound strangely close.
+*elseif (weather = "Rain")
+  Rain patters on roofs and runs along the gutters beneath the patrol's footsteps.
+*elseif (weather = "Fog")
+  The fog deadens the town around you, leaving only nearby footsteps and an occasional muttered complaint.
+*else
+  The only sounds are footsteps on cobbles and a muttered complaint now and then.
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *if (weather = "Clear")
+    By the time the rounds end, the deepest dark has settled over the town, with stars overhead and watch lamps marking the streets.
+  *elseif (weather = "Fog")
+    By the time the rounds end, the deepest dark has settled over the town, and watch lamps hang in the fog like blurred golden coins.
+  *elseif (weather_severity >= 3)
+    By the time the rounds end, the deepest dark has settled over the town, and only shuttered windows and guarded lanterns show through the weather.
+  *else
+    By the time the rounds end, the deepest dark has settled over the town beneath a clouded sky, with watch lamps marking the streets.
+*else
+  By the time the rounds end, you have walked the whole of the town twice, and the light has shifted in the streets.
+
+You stumble back to your lodging, exhausted, with just enough energy left to set down your gear.
+*gosub_scene character_progression free_short_rest
+*gosub_scene dice_engine heroic_award "wolves_ch5_patrol"
+
+You sit down and rest a while, and your legs steady beneath you.
+*gosub_scene character_progression free_short_rest_banner
+*goto wol_ch5_complete
+
+*label wol_ch5_complete
+*set wol_chapter_5_complete true
+*set wol_ch5_done_day campaign_day
+*set wol_chapter_5_checkpoint "complete"
+*page_break Out into the street…
+*set ow_pos "lg"
+*set current_district "langston"
+*goto_scene Langston/langston lg_return

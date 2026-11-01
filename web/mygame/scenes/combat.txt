@@ -1670,6 +1670,9 @@
 *if (weapon_magic > 0)
   *set check_flat_bonus + weapon_magic
   *set check_flat_bonus_label "${check_flat_bonus_label} +${weapon_magic} (magic weapon)"
+*if (weapon_flimsy)
+  *set check_flat_bonus - 1
+  *set check_flat_bonus_label "${check_flat_bonus_label} -1 (flimsy weapon)"
 *return
 
 *label resolve_reverse_oa_player
@@ -2223,7 +2226,7 @@
 
 *comment WEAPON PROPERTY TAGS (2026-10-31): the fight menu says which of the two weapons is magical, silvered or adamantine, because that decides what it can hurt. Rebuilt at every hub, after any swap. replay-ok: it only sets display strings.
 *label combat_weapon_tags
-*script function tag(m, mg, sv, ad) { var a = []; if (Number(m) > 0) a.push("Magic +" + Number(m)); else if (mg === true || mg === "true") a.push("Magical"); if (sv === true || sv === "true") a.push("Silvered"); if (ad === true || ad === "true") a.push("Adamantine"); return a; } var w = tag(stats.weapon_magic, stats.weapon_magical, stats.weapon_silvered, stats.weapon_adamantine), d = tag(stats.sidearm_magic, stats.sidearm_magical, stats.sidearm_silvered, stats.sidearm_adamantine); stats.combat_weapon_tag = w.length ? " [" + w.join(", ") + "]" : ""; stats.combat_weapon_note = w.length ? " (" + w.join(", ").toLowerCase() + ")" : ""; stats.combat_sidearm_tag = d.length ? " [" + d.join(", ") + "]" : ""; stats.combat_sidearm_note = d.length ? " (" + d.join(", ").toLowerCase() + ")" : "";
+*script function tag(m, mg, sv, ad, fl) { var a = []; if (Number(m) > 0) a.push("Magic +" + Number(m)); else if (mg === true || mg === "true") a.push("Magical"); if (sv === true || sv === "true") a.push("Silvered"); if (ad === true || ad === "true") a.push("Adamantine"); if (fl === true || fl === "true") a.push("Flimsy -1"); return a; } var w = tag(stats.weapon_magic, stats.weapon_magical, stats.weapon_silvered, stats.weapon_adamantine, stats.weapon_flimsy), d = tag(stats.sidearm_magic, stats.sidearm_magical, stats.sidearm_silvered, stats.sidearm_adamantine, stats.sidearm_flimsy); stats.combat_weapon_tag = w.length ? " [" + w.join(", ") + "]" : ""; stats.combat_weapon_note = w.length ? " (" + w.join(", ").toLowerCase() + ")" : ""; stats.combat_sidearm_tag = d.length ? " [" + d.join(", ") + "]" : ""; stats.combat_sidearm_note = d.length ? " (" + d.join(", ").toLowerCase() + ")" : "";
 *return
 
 *label fight_round_hub
@@ -4880,6 +4883,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *comment label next (a spell, which must still spend the general action, not an attack).
 *temp fceh_is_attack combat_pending_spend_is_attack
 *set combat_pending_spend_is_attack false
+*gosub fight_undead_fortitude
 *gosub fight_sync_target_out
 *gosub fight_check_all_dead
 *if (combat_all_enemies_dead)
@@ -4901,6 +4905,43 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *if (fceh_is_attack)
   *goto fight_attack_spent
 *goto fight_action_spent
+
+*comment UNDEAD FORTITUDE (2026-10-31, the user: RAW). When the player's damage drops a zombie (library type "zombie") to 0 HP it makes a Constitution save with a DC of 5 + the damage taken, and on a success stays up at 1 HP instead. It is skipped when the damage is radiant or the
+*comment attack roll was a natural 20 (combat_hit_nat20; the engine has no extra critical-hit damage, so a natural 20 is the critical hit here). It triggers every time the zombie reaches 0 HP. Called from fight_check_enemy_hp, the shared tail of every player damage option, before the HP is
+*comment synced out, so the one hook covers weapons, sidearms and every damage spell. NOT covered yet: damage from an ally, a thrown item or a start-of-turn effect (they do not pass through that tail). The save is guarded by a once-per-page lock; the one line of text it prints is combat_fort_banner.
+*label fight_undead_fortitude_roll
+*temp uf_type {(("combat_enemy" & combat_active_target) & "_flavor_type")}
+*if (not(combat_fort_locked)) or (not(locked_combat_fort_page_id = page_id))
+  *set combat_fort_banner ""
+  *set combat_fort_shown false
+  *if ((uf_type = "zombie") and (combat_enemy_hp <= 0))
+    *if ((combat_hit_nat20) or ((combat_player_dmg_type = "radiant") or (combat_player_extra_dmg_type = "radiant")))
+      *set combat_fort_banner "[b][💀 Undead Fortitude cannot save ${combat_enemy_epithet} from that blow.][/b]"
+    *else
+      *temp uf_dc (5 + combat_player_dmg_dealt)
+      *gosub_scene startup score_to_mod combat_enemy_constitution
+      *temp uf_mod sm_mod
+      *temp uf_roll 0
+      *rand uf_roll 1 20
+      *temp uf_total (uf_roll + uf_mod)
+      *if (uf_total >= uf_dc)
+        *set combat_enemy_hp 1
+        *set combat_fort_banner "[b][💀 Undead Fortitude: ${combat_enemy_epithet} makes a Constitution save (DC ${uf_dc}, total ${uf_total}) and keeps standing with 1 HP.][/b]"
+      *else
+        *set combat_fort_banner "[b][💀 Undead Fortitude: ${combat_enemy_epithet} fails a Constitution save (DC ${uf_dc}, total ${uf_total}).][/b]"
+  *set combat_hit_nat20 false
+  *set combat_fort_locked true
+  *set locked_combat_fort_page_id page_id
+*return
+
+*comment The tail's call: the save for any damage source that did not roll it earlier (a spell with its own damage code), and the line of text if no hit banner has carried it yet.
+*label fight_undead_fortitude
+*gosub fight_undead_fortitude_roll
+*if ((not(combat_fort_banner = "")) and (not(combat_fort_shown)))
+  *set combat_fort_shown true
+  ${combat_fort_banner}
+  *line_break
+*return
 
 *label combat_ensnare_apply
 *comment ENSNARING STRIKE (2026-10-12): called inside the weapon-hit lock right after the hit is resolved. If the spell is armed and still running, it is spent on this hit whatever happens; a target still standing makes a Strength save against the player's spell save DC and, on a failure, is restrained
@@ -6285,6 +6326,14 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 
 *comment WEAPON IMMUNITY TEST FOES (2026-10-31, dev hub only; no story scene calls these). Each is a library "beast" with a defense set by the override variables, short enough to finish in a few rounds. What to try with each is in Resources & Quest/GAMEPLAY_MECHANICS_RULES.md,
 *comment "Damage Defenses". The prep menu hands out the Scrapling Claw (a +1 magical club) as the magic weapon; silvered and adamantine weapons are tested by setting weapon_silvered / weapon_adamantine in a script.
+*comment Dev-hub only: a zombie (Undead Fortitude), to try the save, a natural 20 and radiant damage (the Warded Wolf's neighbour).
+*label fight_dev_zombie_test
+*set combat_is_nonlethal false
+*set combat_no_flee true
+*set combat_lib_1 "zombie"
+*set combat_enemy_immune_override "poison"
+*goto fight_library
+
 *label fight_dev_warded_wolf_test
 *comment A werewolf's defense: immune to nonmagical weapons unless silvered (a magical weapon always works). Nothing else.
 *set combat_is_nonlethal false

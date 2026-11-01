@@ -950,6 +950,15 @@
       description: "Bolt of close-woven wool cloth, ready for a tailor."
     },
     {
+      id: "flimsy_jeweled_dagger", category: "weapons", owned: "has_flimsy_jeweled_dagger", slot: "Weapon",
+      weight: 1, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_flimsy_jeweled_dagger) || 0); return "Flimsy Jeweled Dagger" + (n > 1 ? " ×" + n : ""); },
+      description: "Showy dagger with a jeweled hilt and a thin blade.",
+      traits: "1d4 Piercing, Finesse, Flimsy (-1 to attack)",
+      badge: function (s) { return s.equipped_weapon_id === "flimsy_jeweled_dagger" ? "Equipped" : ""; },
+      equip: { slot: "weapon", id: "flimsy_jeweled_dagger" }
+    },
+    {
       id: "scrapling_claw_weapon", category: "weapons", owned: "has_scrapling_claw_weapon", slot: "Weapon",
       weight: 1, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_scrapling_claw_weapon) || 0); return "Scrapling Claw" + (n > 1 ? " ×" + n : ""); },
@@ -1019,6 +1028,14 @@
       use: true
     },
     {
+      id: "potion_barkskin", category: "consumables", owned: "has_potion_barkskin",
+      weight: 0.3, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_potion_barkskin) || 0); return "Potion of Barkskin" + (n > 1 ? " ×" + n : ""); },
+      description: "A green glass vial of brown brew that smells of oak bark.",
+      badge: "For 1 hour: your armor class is at least 16",
+      use: true
+    },
+    {
       id: "brine_antivenom", category: "consumables", owned: "has_brine_antivenom",
       weight: 0.3, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_brine_antivenom) || 0); return "Brine Antivenom" + (n > 1 ? " ×" + n : ""); },
@@ -1081,6 +1098,60 @@
       description: "A stoppered vial of sweet, deep-purple cordial with a trace of truffle.",
       badge: "For 8 hours: +3 to footing checks on slick stone, fords, wet timber and loose scree",
       use: true
+    },
+    {
+      id: "moonshard", category: "weapons", owned: "has_moonshard", slot: "Weapon",
+      weight: 1, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_moonshard) || 0); return "Moonshard" + (n > 1 ? " ×" + n : ""); },
+      description: "Pale-bladed dagger that shimmers with its own light.",
+      traits: "1d4 Piercing, Finesse; casts Light while in hand, Magic +1",
+      badge: function (s) { return s.equipped_weapon_id === "moonshard" ? "Equipped" : ""; },
+      equip: { slot: "weapon", id: "moonshard" }
+    },
+    {
+      id: "lesser_amulet_of_the_beast", category: "apparel", owned: "has_lesser_amulet_of_the_beast", slot: "Neck",
+      weight: 0.2, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_lesser_amulet_of_the_beast) || 0); return "Lesser Amulet of the Beast" + (n > 1 ? " ×" + n : ""); },
+      description: "Carved horn pendant on a braided leather cord.",
+      traits: "Resistance to natural attacks from Beast creatures",
+      badge: function (s) { return s.equipped_neck_id === "lesser_amulet_of_the_beast" ? "Worn" : "Stowed"; },
+      equip: { slot: "neck", id: "lesser_amulet_of_the_beast" }
+    },
+    {
+      id: "iron_gap_poster", category: "valuables", owned: "has_iron_gap_poster",
+      weight: 0.1, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_iron_gap_poster) || 0); return "Iron Gap Wanted Poster" + (n > 1 ? " ×" + n : ""); },
+      description: "Singed wanted poster for the Wolf of the Road, Iron Gap constabulary."
+    },
+    {
+      id: "solaines_unfinished_letter", category: "valuables", owned: "has_solaines_unfinished_letter",
+      weight: 0.1, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_solaines_unfinished_letter) || 0); return "Solaine's Unfinished Letter" + (n > 1 ? " ×" + n : ""); },
+      description: "Tear-stained letter in a looping hand, addressed to Tomlin."
+    },
+    {
+      id: "bloodstained_lavender_ribbon", category: "valuables", owned: "has_bloodstained_lavender_ribbon",
+      weight: 0.05, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_bloodstained_lavender_ribbon) || 0); return "Bloodstained Lavender Ribbon" + (n > 1 ? " ×" + n : ""); },
+      description: "Lavender silk hair ribbon in a double bow, stained with blood."
+    },
+    {
+      id: "burnt_holy_vestments", category: "valuables", owned: "has_burnt_holy_vestments",
+      weight: 0.8, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_burnt_holy_vestments) || 0); return "Burnt Holy Vestments" + (n > 1 ? " ×" + n : ""); },
+      description: "Charred white vestments, restitched in places."
+    },
+    {
+      id: "mayors_letter", category: "valuables", owned: "has_mayors_letter",
+      weight: 0.1, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_mayors_letter) || 0); return "The Mayor's Letter" + (n > 1 ? " ×" + n : ""); },
+      description: "Short letter from Mayor Anathram, sealed with plain Hall wax."
+    },
+    {
+      id: "iron_gap_warrant", category: "valuables", owned: "has_iron_gap_warrant",
+      weight: 0.1, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_iron_gap_warrant) || 0); return "Iron Gap Warrant" + (n > 1 ? " ×" + n : ""); },
+      description: "Rolled bounty warrant for the Wolf of the Road, Iron Gap constabulary."
     },
     {
       id: "pickled_hen_tankard", category: "valuables", owned: "has_pickled_hen_tankard",

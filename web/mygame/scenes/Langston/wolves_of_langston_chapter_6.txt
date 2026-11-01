@@ -1,0 +1,806 @@
+*comment ====================================================================================
+*comment THE WOLVES OF LANGSTON -- CHAPTER 6: THE ACCUSATION
+*comment Source sections 303 to 359 (360 begins the Epilogue), built a chunk at a time (the plan is in WOLVES_OF_LANGSTON_ADAPTATION_PLAN.md). THIS FILE (chunks 1 to 3: the bridge and the square, the evidence, the chase): the mayor at the tavern table (303), the Hall (the walk
+*comment to the square), the square with the four names (334) and the evidence for each accusation (308 to 354). Chunk 3 (the transformation, the chase and the descent) follows, ending at the lair's first sight of Solaine until chunk 4.
+*comment OPEN-WORLD BRIDGE (the user's call, 2026-11-01): like Chapter 4's letter, the summons comes on a LATER day than the one Chapter 5 ended and when it is not night: the first Langston hub then sends a young man from the Pickled Hen (a storm that empties the streets holds him back,
+*comment street_life "empty"), or the mayor is simply at her table if the player walks into the Hen first (indoors, so weather does not matter). The meal is the Hen's stew on the town's account. The source's last chance to visit the general store is the Cord & Kettle, left open on purpose:
+*comment the player prepares for as long as they like, and the accusation starts only when they tell the mayor at Langston Hall (a Hall button: open in the public day, shut on the rest day and in weather that empties the street). From the walk to the square the chapter is a CLOSED run (the user's rule for Chapters 3 to 5).
+*comment The mayor's aide is ill (the source), so Master Vetch the innkeeper records the accusation. The source's "attractive young woman" beside Tomlin is an unnamed townswoman.
+*comment ====================================================================================
+
+*comment The Langston hub (langston.txt lg_menu) and the Pickled Hen (pickled_hen.txt lg_hen_hall) call this label. wol_ch6_summons_due is the hub's summons (a later day, not night, the streets alive); wol_ch6_hen_due is the Hen's table (the same, in any weather).
+*label wol_ch6_summons_check
+*set wol_ch6_summons_due false
+*set wol_ch6_hen_due false
+*if ((wol_chapter_5_complete) and (not(wol_ch6_summoned)))
+  *if ((campaign_day > wol_ch5_done_day) and (not(((time_period = "Night") or (time_period = "Pre-Dawn")))))
+    *set wol_ch6_hen_due true
+    *if (not(street_life = "empty"))
+      *set wol_ch6_summons_due true
+*return
+
+*label wol_ch6_summons
+*set wol_chapter 6
+*set current_district "langston"
+*set scenery_subplace "langston"
+A young man in a flour-dusted apron cuts across the square and stops in front of you, breathing hard.
+
+"Master Vetch sent me," he says. "The mayor's at the Hen, at the long table by the hearth. She had a tray put out for you, and her tea's been steaming a good while."
+
+You ask what she wants.
+
+"She didn't say. She folded her hands and waited." He jerks his chin toward the Hen's painted sign. "You'd best come."
+*set minutes_to_pass 5
+*set time_advance_call_id "wol_ch6_summons_walk_1"
+*gosub_scene Langston/langston lg_walk_time
+*page_break Walk to the Pickled Hen…
+*goto wol_ch6_breakfast
+
+*comment The mayor at the tavern table (source 303). The tray is the Hen's lamb and barley stew on the town's account (the same meal and buff as pickled_hen.txt lg_hen_stew). The meal comes first and the talk after it, as in the source.
+*label wol_ch6_breakfast
+*set wol_ch6_summoned true
+*set wol_chapter 6
+*set wol_chapter_6_checkpoint "breakfast"
+*set current_district "langston"
+*set scenery_subplace "pickled_hen_hall"
+The common room hums low as you cross it. Mayor Anathram sits at the long table nearest the hearth with her hands folded and a cup of tea steaming at her elbow. A tray of food waits on the bench across from her.
+
+You sit, and her face tightens into what you have come to read as her smile.
+
+"The accusation is made today," she says. "The whole town will attend. We'll hold it in the square."
+
+You tell her you are ready to name Maybelline's killer.
+*set tavern_item_cost_copper 0
+*set tavern_item_hp_heal 0
+*set tavern_item_temp_hp 2
+*set tavern_item_type "food"
+*set tavern_item_buff_name "Vale Stew"
+*set tavern_item_buff_desc "+1 CON"
+*set tavern_item_buff_stat "con"
+*set tavern_item_buff_bonus 1
+*set tavern_item_buff_minutes 240
+*gosub_scene economy buy_tavern_item
+*set hours_to_pass 0
+*set minutes_to_pass 20
+*set time_advance_call_id "wol_ch6_breakfast_meal"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "exhaustion"
+  *goto_scene death death_screen
+The tray holds a deep bowl of lamb, barley and leeks with a thick slice of brown bread across the rim. The broth is hot enough to warm your hands through the wood.
+
+[b][Hot Stew Eaten: +2 Temporary HP | Vale Stew (+1 CON for 4 Hours) | HP: ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}][/b]
+
+Since the business with Horace and Titch, the quiet between you has loosened. She sips her tea while you eat, and the only sounds are spoons, the hearth and the murmur of the room.
+
+"We must settle this murder quickly," she says when your bowl is empty. "My aide is ill, so Master Vetch has agreed to write the accusation down." She turns her cup a quarter turn on its saucer. "If you need the Cord & Kettle, go before the town gathers. Once we stand in that square, the shops are behind you."
+
+You ask where to find her when you are ready.
+
+"At the Hall," she says. "The doors open with the day. Tell me, and we'll walk out together."
+
+She stands and squares her shoulders. "Whatever happens next, the people of Langston owe you a great debt." She nods to you, then to the innkeeper at the counter, and the door closes behind her.
+*set wol_ch6_ready true
+*page_break Back to the common room…
+*goto_scene Langston/pickled_hen lg_hen_hall
+
+*comment ── THE HALL AND THE WALK TO THE SQUARE ── The Hall button (langston_hall.txt lg_hall_menu) lands here. A closed run from the steps on: the checkpoint sends a re-entry to where the player was.
+*label wol_ch6_start
+*if (wol_chapter_6_checkpoint = "square")
+  *goto wol_ch6_square
+*if (wol_chapter_6_checkpoint = "evidence")
+  *goto wol_ch6_evidence_dispatch
+*if (wol_chapter_6_checkpoint = "transform")
+  *goto wol_ch6_transform
+*if (wol_chapter_6_checkpoint = "lair")
+  *goto wol_ch6_lair
+*goto wol_ch6_hall
+
+*label wol_ch6_hall
+*set wol_chapter_6_started true
+*set wol_chapter_6_checkpoint "hall"
+*set scenery_subplace "langston_meeting_hall_office"
+The aide's chair stands empty beside the inner passage, and the mayor's door is open. Mayor Anathram is already on her feet when you reach her office, her hands folded in front of her.
+
+You tell her you are ready.
+
+"Then it's time." She glances at the door and back at you. "Once we cross the steps, the shops are behind you. Anything you need, you must have in hand now."
+*choice
+  # Walk out to the square with her.
+    *goto wol_ch6_to_square
+  # Say you need a little longer first.
+    You ask for a little longer, and she dips her head. "I'll be here when the day allows it."
+    *set wol_chapter_6_checkpoint ""
+    *page_break Back to the chamber…
+    *goto_scene Langston/langston_hall lg_hall_front
+  # Tell her you are ready to go.
+    *goto wol_ch6_to_square
+
+*label wol_ch6_to_square
+*set wol_chapter_6_checkpoint "square"
+*set minutes_to_pass 5
+*set time_advance_call_id "wol_ch6_to_square_1"
+*gosub_scene Langston/langston lg_walk_time
+She leads you through the Hall's front doors, and two militia members with long clubs at their belts fall in behind you.
+*page_break Out onto the Hall steps…
+*goto wol_ch6_square
+
+*comment The square (source 334): the crowd, Harlan's table, the four faces and the question. The sky line is the only weather here (the Hall's doors are shut in the weather that empties the street, so this scene starts in light or ordinary weather).
+*label wol_ch6_square
+*set wol_chapter_6_checkpoint "square"
+*set scenery_subplace "langston_town_square_accusation"
+From the top of the Hall's steps the market square lies open before you, ringed by close-set timber houses.
+*if (weather_wet)
+  Rain darkens the cobbles and drums on the awnings along the square.
+*elseif (weather = "Fog")
+  Mist softens the far rooflines and beads on the lamp posts.
+*elseif (time_period = "Dusk")
+  The low light turns the stones of the square amber.
+*elseif (weather = "Clear")
+  Bright light fills the square from edge to edge.
+*else
+  Grey light lies flat across the square.
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Mud from the last long rain still rims the cobbles.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  Damp still darkens the cobbles.
+
+It seems the whole town has come. People ring the Hall's steps and fill the square beyond them, waiting for what you will say. Most are strangers to you, though you pick out a few you have spoken with over the past days.
+
+The innkeeper, Master Vetch, has set up a small table with a single document, a quill and an inkpot. He squares the pages, then squares them again.
+
+"Of all the days for the aide to fall ill," he mutters as you reach him.
+
+He lifts the document and begins to read out a formal accusation for the murder of Maybelline, a citizen in good standing of Langston. It gives the circumstances of her life and death in jumbled legal phrases, so you turn your attention to the faces nearest the front.
+
+Tomlin stands at ease, and a young woman beside him keeps a hand's breadth from his sleeve. Roi smiles at you, his nose and cheeks still ruddy from the sickness and his eyes bright and clear. Solaine stands alone, her white robes bright against the homespun around her and her face drawn with weariness. Mayor Anathram stands as rigid and imposing as ever, the Wolf of the Road for all that you now know, and gives you a nod. The two militia members take their places at her side.
+
+The mayor steps in front of you to address the crowd. "These are trying times for Langston, and you are all afraid. Maybelline's death was tragic, and she was taken long before her time. She is beyond our reach now, but justice for her is not."
+
+She gestures for him to go on. He dips the quill in the ink, and the whole town watches the nib hover over the page.
+
+"Who murdered Maybelline?" the innkeeper asks with finality.
+*choice
+  # Accuse Tomlin the herbalist.
+    *goto wol_ch6_accuse_tomlin
+  # Accuse Roi the druid.
+    *goto wol_ch6_accuse_roi
+  # Accuse Solaine the cleric.
+    *goto wol_ch6_accuse_solaine
+  # Accuse Mayor Anathram, the Wolf of the Road.
+    *goto wol_ch6_accuse_mayor
+
+*comment ── THE ACCUSATIONS AND THEIR EVIDENCE (source 308, 318, 331 / 349, 354, 347, 326 / 341, 317, 323, 330, 312, 340 / 314, 304, 319) ── Each name opens with the innkeeper writing it down and the demand for proof (no item is added for the written page; wol_ch6_accused is the record the payout will read).
+*comment The evidence is whatever the player carries: Tomlin: the scrapling claw (the loose claw or the bound club); Roi: the polypox recipe (a flag, wol_polypox_recipe) and the damaged tankard; Solaine: the lavender ribbon, her unfinished love letter and the burnt vestments, in any order; the mayor: the wanted poster and the warrant.
+*comment Each menu follows the player's two-option rule (the user's call): when exactly one piece of evidence is available, the menu gains a second way to rest the case so it never shows only two buttons. When nothing is available the menu is skipped and the case rests on the player's word. wol_ch6_ev_n counts what is still available (rebuilt on every pass, so a replay cannot double it).
+*comment Every branch ends at the handoff (the transformation, chunk 3) with the checkpoint "transform". The Tomlin cut (the user, 2026-10-31) is chunk 3's work: the accusation text here has no death in it.
+
+*label wol_ch6_evidence_dispatch
+*if (wol_ch6_accused = "tomlin")
+  *goto wol_ch6_tomlin_menu
+*if (wol_ch6_accused = "roi")
+  *goto wol_ch6_roi_menu
+*if (wol_ch6_accused = "solaine")
+  *goto wol_ch6_solaine_menu
+*goto wol_ch6_mayor_menu
+
+*comment ── TOMLIN (308, 318, 331) ──
+*label wol_ch6_accuse_tomlin
+*set wol_ch6_accused "tomlin"
+You name Tomlin. His eyes go wide, and a gasp runs through the crowd; a few women cry out. The young woman beside him clutches his arm. The innkeeper scratches the name onto the document and holds the page out to you.
+
+The mayor raises her hands for quiet. "Have you any evidence to support your accusation?"
+*goto wol_ch6_tomlin_menu
+
+*label wol_ch6_tomlin_menu
+*set wol_chapter_6_checkpoint "evidence"
+*set wol_ch6_ev_n 0
+*comment replay-ok: wol_ch6_ev_n is reset to 0 just above and rebuilt from what the player carries on every pass.
+*if ((scrapling_claw > 0) or (has_scrapling_claw_weapon))
+  *set wol_ch6_ev_n 1
+*if (wol_ch6_ev_n = 0)
+  *goto wol_ch6_tomlin_word
+*choice
+  # Present the scrapling claw.
+    *goto wol_ch6_tomlin_claw
+  # Rest your case on motive and means.
+    *goto wol_ch6_tomlin_word
+  # Tell the mayor your proof is what you have seen.
+    *goto wol_ch6_tomlin_word
+
+*label wol_ch6_tomlin_claw
+You hold up the scrapling claw, the dry hooked limb Roi bound for you, and lay out your theory: Tomlin drew Maybelline in among the dangerous creatures in his garden.
+
+"But why would I do that?" Tomlin says, wide-eyed. "She was my fiancée. I loved her!"
+
+You answer that he wanted his bachelor days back.
+
+Tomlin glances at the young woman who is still gripping his arm. He pulls free and steps forward, eyes darting from face to face.
+
+"But I didn't do this," he shouts. "Everyone, you have to believe me. I didn't kill Maybelline!"
+
+"I'm sorry, adventurer," Roi calls out. "Those claws aren't enough to do what was done to that poor lass. It'd take something much bigger than that."
+
+You ask whether a pitchfork would do it, like the one Tomlin used on the scraplings.
+
+"Maybe at a stretch," Roi says as two militia members approach Tomlin hesitantly and the young woman clutches at his arm again. "But it's not likely. What do you think, Solaine? Could Tomlin have done it with a pitchfork?"
+
+The silent crowd turns as one to Solaine, whose head is hung low. "No," she says quietly.
+
+Then she screams, "No!"
+*goto wol_ch6_transform
+
+*label wol_ch6_tomlin_word
+You have motive and means rather than proof.
+
+A rumble of disbelief runs through the crowd. "Please explain," Mayor Anathram calls out.
+
+You begin with how easily Tomlin has slipped back into a bachelor's life, and you gesture at the young woman beside him.
+
+"Seeking the comfort of friends," he says in his own defense.
+
+You mention the scraplings in his garden, which might even have taken Maybelline's life by accident on that fateful night. They nearly took yours.
+
+"They're dangerous, adventurer, I'll give you that," Roi says loudly. "But their wee claws never did what I saw done to that poor girl."
+
+You add that Tomlin was quick to cut one of them apart with a pitchfork.
+
+The crowd stays unconvinced, but the mayor nods at the militia to take him in. Disbelief rises from the townsfolk as the militia members approach him anyway.
+
+"No!" someone cries out, and all heads whip around.
+
+The cry came from Solaine, her face twisted with rage and her chest heaving.
+*goto wol_ch6_transform
+
+*comment ── ROI (349, 354, 347, 326) ──
+*label wol_ch6_accuse_roi
+*set wol_ch6_accused "roi"
+You name Roi. A worried murmur passes through the crowd, and Roi's face twists with pain. The innkeeper writes the druid's name on the page with obvious reluctance and hands it to you.
+
+"Really, adventurer?" Roi says, tears shining in his eyes. "I certainly hope you know what you're doing."
+
+The innkeeper asks what proof you have that Roi is the killer.
+*goto wol_ch6_roi_menu
+
+*label wol_ch6_roi_menu
+*set wol_chapter_6_checkpoint "evidence"
+*set wol_ch6_ev_n 0
+*comment replay-ok: wol_ch6_ev_n is reset to 0 just above and rebuilt from what the player carries on every pass.
+*if (wol_polypox_recipe)
+  *set wol_ch6_ev_n (wol_ch6_ev_n + 1)
+*if (has_pickled_hen_tankard)
+  *set wol_ch6_ev_n (wol_ch6_ev_n + 1)
+*if (wol_ch6_ev_n = 0)
+  *goto wol_ch6_roi_word
+*choice
+  *if (wol_polypox_recipe)
+    # Present the polypox cure recipe.
+      *goto wol_ch6_roi_recipe
+  *if (has_pickled_hen_tankard)
+    # Present the damaged tankard.
+      *goto wol_ch6_roi_tankard
+  # Rest your case on what you learned.
+    *goto wol_ch6_roi_word
+  *if (wol_ch6_ev_n = 1)
+    # Tell the innkeeper that is all you have.
+      *goto wol_ch6_roi_word
+
+*label wol_ch6_roi_recipe
+You produce the polypox cure recipe and tell the crowd that Roi was ill. Sick as he was, he may have done it unaware, and so he is the killer.
+
+The normally jovial dwarf buries his head in his hands. "I don't believe it," he says, his voice breaking. "She was such a good lass. I couldn't have—"
+
+You read out selected passages from the recipe, the wild shaping that slips a sufferer's control and the delirium. The crowd answers with gasps and murmurs.
+
+"Adventurer," Roi says, looking up with tears shining in his eyes. "I can't fault your logic. And as hard as it is for me to believe, if there's no one else, then it must have been me."
+
+Two militia members step up to the dwarf's side with obvious reluctance and start to guide him away.
+
+The crowd is stunned and Roi is deeply hurt. Tomlin puts his arm around the young woman beside him, and she buries her face in his chest.
+
+"Let him go!" Solaine cries out. Everyone turns to look at her.
+*goto wol_ch6_transform
+
+*label wol_ch6_roi_tankard
+You produce the damaged tankard you found in Roi's glade and hold it up. Roi looks puzzled, but the innkeeper speaks up.
+
+"That's one of mine!" he says. "I've been looking everywhere for that. Where did you find it?"
+
+You tell him and the crowd where and how you found it, and you tell them about Roi's illness.
+
+"The night Maybelline died," Tomlin says, his voice flat with shock. "You ran out of the tavern with a mug. What did you do?"
+
+Roi stands very still, his mouth working. Then he says quietly, "I don't know. I don't remember."
+
+A ripple of gasps runs through the crowd, and someone near the druid takes a step back. The mayor gestures to two militia members to approach the dwarf.
+
+"Don't you dare!" Solaine yells. Startled, every eye swings to the cleric.
+*goto wol_ch6_transform
+
+*label wol_ch6_roi_word
+You admit that your proof lies in what you learned during your investigation, and you lay it out for the crowd.
+
+First, you tell them, Roi had been infected with polypox, a magical disease that made him lose control of his druidic powers. It is also known to cause fits of delirium, even attacks.
+
+The crowd turns its gaze to Roi, who stands teary-eyed and apart from them, trembling.
+
+"Aye, it's true," he says in a shaking voice. "Everything the adventurer says is true. But I just can't see myself hurting the lass. Even at my worst."
+
+The mayor steps forward and lays a hand on the back of Roi's head, the easiest spot for her to reach given her height.
+
+"Does anyone else have reason to believe that Roi Sunderhammer, the druid who has protected this town for many years, killed Maybelline?"
+
+The townspeople murmur and mutter among themselves, but they stay where they are.
+
+"Come with us, Roi," the mayor says. "It's a formality."
+
+He nods, but before they can leave, bitter laughter cuts across the square. You turn and find Solaine laughing at you with open mockery.
+*goto wol_ch6_transform
+
+*comment ── SOLAINE (341, 317, 323, 330, 312, 340) ──
+*label wol_ch6_accuse_solaine
+*set wol_ch6_accused "solaine"
+You declare Solaine the killer. A shocked murmur ripples through the townsfolk, and a few cry out their disbelief. With pursed lips, the innkeeper writes Solaine's name on the page and hands it to you.
+
+He plainly doubts you as well. "Do you have anything to back up this claim?"
+*goto wol_ch6_solaine_menu
+
+*label wol_ch6_solaine_menu
+*set wol_chapter_6_checkpoint "evidence"
+*set wol_ch6_ev_n 0
+*comment replay-ok: wol_ch6_ev_n is reset to 0 just above and rebuilt from what the player carries and has shown on every pass.
+*if ((has_bloodstained_lavender_ribbon) and (not(wol_ch6_shown_ribbon)))
+  *set wol_ch6_ev_n (wol_ch6_ev_n + 1)
+*if ((has_solaines_unfinished_letter) and (not(wol_ch6_shown_letter)))
+  *set wol_ch6_ev_n (wol_ch6_ev_n + 1)
+*if ((has_burnt_holy_vestments) and (not(wol_ch6_shown_vestments)))
+  *set wol_ch6_ev_n (wol_ch6_ev_n + 1)
+*if (wol_ch6_ev_n = 0)
+  *if ((wol_ch6_shown_ribbon) or ((wol_ch6_shown_letter) or (wol_ch6_shown_vestments)))
+
+    You tell the mayor that is the whole of your case.
+
+    *goto wol_ch6_solaine_rest
+  *goto wol_ch6_solaine_word
+*choice
+  *if ((has_bloodstained_lavender_ribbon) and (not(wol_ch6_shown_ribbon)))
+    # Present the lavender ribbon.
+      *goto wol_ch6_solaine_ribbon
+  *if ((has_solaines_unfinished_letter) and (not(wol_ch6_shown_letter)))
+    # Present Solaine's love letter.
+      *goto wol_ch6_solaine_letter
+  *if ((has_burnt_holy_vestments) and (not(wol_ch6_shown_vestments)))
+    # Present the burnt vestments.
+      *goto wol_ch6_solaine_vestments
+  *if ((wol_ch6_shown_ribbon) or ((wol_ch6_shown_letter) or (wol_ch6_shown_vestments)))
+    # Let your case rest.
+      *goto wol_ch6_solaine_rest
+  *if ((not(wol_ch6_shown_ribbon)) and ((not(wol_ch6_shown_letter)) and (not(wol_ch6_shown_vestments))))
+    # Rest your case on your word.
+      *goto wol_ch6_solaine_word
+  *if ((wol_ch6_ev_n = 1) and ((wol_ch6_shown_ribbon) or ((wol_ch6_shown_letter) or (wol_ch6_shown_vestments))))
+    # Tell the innkeeper that is all.
+      *goto wol_ch6_solaine_rest
+  *if ((wol_ch6_ev_n = 1) and ((not(wol_ch6_shown_ribbon)) and ((not(wol_ch6_shown_letter)) and (not(wol_ch6_shown_vestments)))))
+    # Tell the innkeeper you are certain.
+      *goto wol_ch6_solaine_word
+
+*label wol_ch6_solaine_ribbon
+*set wol_ch6_shown_ribbon true
+You present the lavender ribbon you found in the temple as proof of the deed.
+
+"Maybelline's ribbon," Tomlin shouts. "Solaine, how did you get it?"
+
+Solaine stands with her mouth hanging open. Tomlin rushes you and reaches for the ribbon, then stops himself.
+
+"I gave that to her for her birthday," he says. "Her last birthday. And she was wearing it that night. The night you killed her!"
+
+Eyes flashing, Tomlin spins on Solaine and raises a fist. Two men from the crowd rush forward and hold him back. Chest heaving, he shakes them off and returns to the young woman. He flinches when she touches his arm, then looks at her, and his breathing slows.
+
+Meanwhile, the townsfolk have drawn away from Solaine, leaving her small and alone. She is looking past you. Her eyes are fixed on Tomlin and her mouth is a thin line.
+
+"Ahem," the innkeeper says, adjusting his collar. "Have you any other proof to present?"
+*goto wol_ch6_solaine_menu
+
+*label wol_ch6_solaine_letter
+*set wol_ch6_shown_letter true
+You present Solaine's unfinished letter, and the innkeeper reads it. His face flushes a little. Solaine's face darkens as she recognizes the page.
+
+"What does it say?" cries a voice from the crowd. "What is it?" calls another.
+
+"Please," Solaine says quietly but firmly. "Please don't."
+
+"It's a personal letter," the innkeeper says. "From Solaine to Tomlin. Confessing deep, ahem, romantic feelings. And hinting at something else."
+
+"Motive, maybe," the mayor says. "But hardly evidence. Have you anything more substantial?"
+*goto wol_ch6_solaine_menu
+
+*label wol_ch6_solaine_vestments
+*set wol_ch6_shown_vestments true
+You hold up the burnt vestments and tell the crowd where you found them.
+
+"I'm a healer," Solaine scoffs. "Many who need me are bleeding when they call, so it's usual for me to discard old robes."
+
+You ask whether she burns them when she discards them.
+
+"What else am I supposed to do with them?" she asks, her voice edging toward shrill. "Donate bloody rags to the poor?"
+
+The crowd has caught the change in her tone, and gossip starts. The young cleric looks out and sees heads bobbing together in whispered talk, and her cheeks flush.
+
+"This evidence is compelling but circumstantial at best," the mayor says. "Have you anything else to present?"
+*goto wol_ch6_solaine_menu
+
+*label wol_ch6_solaine_word
+You announce that you rely on your certainty: Solaine did it.
+
+"Do you expect us to take your word for it?" the mayor asks, incredulous. "A member of the Radiant Order doing something so—"
+
+"But the adventurer is right."
+
+Everyone turns to Solaine, who stands straight and alone as people back away from her. The mayor makes a small gesture to the two militia members at her side, and they edge closer to the cleric.
+
+"It doesn't matter anymore," she says, firm and clear, and you can see madness in her growing smile.
+*goto wol_ch6_transform
+
+*label wol_ch6_solaine_rest
+"I think we have heard enough," Mayor Anathram says. "Take Solaine into custody."
+
+"So that's it," Solaine says as two militia members approach her. "Don't you want to know how I did it?"
+
+The two men stop just outside arm's reach and exchange a nervous look.
+
+Her smile spreads, stripped of all the meek kindness she has shown so far, and it hints at a growing madness.
+
+"Come closer and I'll show you."
+*goto wol_ch6_transform
+
+*comment ── THE MAYOR (314, 304, 319) ──
+*label wol_ch6_accuse_mayor
+*set wol_ch6_accused "mayor"
+You declare Tanya Anathram the killer. The innkeeper visibly jumps. The mayor's scowl feels hot enough to set you alight, and the crowd goes silent. Despite plain misgivings, the innkeeper writes the mayor's name on the page and hands it to you.
+
+"What proof do you have of your claim?" he asks, with a nervous glance at the mayor.
+*goto wol_ch6_mayor_menu
+
+*label wol_ch6_mayor_menu
+*set wol_chapter_6_checkpoint "evidence"
+*set wol_ch6_ev_n 0
+*comment replay-ok: wol_ch6_ev_n is reset to 0 just above and rebuilt from what the player carries on every pass.
+*if ((has_iron_gap_poster) or (has_iron_gap_warrant))
+  *set wol_ch6_ev_n 1
+*if (wol_ch6_ev_n = 0)
+  *goto wol_ch6_mayor_word
+*choice
+  # Present what you took from the fire.
+    *goto wol_ch6_mayor_poster
+  # Rest your case on the story you were told.
+    *goto wol_ch6_mayor_word
+  # Tell the innkeeper you have a story to tell.
+    *goto wol_ch6_mayor_word
+
+*label wol_ch6_mayor_poster
+You lay the evidence you took from the fire before the innkeeper: the singed wanted poster and the warrant. You tell the story of Horace and Titch's visit, including the part where the bandits told Maybelline about the mayor's secret past.
+
+The warrant names the Wolf of the Road for a killing at Iron Gap. The penalty is death, something she might kill to avoid.
+
+"Is this true?" the innkeeper asks. "Were you once this Wolf of the Road?"
+
+In answer, the mayor's jaw clenches, and she nods.
+
+"And were you responsible for that death?"
+
+"Not directly," the mayor says, her voice shaking for a moment. "But yes. I was responsible."
+
+The crowd makes its voices heard, and every one is raised in support of the mayor.
+
+"We don't believe it!" cries one man. Another calls out, "We don't care about your past!" A woman shouts, "We love you, mayor!"
+
+The mayor's jaw trembles, and her eyes glisten. It takes Roi shouting down the crowd to bring quiet.
+
+As the din fades, she looks at you and says, "You're an idiot."
+
+Before you can answer, a single sharp, high laugh rings out over the square. Solaine is laughing at you.
+*goto wol_ch6_transform
+
+*label wol_ch6_mayor_word
+Relying on your word alone, you tell the story of Horace and Titch's visit, including the part where the bandits told Maybelline about the mayor's secret past.
+
+The mayor's jaw clenches, and she keeps her lips pressed shut.
+
+The crowd starts to shout, and every voice is raised in support of her.
+
+"We don't believe it!" cries one man. Another calls out, "The adventurer lies!" A woman shouts, "We stand with you, mayor!"
+
+The mayor's jaw eases, and she allows herself a small smile while the flustered innkeeper shushes the crowd into silence.
+
+She looks at you and says, "You're an idiot."
+
+Before you can answer, someone starts an unhinged giggle. You look over and find Solaine laughing, and you are the joke.
+*goto wol_ch6_transform
+
+*comment ── THE TRANSFORMATION, THE CHASE AND THE DESCENT (source 337, 306, 320, 344, 329, 315, 342, 305, 321, 324, 307, 313, 316) ── Whichever name the player gave, Solaine changes in the square (the four openings differ, the rampage is shared) and carries Tomlin off across the rooftops toward the temple.
+*comment TOMLIN LIVES (the user's cut, 2026-10-31; he runs an open-world shop): the source's courtyard corpse is a man torn open and still breathing. The player may tend him (Wisdom (Medicine) DC 10) or read the scene; either way he is alive when they go on, and Roi, who stays behind to tend the militia, is the healer the player does not see (the user, 2026-11-01:
+*comment off screen). The crimson sky is Solaine's doing and has no hour: the prose never names a time of day. The mosaic that opens into the stair is the one from Chapter 5. The chunk ends at the lair's first sight of Solaine (316); its two buttons (talk or attack) are chunk 4.
+
+*label wol_ch6_transform
+*set wol_chapter_6_checkpoint "transform"
+*set scenery_subplace "langston_town_square_accusation"
+*if (wol_ch6_accused = "tomlin")
+  *goto wol_ch6_tf_tomlin
+*if (wol_ch6_accused = "roi")
+  *goto wol_ch6_tf_roi
+*if (wol_ch6_accused = "solaine")
+  *goto wol_ch6_tf_solaine
+*goto wol_ch6_tf_mayor
+
+*label wol_ch6_tf_tomlin
+"Don't touch him!" Solaine screams at the militia members, pointing at them with a shaking hand. "He is mine! And he's not getting away with it again!"
+
+The townsfolk shift and look at one another in confusion. Then the confusion turns to horror as Solaine's body begins to warp.
+
+Those nearest her scream as the cleric lets out a grating cry that deepens into a throaty growl. Bone crackles and pops as she steps toward Tomlin. The pointing finger twists and lengthens into a sharp claw, and the rest of her hand follows.
+
+Fur sprouts across her body, and her enraged face crackles as it stretches into a fanged snout. Muscles contort and heave, tearing her white robes as she turns into something bestial.
+
+The militia members stand their ground and even step in front of Tomlin as she finishes. You know what she is before the first voice in the crowd screams it.
+
+"Werewolf!"
+
+Solaine bounds forward at Tomlin at once, her claws slashing through the militia members in sprays of blood. Both men go flying to the ground.
+
+*goto wol_ch6_rampage
+
+*label wol_ch6_tf_roi
+"You're a fool for accusing one of the truly good men of this town," Solaine says, then points at Tomlin. "Nothing like him."
+
+The militia members who had approached Roi back away from him and put themselves between Solaine and the druid, but the rest of the crowd stays rooted.
+
+"In such a world," Solaine goes on, "a liar like Tomlin would never face justice except at the hands of one of his victims. I will see that he answers for what he does to the women of this town. For what he did to me!"
+
+Her fists clench, and the air fills with snapping and crackling, like bone being torn apart. Her body ripples and begins to stretch. Her hands furl and clench before they sprout long claws, and her smile twists into a snarling muzzle.
+
+"Oh no," Roi gasps, looking at you. "It was her. She was the shapechanger."
+
+Her change finishes with her growing bulk straining and tearing at her clerical robes.
+
+"Oh dear friend," she says to the druid. "You can say it."
+
+"She's a werewolf," Roi says, his voice cracking with sadness.
+
+Solaine chuckles deep in her throat. "Now stand aside. I'll be taking him now."
+
+Following her gaze, you see that her eyes are fixed on Tomlin.
+
+The militia members hold their position, too stunned or too brave to step aside, even when Solaine charges them. She tears through both men with almost casual swipes of her claws and leaves them to collapse in sprays of their own blood.
+
+Then she leaps at Tomlin.
+
+*goto wol_ch6_rampage
+
+*label wol_ch6_tf_solaine
+The two militia members at Solaine's sides reach for her, and the cleric doubles over in what looks like excruciating pain.
+
+An angry crackling, ripping sound rises from her slight frame. Her body bulges and ripples, splitting her white robes as muscle and fur burst from her. Her limbs lengthen, and her face twists into a bestial muzzle.
+
+"No," Roi gasps. "Werewolf!"
+
+Through all of it the crowd stands in rapt horror. The only sound is Solaine's pained laughter, which drops into a guttural snarl.
+
+In a moment of blind heroism, the militia members on either side of her rush in to restrain her. She rakes them both with her powerful arms, and long claws open them in spurts of blood. Both men cry out and fall.
+
+The young woman beside Tomlin clings to him as the cleric changes and howls with rage.
+
+"You!" Solaine says, pointing at Tomlin. "You are just as guilty!"
+
+She charges at her former lover, teeth bared and saliva streaming.
+
+*goto wol_ch6_rampage
+
+*label wol_ch6_tf_mayor
+"You really are an idiot," Solaine says. All the bright sweetness you have seen in her has evaporated like morning dew. "Even if what you say about the good mayor is true, she is one of the best among us. Among all of us."
+
+She sweeps her hands out wide, her smile stretching until it looks ready to crack.
+
+"People change, adventurer," she goes on, glancing at Tomlin and the young woman beside him. "Well, most people."
+
+With a gesture and a nod, Mayor Anathram sends two militia members toward the cleric.
+
+"What are you saying?" the mayor asks Solaine. "Did you kill Maybelline?"
+
+"Yes," Solaine says flatly. "Because like you, good mayor, I have also changed."
+
+She throws her head back in a laugh that becomes a scream as her body ripples and heaves. Bones crack, and her robes tear as her limbs grow. Her hands twist into claws, and her face contorts into a muzzle full of fangs. Dark fur sprouts across her body as she staggers.
+
+"What is this?" the mayor demands.
+
+"A werewolf," Roi says, heartbroken. "She's the monster."
+
+In a surge of courage, the two militia members leap at the creature. Solaine catches both in her powerful hands, claws digging in, and smashes them together. They scream and drop in a heap, blood seeping out of their broken bodies onto the ground.
+
+"And now you," she snarls, pointing at Tomlin.
+
+*goto wol_ch6_rampage
+
+*label wol_ch6_rampage
+Whatever held the crowd in place is gone, and the stampede begins. Panicked townspeople buffet you from every side.
+
+"Dear gods, no!" Tomlin screams, his voice high with fear. Driven by rage and unnatural strength, Solaine snatches him up in one clawed hand as if he weighed no more than a rag doll and bounds through the crowd.
+
+Through the tumult you see her leave a trail of fallen townsfolk, most of them simply knocked to the ground. She reaches the wall of a nearby building and scrabbles one-handed up to the roof, her claws leaving long slashes in whitewash and wood.
+
+On the roof she stops to let out a long, keening howl. Then she sprints across the rooftops toward the east and the temple.
+
+"Arm yourself and go after her!" Mayor Anathram yells. She takes over crowd control, sending some citizens away from the danger and rallying the militia members scattered among the throng.
+
+"Break the curse if you can," Roi calls out, pressing a hand to his chest. "We'll tend to the wounded."
+
+He drops to his knees beside the fallen militia members, and the druid starts chanting, his hands glowing green as he lays them over the men's wounds.
+
+You call back that you will, and you sprint off through the streets of Langston toward the temple.
+*set wol_chapter_6_checkpoint "chase"
+*page_break Sprint to the temple…
+*goto wol_ch6_sprint
+
+*label wol_ch6_sprint
+*set scenery_subplace "langston"
+You run flat out through the emptied streets of Langston, heading east toward the temple. Blood pounds in your ears and your lungs burn as you hope you are going in the right direction.
+
+The cobblestones fly past below you, and the walls of homes and shops loom to either side, framing the sky. As you run, the sky darkens from its ordinary color to the red of a coming sunset.
+
+After a couple of turns taken almost by instinct, you reach the crossing in front of the mayor's house and stop to get your bearings and catch your breath.
+
+A man's scream, loud and high with terror, pierces the air from straight ahead. Then it cuts off. You launch yourself forward again, heading east.
+
+You pass through the cemetery on your way to the temple, and everything there lies still and quiet. The only movement is a gathering flock of crows or ravens above the courtyard. You are sure you will be too late, but you redouble your speed regardless.
+*set minutes_to_pass 15
+*set time_advance_call_id "wol_ch6_sprint_1"
+*gosub_scene Langston/langston lg_walk_time
+*page_break Into the courtyard…
+*goto wol_ch6_courtyard
+
+*comment The courtyard: Tomlin is torn open and alive (the cut). The menu is a loop of three one-time things: tend him, read the scene, go in; with only the way in left it is taken without a button.
+*label wol_ch6_courtyard
+*set wol_chapter_6_checkpoint "courtyard"
+*set scenery_subplace "langston_true_sun_temple_courtyard_crimson"
+Your hope falters the moment you enter the temple courtyard.
+
+Tomlin lies on the flagstones in a spreading pool of blood, dark birds crowding around him. They scatter into the air as you run in. His chest and neck are torn open, but a thin breath still lifts his ribs. The sun hangs in a sky stained by the blood on the ground, and an outdoor altar of pale stone stands bathed in the red light.
+
+Solaine is nowhere in sight. Claw marks on the ground, a trail of blood and the smashed-in door to the temple show where she went.
+*goto wol_ch6_court_menu
+
+*label wol_ch6_court_menu
+*set wol_ch6_court_n 0
+*comment replay-ok: wol_ch6_court_n is reset to 0 just above and rebuilt from the two one-time flags on every pass.
+*if (not(wol_ch6_tomlin_tended))
+  *set wol_ch6_court_n (wol_ch6_court_n + 1)
+*if (not(wol_ch6_court_read))
+  *set wol_ch6_court_n (wol_ch6_court_n + 1)
+*if (wol_ch6_court_n = 0)
+  *goto wol_ch6_temple
+*choice
+  *if (not(wol_ch6_tomlin_tended))
+    # Kneel by Tomlin and stop the bleeding.@{show_stat_hints  [Wisdom (Medicine) DC 10]|}
+      *goto wol_ch6_tend
+  *if (not(wol_ch6_court_read))
+    # Study the scene for what it tells you about Solaine.@{show_stat_hints  [Investigation or Perception DC 10]|}
+      *goto wol_ch6_court_read
+  # Follow Solaine into the temple.
+    *goto wol_ch6_temple
+  *if (wol_ch6_court_n = 1)
+    # Go in after her.
+      *goto wol_ch6_temple
+
+*label wol_ch6_tend
+*set wol_ch6_tomlin_tended true
+You drop to your knees beside Tomlin and press both hands over the worst of the wounds. The blood is warm and slick between your fingers.
+*gosub_scene dice_engine roll_skill_check 10 "medicine" "" "" "" "" ""
+*if (check_success)
+  The flow slows under your palms and then stops. Tomlin's eyelids flutter, and his lips move.
+
+  "Go," he whispers. "Please... go." His eyes roll shut again, but his chest keeps its slow rise and fall.
+*else
+  The blood keeps welling between your fingers, and you bind the wounds as tight as you can with strips of cloth. Tomlin stays limp, but his breath keeps coming.
+
+Shouts rise behind you as townsfolk spill toward the cemetery path, and you leave Tomlin to them.
+*goto wol_ch6_court_menu
+
+*label wol_ch6_court_read
+*set wol_ch6_court_read true
+You stop to read the ground and the walls around you for any sign of the threat Solaine poses and how to stop her.
+*gosub_scene dice_engine roll_skill_check 10 "investigation" "" "perception" "" "" ""
+*if (check_success)
+  Tomlin's chest and neck were torn open by powerful strikes. Maybelline's wounds were haphazard and widespread, but these have purpose. Anger shows in their depth and ragged edges, and each strike was placed to kill.
+
+  The bloody paw prints that lead away from him toward the temple include a place where they circle back, as if Solaine took one last look at the man on the ground before escaping to the place where she feels safest.
+
+  The courtyard has given up everything it will, so you hurry on after her.
+*else
+  The cuts across Tomlin's neck and chest are deep, and the courtyard tells you little beyond that.
+
+  With the trail the only clue left, you hurry on after her.
+*goto wol_ch6_court_menu
+
+*label wol_ch6_temple
+*set wol_chapter_6_checkpoint "temple"
+*page_break Into the temple…
+*goto wol_ch6_entry
+
+*label wol_ch6_entry
+*set scenery_subplace "langston_true_sun_temple_rotunda_crimson"
+You cross the courtyard past its outdoor altar, bathed in reddening light, and step into the temple's entry hall.
+
+The temple has lost its sun-drenched charm. Red light streams through the windows and tinges even the shadows with bloody highlights. The tapestries of the dead look darker, as if they drink the light and feed on it.
+
+The hall where you met Solaine has changed too. The sunburst mosaic is gone, and a spiral staircase bearing the same motifs winds down into the dark below the temple.
+
+Solaine may have escaped down one of the corridors, but it is far more likely that she retreated into the darkness below. You descend the rough-hewn steps with damp stone around you and what look like animal bones in various stages of decay. A corridor opens into shadow, though torches burn the whole way down. They burn smokeless over walls clean of soot. Their light resembles that of the glowing orbs in the temple above, so the same magic is plainly at work, in plainer dress.
+
+The corridor offers a single path forward, and growls echo off the dark stone.
+
+You keep your wits about you as you advance, careful at every turn not to become another set of bones on the floor.
+*set minutes_to_pass 10
+*set time_advance_call_id "wol_ch6_descent_1"
+*gosub_scene Langston/langston lg_walk_time
+*page_break Advance down the corridor…
+*goto wol_ch6_chamber
+
+*label wol_ch6_chamber
+*set wol_chapter_6_checkpoint "chamber"
+*set scenery_subplace "langston_true_sun_undercroft_charnel_chamber"
+A doorway looms ahead with candlelight flickering in it, the same strange quality as the torches.
+
+Solaine's rage sounds far away still, so you risk a glance inside. The chamber appears empty of immediate threats, and you step in.
+
+Candles burn throughout. Skeletons hang in chains from the walls and from brackets in the floor, and one lies bound to a table, where light from overhead streams into its ribcage like a bright spear. Its face is smashed, by great rage or great strength, probably both.
+
+Most of the skeletons look ancient, as if they have hung here for decades or centuries. The one on the table has an ashy look to it, and a set of cruel-looking tools lies on a table beside it. The room smells of blood and rot and unwashed fur. It has two doors: the one you came through, and one that leads on into the subterranean dark.
+*choice
+  # Stay in this chamber and look around.
+    *goto wol_ch6_chamber_look
+  # Look the room over before you go on.
+    *goto wol_ch6_chamber_look
+  # Continue the chase.
+    *goto wol_ch6_lair
+
+*label wol_ch6_chamber_look
+*set wol_chapter_6_checkpoint "chamber"
+Keeping an eye on the door that leads deeper beneath the temple, you take a moment to study your surroundings.
+
+Cobwebs hang in the corners, and dust covers most surfaces. Even the stained tools look long idle, and their discoloration could come from age as easily as from use.
+
+*if (not(wol_ch6_chamber_award))
+  *set wol_ch6_chamber_award true
+  *gosub_scene dice_engine heroic_award "wolves_ch6_chamber"
+
+The skeletons carry a thick patina of age, and it is impossible to tell how long they have been here. The one on the table is a much lighter gray. Specks of ash or dust lie across the wood, but before you can look closer, a long low howl comes from deeper beneath the temple.
+
+Then a long silence follows.
+
+Another exit may lead out of this lair, and Solaine might still escape through it. The rest of the room will have to wait until the threat is ended.
+*page_break Continue the chase…
+*goto wol_ch6_lair
+
+*comment The lair (316): the end of this chunk. The two buttons that follow in the source (talk to her, attack at once) are chunk 4, so the run ends with the first sight of her and returns to Langston's square (the checkpoint "lair" lands a re-entry here).
+*label wol_ch6_lair
+*set wol_chapter_6_checkpoint "lair"
+*set minutes_to_pass 5
+*set time_advance_call_id "wol_ch6_lair_1"
+*gosub_scene Langston/langston lg_walk_time
+*set scenery_subplace "langston_true_sun_werewolf_lair"
+You advance cautiously down another dim, twisting corridor. Solaine has gone quiet, so perhaps she escaped after all.
+
+You enter a dim room that is part library and part lair. The cleric is still in werewolf form, crouched at its center. She stares at her bloodied claws and huffs out canine whines, surrounded by stacks of books bound in dark leather.
+
+More tomes lie strewn about in disarray, many open to arcane symbols and dark moons. Scraps of parchment covered in notes litter a single large table, and gnawed animal bones fill the floor. The air is an unsettling mix of spoiled meat and aging parchment.
+
+Before you can plan your next move, her nostrils flare and her head jerks up in your direction.
+
+"You shouldn't be here," she growls. "Go away."
+
+*comment END OF THIS CHUNK: chunk 4 (the talk in the lair and the fight with the werewolf, source 328, 339, 346, 352, 343, 350 and on) follows here. Until then the player is sent back to Langston's square.
+*page_break Back out…
+*set ow_pos "lg"
+*set current_district "langston"
+*goto_scene Langston/langston lg_return

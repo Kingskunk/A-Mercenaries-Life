@@ -56,8 +56,17 @@
 
 *label lg_menu
 *comment The mayor's note after Chapter 3 (Langston/wolves_of_langston_chapter_3.txt wol_ch3_note), delivered once on the first hub after the chapter.
-*if ((wol_chapter_3_complete) and (not(wol_ch3_note_read)))
+*comment A messenger crosses the square only when the streets have people in them: the note waits out a storm that empties them (street_life "empty"), as the Hall's doors do.
+*if (((wol_chapter_3_complete) and (not(wol_ch3_note_read))) and (not(street_life = "empty")))
   *goto_scene Langston/wolves_of_langston_chapter_3 wol_ch3_note
+*comment The mayor's letter after Chapter 4 (Langston/wolves_of_langston_chapter_4.txt wol_ch4_letter): the first hub on a later day, once it is not night.
+*gosub_scene Langston/wolves_of_langston_chapter_4 wol_ch4_letter_check
+*if (wol_ch4_letter_due)
+  *goto_scene Langston/wolves_of_langston_chapter_4 wol_ch4_letter
+*comment The mayor's summons after Chapter 5 (Langston/wolves_of_langston_chapter_6.txt wol_ch6_summons): the first hub on a later day, once it is not night and the streets have people in them. She waits at the Pickled Hen.
+*gosub_scene Langston/wolves_of_langston_chapter_6 wol_ch6_summons_check
+*if (wol_ch6_summons_due)
+  *goto_scene Langston/wolves_of_langston_chapter_6 wol_ch6_summons
 *comment Open-world free time: the sidebar's Wait and Rest work on this page.
 *set wait_ok_page page_id
 *choice
@@ -81,6 +90,9 @@
   *if ((wol_chapter_2_complete) and (not(lg_tomlin_open)))
     # [b]Tomlin's workroom[/b]: ${lg_tomlin_closed_reason}.
       *goto_scene Langston/tomlin_cottage lg_tomlin_closed
+  *if (wol_ch4_letter_read)
+    # [b]The True Sun temple[/b]: the limestone chapel on the town's eastern edge. [~10 min]
+      *goto_scene Langston/true_sun_temple lg_temple
   # [b]Langston Hall[/b]: petitions, notices and the town clerks. [~5 min]
     *goto_scene Langston/langston_hall lg_hall
   *if (lg_lot_show)

@@ -1,0 +1,1034 @@
+*comment ====================================================================================
+*comment THE WOLVES OF LANGSTON -- CHAPTER 4: HELPING MAYOR ANATHRAM
+*comment The source's Chapter 4 (sections 158 to 228) in the order the player lives it: the mayor's new assignment (193, 212/173, 225, 163), the western woods and the wood nymph (176, 215, ...), the bandit camp (204, 218, 169),
+*comment the confrontation at the mayor's house (206, 197, 209, 192), her gift and the warrant (191, 172/181, 222). Built a chunk at a time. THIS FILE SO FAR: the Hall scene only, from the aide to the mayor's map.
+*comment Open world: the source's long rest, breakfast and forced evening are dropped. The player walks in whenever the Hall's public day is open and the mayor's note (wol_hall_called) has been read; langston_hall.txt lg_hall_menu
+*comment offers the door. The mayor's office is indoors, so the scene has no weather layer. Buttercup is a female dog in this adaptation (Chapter 1).
+*comment Money: the source's 30 gp becomes 3 silver marks (a gold piece is one copper here).
+*comment ====================================================================================
+
+*label wol_ch4_start
+*if (not(wol_chapter_4_started))
+  *set wol_chapter_4_started true
+  *set wol_chapter 4
+*set scenery_subplace "langston_meeting_hall_office"
+The aide in the brass-rimmed spectacles sits at his desk with an oil lamp burning beside his papers and the curtains drawn behind him. Lamplight slides across his lenses as he looks up.
+
+"Ah, you're here," he says. "The mayor has been waiting. Follow me, please."
+
+He leads you down the inner passage to her office and leaves you at the door. Mayor Anathram looks up from her desk as you come in. Buttercup lies on her cushion beside it, and her eyes follow you across the floor.
+
+After a short greeting, the mayor comes to the point.
+
+"I have a second matter for you," she says. "Reports are coming in of two strangers who are making the townsfolk uneasy. Farm animals have gone missing, and other items of value with them. The strangers are likely the cause." She taps the desk once with a scarred finger. "Maybelline's death could also be linked to them. I want you to investigate."
+
+*choice
+  # Watch her face while she talks.@{show_stat_hints  [Insight DC 15]|}
+    *gosub_scene dice_engine roll_skill_check 15 "insight" "" "" "" "" ""
+    *if (check_success)
+      *set wol_ch4_unrelated_known true
+      Her voice stays level, but her gaze drifts to the lamp each time she says Maybelline's name. The pieces sit apart: everything you have seen of Maybelline's death points somewhere other than two strangers on the road. You say so.
+
+      "It is unclear," she says, and her flat stare wavers for the length of a breath. "But there is no evidence of their involvement. Yet. I still need you to find out for certain."
+      *goto wol_ch4_pay_choice
+    *else
+      Her face is stone. You sense something held back, though you cannot tell what, and the set of her shoulders makes plain that the task is settled.
+
+      "I'll find them," you say.
+      *goto wol_ch4_map
+  # "May I see the reports?"@{show_stat_hints  [Investigation DC 15]|}
+    "They are few," Anathram says, and slides a slim bundle of farmers' notes across the desk.
+    *gosub_scene dice_engine roll_skill_check 15 "investigation" "" "" "" "" ""
+    *if (check_success)
+      *set wol_ch4_unrelated_known true
+      You read the dates against one another. Every loss lies out along the tree line beyond the wall, and every one of them predates Maybelline's death. You lay the notes side by side on the desk and tell her what they show.
+
+      "It is unclear," she says, and her flat stare wavers for the length of a breath. "But there is no evidence of their involvement. Yet. I still need you to find out for certain."
+      *goto wol_ch4_pay_choice
+    *else
+      You squint through blotted tallies in a dozen different hands, and no pattern comes clear. Anathram collects the notes before you finish and squares them against the edge of the desk, and that closes the matter.
+
+      "I'll find them," you say.
+      *goto wol_ch4_map
+  # "Where do I begin?"
+    "I will show you," she says.
+    *goto wol_ch4_map
+
+*label wol_ch4_pay_choice
+*choice
+  # "A second task deserves a second fee."
+    *goto wol_ch4_extra_pay
+  # "Then I'll find out."
+    *goto wol_ch4_map
+  # "Where were these strangers last seen?"
+    "That is what the map is for," Anathram says.
+    *goto wol_ch4_map
+
+*label wol_ch4_extra_pay
+"I do not normally negotiate with those I employ," Anathram says. "But if it will speed you along, you may have this."
+
+She pulls a coin purse from a desk drawer and tosses it to you. It leaves her hand so quickly that it must have been waiting there.
+*if (not(wol_ch4_extra_paid))
+  *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+    *set wol_ch4_extra_paid true
+    *set currency_add_amount 30
+    *gosub_scene economy currency_add
+    *set currency_txn_locked true
+    *set locked_currency_txn_page_id page_id
+
+[b][Received: 3 Silver Marks][/b]
+
+"I expect that is sufficient to continue the work you have agreed to do?" she says.
+
+You nod, and ask what else she knows.
+*goto wol_ch4_map
+
+*comment The map (source 163). The mayor spreads the town's map over her desk and circles the camp; the player takes it. The woods to the west become a place on the overworld in the next chunk; this one ends back in the Hall with the quest log pointing there.
+*label wol_ch4_map
+*set scenery_subplace "langston_meeting_hall_office"
+
+She pulls a map of Langston and its farmland from a shelf and unrolls it across the desk. Her quill circles a patch of wooded country west of the town.
+
+"Search this area for the bandit camp and remove them from it. By force if necessary. This should be well within your abilities." She taps the paper beside the circle. "Use the forest paths. People are frightened of the murderer and the rumor of bandits. More strangers on the road could cause panic."
+
+You agree, though it feels more like a reflex to the mayor's raw authority than a decision. She rolls the map and hands it across the desk.
+
+Buttercup lifts her head as you turn for the door, and her eyes follow you out into the passage.
+*set wol_ch4_map_given true
+*set minutes_to_pass 15
+*set time_advance_call_id "wol_ch4_hall_1"
+*gosub_scene Langston/langston lg_walk_time
+
+[b][The mayor's map marks a bandit camp in the woods west of Langston.][/b]
+*page_break Leave the mayor's office…
+*goto_scene Langston/langston_hall lg_hall_front
+
+*comment ── THE WESTWOOD RUN (source 176, 215, 175/203/161, 200, 226/210, 220, 189, 195/213) ── A CLOSED run, like Chapter 3 (the user's rule: no exits once it starts). Westwood's button (overworld.txt, then westwood.txt ww_arrive) lands here until wol_chapter_4_complete.
+*comment The dryad of the source is a wood nymph who speaks Common (the user's call, 2026-10-31), so the source's Sylvan and comprehension branches fold into one conversation. The user's call (2026-10-31): she is a peaceful meeting, so there is no attack option (the source's charm save, flight into a tree and
+*comment pang of sadness are dropped). The Potion of Barkskin she hands over before the escort is built (catalog potion_barkskin: a brewed-type timer, an AC floor of 16 for an hour). The camp is built (wol_ch4_camp, below). NOT BUILT YET: the mayor's house and everything after it. Chapter 4 ends at wol_ch4_complete.
+*label wol_ch4_woods_start
+*if (wol_chapter_4_checkpoint = "clearing")
+  *goto wol_ch4_clearing
+*if (wol_chapter_4_checkpoint = "talk")
+  *goto wol_ch4_nymph_hub
+*if (wol_chapter_4_checkpoint = "camp")
+  *goto wol_ch4_camp
+*if (wol_chapter_4_checkpoint = "walk")
+  *goto wol_ch4_camp_leave
+*if (wol_chapter_4_checkpoint = "town")
+  *goto wol_ch4_town
+*if (wol_chapter_4_checkpoint = "house")
+  *goto wol_ch4_house_front
+*if (wol_chapter_4_checkpoint = "parlor")
+  *goto wol_ch4_parlor
+*if (wol_chapter_4_checkpoint = "house_done")
+  *goto wol_ch4_mayor_talk
+*goto wol_ch4_woods
+
+*label wol_ch4_woods
+*set wol_chapter_4_checkpoint "woods"
+*set scenery_subplace "forest"
+*gosub_scene Langston/westwood ww_sky
+
+You follow the forest paths, checking the mayor's circle against each landmark you pass: a split oak, a stone wall gone to moss, a bend in the stream.
+
+This part of the forest carries the ordinary signs of life, a sharp contrast to the unnatural stillness of Roi's woods when he was ill.
+*if (weather_severity >= 3)
+  *if (weather_cold)
+    Wind roars in the canopy, driven snow rasps against the trunks, and a stream rushes somewhere off to the east beneath its gathering ice.
+  *else
+    Rain hisses on the leaves, and a swollen stream rushes somewhere off to the east.
+*elseif (weather = "Sleet")
+  Sleet ticks through the canopy, and a stream runs fast somewhere off to the east.
+*elseif (weather = "Snow")
+  Snow sifts through the branches, muffling the undergrowth while a stream burbles somewhere off to the east.
+*elseif (weather = "Rain")
+  Rain patters through the leaves, frogs call from the undergrowth, and a stream runs somewhere off to the east.
+*elseif (weather = "Fog")
+  Nearby birds trade muffled calls through the mist, and a stream burbles somewhere off to the east.
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  Crickets sing in the undergrowth, an owl calls from deep among the trunks, and a stream burbles somewhere off to the east.
+*else
+  Birds twitter overhead, insects hum in the bracken, and a stream burbles somewhere off to the east.
+*if (weather_severity >= 2)
+  Even without your errand, the weather would make this a hard walk.
+*else
+  Were your errand gentler, this would be a calming hike.
+*set minutes_to_pass 20
+*set time_advance_call_id "wol_ch4_woods_1"
+*gosub_scene Langston/langston lg_walk_time
+*page_break Continue through the woods…
+*goto wol_ch4_clearing
+
+*label wol_ch4_clearing
+*set wol_chapter_4_checkpoint "clearing"
+*set scenery_subplace "langston_dryads_clearing"
+*set wol_ch4_nymph_wary false
+*if (weather_severity >= 3)
+  *if (weather_cold)
+    The path opens onto a clearing ringed with old trees, their trunks thick and gnarled. Driven snow crosses the wildflowers and catches in the roots of the widest oak.
+
+    A woman stands beneath that oak, sheltering a tiny brown bird inside her cupped hands. Her skin is bright green and her hair a tangle of leaves and moss, and she murmurs back when the bird gives a frightened twitter. You have found a wood nymph, a fae creature with a deep connection to the forest.
+  *else
+    The path opens onto a clearing ringed with old trees, their trunks thick and gnarled. Rain lashes the wildflowers, and the branches of the widest oak buck in the wind.
+
+    A woman stands beneath that oak, a drenched robin cupped in her hands. Her skin is bright green and her hair a tangle of leaves and moss, and she laughs and twitters back at the bird while sheltering it from the storm. You have found a wood nymph, a fae creature with a deep connection to the forest.
+*elseif (weather = "Sleet")
+  The path opens onto a clearing ringed with old trees, their trunks thick and gnarled. Sleet ticks through the wildflowers and gathers in the roots of the widest oak.
+
+  A woman stands beneath that oak with a robin sheltered against her chest. Her skin is bright green and her hair a tangle of leaves and moss, and she answers the bird's uneasy twitter with one of her own. You have found a wood nymph, a fae creature with a deep connection to the forest.
+*elseif (weather = "Snow")
+  The path opens onto a clearing ringed with old trees, their trunks thick and gnarled. Snow rests on the wildflowers and powders the roots of the widest oak.
+
+  A woman sits beneath that oak with a small brown bird perched in her outstretched hand. Her skin is bright green and her hair a tangle of leaves and moss, and she laughs and twitters back at it. You have found a wood nymph, a fae creature with a deep connection to the forest.
+*elseif (weather = "Rain")
+  The path opens onto a clearing ringed with old trees, their trunks thick and gnarled. Rain pats the wildflowers, and the air smells of wet blossom and honey.
+
+  A woman stands under the widest oak, a drenched robin cupped in her hands. Her skin is bright green and her hair a tangle of leaves and moss, and she laughs and twitters back at the bird as it shakes out its feathers. You have found a wood nymph, a fae creature with a deep connection to the forest.
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  The path opens onto a clearing ringed with old trees, their trunks thick and gnarled. Crickets sing in the grass, and the air smells of night-blooming flowers and honey.
+
+  A woman sits on a stump at the centre of the clearing. Her skin is bright green and her hair a tangle of leaves and moss, and a pale moth rests on her outstretched fingertip as she laughs and twitters back at it. You have found a wood nymph, a fae creature with a deep connection to the forest.
+*else
+  The path opens onto a clearing ringed with old trees, their trunks thick and gnarled. The birdsong is especially lovely here, and the air smells of wildflowers and honey.
+
+  A woman sits on a stump at the centre of the clearing. Her skin is bright green and her hair a tangle of leaves and moss, and a robin rests in her outstretched hand as she laughs and twitters back at it. You have found a wood nymph, a fae creature with a deep connection to the forest.
+
+*choice
+  # Sneak past her.@{show_stat_hints  [Stealth DC 14]|}
+    You pad around the edge of the clearing, watching for loose leaves and twigs, with one eye on the green woman.
+    *gosub_scene dice_engine roll_skill_check 14 "stealth" "" "" "" "" ""
+    *if (check_success)
+      *set wol_ch4_nymph_passed true
+      You slip past her in near silence. Her attention stays on her small friend, and the path takes you on toward the place the mayor marked.
+      *page_break Go on…
+      *goto wol_ch4_camp
+    *else
+      *goto wol_ch4_nymph_stumble
+  # Circle wide through the undergrowth.@{show_stat_hints  [Survival DC 13]|}
+    You swing out into the bracken, placing each step on moss and bare earth while the clearing slides past on your left.
+    *gosub_scene dice_engine roll_skill_check 13 "survival" "" "" "" "" ""
+    *if (check_success)
+      *set wol_ch4_nymph_passed true
+      The clearing falls behind in near silence. Beyond it the path picks up again toward the place the mayor marked.
+      *page_break Go on…
+      *goto wol_ch4_camp
+    *else
+      *goto wol_ch4_nymph_slip
+  # Step out into the open and greet her.
+    You walk out of the trees in plain view. The leaves of her hair and clothing rustle in a breeze only she can feel. She is surprised, yet her eyes stay calm, and she waits to see what you do next.
+    *goto wol_ch4_nymph_wary_choice
+
+*label wol_ch4_nymph_stumble
+*set wol_ch4_nymph_wary true
+*if ((weather = "Snow") or (weather = "Blizzard"))
+  Your weight snaps a twig beneath the snow, and you stumble into a drift of buried leaf litter.
+*elseif (ground_state = "dry")
+  You step on a dry twig, and then you stumble into a pile of dried leaves.
+*else
+  A waterlogged twig cracks under your boot, and you stumble into a heap of wet leaf litter.
+
+She leaps to her feet, pointing her arm at you as light shines around her fingertips. Whatever she means to do, she hesitates before releasing it. She looks at you warily, the leaves of her hair and clothing swaying in a wind that only she can feel.
+*goto wol_ch4_nymph_wary_choice
+
+*label wol_ch4_nymph_slip
+*set wol_ch4_nymph_wary true
+*if (temperature_band = "freezing")
+  The bank gives way under your foot and the thin ice at the stream's edge breaks beneath your boot. Frigid water splashes up as birds burst from the nearby branches.
+*elseif (weather_cold)
+  The bank gives way under your foot and you slide into a shallow, bitterly cold stream with a splash that sends birds up from the nearby branches.
+*else
+  The bank gives way under your foot and you slide into a shallow stream with a splash that sends birds up from every branch.
+
+She leaps to her feet, pointing her arm at you as light shines around her fingertips. Whatever she means to do, she hesitates before releasing it. She watches you drip, and the leaves of her hair and clothing sway in a wind that only she can feel.
+*goto wol_ch4_nymph_wary_choice
+
+*label wol_ch4_nymph_wary_choice
+*choice
+  # Greet her and ask what she is doing in the forest.
+    You greet the green woman and ask what she is doing in the forest.
+    *goto wol_ch4_nymph_talk
+  # Raise your hands and tell her you mean no harm.
+    You raise your hands where she can see them and tell her you mean no harm.
+    *goto wol_ch4_nymph_talk
+  # Ask whether she can understand you.
+    You ask whether she understands Common.
+
+    "Of course I do!" she says, and laughs as though you had asked whether she could hear birds.
+    *goto wol_ch4_nymph_talk
+
+*label wol_ch4_nymph_talk
+*set wol_ch4_nymph_talked true
+*set wol_chapter_4_checkpoint "talk"
+
+*if (wol_ch4_nymph_wary)
+  Her arm drops to her side, and the light fades from her fingertips. She answers in a voice like wind in the leaves, quick and lilting, and in plain Common.
+*else
+  Her face opens in a smile, and the leaves of her hair settle. She answers in a voice like wind in the leaves, quick and lilting, and in plain Common.
+
+"I am visiting the friends who live here," she says. "What brings you into the wood?"
+
+You tell her you are looking for a bandit camp, and she claps her hands.
+
+"Oh, I'm so glad," she says. "Those terrible men are scaring the residents of the forest and making an awful mess."
+
+You ask for more details, and she says she has kept her distance from both the farms and the new arrivals.
+
+"There is a wrongness in these woods that drew me here," she says. "It seems unlikely to be these awful men, but the birds tell me they are doing real damage, and their snares are excessive to the point of being quite hazardous."
+
+You say that you will remove them from her wood. She claps again and smiles.
+
+"Oh, what a day," she says brightly. "You are so much nicer than the other man I see from the town. Very handsome fellow who usually spends his time collecting herbs, but he seems just as interested in nymphs."
+
+You ask if she is sure.
+
+"Of course. I try to stay out of the distasteful man's sight. When he does see me, he looks at me like I'm prey. But the hungry men at camp are a more pressing threat."
+*set wol_ch4_nymph_herb_man true
+*goto wol_ch4_nymph_hub
+
+*label wol_ch4_nymph_hub
+*set wol_chapter_4_checkpoint "talk"
+*set scenery_subplace "langston_dryads_clearing"
+*choice
+  *if (not(wol_ch4_nymph_asked_camp))
+    # Ask her about the bandit camp.
+      *set wol_ch4_nymph_asked_camp true
+      You ask where the camp lies and what she knows of the men.
+
+      She wrinkles her nose as if she had smelled something off. Two bandits, both men and both human, have taken over the camp. They went into Langston some time ago and have yet to come back, and they have walked into town several times, sometimes returning with bread or meat for a porridge they probably stole or bought in the market.
+
+      "They have been gone longer than on the other trips," she says. "So maybe they are staying in town."
+      *goto wol_ch4_nymph_hub
+  *if (not(wol_ch4_nymph_asked_strange))
+    # Ask whether anything else in the wood has seemed strange.
+      *set wol_ch4_nymph_asked_strange true
+      You ask whether anything else in the wood has seemed strange lately.
+
+      She tilts her head and listens to the trees. They have reported some strange creature wandering the land, she says, but they could not say what it was. They used the words "beast" and "person" interchangeably, so she is a little confused as well.
+
+      She thinks it likely has something to do with the camp nearby, though the men are clearly men and not beasts. Her eyes brighten. "I can show you the way, if you like."
+      *goto wol_ch4_nymph_hub
+  *if ((wol_ch4_nymph_asked_camp) or (wol_ch4_nymph_asked_strange))
+    # Ask her to show you the way to the camp.
+      *set wol_ch4_nymph_guided true
+      You thank the nymph and ask her to show you the way.
+
+      Before she leads you off, she presses a green glass vial into your hand and gestures for you to take a sip.
+
+      "A witch's brew," she says.
+
+      You smell the contents with care and take a small sip to learn what it does. Your skin toughens and twists for a moment before returning to normal.
+      *if (not(wol_ch4_barkskin_given))
+        *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+          *set wol_ch4_barkskin_given true
+          *gosub_scene equipment grant_gear "potion_barkskin" 1
+          *set stat_bump_locked true
+          *set locked_stat_bump_page_id page_id
+
+      [b][🧪 Received: Potion of Barkskin][/b]
+
+      You thank her again, and she leads you through the woods, her feet barely whispering in the underbrush that you must pick through with care. At an easy place to enter, she points to where the trees thin into another clearing.
+      *set minutes_to_pass 20
+      *set time_advance_call_id "wol_ch4_nymph_1"
+      *gosub_scene Langston/langston lg_walk_time
+      You turn to thank her for her help, but she has already melted into the trunks.
+      *page_break Go on…
+      *goto wol_ch4_camp
+  # Thank her and find the camp on your own.
+    You thank her for her time and tell her you will find the camp yourself.
+
+    "Then good hunting," she says, and she turns back to her small friend as though you had already gone.
+    *set minutes_to_pass 10
+    *set time_advance_call_id "wol_ch4_nymph_2"
+    *gosub_scene Langston/langston lg_walk_time
+    *page_break Go on…
+    *goto wol_ch4_camp
+
+*comment ── THE BANDIT CAMP (source 204, 195, 218, 180, 164, 185, 169, 207, 223) ── The camp is empty. The player reaches it guided by the nymph (195: straight to the search) or alone (204: three ways in). Every path ends in the search (169), where the
+*comment source rolls one Investigation check (DC 12): the warrant on a success or a failure, plus the agate and the flimsy jeweled dagger on a success. The source's agate brooch (15 gp) is the plain agate gem here (10 copper); its jeweled dagger (5 gp) is the Flimsy Jeweled Dagger.
+*comment The source's "the day is running out of light" and "return before nightfall" are dropped (open world: the hour is the player's).
+*label wol_ch4_camp
+*set wol_chapter_4_checkpoint "camp"
+*set scenery_subplace "langston_bandit_camp"
+*if (wol_ch4_warrant_found)
+  *goto wol_ch4_camp_leave
+*if (wol_ch4_nymph_guided)
+  This flat patch of ground is nothing like the nymph's clearing. The fire pit is sloppily built and ringed with the leavings of many meals: scorched bones of various sizes and a crust of old grey porridge that even the local wildlife has steered clear of. Everything in it is still.
+
+  You slip into the camp to look around.
+  *page_break Search the camp…
+  *goto wol_ch4_camp_search
+*else
+  You make your way through the woods on your own, following the mayor's circle against the lay of the land. It is harder going than you expected, but the trees thin ahead, so this must be the place.
+
+*choice
+  # Approach the camp stealthily.@{show_stat_hints  [Stealth DC 10]|}
+    You drop into a crouch and advance on the camp as quietly as you can.
+    *gosub_scene dice_engine roll_skill_check 10 "stealth" "" "" "" "" ""
+    *if (check_success)
+      *goto wol_ch4_camp_case
+    *else
+      *goto wol_ch4_camp_fall
+  # Work around the edge of the camp through the trees.@{show_stat_hints  [Survival DC 10]|}
+    You leave the path and work around the edge of the camp, picking a line through ferns and fallen branches.
+    *gosub_scene dice_engine roll_skill_check 10 "survival" "" "" "" "" ""
+    *if (check_success)
+      *goto wol_ch4_camp_case
+    *else
+      *goto wol_ch4_camp_log
+  # Walk into the camp.
+    You step out of the trees and walk straight in.
+    *page_break Search the camp…
+    *goto wol_ch4_camp_search
+
+*label wol_ch4_camp_case
+You stay low in the undergrowth and study the camp. Every corner of it is empty, and the coast is clear.
+*choice
+  # Approach the camp.
+    *goto wol_ch4_camp_search
+  # Look the lean-tos over from the treeline first.
+    You edge along the treeline until the open ends of both lean-tos face you. Rolled bedding and a few cracked pots lie inside, cold and untouched. You step out of the trees and go in.
+    *page_break Search the camp…
+    *goto wol_ch4_camp_search
+  # Wait to see whether anyone comes back.
+    You settle in behind a trunk and keep your eyes on the lean-tos.
+    *set minutes_to_pass 60
+    *set time_advance_call_id "wol_ch4_camp_wait_1"
+    *gosub_scene Langston/langston lg_walk_time
+
+    The lean-tos stay still. The longer you watch, the clearer it becomes that the answers lie inside the camp, and you get to your feet and go in.
+    *gosub_scene dice_engine heroic_award "wolves_ch4_camp_wait"
+    *page_break Search the camp…
+    *goto wol_ch4_camp_search
+
+*label wol_ch4_camp_fall
+*if ((weather = "Snow") or (weather = "Blizzard"))
+  You stumble into a heap of twigs and leaves buried beneath the snow. Between the cracking branches and the noise of your fall, anyone in the camp would have heard you coming.
+*elseif (ground_state = "dry")
+  You stumble into a pile of dry leaves and twigs that the wind has blown into a heap. Between the rustling and the cracking and the noise of your fall, anyone in the camp would have heard you coming.
+*else
+  You stumble into a sodden heap of leaves and twigs. Between the cracking branches and the noise of your fall, anyone in the camp would have heard you coming.
+
+Luck is with you. The camp is empty, so you may as well walk in and look around.
+*page_break Search the camp…
+*goto wol_ch4_camp_search
+
+*label wol_ch4_camp_log
+A rotten log collapses under your foot with a crack that rolls across the clearing, and a pair of crows lift out of the trees in alarm. The camp itself stays still, so you walk in and look around.
+*page_break Search the camp…
+*goto wol_ch4_camp_search
+
+*label wol_ch4_camp_search
+*set scenery_subplace "langston_bandit_camp"
+The camp is not much, and you would pass it by if you stumbled across it on your own. A competent fire pit sits at the centre of the clearing, its last ashes cold. Charred bones of small animals and other, less recognizable scraps litter the ground. Two rough lean-tos have been built to keep bedrolls dry in the rain.
+
+Very little else looks important, though an oilcloth bundle hangs in a tree, tied to the trunk with rough hemp rope to keep it off the ground and away from curious animals.
+
+*choice
+  # Search the camp.@{show_stat_hints  [Investigation DC 12]|}
+    You go through the camp methodically, starting with the oilcloth in the tree.
+    *gosub_scene dice_engine roll_skill_check 12 "investigation" "" "" "" "" ""
+    *if (check_success)
+      *goto wol_ch4_camp_rich
+    *else
+      *goto wol_ch4_camp_poor
+  # Read the camp's signs.@{show_stat_hints  [Survival DC 12]|}
+    You crouch over the fire pit and the trampled ground, reading what two men have left behind: where they sat, where they slept, what they hid.
+    *gosub_scene dice_engine roll_skill_check 12 "survival" "" "" "" "" ""
+    *if (check_success)
+      *goto wol_ch4_camp_rich
+    *else
+      *goto wol_ch4_camp_poor
+  # Climb up to the oilcloth bundle.@{show_stat_hints  [Athletics DC 12]|}
+    You haul yourself up the trunk to the hanging bundle and work at the hemp knots.
+    *gosub_scene dice_engine roll_skill_check 12 "athletics" "" "acrobatics" "" "" ""
+    *if (check_success)
+      *goto wol_ch4_camp_rich
+    *else
+      *goto wol_ch4_camp_poor
+
+*label wol_ch4_camp_rich
+*set wol_ch4_warrant_found true
+*set wol_ch4_camp_rich_loot true
+You open the oilcloth. A leather scroll case holds a rolled sheet of vellum, and when you unroll it you find a warrant made out to someone named Horace and Titch, the bandits' names presumably. It offers three gold crowns for word of a criminal's whereabouts and thirty for capture, dead or alive.
+
+The warrant is for the Wolf of the Road, who has an obviously Orcish real name, unfamiliar to you. The charge is the killing of a constable at Iron Gap.
+
+Unsure what to make of this, you take the document with you until you can find out more.
+
+These bandits have clearly fallen on hard times, since their gear is tattered and in poor repair. It is likely that most of their valuables ride on their persons.
+
+Elsewhere in the clearing, though, you also find a smaller oilcloth rolled up and wedged into a deep knot in a tree. Inside it you find a polished agate and, disguised under a smear of ash, a flimsy jeweled dagger.
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *gosub_scene equipment grant_gear "iron_gap_warrant" 1
+  *gosub_scene equipment grant_gear "gem_agate" 1
+  *gosub_scene equipment grant_gear "flimsy_jeweled_dagger" 1
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+
+[b][📜 Received: Iron Gap Warrant][/b]
+
+[b][💎 Received: Agate][/b]
+
+[b][🗡 Received: Flimsy Jeweled Dagger][/b]
+
+You leave the rest of the bandits' junk where it lies.
+*set minutes_to_pass 20
+*set time_advance_call_id "wol_ch4_camp_search_1"
+*gosub_scene Langston/langston lg_walk_time
+*page_break Start back for Langston…
+*goto wol_ch4_camp_leave
+
+*label wol_ch4_camp_poor
+*set wol_ch4_warrant_found true
+The search turns up little at first. Everything the two men own is in disrepair, and the camp's other leavings look worthless.
+
+In the oilcloth hanging from the tree, though, you find a leather scroll case holding a rolled sheet of vellum. It is a warrant empowering Horace and Titch, the bandits' names presumably, to collect a bounty: three gold crowns for word of a criminal's whereabouts and thirty for capture, dead or alive.
+
+The warrant is for the killer of a constable at Iron Gap, who goes by the alias the Wolf of the Road, with a real name that is obviously Orcish and unfamiliar to you.
+
+Unsure what to make of this, you take the document with you until you can find out more.
+
+These bandits have clearly fallen on hard times, and any valuables they own are likely on their persons. The rest of the camp offers only junk.
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *gosub_scene equipment grant_gear "iron_gap_warrant" 1
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+
+[b][📜 Received: Iron Gap Warrant][/b]
+*set minutes_to_pass 20
+*set time_advance_call_id "wol_ch4_camp_search_2"
+*gosub_scene Langston/langston lg_walk_time
+*page_break Start back for Langston…
+*goto wol_ch4_camp_leave
+
+*comment The way back (source 183). A direct walk to Langston; no night, no locked Hall (the source's aide locking up and the evening at the mayor's house are the next chunk). END OF THIS CHUNK: wol_ch4_town_stub returns the player to Langston's square with the checkpoint "town".
+*label wol_ch4_camp_leave
+*set wol_chapter_4_checkpoint "walk"
+*set scenery_subplace "forest"
+The track carries you out of the trees and across the fields to Langston's wall.
+*set minutes_to_pass 90
+*set time_advance_call_id "wol_ch4_camp_leave_1"
+*gosub_scene Langston/langston lg_walk_time
+*page_break Into Langston…
+*goto wol_ch4_town
+
+*comment ── THE WAY BACK AND THE MAYOR'S HOUSE (source 183, 206, 197, 188/217/160, 205, 182/166/216, 208/165/187, 186, 168, 209, 192, 199/214/159, 178, 184, 162/170) ── Still a closed run. The source's evening and locked Hall are dropped: whoever is at the Hall at the
+*comment hour the player arrives tells them where the mayor has gone (the aide in the Hall's public day, a Watch officer otherwise). The house scene: the player reaches the parlor by one of five doors (listen, knock, force, pick the lock, announce) and the bandits Horace and Titch lay out the mayor's past.
+*comment The source's Battle of Three Rivers is the Battle of Iron Gap here (Chapter 1) and the Three Rivers girl is the Iron Gap girl. Titch's fight uses the library "knifeman" at the source's numbers (11 HP, AC 12, +3); the knifeman's poisoned blade stays as the type's own move.
+*comment The source's option to kill Titch after he yields (source 170, which ends the quest) is dropped (the user's call, 2026-10-31: too easy to fail a quest for no good reason after a fight): the mercy menu has three ways of sparing him.
+*label wol_ch4_town
+*set wol_chapter_4_checkpoint "town"
+*set ow_pos "lg"
+*set current_district "langston"
+*set scenery_subplace "langston"
+*gosub_scene calendar update_hub_condition
+*gosub_scene Langston/langston_hall lg_hall_hours
+
+The warrant sits in your pack, and it cannot wait. You climb the steps to Langston Hall.
+*if (lg_hall_open)
+  The aide is at his desk, his lenses catching the lamp. "The mayor isn't here," he says when you ask for her. "A sealed message reached her a short while ago, and she left soon afterward. She often works from home, so you may find her there."
+*else
+  A Watch officer holds the barred inner passage. "The mayor isn't here," the officer says when you ask for her. "A sealed message reached her a short while ago, and she left for home soon afterward. You may catch her there."
+
+You tell them it is urgent and that you need to speak with Mayor Anathram right away. They give you directions to her house.
+*page_break Go to the mayor's house…
+*goto wol_ch4_house
+
+*label wol_ch4_house
+*set wol_chapter_4_checkpoint "house"
+*set scenery_subplace "langston_mayors_house"
+As you approach the mayor's home, you see two shabbily dressed men lounging by the entrance to her garden. One is tall and lean, with a sharp face set in a permanent grimace of contempt. The other has a smug smile on his face as he scratches idly at his protruding belly. Both wear mismatched clothing and piecemeal light armor, as if everything they own was scavenged from people with even less.
+
+As you watch, the mayor approaches from the other direction. She stops to scowl at the two men, but a nervous energy belies her expression, and her hand strays to her collar to adjust it as she steps forward. The shorter of the pair waves and waggles his eyebrows.
+
+A brief exchange follows, led mostly by the stouter man, and then all three go into the house together. A moment after the door shuts, lamplight shows at the front window.
+
+You approach the house.
+*page_break Look the house over…
+*goto wol_ch4_house_front
+
+*label wol_ch4_house_front
+*set scenery_subplace "langston_mayors_house"
+The mayor's house is a large single-story home with a small, neglected garden and a thick wooden door. Like the rest of town it stands on a stone foundation under timber-framed walls. Lamps burn inside and glow through closed curtains.
+
+Despite the thickness of the door, you can hear voices raised in anger inside.
+*goto wol_ch4_door_menu
+
+*label wol_ch4_door_menu
+*choice
+  *if (not(wol_ch4_house_listened))
+    # Listen at the door.@{show_stat_hints  [Perception DC 15]|}
+      *set wol_ch4_house_listened true
+      You press close to the door. It is thick, and the voices are some distance from it. You can hear them only because they are shouting, and the shouting is broken now and then by the deep bark of the mayor's guard dog.
+      *gosub_scene dice_engine roll_skill_check 15 "perception" "" "" "" "" ""
+      *if (check_success)
+        Despite the barking, you make out three voices. One is the mayor demanding to know what the two men are doing in Langston. The other two take turns speaking in slow, arrogant tones. You catch only a few words: "wolf," "money," and "find out."
+      *else
+        You can make out angry voices, but the barking drowns everything else. Their words stay lost in the barking.
+      *goto wol_ch4_door_menu
+  # Knock.
+    *goto wol_ch4_door_knock
+  # Force the door.@{show_stat_hints  [Athletics DC 15]|}
+    *goto wol_ch4_door_force
+  *if ((has_lockpick_set) and (not(wol_ch4_lock_failed)))
+    # Pick the lock.@{show_stat_hints  [Sleight of Hand DC 15, Lockpick Set: advantage]|}
+      *goto wol_ch4_door_pick
+
+*label wol_ch4_door_knock
+*set wol_ch4_house_entry "knock"
+The voices go silent. You wonder whether anyone will come, and then the mayor's voice calls from the other side: "Who is there?"
+
+You answer that it is you and ask whether everything is all right. A silence follows.
+
+Finally the door unlocks and the mayor's scowling face greets you. "Excellent, I am glad you could make it," she says, more courteously than you have ever heard her speak. "Won't you please come in?"
+
+Confused, you follow her into the front hall. As soon as you step over the threshold, you see that the lean bandit stands behind her with a dagger at the small of her back. The mayor hardly seems to notice him, since she is both taller and much broader than he is.
+
+"Welcome to the party," he says to you, his sour mouth twisting into a wry smile. "Come in and make yourself comfortable."
+
+Still confused, you follow the mayor and the bandit into the parlor. The shorter, more portly bandit is there, casually toying with a dagger and trying not to notice the enormous mastiff staring at him like a meal.
+
+"Hey, hey, as you were, folks," the broad bandit says, gesturing expansively and then pointing his knife at you. "Except you. Stand over by my companion there, so we can keep an eye on you, eh?"
+
+You look to the mayor, and she gives a single small nod. You do as you have been asked.
+*page_break Into the parlor…
+*goto wol_ch4_parlor
+
+*label wol_ch4_door_force
+The door is thick wood with strong iron hinges and fixings. Forcing it will be a challenge, but it looks possible.
+*gosub_scene dice_engine roll_skill_check 15 "athletics" "" "" "" "" ""
+*if (check_success)
+  *set wol_ch4_house_entry "force"
+  The doorframe splinters around the lock as you drive the door open.
+
+  "What in the hells was that?" a man's voice yells from the next room.
+
+  You advance quickly down the hall, ready for a fight. As you round the corner you barge into the parlor.
+
+  "You!" the mayor shouts, though you cannot tell with what emotion. "Horace. Titch. This is my investigator."
+
+  "For the girl, eh?" says the tall, lean one. He lays a hand on a knife at his belt. "May as well come inside. Now."
+  *page_break Into the parlor…
+  *goto wol_ch4_parlor
+*else
+  *set wol_ch4_house_entry "force_failed"
+  You fail to break through, but you make a great deal of noise. The street stays empty, and a moment later the voices pause and the door opens on its own. It is the leaner of the two men who went in with the mayor.
+
+  "Don't know who you are, but you should probably come in," he says. "Someone might get hurt if you don't."
+
+  The quiet certainty in his voice tells you to do as he says. He leads you to the parlor. On one side the second bandit rejoins his friend, and on the other Mayor Anathram stands at ease while her dog watches everyone closely.
+  *page_break Into the parlor…
+  *goto wol_ch4_parlor
+
+*label wol_ch4_door_pick
+You glance up and down the street, find it empty, and take out your lockpick set.
+*set advantage true
+*gosub_scene dice_engine roll_skill_check 15 "sleight_of_hand" "" "" "" "" ""
+*if (check_success)
+  *set wol_ch4_house_entry "pick"
+  The lock clicks and you ease the door open into the front hall of the mayor's house. The precaution is hardly needed, since the conversation next door masks any sound you make.
+
+  "You will leave my town," the mayor shouts. "You will hurt no one and leave."
+
+  "Little late for that now, eh, dear leader?" says a voice dripping with smugness.
+
+  "Keep that dog on a short leash," cries another. "I don't like the way it's looking at me. What are you laughing at, Horace?"
+
+  "Well, Titch my lean friend, you rather look like a bone, don't you?" There is a guffaw and some restrained cursing from the other man. "But I digress, dear leader. Dear former leader, that is. We haven't worked for the Wolf of the Road since... when, Titch?"
+
+  You start moving carefully up the hall.
+
+  "That would be since Iron Gap, Horace," the tight voice says. "When she used the battle to cover her sneaking off. With our loot."
+
+  "With our loot!" bellows Horace, though he goes on in his earlier joviality. "Not so much the Wolf of the Road as a fox... a squirrel, even. It tarnishes your legacy, doesn't it?"
+  *choice
+    # Announce yourself.
+      *goto wol_ch4_door_announce
+    # Keep listening from the hall.
+      *goto wol_ch4_door_peek
+    # Step to the parlor doorway.
+      You walk down the hall and stop in the parlor doorway, where everyone in the room can see you.
+      *goto wol_ch4_door_announce
+*else
+  *set wol_ch4_lock_failed true
+  The lock refuses every pick, and out in the open like this you cannot afford to keep trying. The heated conversation inside goes on.
+  *goto wol_ch4_door_menu
+
+*label wol_ch4_door_peek
+You peek into the mayor's parlor. You cannot see much of the room, but you can see the backs of the two men you saw outside.
+
+"Now, there was this pretty young thing that we met, Wolf," the chubbier one says. "I think we met her out on the road somewhere?"
+
+"The market," the skinny one corrects.
+
+"Ah, right, the market. Well, a lovely little wisp of a thing. Very disarming. Might have let slip what a bloodthirsty monster you actually are. She took surprisingly little convincing."
+
+"Ah, so it was you that prompted her little speech," the mayor says, dangerously calm. "There will be consequences for your actions."
+
+Before things escalate further, the dog's nostrils flare and it lets out a deep-chested bark in your direction. You cannot stay hidden any longer.
+*goto wol_ch4_door_announce
+
+*label wol_ch4_door_announce
+*set wol_ch4_house_entry "announce"
+You step out of hiding and announce yourself loudly. Everyone jumps and reaches for weapons at their belts. Only the guard dog stays still, as if she has known you were there the whole time and chose to wait.
+
+"Bloody hell!" curses the short, portly brigand. "Where in the hells did you come from?"
+
+"Calm yourself," the mayor says, resting a hand on her dog's head. "I have been expecting company."
+
+"Couldn't warn us?" the plump one grumbles. The lean bandit eases his grip on his dagger but does not let go entirely. "So who's this?"
+
+"An investigator I have hired," the mayor says.
+
+While the bandits get over their shock, you take in the room for any other threats.
+*page_break Assess the situation…
+*goto wol_ch4_parlor
+
+*label wol_ch4_parlor
+*set wol_chapter_4_checkpoint "parlor"
+*set scenery_subplace "langston_mayors_parlor"
+In the parlor you can see that the home is well appointed, with comfortable furniture and a snug little kennel for the dog. A few oil paintings hang on the walls beside sconces for lamps and other generic decorations suited to a person in the mayor's position.
+
+The room is bland, as if the mayor chose her surroundings to suit someone else's taste. Only the stained battleaxe hanging over the mantel seems in character. The two bandits stand between you and the mayor, who sits in a dining chair with one hand on her dog, as if restraining her with a light touch. Both are still, but wound with fury.
+
+"Ah, the investigator," the shorter, rounder bandit says with exaggerated interest. The taller, thinner one lounges against a wall, one hand resting comfortably on a knife at his belt.
+
+"A girl died, apparently," says the laconic one. "Torn apart or something."
+
+"Did you have something to do with that? Or you?" the chubby one asks the mayor and the dog in turn. "A pretty young lady found out your little secret while collecting berries in the woods, maybe? Or from a conversation in the market."
+*page_break Hear them out…
+*goto wol_ch4_bandits
+
+*label wol_ch4_bandits
+Mayor Anathram sits in stony silence. Her eyes shift to the middle distance, but her dog keeps its vigil of the room.
+
+"Well, I'm Horace, and this lean-looking lad is my good friend Titch," says the shorter of the pair, breaking the silence. "Your employer here... Well, hells know what name she gave you, but we know her as the Wolf of the Road."
+
+He produces a wanted poster clearly marked Iron Gap constabulary. It carries an accurate image of Mayor Anathram, right down to the wounds where her scars are now apparent.
+
+"Imagine our surprise, finding out you're still alive," Horace continues. "When we heard you got the rope for the Iron Gap girl, that was the end of our merry band. But while we hit hard times, it seems you did well for yourself. So maybe spread the wealth with your old friends?"
+
+"And now your pet sleuth knows," says Titch to the mayor. "But if you don't open up the town coffers, or if we don't make it back to camp by morning, our friends back in camp are going to tell everyone in town your little secret. And we've got more proof like this."
+
+You take this opportunity to point out that there were no more conspirators back at camp, only the warrant, and that the warrant is somewhere safe.
+
+"I see," says the mayor. Her smile is far more unsettling than her scowl.
+
+The two bandits glance at each other, the blood draining from their faces. Mayor Anathram pats her enormous dog's head as the dog begins to growl.
+*choice
+  # Threaten them into running away.@{show_stat_hints  [Intimidation DC 15, advantage from the mayor]|}
+    *goto wol_ch4_threaten
+  # Warn them the Watch is a shout away.@{show_stat_hints  [Persuasion DC 15, advantage from the mayor]|}
+    *goto wol_ch4_watch
+  # Attack them.
+    *goto wol_ch4_fight
+
+*label wol_ch4_threaten
+You let the two bandits know there is only one way they get out of this alive, and that is to give up now.
+
+"You would be smart to listen," the mayor says, nodding toward you. The dog licks her lips and bares her teeth. "You are outmatched and outnumbered."
+*set advantage true
+*gosub_scene dice_engine roll_skill_check 15 "intimidation" "str" "intimidation" "" "" ""
+*if (check_success)
+  *goto wol_ch4_driven_off
+*else
+  *goto wol_ch4_refused
+
+*label wol_ch4_watch
+You tell the two bandits that this is a town with a Watch, and that one shout from you will fill the street with officers.
+
+"You would be smart to listen," the mayor says, nodding toward you. The dog licks her lips and bares her teeth. "You are outnumbered here, and the officers are only a street away."
+*set advantage true
+*gosub_scene dice_engine roll_skill_check 15 "persuasion" "" "" "" "" ""
+*if (check_success)
+  *goto wol_ch4_driven_off
+*else
+  *goto wol_ch4_refused
+
+*label wol_ch4_refused
+Horace looks at you for a moment before barking out a laugh. "Oh, nice try, investigator. Nice try indeed. But you see, we aren't leaving here empty-handed."
+
+"Nope," Titch says, reaching for his knife.
+
+"So if you're not going to give us what we want, Wolf," Horace says, "we're just going to take it. Maybe starting with that handsome doggy of yours."
+
+He yanks his knife from his belt, and Titch does the same.
+*page_break Fight…
+*goto wol_ch4_fight
+
+*label wol_ch4_driven_off
+*set wol_ch4_bandits_outcome "driven_off"
+Horace swallows with a loud click, and even the seemingly unflappable Titch glances around for an escape route.
+
+"You were outmatched when you arrived," Mayor Anathram says to the bandits, "and now you are outnumbered. You may leave safely. But you must leave now."
+
+You tell them the chance to get away safely will end soon.
+
+"Well, I think that their offer is looking more generous by the minute, don't you, Titch?" says Horace. His companion barely pauses to think before nodding. "So I suppose you'll be wanting this?"
+
+He holds up the wanted poster. The mayor speaks a word in Orcish to the dog, and the huge canine pads over to retrieve the large sheet of thick paper with great care. Horace grimaces in fear as the dog's jaws approach his hand before he lets go of the prize.
+
+"So, well, it's been nice catching up. Hasn't it, Titch?" Horace still has his jovial smile fixed to his lips, but it is cracking around the edges.
+
+Titch shakes his head.
+
+"No, I guess you're right. It's been a miserable waste of everyone's time. But you can't fault us for trying, eh, Wolf? Or maybe I should say, mayor?"
+
+"Just get out," Mayor Anathram growls. "My mind is quickly changing."
+
+Horace opens his mouth to speak once more before closing it with a snap. He points to the door, and he and Titch jog out briskly, looking over their shoulders the whole way.
+
+You ask the mayor whether it is wise to let them go like that.
+
+"They are cowards," she says. "They are here because they are desperate. But they will not make that mistake again."
+
+The door slams, and the mayor turns toward you.
+*page_break Hear what she has to say…
+*goto wol_ch4_mayor_talk
+
+*label wol_ch4_fight
+*set wol_ch4_bandits_outcome "fought"
+Titch advances on you with his knife drawn and a cruel smile on his lips. Horace moves to help him, but a sharp command from the mayor sends the dog lunging at him as the mayor strides toward the axe hanging over the mantel.
+
+You fight Titch.
+*set combat_is_nonlethal false
+*set combat_no_flee true
+*set combat_lib_1 "knifeman"
+*set combat_enemy_name_override "Titch"
+*set combat_enemy_epithet_override "Titch"
+*set combat_enemy_hp_override 11
+*set combat_enemy_ac_override 12
+*set combat_enemy_atk_override 3
+*set combat_player_can_die true
+*gosub_scene combat fight_library
+*set combat_player_can_die false
+*if (combat_outcome = "player_died")
+  *goto wol_ch4_fight_death
+*goto wol_ch4_fight_won
+
+*label wol_ch4_fight_death
+*set death_cause "combat"
+*set death_location_name "the mayor's house"
+*set death_enemy_epithet "Titch"
+Titch's knife slips between your ribs, and as it pulls out you feel the blood go with it. Light-headed, you wobble on your feet before crashing to the floor.
+
+From a great distance you hear a snarl and a scream as the dog bites down on Horace, and you hear the mayor telling both men that while they may have killed in her home, she will not. "Now get out before I change my mind," she says. Scrabbling feet and a slammed door are the last things you ever hear.
+*goto_scene death death_screen
+
+*label wol_ch4_fight_won
+*set scenery_subplace "langston_mayors_parlor"
+You overpower Titch, and he falls to the floor. As you are about to finish him off, he holds up a feeble hand, and his eyes beg for mercy. His helplessness gives you a moment's pause.
+
+"That's enough," Mayor Anathram says to you. She turns her glower on the bandits. "You two will be allowed to live. In exchange, you will spread the word: the Wolf of the Road died long ago."
+
+Horace throws up his hands and drops his knife while the dog snarls at him from where she waits. His arm leaks blood from deep gouges left by her powerful jaws. His voice is an octave higher with fear as he cries, "Of course, boss! Dead and gone."
+
+The mayor stands still and imperious, glaring at the bandits, but she catches your eye with a sidelong glance. Her retrieved battleaxe hangs ready at her side in a tight grip.
+
+*choice
+  # Let the bandit live.
+    *goto wol_ch4_spare
+  # Turn to the mayor and wait for her word.
+    You lower your weapon and look to the mayor, and she gives you the slightest nod.
+    *goto wol_ch4_spare
+  # Step back from him.
+    You take a long step back, and Titch lets out a shaking breath.
+    *goto wol_ch4_spare
+
+*label wol_ch4_spare
+*set wol_ch4_titch_spared true
+You stay your hand and leave Titch trembling on the floor. Horace raises his hands higher above his head.
+
+You look at the mayor one last time, and she nods. You command both men to be gone. Titch heaves himself to his feet, and Horace sidles closer to help him toward the door.
+
+"You two," the mayor says, producing a full battleaxe she was able to hide behind her leg. "This is the only time I will spare you. If I ever see you again, I will end you."
+
+"Yes, yes, of course, Wo... I mean, mayor," Horace stammers.
+
+He tries to hide his fear with a smarmy grin at you, but it is plain bravado. Titch beckons his squat partner to help him out, and the two leave carefully but quickly through the front door. As Horace is dragged along, the wanted poster slips from inside his coat. The dog catches it up in her teeth and brings it to the mayor.
+*gosub_scene dice_engine heroic_award "wolves_ch4_spare_titch"
+*page_break Speak with the mayor…
+*goto wol_ch4_mayor_talk
+
+*comment ── THE MAYOR'S CONFESSION, HER GIFT AND THE WARRANT (source 191, 172, 181, 222, 196, 211) ── She gives the player BOTH gifts (the user's call, 2026-10-31: not a choice): the Lesser Amulet of the Beast (worn at once if the neck is bare) and
+*comment Moonshard, a +1 dagger that also casts Light while it is in hand. The warrant the player took from the camp and the poster in the mayor's hands are the last beats: she burns them, the poster rolls out of the flame, and the player takes both or lets them burn
+*comment (wol_ch4_warrant_resolved). The source's inn night and the next morning's letter are dropped (open world); this ends Chapter 4: wol_chapter_4_complete.
+*label wol_ch4_mayor_talk
+*set wol_chapter_4_checkpoint "house_done"
+*set ow_pos "lg"
+*set current_district "langston"
+*set scenery_subplace "langston_mayors_parlor"
+*if (wol_ch4_bandits_outcome = "fought")
+  Mayor Anathram stares after the retreating bandits for a moment, her worn battleaxe clutched in a white-knuckled grip. Then, in silence, she returns the weapon to its place above the mantel.
+*else
+  Mayor Anathram stares after the retreating bandits for a moment, her scarred hands flat on the arms of her chair. Then, in silence, she rises and goes to stand under the battleaxe above the mantel.
+
+She keeps her back to you as she speaks. "You must have questions. I will not answer them. I will tell you what you need to know."
+
+"Those two imbeciles spoke the truth," she says finally, one hand reaching up to tug gently at her embroidered collar. "I will not be able to keep you from knowing what is plain before your eyes, any more than I could have with Maybelline."
+
+She walks over to Buttercup and lays a hand on the big dog's head. "A solution of sorts arose for Maybelline. I can only hope that you will exercise discretion, because I meant what I said. There will be no murder in this house. Since my arrival in Langston, my appetite for blood has gone. I am not the killer I once was."
+
+Buttercup whines and licks the mayor's hand. The half-orc's lips twitch almost into a smile. "I have unfinished work here in Langston," she says. "I hope that you will let that continue. Maybelline was not so generous."
+
+"We argued," the mayor says. "She did not think someone with my past should hold my position. I disagreed, and I convinced her that I am better suited to protect Langston from threats."
+
+She sets her jaw and then looks at you, and you see tears shining in her eyes.
+
+"I was wrong. The next night, something killed that girl. It was not me."
+
+A loud crack rings out. Turning, you see that Buttercup has found what looks like the femur of a sheep and snapped it in half. She flops to the floor to lick out the marrow.
+
+The mayor takes her hand from the dog and turns to face you. Her expression is a mix of fear and anger as she speaks.
+
+"And this is where we are now. We must conclude quickly before my town loses itself to fear. But I wish to show my thanks for your help. Please accept something from my previous life. Both of them."
+*page_break Accept her gifts…
+*goto wol_ch4_gifts
+
+*label wol_ch4_gifts
+*if (not(wol_ch4_gifts_given))
+  *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+    *set wol_ch4_gifts_given true
+    *gosub_scene equipment grant_gear "lesser_amulet_of_the_beast" 1
+    *gosub_scene equipment grant_gear "moonshard" 1
+    *if (equipped_neck_id = "none")
+      *gosub_scene equipment equip_neck "lesser_amulet_of_the_beast"
+      *set wol_ch4_amulet_worn true
+    *set stat_bump_locked true
+    *set locked_stat_bump_page_id page_id
+"Take this," the mayor says, lifting an amulet from around her neck. "It will protect you from all manner of beasts. It was helpful when I was training Buttercup to fight."
+
+She hands it to you, and Buttercup huffs for a moment before putting her huge head back down on her paws.
+
+*if (wol_ch4_amulet_worn)
+  You slip the amulet around your neck.
+*else
+  You tuck the amulet into your pack to wear when you choose.
+
+Then she retrieves a box from a shelf and opens it to reveal a beautifully crafted dagger. The blade shimmers with a pale light of its own.
+
+"It is called Moonshard, for obvious reasons," Mayor Anathram says. "You will not find my axe among the gifts. But this will cut."
+
+You tuck the dagger away.
+
+[b][🧿 Received: Lesser Amulet of the Beast][/b]
+
+[b][🗡 Received: Moonshard][/b]
+*page_break Thank her…
+*goto wol_ch4_warrant_scene
+
+*label wol_ch4_warrant_scene
+You thank the mayor for her gifts and ask whether there is anything else you can do for her.
+
+"No," she says. "That will be all. I trust you to find your own way out. It has been an exhausting business."
+
+Then she holds out a hand. "The warrant from their camp."
+
+You give it to her.
+*if (not(wol_ch4_warrant_handed))
+  *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+    *set wol_ch4_warrant_handed true
+    *gosub_scene equipment sell_gear "iron_gap_warrant"
+    *set stat_bump_locked true
+    *set locked_stat_bump_page_id page_id
+
+She balls up the wanted poster and the warrant together and throws them into the low-burning fire. Then she walks away without another word, but the poster rolls out of the flame before it catches. A door closes toward the back of the house.
+
+Buttercup stays where she is, keeping a quiet eye on you.
+*choice
+  # Take the poster and the warrant.
+    *goto wol_ch4_keep_evidence
+  # Kick both back into the fire.
+    *goto wol_ch4_burn_evidence
+  # Push the sheets deeper into the coals with the poker.
+    You take the poker from its hook and bury the poster and warrant under the coals, turning them until they curl and blacken.
+    *goto wol_ch4_burn_evidence
+
+*label wol_ch4_keep_evidence
+*set wol_ch4_warrant_resolved true
+*set wol_ch4_evidence_kept true
+*if (not(wol_ch4_evidence_given))
+  *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+    *set wol_ch4_evidence_given true
+    *gosub_scene equipment grant_gear "iron_gap_poster" 1
+    *gosub_scene equipment grant_gear "iron_gap_warrant" 1
+    *set stat_bump_locked true
+    *set locked_stat_bump_page_id page_id
+You pluck the poster and the warrant out of the grate and smooth the singed edges.
+
+[b][📜 Received: Iron Gap Wanted Poster][/b]
+
+[b][📜 Received: Iron Gap Warrant][/b]
+
+As you stow them, you see that Buttercup is staring at you. Her gaze follows you to the front door, the same way the bandits went, and a low rumble rolls out of her chest as you pass. She stays on her mat.
+*goto wol_ch4_complete
+
+*label wol_ch4_burn_evidence
+*set wol_ch4_warrant_resolved true
+You make sure the mayor's secret stays safe, and you leave the poster and the warrant to the fire.
+*gosub_scene dice_engine heroic_award "wolves_ch4_burn_evidence"
+
+As you watch the flames consume the evidence of the mayor's past, you feel something wet and warm on your hand. You jerk it away and see Buttercup's face, and her tongue. You wipe your hand and back away from the huge dog, moving toward the door. She follows, but only as far as her mat, and then flops down and closes her eyes.
+*goto wol_ch4_complete
+
+*label wol_ch4_complete
+*set wol_chapter_4_complete true
+*set wol_ch4_done_day campaign_day
+*set wol_chapter_4_checkpoint "complete"
+*set minutes_to_pass 15
+*set time_advance_call_id "wol_ch4_complete_1"
+*gosub_scene Langston/langston lg_walk_time
+*page_break Out into the street…
+*set ow_pos "lg"
+*set current_district "langston"
+*goto_scene Langston/langston lg_return
+
+*comment Level-up quest pool (the user's call, 2026-10-31): the end of Chapters 2, 4 and 5 each count as one finished quest toward level progress. replay-ok: refresh_quests_finished (character_progression.txt) sets quests_finished to 0 and then calls this label, so the count is rebuilt from flags on every call and a replay cannot do it twice.
+*label count_finished_wolves
+*if (wol_chapter_2_complete)
+  *set quests_finished + 1
+*if (wol_chapter_4_complete)
+  *set quests_finished + 1
+*if (wol_chapter_5_complete)
+  *set quests_finished + 1
+*return
+
+*comment ── THE MAYOR'S LETTER (source 228) ── The source's next-morning breakfast and letter, as an open-world delivery (the user's call, 2026-10-31): the first time the player is at Langston's hub after the chapter, on a LATER day than the one it ended and when it is not night, a runner from the Hall hands over the letter (langston.txt lg_menu calls
+*comment wol_ch4_letter_check, then wol_ch4_letter). It opens Chapter 5: the mayor tells the player to visit the chapel and examine Maybelline's body, and that Solaine expects them. The letter is a pack item the player can show Solaine ("present this note if you have any problems"). The source's "burial tomorrow" is "soon".
+*label wol_ch4_letter_check
+*set wol_ch4_letter_due false
+*if ((wol_chapter_4_complete) and (not(wol_ch4_letter_read)))
+  *comment Not in a storm that empties the streets (street_life "empty"): the runner waits for the weather to ease.
+  *if (((campaign_day > wol_ch4_done_day) and (not(((time_period = "Night") or (time_period = "Pre-Dawn"))))) and (not(street_life = "empty")))
+    *set wol_ch4_letter_due true
+*return
+
+*label wol_ch4_letter
+*set wol_ch4_letter_read true
+*set wol_chapter 5
+*set current_district "langston"
+*set scenery_subplace "langston"
+A runner wearing the Hall's badge threads through the square toward you. "You're the one the mayor engaged," the runner says, and holds out a folded letter sealed with plain Hall wax. "She wanted this to reach you before anyone else."
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *gosub_scene equipment grant_gear "mayors_letter" 1
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+
+[b][📜 Received: The Mayor's Letter][/b]
+
+You break the seal. The hand is blunt and square, and the page is short.
+
+[i]Dear adventurer,[/i]
+
+[i]My thanks for your assistance with the matter of the bandits.[/i]
+
+[i]I hope that you are making progress in your investigation into the threat to my town. Maybelline is to be buried soon. Visit the chapel and examine the body before then.[/i]
+
+[i]Solaine of the Church of the True Sun has been informed of your visit. Present this note if you have any problems.[/i]
+
+[i]The Mayor[/i]
+
+Any thanks at all seem to be the mayor's way of gushing with gratitude. The runner waits only until you have read the page twice, then nods and slips back into the crowd.
+*page_break Back to the square…
+*goto_scene Langston/langston lg_return

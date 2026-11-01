@@ -74,6 +74,11 @@
     sewer:         { all: "sewer", indoor: true },
     silt_conduits: { all: "sewer", indoor: true },
     open_road:     { day: "grassland_openfields_meadows_daytime", night: "nature_outdoors_night" },
+    // The True Sun temple (Langston, Chapter 5; the user's sound, 2026-10-31: white noise, near silence, a little suspense). Inside the temple a very soft indoor bed (the recording says it needs to be played very softly); the mausoleum is a touch quieter. The
+    // grounds outside are the town's edge, so a hushed village by day and open night nature after dark.
+    temple_hall:   { all: "indoor_underground_silence_needstobeplayedverysoftly", level: 0.32, indoor: true },
+    temple_crypt:  { all: "indoor_underground_silence_needstobeplayedverysoftly", level: 0.26, indoor: true },
+    temple_grounds: { day: "generic_village", night: "nature_outdoors_night", level: 0.4 },
     siege:         { all: "siege_battle" }
   };
   // a place name (from Scenery.placeNames) that plays another kind of place's sound
@@ -94,6 +99,19 @@
     vale_gate_wagon_lot: "village",
     langston_pickled_hen_funeral: "tavern",
     langston_meeting_hall_office: "civic_indoor",
+    langston_town_square_accusation: "city",
+    langston_true_sun_temple_rotunda: "temple_hall",
+    langston_true_sun_temple_library: "temple_hall",
+    langston_true_sun_temple_kitchen: "temple_hall",
+    langston_true_sun_temple_refectory: "temple_hall",
+    langston_solaine_quarters: "temple_hall",
+    langston_true_sun_mausoleum: "temple_crypt",
+    langston_true_sun_temple_courtyard_crimson: "temple_crypt",
+    langston_true_sun_temple_rotunda_crimson: "temple_hall",
+    langston_true_sun_undercroft_charnel_chamber: "temple_crypt",
+    langston_true_sun_werewolf_lair: "temple_crypt",
+    langston_true_sun_temple_exterior: "temple_grounds",
+    langston_true_sun_cemetery: "open_road",
     compound: "city", middle_ward: "city", civic_heights: "city", upper_wharves: "city", port_valen: "city", city: "city",
     carrion_compound: "warcamp",
     prologue_camp_night: "warcamp",
@@ -166,6 +184,7 @@
     black_sinks_captured_gatehouse_bivouac: [{ all: "wind_against_stone_creeking_timber_distantsound_needstobelayerd", level: 0.22 }],
     black_sinks_gilded_scales_toll_fort: [{ all: "wind_against_stone_creeking_timber_distantsound_needstobelayerd", level: 0.18 }],
     stonewatch: [{ all: "wind_against_stone_creeking_timber_distantsound_needstobelayerd", level: 0.24 }],
+    langston_true_sun_temple_rotunda: [{ all: "wind_against_stone_creeking_timber_distantsound_needstobelayerd", level: 0.12 }],
     port_valen_patrician_gala_salon: [{ all: "noble_gala_party_talking_glassclinking_softlaughter_nomusic", level: 0.30 }]
   };
   var OVERWORLD_OPEN = { road: 1, woodroad: 1, hills: 1, forest: 1 };   // ground a rider travels over (not a town, a village or a fort)

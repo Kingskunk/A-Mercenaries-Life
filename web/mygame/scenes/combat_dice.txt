@@ -93,6 +93,9 @@
     *set combat_extra_resist true
 *if ((aidp_type = "poison") and (brine_minutes_left > 0))
   *set combat_extra_resist true
+*comment The Lesser Amulet of the Beast (the mayor's gift, 2026-10-31): resistance to every natural attack of a creature of the Beast type (the enemy's creature_type; its blows are natural and so are the riders on them), not to a weapon or spell.
+*if ((equipped_neck_id = "lesser_amulet_of_the_beast") and (combat_enemy_creature_type = "beast"))
+  *set combat_extra_resist true
 *gosub adjust_damage_packet "player_" aidp_amount aidp_type 0
 *set combat_extra_resist false
 *return
@@ -201,6 +204,7 @@
 *label resolve_player_hit
 *params rph_is_attack_roll
 *if (not(combat_player_hit_locked)) or (not(locked_combat_player_hit_page_id = page_id))
+  *set combat_hit_nat20 ((rph_is_attack_roll) and (is_nat_20))
   *temp cph_roll 0
   *rand cph_roll 1 combat_player_dmg_dice_sides
   *set combat_player_dmg_dealt (cph_roll + combat_player_dmg_bonus)
@@ -241,6 +245,10 @@
   *set combat_enemy_hp - combat_player_dmg_dealt
   *if (combat_enemy_hp < 0)
     *set combat_enemy_hp 0
+  *gosub_scene combat fight_undead_fortitude_roll
+  *if (not(combat_fort_banner = ""))
+    *set combat_fort_shown true
+    *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} ${combat_fort_banner}"
   *set combat_player_hit_locked true
   *set locked_combat_player_hit_page_id page_id
 ${combat_player_dmg_roll_banner}
@@ -254,6 +262,7 @@ ${combat_player_dmg_roll_banner}
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_player_weapon_hit
 *if (not(combat_weapon_hit_locked)) or (not(locked_combat_weapon_hit_page_id = page_id))
+  *set combat_hit_nat20 is_nat_20
   *set combat_weapon_blocked false
   *set combat_weapon_defense_text ""
   *temp cwh_roll 0
@@ -403,6 +412,10 @@ ${combat_player_dmg_roll_banner}
   *set combat_enemy_hp - combat_player_dmg_dealt
   *if (combat_enemy_hp < 0)
     *set combat_enemy_hp 0
+  *gosub_scene combat fight_undead_fortitude_roll
+  *if (not(combat_fort_banner = ""))
+    *set combat_fort_shown true
+    *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} ${combat_fort_banner}"
   *set combat_weapon_hit_locked true
   *set locked_combat_weapon_hit_page_id page_id
 ${combat_player_dmg_roll_banner}

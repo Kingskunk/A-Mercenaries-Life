@@ -5,6 +5,7 @@
 *comment ====================================================================================
 
 *label wol_ch2_start
+*gosub_scene calendar update_hub_condition
 *if (not(wol_quest_stage = "active"))
   *goto_scene Langston/langston lg_return
 *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
@@ -47,7 +48,11 @@
 *label wol_ch2_approach
 *set scenery_subplace "langston"
 
-*if (time_period = "Morning")
+*if (street_life = "empty")
+  Dangerous weather has stripped Langston's square of its ordinary trade. A few muffled hammers sound behind shuttered workshops, but the market bays stand empty and the cobbles belong to the weather. Fear and grief wait behind the closed doors.
+*elseif (street_life = "thin")
+  Poor weather has thinned Langston's daily work. Tradespeople keep beneath awnings and eaves, while the few shoppers crossing the square hurry over the cobbles. Fear and grief have settled beneath even that reduced noise.
+*elseif (time_period = "Morning")
   Langston has come awake to its daily work. Tradespeople hammer, weave, plane boards and draw bread from ovens; shoppers cross the square with baskets and account sheets. Yet the laughter comes too rarely, and the sound of hammers and hoofbeats carries too sharply. Fear and grief have settled beneath the ordinary noise of the town.
 *elseif (time_period = "Dusk")
   Langston's workday is winding down. Porters cover the last wagon loads, shopkeepers draw in their wares, and the first lamps are being lit. Yet the laughter comes too rarely, and the sound of hammers and hoofbeats carries too sharply. Fear and grief have settled beneath the ordinary noise of the town.
@@ -55,9 +60,17 @@
   Langston is deep in its daily work. Tradespeople hammer, weave, plane boards and draw bread from ovens; shoppers cross the square with baskets and account sheets. Yet the laughter comes too rarely, and the sound of hammers and hoofbeats carries too sharply. Fear and grief have settled beneath the ordinary noise of the town.
 
 *if (wol_ch2_days_since_funeral <= 1)
-  The flower wagon from Maybelline's funeral still stands where it was left, forlorn against the cobbles.
+  *if (weather_severity >= 3)
+    The flower wagon from Maybelline's funeral still stands where it was left, lashed in place while the weather worries at its battered flowers.
+  *else
+    The flower wagon from Maybelline's funeral still stands where it was left, forlorn against the cobbles.
 *elseif (wol_ch2_days_since_funeral <= 3)
-  The funeral wagon is gone, but fading petals remain caught in the seams between the cobbles where it stood.
+  *if ((weather = "Snow") or (weather = "Blizzard"))
+    The funeral wagon is gone, but a few fading petals remain partly buried where it stood.
+  *elseif (weather_wet)
+    The funeral wagon is gone, but fading petals lie flattened into the seams between the wet cobbles where it stood.
+  *else
+    The funeral wagon is gone, but fading petals remain caught in the seams between the cobbles where it stood.
 *else
   The funeral has receded into Langston's recent memory, but the killing has not. People still lower their voices when it is mentioned.
 
@@ -70,7 +83,12 @@ You have a substantial payment waiting at the end of this investigation, but onl
 *else
   A cooper carrying a bundle of barrel staves calls after you. "You're the mercenary the mayor hired, aren't you? We've got our eyes on you. Don't think we don't."
 
-Several people nearby shake their heads, and one gives you an embarrassed look. You will have your work cut out for you here.
+*if (street_life = "empty")
+  He delivers the warning from the shelter of his workshop door, then pulls it shut against the weather. You will have your work cut out for you here.
+*elseif (street_life = "thin")
+  Two hurried passersby glance between you and the cooper. One gives you an embarrassed look before moving on. You will have your work cut out for you here.
+*else
+  Several people nearby shake their heads, and one gives you an embarrassed look. You will have your work cut out for you here.
 
 *if (known_detect_magic or has_scroll_detect_magic)
   Something else presses at the edge of your senses: a vast, discordant working spread through Langston itself. It is strong enough that attempting to read it could hurt.
@@ -392,7 +410,12 @@ Tomlin settles against the edge of the worktable. "Ask what you need to ask. I w
   *set wol_scraplings_spotted true
   *set wol_scrapling_surprise false
   *goto wol_ch2_scrapling_attack
-You find torn stems and shallow impressions, but the soft soil has been disturbed too thoroughly to preserve a useful trail.
+*if (temperature_band = "freezing")
+  You find torn stems and shallow impressions in the frozen crust, but too much of it has been broken to preserve a useful trail.
+*elseif (ground_state = "dry")
+  You find torn stems and shallow impressions in the dusty surface, but the ground has been scuffed too thoroughly to preserve a useful trail.
+*else
+  You find torn stems and shallow impressions, but the soft soil has been disturbed too thoroughly to preserve a useful trail.
 *goto wol_ch2_garden_menu
 
 *label wol_ch2_garden_trellis
@@ -403,7 +426,7 @@ You find torn stems and shallow impressions, but the soft soil has been disturbe
   *set wol_scraplings_spotted true
   *set wol_scrapling_surprise false
   *goto wol_ch2_scrapling_attack
-You search the fence line and dense trellises without spotting anything beyond wind-stirred leaves and old breaks in the vines.
+You search the fence line and dense trellises without finding anything beyond leaves caught among old breaks in the vines.
 *goto wol_ch2_garden_menu
 
 *label wol_ch2_garden_beam

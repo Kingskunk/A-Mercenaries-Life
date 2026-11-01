@@ -1,0 +1,68 @@
+*comment ====================================================================================
+*comment THE TRUE SUN TEMPLE: the limestone temple and spire on the eastern edge of Langston (the "chapel" of Chapter 1, whose tower shows over the town's roofs), kept by Solaine of the Order of Radiant Light.
+*comment Reached from Langston's hub button (langston.txt) once the mayor's letter is read (wol_ch4_letter_read). Until Chapter 5 is complete the button hands the player to the Chapter 5 run (wolves_of_langston_chapter_5.txt wol_ch5_start),
+*comment a CLOSED run like Chapters 3 and 4. This file owns the place itself: the exterior layers (tst_place, tst_sky, tst_courtyard, reused by Chapter 5) and the look-in afterwards. Any hour, any weather; the door is never locked.
+*comment ====================================================================================
+
+*label lg_temple
+*set current_district "langston"
+*set scenery_subplace "langston_true_sun_temple_exterior"
+*gosub_scene calendar update_hub_condition
+*set minutes_to_pass 10
+*set time_advance_call_id "lg_temple_walk_1"
+*gosub_scene Langston/langston lg_walk_time
+*if ((wol_ch4_letter_read) and (not(wol_chapter_5_complete)))
+  *goto_scene Langston/wolves_of_langston_chapter_5 wol_ch5_start
+*goto tst_look_in
+
+*comment ── LAYER 1: PLACE ── The temple itself, always true.
+*label tst_place
+The sun temple is easy to find, since it towers over every other building in Langston and pierces the sky on the eastern edge of town. Unlike the timber walls and whitewash around it, the temple is built of limestone, scoured smooth by centuries of rain and wind. It stood here long before the rest of Langston, and it will likely stand long after Langston is lost to history.
+*return
+
+*comment ── LAYER 2: SKY ── Weather and light on the limestone, closing with the ground's memory of recent rain.
+*label tst_sky
+*if (weather_severity >= 3)
+  *if (weather_cold)
+    Snow drives against the pale stone, and the spire vanishes into the storm overhead.
+  *else
+    Rain lashes the limestone in sheets, and the spire is lost in low cloud.
+*elseif (weather = "Fog")
+  Fog wraps the lower walls, and the spire rises out of it like a pale finger.
+*elseif (weather = "Rain")
+  Rain darkens the limestone to a wet grey and runs from the spire's sunburst in thin streams.
+*elseif (weather = "Sleet")
+  Sleet ticks against the stone and gathers in the carved joints of the walls.
+*elseif (weather = "Snow")
+  Snow settles on the courtyard's tile roof and clings in the hollows of the carving.
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *if (weather = "Clear")
+    The limestone is pale under the stars, and the spire cuts a clean line across them.
+  *else
+    The limestone is a ghostly grey in the dark, and the spire fades into the cloud above.
+*elseif (time_period = "Dusk")
+  The low light turns the limestone gold, and the spire throws a long shadow across the courtyard.
+*elseif (weather = "Clear")
+  The limestone shines in the sun, and the spire's sunburst throws back a point of light.
+*else
+  Grey light lies flat across the limestone, and the spire stands pale against the cloud.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Standing water fills the low joints of the courtyard paving.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The paving is dark from recent rain.
+*return
+
+*comment ── LAYER 3: THE COURTYARD ── The altar and the seats around it, constant.
+*label tst_courtyard
+The courtyard in front of the temple holds an altar left open to the sky, surrounded by theater-style seating under a tile roof that offers shade or shelter from the rain. The top of the altar carries the same sunburst symbol as the spire.
+*return
+
+*comment ── THE LOOK-IN ── After Chapter 5 the temple's outside is a place to stand in; what happens inside belongs to the chapters.
+*label tst_look_in
+*set scenery_subplace "langston_true_sun_temple_exterior"
+*gosub tst_place
+*gosub tst_sky
+*gosub tst_courtyard
+*page_break Walk back to the square…
+*goto_scene Langston/langston lg_return

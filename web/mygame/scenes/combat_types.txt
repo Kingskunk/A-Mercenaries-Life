@@ -143,7 +143,7 @@
   *set aect_value "beast"
 *if (aect_type = "twig_blight")
   *set aect_value "plant"
-*if (aect_type = "lacedon")
+*if ((aect_type = "lacedon") or (aect_type = "zombie"))
   *set aect_value "undead"
 *if (aect_slot = 1)
   *set combat_enemy_creature_type aect_value
@@ -362,6 +362,8 @@
   *gosub apply_type_hedge_mage
 *if (combat_apply_type = "twig_blight")
   *gosub apply_type_twig_blight
+*if (combat_apply_type = "zombie")
+  *gosub apply_type_zombie
 *gosub assign_enemy_behavior_profile combat_apply_slot combat_apply_type
 *gosub assign_enemy_size combat_apply_slot combat_apply_type
 *gosub assign_enemy_creature_type combat_apply_slot combat_apply_type
@@ -970,6 +972,44 @@
   *gosub apply_ability_score_range apt_p "intelligence" 6 8
   *gosub apply_ability_score_range apt_p "wisdom" 8 10
   *gosub apply_ability_score_range apt_p "charisma" 6 8
+  *gosub apply_derived_combat_bonuses apt_p
+*return
+
+*label apply_type_zombie
+*comment A risen corpse (the Zombie of Chapter 5; the source's Risen Corpse: 22 HP, AC 8, Slam +3 for 1d6+1 bludgeoning, poison immunity; set the immunity on the fight, combat_enemy_immune_override "poison"). UNDEAD FORTITUDE (RAW) belongs to this library type:
+*comment when damage drops it to 0 HP it makes a Constitution save (DC 5 + the damage) and stays up at 1 HP on a success, unless the damage is radiant or the blow was a natural 20 (combat.txt fight_undead_fortitude reads the slot's flavor_type "zombie"). Mindless: it
+*comment keeps the *create default chase chance of 0 and fights whatever is in front of it.
+*if (combat_apply_slot = 1)
+  *set combat_enemy_name "Zombie"
+  *set combat_enemy_hp 22
+  *set combat_enemy_max_hp 22
+  *set combat_enemy_ac 8
+  *set combat_enemy_dmg_dice_sides 6
+  *set combat_enemy_epithet "the zombie"
+  *set combat_enemy_dmg_type "bludgeoning"
+  *gosub apply_ability_score_range "combat_enemy_" "strength" 12 13
+  *gosub apply_ability_score_range "combat_enemy_" "dexterity" 8 8
+  *gosub apply_ability_score_range "combat_enemy_" "constitution" 15 15
+  *gosub apply_ability_score_range "combat_enemy_" "intelligence" 3 3
+  *gosub apply_ability_score_range "combat_enemy_" "wisdom" 6 6
+  *gosub apply_ability_score_range "combat_enemy_" "charisma" 5 5
+  *gosub apply_derived_combat_bonuses "combat_enemy_"
+*else
+  *comment Slots 2 and beyond: one generic block, via indirection (the same values as slot 1 above, by construction).
+  *temp apt_p (("combat_enemy" & combat_apply_slot) & "_")
+  *set {(apt_p & "name")} "Zombie"
+  *set {(apt_p & "hp")} 22
+  *set {(apt_p & "max_hp")} 22
+  *set {(apt_p & "ac")} 8
+  *set {(apt_p & "dmg_dice_sides")} 6
+  *set {(apt_p & "epithet")} "the zombie"
+  *set {(apt_p & "dmg_type")} "bludgeoning"
+  *gosub apply_ability_score_range apt_p "strength" 12 13
+  *gosub apply_ability_score_range apt_p "dexterity" 8 8
+  *gosub apply_ability_score_range apt_p "constitution" 15 15
+  *gosub apply_ability_score_range apt_p "intelligence" 3 3
+  *gosub apply_ability_score_range apt_p "wisdom" 6 6
+  *gosub apply_ability_score_range apt_p "charisma" 5 5
   *gosub apply_derived_combat_bonuses apt_p
 *return
 

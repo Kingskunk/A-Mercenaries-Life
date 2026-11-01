@@ -37,12 +37,16 @@
 *label wol_ch3_silence
 *if (weather_severity >= 3)
   Even through the noise of the weather, the wood feels held still around you.
+*elseif (weather = "Sleet")
+  No birds call above the hard ticking of sleet on leaves and roots.
+*elseif (weather = "Rain")
+  No birds call from the dripping branches, and the wood gives back no sound but the rain.
+*elseif (weather = "Snow")
+  No birds call, and the snow muffles every other sound.
+*elseif (weather = "Fog")
+  No birds call, and the mist seems to swallow every sound beyond the nearest trees.
 *elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
   No owl calls, and nothing small stirs in the leaf litter.
-*elseif (weather_wet)
-  No birds call from the dripping branches, and the wood gives back no sound but the rain.
-*elseif (weather_cold)
-  No birds call, and the snow muffles every other sound.
 *else
   No birds are singing. No insects hum in the undergrowth, and not even a raven calls from far off.
 *return
@@ -104,7 +108,10 @@
 *gosub_scene Langston/roi_grove rg_sky
 *gosub wol_ch3_silence
 
-Your own steps are the loudest thing in the wood, and after a while you notice that something is keeping pace with them. A branch sways that the wind did not move. A patch of leaf litter ahead of you is pressed flat, and when you reach it the print is gone. Twice, something moves off to your left, always just out of sight. Each time you stop and turn, the trees are only trees.
+*if (weather_severity >= 2)
+  Beneath the noise of the weather, you begin to notice a second rhythm keeping pace with your steps. A branch moves against the prevailing wind. A patch of leaf litter ahead of you is pressed flat, and when you reach it the print is gone. Twice, something moves off to your left, always just out of sight. Each time you stop and turn, the trees are only trees.
+*else
+  Your own steps are the loudest thing in the wood, and after a while you notice that something is keeping pace with them. A branch sways that the wind did not move. A patch of leaf litter ahead of you is pressed flat, and when you reach it the print is gone. Twice, something moves off to your left, always just out of sight. Each time you stop and turn, the trees are only trees.
 
 Then the track bends round a bank of earth and roots, and you stop for a third time.
 
@@ -140,7 +147,16 @@ Its eyes burn gold.
   # Walk on toward the grove.
     *goto wol_ch3_walk_on
   # Stay where you are and watch the trees for a while.
-    The wood settles around you. Small sounds come back one at a time: dripping, creaking, leaves shifting, and nothing else moves among the trunks. When you have waited long enough to be sure, you let out your breath.
+    *if (weather_severity >= 3)
+      You wait while the weather tears at the canopy. Branches thrash and the trunks groan, but no animal calls and nothing moves with purpose among the trees. When you have watched long enough to be sure, you let out your breath.
+    *elseif (weather = "Sleet")
+      You wait through the hard ticking of sleet on leaves and roots. Nothing else moves among the trunks. When you have watched long enough to be sure, you let out your breath.
+    *elseif (weather = "Rain")
+      You wait while water drips from the canopy and runs through the leaf litter. Nothing else moves among the trunks. When you have watched long enough to be sure, you let out your breath.
+    *elseif (weather = "Snow")
+      You wait as snow sifts between the branches. Nothing else marks the gathering white or moves among the trunks. When you have watched long enough to be sure, you let out your breath.
+    *else
+      The wood settles around you. Small sounds come back one at a time: creaking branches, leaves shifting, and nothing else moving among the trunks. When you have waited long enough to be sure, you let out your breath.
     *goto wol_ch3_walk_on
 
 *label wol_ch3_climb
@@ -163,7 +179,12 @@ Its eyes burn gold.
     You turn over the roots and the bark around the marks, but find nothing more than the gouges themselves.
   *goto wol_ch3_walk_on
 *else
-  The roots are slick and the earth gives way beneath you. By the time you scrabble over the top there is only trampled leaf litter that leads off in three directions at once, and the trail goes cold.
+  *if (temperature_band = "freezing")
+    Your boot skids from a frost-slick root and costs you precious time. By the time you scrabble over the top there is only trampled leaf litter that leads off in three directions at once, and the trail goes cold.
+  *elseif (ground_state = "dry")
+    A root rolls beneath your boot and loose earth gives way under you. By the time you scrabble over the top there is only trampled leaf litter that leads off in three directions at once, and the trail goes cold.
+  *else
+    The roots are slick and the earth gives way beneath you. By the time you scrabble over the top there is only trampled leaf litter that leads off in three directions at once, and the trail goes cold.
   *goto wol_ch3_walk_on
 
 *label wol_ch3_walk_on
@@ -177,7 +198,7 @@ You go on along the track. Whatever it is has marked out this ground, and the fe
 *label wol_ch3_clearing
 *set scenery_subplace "forest"
 *set wol_chapter_3_checkpoint "clearing"
-The track runs on south through the silent trees, then opens into a patch of bare light. For a moment you take it for the druid's grove, but it is only a place where the canopy has parted and the grass has crept in to fill the gap.
+The track runs on south through the silent trees, then opens where the canopy has parted and grass has crept in to fill the gap. For a moment you take it for the druid's grove, but it is only a small clearing.
 
 *gosub wol_ch3_open_sky
 
@@ -186,7 +207,7 @@ Your legs would welcome a halt here, but the quiet prickles at the back of your 
 *gosub_scene dice_engine roll_skill_check 15 "nature" "" "perception" "" "" ""
 *if (check_success)
   *set wol_stirge_spotted true
-  Two small shapes hang from a low branch at the edge of the clearing: leathery wings folded over round bodies, clawed feet hooked into the bark, long needle snouts drooping as they doze. Stirges. Both are asleep, and you have your weapon ready before either stirs.
+  Two small shapes hang beneath a low branch at the sheltered edge of the clearing: leathery wings folded over round bodies, clawed feet hooked into the bark, long needle snouts drooping as they doze. Stirges. Both are asleep, and you have your weapon ready before either stirs.
 
 *else
   *set wol_stirge_spotted false
@@ -243,7 +264,12 @@ The blood loss is too much. Your knees fold, and the grass of the clearing rises
 *set wol_chapter_3_checkpoint "stirge_won"
 You knock the last little bloodsucker out of the air. It drops to the ground, twitches a couple of times, and lies still.
 
-The clearing is a good place to catch your breath, so you sit on a fallen log and let your pulse settle. As you rest, the hush stays pressed on the woods. The stirges were not what silenced it.
+*if (weather_severity >= 3)
+  You retreat beneath the dense boughs at the clearing's edge and crouch in the lee of a fallen log until your pulse settles. Even through the weather, the unnatural hush stays pressed on the woods. The stirges were not what silenced it.
+*elseif ((weather_wet) or weather_cold)
+  You find the sheltered side of a fallen log beneath the canopy and pause there until your pulse settles. The unnatural hush stays pressed on the woods. The stirges were not what silenced it.
+*else
+  The clearing is a good place to catch your breath, so you sit on a fallen log and let your pulse settle. As you pause, the hush stays pressed on the woods. The stirges were not what silenced it.
 *gosub_scene character_progression free_short_rest
 *gosub_scene character_progression free_short_rest_banner
 
@@ -288,7 +314,7 @@ Someone does live here, though. Near the outcropping stands a medium-sized wolf,
   *goto wol_ch3_wolf_choice
 
 *label wol_ch3_stride
-You walk openly into the grove. The druid clearly enjoys the sun, for the grove is a wide clearing, with clumps of flowers both wild and cultivated around the stone outcropping that stands at its centre as a cabin.
+You walk openly into the grove. The druid has opened it broadly to the sky, with clumps of flowers both wild and cultivated around the stone outcropping that stands at its centre as a cabin.
 
 As you approach, the wolf stalks into view from behind the druid's home. Its head is low and its hackles are up, but its lips stay down over its teeth. As you and the wolf look at each other, you see that its muzzle is smeared and speckled with fresh blood.
 *goto wol_ch3_wolf_choice
@@ -549,7 +575,7 @@ You and the druid work together to find wild sage. Roi snuffles along the foot o
   [b][🌿 Gathered: Sage][/b]
 *else
   *set wol_forage_sage "missed"
-  Despite your best efforts, you cannot find the wild sage you need. Roi sneezes at the dust of the dry leaves and gives a shrug.
+  Despite your best efforts, you cannot find the wild sage you need. Roi noses through the leaf litter, sneezes and gives a shrug.
 *page_break Go on…
 *goto wol_ch3_forage_menu
 

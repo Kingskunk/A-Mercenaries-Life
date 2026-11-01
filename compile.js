@@ -312,6 +312,15 @@ function compile(){
   verifyFileName("Langston/roi_grove.txt");
   // Chapter 3 (Speaking to Roi): reached by *goto_scene from the grove tile, never through *scene_list.
   verifyFileName("Langston/wolves_of_langston_chapter_3.txt");
+  // Westwood: the forest tile west of Langston, reached by *goto_scene from the overworld's "Follow the forest paths" button and the Dev Hub, never through *scene_list.
+  verifyFileName("Langston/westwood.txt");
+  // Chapter 6 (The Accusation): reached by *goto_scene from the Pickled Hen, the Langston hub and Langston Hall, never through *scene_list.
+  verifyFileName("Langston/wolves_of_langston_chapter_6.txt");
+  // The True Sun temple (the "chapel" at Langston's eastern edge) and Chapter 5 (Speaking with Solaine): reached by *goto_scene from Langston's hub once the mayor's letter is read, never through *scene_list.
+  verifyFileName("Langston/true_sun_temple.txt");
+  verifyFileName("Langston/wolves_of_langston_chapter_5.txt");
+  // Chapter 4 (Helping Mayor Anathram): reached by *goto_scene from Langston Hall's menu once the mayor's note is read, never through *scene_list.
+  verifyFileName("Langston/wolves_of_langston_chapter_4.txt");
   // Middle Ward quests live in their own *goto_scene-only files. The district scene owns
   // their physical triggers and aftermath; each quest file owns its choices and resolutions.
   verifyFileName("port_valen/MiddlewardQuest/dry_lion.txt");

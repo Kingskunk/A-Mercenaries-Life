@@ -443,6 +443,22 @@
       hereNight: "The grove is dark under its trees. Leaves move overhead, a stream runs somewhere nearby, and the track is only a paler strip between the trunks.",
       hereStorm: "Rain hammers the canopy and drips through in heavy drops. The ruts of the track have filled with water, and the trunks creak in the wind."
     },
+    // Westwood (2026-10-31, the user's call: west of Langston, because they want the north kept free for later plans): the woodland the mayor circles on her map in Chapter 4, with the nymph's clearing and the bandit camp inside it. HIDDEN until the
+    // mayor hands over the map (wol_ch4_map_given), like Roi's Grove. The name is a plain working title (the nymph is only a passing meeting, so nothing on the tile names her). The position (about six miles from the town) and the prose are invented.
+    ww: {
+      name: "Westwood", kind: "forest", x: -6.95, y: -6.45,
+      requires: "wol_ch4_map_given",
+      territory: "gault",
+      danger: 1,
+      climate: -1,
+      water: "a stream",
+      walk: "The forest paths leave the farm fields as a footpath between hedgerow oaks, then wind among old trunks where the last of the farm tracks give out.",
+      camp: "A level spot between two broad roots, with dry leaf litter underfoot and a stream within earshot.",
+      info: "A stretch of woodland west of Langston, past the last farm fields. Foot paths run in from the town, and the mayor has marked a patch of it on a map.",
+      here: "Old oaks and ash stand around a footpath that runs west from the fields. Leaves move overhead, and a stream runs somewhere off through the trunks.",
+      hereNight: "The wood is dark under its crowns. Water runs somewhere nearby, small things move in the leaf litter, and the footpath is a paler line between the trunks.",
+      hereStorm: "Rain hammers through the leaves and drips off every branch. The footpath has turned to mud, and the trunks creak in the wind."
+    },
     // The Western Vale (2026-10-29, the user's sketch): the road west out of Fellgate leaves the Valen Reach and crosses into House Gault's country, a level land of grass and tilled fields. Western Vale Road is the one road tile between the
     // fort and Langston, and Langston is a walled market town. Both are invented here to the sketch (the 8-mile lengths are the user's sketch at about six miles to a grid unit, the text matches the plan's Chapter 1 road and town). Map tiles only: the
     // town's entry button is not wired yet (Langston/langston.txt lg_arrive is the label it will enter at).
@@ -521,6 +537,8 @@
     ["wv", "lg", 8],
     // Roi's Grove (hidden until the visit to Tomlin is done): a seldom-used dirt track to Langston and another to Western Vale Road.
     ["lg", "rg", 6, "track"],
+    // Westwood (hidden until the mayor's map is in hand): forest paths from Langston's west side.
+    ["lg", "ww", 6, "track"],
     ["rg", "wv", 7, "track"]
   ];
 

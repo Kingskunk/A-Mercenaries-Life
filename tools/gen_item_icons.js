@@ -75,6 +75,7 @@ const MAP = {
   cloak_duster: "Summer_Duster.png",
   neck_muffler: "Wool_Muffler.png",
   neck_cravat: "Silvertongue_Cravat.png",                    // Silvertongue Cravat (id silk_neckcloth)
+  hearthstone_talisman: "../Generic/Torvalds_Hearthstone_Talisman_Generated_Source.png",
   gloves: "Gloves_Hide_Unfaded_Icon.png",
   gloves_scholar: "Gloves_Leather_3_Unfaded_Icon.png",       // Lamplight Gloves
   gloves_lined: "Bracers_Barbarian_Unfaded_Icon.png",         // Lined Gloves
@@ -100,6 +101,15 @@ const MAP = {
   potion_mending: "Consumable/Potion/POT_Remedial_Potion_Unfaded_Icon.png",
   potion_antivenom: "Consumable/Potion/POT_Antidote_Unfaded_Icon.png",
   potion_tidebreath: "Consumable/Potion/POT_Potion_of_Gaseous_Form_Unfaded_Icon.png",
+  moonshard: "../Generic/Moonshard_Generated_Source.png",   // Chapter 4: the mayor's gift dagger
+  lesser_amulet_of_the_beast: "../Generic/Lesser_Amulet_of_the_Beast_Generated_Source.png",   // Chapter 4: the mayor's gift amulet
+  solaines_unfinished_letter: "../Generic/Solaines_Unfinished_Love_Letter_Generated_Source.png",   // Chapter 5: Solaine's letter to Tomlin
+  bloodstained_lavender_ribbon: "../Generic/Bloodstained_Lavender_Ribbon_Generated_Source.png",   // Chapter 5: the ribbon behind the wardrobe
+  burnt_holy_vestments: "../Generic/Burnt_Holy_Vestments_Generated_Source.png",   // Chapter 5: the vestments in the stove
+  mayors_letter: "Miscellaneous_item/Book/Book_Note_D_Unfaded.png",   // Chapter 4: the mayor's letter after the bandits
+  iron_gap_poster: "Miscellaneous_item/Book/Book_Note_B_Unfaded.png",   // Chapter 4: the mayor's wanted poster
+  iron_gap_warrant: "Miscellaneous_item/Book/Book_Parchment_A_Unfaded.png",   // Chapter 4: the camp's warrant (a rolled sheet with a red band)
+  potion_barkskin: "Consumable/Elixir/ELX_Elixir_of_Barkskin_Unfaded_Icon.png",   // Chapter 4: the nymph's witch's brew
   potion_darksight: "Consumable/Elixir/ELX_Elixir_of_Darkvision_Unfaded_Icon.png",
   potion_fortifying: "Consumable/Potion/POT_Potion_of_Vitality_Unfaded_Icon.png",
   potion_restful: "Consumable/Potion/POT_Wilted_Dreams_Unfaded_Icon.png",
@@ -165,6 +175,7 @@ const MAP = {
   boar_tusk: "../Generic/Boar_Tusk_Generated_Source.png",
   elk_antler: "../Generic/Elk_Antler_Generated_Source.png",
   pickled_hen_tankard: "ALCH_Mug_of_Beer_Unfaded_Icon.png",              // the chewed tankard in Roi's grass (STAND-IN: a beer mug, no tankard art yet)
+  flimsy_jeweled_dagger: "../Generic/Flimsy_Jeweled_Dagger_Generated_Source.png",   // Chapter 4: the bandit camp's showy dagger
   scrapling_claw_weapon: "../Generic/Scrapling_Claw_Weapon_Generated_Source.png",   // Chapter 3: the claw as Roi binds it, a +1 club for a week
   scrapling_claw: "../Generic/Scrapling_Claw_Generated_Source.png",         // Chapter 2: the claw Tomlin gives you from the garden
   philter_remembrance: "../Generic/Philter_of_Remembrance_Generated_Source.png", // Chapter 2: Tomlin's wedding-gift scent

@@ -179,9 +179,18 @@
       id: "wolves_of_langston", title: "The Wolves of Langston",
       giver: "Mayor Tanya Anathram, Langston meeting hall",
       place: "Langston",
-      levelProgress: "Counts toward level progress on a successful final resolution.",
+      levelProgress: "Each finished chapter 2, 4 and 5 counts as one quest toward level progress.",
       goal: function (s) {
         if (s.wol_quest_stage === "asked" || s.wol_quest_stage === "offered") return "Call on Mayor Anathram at Langston Hall during the day and hear her terms.";
+        if (truthy(s.wol_ch6_ready)) return "Tell Mayor Anathram at Langston Hall when you are ready to make the accusation. Prepare first: the Cord & Kettle is the last shop before the town gathers.";
+        if (truthy(s.wol_ch6_summoned)) return "Tell Mayor Anathram at Langston Hall when you are ready to make the accusation.";
+        if (truthy(s.wol_chapter_5_complete)) return "Wait for word from Mayor Anathram; Langston's hub will bring it once a new day begins, and she may be waiting at the Pickled Hen.";
+        if (truthy(s.wol_ch5_corpse_fought)) return "Tell Mayor Anathram that Maybelline's body rose in the True Sun cemetery.";
+        if (truthy(s.wol_ch5_letter_shown)) return "Examine Maybelline's body in the mausoleum of the True Sun temple's cemetery. Solaine has given way.";
+        if (truthy(s.wol_ch4_letter_read)) return "Visit Langston's chapel and examine Maybelline's body before the burial. Solaine expects you; show the mayor's letter if there is any trouble.";
+        if (truthy(s.wol_chapter_4_complete)) return "Wait for word from Mayor Anathram; Langston's hub will bring it once a new day begins.";
+        if (truthy(s.wol_ch4_warrant_found)) return "Take the warrant from the bandit camp to Mayor Anathram.";
+        if (truthy(s.wol_ch4_map_given)) return "Search the woods west of Langston for the bandit camp the mayor circled on your map.";
         if (truthy(s.wol_ch3_note_read) || truthy(s.wol_hall_called)) return "Call at Langston Hall: the mayor has sent word of a new lead.";
         if (truthy(s.wol_roi_cured)) return "Return to Langston; the mayor may have word for you.";
         if (truthy(s.wol_polypox_recipe)) return "Bring Roi Sunderhammer sage, hornwort and wolfsbane so he can brew his cure, from the woods with him or from Tomlin in Langston.";
@@ -201,9 +210,33 @@
         if (truthy(s.wol_roi_sick_new_moon)) c.push("Roi first felt unwell around the new moon, two weeks before the full moon of Maybelline's death.");
         if (truthy(s.wol_roi_claw_not_scrapling)) c.push("Roi says Maybelline was mauled by beasts much larger than a scrapling.");
         if (truthy(s.wol_roi_night_gap)) c.push("Roi honestly cannot remember where he was the night Maybelline died.");
+        if (truthy(s.wol_ch4_map_given)) c.push("Mayor Anathram sent you after two strangers blamed for missing livestock and valuables. She thinks they may be tied to Maybelline's death.");
+        if (s.wol_ch4_bandits_outcome) c.push("Mayor Anathram is the Wolf of the Road, an outlaw once wanted for killing a constable at Iron Gap. Two of her old band, Horace and Titch, tried to blackmail her at her house.");
+        if (s.wol_ch5_tome_state === "read") c.push("A black tome in Solaine's library, Turning from the Light, covers turning from a sun deity, infernal pacts, autopsies and making undead servants. A scrap marking one page reads \"This one.\" and shows how to destroy zombies, ghouls and vampires.");
+        if (s.wol_ch5_tome_state === "pictures") c.push("A black tome in Solaine's library has illustrations of dark moon symbols, cruel tools and animated corpses; a scrap reading \"This one.\" marks the page on the walking dead.");
+        if (truthy(s.wol_ch5_letter_granted)) c.push("A letter to Tomlin, hidden in Solaine's Compendium of Curses on the page for lycanthropy, tells of a changed woman whose darkness will not forgive \"her\". It stops mid-sentence.");
+        if (truthy(s.wol_ch5_door_scratched)) c.push("The latch on Solaine's door is scratched and bent, as if by claws or tools in an unpracticed strong hand.");
+        if (truthy(s.wol_ch5_wardrobe_seen)) c.push("One of Solaine's robes has been torn at the seams and restitched.");
+        if (truthy(s.wol_ch5_ribbon_granted)) c.push("A blood-stained lavender silk ribbon lay behind the wardrobe in Solaine's room, with little dust on it.");
+        if (truthy(s.wol_ch5_vestments_granted)) c.push("Burnt holy vestments, restitched and spotted with blood, were in the temple kitchen's stove.");
+        if (truthy(s.wol_ch5_larder_done)) c.push("The temple larder holds fresh raw meat with small, ragged bite marks.");
+        if (truthy(s.wol_ch5_corpse_fought) && truthy(s.wol_chapter_5_complete)) c.push("Mayor Anathram ordered the militia to guard the graveyard after dark and had a proclamation posted announcing the accusation of Maybelline's murderer.");
+        if (truthy(s.wol_ch5_grave_seen)) c.push("A grave in the True Sun cemetery was dug open in great haste, or by some huge beast, and left with its shrouded body exposed.");
+        if (truthy(s.wol_ch5_corpse_fought)) c.push("Maybelline's body rose in the mausoleum and attacked. It had to be destroyed a second time. Solaine says this cannot happen while one of the Order of Radiant Light keeps the temple.");
+        if (truthy(s.wol_ch5_marks_seen)) c.push("Maybelline's body was mauled by something larger than most forest beasts: broad, deep claw marks, crisscrossed in a rage.");
+        if (truthy(s.wol_ch5_daisies_seen)) c.push("The bouquet in Maybelline's hands was daisies tagged \"Rest well, Maybelline\" in Tomlin's careful hand, crushed as if squeezed too tight.");
+        if (truthy(s.wol_ch5_tapestry_lore)) c.push("The temple's tapestries show an ancient order of sun worshippers who raised the tower to hold back undead; as long as one of them stays present and dedicated to the light, the area is sanctified and the dead stay in their graves.");
+        if (truthy(s.wol_ch5_indent_amulet)) c.push("A sunburst-shaped indent in the rotunda floor fits an amulet like the one Solaine wore at the funeral. Pressing it flashes with radiant magic and then seals; it needs a key or object.");
+        if (truthy(s.wol_ch5_asked_tomlin)) c.push("Solaine and Tomlin were lovers; she returned from a pilgrimage to find him betrothed to Maybelline.");
+        if (truthy(s.wol_ch5_asked_temple)) c.push("Solaine says the temple's consecration, kept by one member of the Order of Radiant Light at a time, keeps Langston's dead in their graves. Roi is its counterpart in the wood.");
+        if (truthy(s.wol_ch4_letter_read)) c.push("Mayor Anathram wrote that Maybelline will be buried soon, and that Solaine of the Church of the True Sun has been told to expect you at the chapel.");
+        if (truthy(s.wol_ch4_warrant_found)) c.push("The bandits' camp held a Iron Gap warrant for the Wolf of the Road, wanted for killing a constable: three gold crowns for her whereabouts and thirty for her capture, dead or alive.");
+        if (truthy(s.wol_ch4_nymph_herb_man)) c.push("A nymph in the western woods says a handsome man from the town gathers herbs there and watches her \"like prey\".");
+        if (truthy(s.wol_ch4_nymph_asked_strange)) c.push("The trees have reported some strange creature wandering the land. They use the words \"beast\" and \"person\" for it interchangeably.");
+        if (truthy(s.wol_ch4_unrelated_known)) c.push("Nothing about Maybelline's death fits two strangers on the road, and the mayor knows it.");
         if (truthy(s.wol_solaine_hymn_wrong)) c.push("The hymn Solaine attributed to the Book of Passing is not in that book.");
         if (truthy(s.wol_solaine_tomlin_hint)) c.push("Solaine and Tomlin concealed a familiarity older than the funeral.");
-        if (truthy(s.wol_mayor_history_wrong)) c.push("Mayor Anathram's account of the Battle of Three Rivers contains serious errors.");
+        if (truthy(s.wol_mayor_history_wrong)) c.push("Mayor Anathram's account of the Battle of Iron Gap contains serious errors.");
         if (truthy(s.wol_mayor_dog_trained)) c.push("Buttercup is a trained attack and guard dog, not merely an obedient pet.");
         return c;
       },

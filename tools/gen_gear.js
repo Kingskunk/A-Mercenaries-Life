@@ -376,6 +376,7 @@ function weaponProps(o) {
   if (n > 0 || o.magical) out.push(["magical", "true"]);
   if (o.silvered) out.push(["silvered", "true"]);
   if (o.adamantine) out.push(["adamantine", "true"]);
+  if (o.flimsy) out.push(["flimsy", "true"]);
   return out;
 }
 function weaponPropsText(o) {
@@ -383,6 +384,7 @@ function weaponPropsText(o) {
   if (n > 0) out.push("Magic +" + n + (o.fadesDays ? ", fades after " + (o.fadesDays === 7 ? "a week" : o.fadesDays + " days") : "")); else if (o.magical) out.push("Magical" + (o.fadesDays ? ", fades after " + (o.fadesDays === 7 ? "a week" : o.fadesDays + " days") : ""));
   if (o.silvered) out.push("Silvered");
   if (o.adamantine) out.push("Adamantine");
+  if (o.flimsy) out.push("Flimsy (-1 to attack)");
   return out.join(", ");
 }
 

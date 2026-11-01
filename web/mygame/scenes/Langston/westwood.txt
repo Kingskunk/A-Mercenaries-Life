@@ -1,0 +1,59 @@
+*comment ====================================================================================
+*comment WESTWOOD: the forest tile west of Langston (overworld-data.js "ww"), hidden on the map until the mayor hands over her map (wol_ch4_map_given).
+*comment Reached from the map's "Follow the forest paths" button (overworld.txt). Until Chapter 4 is complete the button hands the player to the Chapter 4 woods sequence (wolves_of_langston_chapter_4.txt wol_ch4_woods_start: the
+*comment footpath, the nymph's clearing, the bandit camp). This file owns the place itself: the footpath (ww_place), the sky under the canopy (ww_sky, reused by Chapter 4) and the look-in afterwards.
+*comment Open-world place: any hour, any weather.
+*comment ====================================================================================
+
+*label ww_arrive
+*set scenery_subplace "forest"
+*gosub_scene calendar update_hub_condition
+*if ((wol_ch4_map_given) and (not(wol_chapter_4_complete)))
+  *goto_scene Langston/wolves_of_langston_chapter_4 wol_ch4_woods_start
+*goto ww_woods
+
+*comment ── LAYER 1: PLACE ── The footpath and the trees, always true.
+*label ww_place
+West of the last farm fields the footpath runs in under oaks and ash, and the hedgerows give way to old trunks and bracken. The air smells of leaf litter and green bark, and a stream runs somewhere out of sight among the roots.
+*return
+
+*comment ── LAYER 2: SKY ── Weather and the light under the canopy, closing with the ground's memory of recent rain.
+*label ww_sky
+*if (weather_severity >= 3)
+  *if (weather_cold)
+    Snow drives between the trunks and the canopy roars overhead.
+  *else
+    Wind thrashes the crowns and rain comes through them in heavy gusts.
+*elseif (weather = "Fog")
+  Mist lies between the trunks, and the far bend of the path dissolves into grey.
+*elseif (weather = "Rain")
+  Rain patters through the leaves and drips from every branch.
+*elseif (weather = "Sleet")
+  Sleet ticks on the leaves and bounces off the roots.
+*elseif (weather = "Snow")
+  Snow sifts down between the branches and thins to a few flakes by the time it reaches the ground.
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *if (weather = "Clear")
+    Moonlight finds the footpath in a few pale patches, and the rest is black trunks.
+  *else
+    The canopy shuts out the sky, and the footpath is a paler strip in the dark.
+*elseif (time_period = "Dusk")
+  The light is low and golden between the trunks, and the shadows under the oaks have run together.
+*elseif (weather = "Clear")
+  Sunlight falls through the leaves in moving patches.
+*else
+  Grey light filters down through the canopy, flat and shadowless.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  The footpath holds standing water from the last long rain.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The ground is soft underfoot from recent rain.
+*return
+
+*comment ── THE LOOK-IN ── After Chapter 4 the woods are a place to walk through; their people and camps belong to the chapter.
+*label ww_woods
+*set scenery_subplace "forest"
+*gosub ww_sky
+*gosub ww_place
+*page_break Walk back to the footpath…
+*goto_scene overworld/overworld ow_here
