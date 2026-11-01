@@ -37,23 +37,24 @@ const MAP = {
   shoot_ice_arrow: "Item/Consumable/Arrow/Arrow_of_Ice_Unfaded_Icon.png",
   throw_grease_flask: "Item/Consumable/Grenade/GRN_Grease_Bottle_Unfaded_Icon.png",
   throw_alchemists_fire: "Item/Consumable/Grenade/GRN_Alchemist's_Fire_Unfaded_Icon.png",
-  throw_water_jug: "Generic/Filled_Water_Jug_Generated_Source.png",
+  throw_water_jug: "item:water_jug",
   // Unique combat items share one Items button. Each "Items: <name>" choice uses items_<slug of its name> in the fly-out.
   items: "Item/Miscellaneous_item/Container/Backpack_A_Unfaded_Icon.webp",
-  items_bramble_heart: "Generic/Gnarled_Bramble_Heart_Generated_Source.png",
-  items_silverstar: "Generic/Silverstar_Generated_Source.png",
-  items_philter_of_remembrance: "Generic/Philter_of_Remembrance_Generated_Source.png",
+  items_bramble_heart: "item:bramble_heart",
+  items_silverstar: "item:silverstar",
+  items_philter_of_remembrance: "item:philter_remembrance",
   // Drinkable potions share one Potions button (2026-11-01). Each "Potions: <title>" choice uses potions_<slug of its title> in the fly-out.
   potions: "Interface/Elixir_Icon.png",
-  potions_potion_of_barkskin: "Item/Consumable/Elixir/ELX_Elixir_of_Barkskin_Unfaded_Icon.png",
-  potions_clear_head_draught: "Item/Consumable/Elixir/ELX_Elixir_of_Vigilance_Unfaded_Icon.png",
-  potions_saint_altheas_water: "Generic/Saint_Altheas_Water_Generated_Source.png",
-  potions_fortifying_tonic: "Item/Consumable/Potion/POT_Potion_of_Vitality_Unfaded_Icon.png",
-  potions_brine_antivenom: "Item/Consumable/Potion/POT_Antidote_Unfaded_Icon.png",
-  potions_healing_potion: "Item/Consumable/Potion/POT_Potion_of_Healing_Unfaded_Icon.png",
-  potions_fire_resistance_potion: "Generic/Fire_Resistance_Potion_Generated_Source.png",
-  potions_cold_resistance_potion: "Generic/Cold_Resistance_Potion_Generated_Source.png",
-  potions_heroism_potion: "Generic/Heroism_Potion_Generated_Source.png",
+  potions_potion_of_barkskin: "item:potion_barkskin",
+  potions_clear_head_draught: "item:clear_head_draught",
+  potions_saint_altheas_water: "item:althea_phial",
+  potions_fortifying_tonic: "item:potion_fortifying",
+  potions_brine_antivenom: "item:potion_antivenom",
+  potions_healing_potion: "item:healing_potion",
+  potions_fire_resistance_potion: "item:fire_resistance_potion",
+  potions_cold_resistance_potion: "item:cold_resistance_potion",
+  potions_wolfsbane_antidote: "item:wolfsbane_antidote",
+  potions_heroism_potion: "item:heroism_potion",
   // Each spell scroll's own art on the Read fly-out, keyed read_<slug of its title> (battlehud.js variantArt).
   read: "Item/Consumable/Scroll/BOOK_SignedTradeVisa_Unfaded_Icon.png",
   read_magic_missile_scroll: "Item/Consumable/Scroll/Scroll_of_Magic_Missile_Unfaded_Icon.png",
@@ -89,9 +90,28 @@ const MAP = {
 
 const MIME = { ".webp": "image/webp", ".png": "image/png", ".jpg": "image/jpeg", ".svg": "image/svg+xml" };
 
+// A value written "item:<key>" uses the Pack's own art for that icon key (web/mygame/item-icons.js, already shrunk by gen_item_icons.js), so one picture serves an item in the Pack and on the
+// battle bar and the generated file stays small. Run gen_item_icons.js first.
+let ITEM_ART = null;
+function itemArt(key) {
+  if (!ITEM_ART) {
+    const sandbox = { window: {} };
+    require("vm").runInNewContext(fs.readFileSync(path.join(ROOT, "web", "mygame", "item-icons.js"), "utf8"), sandbox);
+    ITEM_ART = sandbox.window.ITEM_ICONS || {};
+  }
+  return ITEM_ART[key] || "";
+}
+
 let bytes = 0, bad = 0;
 const out = {};
 for (const id of Object.keys(MAP).sort()) {
+  if (String(MAP[id]).indexOf("item:") === 0) {
+    const uri = itemArt(MAP[id].slice(5));
+    if (!uri) { console.warn("  MISSING item art: " + id + " -> " + MAP[id]); bad++; continue; }
+    out[id] = uri;
+    bytes += uri.length * 3 / 4;
+    continue;
+  }
   const p = path.join(ICONS, MAP[id]);
   if (!fs.existsSync(p)) { console.warn("  MISSING: " + id + " -> " + MAP[id]); bad++; continue; }
   const mime = MIME[path.extname(p).toLowerCase()];

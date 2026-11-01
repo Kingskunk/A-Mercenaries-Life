@@ -26,6 +26,9 @@ The listed properties are alchemy traits, not effects gained by eating a raw ing
 | Longshade Forest | Shadefern | `shadefern` | Resist Cold; Fortify Health | Uncommon | The Old Grove — wet rock by the seep | Nature or Survival DC 12 | Maximum 4 pieces per season |
 | Longshade Forest | Acorn Truffle | `acorn_truffle` | Fortify Health; Surefooted | Rare | The Old Grove — leaf mold beneath the great oak | Nature or Survival DC 14 | Maximum 3 pieces per season |
 | Longshade Forest | Brambleberry | `brambleberry` | Surefooted; Clear Mind | Uncommon | The Dry Edge — briars along the game trail | Nature or Survival DC 11 | Normal forest refill |
+| Roi's Grove | Sage | `sage` | Restore; Purge | Common | The sun-warmed stones above the overhang | Nature or Survival DC 10 | Back five days after a try; after the polypox cure |
+| Roi's Grove | Hornwort | `hornwort` | Restore; Valor | Uncommon | The seep | Nature or Survival DC 11 | Back five days after a try; after the polypox cure |
+| Roi's Grove | Wolfsbane | `wolfsbane` | Valor; Purge | Uncommon | The shady edge | Nature or Survival DC 12 | Back five days after a try; after the polypox cure |
 
 ## Crafting rules
 
@@ -102,3 +105,11 @@ The coin is cheap and the effort is the real price. A brew's herbs cost 1 to 3 c
 ## Later three-ingredient upgrade pattern
 
 Three ingredients should intensify an existing shared property, not create an unrelated effect. Example: Glowmold + Cistern Spores + Shadefern can become a Greater Fortifying Tonic that grants +6 temporary HP.
+
+## Properties (the user, 2026-11-01: one property per potion, so a property never has to carry several)
+
+Each finished potion has its own property, and a recipe's two ingredients share it. Nine existed (Mend, Resist Poison, Hold Breath, Keen Sight, Fortify Health, Mend Rest, Clear Mind, Resist Cold, Surefooted). Added with Roi's Grove herbs: **Restore** (Healing Potion: sage + hornwort, DC 16), **Valor** (Heroism Potion: hornwort + wolfsbane, DC 19) and **Purge** (Wolfsbane Antidote: wolfsbane + sage, DC 17, 35 copper at both herbalists; a CURE, not a shield: it ends the Poisoned condition at once, drunk as an action in a fight, refused and kept when not poisoned; no resistance and no HP cost, the user's call 2026-11-01, so it stays distinct from Brine Antivenom). The three herbs form a triangle: each pair shares exactly one property.
+
+**Reserved for ingredients to come (no ingredient carries them yet):** **Resist Fire** and **Resist Frost** (the Fire and Cold Resistance Potions, which stay buy-only until a fire or frost ingredient exists). Resist Frost is combat cold damage; the existing Resist Cold is weather exposure (Winterward Tea). A new ingredient only needs an `alchemy.effects` entry in inventory-data.js and a recipe row in crafting-data.js.
+
+**Roi's Grove herbs:** once the polypox cure is done (`wol_roi_cured`), the grove offers "Look the grove over for herbs" (by day, whether Roi is there or away). One try per patch through `dungeon.txt dg_forage`, a patch back five days after it was tried (`rg_<herb>_day`). Tomlin sells the three herbs only while the cure is pending; afterwards he and Ambrose buy them by the piece (sage 1, hornwort 2, wolfsbane 2 copper). Tests: `grove_herbs_*`, `craft_healing_potion`, `craft_heroism_potion`.

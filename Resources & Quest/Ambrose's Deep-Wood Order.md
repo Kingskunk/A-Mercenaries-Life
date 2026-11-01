@@ -212,10 +212,10 @@ Built from your marked-up text, which I used almost word for word. I fixed obvio
 
 What you added in chat: it **does not start until the campaign is past day 30** (the blackboard is not there before), and **the Old Grove's two plants come back once a season**. To keep the order of three and two possible in one season, the grove now holds a seasonal stock of four shadefern and three acorn truffle (my numbers); a pass takes pieces from it, and a missed try still hides that patch until the ordinary three-day refill. The seasonal radiant version of the order is not built yet.
 
-You then ruled that it **does** count toward level progress, and every repeat adds one again (for levels 2, 3, 4, 5 and on); the earlier "not toward the pool" note above is superseded.
+You then ruled that it **does** count toward level progress, and every repeat adds one again; **that was changed on 2026-11-01: only the FIRST delivered order counts, once. The seasonal repeats pay silver only**, like the other radiant jobs.
 
 The sidebar was reworked at the same time (a fold, progress lines, job grouping, a hover card), and this quest is its first user of the progress line.
 
 ### The seasonal repeat (built 2026-10-19)
 
-After the first order is done, a new blackboard is posted every season ("WANTED AGAIN", with that season's numbers: 2 to 4 shadefern and 1 to 3 acorn truffle, paid in silver marks as the pieces less two, so at least one). It is asked about in one short, described scene, and the order is gone when the season ends if it has not been delivered (silently; the first order never lapses). Every delivered order counts one toward level progress. The numbers come from the season, not from a die, so the same season always posts the same order.
+After the first order is done, a new blackboard is posted every season ("WANTED AGAIN", with that season's numbers: 2 to 4 shadefern and 1 to 3 acorn truffle, paid in silver marks as the pieces less two, so at least one). It is asked about in one short, described scene, and the order is gone when the season ends if it has not been delivered (silently; the first order never lapses). Only the first delivered order counts toward level progress (2026-11-01); a repeat pays silver only. The numbers come from the season, not from a die, so the same season always posts the same order.

@@ -1076,6 +1076,14 @@
       use: true
     },
     {
+      id: "wolfsbane_antidote", category: "consumables", owned: "has_wolfsbane_antidote",
+      weight: 0.3, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_wolfsbane_antidote) || 0); return "Wolfsbane Antidote" + (n > 1 ? " ×" + n : ""); },
+      description: "A stoppered vial of cloudy blue-green liquid with violet petals drifting in it.",
+      badge: "Ends the Poisoned condition",
+      use: true
+    },
+    {
       id: "tidebreath_elixir", category: "consumables", owned: "has_tidebreath_elixir",
       weight: 0.3, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_tidebreath_elixir) || 0); return "Tidebreath Elixir" + (n > 1 ? " ×" + n : ""); },

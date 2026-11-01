@@ -152,6 +152,7 @@ window.DISCARD_DATA = {
   "fire_resistance_potion": {"kind":"consumable"},
   "cold_resistance_potion": {"kind":"consumable"},
   "heroism_potion": {"kind":"consumable"},
+  "wolfsbane_antidote": {"kind":"consumable"},
   "tidebreath_elixir": {"kind":"consumable"},
   "darksight_tonic": {"kind":"consumable"},
   "fortifying_tonic": {"kind":"consumable"},

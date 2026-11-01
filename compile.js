@@ -15,6 +15,10 @@ if (typeof process != "undefined") {
     rootDir = "web/";
   }
   global.rootDir = rootDir;
+  // Windows' virus scanner briefly locks files it has just seen written, which fails an `open` with "UNKNOWN ... errno -4094"; tools/fs_retry.js retries just those, here and in the
+  // child processes below (through NODE_OPTIONS), so a compile no longer dies on a lock that is gone a moment later.
+  require('./tools/fs_retry.js');
+  process.env.NODE_OPTIONS = ((process.env.NODE_OPTIONS || '') + ' --require "' + require('path').join(__dirname, 'tools', 'fs_retry.js').replace(/\\/g, '/') + '"').trim();
   fs = require('fs');
   path = require('path');
   vm = require('vm');

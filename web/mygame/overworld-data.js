@@ -143,7 +143,21 @@
       water: "the river",
       ford: true,
       info: "The road runs along the bank here, where the Ashrun comes down from the west and meets the Grey River. The two make one river, and the road runs alongside",
-      here: "The river runs broad and slow beside the road, and the Ashrun comes in from the west over a bar of grey stones, its brown water running beside the clearer water of the Grey for a stretch before the two run as one. A track branches off up the Ashrun's bank into the trees."
+      here: "The river runs broad and slow beside the road, and the Ashrun comes in from the west over a bar of grey stones, its brown water running beside the clearer water of the Grey for a stretch before the two run as one. A track branches off up the Ashrun's bank into the trees, and a rougher road climbs away north-east across the middle country toward the Crossfield Road."
+    },
+    // The Ashrun Cutoff (the user, 2026-11-01): the middle of the road from Ashrun Mouth to the Crossfield Road, a tile of its own so the long road is not one straight line. Position read off the user's drawing; the prose is mine.
+    ac: {
+      name: "The Ashrun Cutoff", kind: "road", also: "hills", x: -0.61, y: -2.72,
+      territory: "scales",
+      danger: 2,
+      climate: -1,
+      walk: "The cutoff is a narrow carters' road over rough pasture and low, stony rises, its ruts half grown over where only a few wagons pass in a week.",
+      camp: "A hollow behind a ragged hawthorn hedge keeps the wind off a small camp. There is a spring a short way down the slope, and the road is empty in both directions.",
+      water: "a spring",
+      info: "The middle of the cutoff, where the road from Ashrun Mouth crosses open country with no village for miles. Carters use it to save the long way round by the river or through Timbermouth.",
+      here: "The road runs over open upland of rough grass and scattered thorn, with a stone marker leaning at a bend and no roof in sight. Ashrun Mouth lies a long walk south-west, and the Crossfield Road a long walk to the north-east.",
+      hereNight: "The cutoff is a pale scar of road in the dark, with the thorn hedges standing black on either side and not a light anywhere.",
+      hereStorm: "Rain drives across the open upland and runs down the ruts in brown streams. The hawthorn hedges give a little shelter, and the road ahead is a darker line in the weather."
     },
     ar1: {
       name: "The High Grey Road", kind: "road", x: 0.82, y: -0.66,
@@ -190,7 +204,7 @@
       climate: -1,
       walk: "The Crossfield Road runs over open upland between hedged fields and low stony rises. Its packed surface is deeply rutted by timber wagons going east and grain carts going west, with no settlement close enough to shelter either line.",
       camp: "A broad verge beside an old stone field wall gives a wagon line room to pull off the road. There is no wood nearby, but a shallow ditch holds enough rainwater for animals after wet weather.",
-      info: "The cross-country road between Alderford and Timbermouth. It runs ten miles east to the weir town and eight miles north-west to Barleycross, carrying seasoned ash, charcoal and wagon parts toward Alderford, and salt, ironwork, cured fish and cloth back toward the forest country.",
+      info: "The cross-country road between Alderford and Timbermouth. It runs ten miles east to the weir town and eight miles north-west to Barleycross, carrying seasoned ash, charcoal and wagon parts toward Alderford, and salt, ironwork, cured fish and cloth back toward the forest country. A rougher road runs seven miles south-west to the Ashrun Cutoff and on to Ashrun Mouth.",
       here: "The road crosses open upland between low field walls and patches of rough pasture. Wheel ruts run hard and deep through the pale soil, with Alderford's hills behind one way and the farm country rising toward the other.",
       hereNight: "The Crossfield Road is a pair of dark ruts between low walls and empty fields. Far off, a window or a cart lantern shows briefly and is gone behind a fold of ground.",
       hereStorm: "Rain sweeps unchecked across the upland and fills the road ruts to their rims. The field walls offer little shelter, and the track is only a darker line through the weather."
@@ -510,6 +524,9 @@
     ["lc", "bs", 7],
     ["mc", "lc", 10],
     ["r2", "r3", 10],
+    // The Ashrun Cutoff (the user, 2026-11-01): a road from Ashrun Mouth north-east across the middle of the map to the Crossfield Road, so the centre is not empty. 14 miles in all, my number from the drawn length, in two halves of seven round a tile at the middle (the user drew a circular node there).
+    ["r2", "ac", 7],
+    ["ac", "cf", 7],
     // Forest links are map travel connections, not roads or maintained tracks: overland, twice the time a road mile takes.
     ["r3", "lf", 6, "overland"],
     ["lf", "tm", 6, "overland"],

@@ -51,11 +51,11 @@ const MAP = {
 
   // ---- body armour and clothing worn as armour
   a_cloth: "Robe_D_Unfaded_Icon.png",
-  a_coat: "Robe_E_Unfaded_Icon.png",
+  a_coat: "../Generic/Envoys_Court_Coat_Generated_Source.png",
   a_clothes: "Clothes_Unfaded_Icon.png",                       // Simple Clothes, the Wizard's and the Warlock's
   a_barbarian: "Barbarian_Clothes_Unfaded_Icon.png",
   a_scale: "Scale_Mail_Unfaded_Icon.png",
-  a_robe: "Robe_E_Unfaded_Icon.png",                       // a plain robe (the Dread Warlock's)
+  a_robe: "../Generic/Plain_Robe_Generated_Source.png",    // a plain robe (the Dread Warlock's)
   a_leather: "Hide_Armour_Unfaded_Icon.png",
   a_chain: "Chain_Shirt_Unfaded_Icon.png",
   a_brig: "Breastplate_Unfaded_Icon.png",                       // STAND-IN: studded gambeson / brigandine
@@ -65,6 +65,8 @@ const MAP = {
   // ---- the rest of the paper doll
   shield: "Wooden_Shield_Unfaded_Icon.png",
   h_cap: "Frumpy_Hat_Unfaded_Icon.png",
+  torvald_hide_cap: "../Generic/Torvalds_Hide_Cap_Generated_Source.png",
+  fur_cap: "../Generic/Fur_Cap_Generated_Source.png",
   h_hat: "Brimmed_Hat_Unfaded_Icon.png",
   h_helm: "Blackplume_Helm_Unfaded_Icon.png",                   // STAND-IN: a plain iron helm
   cloak: "Cloak_B_Unfaded_Icon.png",
@@ -90,6 +92,10 @@ const MAP = {
   neck: "Amulet_Necklace_A_Bronze_A_Unfaded_Icon.png",          // STAND-IN for scarves and mufflers too
   ring: "Ring_A_Simple_Gold_Unfaded_Icon.png",
   signet: "Equipment/Ring/Guild_Ring_Unfaded_Icon.png",
+  toll_seal_ring: "../Generic/Toll_Seal_Ring_Generated_Source.png",
+  hall_insignia: "../Generic/Hall_Insignia_Generated_Source.png",
+  althea_votive_ring: "../Generic/Altheas_Votive_Ring_Generated_Source.png",
+  night_eye_ring: "../Generic/Night_Eye_Ring_Generated_Source.png",
 
   // ---- consumables and tools
   potion: "POT_Potion_of_Healing_Unfaded_Icon.png",
@@ -98,6 +104,11 @@ const MAP = {
   empty_potion_vial: "05-empty-vial.png",                              // the user's own art: the herbalist's corked vial
   portable_burner: "07-portable-burner.png",
   althea_phial: "../Generic/Saint_Altheas_Water_Generated_Source.png",  // Saint Althea's wax-stoppered healing water
+  clear_head_draught: "../Generic/Clear_Head_Draught_Generated_Source.png",
+  warming_liniment: "../Generic/Warming_Liniment_Generated_Source.png",
+  odessa_salve: "../Generic/Odessas_Salve_Generated_Source.png",
+  linen_bandage: "../Generic/Linen_Bandage_Generated_Source.png",
+  waxed_oilcloth: "../Generic/Waxed_Oilcloth_Generated_Source.png",
   // ---- the nine brews of the crafting view's result box (the user's chosen source art, ALCHEMY_CRAFTING_REFERENCE.md)
   potion_mending: "Consumable/Potion/POT_Remedial_Potion_Unfaded_Icon.png",
   potion_antivenom: "Consumable/Potion/POT_Antidote_Unfaded_Icon.png",
@@ -115,6 +126,7 @@ const MAP = {
   fire_resistance_potion: "../Generic/Fire_Resistance_Potion_Generated_Source.png",
   cold_resistance_potion: "../Generic/Cold_Resistance_Potion_Generated_Source.png",
   heroism_potion: "../Generic/Heroism_Potion_Generated_Source.png",
+  wolfsbane_antidote: "../Generic/Wolfsbane_Antidote_Generated_Source.png",
   potion_darksight: "Consumable/Elixir/ELX_Elixir_of_Darkvision_Unfaded_Icon.png",
   potion_fortifying: "Consumable/Potion/POT_Potion_of_Vitality_Unfaded_Icon.png",
   potion_restful: "../Generic/Restful_Balsam_Generated_Source.png",

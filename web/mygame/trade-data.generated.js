@@ -901,6 +901,31 @@ window.TRADE_DATA = {
     "countVar": ""
    }
   },
+  "wolfsbane_antidote": {
+   "name": "wolfsbane antidote",
+   "title": "Wolfsbane Antidote",
+   "kind": "consumable",
+   "group": "",
+   "tier": "",
+   "retail": 35,
+   "weight": 0.3,
+   "minutes": 5,
+   "hint": "Ends Poisoned",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 0,
+    "countVar": ""
+   }
+  },
   "linen_bandage": {
    "name": "linen bandage",
    "title": "Linen Bandage",
@@ -3764,6 +3789,7 @@ window.TRADE_DATA = {
     "fire_resistance_potion",
     "cold_resistance_potion",
     "heroism_potion",
+    "wolfsbane_antidote",
     "linen_bandage",
     "alchemists_fire",
     "mortar_pestle",
@@ -4087,6 +4113,7 @@ window.TRADE_DATA = {
     "fire_resistance_potion",
     "cold_resistance_potion",
     "heroism_potion",
+    "wolfsbane_antidote",
     "linen_bandage",
     "alchemists_fire",
     "mortar_pestle",

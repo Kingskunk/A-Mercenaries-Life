@@ -173,6 +173,46 @@ window.MARKET_DEFS = {
     "mult": 1,
     "buys": false
    },
+   "healing_potion": {
+    "base": 40,
+    "target": 14,
+    "stock0": 14,
+    "buyPct": 0.5,
+    "mult": 1,
+    "buys": false
+   },
+   "fire_resistance_potion": {
+    "base": 60,
+    "target": 10,
+    "stock0": 10,
+    "buyPct": 0.5,
+    "mult": 1,
+    "buys": false
+   },
+   "cold_resistance_potion": {
+    "base": 60,
+    "target": 10,
+    "stock0": 10,
+    "buyPct": 0.5,
+    "mult": 1,
+    "buys": false
+   },
+   "heroism_potion": {
+    "base": 80,
+    "target": 10,
+    "stock0": 10,
+    "buyPct": 0.5,
+    "mult": 1,
+    "buys": false
+   },
+   "wolfsbane_antidote": {
+    "base": 35,
+    "target": 14,
+    "stock0": 14,
+    "buyPct": 0.5,
+    "mult": 1,
+    "buys": false
+   },
    "linen_bandage": {
     "base": 5,
     "target": 24,
@@ -318,6 +358,30 @@ window.MARKET_DEFS = {
     "target": 36,
     "stock0": 36,
     "buyPct": 0.5,
+    "mult": 1,
+    "sells": false
+   },
+   "sage": {
+    "base": 6,
+    "target": 36,
+    "stock0": 36,
+    "buyPct": 0.167,
+    "mult": 1,
+    "sells": false
+   },
+   "hornwort": {
+    "base": 10,
+    "target": 36,
+    "stock0": 36,
+    "buyPct": 0.2,
+    "mult": 1,
+    "sells": false
+   },
+   "wolfsbane": {
+    "base": 8,
+    "target": 36,
+    "stock0": 36,
+    "buyPct": 0.25,
     "mult": 1,
     "sells": false
    }
@@ -798,6 +862,13 @@ window.MARKET_DEFS = {
    },
    "scroll_charm_person": {
     "base": 50,
+    "target": 8,
+    "stock0": 8,
+    "buyPct": 0.5,
+    "mult": 1
+   },
+   "scroll_remove_curse": {
+    "base": 120,
     "target": 8,
     "stock0": 8,
     "buyPct": 0.5,
@@ -2042,10 +2113,10 @@ window.MARKET_DEFS = {
    },
    "salt": {
     "base": 6,
-    "target": 48,
-    "stock0": 48,
+    "target": 50,
+    "stock0": 50,
     "buyPct": 0.8,
-    "mult": 1.11,
+    "mult": 1.09,
     "hi": 1.59,
     "world": {
      "tile": "fv"

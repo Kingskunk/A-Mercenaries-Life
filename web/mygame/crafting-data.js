@@ -17,6 +17,8 @@ window.CRAFT_RECIPES = {
       summary: "Restores 2d4+2 HP." },
     { id: "heroism_potion", name: "Heroism Potion", ingredients: ["hornwort", "wolfsbane"], dc: 19, property: "valor", icon: "heroism_potion",
       summary: "Gain 10 temporary HP (the larger of this and any you hold)." },
+    { id: "wolfsbane_antidote", name: "Wolfsbane Antidote", ingredients: ["wolfsbane", "sage"], dc: 17, property: "purge", icon: "wolfsbane_antidote",
+      summary: "Ends the Poisoned condition." },
     { id: "mending_draught", name: "Mending Draught", ingredients: ["sluice_moss", "glowmold"], dc: 15, property: "mend", icon: "potion_mending",
       summary: "The next proper sleep restores 2 extra HP." },
     { id: "brine_antivenom", name: "Brine Antivenom", ingredients: ["sluice_moss", "brinecap"], dc: 15, property: "resist_poison", icon: "potion_antivenom",
