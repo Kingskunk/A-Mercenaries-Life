@@ -1,0 +1,200 @@
+*comment ====================================================================================
+*comment THE WOLVES OF LANGSTON -- EPILOGUE: LANGSTON AFTER THE WOLF
+*comment Source sections 360 to 366 (the epilogue the user wrote for this game, in Resources & Quest/Wolves_of_Langston). A ONE-TIME, POSTPONABLE conversation, not a farewell and not a new investigation: the contract is already finished and paid (Chapter 6), nothing here grants loot or starts a quest, and returning goes to the ordinary Langston hub.
+*comment TRIGGER (the user's decisions, 2026-11-01): the first Langston hub visit on a LATER day than the one Chapter 6 ended, when the Hall is open to the public (so not at night, not on the rest day, not in a storm that empties the streets), a Hall clerk (the young one from Chapter 6) offers the account (wol_ep_clerk). Taking it goes to the office; putting it off sets wol_ep_offered and a Langston Hall menu button, "Call on Mayor Anathram and Roi about what followed", stays until
+*comment the conversation is seen (wol_ep_seen). No other hub button is added. The four topics are one-time; the meeting ends when the player says so or has heard everything. The light and weather follow the live hour (the Hall is only open from Morning to Afternoon). Cut from the epilogue file as hub clutter (the user): visits to Solaine at the jail; Roi's "at the Hen" line is dropped. Tomlin's recovery, the cemetery and the
+*comment temple's watch shifts are Epilogue step C; the new caretaker is a later settlement event.
+*comment ====================================================================================
+
+*comment The Langston hub (langston.txt lg_menu) calls this label. wol_ep_due is derived on every call.
+*label wol_ep_check
+*set wol_ep_due false
+*if ((wol_chapter_6_complete) and ((not(wol_ep_seen)) and (not(wol_ep_offered))))
+  *if (campaign_day > wol_ch6_done_day)
+    *gosub_scene Langston/langston_hall lg_hall_hours
+    *if (lg_hall_open)
+      *set wol_ep_due true
+*return
+
+*comment The clerk (source 360).
+*label wol_ep_clerk
+*set wol_ep_offered true
+*set current_district "langston"
+*set scenery_subplace "langston"
+When you next pass through Langston's market square, the town is busy with ordinary work again. The stains from the accusation are gone from the cobbles.
+*if (weather_wet)
+  Awnings are cranked out over the stalls, and neighbors argue over prices beneath them while the rain runs off the edges.
+*else
+  Stalls stand open, neighbors argue over prices, and children are shooed away from the well.
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Mud from the last long rain still rims the cobbles.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  Damp still darkens the cobbles between the stalls.
+
+People still recognize you. Some offer thanks, some stare, and others go out of their way to behave as though nothing unusual happened. Langston has not forgotten the wolf in its square, but it has not stopped living because of her either.
+
+The young clerk from the Hall catches your attention near the entrance.
+
+"Mayor Anathram asked me to tell you that she and Roi have an account of everything that followed," she says. "She said there's no hurry. They'll see you whenever you have the time."
+*choice
+  # Call on Mayor Anathram and Roi now.
+    *goto wol_ep_office
+  # Carry on with your business and return another time.
+    *goto wol_ep_later
+  # Thank her and say you will come by when you can.
+    *goto wol_ep_later
+
+*label wol_ep_later
+You tell the clerk you will come by when you can, and she nods and hurries back up the steps. The offer stays open at the Hall.
+*page_break Back to the square…
+*set ow_pos "lg"
+*set current_district "langston"
+*goto_scene Langston/langston lg_return
+
+*comment The office (source 361). The Hall button (langston_hall.txt) also lands here.
+*label wol_ep_office
+*set scenery_subplace "langston_meeting_hall_office"
+Mayor Anathram receives you in her office.
+*if (weather_wet)
+  Rain ticks against the shutters.
+*elseif (weather = "Fog")
+  Fog presses pale against the window glass.
+*elseif (time_period = "Morning")
+  Morning light lies across her desk.
+*elseif (time_period = "Midday")
+  The midday light stands straight in the window.
+*else
+  Afternoon light slants across the floorboards.
+
+Roi sits in the armchair beside her desk, and Buttercup has settled wherever she is the greatest inconvenience to everyone else.
+
+You take the chair across from the desk and tell them you are listening.
+
+"The murder of Maybelline is solved," the mayor says. "Solaine is in custody, her curse is broken, and the town has begun putting its affairs back in order. You deserve to know what followed."
+
+Roi nods. "Healing, testimony, repairs, and a great deal of paperwork. Quiet work, mostly, though no less necessary."
+
+The mayor opens a folder of reports from the militia, the temple and the people caring for the wounded.
+
+"There are several matters you deserve to hear about," she says.
+
+*goto wol_ep_menu
+
+*comment The aftermath menu: four one-time topics and the way out. With nothing left to ask, the meeting ends by itself; with one topic left, a third button says the same as the way out so the menu is never exactly two.
+*label wol_ep_menu
+*set wol_ep_left 0
+*comment replay-ok: wol_ep_left is reset to 0 just above and rebuilt from the four one-time flags on every pass.
+*if (not(wol_ep_asked_tomlin))
+  *set wol_ep_left (wol_ep_left + 1)
+*if (not(wol_ep_asked_solaine))
+  *set wol_ep_left (wol_ep_left + 1)
+*if (not(wol_ep_asked_temple))
+  *set wol_ep_left (wol_ep_left + 1)
+*if (not(wol_ep_asked_maybelline))
+  *set wol_ep_left (wol_ep_left + 1)
+*if (wol_ep_left = 0)
+  *goto wol_ep_end
+*choice
+  *if (not(wol_ep_asked_tomlin))
+    # Ask how Tomlin and the wounded militia members are recovering.
+      *goto wol_ep_tomlin
+  *if (not(wol_ep_asked_solaine))
+    # Ask what will happen to Solaine.
+      *goto wol_ep_solaine
+  *if (not(wol_ep_asked_temple))
+    # Ask whether Langston is safe without its True Sun cleric.
+      *goto wol_ep_temple
+  *if (not(wol_ep_asked_maybelline))
+    # Ask about Maybelline's family and the town's dead.
+      *goto wol_ep_maybelline
+  # Finish the meeting.
+    *goto wol_ep_end
+  *if (wol_ep_left = 1)
+    # Thank them and say that is all you wanted to know.
+      *goto wol_ep_end
+
+*label wol_ep_tomlin
+*set wol_ep_asked_tomlin true
+You ask how Tomlin and the wounded militia members are recovering.
+
+"Tomlin lives," Roi says. "He's awake, eating, complaining about the food, and trying to convince everyone that he can walk farther than the length of his room."
+
+The mayor's mouth tightens in what might be relief. "The militia members injured in the square are expected to recover as well. Their families have them under close watch, which may be a harsher sentence than bed rest."
+
+"Tomlin's at his cottage," Roi says, "under orders to stay off his feet. A few days yet before he's trusted with a pot."
+*if (wol_ch6_tomlin_tended)
+
+  "He knows who kept him alive," Roi adds. "Once he's steady enough for visitors, I expect he'll want to thank you himself."
+*else
+
+  "He knows you ran in after him," Roi adds. "Once he's steady enough for visitors, I expect he'll want to thank you himself."
+
+*goto wol_ep_menu
+
+*label wol_ep_solaine
+*set wol_ep_asked_solaine true
+You ask what will happen to Solaine.
+
+"Solaine remains human," the mayor says. "The Silverstar broke the curse. It did not erase what she chose to do while she carried it."
+
+"The cell's been repaired and reinforced," Roi says. "Two militia members stand watch, with shifts arranged so no exhausted guard is ever left alone. She's been given plain clothes, food, water and treatment for the wounds she took below the temple."
+
+He rubs his beard. "Sometimes she answers questions. Sometimes she prays. Sometimes she just sits there. She hasn't changed again, and she hasn't tried to run."
+
+Mayor Anathram has sent a full report to the Church of the True Sun and to its Order of Radiant Light, but she has not handed Solaine over because the Church claims her as one of its own. "Langston will hear what the Church proposes," she says, "and Solaine will answer for Maybelline's murder."
+
+*goto wol_ep_menu
+
+*label wol_ep_temple
+*set wol_ep_asked_temple true
+You ask whether Langston is safe without its True Sun cleric.
+
+"Veyra's ward didn't vanish the moment Solaine was removed," Roi says. "It's weakened, not gone. The Church of the True Sun assures us that a new caretaker from the Order of Radiant Light can arrive before that becomes dangerous."
+
+"Until then, the temple and its mortuary are watched," the mayor says. "Roi has organized the militia and several volunteers into shifts, and every body awaiting burial has someone beside it."
+
+Roi nods. "The Order has acknowledged the mayor's message and confirmed that a new caretaker is already on the road."
+
+"We are taking precautions," Mayor Anathram says. "If the Church keeps its word, the ward will have a keeper well before it fails. If it does not, Langston will decide what must be done."
+
+*goto wol_ep_menu
+
+*label wol_ep_maybelline
+*set wol_ep_asked_maybelline true
+You ask about Maybelline's family and the town's dead.
+
+"I've told Maybelline's parents that her killer was found and taken," the mayor says. "Roi has offered to speak with them about her burial and any rites they still want observed. They haven't asked you to carry another message or to reopen the investigation."
+
+"They've lost a daughter," Roi says. "Answers don't make that loss smaller. But they know the town didn't forget her, and they know the person responsible will answer for it."
+
+He looks toward the window. "Fresh flowers keep showing up at her grave. Some came from her parents, some from people in town, and some from people who leave only the flowers. The colors brighten the raw earth, and more appear whenever the old stems begin to wilt."
+
+"You are welcome to visit," the mayor says. "That is remembrance, not an obligation."
+
+*goto wol_ep_menu
+
+*comment The close (source 366), then the hub. wol_ep_seen only means this conversation was heard. One time advance, on the page that ends it.
+*label wol_ep_end
+*set wol_ep_seen true
+When there is nothing more you wish to ask, Mayor Anathram closes the folder.
+
+"Then the account is settled," she says. "Langston remembers what you did."
+
+Roi pushes himself out of the armchair. "You'll find me at the grove, usually."
+
+The mayor has opened the next folder on her desk before you reach the door. Buttercup follows you as far as the threshold, then returns to her mat at a word from the mayor.
+
+You step back into the market square.
+*if (weather_wet)
+  Rain drums on the stall awnings, and the ordinary noise of Langston closes around you.
+*else
+  A hawker is arguing over the price of onions, the well rope creaks, and the ordinary noise of Langston closes around you.
+
+[b]The Wolves of Langston is complete.[/b]
+*set minutes_to_pass 15
+*set time_advance_call_id "wol_ep_end_1"
+*gosub_scene Langston/langston lg_walk_time
+*page_break Back to the square…
+*set ow_pos "lg"
+*set current_district "langston"
+*goto_scene Langston/langston lg_return

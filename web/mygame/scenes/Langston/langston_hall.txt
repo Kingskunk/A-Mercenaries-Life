@@ -63,6 +63,12 @@
   *if ((lg_hall_open) and ((wol_hall_called) and (not(wol_ch4_map_given))))
     # Ask the aide for Mayor Anathram, as her note asks.
       *goto_scene Langston/wolves_of_langston_chapter_4 wol_ch4_start
+  *if ((lg_hall_open) and ((wol_ep_offered) and (not(wol_ep_seen))))
+    # Call on Mayor Anathram and Roi about what followed.
+      *goto_scene Langston/wolves_of_langston_epilogue wol_ep_office
+  *if ((not(lg_hall_open)) and ((wol_ep_offered) and (not(wol_ep_seen))))
+    # The mayor's office: ${lg_hall_closed_reason}.
+      *goto lg_hall_mayor_shut
   *if ((lg_hall_open) and ((wol_ch6_ready) and (not(wol_chapter_6_complete))))
     # Tell Mayor Anathram you are ready to make the accusation.
       *goto_scene Langston/wolves_of_langston_chapter_6 wol_ch6_start
@@ -104,6 +110,7 @@
 *line_break
 The Contract Board hangs beside the oak doors under a painted Gault shield, a frame of dark boards ruled into columns. Every notice names its patron and carries two marks, the patron's own and the Hall's counterseal pressed beside it. The clerks check each patron before they seal, and only sealed notices stay up.
 *gosub lg_hall_forecast_slip
+*gosub lg_hall_solaine_notice
 *comment The wagon line out of Langston, as a sheet on the board on the day it makes up (Overworld CARAVAN_LINES, through hall_escort.txt es_set_line).
 *set es_start "lg"
 *gosub_scene port_valen/radiant/hall_escort es_set_line
@@ -117,6 +124,15 @@ The Contract Board hangs beside the oak doors under a painted Gault shield, a fr
 *set cr_origin "lg"
 *set cr_inline true
 *goto_scene port_valen/radiant/hall_courier cr_read
+
+*comment SOLAINE'S JUDGMENT (the user's decisions, 2026-11-01): sixteen days after Chapter 6 ended the Hall pins the verdict apart from the contracts, and takes it down ten days later so the board does not clog; Ansel Merrow tells anyone who missed it (true_sun_temple.txt). Guilty of Maybelline's killing; with the curse broken the sentence is penance in a closed house of the Order of Radiant Light for the rest of her life, stripped of office, with Maybelline's parents' consent.
+*label lg_hall_solaine_notice
+*if ((wol_chapter_6_complete) and ((campaign_day >= (wol_ch6_done_day + 16)) and (campaign_day < (wol_ch6_done_day + 26))))
+  A sheet pinned apart from the contracts carries the mayor's mark and the Hall's counterseal.
+
+  [i]NOTICE OF JUDGMENT. In the matter of the death of Maybelline of Langston, the Hall has heard Solaine, formerly of the Order of Radiant Light, and finds her guilty of the killing. Her curse being broken, the sentence is penance rather than death. With the consent of Maybelline's parents and of the Order, she is given into the Order's custody to serve out her life in a closed house of the Order, stripped of every office. The Order's escort has taken her from Langston. Anathram, Mayor, by the Countess's seal.[/i]
+
+*return
 
 *comment The forecast slip: the same weather_tomorrow the calendar rolls a day ahead for the zone the player is in (the Vale's own, from Overworld WEATHER_ZONES); forecast_missed says when it did not hold.
 *label lg_hall_forecast_slip
@@ -359,6 +375,19 @@ You give it. She writes it into the air above the brass with a silver stylus, an
 
 *if (((wol_quest_stage = "asked") or (wol_quest_stage = "offered")) or (wol_quest_stage = "active"))
   A fresh duty slate beside the watch room lists doubled patrols and the names of people questioned about the killing. Reports from the investigation are stacked apart from the ordinary town papers.
+*comment THE MAYOR IN THE BACKGROUND (the user, 2026-11-01): once the Epilogue conversation has been heard there is no mayor button, so she is seen at the long table during the public day, one of four pictures by the hour (the pool rotates with the clock, never one fixed gesture).
+*if (wol_ep_seen)
+  *gosub lg_hall_hours
+  *if (lg_hall_open)
+    *temp lg_mv (((campaign_day * 24) + clock_hour) modulo 4)
+    *if (lg_mv = 0)
+      Mayor Anathram sits at the long table beneath the Gault arms, hearing two neighbors argue over a boundary stone with her scarred hands folded, and Buttercup lies asleep beneath the table.
+    *elseif (lg_mv = 1)
+      At the long table Mayor Anathram signs a stack of papers one after another, and the clerk at her elbow blots each sheet as it leaves the pen.
+    *elseif (lg_mv = 2)
+      Mayor Anathram stands at the long table between a miller and a carter and lets them argue until they have run out of breath.
+    *else
+      The mayor reads a petition twice at the long table, her tea going cold at her elbow while Buttercup watches the door.
 *return
 
 *comment ── LAYER 4: TELL ── A wisdom 13+ or outlaw reading of how the appointed government uses the room.

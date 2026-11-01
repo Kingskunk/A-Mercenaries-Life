@@ -58,11 +58,359 @@ The sun temple is easy to find, since it towers over every other building in Lan
 The courtyard in front of the temple holds an altar left open to the sky, surrounded by theater-style seating under a tile roof that offers shade or shelter from the rain. The top of the altar carries the same sunburst symbol as the spire. Beneath its rim, a shallow carving shows a closed stone doorway with a golden sun rising behind it: the seal of Veyra the Dawn-Warden.
 *return
 
-*comment ── THE LOOK-IN ── After Chapter 5 the temple's outside is a place to stand in; what happens inside belongs to the chapters.
+*comment ── THE LOOK-IN ── After Chapter 5 the temple's outside is a place to stand in; what happens inside belongs to the chapters. After Chapter 6 the temple is watched in shifts (Epilogue topic 364) and the cemetery behind it is a place to visit (the epilogue: Maybelline's grave stays available, "an act of remembrance, not a final obligation"); the way to it is a button on this page, not on the hub.
 *label tst_look_in
 *set scenery_subplace "langston_true_sun_temple_exterior"
 *gosub tst_place
 *gosub tst_sky
 *gosub tst_courtyard
-*page_break Walk back to the square…
+*gosub tst_cleric_check
+*if ((wol_chapter_6_complete) and (not(tst_cleric_arrived)))
+  Two militia members stand at the temple doors with a pair of townsfolk in plain coats beside them, and a lantern and a folding stool wait by the mortuary stair for whoever sits the next watch.
+*elseif (tst_cleric_arrived)
+  The temple's doors stand open, and the front steps are scrubbed pale.
+*if (not(wol_chapter_6_complete))
+  *page_break Walk back to the square…
+  *goto_scene Langston/langston lg_return
+*choice
+  # Follow the flagstone path around to the cemetery.
+    *goto tst_cemetery
+  *if (tst_cleric_arrived)
+    # Go inside the temple.
+      *goto tst_hall
+  # Walk back to the square.
+    *goto_scene Langston/langston lg_return
+  # Head back toward the town hall.
+    *goto_scene Langston/langston lg_return
+
+*comment ── THE CEMETERY (Epilogue step C) ── Reached from the temple page once Chapter 6 is done. Open at any hour like the temple; the weather and the light follow the live conditions. Maybelline's grave is the one place in it: the headstone, the flowers, and standing a while. Nothing here is owed and nothing is granted.
+*label tst_cemetery
+*set current_district "langston"
+*set scenery_subplace "langston_true_sun_cemetery"
+*set minutes_to_pass 5
+*set time_advance_call_id "tst_cemetery_walk_1"
+*gosub_scene Langston/langston lg_walk_time
+
+*goto tst_cemetery_hub
+
+*label tst_cemetery_hub
+*set scenery_subplace "langston_true_sun_cemetery"
+[b]◈ THE TRUE SUN CEMETERY[/b]
+*line_break
+*gosub tst_cem_place
+*gosub tst_cem_sky
+*gosub tst_cem_state
+*set wait_ok_page page_id
+*choice
+  # Read the headstone.
+    *goto tst_cem_stone
+  # Look over the flowers.
+    *goto tst_cem_flowers
+  # Stand at the grave a while. [~10 min]
+    *goto tst_cem_stand
+  # Leave the cemetery.
+    *goto tst_cem_leave
+
+*label tst_cem_place
+The cemetery spreads out behind the temple in rows of headstones and low monuments, with flagstone paths winding between them and the limestone mausoleum standing at its center. The grass between the plots is cut short.
+*return
+
+*label tst_cem_sky
+*if (weather_severity >= 3)
+  *if (weather_cold)
+    Snow drives sideways between the headstones and piles against their windward edges.
+  *else
+    Rain beats the grass flat, and water runs along the flagstone paths in thin brown streams.
+*elseif (weather = "Fog")
+  Fog fills the rows, and the nearer headstones stand out of it one at a time.
+*elseif (weather = "Rain")
+  Rain beads on the stone and darkens the flagstones to slate.
+*elseif (weather = "Sleet")
+  Sleet ticks against the headstones and rattles in the dry stems of old bouquets.
+*elseif (weather = "Snow")
+  Snow lies on the tops of the headstones and in the lettering of the oldest ones.
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *if (weather = "Clear")
+    The headstones are pale shapes under the stars, and the mausoleum's limestone gives back a faint glow.
+  *else
+    The headstones are grey shapes in the dark, and the paths show only as a paler strip between the rows.
+*elseif (time_period = "Dusk")
+  The low light lengthens every shadow across the grass and turns the mausoleum's steps gold.
+*elseif (weather = "Clear")
+  Sun lies warm across the plots, and the headstones cast small, sharp shadows.
+*else
+  Grey light lies even across the plots and flattens the shadows of the stones.
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Standing water darkens the low corners of the paths.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The flagstones are dark from recent rain.
+*return
+
+*comment What the cemetery shows of what happened: the grave Chapter 5 found dug open is filled again, and Maybelline's grave has fresh flowers at its foot.
+*label tst_cem_state
+*if (wol_ch5_grave_seen)
+  The grave near the path that was dug open in such haste has been refilled, its soil raked smooth and a plain wooden marker pressed in at its head.
+A newer mound lies a few rows from the mausoleum steps, its headstone still pale and sharp at the edges. Flowers crowd the foot of it.
+*return
+
+*label tst_cem_stone
+*set minutes_to_pass 2
+*set time_advance_call_id "tst_cem_stone_1"
+*gosub_scene Langston/langston lg_walk_time
+You crouch in front of the new headstone. The letters are deep and clean, and the stone is still too new for moss.
+
+[i]Maybelline[/i]
+
+[i]Her life was a joy to all who knew her.[/i]
+
+You trace the last word of the line with your eyes and straighten up.
+
+*goto tst_cemetery_hub
+
+*label tst_cem_flowers
+*temp tcf_v (((campaign_day * 24) + clock_hour) modulo 4)
+You look over what has been left at the foot of the grave.
+*if (tcf_v = 0)
+  A jar of wildflowers stands in the soil, its stems tied with kitchen twine, and beside it lies a loaf-shaped stone someone has painted with a small red heart.
+*elseif (tcf_v = 1)
+  Three bunches of cut roses lie side by side, the oldest browned at the edges and the newest still wet at the stem.
+*elseif (tcf_v = 2)
+  A child's drawing of a yellow flower is held down against the earth by four smooth pebbles, and a ring of marigolds circles the headstone's base.
+*else
+  A handful of herbs lies in the grass, rosemary and thyme, still bound with a strip of green cloth.
+*if ((wol_ch5_daisies_seen) and (campaign_day >= (wol_ch6_done_day + 4)))
+
+  Among them is a bunch of pink daisies tagged "Rest well, Maybelline" in a careful hand.
+
+*goto tst_cemetery_hub
+
+*label tst_cem_stand
+*set minutes_to_pass 10
+*set time_advance_call_id "tst_cem_stand_1"
+*gosub_scene Langston/langston lg_walk_time
+You stand at the foot of the grave with your hands loose at your sides.
+*if (weather_severity >= 3)
+  The storm leans on your shoulders and fills your ears, and you stay until the worst of a gust has passed.
+*elseif (weather_wet)
+  Rain taps on your shoulders and runs down the headstone in a steady thread, and you stand in it a while.
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  The dark is quiet around you, and far off a single lamp burns in the town.
+*elseif (time_period = "Dusk")
+  The light goes slowly orange and then slowly grey, and you stand through the change.
+*elseif (weather = "Clear")
+  The sun warms the back of your neck, and somewhere past the wall a cart rattles by.
+*else
+  The grey air is still, and the only sound is the grass moving against the stone.
+
+After a while you step back, and the place lets you go.
+
+*goto tst_cemetery_hub
+
+*label tst_cem_leave
 *goto_scene Langston/langston lg_return
+
+*comment ── THE NEW CARETAKER (the user's decisions, 2026-11-01) ── About twelve days after Chapter 6 ended the Order of Radiant Light sends Ansel Merrow, with two novices: Wynne, who has taken on the neglected burial register, and Tamsin, who sits the mortuary vigil. The Order is stretched thin (a cleric and two novices for the temple and three villages on the east road; Solaine had been alone). The doors are open at any hour, the temple page grows a "Go inside" button, and the rotunda becomes a small hub: a daily healing rite for 5 copper (the Alderford chapel's Cure Wounds, 1d8 + 3 HP, once a day), two one-time topics, and the benches. The cleric receives by day only; after dark a novice sits the vigil. No hub button is added; the way in is the temple page.
+*label tst_cleric_check
+*set tst_cleric_arrived false
+*if ((wol_chapter_6_complete) and (campaign_day >= (wol_ch6_done_day + 12)))
+  *set tst_cleric_arrived true
+*return
+
+*label tst_receiving_check
+*set tst_receiving false
+*if ((((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon")) or (time_period = "Dusk"))
+  *set tst_receiving true
+*return
+
+*label tst_hall
+*set current_district "langston"
+*set scenery_subplace "langston_true_sun_temple_rotunda"
+*comment The introduction page replays as itself (wol_cleric_intro_page holds the page that gave it), so opening Stats and returning does not skip to the hall.
+*if ((not(wol_cleric_met)) or (wol_cleric_intro_page = page_id))
+  *goto tst_cleric_intro
+*goto tst_hall_front
+
+*comment The first visit after the cleric arrives (the player gives their name when he gives his). By day he is in the rotunda; after dark Tamsin is at the stair and he has retired, so the introduction waits for the morning.
+*label tst_cleric_intro
+*gosub tst_receiving_check
+*if ((not(tst_receiving)) and (not(wol_cleric_intro_page = page_id)))
+  *goto tst_hall_night_first
+*set wol_cleric_intro_page page_id
+The temple's doors stand open. Inside, the sunburst mosaic lies whole again under a fresh scrub, and a lean man in a white robe mended at both elbows stands near the tapestries with a wax tablet in one hand. His hair is iron grey and cut close, and he looks as though he walked here straight off the road.
+
+He turns as you come in. "A visitor," he says, and smiles tiredly. "The doors are open to anyone, though I'm still finding my feet. Ansel Merrow, of the Order of Radiant Light."
+
+You give him your name.
+
+"${name}. Yes." His eyebrows lift. "The mayor mentioned you in her report to the Order. You put a good deal of work into this place before I came."
+
+He gestures toward a freckled young man at a small desk by the wall, a burial register open under his hand, and then toward the corridor, where a young woman is coming up from the mortuary stair with a lamp. "Wynne has taken on the register, and Tamsin sits with the dead."
+
+Wynne nods at you, pen still moving. Tamsin gives a quick, shy bob of the head.
+
+"I'm to cover this temple and three villages on the east road," Ansel goes on, "so you'll find me out riding two days in seven. The doors stay open regardless. If you're hurt, I can offer a rite once a day for what you can spare. The lamps and herbs aren't free."
+
+You tell him you will remember it.
+
+"Good." He looks around the rotunda, at the tapestries and the whole mosaic. "It's a fine temple. It was a great deal for one person."
+*set wol_cleric_met true
+*set minutes_to_pass 5
+*set time_advance_call_id "tst_cleric_intro_1"
+*gosub_scene Langston/langston lg_walk_time
+*page_break Look around the rotunda…
+*goto tst_hall_front
+
+*label tst_hall_night_first
+The temple's doors stand open, and the rotunda lies in the cool light of the ceiling orbs. A young woman sits on the bottom step of the mortuary stair with a lamp beside her and a blanket over her knees. She looks up and gets to her feet.
+
+"Forgive me," she says quietly. "Cleric Merrow has retired for the night, and he'll receive visitors in the morning. You're welcome to sit a while if you like."
+
+You thank her, and she settles back onto the step. The introduction will have to wait for daylight.
+*page_break Step back outside…
+*goto tst_look_in
+
+*label tst_hall_front
+*gosub tst_receiving_check
+*set scenery_subplace "langston_true_sun_temple_rotunda"
+[b]◈ THE TRUE SUN TEMPLE[/b]
+*line_break
+Inside the doors the rotunda rises round and pale, with benches along its walls, aging tapestries high on the stone, and the sunburst mosaic whole again at the center of the floor.
+*if (weather_severity >= 3)
+  The storm hums against the windows, and the glowing orbs have been brought up bright.
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  The glowing orbs set into the ceiling give the room a steady, cool light, and the windows are black.
+*elseif (weather_wet)
+  Rain ticks against the tall windows, and the orbs glow a little brighter to meet the grey.
+*elseif (time_period = "Dusk")
+  Low gold light slants through the windows and climbs the tapestries.
+*elseif (weather = "Clear")
+  Sun comes through the tall windows in long panels across the floor.
+*else
+  Grey daylight fills the windows, and the orbs glow softly to help it.
+*if (tst_receiving)
+  Wynne sits at a small desk by the wall with the burial register open under his hand, and Tamsin's footsteps come and go along the corridor toward the mortuary stair. Ansel Merrow stays within call, a wax tablet in his hand.
+*else
+  A single lamp burns by the mortuary stair, where Tamsin sits the night's vigil. The register desk stands cleared, and Ansel Merrow has retired until morning.
+
+*comment The Order's answer about Solaine, told once (no topic): sixteen days after Chapter 6, for anyone who has not read the Hall's notice. wol_cleric_told_page holds the page that told it so a replay prints it again.
+*if ((tst_receiving) and (campaign_day >= (wol_ch6_done_day + 16)))
+  *if (not(wol_cleric_solaine_told))
+    *set wol_cleric_solaine_told true
+    *set wol_cleric_told_page page_id
+  *if (wol_cleric_told_page = page_id)
+
+    As you come in, Ansel tells you quietly that the Order's escort has taken Solaine to its closed house, and that he said the dawn rite over her leaving himself.
+
+*set wait_ok_page page_id
+*choice
+  *if ((tst_receiving) and ((hp_current < hp_max) and (not(tst_heal_day = campaign_day))))
+    # [Cure Wounds] Ask Ansel Merrow for the temple's healing rite. [5 Copper Bits]@{show_stat_hints  [Heals 1d8 + 3 HP]|}
+      *goto tst_heal_paid
+  *if ((tst_receiving) and ((hp_current < hp_max) and (tst_heal_day = campaign_day)))
+    # Ask Ansel whether he can spare another healing rite today.
+      You keep your voice low. "Could you spare another rite today?"
+
+      Ansel's regret is plain. "I've spent what I can safely give. Come back tomorrow if you can, or find a surgeon if waiting would be worse."
+
+      *goto tst_hall_front
+  *if ((tst_receiving) and (not(wol_cleric_asked_temple)))
+    # Ask how the temple is faring.
+      *goto tst_talk_temple
+  *if ((tst_receiving) and (not(wol_cleric_asked_ward)))
+    # Ask what the ward needs.
+      *goto tst_talk_ward
+  # Sit on one of the benches a while. [~10 min]
+    *goto tst_bench
+  # Step back outside.
+    *goto tst_look_in
+  # Walk back out onto the steps.
+    *goto tst_look_in
+
+*label tst_talk_temple
+*set wol_cleric_asked_temple true
+You ask how the temple is faring.
+
+"Better than I feared, worse than I'd like," Ansel says, and rubs the back of his neck. "The stone is sound. Veyra's ward is weak but holding. I've renewed the first circle at the mortuary door, and the rest will take a season of steady work. The register was the real mess. Eleven burials were never written down."
+
+"Fourteen," Wynne says from his desk, eyes on the page.
+
+"Fourteen," Ansel agrees. "Solaine was alone here, and one person can only be in so many places."
+
+He glances at the ceiling orbs. "The Order sent what it could spare: two novices and me, and a letter asking Langston for its patience. That's the Order these days. Thin, and mostly willing."
+
+*goto tst_hall_front
+
+*label tst_talk_ward
+*set wol_cleric_asked_ward true
+You ask what the ward needs.
+
+"A keeper at the doors at dawn and dusk, and steady hands at every burial," Ansel says. "That's the whole of it, and it's more than it sounds. Veyra's ward holds the dead where they were laid, and it only holds while someone tends it."
+
+He nods toward the stair. "Tamsin sits the night watch, and I take the dawn rite myself. If you want to help, remember the dead by name when you pass the cemetery. It's a small thing, and it counts for more than people think."
+
+*goto tst_hall_front
+
+*label tst_bench
+*set minutes_to_pass 10
+*set time_advance_call_id "tst_bench_1"
+*gosub_scene Langston/langston lg_walk_time
+*temp tst_bench_v (((campaign_day * 24) + clock_hour) modulo 4)
+You settle onto a bench by the wall and let the room go on around you.
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  The orbs hold their cool light, and the only sounds are the soft rasp of the novice's blanket and the long creak of the old roof timbers.
+*elseif (tst_bench_v = 0)
+  The scratch of a pen carries across the floor, steady as a clock.
+*elseif (tst_bench_v = 1)
+  Light moves slowly across the mosaic, climbing one ray of the sunburst after another.
+*elseif (tst_bench_v = 2)
+  Footsteps pass along the corridor and fade, and the room settles back into its quiet.
+*else
+  The tapestries hang still above you, and the stone holds the faint smell of lamp oil and soap.
+
+After a while you stand, stiff and a little steadier.
+
+*goto tst_hall_front
+
+*label tst_heal_paid
+*temp tst_heal_cost 5
+*if ((((gold * 100) + (silver * 10)) + copper) < tst_heal_cost)
+  You reach for your purse and find too little copper to make the offering.
+
+  Ansel waves the thought away. "The lamps will burn either way," he says. "Kneel."
+  *goto tst_heal_rite
+
+You set the five coppers in the offering dish by the register desk. Ansel nods toward Wynne's ledger and the lamps. "It pays for the oil and the herbs in the room. The rite is for the hurt, not the coin."
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount (0 - tst_heal_cost)
+  *gosub_scene economy currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*goto tst_heal_rite
+
+*label tst_heal_rite
+*set minutes_to_pass 15
+*set time_advance_call_id "tst_heal_rite_1"
+*gosub_scene Langston/langston lg_walk_time
+
+You kneel on the edge of the sunburst. Ansel lays a clean square of linen over the worst of the hurt and rests two fingers on it.
+
+"Light that mends what the dark has opened," he says, and begins the dawn invocation of the Order.
+
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *temp tst_cure_roll 0
+  *rand tst_cure_roll 1 8
+  *set locked_heal_roll (tst_cure_roll + 3)
+  *set hp_current + locked_heal_roll
+  *if (hp_current > hp_max)
+    *set hp_current hp_max
+  *set tst_heal_day campaign_day
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+
+Warmth spreads beneath the linen. The pain loosens its hold, then recedes, and when Ansel lifts the cloth only a faint gold thread remains where the wound had been.
+
+He exhales and steadies himself against a bench. "Walk carefully. Mending is not the same as being unbreakable."
+
+[b][Temple Rite: Cure Wounds | Healed: +${locked_heal_roll} HP | Current HP: ${hp_current}/${hp_max}][/b]
+*page_break Return to the rotunda…
+*goto tst_hall_front

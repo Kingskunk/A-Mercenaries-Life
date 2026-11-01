@@ -316,6 +316,8 @@ function compile(){
   verifyFileName("Langston/westwood.txt");
   // Chapter 6 (The Accusation): reached by *goto_scene from the Pickled Hen, the Langston hub and Langston Hall, never through *scene_list.
   verifyFileName("Langston/wolves_of_langston_chapter_6.txt");
+  // The Epilogue (a Hall clerk's offer, then a one-time conversation at Langston Hall): reached by *goto_scene from the Langston hub and the Hall menu, never through *scene_list.
+  verifyFileName("Langston/wolves_of_langston_epilogue.txt");
   // The True Sun temple (the "chapel" at Langston's eastern edge) and Chapter 5 (Speaking with Solaine): reached by *goto_scene from Langston's hub once the mayor's letter is read, never through *scene_list.
   verifyFileName("Langston/true_sun_temple.txt");
   verifyFileName("Langston/wolves_of_langston_chapter_5.txt");

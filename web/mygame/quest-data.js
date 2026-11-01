@@ -179,10 +179,9 @@
       id: "wolves_of_langston", title: "The Wolves of Langston",
       giver: "Mayor Tanya Anathram, Langston meeting hall",
       place: "Langston",
-      levelProgress: "Each finished chapter 2, 4, 5 and 6 counts as one quest toward level progress.",
       goal: function (s) {
         if (s.wol_quest_stage === "asked" || s.wol_quest_stage === "offered") return "Call on Mayor Anathram at Langston Hall during the day and hear her terms.";
-        if (truthy(s.wol_chapter_6_complete)) return "The contract is finished. The mayor and Roi hope you will stay to help with the undead and with Solaine.";
+        if (truthy(s.wol_chapter_6_complete)) return truthy(s.wol_ep_seen) ? "The contract is finished." : "The contract is finished. The mayor and Roi have an account of what followed whenever you call at Langston Hall.";
         if (truthy(s.wol_ch6_solaine_cured)) return "Return to the town hall with the mayor and Roi. Solaine's curse is broken.";
         if (["chase", "courtyard", "temple", "chamber", "lair", "talk", "fight", "yield"].indexOf(String(s.wol_chapter_6_checkpoint)) >= 0) return "Stop Solaine beneath the True Sun temple. The Silverstar can break her curse.";
         if (["square", "evidence", "transform"].indexOf(String(s.wol_chapter_6_checkpoint)) >= 0) return "Make your accusation in the town square.";
