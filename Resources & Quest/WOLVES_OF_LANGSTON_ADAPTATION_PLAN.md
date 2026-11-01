@@ -85,3 +85,15 @@ Clue totals must always be derived from those flags. They must never be incremen
 - A general store, remaining local town destinations, and post-quest state.
 - Final payment, level-progress credit, unique rewards, accusation outcomes, and aftermath.
 - Whether Langston remains the settlement's final name.
+
+## Weather and Time Audit, Chapters 1 to 6 and the Epilogue (2026-11-01)
+
+Read every line of prose in the Wolves chapters, the epilogue and their places for weather, light or time-of-day words that print unconditionally. Almost all were already gated by the weather and hour layers, in metaphors, or in speech about a past event. Fixed: Titch's "by morning" threat (now "soon"), the Chapter 3 wolfsbane clearing's "bright" and "lets the light through" (it can be foraged at night or in a storm), and the mayor's "the accusation is made today" (the player can take days to reach the Hall). Earlier: the Chapter 3 note and the Chapter 4 letter wait while a storm empties the streets. The Chapter 6 summons, the Hall button, the epilogue clerk and the temple's rite all follow the Hall's hours and the live weather.
+
+## Roi's Grove Conversations (2026-11-01)
+
+When Roi is at the grove and awake (not on a wandering or market day, not asleep), a small menu follows the look-in: four one-time topics (how he is after the polypox, his circle and the wolves on the road, how he is taking Solaine's fall after Chapter 6, and the new cleric after Ansel arrives) and a ten-minute sit that varies with the hour and weather. No reward; time in company.
+
+## How the Quest Starts (2026-11-01)
+
+The quest is no longer dev-menu only. A day between 30 and 60 campaign days in is rolled once (`wol_start_day`, the user's design: a month or two after the start). From then on, the first overworld journey that ends at Langston in daylight or at dusk is stopped by the wolves, like a travel event: `overworld-data.js` `wolvesStartPlan` plans it, `overworld.txt` dispatches `wolves_start`, and `travel_events.txt` `te_wolves_start` leaves the map and enters `wol_ch1_start`, whose opening ("You crest a low rise. Langston lies ahead.") already assumes road travel. A journey that would arrive after dark waits for the next arrival. `langston.txt` `lg_arrive` is a safety net for any other way in (a wagon line, a direct entry), also not at night. It fires once: `wol_chapter_1_started` is set at once. Dev hub: "The Wolves of Langston: the world hook".

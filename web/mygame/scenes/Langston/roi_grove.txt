@@ -50,7 +50,7 @@ Past the last field the track turns into the trees. It is two ruts with a strip 
   The ground is soft underfoot from recent rain.
 *return
 
-*comment ── THE GROVE ── Every entry after Chapter 3 opens on the sky layer, then the clearing, then Roi (rg_roi). Roi has no conversation menu yet; the grove is a look-in.
+*comment ── THE GROVE ── Every entry after Chapter 3 opens on the sky layer, then the clearing, then Roi (rg_roi). When Roi is at the grove and awake (any weather: he talks from under the overhang in the wet) a small menu follows (rg_menu, the user's call 2026-11-01): four one-time topics and a sit-with-him that passes ten minutes. On his away days and at night the grove is a look-in as before.
 *label rg_grove
 *set scenery_subplace "rois_grove"
 *gosub rg_sky
@@ -58,8 +58,110 @@ Past the last field the track turns into the trees. It is two ruts with a strip 
 *label rg_grove_edge
 The old trees stand back from a clear patch of ground, and the track runs out into it. A rock overhang shelters a bed of hides and a ring of blackened stones.
 *gosub rg_roi
-*page_break Walk back to the track…
-*goto_scene overworld/overworld ow_here
+*gosub rg_roi_here_check
+*if (not(rg_roi_here))
+  *page_break Walk back to the track…
+  *goto_scene overworld/overworld ow_here
+*goto rg_menu
+
+*comment Roi is here to talk: it is a grove day (not wandering, not at the market) and he is awake. replay-ok: sets a display variable.
+*label rg_roi_here_check
+*set rg_roi_here false
+*gosub rg_roi_where
+*if (roi_where = "grove")
+  *if (not((time_period = "Night") or (time_period = "Pre-Dawn")))
+    *set rg_roi_here true
+*return
+
+*label rg_menu
+*set wait_ok_page page_id
+*choice
+  *if (not(wol_roi_asked_health))
+    # Ask how he is now that the polypox is gone.
+      *goto rg_talk_health
+  *if (not(wol_roi_asked_circle))
+    # Ask about his circle and the wolves on the road.
+      *goto rg_talk_circle
+  *if ((wol_chapter_6_complete) and (not(wol_roi_asked_solaine)))
+    # Ask how he is taking what happened to Solaine.
+      *goto rg_talk_solaine
+  *if ((tst_cleric_arrived) and (not(wol_roi_asked_cleric)))
+    # Ask whether he has met the temple's new cleric.
+      *goto rg_talk_cleric
+  # Sit with him a while. [~10 min]
+    *goto rg_sit
+  # Walk back to the track.
+    *goto_scene overworld/overworld ow_here
+  # Nod your thanks and head back to the track.
+    *goto_scene overworld/overworld ow_here
+
+*label rg_talk_health
+*set wol_roi_asked_health true
+You ask how he is keeping now that the polypox is gone.
+
+"Better than I've any right to be," Roi says, and blows his nose out of habit. "Still ruddy round the edges, but the sneezing's stopped, and my beard's stopped trying to be fur. Do you know what it is to wake up unsure how many legs you've got?"
+
+He laughs, and the laugh thins out. "I'd have made a fine wolf, if I'd stayed one. Not a fine druid, mind. The forest has little patience for a druid who can't hold his own shape."
+
+He rubs his bald head. "I'll not forget who hauled the herbs, ${name}."
+
+*goto rg_menu
+
+*label rg_talk_circle
+*set wol_roi_asked_circle true
+You ask about his circle and the wolves on the road.
+
+"My circle sent me to Langston years back," he says. "A town needs somebody who talks to the forest for it, and the forest needs somebody who talks back to the town. Mostly it's drains and manure heaps and whose goats got into whose beans." He grins. "Funerals too, and the odd wedding."
+
+"The wolves came down from the hills last winter, thin and hungry, and the road was the nearest thing to a larder. I've been teaching them it isn't. They're slow pupils, but they've good manners about the sausages now."
+
+*goto rg_menu
+
+*label rg_talk_solaine
+*set wol_roi_asked_solaine true
+You ask how he is taking what happened to Solaine.
+
+Roi is quiet for a long moment, and his hands go still in his lap.
+
+"She gave me the Silverstar herself," he says. "Said druids struggle with curses and she thought I might want one to hand. A gift for a friend, I thought." He looks at his palms. "I've been back through every talk we ever had, hunting for the moment I should've known."
+
+You tell him he couldn't have.
+
+"Maybe not." He closes his hands. "Whatever the court says, I hope someone who cared for her sees her through it. The lass I knew is in there somewhere, and that's what hurts."
+
+*goto rg_menu
+
+*label rg_talk_cleric
+*set wol_roi_asked_cleric true
+You ask whether he has met the temple's new cleric.
+
+"Ansel? Aye." Roi's face brightens. "Decent sort. Overworked, but decent. I took a basket of herbs down for the mortuary stair, and he looked at it like I'd handed him gold."
+
+He chuckles. "The young one, Wynne, asked what a sprig of lavender does for the dead. I told him it's good for the flies and the mourners alike."
+
+*goto rg_menu
+
+*comment Sitting with Roi: ten minutes, one of four pictures by the hour (the pool rotates with the clock), under the overhang in the wet. No reward: time spent in company.
+*label rg_sit
+*set minutes_to_pass 10
+*set time_advance_call_id "rg_sit_1"
+*gosub_scene Langston/langston lg_walk_time
+*temp rg_sit_v (((campaign_day * 24) + clock_hour) modulo 4)
+You sit down near Roi and let him get on with his work.
+*if ((weather_severity >= 3) or (weather_wet))
+  You settle under the overhang beside him while the rain drums on the rock, and he hands you a strip of bark to twist into cord.
+*elseif (rg_sit_v = 0)
+  He hands you a bundle of leaves and a twist of grass, and you tie bundles beside him until the pile is gone.
+*elseif (rg_sit_v = 1)
+  He talks about nothing in particular: the moss on the north side of every tree, and a fox that has learned to open his basket.
+*elseif (rg_sit_v = 2)
+  He sorts bark into strips by length while the grove's small noises settle around the two of you.
+*else
+  Roi hums a tuneless song to the saplings and expects no audience, and you listen to it anyway.
+
+After a while you get up, and he lifts a hand as you go.
+
+*goto rg_menu
 
 *comment ── WHERE ROI IS TODAY ── Sets roi_where from the campaign day alone, so a day reads the same on every look and after a reload. h cycles through 0..15 (5 is coprime to 16, so the away days are scattered, never in a run):
 *comment h under 4 is a wandering day (one in four); h = 0 is a market day (one in sixteen: he walks to Langston and back). Used by rg_roi here and by the market square in langston.txt (lg_roi_sighting). replay-ok: sets a display variable.

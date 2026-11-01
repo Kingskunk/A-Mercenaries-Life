@@ -5,8 +5,19 @@
 *comment The contract is verbal: the mayor states the terms in her office, the player repeats them, they shake on it and she writes one line in the Hall's day-book. Nothing goes on the Contract Board.
 *comment Nothing is paid for until the contract is accepted: no room, no meals. Declining in the office leaves the stage "offered" and the same office door.
 *comment Entry contract: a world hook may enter at wol_ch1_start after road travel, whether or not the player has visited Langston before.
-*comment No world hook is wired yet. On accepting the contract, the player returns to Langston and chooses when to visit Tomlin.
+*comment The world hook is wired (2026-11-01, wol_ch1_due_check below): a month or two into the campaign the first daylight or dusk journey that ends at Langston meets the wolves and begins here. On accepting the contract, the player returns to Langston and chooses when to visit Tomlin.
 *comment ====================================================================================
+
+*comment THE WORLD HOOK (the user's design, 2026-11-01): wol_start_day is rolled once, between 30 and 60 campaign days in, the first time anything asks. wol_ch1_due is derived: the quest has not begun and that day has come. The overworld (overworld.txt, overworld-data.js wolvesStartPlan, travel_events.txt te_wolves_start) fires wol_ch1_start when a daylight or dusk journey ends at
+*comment Langston; langston.txt lg_arrive is the safety net for any other way in (a wagon line, a direct entry). It cannot fire again: wol_chapter_1_started is set at once.
+*label wol_ch1_due_check
+*if (wol_start_day = 0)
+  *rand wol_start_day 30 60
+*set wol_ch1_due false
+*if ((wol_quest_stage = "unstarted") and (not(wol_chapter_1_started)))
+  *if (campaign_day >= wol_start_day)
+    *set wol_ch1_due true
+*return
 
 *label wol_ch1_start
 *gosub_scene calendar update_hub_condition
