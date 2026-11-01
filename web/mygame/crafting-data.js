@@ -13,6 +13,10 @@ window.COOK_TIERS = {
 };
 window.CRAFT_RECIPES = {
   alchemy: [
+    { id: "healing_potion", name: "Healing Potion", ingredients: ["sage", "hornwort"], dc: 16, property: "restore", icon: "healing_potion",
+      summary: "Restores 2d4+2 HP." },
+    { id: "heroism_potion", name: "Heroism Potion", ingredients: ["hornwort", "wolfsbane"], dc: 19, property: "valor", icon: "heroism_potion",
+      summary: "Gain 10 temporary HP (the larger of this and any you hold)." },
     { id: "mending_draught", name: "Mending Draught", ingredients: ["sluice_moss", "glowmold"], dc: 15, property: "mend", icon: "potion_mending",
       summary: "The next proper sleep restores 2 extra HP." },
     { id: "brine_antivenom", name: "Brine Antivenom", ingredients: ["sluice_moss", "brinecap"], dc: 15, property: "resist_poison", icon: "potion_antivenom",

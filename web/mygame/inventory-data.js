@@ -545,7 +545,7 @@
       weight: 0.05, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_scroll_remove_curse) || 0); return "Remove Curse Scroll" + (n > 1 ? " ×" + n : ""); },
       description: "Pale scroll sealed with white wax stamped with a broken chain.",
-      badge: "Read to renew the Silverstar, or to lift a curse where one lies",
+      badge: "Lifts a curse",
       use: true
     },
     {
@@ -1044,6 +1044,38 @@
       use: true
     },
     {
+      id: "healing_potion", category: "consumables", owned: "has_healing_potion",
+      weight: 0.3, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_healing_potion) || 0); return "Healing Potion" + (n > 1 ? " ×" + n : ""); },
+      description: "A stoppered vial of clear red liquid, honey and rosehip.",
+      badge: "Restores 2d4+2 HP",
+      use: true
+    },
+    {
+      id: "fire_resistance_potion", category: "consumables", owned: "has_fire_resistance_potion",
+      weight: 0.3, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_fire_resistance_potion) || 0); return "Fire Resistance Potion" + (n > 1 ? " ×" + n : ""); },
+      description: "A squat vial of orange-gold liquid, warm to the touch.",
+      badge: "For 1 hour: resistance to fire damage",
+      use: true
+    },
+    {
+      id: "cold_resistance_potion", category: "consumables", owned: "has_cold_resistance_potion",
+      weight: 0.3, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_cold_resistance_potion) || 0); return "Cold Resistance Potion" + (n > 1 ? " ×" + n : ""); },
+      description: "A slim vial of pale blue liquid, frosted on the outside.",
+      badge: "For 1 hour: resistance to cold damage",
+      use: true
+    },
+    {
+      id: "heroism_potion", category: "consumables", owned: "has_heroism_potion",
+      weight: 0.3, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_heroism_potion) || 0); return "Heroism Potion" + (n > 1 ? " ×" + n : ""); },
+      description: "A heavy vial of bright gold liquid that glows faintly.",
+      badge: "Gain 10 temporary HP (the larger of this and any you hold)",
+      use: true
+    },
+    {
       id: "tidebreath_elixir", category: "consumables", owned: "has_tidebreath_elixir",
       weight: 0.3, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_tidebreath_elixir) || 0); return "Tidebreath Elixir" + (n > 1 ? " ×" + n : ""); },
@@ -1387,8 +1419,8 @@
       id: "silverstar", category: "accessories", owned: "has_silverstar",
       weight: 0.1,
       name: "The Silverstar",
-      description: "A silver starburst brooch from Solaine of the Radiant Order, made to protect common folk and monster hunters. It holds a single charge of Remove Curse, touch, and glows brightly when it discharges. A Remove Curse working renews it; it holds one charge at a time.",
-      badge: function (s) { return truthy(s.silverstar_charged) ? "One charge held" : "Spent, renew with Remove Curse"; }
+      description: "A silver starburst brooch from Solaine of the Radiant Order, made to protect common folk and monster hunters. It holds a single charge of Remove Curse, touch, and glows brightly when it discharges. It renews itself with each new season; it holds one charge at a time.",
+      badge: function (s) { return truthy(s.silverstar_charged) ? "One charge held" : "Spent, renews with the season"; }
     },
     {
       id: "hearthstone_talisman", category: "accessories", owned: "has_hearthstone_talisman",
@@ -1454,21 +1486,24 @@
       weight: 0.1,
       owned: function (s) { return Number(s.sage) > 0; },
       name: function (s) { return "Sage (" + Number(s.sage) + ")"; },
-      description: "Grey-green leaves, soft as felt, that smell of dust and warm resin."
+      description: "Grey-green leaves, soft as felt, that smell of dust and warm resin.",
+      alchemy: { source: "rois_grove", form: "herb", rarity: "common", potency: 1, effects: ["restore", "purge"] }
     },
     {
       id: "hornwort", category: "provisions",
       weight: 0.1,
       owned: function (s) { return Number(s.hornwort) > 0; },
       name: function (s) { return "Hornwort (" + Number(s.hornwort) + ")"; },
-      description: "A dripping handful of feathery water-weed, dark green and slick to hold."
+      description: "A dripping handful of feathery water-weed, dark green and slick to hold.",
+      alchemy: { source: "rois_grove", form: "weed", rarity: "uncommon", potency: 1, effects: ["restore", "valor"] }
     },
     {
       id: "wolfsbane", category: "provisions",
       weight: 0.1,
       owned: function (s) { return Number(s.wolfsbane) > 0; },
       name: function (s) { return "Wolfsbane (" + Number(s.wolfsbane) + ")"; },
-      description: "Hooded blue flowers on a bundled stem. Every part of it is poison, and Tomlin handles it with gloves."
+      description: "Hooded blue flowers on a bundled stem. Every part of it is poison, and Tomlin handles it with gloves.",
+      alchemy: { source: "rois_grove", form: "flower", rarity: "uncommon", potency: 1, effects: ["valor", "purge"] }
     },
     {
       id: "grave_ichor", category: "provisions",

@@ -46,10 +46,12 @@
     { id: "bonus",  groups: ["bonus", "free"], cols: 4 },
     { id: "other",  groups: ["other"], cols: 4 }
   ];
-  // Read and Items still cost an action, but they are utility menus rather than attacks or spells.
+  // Read, Items and Potions still cost an action, but they are utility menus rather than attacks or spells.
   // Lay their parent buttons out with Flee and End turn without changing their action colouring,
   // availability checks, or the ChoiceScript options their fly-outs submit.
-  var UTILITY_ACTIONS = { read: true, items: true };
+  var UTILITY_ACTIONS = { read: true, items: true, potions: true };
+  // The fly-outs that hold items. Each button is its art alone, and its hover card is built from the Pack's own entry for the item (INVENTORY in inventory-data.js).
+  var ITEM_MENUS = { potions: "Potion", read: "Scroll", items: "Item", throw: "Thrown", shoot: "Arrow" };
   var MIN_ROWS = 3;       // empty cells fill each grid to at least this many rows
   var KIND = { action: "Action", bonus: "Bonus action", free: "Free", move: "Movement", tactic: "Tactical movement", other: "" };
 
@@ -321,9 +323,11 @@
     el.innerHTML = "<div class=\"bfly-title\">" + esc(e.name) + "</div><div class=\"bfly-row\">" + e.variants.map(function (v) {
       var on = !!offered[v.id];
       var icon = variantArt(e, v) || iconFor(e.name);
-      return "<button type=\"button\" class=\"bfly-btn bhud-" + e.group + (on ? "" : " off") + "\" data-bhud=\"pick\" data-id=\"" + esc(v.id) + "\"" +
-        (on ? "" : " aria-disabled=\"true\"") + " title=\"" + esc(v.blurb) + "\">" +
-        (icon ? "<img class=\"bhud-icon\" src=\"" + icon + "\" alt=\"\">" : "") + "<span>" + esc(v.label) + "</span></button>";
+      // The item menus (Potions, Read, Items, Throw, Shoot) show the art alone: the name and what the item does are on the hover card, the same card the Pack gives it.
+      var iconOnly = !!(icon && ITEM_MENUS[e.id]);
+      return "<button type=\"button\" class=\"bfly-btn bhud-" + e.group + (iconOnly ? " bfly-icon" : "") + (on ? "" : " off") + "\" data-bhud=\"pick\" data-id=\"" + esc(v.id) + "\" data-parent=\"" + esc(e.id) + "\"" +
+        (on ? "" : " aria-disabled=\"true\"") + " aria-label=\"" + esc(v.label) + "\"" + (iconOnly ? "" : " title=\"" + esc(v.blurb) + "\"") + ">" +
+        (icon ? "<img class=\"bhud-icon\" src=\"" + icon + "\" alt=\"\">" : "") + (iconOnly ? "" : "<span>" + esc(v.label) + "</span>") + "</button>";
     }).join("") + "</div>";
     el.className = "on";
     var z = window.UI_ZOOM || 1;
@@ -341,6 +345,8 @@
     if (e.id === "shoot") return (window.ACTION_ICONS || {})["shoot_" + slug(v.label)] || "";
     // Items: Bramble Heart / future unique combat items -- one backpack button, each fly-out choice wearing its own art.
     if (e.id === "items") return (window.ACTION_ICONS || {})["items_" + slug(v.label)] || "";
+    // Potions: Potion of Barkskin / Clear-Head Draught ... -- one Potions button, each drinkable wearing its own art (ACTION_ICONS potions_<slug of its title>).
+    if (e.id === "potions") return (window.ACTION_ICONS || {})["potions_" + slug(v.label)] || "";
     // Read: Magic Missile Scroll / Bane Scroll ... -- each spell scroll wears its own art (ACTION_ICONS read_<slug of its title>).
     if (e.id === "read") return (window.ACTION_ICONS || {})["read_" + slug(v.label)] || "";
     if (e.id !== "booming_blade") return "";
@@ -382,8 +388,63 @@
       (bits.length ? "<div class=\"bt-text\">" + esc(bits.join(" · ")) + "</div>" : "");
   }
 
+  // The Pack's entry for an item named on a button: the names match the Pack's (a leading "The" or "Gnarled" aside), so the card says what the Pack's card says.
+  function packItemFor(label) {
+    var items = (window.INVENTORY && window.INVENTORY.items) || [], s = statsNow(), want = normName(label), best = null;
+    if (!want) return null;
+    for (var i = 0; i < items.length; i++) {
+      var n = items[i].name, nm;
+      try { n = typeof n === "function" ? n(s) : n; } catch (err) { n = ""; }
+      nm = normName(String(n || "").replace(/\s*\u00d7\s*\d+$/, ""));
+      if (nm === want) return items[i];
+      if (!best && want.length >= 5 && (nm.indexOf(want) >= 0 || want.indexOf(nm) >= 0) && nm.length >= 5) best = items[i];
+    }
+    return best;
+  }
+  function normName(t) { return String(t || "").toLowerCase().replace(/^the\s+/, "").replace(/[^a-z0-9]+/g, ""); }
+  function flyCardHtml(btn) {
+    var pid = btn.getAttribute("data-parent"), vid = btn.getAttribute("data-id"), e = null, v = null, i, k;
+    for (i = 0; i < seen.length; i++) if (seen[i].id === pid) e = seen[i];
+    if (!e || !e.variants) return "";
+    for (k = 0; k < e.variants.length; k++) if (e.variants[k].id === vid) v = e.variants[k];
+    if (!v) return "";
+    var item = packItemFor(v.label), s = statsNow(), name = v.label, badge = "", desc = "";
+    if (item) {
+      try {
+        var nn = typeof item.name === "function" ? item.name(s) : item.name;
+        name = String(nn || v.label).replace(/\s*\u00d7\s*\d+$/, "");
+        badge = typeof item.badge === "function" ? item.badge(s) : (item.badge || "");
+        desc = typeof item.description === "function" ? item.description(s) : (item.description || "");
+      } catch (err) { /* the label alone will do */ }
+    }
+    if (!desc && !badge) desc = String(v.blurb || "");
+    var on = !!offered[vid];
+    return "<div class=\"bt-name\">" + esc(name) + "</div>" +
+      "<div class=\"bt-kind\">" + esc([KIND[e.group], ITEM_MENUS[e.id]].filter(Boolean).join(" \u00b7 ")) + "</div>" +
+      (badge ? "<div class=\"bt-meta\">" + esc(badge) + "</div>" : "") +
+      (desc ? "<div class=\"bt-text\">" + esc(desc) + "</div>" : "") +
+      (on ? "" : "<div class=\"bt-off\">" + esc(reasonFor({ id: vid, group: e.group })) + "</div>");
+  }
+
   function showTip(slot) {
     var id = slot.getAttribute("data-id");
+    if (slot.classList && slot.classList.contains("bfly-btn")) {
+      var fc = flyCardHtml(slot);
+      if (!fc) return hideTip();
+      var fel = tipEl();
+      fel.innerHTML = fc;
+      fel.className = "on";
+      var fz = window.UI_ZOOM || 1, fr = slot.getBoundingClientRect(), ft = fel.getBoundingClientRect();
+      var fleft = Math.min(Math.max(8, fr.left + fr.width / 2 - ft.width / 2), window.innerWidth - ft.width - 8);
+      // above the whole fly-out, so its title and its other buttons stay in view
+      var fbox = document.getElementById(FLY_ID), fbr = fbox ? fbox.getBoundingClientRect() : fr;
+      var ftop = fbr.top - ft.height - 6;
+      if (ftop < 8) ftop = fbr.bottom + 6;
+      fel.style.left = (fleft / fz) + "px";
+      fel.style.top = (ftop / fz) + "px";
+      tipFor = id;
+      return;
+    }
     var e = null;
     for (var i = 0; i < seen.length; i++) if (seen[i].id === id) e = seen[i];
     if (!e || flyFor === id) return;
@@ -480,7 +541,7 @@
     else if (act === "hud") { classic = false; scan(); }
   });
 
-  function slotOf(el) { return el && el.closest ? el.closest("#" + HUD_ID + " .bhud-slot, #" + HUD_ID + " .bhud-adv, #" + HUD_ID + " .bhud-weapon") : null; }
+  function slotOf(el) { return el && el.closest ? el.closest("#" + HUD_ID + " .bhud-slot, #" + HUD_ID + " .bhud-adv, #" + HUD_ID + " .bhud-weapon, #" + FLY_ID + " .bfly-btn") : null; }
   document.addEventListener("mouseover", function (ev) { var sl = slotOf(ev.target); if (sl) showTip(sl); else if (tipFor) hideTip(); });
   document.addEventListener("focusin", function (ev) { var sl = slotOf(ev.target); if (sl) showTip(sl); });
   document.addEventListener("focusout", function () { hideTip(); });

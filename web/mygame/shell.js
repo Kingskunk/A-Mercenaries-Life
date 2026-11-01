@@ -169,6 +169,13 @@
       }
       // the real button's own title carries the unread count ("3 new lorebook entries"), so the rail shows it too
       var rt = real ? (real.getAttribute("title") || "") : "";
+      // The Pack is shut in a fight (inventory.js fightBlock): the rail icon dims and says why.
+      if (id === "inventoryButton") {
+        var shut = !!(window.InventoryPanel && window.InventoryPanel.fightBlock && window.InventoryPanel.fightBlock());
+        b.classList.toggle("off", shut);
+        if (b.getAttribute("aria-disabled") !== (shut ? "true" : null)) { if (shut) b.setAttribute("aria-disabled", "true"); else b.removeAttribute("aria-disabled"); }
+        rt = shut ? "Not in the middle of a fight." : (rt || "Pack");
+      }
       if (rt && b.getAttribute("title") !== rt) b.setAttribute("title", rt);
     }
     syncTts();

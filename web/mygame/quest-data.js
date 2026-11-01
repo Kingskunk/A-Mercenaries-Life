@@ -9,14 +9,12 @@
  *   title   shown in the sidebar (or function(stats) -> text, for an entry that changes with the save)
  *   place   the smaller line under the title (where the quest lives; also may be function(stats))
  *   active  function(stats) -> true while the quest is in progress
- *   levelProgress  optional: true if a successful completion adds to the level-up quest total;
- *                  a short string when a particular successful resolution is required
+ *   (The quest panel shows no rewards or level-up credit before they are earned, the user 2026-11-01, so there is no levelProgress or insignia field.)
  *   group     optional: "job" for a Hiring Hall job or a courier parcel, which the sidebar lists under its own heading below the quests
  *   giver     optional: who gave it (text or function(stats)), shown on the hover card
  *   goal      optional: one sentence of what to do next (text or function(stats)), shown on the hover card
  *   progress  optional: function(stats) -> [{label, have, need}], drawn as a progress line under the title and listed on the card
  *   clues     optional: function(stats) -> [text], only what the player has FOUND (never a lead they have not met), listed on the card
- *   insignia  optional: true if finishing it adds to the Contractor's Insignia job count (said on the card)
  *
  * Quest stage variables are set by the scenes (see quest/QUESTS.md). A quest that is
  * "unstarted", "resolved", "failed" or "declined" is not active and is not listed.
@@ -89,7 +87,6 @@
       id: "ambrose_order", title: "Ambrose's Deep-Wood Order",
       giver: "Master Ambrose, the Still-Room in Herb-Pounder Close",
       place: function (s) { return "Port Valen · Herb-Pounder Close" + (truthy(s.amb_repeat) ? " · this season only" : ""); },
-      levelProgress: true,
       goal: function (s) { return "Bring him " + s.amb_need_fern + " shadefern and " + s.amb_need_truffle + " acorn truffle, cut clean and wrapped dry, all at one time."; },
       progress: function (s) { return [{ label: "Shadefern", have: Number(s.shadefern) || 0, need: Number(s.amb_need_fern) || 0 }, { label: "Acorn truffle", have: Number(s.acorn_truffle) || 0, need: Number(s.amb_need_truffle) || 0 }]; },
       clues: function (s) {
@@ -137,8 +134,6 @@
         if (truthy(s.lsf_dead_buried)) c.push("You buried them there, under stones.");
         return c;
       },
-      insignia: true,
-      levelProgress: true,
       active: function (s) { return s.peddler_stage === "active"; }
     },
     {
@@ -170,8 +165,6 @@
           reckoning: "Attend the Common's meeting at the Fleecefold." };
         return g[s.weight_road_quest_stage] || "";
       },
-      insignia: true,
-      levelProgress: "Counts toward level progress when a successful repair is carried through the Common's reckoning.",
       active: function (s) { return ["emergency", "investigation", "wall", "repair", "reckoning"].indexOf(s.weight_road_quest_stage) >= 0; }
     },
     {
@@ -201,6 +194,7 @@
         if (Number(s.wol_chapter) === 2) return "Speak with Tomlin at his herb garden on the western edge of Langston.";
         return "Find what killed Maybelline inside Langston's wall.";
       },
+      // In the order the player meets them (chapter by chapter), so the quest card's "Latest" and the Quest Journal's timeline end on the newest finding.
       clues: function (s) {
         var c = [];
         if (truthy(s.wol_tomlin_crowd_hint)) c.push("Several townspeople treat Tomlin's attention as something contested, even during Maybelline's funeral.");
@@ -214,7 +208,12 @@
         if (truthy(s.wol_roi_claw_not_scrapling)) c.push("Roi says Maybelline was mauled by beasts much larger than a scrapling.");
         if (truthy(s.wol_roi_night_gap)) c.push("Roi honestly cannot remember where he was the night Maybelline died.");
         if (truthy(s.wol_ch4_map_given)) c.push("Mayor Anathram sent you after two strangers blamed for missing livestock and valuables. She thinks they may be tied to Maybelline's death.");
+        if (truthy(s.wol_ch4_nymph_herb_man)) c.push("A nymph in the western woods says a handsome man from the town gathers herbs there and watches her \"like prey\".");
+        if (truthy(s.wol_ch4_nymph_asked_strange)) c.push("The trees have reported some strange creature wandering the land. They use the words \"beast\" and \"person\" for it interchangeably.");
+        if (truthy(s.wol_ch4_unrelated_known)) c.push("Nothing about Maybelline's death fits two strangers on the road, and the mayor knows it.");
         if (s.wol_ch4_bandits_outcome) c.push("Mayor Anathram is the Wolf of the Road, an outlaw once wanted for killing a constable at Iron Gap. Two of her old band, Horace and Titch, tried to blackmail her at her house.");
+        if (truthy(s.wol_ch4_warrant_found)) c.push("The bandits' camp held a Iron Gap warrant for the Wolf of the Road, wanted for killing a constable: three gold crowns for her whereabouts and thirty for her capture, dead or alive.");
+        if (truthy(s.wol_ch4_letter_read)) c.push("Mayor Anathram wrote that Maybelline will be buried soon, and that Solaine of the Church of the True Sun has been told to expect you at the chapel.");
         if (s.wol_ch5_tome_state === "read") c.push("A black tome in Solaine's library, Turning from the Light, covers turning from a sun deity, infernal pacts, autopsies and making undead servants. A scrap marking one page reads \"This one.\" and shows how to destroy zombies, ghouls and vampires.");
         if (s.wol_ch5_tome_state === "pictures") c.push("A black tome in Solaine's library has illustrations of dark moon symbols, cruel tools and animated corpses; a scrap reading \"This one.\" marks the page on the walking dead.");
         if (truthy(s.wol_ch5_letter_granted)) c.push("A letter to Tomlin, hidden in Solaine's Compendium of Curses on the page for lycanthropy, tells of a changed woman whose darkness will not forgive \"her\". It stops mid-sentence.");
@@ -223,20 +222,15 @@
         if (truthy(s.wol_ch5_ribbon_granted)) c.push("A blood-stained lavender silk ribbon lay behind the wardrobe in Solaine's room, with little dust on it.");
         if (truthy(s.wol_ch5_vestments_granted)) c.push("Burnt holy vestments, restitched and spotted with blood, were in the temple kitchen's stove.");
         if (truthy(s.wol_ch5_larder_done)) c.push("The temple larder holds fresh raw meat with small, ragged bite marks.");
-        if (truthy(s.wol_ch5_corpse_fought) && truthy(s.wol_chapter_5_complete)) c.push("Mayor Anathram ordered the militia to guard the graveyard after dark and had a proclamation posted announcing the accusation of Maybelline's murderer.");
-        if (truthy(s.wol_ch5_grave_seen)) c.push("A grave in the True Sun cemetery was dug open in great haste, or by some huge beast, and left with its shrouded body exposed.");
-        if (truthy(s.wol_ch5_corpse_fought)) c.push("Maybelline's body rose in the mausoleum and attacked. It had to be destroyed a second time. Solaine says this cannot happen while one of the Order of Radiant Light keeps the temple.");
-        if (truthy(s.wol_ch5_marks_seen)) c.push("Maybelline's body was mauled by something larger than most forest beasts: broad, deep claw marks, crisscrossed in a rage.");
-        if (truthy(s.wol_ch5_daisies_seen)) c.push("The bouquet in Maybelline's hands was daisies tagged \"Rest well, Maybelline\" in Tomlin's careful hand, crushed as if squeezed too tight.");
         if (truthy(s.wol_ch5_tapestry_lore)) c.push("The temple's tapestries show an ancient order of sun worshippers who raised the tower to hold back undead; as long as one of them stays present and dedicated to the light, the area is sanctified and the dead stay in their graves.");
         if (truthy(s.wol_ch5_indent_amulet)) c.push("A sunburst-shaped indent in the rotunda floor fits an amulet like the one Solaine wore at the funeral. Pressing it flashes with radiant magic and then seals; it needs a key or object.");
         if (truthy(s.wol_ch5_asked_tomlin)) c.push("Solaine and Tomlin were lovers; she returned from a pilgrimage to find him betrothed to Maybelline.");
         if (truthy(s.wol_ch5_asked_temple)) c.push("Solaine says the temple's consecration, kept by one member of the Order of Radiant Light at a time, keeps Langston's dead in their graves. Roi is its counterpart in the wood.");
-        if (truthy(s.wol_ch4_letter_read)) c.push("Mayor Anathram wrote that Maybelline will be buried soon, and that Solaine of the Church of the True Sun has been told to expect you at the chapel.");
-        if (truthy(s.wol_ch4_warrant_found)) c.push("The bandits' camp held a Iron Gap warrant for the Wolf of the Road, wanted for killing a constable: three gold crowns for her whereabouts and thirty for her capture, dead or alive.");
-        if (truthy(s.wol_ch4_nymph_herb_man)) c.push("A nymph in the western woods says a handsome man from the town gathers herbs there and watches her \"like prey\".");
-        if (truthy(s.wol_ch4_nymph_asked_strange)) c.push("The trees have reported some strange creature wandering the land. They use the words \"beast\" and \"person\" for it interchangeably.");
-        if (truthy(s.wol_ch4_unrelated_known)) c.push("Nothing about Maybelline's death fits two strangers on the road, and the mayor knows it.");
+        if (truthy(s.wol_ch5_grave_seen)) c.push("A grave in the True Sun cemetery was dug open in great haste, or by some huge beast, and left with its shrouded body exposed.");
+        if (truthy(s.wol_ch5_marks_seen)) c.push("Maybelline's body was mauled by something larger than most forest beasts: broad, deep claw marks, crisscrossed in a rage.");
+        if (truthy(s.wol_ch5_daisies_seen)) c.push("The bouquet in Maybelline's hands was daisies tagged \"Rest well, Maybelline\" in Tomlin's careful hand, crushed as if squeezed too tight.");
+        if (truthy(s.wol_ch5_corpse_fought)) c.push("Maybelline's body rose in the mausoleum and attacked. It had to be destroyed a second time. Solaine says this cannot happen while one of the Order of Radiant Light keeps the temple.");
+        if (truthy(s.wol_ch5_corpse_fought) && truthy(s.wol_chapter_5_complete)) c.push("Mayor Anathram ordered the militia to guard the graveyard after dark and had a proclamation posted announcing the accusation of Maybelline's murderer.");
         if (truthy(s.wol_solaine_hymn_wrong)) c.push("The hymn Solaine attributed to the Book of Passing is not in that book.");
         if (truthy(s.wol_solaine_tomlin_hint)) c.push("Solaine and Tomlin concealed a familiarity older than the funeral.");
         if (truthy(s.wol_mayor_history_wrong)) c.push("Mayor Anathram's account of the Battle of Iron Gap contains serious errors.");
@@ -249,7 +243,6 @@
     {
       id: "hale_ring", title: "The Hale Ring",
       giver: function (s) { return truthy(s.hale_ring_cassia_spoken) ? "Cassia Rell, the Bright Setting" : "A ring found on the River Road"; },
-      levelProgress: "Counts toward level progress when returned to Ressa Hale.",
       place: function (s) { return (truthy(s.hale_ring_cassia_spoken) || truthy(s.hale_ring_oswin_spoken)) ? "Timbermouth · the Split Pine" : "Port Valen · the Bright Setting"; },
       goal: function (s) { return (truthy(s.hale_ring_cassia_spoken) || truthy(s.hale_ring_oswin_spoken)) ? "Return Ressa Hale's ring to her at the Split Pine in Timbermouth." : "Show the gold ring engraved R. H. to Cassia Rell at the Bright Setting."; },
       clues: function (s) {
@@ -264,7 +257,6 @@
     {
       id: "varren_errand", title: "Varren's Errand", place: "Port Valen",
       giver: "Sergeant Varren, the Carrion Compound",
-      levelProgress: "Counts toward level progress on a successful resolution.",
       goal: function (s) {
         if ((s.slasher_quest_stage === "resolved" || s.slasher_quest_stage === "failed") && !truthy(s.slasher_reported)) return "Return to Sergeant Varren at the Carrion Compound and report what happened.";
         if (!truthy(s.slasher_trent_met)) return "Speak with Captain Bronner Trent at the militia post on the Trunk Road.";
@@ -282,23 +274,19 @@
     },
     {
       id: "silt_gate", title: "Silt-Gate Contraband", place: "The Silt-Gates",
-      levelProgress: true,
       active: function (s) { return s.silt_gate_quest_stage === "active"; }
     },
     {
       id: "dry_lion", title: "The Dry Lion", place: "Middle Ward",
-      levelProgress: true,
       active: function (s) { return s.dry_lion_quest_stage === "active"; }
     },
     {
       id: "a_key_for_every_door", title: "A Key for Every Door", place: "Middle Ward",
-      levelProgress: true,
       active: function (s) { return s.a_key_quest_stage === "active"; }
     },
     {
       id: "rotten_rib", title: "The Rotten Rib", place: "Iron Wharves",
       giver: "Ysolde Ostrand, the Carrion Compound",
-      levelProgress: true,
       goal: function (s) {
         if (!truthy(s.has_rotten_rib_splinter)) return "Speak with the shipwright at Slipway Two about the delayed timber.";
         return "Find proof of what happened to the heartwood meant for Slipway Two.";
@@ -313,17 +301,14 @@
     },
     {
       id: "muffled_bell", title: "The Muffled Bell", place: "The Pier",
-      levelProgress: true,
       active: function (s) { return s.bell_quest_stage === "active"; }
     },
     {
       id: "stolen_shroud", title: "The Stolen Shroud", place: "The Alley Shrine",
-      levelProgress: true,
       active: function (s) { return s.shroud_quest_stage === "active"; }
     },
     {
       id: "quiet_block", title: "The Quiet Block", place: "Fishmongers' Slip",
-      levelProgress: true,
       active: function (s) { return s.fish_quest_stage === "active"; }
     },
     {
@@ -336,13 +321,12 @@
     },
     {
       id: "black_oath_night_list", title: "The Night List", place: "Dredge-End",
-      levelProgress: true,
       active: function (s) { return s.black_oath_night_list_stage === "active"; }
     }
   ];
 
-  // Hiring Hall jobs and courier parcels are listed under their own heading, and each finished one counts on the insignia.
+  // Hiring Hall jobs and courier parcels are listed under their own heading.
   window.QUESTLOG.forEach(function (q) {
-    if (/^(hall_|courier_)/.test(q.id)) { q.group = "job"; q.insignia = true; }
+    if (/^(hall_|courier_)/.test(q.id)) { q.group = "job"; }
   });
 })();

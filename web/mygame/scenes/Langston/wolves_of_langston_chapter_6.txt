@@ -972,9 +972,12 @@ You fight the werewolf.
 *set combat_enemy_nonmagic_override "immune silvered"
 *set combat_cure_kind "lycanthropy"
 *set combat_philter_stuns true
+*comment The fight keeps the place it began in (scenery.js: a combat scene shows scenery_combat_place; port_valen scenes set it the same way).
+*set scenery_combat_place scenery_subplace
 *set combat_player_can_die true
 *gosub_scene combat fight_library
 *set combat_player_can_die false
+*set scenery_combat_place ""
 *if (combat_outcome = "player_died")
   *goto wol_ch6_lair_death
 *if (combat_outcome = "cured")
@@ -994,6 +997,7 @@ You collapse, and the world fades to black before you hit the ground.
 *label wol_ch6_cured_in_fight
 *set wol_chapter_6_checkpoint "cured"
 *set silverstar_charged false
+*set silverstar_spent_key (current_season & calendar_year)
 As you feel the magic of the brooch pouring out, Mayor Anathram and Roi lead a group of armed townspeople into the chamber. All of them stand rapt as you press the Silverstar harder into the werewolf.
 
 *goto wol_ch6_cure
@@ -1025,6 +1029,7 @@ The mayor looks impressed too.
 
 You take out the brooch, and at Roi's prompt you press it into Solaine, though she shies away from the silver.
 *set silverstar_charged false
+*set silverstar_spent_key (current_season & calendar_year)
 
 *goto wol_ch6_cure
 
@@ -1033,6 +1038,7 @@ You take out the Silverstar and step toward Solaine. She shies from the silver a
 
 As the brooch touches her, Mayor Anathram and Roi lead a group of armed townspeople into the chamber. All of them stand rapt.
 *set silverstar_charged false
+*set silverstar_spent_key (current_season & calendar_year)
 
 *goto wol_ch6_cure
 
@@ -1052,6 +1058,7 @@ Solaine slinks back toward the wall, more afraid of the pity she sees in their e
 "Come on then, lass," he says, and he holds the brooch toward Solaine. She bares her teeth at him, then goes still as he presses it to her forehead.
 *set wol_ch6_star_with_roi true
 *set silverstar_charged false
+*set silverstar_spent_key (current_season & calendar_year)
 
 *goto wol_ch6_cure
 
@@ -1206,6 +1213,10 @@ She hands you a large coin pouch, heavier than you expected. "Thirty marks for t
     *gosub_scene economy currency_add
     *set currency_txn_locked true
     *set locked_currency_txn_page_id page_id
+    *comment The contract was formed with the mayor (House Gault's Hall): one finished job on the Gault page of the Contractor's Insignia, written once with the payment. The job is written on the disc, so it needs the disc (no disc, no job). wol_ch6_insignia_credited is the guard and the reprint marker.
+    *if (has_hall_insignia)
+      *set wol_ch6_insignia_credited true
+      *script window.Insignia.credit(stats, "gault");
 
 *if (wol_ch6_pay_copper = 280)
   [b][Received: 28 Silver Marks][/b]
@@ -1213,6 +1224,9 @@ She hands you a large coin pouch, heavier than you expected. "Thirty marks for t
   [b][Received: 25 Silver Marks and 5 Copper Bits][/b]
 *else
   [b][Received: 33 Silver Marks][/b]
+*if (wol_ch6_insignia_credited)
+  *line_break
+  [b][🏷️ Insignia: House Gault page, ${hall_jobs_gault} @{(hall_jobs_gault = 1) job|jobs} finished][/b]
 
 *if (wol_ch6_accused = "tomlin")
   "You earned that," Roi says. "And Tomlin will mend."

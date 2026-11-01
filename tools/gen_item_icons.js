@@ -97,6 +97,7 @@ const MAP = {
   mortar_pestle: "Mortar_And_Pestle_Unfaded_Icon.png",
   empty_potion_vial: "05-empty-vial.png",                              // the user's own art: the herbalist's corked vial
   portable_burner: "07-portable-burner.png",
+  althea_phial: "../Generic/Saint_Altheas_Water_Generated_Source.png",  // Saint Althea's wax-stoppered healing water
   // ---- the nine brews of the crafting view's result box (the user's chosen source art, ALCHEMY_CRAFTING_REFERENCE.md)
   potion_mending: "Consumable/Potion/POT_Remedial_Potion_Unfaded_Icon.png",
   potion_antivenom: "Consumable/Potion/POT_Antidote_Unfaded_Icon.png",
@@ -110,11 +111,15 @@ const MAP = {
   iron_gap_poster: "Miscellaneous_item/Book/Book_Note_B_Unfaded.png",   // Chapter 4: the mayor's wanted poster
   iron_gap_warrant: "Miscellaneous_item/Book/Book_Parchment_A_Unfaded.png",   // Chapter 4: the camp's warrant (a rolled sheet with a red band)
   potion_barkskin: "Consumable/Elixir/ELX_Elixir_of_Barkskin_Unfaded_Icon.png",   // Chapter 4: the nymph's witch's brew
+  healing_potion: "Consumable/Potion/POT_Potion_of_Healing_Unfaded_Icon.png",
+  fire_resistance_potion: "../Generic/Fire_Resistance_Potion_Generated_Source.png",
+  cold_resistance_potion: "../Generic/Cold_Resistance_Potion_Generated_Source.png",
+  heroism_potion: "../Generic/Heroism_Potion_Generated_Source.png",
   potion_darksight: "Consumable/Elixir/ELX_Elixir_of_Darkvision_Unfaded_Icon.png",
   potion_fortifying: "Consumable/Potion/POT_Potion_of_Vitality_Unfaded_Icon.png",
-  potion_restful: "Consumable/Potion/POT_Wilted_Dreams_Unfaded_Icon.png",
+  potion_restful: "../Generic/Restful_Balsam_Generated_Source.png",
   potion_clearhead: "Consumable/Elixir/ELX_Elixir_of_Vigilance_Unfaded_Icon.png",
-  potion_winterward: "Consumable/Elixir/ELX_Elixir_of_Cold_Resistance_Unfaded_Icon.png",
+  potion_winterward: "../Generic/Winterward_Tea_Generated_Source.png",
   potion_surestep: "Consumable/Potion/POT_Potion_of_Glorious_Vaulting_Unfaded_Icon.png",                           // the user's own art: the herbalist's brass burner
   // ---- the twelve distinct finished-dish illustrations reserved for the future Cooking craft mode (COOKING_CRAFTING_REFERENCE.md)
   cooking_dripping_roasted_boar: "FOOD_Grilled_Pork_Leg_Unfaded_Icon.png",
@@ -174,7 +179,7 @@ const MAP = {
   raw_hide: "../Generic/Raw_Hide_Generated_Source.png",                 // a skinned beast's hide, from the Longshade's boar and elk
   boar_tusk: "../Generic/Boar_Tusk_Generated_Source.png",
   elk_antler: "../Generic/Elk_Antler_Generated_Source.png",
-  pickled_hen_tankard: "ALCH_Mug_of_Beer_Unfaded_Icon.png",              // the chewed tankard in Roi's grass (STAND-IN: a beer mug, no tankard art yet)
+  pickled_hen_tankard: "../Generic/Damaged_Pickled_Hen_Tankard_Generated_Source.png", // the chewed tankard in Roi's grass
   flimsy_jeweled_dagger: "../Generic/Flimsy_Jeweled_Dagger_Generated_Source.png",   // Chapter 4: the bandit camp's showy dagger
   scrapling_claw_weapon: "../Generic/Scrapling_Claw_Weapon_Generated_Source.png",   // Chapter 3: the claw as Roi binds it, a +1 club for a week
   scrapling_claw: "../Generic/Scrapling_Claw_Generated_Source.png",         // Chapter 2: the claw Tomlin gives you from the garden

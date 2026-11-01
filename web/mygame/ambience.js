@@ -61,6 +61,7 @@
     kestrel_watchtower_room: { all: "military_camp_ambience", level: 0.28, indoor: false },
     lodgings:      { all: "city_indoor", indoor: true },
     factors_hall:  { all: "city_indoor", indoor: true },
+    langston_hall: { all: "city_indoor", level: 0.45, indoor: true },
     bathhouse:     { all: "bathhouse_ambience", indoor: true },
     blacksmith:    { all: "village_blacksmith_ambience", indoor: true },
     private_supper: { all: "interior_palace_or_lage_noblehouse_distantalking_guardpatrol_crackling_fire", level: 0.55, indoor: true },
@@ -71,6 +72,7 @@
     marshland:     { day: "marshland_ambience_wind_birds_shallowwater_reeds", night: "marshland_night_crickets_shallowwater_ambience" },
     undercroft:    { all: "city_indoor", indoor: true },
     tavern:        { day: "quiet_tavern", night: "crowded_tavern", indoor: true },   // it fills up as the day ends
+    funeral_tavern: { all: "crowded_tavern", indoor: true },   // Maybelline's service fills the Pickled Hen even during the day
     sewer:         { all: "sewer", indoor: true },
     silt_conduits: { all: "sewer", indoor: true },
     open_road:     { day: "grassland_openfields_meadows_daytime", night: "nature_outdoors_night" },
@@ -97,8 +99,8 @@
     timber_wagon_lot: "village",
     river_carters_lot: "village",
     vale_gate_wagon_lot: "village",
-    langston_pickled_hen_funeral: "tavern",
-    langston_meeting_hall_office: "civic_indoor",
+    langston_pickled_hen_funeral: "funeral_tavern",
+    langston_meeting_hall_office: "langston_hall",
     langston_town_square_accusation: "city",
     langston_true_sun_temple_rotunda: "temple_hall",
     langston_true_sun_temple_library: "temple_hall",

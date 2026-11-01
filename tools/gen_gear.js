@@ -525,7 +525,23 @@ function genShop(shop) {
 // ---------------------------------------------------------------- consumables (use menus)
 function consumables(combatOnly) {
   // A thrown item (effect type throw) is used only in a fight, and from its own Throw button on the fight's main menu (genThrowOptions), so it appears in neither the satchel menu nor the fight's Use-an-item list.
-  return items.filter(function (it) { return it.kind === "consumable" && !isNoUse(it) && !(combatOnly && it.effect.type === "scroll") && (!combatOnly || it.combat); });
+  return items.filter(function (it) { return it.kind === "consumable" && !isNoUse(it) && !(combatOnly && it.effect.type === "scroll") && (!combatOnly || (it.combat && it.combat !== "potions")); });
+}
+// POTIONS (2026-11-01, the user's design): a drinkable with "combat": "potions" in the catalog has its own button on the fight bar (beside Items and Read), not a line in the satchel menu. One "Potions: <Title>" option each,
+// which the battle bar folds into ONE Potions button with a fly-out (battlehud.js "Name: Variant"). Drinking costs the ACTION (5e: an action to drink a potion) and goes through the same use routine as the satchel menu (combat.txt fight_use_do).
+function potionItems() {
+  return items.filter(function (it) { return it.kind === "consumable" && !isNoUse(it) && it.combat === "potions"; });
+}
+function genPotionOptions() {
+  var L = [];
+  potionItems().forEach(function (it) {
+    L.push('*if (' + flag(it) + ')');
+    L.push('  *if (combat_player_actions_left > 0)');
+    L.push('    # [b][ACTION][/b] [b][Potions: ' + it.title + '][/b] ' + (it.useVerb || "Use") + ' it.@{show_stat_hints  [' + effectSummary(it) + ']|}' + (it.effect.type === "boon" ? "@{" + boonRunning(it) + "  [Already active: using it refreshes the timer]|}" : ""));
+    L.push('      *set use_item_id ' + q(it.id));
+    L.push('      *goto fight_use_do');
+  });
+  return L;
 }
 function throwItems() {
   return items.filter(function (it) { return it.kind === "consumable" && it.effect.type === "throw" && it.combat; });
@@ -772,6 +788,7 @@ setRegion(F.combat, "combat_throw_options", genThrowOptions());
 setRegion(F.combat, "combat_arrow_options", genArrowOptions());
 setRegion(F.combat, "combat_read_check", genReadCheck());
 setRegion(F.combat, "combat_read_options", genReadOptions());
+setRegion(F.combat, "combat_potion_options", genPotionOptions());
 setRegion(F.combat, "combat_use_check", genUseCheck(true));
 setRegion(F.combat, "combat_use_options", genUseOptions("fight_use_do", true));
 CATALOG.shops.forEach(function (shop) {

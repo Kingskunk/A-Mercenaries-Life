@@ -825,21 +825,17 @@
         sub: "Lords of the Western Vale",
         tags: ["Western Vale"], aliases: ["Gault", "Dunmow", "lord of Dunmow", "riders", "cavalry", "Western Vale"],
         unlock: "codex_house_gault",
-        body: [
+        body: function (s) {
+          var out = [
           "The noble house that holds the [[western_vale|Western Vale]] from its walled seat at Dunmow. When the legions left, Gault kept its storehouses shut and its gates manned, and it has held Dunmow ever since. It fields mounted riders and archers, who are at home on the open grasslands and far less so in forest or bog. Coombe Gap, the road that takes the vale's wagons east toward the river, is Gault's.",
           "Gault keeps no harbor and no fleet, so its hemp, wool and wine reach the sea on Scales barges or not at all."
-        ],
+          ];
+          if (truthy(s.lg_hall_seen)) {
+            out.push("Its arms hang over the doors of Langston Hall, which a newer tablet calls the Countess's hall. The mayor of Langston hears disputes there, and the clerks list the people hired in the Vale.");
+          }
+          return out;
+        },
         see: ["western_vale", "stenmark", "grey_marches", "meridian_empire"]
-      },
-      {
-        id: "squatters", category: "factions", title: "The Causeway Squatters",
-        sub: "The garrison of the Black Sinks gatehouse",
-        tags: ["Grey River"], aliases: ["squatters", "deserters", "Black Sinks"],
-        unlock: "codex_marsh_squatters",
-        body: [
-          "Displaced highland tenants, escaped bond-servants, and army deserters who fortified the Black Sinks toll gatehouse. Starvation and debt had driven them into the fen. They held the causeway with scythes, sickles, and fishing spears until the Carrion overran them."
-        ],
-        see: ["black_sinks"]
       },
       {
         id: "iron_bull", category: "factions", title: "The Iron Bull Free Company",
@@ -1055,7 +1051,7 @@
           }
           return out;
         },
-        see: ["squatters", "gilded_scales", "valen_reach", "meridian_empire", "iron_carrion", "grey_river", "alderford", "grey_marches", "great_sedge", "stenmark"]
+        see: ["gilded_scales", "valen_reach", "meridian_empire", "iron_carrion", "grey_river", "alderford", "grey_marches", "great_sedge", "stenmark"]
       },
       {
         id: "broken_crags", category: "places", title: "The Highland Crags",
@@ -1131,9 +1127,13 @@
         body: function (s) {
           var karr = truthy(s.codex_baron_karr) ? "Baron Karr's" : "the highland lord's";
           var lord = truthy(s.codex_house_gault) ? "[[house_gault|House Gault]]" : "A noble house";
-          return [
+          var out = [
             "Open grassland and mostly level, river-fed farm country west of the Grey, broken only by low chalk rises and old forest along its southern edge. " + lord + " rules it from Dunmow. Fallowfield and smaller market towns sit among mixed farms, fibre hemp and vineyards, while sheep and horses graze the broad pasture. Coombe Gap leads east to the river; Iron Gap climbs north into the Crags and " + karr + " tolls."
           ];
+          if (truthy(s.langston_seen) || truthy(s.langston_arrival_seen)) {
+            out.push("[[langston|Langston]] is one of its market towns, a walled town on the Vale's wagon road.");
+          }
+          return out;
         },
         see: ["house_gault", "stenmark", "grey_river", "grey_marches", "port_valen"]
       },

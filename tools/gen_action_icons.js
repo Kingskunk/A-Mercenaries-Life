@@ -43,6 +43,17 @@ const MAP = {
   items_bramble_heart: "Generic/Gnarled_Bramble_Heart_Generated_Source.png",
   items_silverstar: "Generic/Silverstar_Generated_Source.png",
   items_philter_of_remembrance: "Generic/Philter_of_Remembrance_Generated_Source.png",
+  // Drinkable potions share one Potions button (2026-11-01). Each "Potions: <title>" choice uses potions_<slug of its title> in the fly-out.
+  potions: "Interface/Elixir_Icon.png",
+  potions_potion_of_barkskin: "Item/Consumable/Elixir/ELX_Elixir_of_Barkskin_Unfaded_Icon.png",
+  potions_clear_head_draught: "Item/Consumable/Elixir/ELX_Elixir_of_Vigilance_Unfaded_Icon.png",
+  potions_saint_altheas_water: "Generic/Saint_Altheas_Water_Generated_Source.png",
+  potions_fortifying_tonic: "Item/Consumable/Potion/POT_Potion_of_Vitality_Unfaded_Icon.png",
+  potions_brine_antivenom: "Item/Consumable/Potion/POT_Antidote_Unfaded_Icon.png",
+  potions_healing_potion: "Item/Consumable/Potion/POT_Potion_of_Healing_Unfaded_Icon.png",
+  potions_fire_resistance_potion: "Generic/Fire_Resistance_Potion_Generated_Source.png",
+  potions_cold_resistance_potion: "Generic/Cold_Resistance_Potion_Generated_Source.png",
+  potions_heroism_potion: "Generic/Heroism_Potion_Generated_Source.png",
   // Each spell scroll's own art on the Read fly-out, keyed read_<slug of its title> (battlehud.js variantArt).
   read: "Item/Consumable/Scroll/BOOK_SignedTradeVisa_Unfaded_Icon.png",
   read_magic_missile_scroll: "Item/Consumable/Scroll/Scroll_of_Magic_Missile_Unfaded_Icon.png",

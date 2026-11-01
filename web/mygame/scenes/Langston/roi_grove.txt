@@ -60,6 +60,9 @@ The old trees stand back from a clear patch of ground, and the track runs out in
 *gosub rg_roi
 *gosub rg_roi_here_check
 *if (not(rg_roi_here))
+  *gosub rg_herbs_check
+  *if (rg_herbs_any)
+    *goto rg_menu_alone
   *page_break Walk back to the track…
   *goto_scene overworld/overworld ow_here
 *goto rg_menu
@@ -73,8 +76,73 @@ The old trees stand back from a clear patch of ground, and the track runs out in
     *set rg_roi_here true
 *return
 
+*comment THE HERB PATCHES (the user's design, 2026-11-01): once Roi's cure is done the grove's three patches give sage (stones above the overhang), hornwort (the seep) and wolfsbane (the shady edge). Each is one try through the shared forage routine (dungeon.txt dg_forage: Nature or Survival, 15 minutes, two pieces on a margin of 5) and comes back five days after it was tried. Not in the dark. replay-ok: sets display variables from the day.
+*label rg_herbs_check
+*set rg_sage_ready false
+*set rg_hornwort_ready false
+*set rg_wolfsbane_ready false
+*set rg_herbs_any false
+*if (wol_roi_cured)
+  *if (not((time_period = "Night") or (time_period = "Pre-Dawn")))
+    *if (campaign_day >= (rg_sage_day + 5))
+      *set rg_sage_ready true
+    *if (campaign_day >= (rg_hornwort_day + 5))
+      *set rg_hornwort_ready true
+    *if (campaign_day >= (rg_wolfsbane_day + 5))
+      *set rg_wolfsbane_ready true
+    *if ((rg_sage_ready) or ((rg_hornwort_ready) or (rg_wolfsbane_ready)))
+      *set rg_herbs_any true
+*return
+
+*comment Roi is away (or it is night): the grove alone, with the herbs when a patch is ready. The walk back is offered twice so the menu is never two buttons.
+*label rg_menu_alone
+*set wait_ok_page page_id
+*choice
+  # Look the grove over for herbs. [~15 min]
+    *goto rg_herbs
+  # Walk back to the track.
+    *goto_scene overworld/overworld ow_here
+  # Leave the herbs for another day and head back to the track.
+    *goto_scene overworld/overworld ow_here
+
+*label rg_herbs
+*gosub rg_herbs_check
+*choice
+  *if (rg_sage_ready)
+    # Cut sage from the warm stones above the overhang. [~15 min]@{show_stat_hints  [Nature or Survival DC 10]|}
+      *set dg_fg_plant "sage"
+      *gosub_scene dungeon dg_forage
+      *set rg_sage_day campaign_day
+      *page_break Back to the clearing…
+      *goto rg_after_herbs
+  *if (rg_hornwort_ready)
+    # Draw hornwort from the seep. [~15 min]@{show_stat_hints  [Nature or Survival DC 11]|}
+      *set dg_fg_plant "hornwort"
+      *gosub_scene dungeon dg_forage
+      *set rg_hornwort_day campaign_day
+      *page_break Back to the clearing…
+      *goto rg_after_herbs
+  *if (rg_wolfsbane_ready)
+    # Cut wolfsbane at the shady edge. [~15 min]@{show_stat_hints  [Nature or Survival DC 12]|}
+      *set dg_fg_plant "wolfsbane"
+      *gosub_scene dungeon dg_forage
+      *set rg_wolfsbane_day campaign_day
+      *page_break Back to the clearing…
+      *goto rg_after_herbs
+  # Leave the patches be.
+    *goto rg_after_herbs
+  # Step back from the patches.
+    *goto rg_after_herbs
+
+*label rg_after_herbs
+*gosub rg_roi_here_check
+*if (rg_roi_here)
+  *goto rg_menu
+*goto rg_menu_alone
+
 *label rg_menu
 *set wait_ok_page page_id
+*gosub rg_herbs_check
 *choice
   *if (not(wol_roi_asked_health))
     # Ask how he is now that the polypox is gone.
@@ -88,6 +156,9 @@ The old trees stand back from a clear patch of ground, and the track runs out in
   *if ((tst_cleric_arrived) and (not(wol_roi_asked_cleric)))
     # Ask whether he has met the temple's new cleric.
       *goto rg_talk_cleric
+  *if (rg_herbs_any)
+    # Look the grove over for herbs. [~15 min]
+      *goto rg_herbs
   # Sit with him a while. [~10 min]
     *goto rg_sit
   # Walk back to the track.
@@ -135,7 +206,7 @@ You tell him he couldn't have.
 *set wol_roi_asked_cleric true
 You ask whether he has met the temple's new cleric.
 
-"Ansel? Aye." Roi's face brightens. "Decent sort. Overworked, but decent. I took a basket of herbs down for the mortuary stair, and he looked at it like I'd handed him gold."
+"Edric? Aye." Roi's face brightens. "Decent sort. Overworked, but decent. I took a basket of herbs down for the mortuary stair, and he looked at it like I'd handed him gold."
 
 He chuckles. "The young one, Wynne, asked what a sprig of lavender does for the dead. I told him it's good for the flies and the mourners alike."
 

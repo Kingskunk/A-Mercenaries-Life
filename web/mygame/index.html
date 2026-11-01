@@ -40,8 +40,10 @@ either express or implied.
 <script src="lorebook-data.js"></script>
 <script src="lorebook-port-valen.js"></script>
 <script src="lorebook-timbermouth.js"></script>
+<script src="lorebook-langston.js"></script>
 <script src="lorebook.js"></script>
 <script src="quest-data.js"></script>
+<script src="questjournal.js"></script>
 <script src="spell-data.js"></script>
 <script src="spell-icons.js"></script>
 <script src="action-icons.js"></script>
@@ -87,6 +89,7 @@ either express or implied.
 <link href="ability_score_icons.css" rel="stylesheet" type="text/css">
 <link href="theme.css" rel="stylesheet" type="text/css">
 <link href="lorebook.css" rel="stylesheet" type="text/css">
+<link href="questjournal.css" rel="stylesheet" type="text/css">
 <link href="inventory.css" rel="stylesheet" type="text/css">
 <link href="trade.css" rel="stylesheet" type="text/css">
 <link href="citytravel.css" rel="stylesheet" type="text/css">
@@ -157,10 +160,10 @@ var rootDir = "../";
 }
 /* The quest panel (questPanelHtml): a title, the place under it, a progress line for a quest with counts. */
 #statSidebar .qGroup { margin: 8px 0 2px; font: 600 10.5px var(--ch-font-ui); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ch-dim); }
-#statSidebar .qItem { padding: 6px 0; border-bottom: 1px dotted var(--ch-line); cursor: help; }
+#statSidebar .qItem { padding: 6px 0; border-bottom: 1px dotted var(--ch-line); }
 #statSidebar .qItem:last-child { border-bottom: 0; }
 #statSidebar .qTitle { font-weight: 600; }
-#statSidebar .qMark { margin-left: 6px; font-size: 0.8em; color: var(--ch-gold, #c9a35a); }
+#statSidebar .qHot { cursor: pointer; }
 #statSidebar .qPlace { font-size: 0.9em; font-style: italic; color: var(--ch-dim); }
 #statSidebar .qPlace.qUrgent { font-style: normal; font-weight: 600; color: #d98a5a; }
 #statSidebar .qProg { display: flex; align-items: center; gap: 8px; padding-top: 2px; font-size: 0.9em; }
@@ -168,6 +171,7 @@ var rootDir = "../";
 #statSidebar .qTicks { letter-spacing: 2px; color: var(--ch-brass); }
 #statSidebar .qProg.qDone .qTicks, #statSidebar .qProg.qDone > span:last-child { color: var(--ch-gold, #c9a35a); }
 #csTip .tText .qClue { margin: 2px 0 0 4px; }
+#csTip .tMore { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--ch-line); font-size: 0.85em; color: var(--ch-brass); }
 #statSidebar .abilityGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -428,6 +432,7 @@ button#statSidebar .turnRow,
   border-bottom: 1px solid rgba(255,255,255,0.09);
 }
 #csTip .tMeta b { color: var(--ch-dim); font-weight: 600; }
+#csTip.questCard .tMeta { white-space: normal; }   /* the quest card's place and giver line wraps inside the card instead of running off it */
 #csTip .tCond { margin-top: 4px; color: var(--ch-info); font-size: 12px; }   /* active conditions, one line */
 #csTip .tGrid {                  /* 2 columns x 3 rows: STR DEX / CON INT / WIS CHA. A real grid so the
                                     columns align exactly -- the previous version padded with non-breaking
@@ -448,6 +453,11 @@ button#statSidebar .turnRow,
 #csTip .tText { white-space: normal; max-width: 250px; }   /* the condition chips' card: sentences, not one-line rows */
 #csTip .tText p { margin: 4px 0 0; }
 #csTip .tText b { color: var(--ch-dim); font-weight: 600; }
+/* The quest card is a compact preview (goal and the latest clues); the whole history is in the Quest Journal panel a click on the quest's name opens (questjournal.js). */
+#csTip.questCard {
+  box-sizing: border-box;
+  max-width: min(280px, calc(100vw / var(--z, 1) - 16px));
+}
 #statSidebar .turnRow[data-combatant] {
   cursor: help;
 }
@@ -830,9 +840,8 @@ button#statSidebar .turnRow,
   function foldHtml(id, label, summary, body) {
     return "<details class=\"sbFold\" data-fold=\"" + id + "\"" + (sbOpen[id] ? " open" : "") + "><summary><span>" + label + "</span><span class=\"sbSum\">" + summary + "</span></summary>" + body + "</details>";
   }
-  // THE QUEST PANEL (2026-10-19, the user's five ideas): a fold with a one-line summary, quests above Hiring Hall jobs, a progress line for a quest that has counts, a gold diamond for one that counts toward
-  // level progress, the last day of a job in a warm colour, and a hover card (paintQuestCard) with who gave it, the goal, the clues found and what it counts toward. All of it is read from quest-data.js entries,
-  // whose new fields are optional (group, giver, goal, progress, clues, levelProgress, insignia), so an older entry draws as before with just a title and a place.
+  // THE QUEST PANEL (2026-10-19, the user's five ideas): a fold with a one-line summary, quests above Hiring Hall jobs, a progress line for a quest that has counts, the last day of a job in a warm colour, and a hover card (paintQuestCard) with who gave it, the goal, the clues found. All of it is read from quest-data.js entries,
+  // whose new fields are optional (group, giver, goal, progress, clues), so an older entry draws as before with just a title and a place.
   function qVal(v, s) { return typeof v === "function" ? v(s) : v; }
   function qTicks(have, need) {
     have = Math.max(0, Math.min(Number(have) || 0, Number(need) || 0)); need = Number(need) || 0;
@@ -843,8 +852,8 @@ button#statSidebar .turnRow,
   }
   function questItemHtml(q, s) {
     var title = qVal(q.title, s), place = qVal(q.place, s), prog = q.progress ? (q.progress(s) || []) : [];
-    var h = "<div class=\"qItem\" data-quest=\"" + esc(q.id) + "\"><div class=\"qTitle\">" + esc(title) + (q.levelProgress ? "<span class=\"qMark\">\u25c6</span>" : "") + "</div>";
-    if (place) h += "<div class=\"qPlace" + (/last day/.test(place) ? " qUrgent" : "") + "\">" + esc(place) + "</div>";
+    var h = "<div class=\"qItem\" data-quest=\"" + esc(q.id) + "\"><div class=\"qTitle\"><span class=\"qHot\">" + esc(title) + "</span></div>";
+    if (place) h += "<div class=\"qPlace" + (/last day/.test(place) ? " qUrgent" : "") + "\"><span class=\"qHot\">" + esc(place) + "</span></div>";
     prog.forEach(function (p) {
       var done = Number(p.have) >= Number(p.need);
       h += "<div class=\"qProg" + (done ? " qDone" : "") + "\"><span>" + esc(p.label) + "</span><span class=\"qTicks\">" + qTicks(p.have, p.need) + "</span><span>" + Math.min(Number(p.have) || 0, Number(p.need) || 0) + "/" + (Number(p.need) || 0) + "</span></div>";
@@ -1819,7 +1828,7 @@ button#statSidebar .turnRow,
   }
 
   // ── The card itself ──────────────────────────────────────────────────────────────────────────────────────
-  var tipEl = null, tipKey = null, tipX = 0, tipY = 0;
+  var tipEl = null, tipKey = null, tipX = 0, tipY = 0, tipHideTimer = null;
   // The combatant the pointer is on, as "kind:slot", on its lane dot or on its turn-order card; both are drawn lit while it is set.
   // Held here, not in the DOM, because the sidebar is rebuilt every 400ms (see renderStatSidebar).
   var linkKey = null;
@@ -1828,6 +1837,17 @@ button#statSidebar .turnRow,
       tipEl = document.createElement("div");
       tipEl.id = "csTip";
       document.body.appendChild(tipEl);   // NOT #statSidebar: its innerHTML is replaced every render
+      // A long quest card is the one interactive version of this shared card. The short delay lets the
+      // pointer cross the small gap from its quest row; entering the card cancels that pending close.
+      tipEl.addEventListener("mouseenter", function () {
+        if (tipKey && tipKey.indexOf("quest:") === 0 && tipHideTimer) {
+          clearTimeout(tipHideTimer);
+          tipHideTimer = null;
+        }
+      });
+      tipEl.addEventListener("mouseleave", function () {
+        if (tipKey && tipKey.indexOf("quest:") === 0) hideTip();
+      });
     }
     return tipEl;
   }
@@ -1933,24 +1953,25 @@ button#statSidebar .turnRow,
     var lines = [];
     function add(label, text) { lines.push("<p><b>" + esc(label) + "</b> " + esc(text) + "</p>"); }
     var giver = qVal(q.giver, s), place = qVal(q.place, s), goal = qVal(q.goal, s);
-    if (giver) add("Given by", giver);
-    if (place) add("Where", place);
+    var who = [];
+    if (place) who.push(esc(place));
+    if (giver) who.push("given by " + esc(giver));
     if (goal) add("Goal", goal);
     (q.progress ? (q.progress(s) || []) : []).forEach(function (p) { add(p.label, Math.min(Number(p.have) || 0, Number(p.need) || 0) + " of " + (Number(p.need) || 0) + (Number(p.have) >= Number(p.need) ? " (enough)" : "")); });
     var clues = q.clues ? (q.clues(s) || []) : [];
-    if (clues.length) lines.push("<p><b>So far</b></p>" + clues.map(function (c) { return "<p class=\"qClue\">\u2022 " + esc(c) + "</p>"; }).join(""));
-    var counts = [];
-    if (q.levelProgress) counts.push(typeof q.levelProgress === "string" ? q.levelProgress : "level progress, on success");
-    if (q.insignia) counts.push("finished jobs recorded on your Contractor's Insignia");
-    if (counts.length) add("Counts toward", counts.join(" and ") + ".");
-    tipNode().innerHTML = "<div class=\"tHd\">" + esc(qVal(q.title, s)) + "</div><div class=\"tText\">" + lines.join("") + "</div>";
+    if (clues.length) lines.push("<p><b>Latest</b></p>" + clues.slice(-2).map(function (c) { return "<p class=\"qClue\">\u2022 " + esc(c) + "</p>"; }).join(""));
+    tipNode().innerHTML = "<div class=\"tHd\">" + esc(qVal(q.title, s)) + "</div>" + (who.length ? "<div class=\"tMeta\">" + who.join(" \u00b7 ") + "</div>" : "") + "<div class=\"tText\">" + lines.join("") + "</div><div class=\"tMore\">Click for full quest details</div>";
     return true;
   }
   function showTip(key, x, y) {
     var t = tipNode();
+    if (tipHideTimer) { clearTimeout(tipHideTimer); tipHideTimer = null; }
+    var changed = tipKey !== key;
+    t.classList.toggle("questCard", key.indexOf("quest:") === 0);
     if (key.indexOf("quest:") === 0) {
       tipKey = key; tipX = x; tipY = y;
       if (!paintQuestCard(key.slice(6))) return hideTip();
+      if (changed) t.scrollTop = 0;
       placeTip();
       t.classList.add("on");
       return;
@@ -1976,7 +1997,15 @@ button#statSidebar .turnRow,
     placeTip();
     t.classList.add("on");
   }
-  function hideTip() { tipKey = null; if (tipEl) tipEl.classList.remove("on"); }
+  function hideTip() {
+    if (tipHideTimer) { clearTimeout(tipHideTimer); tipHideTimer = null; }
+    tipKey = null;
+    if (tipEl) tipEl.classList.remove("on");
+  }
+  function scheduleQuestTipHide() {
+    if (tipHideTimer) clearTimeout(tipHideTimer);
+    tipHideTimer = setTimeout(function () { tipHideTimer = null; hideTip(); }, 140);
+  }
   // Renders whichever kind of card tipKey names. Split out of showTip so refreshTip can re-show a SPELL
   // card without going through the combatant-only path -- the two share one #csTip element, so anything
   // that re-renders it has to dispatch on the key's prefix. Known spells' art is deliberately NOT shown
@@ -2000,8 +2029,10 @@ button#statSidebar .turnRow,
   function refreshTip() {
     if (!tipKey) return;
     if (tipKey.indexOf("quest:") === 0) {
-      // A quest in the quest panel: the sidebar is rebuilt every 400 ms, so find the row under the pointer again and repaint it (its counts may have moved)
-      var qel = document.elementFromPoint(tipX, tipY), qrow = qel && qel.closest ? qel.closest("#statSidebar .qItem[data-quest]") : null;
+      // A quest in the quest panel: the sidebar is rebuilt every 400 ms, so find its visible text under
+      // the pointer again and repaint it (its counts may have moved). Blank row space is not a trigger.
+      var qel = document.elementFromPoint(tipX, tipY), qhot = qel && qel.closest ? qel.closest("#statSidebar .qHot") : null;
+      var qrow = qhot && qhot.closest ? qhot.closest(".qItem[data-quest]") : null;
       if (!qrow) return hideTip();
       tipKey = "quest:" + qrow.getAttribute("data-quest");
       if (!paintQuestCard(tipKey.slice(6))) return hideTip();
@@ -2410,7 +2441,11 @@ button#statSidebar .turnRow,
     var row = rowAt(ev);
     if (row && row.getAttribute("data-combatant") === tipKey) { tipX = ev.clientX; tipY = ev.clientY; placeTip(); }
   });
-  document.getElementById("statSidebar").addEventListener("mouseleave", function () { hideTip(); setLink(null); });
+  document.getElementById("statSidebar").addEventListener("mouseleave", function () {
+    if (tipKey && tipKey.indexOf("quest:") === 0) scheduleQuestTipHide();
+    else hideTip();
+    setLink(null);
+  });
   // Battlefield lane nodes open the shared card (paintNodeCard) and follow the pointer like the combatant card does.
   document.getElementById("statSidebar").addEventListener("mouseover", function (ev) {
     var el = ev.target, node = el && el.closest ? el.closest(".battlefieldNode[data-node]") : null;
@@ -2423,17 +2458,19 @@ button#statSidebar .turnRow,
     var el = ev.target, node = el && el.closest ? el.closest(".battlefieldNode[data-node]") : null;
     if (node) { tipX = ev.clientX; tipY = ev.clientY; placeTip(); }
   });
-  // The three condition chips open their own card (paintCondCard) and follow the pointer; so does each quest in the quest panel (paintQuestCard).
+  // The three condition chips follow the pointer. A quest card stays where it opened so a long history's
+  // scrollbar does not run away from the player as they move from the quest row onto the card.
   document.getElementById("statSidebar").addEventListener("mouseover", function (ev) {
-    var el = ev.target, chip = el && el.closest ? el.closest(".sbCond[data-cond]") : null, qrow = el && el.closest ? el.closest(".qItem[data-quest]") : null;
+    var el = ev.target, chip = el && el.closest ? el.closest(".sbCond[data-cond]") : null;
+    var qhot = el && el.closest ? el.closest(".qHot") : null, qrow = qhot && qhot.closest ? qhot.closest(".qItem[data-quest]") : null;
     if (chip) showTip("cond:" + chip.getAttribute("data-cond"), ev.clientX, ev.clientY);
     else if (qrow) showTip("quest:" + qrow.getAttribute("data-quest"), ev.clientX, ev.clientY);
     else if (tipKey && (tipKey.indexOf("cond:") === 0 || tipKey.indexOf("quest:") === 0)) hideTip();
   });
   document.getElementById("statSidebar").addEventListener("mousemove", function (ev) {
     if (!tipKey || (tipKey.indexOf("cond:") !== 0 && tipKey.indexOf("quest:") !== 0)) return;
-    var el = ev.target, chip = el && el.closest ? el.closest(".sbCond[data-cond]") : null, qrow = el && el.closest ? el.closest(".qItem[data-quest]") : null;
-    if (chip || qrow) { tipX = ev.clientX; tipY = ev.clientY; placeTip(); }
+    var el = ev.target, chip = el && el.closest ? el.closest(".sbCond[data-cond]") : null;
+    if (chip) { tipX = ev.clientX; tipY = ev.clientY; placeTip(); }
   });
   // A lane dot and its turn-order card light each other. Only a CHANGE re-renders: the rebuild puts a new element under a still pointer,
   // and the browser answers with another mouseover, which would otherwise loop.
