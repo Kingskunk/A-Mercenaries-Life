@@ -1,0 +1,134 @@
+*comment ====================================================================================
+*comment THE VINEYARD ROADS (Barolo): the lanes, terraces and footpaths among the vines. Plan: Resources & Quest/WESTERN_VALE_VILLAGES_PLAN.md, Village Two, place 4.
+*comment This page leads nowhere yet, by the user's instruction (2026-11-01): it is the three description layers and the way back to the village. It is where future quest and notice-board hooks will
+*comment attach. The vineyards themselves are the subject; the estates and their families are not named or visited here (they are not the only people in Barolo).
+*comment ====================================================================================
+
+*label ba_vr
+*set minutes_to_pass 10
+*set time_advance_call_id "ba_vr_walk_1"
+*gosub_scene Langston/barolo/barolo ba_walk_time
+*goto ba_vr_hub
+
+*label ba_vr_hub
+*temp vr_first false
+*if (not(ba_vr_seen))
+  *set vr_first true
+*set ba_vr_seen true
+*temp vr_night false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set vr_night true
+*temp vr_vignette (((campaign_day * 24) + clock_hour) modulo 6) + 1
+
+[b]◈ THE VINEYARD ROADS[/b]
+*line_break
+*gosub ba_vr_layers
+
+*comment Open-world free time: the sidebar's Wait and Rest work on this page.
+*set wait_ok_page page_id
+*choice
+  # Walk back down to the village.
+    *goto_scene Langston/barolo/barolo ba_return
+
+*comment ── LAYERS ──
+*label ba_vr_layers
+*gosub ba_vr_place
+*gosub ba_vr_sky
+*gosub ba_vr_street
+*return
+
+*comment ── LAYER 1: PLACE ── The vineyards first, then the lanes. The long description prints once; the seasonal line that closes it prints every visit, since it is the vines' own state and not the weather.
+*label ba_vr_place
+*if (vr_first)
+  Just above the last houses the ground opens into vineyards, and they cover everything in sight. The vines run in long, curving lines across the slope, each one a knotted trunk as thick as a wrist with its canes tied along wires strung between wooden posts. On the steeper ground the lines step down in terraces held up by walls of fitted stone. Between the lines the soil shows pale and crumbly, with grass and small flowers along the edges, and nearly every strip has its own little hut for tools and baskets.
+
+  Three lanes leave a stone trough at the edge of the village and run out among the plots: a stepped road up the hill, a broad rutted lane along the slope, and a narrow track between hedges lower down. Footpaths cut across the strips between them. The air smells of earth and leaf.
+*else
+  The vineyards cover the slope in long, curving lines of vines on wires, stepped into terraces where the ground steepens. Three lanes leave the trough at the village edge and run out among them, with footpaths cutting across the plots between.
+*if (current_season = "Spring")
+  Pale green leaves are unfurling along every cane, and the first shoots reach for the wires.
+*elseif (current_season = "Summer")
+  The vines are heavy with broad green leaves, and small hard bunches of grapes hang beneath them.
+*elseif (current_season = "Autumn")
+  The leaves are turning and beginning to fall, and the bunches hang dark and heavy beneath them.
+*else
+  The vines stand bare and knotted, their cut canes tied along the wires.
+*return
+
+*comment ── LAYER 2: SKY ── Open ground, so the weather is felt in full. Weather and light only, then the ground's memory of recent weather.
+*label ba_vr_sky
+*if (weather = "Rain")
+  Rain runs down the terrace walls in thin sheets and fills the ruts of the broad lane.
+*elseif (weather = "Storm")
+  Wind tears along the slope and bends the vines hard over, and rain stings across the open lanes.
+*elseif (weather = "Fog")
+  Fog lies thick among the vines and swallows the lower lane a few steps from the trough.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Wet snow clings to the terrace walls and lies in the furrows between the vines.
+*elseif (weather = "Blizzard")
+  Driven snow fills the lanes and blots out the vines beyond the nearest wall.
+*elseif (weather = "Clear")
+  *if (vr_night)
+    Starlight lies on the pale lanes, and the vines make black bars across the slope.
+  *elseif (time_period = "Dusk")
+    The last light lies gold along the walls and sends long shadows down between the vines.
+  *else
+    Bright light lies across the terraces, and the fitted stone is warm to the touch.
+*else
+  *if (vr_night)
+    A starless sky leaves the lanes dark, and the vines are only a rustle on either side.
+  *else
+    Flat grey light lies over the slope and picks out the lines of the walls and vines.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  The ruts of the broad lane still hold water, and the footpaths through the vines are slick with mud.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The terrace walls are dark with damp, and the footpaths are soft underfoot.
+*return
+
+*comment ── LAYER 3: STREET ── Who is about. Daytime work follows the season; the vignette follows the clock.
+*label ba_vr_street
+*if ((street_life = "empty") and (not(vr_night)))
+  The slope is empty and the broad lane lies bare. Every gate along the lower track is shut against the weather.
+  *return
+*if (vr_night)
+  *if (vr_vignette = 1)
+    A fox calls once from the high ground and is answered from lower down.
+  *elseif (vr_vignette = 2)
+    A gate chain clinks somewhere along the lower track.
+  *elseif (vr_vignette = 3)
+    An owl crosses the lane without a sound and settles on a wall.
+  *elseif (vr_vignette = 4)
+    Wind runs through the vines with a long, dry rustle.
+  *elseif (vr_vignette = 5)
+    A cart rolls a long way off on the broad lane and fades.
+  *else
+    A pale light moves behind a hedge on the lower track and goes out.
+  *return
+*if (time_period = "Dusk")
+  Workers come down from the slope in twos and threes, tools on their shoulders, and a cart groans down the broad lane under a heavy load.
+  *return
+*if (day_of_week = "Hallowday")
+  The slope is quiet for the rest day. A few walkers in their better clothes stroll the terrace steps, and the broad lane is empty.
+  *return
+*if (current_season = "Spring")
+  Workers move along the lines tying young shoots to the wires.
+*elseif (current_season = "Summer")
+  Workers move along the vines trimming leaves back from the heavy bunches.
+*elseif (current_season = "Autumn")
+  Pickers work the vines with baskets on their backs, and loaded carts jolt down the broad lane.
+*else
+  Workers in thick coats prune the vines and heap the cuttings between the lines.
+*if (vr_vignette = 1)
+  A string of mules picks its way along a terrace wall with empty baskets.
+*elseif (vr_vignette = 2)
+  Two workers pass a basket between them over a hedge and go on talking.
+*elseif (vr_vignette = 3)
+  A hawk hangs over the upper slope, then slides away down the hill.
+*elseif (vr_vignette = 4)
+  Voices carry across the terraces from somewhere above, too far off to make out.
+*elseif (vr_vignette = 5)
+  A cart of baskets jolts down the broad lane toward the village.
+*else
+  Bees work the hedge beside the lower track, loud in the stillness.
+*return

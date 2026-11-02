@@ -1,0 +1,133 @@
+*comment ====================================================================================
+*comment BAROLO MARKET: the paved yard where the village lane meets the road from the arch. Plan: Resources & Quest/WESTERN_VALE_VILLAGES_PLAN.md, Village Two, place 2.
+*comment Built so far: the hours, the three description layers and the way back. There is no trade panel yet, by the user's instruction (2026-11-01); the labels are laid out like
+*comment timbermouth/market.txt so the panel and rumours drop in without moving anything:
+*comment   ba_market            entry from the village hub (5 minutes' walk, hours check)
+*comment   ba_market_ground     the market page; it already calls ba_market_open_panel, which is an empty stub
+*comment   ba_market_open_panel where the panel opens: set shop_open "ba_market", clear shop_rows, and the GEN:BEGIN/END ba_market_panel_rows block with its market_rumor_check "ba_market" call
+*comment   (add the "# ⚖ Settle up" option, ba_market_cart_pass and ba_market_settle by copying tm_market_* from timbermouth/market.txt with the prefix changed)
+*comment To switch trading on, the same market also needs a "ba_market" entry in tools/market_defs.json (tile "nv", commodities true), the shop in tools/gear_catalog.json and the PILOT list in
+*comment web/mygame/trade.js, and Wine as a commodity with Barolo as a major maker (plan: one Wine row, estate names and vintages never separate goods). Not in *scene_list: compile.js lists it.
+*comment The prose shows tables, casks and weighing, never a price list. Plan notes kept for later: the clerk at the shuttered counter refers a contested weight, fee or seal to the village head.
+*comment ====================================================================================
+
+*label ba_market
+*set minutes_to_pass 5
+*set time_advance_call_id "ba_market_walk_1"
+*gosub_scene Langston/barolo/barolo ba_walk_time
+*gosub_scene Langston/barolo/barolo ba_hours
+*if (not(ba_ok_market))
+  *set shop_open ""
+  *goto ba_mk_closed
+*goto ba_market_ground
+
+*label ba_market_ground
+*gosub_scene Langston/barolo/barolo ba_hours
+*if (not(ba_ok_market))
+  *set shop_open ""
+  *goto ba_mk_closed
+*temp mk_first false
+*if (not(ba_market_seen))
+  *set mk_first true
+*set ba_market_seen true
+*temp mk_vignette (((campaign_day * 24) + clock_hour) modulo 4) + 1
+
+[b]◈ BAROLO MARKET[/b]
+*line_break
+*gosub ba_mk_layers
+*gosub ba_market_open_panel
+
+*comment Open-world free time: the sidebar's Wait and Rest work on this page.
+*set wait_ok_page page_id
+*choice
+  *comment The "# ⚖ Settle up" option goes here when the panel is wired (see the header).
+  # Walk back to the village lane.
+    *set shop_open ""
+    *goto_scene Langston/barolo/barolo ba_return
+
+*comment The trade panel's home. Empty until the market is wired to the trading system (see the header).
+*label ba_market_open_panel
+*comment GEN:BEGIN ba_market_panel_rows goes here once tools/gen_markets.js knows the market
+*return
+
+*label ba_mk_closed
+[b]◈ BAROLO MARKET[/b]
+*line_break
+*if (street_life = "empty")
+  The tiled canopies are lashed down and the tables stacked against the posts. Water runs across the empty paving, and the clerk's shutter is closed.
+*else
+  The tables are stacked against the posts and a chain is looped through the yard's gateposts. The canopies stand over bare paving, and the clerk's counter is shuttered.
+*choice
+  # Walk back to the village lane.
+    *goto_scene Langston/barolo/barolo ba_return
+  # Wait at the gate a while. [~5 min]
+    *set minutes_to_pass 5
+    *set time_advance_call_id "ba_mk_closed_wait"
+    *gosub_scene Langston/barolo/barolo ba_walk_time
+    *goto_scene Langston/barolo/barolo ba_return
+
+*comment ── LAYERS ── The yard is open to the weather under its canopies, so it keeps the full sky layer.
+*label ba_mk_layers
+*gosub ba_mk_place
+*gosub ba_mk_sky
+*gosub ba_mk_street
+*return
+
+*comment ── LAYER 1: PLACE ── Fixed geography only. The long description prints once.
+*label ba_mk_place
+*if (mk_first)
+  The market fills a broad paved yard where the village lane meets the road from the arch. Tiled canopies on stone posts shelter long tables along three sides, and the paving between them has been worn smooth and pale by carts and boots. At the middle a raised stone platform holds a big iron scale beneath a canopy painted with House Gault's shield, and a clerk's counter with folding shutters stands beside it. Small casks with wooden taps sit in rows on the nearer tables, among baskets of fruit, jars of honey and pale blocks of beeswax. A stone trough fed by a pipe waits where the carts pull up. It smells of fruit, beeswax, wine and warm stone.
+*else
+  The paved yard is as before: the tiled canopies along its sides, the scale on its platform under the painted shield, and the rows of small casks, fruit and honey on the tables.
+*return
+
+*comment ── LAYER 2: SKY ── Weather and light only, then the ground's memory of recent weather. The market is shut at night and in dangerous weather, so those cases never print here.
+*label ba_mk_sky
+*if (weather = "Rain")
+  Rain drums on the tiled canopies and runs off their edges in strings, darkening the paving between them.
+*elseif (weather = "Fog")
+  Fog fills the yard and softens the far canopies to grey shapes.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Wet snow slides off the canopy tiles and melts to slush on the paving.
+*elseif (weather = "Clear")
+  *if (time_period = "Dusk")
+    The last light lies low across the yard and turns the pale paving gold.
+  *else
+    Bright light falls across the paving, and the canopies throw sharp shadows over the tables.
+*else
+  Flat grey light lies over the yard and shows every worn dip in the paving.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Water still stands in the dips of the paving, and the carts have left muddy tracks across it.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The paving is dark in the hollows from the last rain.
+*return
+
+*comment ── LAYER 3: STREET ── Who is about and what is laid out. The stock line follows the season; the rest follows the day and the clock.
+*label ba_mk_street
+*if (current_season = "Spring")
+  Last year's apples and dried pears fill the fruit baskets, and the first honey of the year stands in small jars.
+*elseif (current_season = "Summer")
+  Baskets of cherries, plums and early pears share the tables with fresh honeycomb.
+*elseif (current_season = "Autumn")
+  Baskets of apples, pears, plums and grapes crowd the tables, and the honey jars are new and dark.
+*else
+  Stored apples and dried fruit fill the baskets, and the honey jars stand in neat rows beside the beeswax.
+*if (time_period = "Dusk")
+  Sellers are untying canopy ropes and rolling the last small casks toward their carts, and the clerk has begun folding the shutters over the counter.
+  *return
+*if (day_of_week = "Marketday")
+  The yard is packed. Carts nose in beside the trough, buyers pass tin cups from hand to hand, and sellers call their lots over the noise of the scale.
+  *return
+*if (day_of_week = "Hallowday")
+  Only a few tables are laid out for the rest day, and the buyers who come move slowly from one to the next.
+  *return
+*if (mk_vignette = 1)
+  A buyer tips a sample from a small cask into a tin cup and holds it up to the light.
+*elseif (mk_vignette = 2)
+  The clerk calls a weight across the yard, and a cart pulls off the platform.
+*elseif (mk_vignette = 3)
+  Bees circle the honey table, and the seller waves them off with a cloth.
+*else
+  A woman at the fruit table arranges her baskets in a tidy row, turning each one to show its best side.
+*return

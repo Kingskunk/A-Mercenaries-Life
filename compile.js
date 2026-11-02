@@ -306,6 +306,12 @@ function compile(){
   // Langston's town hub and standalone location files. Reached by *goto_scene from the overworld's Langston tile and the Dev Hub, never through *scene_list, so each needs its own line here or a compiled build fails
   // with "scene doesn't exist" the moment the player walks into the town. Langston Hall is registered as a location shell but remains unlinked until it receives playable business.
   verifyFileName("Langston/langston.txt");
+  // Barolo: the vineyard village north of Langston (hub only so far). Reached by *goto_scene, never through *scene_list.
+  verifyFileName("Langston/barolo/barolo.txt");
+  verifyFileName("Langston/barolo/red_stave.txt");
+  verifyFileName("Langston/barolo/vineyard_roads.txt");
+  verifyFileName("Langston/barolo/market.txt");
+  verifyFileName("Langston/barolo/village_heads_hall.txt");
   verifyFileName("Langston/cord_and_kettle.txt");
   verifyFileName("Langston/pickled_hen.txt");
   verifyFileName("Langston/langston_hall.txt");

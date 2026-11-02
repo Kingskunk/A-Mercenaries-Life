@@ -298,9 +298,7 @@ Likely imports include timber and iron for casks and hoops, salt and preserved f
 ## Village Three: Broadmead
 
 ### Identity and Landscape
-
-Broadmead lies on a pasture lane branching from the eastern part of the Langston road, provisionally near the Fellgate end of the Vale. Open grassland supports sheep, dairy cattle, hay ground, and House Gault's remount herd. The village spreads around folds and fenced lanes rather than forming one tight street.
-
+    
 Broadmead's best horses are not ordinary market goods. Some belong directly to the Countess, while others are raised by tenants under breeding agreements or purchased under House right of first offer. Wool and dairy goods provide the steadier village economy.
 
 ### Four Places of Interest
@@ -401,7 +399,7 @@ Recommended implementation principles:
 6. Decide which village markets are open on which weekdays and whether their schedules complement or compete with Langston's Marketday.
 7. Approve the proposed generic Wine and Hemp commodities, including makers, prices, weights, seasonal curves, storage, and freight reach. Preserve one market row for each good.
 8. Decide which members of House Veyre, the Durnell family, and the Avenel family are present during the player's first visit, and how many household guards and principal servants each maintains.
-9. Name the Red Stave's innkeeper, decide its ordinary room and stable capacity, and decide whether a cooper works from its court as scenery or a future service without adding another permanent place.
+9. Red Stave: the innkeeper is **Odalie Hollowell**, a halfling woman (chosen 2026-11-01; the name was checked against every scene, lorebook and the name generator, and is reserved in names-data.js). Still to decide: its ordinary room and stable capacity, and decide whether a cooper works from its court as scenery or a future service without adding another permanent place.
 10. Decide whether Broadmead sells player mounts and, if so, how it reuses the established horse-selection flow.
 11. Define which Barolo Contract Board postings count toward House Gault standing, how often official, private, and public notices change, and who is authorized to confirm completion and pay each reward.
 12. Define the in-world discovery trigger for each Barolo family, estate, and named household member before adding individually gated lorebook coverage.

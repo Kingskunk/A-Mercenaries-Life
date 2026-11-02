@@ -87,7 +87,7 @@
   };
   var DEFAULT_WEATHER_ZONE = "reach";
   // A district (stats.current_district) the player is in while NOT on the overworld, where it is not the default zone. Langston is a town, not a tile; a Vale dungeon or farm would be listed here too.
-  var DISTRICT_ZONE = { langston: "vale" };
+  var DISTRICT_ZONE = { langston: "vale", barolo: "vale" };
   // The fields a zone owns: its key in a parked slot -> the stat it is swapped with.
   var WEATHER_FIELDS = { weather: "weather", tomorrow: "weather_tomorrow", missed: "forecast_missed", rain: "rain_streak", dry: "dry_streak" };
 
@@ -926,7 +926,8 @@
     sw: { place: "the gate" },
     fg: { place: "the gate" },
     lg: { place: "the town hall", setting: "town", region: "any" },
-    nv: { place: "the village", setting: "village", region: "marches", count: [0, 0] },   // placeholder villages (2026-11-01): no board of their own yet
+    nv: { place: "the Village Head's Hall", setting: "village", region: "marches" },   // Barolo (2026-11-02): its Contract Board is in the Village Head's Hall (Langston/barolo/village_heads_hall.txt ba_hall_board); the village count [0, 2]
+    // The two placeholder villages below have no board of their own yet.
     tb: { place: "the village", setting: "village", region: "marches", count: [0, 0] },
     fm: { place: "the village", setting: "village", region: "marches", count: [0, 0] }
   };

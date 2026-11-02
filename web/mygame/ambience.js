@@ -93,6 +93,11 @@
     road: "open_road", overworld_hilly_road: "open_road",   // the kind of an overworld tile (Scenery.placeNames ends a tile's names with it)
     generic_town_street: "village",
     langston: "city",
+    barolo: "village",                    // the village hub and the overworld tile: a village by day, a hushed one at night
+    barolo_market: "village",             // the paved market yard is open air
+    barolo_vineyard_roads: "open_road",   // lanes between the vines: grassland by day, night nature after dark
+    barolo_village_heads_hall: "langston_hall",   // an indoor government hall, the same soft room tone as Langston Hall
+    barolo_red_stave: "tavern",           // the hall: a quiet tavern by day that fills as the day ends
     tomlin_cottage: "city",
     tomlin_herbalist_workroom: "shop",
     city_wagon_yard: "city",

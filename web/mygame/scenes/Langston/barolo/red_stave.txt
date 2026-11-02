@@ -1,0 +1,404 @@
+*comment ====================================================================================
+*comment THE RED STAVE (Barolo): coaching inn and wine house on the main lane. Plan: Resources & Quest/WESTERN_VALE_VILLAGES_PLAN.md, Village Two, place 3.
+*comment Built so far: the hall with its three layers, two meals, a rented room (24 hours) and the stable court. Odalie Hollowell, the innkeeper, is a halfling woman; her name is checked
+*comment against every scene, lorebook and the name generator, and it is in names-data.js RESERVED. Her private rooms, the wine and the cellar dealings are not built yet; the cellar stair is
+*comment only described, and the hall is Barolo's honest social centre first.
+*comment ====================================================================================
+
+*label ba_rs
+*set minutes_to_pass 5
+*set time_advance_call_id "ba_rs_walk_1"
+*gosub_scene Langston/barolo/barolo ba_walk_time
+*goto ba_rs_hall
+
+*label ba_rs_hall
+*set scenery_subplace "village_inn_hall"
+*temp rs_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+*if (rs_now >= ba_rs_room_until)
+  *set ba_rs_room_active false
+*temp rs_first false
+*if (not(ba_rs_seen))
+  *set rs_first true
+*set ba_rs_seen true
+*temp rs_state "day"
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set rs_state "night"
+*elseif (time_period = "Morning")
+  *set rs_state "morning"
+*elseif (time_period = "Dusk")
+  *set rs_state "dusk"
+*temp rs_vignette (((campaign_day * 24) + clock_hour) modulo 4) + 1
+*temp ba_rs_talk_done false
+*if (((ba_rs_asked_head) and (ba_rs_asked_houses)) and (ba_rs_asked_self))
+  *set ba_rs_talk_done true
+
+[b]◈ THE RED STAVE[/b]
+*line_break
+*gosub ba_rs_layers
+
+*comment Open-world free time: the sidebar's Wait and Rest work on this page.
+*set wait_ok_page page_id
+*choice
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 3)
+    # [3 Copper Bits] Buy roast pork, baked apples and bread. [~20 min]@{show_stat_hints  [+2 Temp HP, +1 CON for 4h]|}
+      *set tavern_item_cost_copper 3
+      *goto ba_rs_roast
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 1)
+    # [1 Copper Bit] Buy bread, soft cheese, pears and honey. [~10 min]@{show_stat_hints  [+1 Temp HP, +1 CHA for 4h]|}
+      *set tavern_item_cost_copper 1
+      *goto ba_rs_plate
+  *if (not(ba_rs_talk_done))
+    *if (not(ba_rs_talk_opened))
+      # Ask Odalie what she can tell you about Barolo.
+        *goto ba_rs_talk
+    *else
+      # Talk with Odalie a little longer.
+        *goto ba_rs_talk
+  *if (ba_rs_room_active)
+    # Go up to your room.
+      *goto ba_rs_room
+  *elseif ((((gold * 100) + (silver * 10)) + copper) >= ba_rs_rate_copper)
+    # [${ba_rs_rate_copper} Copper Bits] Take a private room for 24 hours.
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+        *set currency_add_amount (0 - ba_rs_rate_copper)
+        *gosub_scene economy currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id page_id
+      *set ba_rs_room_active true
+      *set ba_rs_room_until (rs_now + 1440)
+      You count the price onto the counter. "A room, please."
+
+      Odalie takes the coins and slides an iron key across to you. "Top of the stair, third door along the gallery. It's yours until this hour tomorrow."
+      *goto ba_rs_room
+  *else
+    # Ask what a room costs.
+      "What do you charge for a room?" you ask.
+
+      "${ba_rs_rate_copper} copper bits for a day and a night," Odalie says. "That's the key, a clean bed and water in the jug."
+      *choice
+        # Step back from the counter.
+          *goto ba_rs_hall
+        # Step back out into the lane.
+          *goto_scene Langston/barolo/barolo ba_return
+  # Step through the arch to the stable court.
+    *goto ba_rs_court
+  # Step back out into the lane.
+    *goto_scene Langston/barolo/barolo ba_return
+
+*comment ── LAYERS: the hall uses the same place, sky and activity contract as the village.
+*label ba_rs_layers
+*gosub ba_rs_place
+*gosub ba_rs_sky
+*gosub ba_rs_street
+*return
+
+*comment ── LAYER 1: PLACE ── Permanent hall geography and smell. Nothing here depends on the hour or the weather.
+*label ba_rs_place
+*if (rs_first)
+  The Red Stave is a broad two-storey house of stone and timber, set back from the lane behind a covered carriage arch. The common hall is long and high, with dark beams overhead, a wide hearth at one end and a row of barrels lying on their sides along the back wall, each with a wooden tap. Doors along one side lead to smaller rooms with tables of their own, and a stair climbs to a gallery of guest rooms. Behind the counter a second, narrower stair drops into the cellar, and a cool breath of stone and wine rises from it. The hall smells of roasting meat, spilled wine, trodden straw from the court and the sour sweetness of old oak.
+*else
+  The Red Stave's long hall runs from the hearth to the barrel row, with the closed doors of the smaller rooms along one wall and the stair to the gallery at the far end.
+*return
+
+*comment ── LAYER 2: SKY ── Weather and light reaching the hall, plus the ground's memory of recent weather.
+*label ba_rs_sky
+*if (weather_severity >= 3)
+  The shutters are closed and every lamp in the hall is lit. Wind finds the carriage arch and moans through it.
+*elseif (weather = "Rain")
+  Rain ticks on the tall windows and darkens the boards just inside the door.
+*elseif (weather = "Fog")
+  The windows have turned white, and the lamp flames stand straight in the still air.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Slush melts from boots by the door, and the hearth is built high against the cold at the windows.
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  The tall windows show only the dark lane and the lamp over the arch.
+*elseif (time_period = "Dusk")
+  The last light turns the western windows red, and the lamps nearest the counter are lit.
+*elseif (weather = "Clear")
+  Clear light pours through the tall windows and lies in long bars across the tables.
+*else
+  Flat grey light reaches the tables from the tall windows, and the hearth supplies the hall's colour.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Mud from the lane marks the boards by the door, and the smell of wet straw drifts in from the court.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  Damp boot prints cross the boards from the door.
+*return
+
+*comment ── LAYER 3: STREET ── The innkeeper and the hall's company. Odalie is introduced once (met_odalie_hollowell); later visits describe her at work.
+*label ba_rs_street
+*if (not(met_odalie_hollowell))
+  *set met_odalie_hollowell true
+  A halfling woman stands on a low step behind the counter so that she can see over it. She is round-faced, with a streak of grey in her auburn braid and forearms stained purple to the elbow, and a ring of iron keys hangs at her hip. She sets down the tall glass she has been rinsing and looks you over.
+
+  "Odalie Hollowell," she says. "Welcome to the Stave. There's hot food off the fire, and I've rooms upstairs if you want a door that locks."
+*else
+  Odalie works the counter with a glass in her hand, her cellar keys at her hip.
+
+*if (street_life = "empty")
+  The hall is packed with people waiting out the weather, their wet outer layers steaming near the hearth while Odalie passes full measures hand to hand over their heads.
+*elseif (rs_state = "morning")
+  People in mud-caked boots eat quickly at the long tables, with baskets and tools stacked on the benches beside them.
+*elseif (rs_state = "dusk")
+  The hall fills as carts roll into the court and the lamps come on. Voices rise over the clink of cups, and the barrel taps are seldom still.
+*elseif (rs_state = "night")
+  The fire is banked low and one lamp burns at the foot of the stair. A few low voices carry from the far table.
+*elseif (rs_vignette = 1)
+  A cart rolls in beneath the arch, and an ostler's call rings off the stone of the court.
+*elseif (rs_vignette = 2)
+  A cork pops behind one of the closed doors, followed by a short laugh.
+*elseif (rs_vignette = 3)
+  Odalie draws a measure from one of the barrels and holds it to the window before she pours.
+*else
+  Two drinkers at the near table talk quietly over small glasses, now and then nodding toward the vines beyond the glass.
+*return
+
+*label ba_rs_roast
+*set tavern_item_hp_heal 0
+*set tavern_item_temp_hp 2
+*set tavern_item_type "food"
+*set tavern_item_buff_name "Vineyard Roast"
+*set tavern_item_buff_desc "+1 CON"
+*set tavern_item_buff_stat "con"
+*set tavern_item_buff_bonus 1
+*set tavern_item_buff_minutes 240
+*gosub_scene economy buy_tavern_item
+*set hours_to_pass 0
+*set minutes_to_pass 20
+*set time_advance_call_id "ba_rs_roast"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "exhaustion"
+  *goto_scene death death_screen
+Odalie sets down a plate of sliced roast pork with two baked apples and a thick slice of dark bread. The fat is crisp, the apples are sharp, and the gravy has red wine in it.
+
+[b][Hearty Meal Eaten: +2 Temporary HP | Vineyard Roast (+1 CON for 4 Hours) | HP: ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}][/b]
+*goto ba_rs_after_meal
+
+*label ba_rs_plate
+*set tavern_item_hp_heal 0
+*set tavern_item_temp_hp 1
+*set tavern_item_type "food"
+*set tavern_item_buff_name "Orchard Plate"
+*set tavern_item_buff_desc "+1 CHA"
+*set tavern_item_buff_stat "cha"
+*set tavern_item_buff_bonus 1
+*set tavern_item_buff_minutes 240
+*gosub_scene economy buy_tavern_item
+*set hours_to_pass 0
+*set minutes_to_pass 10
+*set time_advance_call_id "ba_rs_plate"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "exhaustion"
+  *goto_scene death death_screen
+Odalie sets out a round of bread with a wedge of soft white cheese, two ripe pears and a spoonful of honey in a saucer. The honey is dark and tastes of the hives on the hill.
+
+[b][Light Meal Eaten: +1 Temporary HP | Orchard Plate (+1 CHA for 4 Hours) | HP: ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}][/b]
+*goto ba_rs_after_meal
+
+*label ba_rs_after_meal
+*choice
+  # Order something else.
+    *goto ba_rs_hall
+  # Step through the arch to the stable court.
+    *goto ba_rs_court
+  *if (ba_rs_room_active)
+    # Go up to your room.
+      *goto ba_rs_room
+  # Step back out into the lane.
+    *goto_scene Langston/barolo/barolo ba_return
+
+*comment ── THE STABLE COURT ── Outdoors: it gets the weather in a line and nothing else.
+*label ba_rs_court
+*set scenery_subplace "barolo_red_stave_court"
+*set wait_ok_page page_id
+
+[b]◈ THE RED STAVE: STABLE COURT[/b]
+*line_break
+The court is paved in cobbles worn into shallow dips. Stalls run along one side and carriage sheds along another, and a pump fills a stone trough in the middle. A roofed bay holds travellers' loads under canvas, and a pile of pale new barrel staves leans against the far wall. Hay, horse and wet straw hang in the air.
+*if (weather_severity >= 3)
+  The horses stand with their heads low in the stalls while the weather beats across the open middle of the court.
+*elseif (weather = "Rain")
+  Rain runs off the shed roofs into the gutters and streams across the cobbles to the drain.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Slush lies in the hollows of the cobbles, and steam rises from the horses' backs.
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  A single lantern hangs over the arch, and an animal shifts in the dark of the stalls.
+*choice
+  # Go back inside.
+    *goto ba_rs_hall
+  # Step out into the lane.
+    *goto_scene Langston/barolo/barolo ba_return
+
+*label ba_rs_room
+*set scenery_subplace "village_inn_room"
+*temp rs_room_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+*if (rs_room_now >= ba_rs_room_until)
+  *set ba_rs_room_active false
+*if (not(ba_rs_room_active))
+  *goto ba_rs_hall
+*comment A rented private room is open-world free time for the sidebar's Wait and Rest controls.
+*set wait_ok_page page_id
+
+[b]◈ YOUR ROOM: THE RED STAVE[/b]
+*line_break
+The room is clean and solid, with a wide bed under a feather-topped mattress, a washstand with a basin and jug, and a peg rail for clothes and gear. A shuttered window looks over the lane to the vine rows on the slope.
+
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  A thin line of lamplight shows under the door, and the lane beyond the shutter is quiet.
+*elseif (time_period = "Dusk")
+  The last light comes through the shutter gaps while the hall grows louder below.
+*else
+  Light lies across the foot of the bed in narrow bands from the shutter.
+
+*if (weather_severity >= 3)
+  Wind presses at the shutter and shakes the tiles overhead.
+*elseif (weather = "Rain")
+  Rain taps steadily on the roof and runs through a gutter outside the window.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Cold gathers around the shutter, though the room itself stays dry.
+
+*choice
+  # Train in your room. [~${training_hours} Hours]
+    *gosub_scene character_progression inn_room_training "red_stave"
+    *page_break Back to your room…
+    *goto ba_rs_room
+  # Bar the door and sleep in the bed. [~8 Hours]
+    *goto ba_rs_sleep
+  # Wash in the basin. [~10 min]
+    *goto ba_rs_wash
+  # Go back down to the hall.
+    *goto ba_rs_hall
+  # Walk back out into the lane.
+    *goto_scene Langston/barolo/barolo ba_return
+
+*label ba_rs_sleep
+*set hours_to_pass 8
+*set minutes_to_pass 0
+*set time_advance_call_id "ba_rs_sleep"
+*gosub_scene calendar advance_time
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*set sleep_location_id "barolo_red_stave"
+*set sleep_is_shared false
+*set sleep_is_permanent_home false
+*set sleep_is_paid_inn true
+*set sleep_tier_name "none"
+*set sleep_tier_stat1 "none"
+*set sleep_tier_bonus1 0
+*set sleep_tier_stat2 "none"
+*set sleep_tier_bonus2 0
+*gosub_scene calendar resolve_sleep
+You set your gear within reach, bar the door and sink into the feather mattress. The voices below thin to nothing as sleep takes you.
+*if ((time_period = "Morning") or (time_period = "Pre-Dawn"))
+  The first cart in the court wakes you, with the clatter of hooves and an ostler's call. You feel rested.
+*elseif (time_period = "Dusk")
+  You wake to a louder hall below and the last light at the shutter. The ache of travel has eased.
+*elseif (time_period = "Night")
+  You wake in the dark to a floorboard creaking in the gallery outside. Your fatigue has cleared.
+*else
+  Light reaches the foot of the bed when you wake, and the hall carries on below. Your mind is clear.
+*if (not(sleep_gear_note = ""))
+  *line_break
+  ${sleep_gear_note}
+The key stays with you until this hour tomorrow.
+*goto ba_rs_room
+
+*label ba_rs_wash
+*set hours_to_pass 0
+*set minutes_to_pass 10
+*set time_advance_call_id "ba_rs_wash"
+*gosub_scene calendar advance_time
+*set minutes_since_wash 0
+*set hygiene_stage "Clean"
+*gosub_scene calendar update_hub_condition
+You pour water into the basin and wash the road dust away with the soap beside the jug. The soap smells faintly of lavender, and the towel is thick and dry.
+*line_break
+[b][🧼 Washed Up: Hygiene Restored to Clean][/b]
+*choice
+  # Set the basin aside.
+    *goto ba_rs_room
+  # Go back down to the hall.
+    *goto ba_rs_hall
+
+*comment ── TALKING WITH ODALIE ── Conversation is about people, not the building or the cellar. Her answers are quoted once; each topic is a one-time answer that leaves the menu when asked.
+*comment Names she gives set ba_know_* flags so later route labels and lorebook entries can wait for them (plan: a family name is known only after the player is told or shown it in the world).
+*comment Invented here (2026-11-01, not in the plan): the village head, Hobart Thring, and Odalie's own story of how she came to own the Stave.
+*label ba_rs_talk
+*if (not(ba_rs_talk_opened))
+  *set ba_rs_talk_opened true
+  You lean on the counter. "What can you tell me about Barolo?"
+
+  Odalie laughs and sets her glass down. "That's a wide question, love. Barolo's people, mostly. The ones who grow it, the ones who haul it, and the ones who drink what the first two make. Ask me who, and I'll tell you who."
+*goto ba_rs_talk_menu
+
+*label ba_rs_talk_menu
+*if (((ba_rs_asked_head) and (ba_rs_asked_houses)) and (ba_rs_asked_self))
+  *line_break
+  Odalie turns back to her glasses and the hall goes on around you.
+  *page_break Back to the counter…
+  *goto ba_rs_hall
+*choice
+  *if (not(ba_rs_asked_head))
+    # Ask who looks after the village.
+      *goto ba_rs_talk_head
+  *if (not(ba_rs_asked_houses))
+    # Ask who owns the big houses up the hill.
+      *goto ba_rs_talk_houses
+  *if (not(ba_rs_asked_self))
+    # Ask how she came to run the Stave.
+      *goto ba_rs_talk_self
+  # That's enough for now.
+    *goto ba_rs_hall
+
+*label ba_rs_talk_head
+*set ba_rs_asked_head true
+*set ba_know_head true
+*set minutes_to_pass 5
+*set time_advance_call_id "ba_rs_talk_head"
+*gosub_scene calendar advance_time
+"Who looks after the village?" you ask. "Somebody must settle things when two neighbours fall out."
+
+"Hobart Thring," Odalie says. "He's the village head, going on eleven years now. Slow, fair, and he writes everything down. Folk grumble about the slow until they need the writing." She sets a glass on the shelf. "He answers to the mayor in Langston, and she answers to the Countess, so he's careful. You'll find him at the Hall most days."
+
+"Does he drink here?" you ask.
+
+"A cup at noon, never two. Hobart Thring doesn't care to be seen with his judgement loosened."
+*goto ba_rs_talk_menu
+
+*label ba_rs_talk_houses
+*set ba_rs_asked_houses true
+*set ba_know_veyre true
+*set ba_know_durnell true
+*set ba_know_avenel true
+*set minutes_to_pass 5
+*set time_advance_call_id "ba_rs_talk_houses"
+*gosub_scene calendar advance_time
+"I saw manor roofs from the lane," you say. "Who owns the big houses up the hill?"
+
+"Three houses, three heads, and I pour for all of them, so mind how you ask me about any one." Odalie counts them off on her fingers. "Lady Maelin Veyre has the old stone house at the top. A widow, proud as a church bell, and she'll pay what her family owes if she has to sell a spoon to do it. Master Cellan Durnell has the big yard on the cart lane. He came up from the wagon trade, pays every wage on the day, and remembers every favour. Mistress Tressa Avenel grew up between these rows. She knows every grower by their first name and their father's."
+
+"And do they get on?" you ask.
+
+"The way three neighbours with good land get on." She shrugs and picks up a cloth. "I pour for all three, love. That's why I'm still pouring."
+*goto ba_rs_talk_menu
+
+*label ba_rs_talk_self
+*set ba_rs_asked_self true
+*set minutes_to_pass 5
+*set time_advance_call_id "ba_rs_talk_self"
+*gosub_scene calendar advance_time
+"How did you come to run the Stave?" you ask. "You don't strike me as someone who drifted into it."
+
+"Cook, first." Odalie smiles. "I came up the river road with my mother's recipes and a cart with a bad wheel. The man who owned the house wanted to go and live on his sister's farm, and I'd saved a little coin, so he sold it to me on terms. I've paid every one of them."
+
+"Did you always want an inn?"
+
+"I always wanted to be standing on something." She taps the step under her boots with one heel. "A house like this, a woman my size, people think the step is for the barrels. It's for me."
+*goto ba_rs_talk_menu

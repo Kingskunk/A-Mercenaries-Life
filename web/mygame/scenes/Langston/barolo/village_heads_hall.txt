@@ -1,0 +1,376 @@
+*comment ====================================================================================
+*comment THE VILLAGE HEAD'S HALL (Barolo): the village head's house, public room and records. Plan: Resources & Quest/WESTERN_VALE_VILLAGES_PLAN.md, Village Two, place 1.
+*comment Design agreed with the user (2026-11-01): a working house, not a fortress. The public room is open by day with NO guard on the door; a bench outside lets people wait. The one guarded thing is the
+*comment locked record-room door (a lock, not a person). House Gault's force is the Cask Gate at the village edge, not here. Open Morning through Afternoon; shut at dusk, at night and in dangerous
+*comment weather, and on the rest day, when it is still a family home and a household servant answers the door. The closed button stays listed with its reason (barolo.txt ba_hall_hours).
+*comment Built so far: hours, closed page, the three layers, and the way back. The clerk (unnamed, human) talks: see ba_hl_clerk. Hobart's is below (ba_hl_head). The Contract Board (ba_hall_board) carries the village's courier postings through hall_courier.txt (cr_origin "nv"); it hangs on the wall beside the locked
+*comment door (plan: between the entrance and the door, under House Gault's painted shield). Only its House and Village section has work so far; the Private and Public sections are bare pins until they are written. The village head, Hobart Thring, is met in his study through the inner door (ba_hl_head).
+*comment ====================================================================================
+
+*label ba_hall
+*set minutes_to_pass 5
+*set time_advance_call_id "ba_hall_walk_1"
+*gosub_scene Langston/barolo/barolo ba_walk_time
+*gosub_scene Langston/barolo/barolo ba_hall_hours
+*if (not(ba_ok_hall))
+  *goto ba_hall_closed
+*goto ba_hall_front
+
+*label ba_hall_front
+*gosub_scene Langston/barolo/barolo ba_hall_hours
+*if (not(ba_ok_hall))
+  *goto ba_hall_closed
+*temp hl_first false
+*if (not(ba_hall_seen))
+  *set hl_first true
+*set ba_hall_seen true
+*temp hl_vignette (((campaign_day * 24) + clock_hour) modulo 4) + 1
+*temp hl_clerk_done false
+*if (((ba_hl_asked_benches) and (ba_hl_asked_job)) and (ba_hl_asked_head))
+  *set hl_clerk_done true
+*comment The village head's door is always open in public hours (the user's call). It is listed while he has something left to say: a free topic, or the houses' requests when the player has asked about the heirs and today's try has not failed.
+*temp hl_head_show false
+*if (not(((ba_hl_asked_heirs) and (ba_hl_asked_growers)) and (ba_hl_asked_post)))
+  *set hl_head_show true
+*if (((ba_hl_asked_heirs) and (not(ba_hl_asked_wants))) and (ba_hl_wants_fail_day < campaign_day))
+  *set hl_head_show true
+
+[b]◈ THE VILLAGE HEAD'S HALL[/b]
+*line_break
+*gosub ba_hl_layers
+
+*comment Open-world free time: the sidebar's Wait and Rest work on this page.
+*set wait_ok_page page_id
+*choice
+  *if (not(hl_clerk_done))
+    *if (not(ba_hl_clerk_opened))
+      # Step up to the sloped desk.
+        *goto ba_hl_clerk
+    *else
+      # Speak to the clerk again.
+        *goto ba_hl_clerk
+  *if (hl_head_show)
+    *if (not(ba_hl_head_opened))
+      *if (ba_know_head)
+        # Go through the inner door to Hobart Thring. [~5 min]
+          *goto ba_hl_head
+      *else
+        # Go through the inner door to the village head. [~5 min]
+          *goto ba_hl_head
+    *else
+      # Talk with Hobart Thring a little longer. [~5 min]
+        *goto ba_hl_head
+  # Look over the Contract Board by the locked door. [~5 min]
+    *goto ba_hall_board
+  # Step back out to the village lane.
+    *goto_scene Langston/barolo/barolo ba_return
+
+*label ba_hall_closed
+[b]◈ THE VILLAGE HEAD'S HALL[/b]
+*line_break
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  The front door is shut and barred, and the bench beside it stands empty. A single lamp burns in an upper window.
+*elseif (street_life = "empty")
+  The shutters are closed and the bench by the door is bare. Rain or wind has driven everyone indoors, and the door stays shut.
+*elseif (day_of_week = "Hallowday")
+  The public room is closed, though the house behind it is lived in. A servant opens the door a hand's width, shakes her head toward the empty bench and closes it again.
+*else
+  A clerk is pulling the shutters across the public room's windows, and the bench by the door is already empty. The door is locked behind him.
+*choice
+  # Step back out to the village lane.
+    *goto_scene Langston/barolo/barolo ba_return
+
+*comment ── LAYERS ── The public room is indoors, so the sky layer is one muffled line.
+*label ba_hl_layers
+*gosub ba_hl_place
+*gosub ba_hl_sky
+*gosub ba_hl_street
+*return
+
+*comment ── LAYER 1: PLACE ── Fixed geography only. The long description prints once.
+*label ba_hl_place
+*if (hl_first)
+  Barolo's village hall is a long, low house of pale stone with a steep tiled roof, set a little back from the lane behind a gravel forecourt. A covered bench runs along the front wall beside the door, where people can wait out of the rain. Inside, the public room is a wide, plain space with a flagged floor and benches along the walls. At one end a sloped desk stands under a window with a heavy posting book open on it. A notice board with a shallow wooden canopy and two hinged shutters hangs on the wall beside the entrance, under House Gault's painted shield, and past it a heavy oak door banded with iron stays locked. Two more doors lead into the rest of the house, where the village head lives. The room smells of ink, beeswax and old paper.
+*else
+  The public room is as before: the benches along the walls, the sloped desk under its window, the notice board beneath the painted shield and the locked oak door beside it.
+*return
+
+*comment ── LAYER 2: SKY ── Indoors: at most one muffled line, then the ground's memory of recent weather.
+*label ba_hl_sky
+*if (weather = "Rain")
+  Rain ticks on the tall windows.
+*elseif (weather = "Fog")
+  The windows are pale with mist.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Slush melts from boots by the door and darkens the flags.
+*elseif (weather = "Clear")
+  Clear light falls through the windows across the flagged floor.
+*else
+  Grey light from the windows leaves the corners dim.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Mud from the lane marks the flags by the door.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  Damp boot prints cross the flags from the door.
+*return
+
+*comment ── LAYER 3: STREET ── The clerk, described once on first sight, and who is waiting. Nothing here names the village head or a family.
+*label ba_hl_street
+*if (hl_first)
+  A thin clerk with ink-stained fingers sits at the sloped desk, writing in the posting book without looking up.
+*else
+  The clerk writes at the sloped desk.
+*if (day_of_week = "Marketday")
+  The benches are full, and people with baskets and tools wait their turn along both walls.
+*elseif (hl_vignette = 1)
+  A man in earth-stained boots sits on the nearest bench, turning his cap in his hands.
+*elseif (hl_vignette = 2)
+  A door closes somewhere in the house, and footsteps cross a floor above.
+*elseif (hl_vignette = 3)
+  Two neighbours sit at opposite ends of the same bench and study the floor.
+*else
+  A woman unrolls a hand-drawn sketch of a vineyard strip on the desk and smooths it flat with both hands.
+*return
+
+*comment ── TALKING WITH THE CLERK ── Unnamed on purpose. Quick and clipped, answers in threes, apologises while he enforces a rule; he knows the benches and his own story, never the families. Conversation is about people. Each answer is
+*comment quoted once and leaves the menu when asked. Hobart's description here is the clerk's, before the player meets him. Invented 2026-11-01 (not in the plan): the clerk's cooper father and how he got the job.
+*label ba_hl_clerk
+*if (not(ba_hl_clerk_opened))
+  *set ba_hl_clerk_opened true
+  You step up to the sloped desk. The clerk finishes his line, blots it and looks up.
+
+  "A name, a matter, a strip," he says. "Sorry. The form wants all three before I can open the book. Well, before I can open it for you."
+
+  "I've no matter," you say. "I'm new to Barolo, and I wanted to see how the Hall works."
+
+  "Ah." The pen goes down, and his shoulders drop an inch. "A visit. Visits don't need the book. Ask what you like, and I'll answer what I'm let."
+*goto ba_hl_clerk_menu
+
+*label ba_hl_clerk_menu
+*if (((ba_hl_asked_benches) and (ba_hl_asked_job)) and (ba_hl_asked_head))
+  *line_break
+  The clerk dips his pen and goes back to his line.
+  *page_break Back to the desk…
+  *goto ba_hall_front
+*choice
+  *if (not(ba_hl_asked_benches))
+    # Ask who waits on all these benches.
+      *goto ba_hl_clerk_benches
+  *if (not(ba_hl_asked_job))
+    # Ask how he came to work here.
+      *goto ba_hl_clerk_job
+  *if (not(ba_hl_asked_head))
+    # Ask what the village head is like to work for.
+      *goto ba_hl_clerk_head
+  # That's enough for now.
+    *goto ba_hall_front
+
+*label ba_hl_clerk_benches
+*set ba_hl_asked_benches true
+*set minutes_to_pass 5
+*set time_advance_call_id "ba_hl_clerk_benches"
+*gosub_scene calendar advance_time
+"Who waits on all these benches?" you ask.
+
+"Boundaries, water, debts," he says, quick as a list. "A man whose neighbour's vine has crossed a line. A woman whose late husband's strip goes to her brother, or doesn't. Two cousins who haven't spoken since a wedding and need a path between their plots settled. Mostly they're neighbours. Mostly they like each other, you'd be surprised."
+
+"Do they get what they came for?"
+
+"They get an answer. The village head says that's different, and he's right, and nobody enjoys it."
+*goto ba_hl_clerk_menu
+
+*label ba_hl_clerk_job
+*set ba_hl_asked_job true
+*set minutes_to_pass 5
+*set time_advance_call_id "ba_hl_clerk_job"
+*gosub_scene calendar advance_time
+"How did you come to work here?" you ask.
+
+"My father makes barrels," he says. "Barrels don't read. I did. Six of us, one decent hand, so the village head took me on at fifteen, and I've been on this stool since."
+
+"Is it what you wanted?"
+
+"I wanted a stool and a window." He tips his pen toward the one over the desk. "I've both."
+*goto ba_hl_clerk_menu
+
+*label ba_hl_clerk_head
+*set ba_hl_asked_head true
+*set minutes_to_pass 5
+*set time_advance_call_id "ba_hl_clerk_head"
+*gosub_scene calendar advance_time
+"What's the village head like to work for?" you ask.
+
+"Slow," he says, then glances at the inner doors. "Careful. Careful is what I meant. He reads every line twice, has me read it a third time, then signs. In all my years here he's never signed wrong."
+
+"Does he ever lose his temper?"
+
+"Once. A man had changed a number in the posting book. He didn't shout. He stopped talking for the rest of the day, and the whole hall knew."
+*goto ba_hl_clerk_menu
+
+*comment ── TALKING WITH HOBART THRING ── Human, mid-fifties, tall and stooped, slow and measured, fewer contractions than most; gives the record before the opinion; writes while you talk. Fair, and cannot afford enemies among the houses.
+*comment The inner door is always open in public hours (the user's call). Three free topics (the heirs, the small growers, how he got the post) and one behind a check: what each house asks of him (Persuasion DC 14 or Insight DC 15, the user's call).
+*comment A failed try shuts that topic until a later day (ba_hl_wants_fail_day); a success is kept. Answers are quoted once. Invented 2026-11-01 (not in the plan): his own story (he was the old head's clerk), the cousins who have not spoken since a wedding, and
+*comment what each house asks of him. The heirs get one line each here; their wants and rivalries are not given beyond the check. ba_know_* flags record names told to the player.
+*label ba_hl_head
+*set minutes_to_pass 5
+*set time_advance_call_id "ba_hl_head_walk"
+*gosub_scene calendar advance_time
+*if (not(ba_hl_head_opened))
+  *set ba_hl_head_opened true
+  *set ba_know_head true
+  The inner door opens on a short passage and a small study with narrow shelves of bound books and rolled papers along its walls. A tall, stooped man sits at a table by the window with a pen in his hand and a half-written page in front of him. His grey hair is cropped close, and ink has soaked into his cuffs. He finishes his line before he looks up, and then he looks for a while.
+
+  "Hobart Thring," he says. "I'm the village head here. Sit, if you like. I write while I listen, if you don't mind. I forget what I haven't written."
+
+  "I'm new to Barolo," you say. "I wanted to hear from the person who looks after it."
+
+  "Looks after is generous. Settles, mostly." He turns the page and dips the pen. "What would you like to know?"
+*else
+  Hobart Thring looks up from his page and lays the pen across it.
+*goto ba_hl_head_menu
+
+*label ba_hl_head_menu
+*temp hl_wants_ok false
+*if (((ba_hl_asked_heirs) and (not(ba_hl_asked_wants))) and (ba_hl_wants_fail_day < campaign_day))
+  *set hl_wants_ok true
+*if (((ba_hl_asked_heirs) and (ba_hl_asked_growers)) and ((ba_hl_asked_post) and (ba_hl_asked_wants)))
+  *line_break
+  Hobart Thring dips his pen and goes back to his page.
+  *page_break Back to the public room…
+  *goto ba_hall_front
+*if (((ba_hl_asked_heirs) and (ba_hl_asked_growers)) and ((ba_hl_asked_post) and (not(hl_wants_ok))))
+  *line_break
+  Hobart Thring turns back to his page, and the study is quiet but for the scratch of the pen.
+  *page_break Back to the public room…
+  *goto ba_hall_front
+*choice
+  *if (not(ba_hl_asked_heirs))
+    # Ask who owns the big houses on the hill, and who comes after them.
+      *goto ba_hl_head_heirs
+  *if (not(ba_hl_asked_growers))
+    # Ask about the growers who aren't one of the three houses.
+      *goto ba_hl_head_growers
+  *if (not(ba_hl_asked_post))
+    # Ask how he came to be village head.
+      *goto ba_hl_head_post
+  *if (hl_wants_ok)
+    # Ask plainly, and politely, what the three houses want from him.@{show_stat_hints  [Persuasion DC 14]|}
+      *goto ba_hl_head_wants_persuade
+  *if (hl_wants_ok)
+    # Watch his pen as you ask what the three houses want from him.@{show_stat_hints  [Insight DC 15]|}
+      *goto ba_hl_head_wants_insight
+  # Thank him and step back out.
+    *goto ba_hall_front
+
+*label ba_hl_head_heirs
+*set ba_hl_asked_heirs true
+*set ba_know_veyre true
+*set ba_know_durnell true
+*set ba_know_avenel true
+*set ba_know_lucan true
+*set ba_know_ressa true
+*set ba_know_garran true
+*set minutes_to_pass 5
+*set time_advance_call_id "ba_hl_head_heirs"
+*gosub_scene calendar advance_time
+*if (ba_rs_asked_houses)
+  "Odalie at the Stave named the heads of the three big houses," you say. "Who comes after them?"
+*else
+  "Who owns the big houses on the hill," you ask, "and who comes after them?"
+
+*if (not(ba_rs_asked_houses))
+  "Three houses." He writes the number down before he goes on. "Lady Maelin Veyre has the old stone house at the top. Master Cellan Durnell has the large yard on the cart lane. Mistress Tressa Avenel has the farm at the end of the lower lane."
+
+  "As for who comes after them, that's a matter of record, so I can say it plainly."
+*else
+  "That's a matter of record, so I can say it plainly," he says, and the pen moves.
+
+He goes on without looking up. "Lucan Veyre is Lady Maelin's son and will have the stone house. Ressa Durnell, Master Cellan's daughter, runs the Durnell yard, and everyone on the cart lane knows it. Garran Avenel is Mistress Tressa's nephew. He'll have the Avenel land after her, and he would like that said more often."
+*goto ba_hl_head_menu
+
+*label ba_hl_head_growers
+*set ba_hl_asked_growers true
+*set minutes_to_pass 5
+*set time_advance_call_id "ba_hl_head_growers"
+*gosub_scene calendar advance_time
+"What about everyone else?" you ask. "The growers who don't belong to one of the three houses."
+
+"Most of what reaches this desk is them." He sets the pen down for the first time. "Some seventy strips round the village, give or take a cousin. They bring their grapes to the common press together, they argue over whose cart goes first, and they drink at the Stave and forget it."
+
+"And when they don't forget it?"
+
+"Then they come to me. I've two cousins who haven't spoken since a wedding, and I've settled the path between their plots twice." He picks the pen up again. "They'll go on not speaking. The path is settled."
+*goto ba_hl_head_menu
+
+*label ba_hl_head_post
+*set ba_hl_asked_post true
+*set minutes_to_pass 5
+*set time_advance_call_id "ba_hl_head_post"
+*gosub_scene calendar advance_time
+"How did you come to be village head?" you ask.
+
+"I was the clerk here, as the lad at the desk is now." He almost smiles. "The old village head died at that table, in the middle of a sentence, and nobody else could read his hand. I could. The mayor confirmed me under the Countess's seal that spring."
+
+"Did you want it?"
+
+"I wanted the sentence finished." He looks at the page in front of him. "I've been finishing it ever since."
+*goto ba_hl_head_menu
+
+*label ba_hl_head_wants_persuade
+You lay your hands on the back of the empty chair. "You must hear a great deal from those three houses," you say. "I'd like to understand what's asked of you, and I'd be grateful for a straight answer."
+
+*gosub_scene dice_engine roll_skill_check 14 "persuasion" "" "" "" "" ""
+*if (check_success)
+  *goto ba_hl_head_wants_told
+*else
+  *goto ba_hl_head_wants_refused
+
+*label ba_hl_head_wants_insight
+You ask what the three houses want from him, and you keep your eyes on the pen. It slows at the third name and stops.
+
+*gosub_scene dice_engine roll_skill_check 15 "insight" "" "" "" "" ""
+*if (check_success)
+  *goto ba_hl_head_wants_told
+*else
+  *goto ba_hl_head_wants_refused
+
+*label ba_hl_head_wants_told
+*set ba_hl_asked_wants true
+*set ba_know_house_wants true
+*set minutes_to_pass 10
+*set time_advance_call_id "ba_hl_head_wants"
+*gosub_scene calendar advance_time
+Hobart Thring lays the pen down and folds his hands over the page. He is quiet for a while.
+
+"Lady Maelin asks that her family's old rights are named in any dispute that touches them, whether or not anyone ever wrote them down," he says. "She asks politely, and often. Master Cellan asks for nothing, which is how I know what he wants. He'd like this Hall to write 'landed gentry' beside his name in the posting book. I've told him a title doesn't belong in a book that holds boundaries."
+
+"And the Avenels?"
+
+"Mistress Tressa asks me to remember the small growers. Her nephew asks me to remember the Avenels." He picks up the pen. "I tell you because you asked like someone who might need to know which way the wind blows. Don't write it where they can read it."
+*goto ba_hl_head_menu
+
+*label ba_hl_head_wants_refused
+*set ba_hl_wants_fail_day campaign_day
+*set minutes_to_pass 10
+*set time_advance_call_id "ba_hl_head_refused"
+*gosub_scene calendar advance_time
+Hobart Thring lays the pen down slowly and keeps his voice level.
+
+"I write down what's asked of me and what I decide," he says. "What's asked belongs to the people who asked it. If you want to know what the Veyres want, you may ask the Veyres."
+
+He picks the pen up again, and the matter is closed for now.
+*goto ba_hl_head_menu
+
+*comment ── THE CONTRACT BOARD ── The board is the courier system's board for Barolo (hall_courier.txt cr_read, cr_origin "nv"; overworld-data.js COURIER_TILES nv; postings are a function of the day, so a refresh shows the same sheets). Only the House and Village section carries
+*comment work so far: every sheet is a Hall posting under the village head's countersign, credited to the House Gault page (plan: a posting states whether it counts toward the page). The Private and Public Notices sections are scenery (bare pins) until they are written.
+*comment Reading costs five minutes. A board with nothing to take goes back to the public room (hall_courier.txt cr_back).
+*label ba_hall_board
+*set minutes_to_pass 5
+*set time_advance_call_id "ba_hall_board_1"
+*gosub_scene Langston/barolo/barolo ba_walk_time
+[b]◈ THE VILLAGE HEAD'S HALL: THE CONTRACT BOARD[/b]
+*line_break
+The Contract Board hangs between the entrance and the locked oak door under its shallow wooden canopy and House Gault's painted shield, its two hinged shutters folded back. The boards are ruled into three sections, each headed in the clerk's neat hand: HOUSE AND VILLAGE, PRIVATE, and PUBLIC NOTICES. Under the last two, only bare pins and pale squares on the wood show where sheets have hung.
+*set cr_origin "nv"
+*set cr_inline true
+*goto_scene port_valen/radiant/hall_courier cr_read

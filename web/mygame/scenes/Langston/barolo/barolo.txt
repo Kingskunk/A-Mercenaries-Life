@@ -1,0 +1,241 @@
+*comment ====================================================================================
+*comment BAROLO: vineyard village on a low hill north of Langston (overworld tile "nv"). Plan: Resources & Quest/WESTERN_VALE_VILLAGES_PLAN.md, Village Two.
+*comment The hub: the three description layers (place, sky, street), the arrival from the overworld tile "nv" (ba_arrive) and the four places as menu entries, all built:
+*comment the Village Head's Hall (village_heads_hall.txt), Barolo Market (market.txt), the Red Stave (red_stave.txt) and the Vineyard Roads (vineyard_roads.txt).
+*comment Player knowledge: the three estates and their families are never named here. The lanes are described by what they look like until the player meets the names in the world.
+*comment ====================================================================================
+
+*label barolo
+*gosub ba_enter
+*gosub ba_header
+*gosub ba_layers
+*goto ba_menu
+
+*comment Shared setup so a direct visit and a later return land in the same state. ba_first_hub is true only on the first visit.
+*label ba_enter
+*temp ba_first_hub false
+*if (not(ba_seen))
+  *set ba_first_hub true
+*set current_district "barolo"
+*set ba_seen true
+*gosub_scene calendar update_hub_condition
+*gosub ba_hours
+*gosub ba_hall_hours
+*return
+
+*comment Barolo Market's hours (market.txt): Morning through Dusk, shut at night and while dangerous weather has emptied the streets. Called on every hub entry and by market.txt itself. The Hall and the Red Stave will add their own.
+*label ba_hours
+*set ba_ok_market false
+*set ba_market_closed_reason "shut for the night"
+*if (street_life = "empty")
+  *set ba_market_closed_reason "shut against the weather"
+  *return
+*if ((((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon")) or (time_period = "Dusk"))
+  *set ba_ok_market true
+  *set ba_market_closed_reason ""
+*return
+
+*comment The Village Head's Hall hours (village_heads_hall.txt): the public room is open Morning through Afternoon. Shut at dusk, at night, in dangerous weather and on the rest day (a family home then; a servant answers the door).
+*label ba_hall_hours
+*set ba_ok_hall false
+*set ba_hall_closed_reason "shut for the night"
+*if (day_of_week = "Hallowday")
+  *set ba_hall_closed_reason "closed for the rest day"
+  *return
+*if (street_life = "empty")
+  *set ba_hall_closed_reason "shut against the weather"
+  *return
+*if (time_period = "Dusk")
+  *set ba_hall_closed_reason "the clerk is locking up"
+  *return
+*if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
+  *set ba_ok_hall true
+  *set ba_hall_closed_reason ""
+*return
+
+*comment The overworld's Barolo tile (nv) enters here. The short walk up the hill costs five minutes once per arrival.
+*label ba_arrive
+*set minutes_to_pass 5
+*set time_advance_call_id "ba_arrive_1"
+*gosub ba_walk_time
+*temp ba_first_arrival false
+*if (not(ba_arrival_seen))
+  *set ba_first_arrival true
+*set ba_arrival_seen true
+*gosub ba_enter
+*gosub ba_header
+*if (ba_first_arrival)
+  *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+    The track climbs between dark vine rows toward a single lantern at the top of the hill.
+  *elseif (time_period = "Dusk")
+    The track climbs the hill between vine rows going gold and then grey, with carts creaking up ahead of you.
+  *else
+    The track climbs out of Langston's fields onto the hill, and the vines begin well before the first house.
+*else
+  *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+    You climb the dark track to the lantern at the arch, and the guard nods you through.
+  *elseif (time_period = "Dusk")
+    You climb the track among the last carts and pass beneath the arch.
+  *else
+    You climb the track between the vine rows and pass beneath the arch.
+*line_break
+*gosub ba_layers
+*goto ba_menu
+
+*label ba_walk_time
+*set hours_to_pass 0
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return
+
+*label ba_header
+[b]◈ BAROLO[/b]
+*line_break
+*return
+
+*label ba_layers
+*gosub ba_place
+*gosub ba_sky
+*gosub ba_street
+*return
+
+*comment Places will return here without repeating the full village description.
+*label ba_return
+*gosub ba_enter
+*gosub ba_header
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  You come back to the lane in front of the inn, and the village is quiet around you.
+*elseif (time_period = "Dusk")
+  You come back to the lane as the village settles for the evening.
+*else
+  You come back to Barolo's main lane.
+*goto ba_menu
+
+*label ba_menu
+*comment Open-world free time: the sidebar's Wait and Rest work on this page.
+*set wait_ok_page page_id
+*choice
+  *if (ba_ok_hall)
+    # [b]The Village Head's Hall[/b]: leases, disputes and the notice board. [~5 min]
+      *goto_scene Langston/barolo/village_heads_hall ba_hall
+  *else
+    # [b]The Village Head's Hall[/b]: ${ba_hall_closed_reason}.
+      *goto_scene Langston/barolo/village_heads_hall ba_hall_closed
+  *if (ba_ok_market)
+    # [b]Barolo Market[/b]: casks, fruit and honey in the paved yard. [~5 min]
+      *goto_scene Langston/barolo/market ba_market
+  *else
+    # [b]Barolo Market[/b]: ${ba_market_closed_reason}.
+      *goto_scene Langston/barolo/market ba_mk_closed
+  # [b]The Red Stave[/b]: meals, rooms and a wine house. [~5 min]
+    *goto_scene Langston/barolo/red_stave ba_rs
+  # [b]The Vineyard Roads[/b]: the lanes and terraces among the vines. [~10 min]
+    *goto_scene Langston/barolo/vineyard_roads ba_vr
+  # [b]The road to Langston[/b]: leave Barolo.
+    *set ow_pos "nv"
+    *goto_scene overworld/overworld ow_here
+
+*comment ── LAYER 1: PLACE ── Fixed geography only. The long description prints once. Nothing here changes with the season, so the vines are never given a colour.
+*label ba_place
+*if (ba_first_hub)
+  Barolo climbs a low pale hill, one of the few real slopes in the Vale. Vines cover the sunward side in tight rows, and small orchards, hedges and white beehives break them up wherever the ground flattens. Beaten-earth lanes run between stone walls, and the village's houses of pale stone and red tile gather along the one that climbs the middle of the hill.
+
+  Where the road from Langston comes in, a stone arch spans the cart way beside a small lodge and a cellar with an iron-banded door. A painted shield hangs above the arch, and casks wait beneath it to be looked over. Past the arch the lane opens into a paved yard under tiled canopies, with a raised scale at its centre. Across from it a broad stone barn stands open to a cart yard, with heavy wooden wine presses showing in the dark inside. A two-storey inn of stone and timber faces the lane behind a covered carriage arch, a red-painted barrel stave hanging over its door.
+
+  Three ways leave the village among the vines. One climbs in walled steps toward an old stone house on the high ground. A wide lane worn by wheels runs toward a busy yard of stacked casks. A narrow lower lane threads between small plots and working courtyards. From the top of the hill the Vale spreads out below, and manor roofs show here and there among the long rows. The air smells of warm earth, beeswax, wood smoke and old wine soaking into oak.
+*else
+  Barolo's main lane climbs between pale walls, with the paved yard and the arch below it and the inn across from the press barn. The vine rows run away on every side, and the three ways out lead off among them under the manor roofs on the hill.
+*return
+
+*comment ── LAYER 2: SKY ── Weather and light only, followed by the ground's recent-weather state.
+*label ba_sky
+*temp ba_dark false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set ba_dark true
+*if (weather = "Rain")
+  Rain darkens the pale walls and drums on the tiled roofs, and brown water runs down the furrows between the vine rows.
+*elseif (weather = "Storm")
+  Wind shoves across the open slope and drives rain sideways through the vines. Roof tiles clatter, and the hedges lash against the walls.
+*elseif (weather = "Fog")
+  Fog fills the lanes and hides the slope below the village, leaving the nearest vine rows as dark lines in the white.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Wet snow gathers on the tiles and the tops of the walls, and the vine rows run down the white slope in dark stripes.
+*elseif (weather = "Blizzard")
+  Driven snow blots out the slope and the far end of the lane. The nearest wall is the farthest thing you can see.
+*elseif (weather = "Clear")
+  *if (ba_dark)
+    Starlight lies pale on the walls, and the vine rows run down the hillside as dark bars.
+  *elseif (time_period = "Dusk")
+    The last light turns the pale walls gold and sends long shadows down between the vine rows.
+  *else
+    Bright light lies across the slope, warm on the stone and the red tiles, and every vine row throws a thin shadow.
+*else
+  *if (ba_dark)
+    A starless sky presses down on the hill, and the vine rows are lost in the dark.
+  *else
+    Flat grey light lies over the slope and brings out the pale stone of the walls.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Water still runs in the furrows between the vine rows, and the lanes are soft with mud.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The lane stones are dark from the last rain, and the furrows hold shallow water.
+*return
+
+*comment ── LAYER 3: STREET ── Current village activity. Daytime work follows the season; the rotating vignette follows the clock (campaign_day * 24 + clock_hour).
+*label ba_street
+*temp ba_vignette (((campaign_day * 24) + clock_hour) modulo 6) + 1
+*temp ba_night false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set ba_night true
+*if ((street_life = "empty") and (not(ba_night)))
+  The paved yard is bare and the tiled canopies are tied down. Shutters cover the windows along the lane, and the only movement is water running past the doors.
+  *return
+*if (ba_night)
+  *if (ba_vignette = 1)
+    A lamp moves along the inn's upper floor and goes out.
+  *elseif (ba_vignette = 2)
+    A cask rolls on stone somewhere behind the arch, then stops.
+  *elseif (ba_vignette = 3)
+    A dog barks twice from the vineyard slope and goes quiet.
+  *elseif (ba_vignette = 4)
+    The inn's stable doors creak as someone checks the latch.
+  *elseif (ba_vignette = 5)
+    Wind runs through the vine rows with a low, dry rustle.
+  *else
+    A shutter closes hard against the night air.
+  *return
+*if (time_period = "Dusk")
+  Carts come down from the slope with their loads roped tight, and lamps are lit one by one along the lane. Workers from the rows walk down toward the village in twos and threes.
+  *return
+*if (day_of_week = "Hallowday")
+  Most doors are shut for the rest day, and families walk the lane in their better clothes. The inn's carriage arch stands open, and a few carts rest in its yard.
+  *return
+*if (day_of_week = "Marketday")
+  Carts crowd the paved yard, and small casks stand on trestles beneath the tiled canopies. Buyers pass tin cups from hand to hand, and sellers call prices over the noise of the scale.
+  *return
+*if (current_season = "Spring")
+  Workers move along the nearer rows tying young shoots to their stakes.
+*elseif (current_season = "Summer")
+  Workers move along the nearer rows trimming back leaves from the heavy bunches.
+*elseif (current_season = "Autumn")
+  Pickers work the nearer rows with baskets on their backs, and full baskets go down the lane toward the press barn.
+*else
+  Workers in thick coats prune the nearer rows and heap the cuttings in the furrows.
+*if (ba_vignette = 1)
+  A cart of small casks waits under the arch while a guard walks slowly around it.
+*elseif (ba_vignette = 2)
+  Bees hum at the orchard edge, and a child carries a bucket along the lane.
+*elseif (ba_vignette = 3)
+  Hammering rings from the press barn as someone drives a hoop onto a barrel.
+*elseif (ba_vignette = 4)
+  A rider trots up the wall-lined road toward the high ground.
+*elseif (ba_vignette = 5)
+  Hens scatter from the lane as a wagon rolls through toward the paved yard.
+*else
+  A carter and a worker argue over a cask's weight at the press barn gate.
+*return
