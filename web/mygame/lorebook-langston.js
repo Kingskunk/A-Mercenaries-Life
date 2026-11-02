@@ -186,7 +186,7 @@
       unlock: "wol_met_tomlin",
       body: function (s) {
         var out = [
-          "Langston's herbalist, who was engaged to Maybelline and spoke at her funeral. His eyes hold you, and his smile is dazzling even when it is sad."
+          "Langston's herbalist, who was engaged to Maybelline and spoke at her funeral. Tomlin is a handsome man with warm brown eyes, dark hair falling loosely across his brow, and a neatly kept beard. His practical clothes and working gloves suit a man accustomed to the garden and the brewing bench, while his quiet warmth softens an otherwise rugged appearance."
         ];
         if (Number(s.wol_funeral_day) > 0) {
           out.push("After the funeral he asked how you had known Maybelline and told you to come to his home for whatever you needed.");

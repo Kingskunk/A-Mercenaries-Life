@@ -827,7 +827,7 @@
         unlock: "codex_house_gault",
         body: function (s) {
           var out = [
-          "The noble house that holds the [[western_vale|Western Vale]] from its walled seat at Dunmow. When the legions left, Gault kept its storehouses shut and its gates manned, and it has held Dunmow ever since. It fields mounted riders and archers, who are at home on the open grasslands and far less so in forest or bog. Coombe Gap, the road that takes the vale's wagons east toward the river, is Gault's.",
+          "The noble house that holds the [[western_vale|Western Vale]] from its walled seat at Dunmow. Its arms show a golden horse on a deep-blue field. When the legions left, Gault kept its storehouses shut and its gates manned, and it has held Dunmow ever since. It fields mounted riders and archers, who are at home on the open grasslands and far less so in forest or bog. Coombe Gap, the road that takes the vale's wagons east toward the river, is Gault's.",
           "Gault keeps no harbor and no fleet, so its hemp, wool and wine reach the sea on Scales barges or not at all."
           ];
           if (truthy(s.lg_hall_seen)) {

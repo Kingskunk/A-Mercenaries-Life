@@ -47,6 +47,7 @@
     "Langston/cord_and_kettle": "generic_trade_shop",
     "Langston/tomlin_cottage": "tomlin_cottage",
     "Langston/tomlin_shop": "tomlin_herbalist_workroom",
+    "Langston/langston_hall": "langston_hall",
     "alderford/wagon_lot": "river_carters_lot",
     "timbermouth/wagon_lot": "timber_wagon_lot",
     "port_valen/radiant/caravan_lot": "vale_gate_wagon_lot",
@@ -192,6 +193,7 @@
     function (s) { return s.sceneName === "timbermouth/barleycross/lane" && s.scenery_subplace === "barleycross_hayloft" ? "generic_farm_hayloft" : undefined; }, // paid loft above a Barleycross farmstead
     function (s) { return s.sceneName === "port_valen/radiant/notice_board" && s.cr_origin === "tm" ? "shared_factors_hall" : undefined; }, // Timbermouth's board is inside its Factor's Hall
     function (s) { return s.sceneName === "port_valen/radiant/notice_board" && s.cr_origin === "fv" ? "generic_village_gathering_hall" : undefined; }, // Barleycross's board is inside its village hall
+    function (s) { return s.sceneName === "port_valen/radiant/hall_courier" && s.cr_origin === "lg" ? "langston_hall" : undefined; }, // Langston's shared courier-posting pages remain at the Contract Board inside Langston Hall
     function (s) { return s.sceneName === "horse_dealer" && s.horse_place === "bc" ? "generic_village_pasture" : undefined; }, // Barleycross's working-horse rail stands at the common pasture
     function (s) { return s.sceneName === "horse_dealer" && s.horse_place === "mw" ? "village_stable_yard" : undefined; }, // Port Valen's dealer works from the Middle Ward yard
     function (s) { return s.sceneName === "Langston/tomlin_shop" ? "tomlin_herbalist_workroom" : undefined; }, // Tomlin's workroom keeps its own picture while the trade panel is open (it has a bespoke interior, so the generic open-counter picture below must not take over)
