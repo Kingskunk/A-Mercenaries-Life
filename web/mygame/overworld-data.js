@@ -526,7 +526,7 @@
       hereNight: "A few window lamps show among the dark rows of vines, and the air smells of crushed grapes and cool earth.",
       hereStorm: "Rain drives across the slope and runs off the village roofs. The vine rows stream with water, the lanes between the hedges are small brooks, and every door is shut."
     },
-    // Two more villages north-west of the road tile (the user, 2026-11-01, two gold circles), joined to it and to each other as drawn. The first is Broadmead (2026-11-02, the former placeholder Thornby; the user's pick, the village is in Langston/broadmead/broadmead.txt); the second is still a stand-in, as for the two above.
+    // Two more villages north-west of the road tile (the user, 2026-11-01, two gold circles), joined to it and to each other as drawn. The first is Broadmead (2026-11-02, the former placeholder Thornby; the user's pick, the village is in Langston/broadmead/broadmead.txt); the second is Fallowmere, which the user turned into a generic farming village (2026-11-02, the Barleycross and Marlcross model: mixed arable that feeds Langston) and which has no places or board yet.
     bm: {
       name: "Broadmead", kind: "village", x: -7.79, y: -8.56,
       territory: "gault",
@@ -543,11 +543,11 @@
       territory: "gault",
       danger: 1,
       climate: -1,
-      walk: "The road runs west over flat, damp ground, past fields left fallow and ditches full of reeds.",
-      info: "A village on the western edge of Langston's farmland, where the ground turns wet and the fields lie fallow.",
-      here: "Low roofs stand on a rise above flat, reedy fields, with ditches shining between the strips and a few geese picking along the lane.",
-      hereNight: "Mist lies over the fallow fields, and a lantern swings once at the far end of the lane and goes out.",
-      hereStorm: "Rain turns the ditches to brown water and the lane to a trench of mud. The geese have vanished, and every shutter is closed."
+      walk: "The road runs west across level farmland, between hedged strips of wheat, barley and beans, toward a cluster of roofs round a village pond.",
+      info: "A farming village on the western edge of Langston's farmland. Its wheat, barley, beans and vegetables go to Langston's market, and its carts are on the road most mornings.",
+      here: "Hedged strips of wheat, barley and beans run out from a cluster of thatched roofs round a village pond, where geese pick along the bank. Haystacks and kitchen gardens stand among the houses, and a cart or two waits in the lane.",
+      hereNight: "A few lit windows show round the dark pond, and a dog barks from a farmyard. The fields lie quiet, and the air smells of hay and cold water.",
+      hereStorm: "Rain beats on the strips and fills the ruts in the lane. The pond is dimpled and brown, the geese have gone, and every shutter is closed."
     }
   };
 
@@ -928,7 +928,7 @@
     lg: { place: "the town hall", setting: "town", region: "any" },
     nv: { place: "the Village Head's Hall", setting: "village", region: "marches" },   // Barolo (2026-11-02): its Contract Board is in the Village Head's Hall (Langston/barolo/village_heads_hall.txt ba_hall_board); the village count [0, 2]
     bm: { place: "the Village Head's Hall", setting: "village", region: "marches" },   // Broadmead (2026-11-02): its Contract Board is in the Village Head's Hall (Langston/broadmead/village_heads_hall.txt bm_hall_board); the village count [0, 2]
-    // The placeholder village below has no board of its own yet.
+    // Fallowmere (below) has no board of its own yet.
     fm: { place: "the village", setting: "village", region: "marches", count: [0, 0] }
   };
   // count is how many postings a board shows on a given day, rolled between the two numbers from the day and the origin (so a refresh and a return visit show the same board): a city is busiest and a village is
