@@ -1,0 +1,528 @@
+*comment ====================================================================================
+*comment THE GREY GANDER (Fallowmere): the village inn at the edge of the green, built for carters and harvest crews. Plan: Resources & Quest/WESTERN_VALE_VILLAGES_PLAN.md (Fallowmere); voice sheet: Resources & Quest/FALLOWMERE_ROLEPLAY_TEST.md.
+*comment Built (2026-11-02): the taproom with its three layers, three things to buy (a goose pie, a bowl of bean pottage, a mug of house beer), a rented room (24 hours), the cart yard, Ione Brackett's introduction and her talk (fm_gg_talk, below), and a small-stakes dice table that is up only at night (fm_gg_dice).
+*comment Ione is a half-elf woman of fifty-two, unhurried, dry and observant: short level sentences, deadpan understatement ("not the worst room" is the best), "Hm", a pewter mug she polishes while she talks. She calls the player "traveller" until she has a name and then says the name once, in the opening talk, and not again in the same conversation. She does not gossip and she does not flatter.
+*comment Invented here (2026-11-02, the user's narrative freedom): her father, a reaper, died of a winter chest twenty years ago; the old landlord who raised her kept the taps ten more years and left her the house, the cask and no debts; her mother passed through once and is "passing trade". Not built yet: the hard rye loaf as a buyable travel item (it needs its own icon; Ione and Aubrey both mention it in the roleplay sheet), and a Town card (T key) entry, which comes with the Hall's Contract Board.
+*comment The dice table follows the Keel's pattern (port_valen.txt pv_poi_tavern_dice) and uses the shared wager routine (economy.txt resolve_wager): 4 coppers to ante, 8 to win, Sleight of Hand (DEX DC 13), a house pot of 30 coppers (gander_dice_bankroll) that refills every day (calendar.txt). The table is run by a leathery carter, not by Ione, who watches and keeps the slate.
+*comment Backdrop: Wallpaper/Fallowmere_Grey_Gander_Day.png and _Night.png (scenery.js SCENE_PLACES); ambience "tavern" (ambience.js ALIAS).
+*comment ====================================================================================
+
+*label fm_gg
+*set minutes_to_pass 5
+*set time_advance_call_id "fm_gg_walk_1"
+*gosub_scene Langston/fallowmere/fallowmere fm_walk_time
+*goto fm_gg_hall
+
+*label fm_gg_hall
+*set scenery_subplace "village_inn_hall"
+*temp gg_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+*if (gg_now >= fm_gg_room_until)
+  *set fm_gg_room_active false
+*temp gg_first false
+*if (not(fm_gg_seen))
+  *set gg_first true
+*set fm_gg_seen true
+*temp gg_state "day"
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set gg_state "night"
+*elseif (time_period = "Morning")
+  *set gg_state "morning"
+*elseif (time_period = "Dusk")
+  *set gg_state "dusk"
+*temp gg_vignette (((campaign_day * 24) + clock_hour) modulo 4) + 1
+*temp gg_dice_open false
+*if (time_period = "Night")
+  *set gg_dice_open true
+*temp gg_talk_done false
+*if (((fm_gg_asked_work) and (fm_gg_asked_self)) and ((fm_gg_asked_dice) or (gg_dice_open)))
+  *set gg_talk_done true
+
+[b]◈ THE GREY GANDER[/b]
+*line_break
+*gosub fm_gg_layers
+
+*comment Open-world free time: the sidebar's Wait and Rest work on this page.
+*set wait_ok_page page_id
+*choice
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 2)
+    # [2 Copper Bits] Buy a goose pie with barley and onion. [~20 min]@{show_stat_hints  [+2 Temp HP, +1 CON for 4h]|}
+      *set tavern_item_cost_copper 2
+      *goto fm_gg_pie
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 1)
+    # [1 Copper Bit] Buy a bowl of bean pottage with a heel of rye. [~10 min]@{show_stat_hints  [+1 Temp HP]|}
+      *set tavern_item_cost_copper 1
+      *goto fm_gg_pottage
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 1)
+    # [1 Copper Bit] Buy a mug of the house beer. [~10 min]@{show_stat_hints  [+1 CHA for 4h]|}
+      *set tavern_item_cost_copper 1
+      *goto fm_gg_beer
+  *if (gg_dice_open)
+    # Take a stool at the carters' dice table. [~5 min]
+      *goto fm_gg_dice
+  *if (not(gg_talk_done))
+    *if (not(fm_gg_talk_opened))
+      # Ask the woman behind the bar what she can tell you about Fallowmere.
+        *goto fm_gg_talk
+    *else
+      # Talk with Ione a little longer.
+        *goto fm_gg_talk
+  *if (fm_gg_room_active)
+    # Go up to your room.
+      *goto fm_gg_room
+  *elseif ((((gold * 100) + (silver * 10)) + copper) >= fm_gg_rate_copper)
+    # [${fm_gg_rate_copper} Copper Bits] Take a room for 24 hours.
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+        *set currency_add_amount (0 - fm_gg_rate_copper)
+        *gosub_scene economy currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id page_id
+      *set fm_gg_room_active true
+      *set fm_gg_room_until (gg_now + 1440)
+      You count the price onto the bar. "A room, please."
+
+      Ione sweeps the coins into a drawer and pushes an iron key across the planks. "Up the back stair, first door. It's not the worst room." She gives the key a quarter turn so the bow faces you. "Yours till this hour tomorrow."
+      *goto fm_gg_room
+  *else
+    # Ask what a room costs.
+      "What do you charge for a room?" you ask.
+
+      "Three coppers," Ione says. "Bed's clean." She turns the rag once inside the mug. "Hm."
+      *choice
+        # Step back from the bar.
+          *goto fm_gg_hall
+        # Step back out onto the green.
+          *goto_scene Langston/fallowmere/fallowmere fm_return
+        *comment GEN:BEGIN place_steps home:fallowmere -- generated by tools/gen_city_settlements.js from its registry; edit the registry, not this block
+        # ⇥ [pvgo:home:fallowmere]
+          *goto_scene Langston/fallowmere/fallowmere fm_return
+        *comment GEN:END place_steps home:fallowmere
+  # Go out through the arch to the cart yard.
+    *goto fm_gg_yard
+  # Step back out onto the green.
+    *goto_scene Langston/fallowmere/fallowmere fm_return
+        *comment GEN:BEGIN place_steps home:fallowmere -- generated by tools/gen_city_settlements.js from its registry; edit the registry, not this block
+  # ⇥ [pvgo:home:fallowmere]
+    *goto_scene Langston/fallowmere/fallowmere fm_return
+        *comment GEN:END place_steps home:fallowmere
+
+*comment ── LAYERS: the taproom uses the same place, sky and activity contract as the village.
+*label fm_gg_layers
+*gosub fm_gg_place
+*gosub fm_gg_sky
+*gosub fm_gg_street
+*return
+
+*comment ── LAYER 1: PLACE ── Permanent room geography and smell. Nothing here depends on the hour or the weather.
+*label fm_gg_place
+*if (gg_first)
+  The Grey Gander is a long, low inn under a heavy thatch, its walls whitewashed and its beams dark. The taproom runs most of the length of the house, with scrubbed oak tables and stools tucked in beneath them, a stone hearth with a hanging kettle at one end, and a plain plank bar with a small cask on a stand behind it and a row of pewter mugs on pegs. A wide arch at the side of the house leads through to the cart yard. In one corner a high shelf holds a pair of bone dice and a chalked slate on a string. The room smells of malt, wood smoke and dried rushes.
+*else
+  The Gander's long room runs from the hearth to the plank bar, with the scrubbed tables between and the high shelf in the corner that holds the dice and the slate.
+*return
+
+*comment ── LAYER 2: SKY ── Weather and light reaching the room through its small windows, plus the ground's memory of recent weather.
+*label fm_gg_sky
+*if (weather_severity >= 3)
+  The shutters are closed and the hearth is built high. Wind shoves at the thatch and rattles the door in its frame.
+*elseif (weather = "Rain")
+  Rain whispers in the thatch and drips past the small windows.
+*elseif (weather = "Fog")
+  Fog presses grey against the windows, and the lamp flames stand straight.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Wet snow melts from boots at the door, and the fire is built high against the cold at the windows.
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  The windows show only the dark green and the lantern under the yard arch.
+*elseif (time_period = "Dusk")
+  The last light slants through the windows and lights the dust above the tables.
+*elseif (weather = "Clear")
+  Sunlight comes through the small windows and lies in bars across the swept boards.
+*else
+  Flat grey light reaches the tables from the windows, and the hearth supplies the room's colour.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Mud from the lane is trodden across the boards to the hearth, and the rushes by the door are sodden.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  Damp boot prints cross the boards from the door.
+*return
+
+*comment ── LAYER 3: STREET ── The innkeeper and the room's company. Ione is introduced once (met_ione); later visits describe her at work. Daytime is quiet because the crews are in the strips and the carters are on the road.
+*label fm_gg_street
+*if (not(met_ione))
+  *set met_ione true
+  A half-elf woman with grey-streaked hair in a plain knot stands behind the bar, her sleeves pushed above scarred forearms, working a rag round the inside of a pewter mug in slow circles. She takes in the road dust on you without breaking the rhythm of her hand.
+
+  "Traveller," she says, level and unhurried. "Beer's fresh, if you're dry. Fire's caught, if you're cold." She gives the rim one last turn. "Hm."
+*else
+  Ione stands behind the bar with a pewter mug and a rag, turning the rag in slow circles.
+
+*if (street_life = "empty")
+  The room is full of harvest hands and carters waiting out the weather, wet coats steaming on the pegs, while Ione passes mugs along the bar without hurrying.
+*elseif (gg_state = "morning")
+  The harvest crews have gone out to the strips, and two carters finish bowls of pottage at the near table before the road.
+*elseif (gg_state = "dusk")
+  The crews come in from the strips with aching backs, and the carters unyoke in the yard. The room fills slowly and mostly in silence.
+*elseif (gg_state = "night")
+  The fire burns low and the lamps are lit. By the hearth the carters have the dice down from the shelf, and the slate hangs by its string at Ione's elbow.
+*elseif (gg_vignette = 1)
+  A carter reads the slate behind the bar, then lays a coin on the planks and watches Ione rub out a chalk mark.
+*elseif (gg_vignette = 2)
+  A reaper sits at the near table with her blistered hands wrapped round a mug.
+*elseif (gg_vignette = 3)
+  Ione refills a mug without being asked and slides it along the bar.
+*else
+  Two carters compare notes on the Langston road, and one of them draws the ruts in spilled beer with a finger.
+*return
+
+*label fm_gg_pie
+*set tavern_item_hp_heal 0
+*set tavern_item_temp_hp 2
+*set tavern_item_type "food"
+*set tavern_item_buff_name "Goose Pie"
+*set tavern_item_buff_desc "+1 CON"
+*set tavern_item_buff_stat "con"
+*set tavern_item_buff_bonus 1
+*set tavern_item_buff_minutes 240
+*gosub_scene economy buy_tavern_item
+*set hours_to_pass 0
+*set minutes_to_pass 20
+*set time_advance_call_id "fm_gg_pie"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "exhaustion"
+  *goto_scene death death_screen
+Ione sets down a goose pie in a thick golden crust, with barley and onion under the gravy. "The goose had opinions," she says. "The pie has none." The crust is crisp, the gravy is rich, and the barley is tender. It is a meal for the end of a long day's walk.
+
+[b][Hearty Meal Eaten: +2 Temporary HP | Goose Pie (+1 CON for 4 Hours) | HP: ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}][/b]
+*goto fm_gg_after_meal
+
+*label fm_gg_pottage
+*set tavern_item_hp_heal 0
+*set tavern_item_temp_hp 1
+*set tavern_item_type "food"
+*set tavern_item_buff_name ""
+*set tavern_item_buff_desc ""
+*set tavern_item_buff_stat "none"
+*set tavern_item_buff_bonus 0
+*set tavern_item_buff_minutes 0
+*gosub_scene economy buy_tavern_item
+*set hours_to_pass 0
+*set minutes_to_pass 10
+*set time_advance_call_id "fm_gg_pottage"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "exhaustion"
+  *goto_scene death death_screen
+Ione ladles beans and barley from the pot into a wooden bowl and sets a heel of rye beside it. The pottage is thick and salty, and the rye chews like an oak shingle.
+
+[b][Light Meal Eaten: +1 Temporary HP | HP: ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}][/b]
+*goto fm_gg_after_meal
+
+*label fm_gg_beer
+*set tavern_item_hp_heal 0
+*set tavern_item_temp_hp 0
+*set tavern_item_type "drink"
+*set tavern_item_buff_name "Barley Beer"
+*set tavern_item_buff_desc "+1 CHA"
+*set tavern_item_buff_stat "cha"
+*set tavern_item_buff_bonus 1
+*set tavern_item_buff_minutes 240
+*gosub_scene economy buy_tavern_item
+*set hours_to_pass 0
+*set minutes_to_pass 10
+*set time_advance_call_id "fm_gg_beer"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "exhaustion"
+  *goto_scene death death_screen
+Ione draws a mug of pale, cloudy beer from the small cask and sets it down with a solid clunk. It is hearty and thick with grain, with a clean taste of toasted barley and well water. "Not the worst I've made," she says.
+
+[b][Barley Beer Drunk: +1 CHA for 4 Hours | HP: ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}][/b]
+*goto fm_gg_after_meal
+
+*label fm_gg_after_meal
+*temp gg_open_dice false
+*if (time_period = "Night")
+  *set gg_open_dice true
+*choice
+  # Order something else.
+    *goto fm_gg_hall
+  *if (gg_open_dice)
+    # Take a stool at the carters' dice table. [~5 min]
+      *goto fm_gg_dice
+  # Go out through the arch to the cart yard.
+    *goto fm_gg_yard
+  *if (fm_gg_room_active)
+    # Go up to your room.
+      *goto fm_gg_room
+  # Step back out onto the green.
+    *goto_scene Langston/fallowmere/fallowmere fm_return
+  *comment GEN:BEGIN place_steps home:fallowmere -- generated by tools/gen_city_settlements.js from its registry; edit the registry, not this block
+  # ⇥ [pvgo:home:fallowmere]
+    *goto_scene Langston/fallowmere/fallowmere fm_return
+  *comment GEN:END place_steps home:fallowmere
+
+*comment ── THE DICE TABLE ── Up only at night. The leathery carter who keeps the pot is unnamed. Ione does not play and does not bet; she watches the table, and her "Hm" is the only comment she makes on a bad run.
+*label fm_gg_dice
+*set minutes_to_pass 5
+*set time_advance_call_id "fm_gg_dice_walk"
+*gosub_scene calendar advance_time
+*if (not(fm_gg_dice_met))
+  *set fm_gg_dice_met true
+  You take a stool at the table by the hearth, where two carters and a reaper sit round a bare circle of scrubbed board. The bone dice have come down from the high shelf, and the slate hangs on its string at the end of the table. The man keeping the pot is a leathery carter with a cracked whip hand and a patient face, and he shakes the dice in a pewter mug.
+
+  "Four coppers a throw," he says, and looks at your coin the way a man looks at a horse's feet. "Beat the high mark and the pot pays eight. Slate says nobody cheats." From behind the bar Ione watches the whole table.
+*else
+  *if (gander_dice_bankroll > 0)
+    You pull a stool up to the hearth. The carter shakes the mug against the board and tips his head at you. "Four coppers a throw. Beat the high mark and the pot pays eight."
+  *else
+    You pull a stool up to the hearth. The carter turns the pot out on the board, and a button and a nail roll across the wood. "Pot's dry," he says. "Tomorrow."
+*goto fm_gg_dice_menu
+
+*label fm_gg_dice_menu
+*temp hint_gander_dice ""
+*if (show_stat_hints)
+  *if (guidance_active)
+    *set hint_gander_dice " [Guidance: Sleight of Hand (DEX DC 13) + 1d4, +8 Copper]"
+  *else
+    *set hint_gander_dice " [Sleight of Hand (DEX DC 13), +8 Copper]"
+The mug goes from hand to hand round the bare circle, and the bone dice rattle on the board.
+
+*choice
+  *if ((gander_dice_bankroll > 0) and ((((gold * 100) + (silver * 10)) + copper) >= 4))
+    # Drop 4 Copper Bits and take a throw.${hint_gander_dice}
+      *set wager_bankroll_var "gander_dice_bankroll"
+      *set wager_ante_copper 4
+      *set wager_win_copper 8
+      *set check_stat "dex"
+      *set check_dc 13
+      *set check_skill "Sleight of Hand"
+      *gosub_scene economy resolve_wager
+      *if (check_success)
+        You tip the mug and the dice run out clean across the board, a high point, and the table groans before the carter has finished looking.
+        The carter pushes the coppers across with two fingers and no comment. "Good wrist," he says. "Careful with it."
+        [b][🎲 Dice Wager Won: +8 Copper Bits][/b]
+      *else
+        The dice skitter off the end of the board and drop to the floor. The carter rakes the ante into the pot. "Floor's not on the slate," he says.
+        From behind the bar Ione says, "Hm."
+      *if (wager_bankroll_busted)
+        The carter turns the pot out on the board, and a button and a nail roll across the wood. "That's the pot," he says. "Tomorrow, if you're about."
+      *page_break The mug goes round the table…
+      *goto fm_gg_dice_menu
+  # Leave the table.
+    *goto fm_gg_hall
+  *comment GEN:BEGIN place_steps home:fallowmere -- generated by tools/gen_city_settlements.js from its registry; edit the registry, not this block
+  # ⇥ [pvgo:home:fallowmere]
+    *goto fm_gg_hall
+  *comment GEN:END place_steps home:fallowmere
+
+*comment ── THE CART YARD ── Outdoors: it gets the weather in a line and nothing else.
+*label fm_gg_yard
+*set scenery_subplace "fallowmere_grey_gander_yard"
+*set wait_ok_page page_id
+
+[b]◈ THE GREY GANDER: CART YARD[/b]
+*line_break
+The yard is packed earth under the arch and beyond it, with a hay wagon and a stack of barrels along the back wall, a long hitching rail on the lane side and a trough fed from the village well. Stalls at the back hold the carters' horses. Hay, horse and malt hang in the air.
+*if (weather_severity >= 3)
+  The horses stand with their heads low in the stalls while the weather beats across the open yard.
+*elseif (weather = "Rain")
+  Rain drips from the thatch into the straw and runs in the ruts toward the green.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Slush lies in the ruts, and steam rises from the horses' backs.
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  A lantern hangs under the arch, and an animal shifts in the dark of the stalls.
+*choice
+  # Go back inside.
+    *goto fm_gg_hall
+  # Step out onto the green.
+    *goto_scene Langston/fallowmere/fallowmere fm_return
+  *comment GEN:BEGIN place_steps home:fallowmere -- generated by tools/gen_city_settlements.js from its registry; edit the registry, not this block
+  # ⇥ [pvgo:home:fallowmere]
+    *goto_scene Langston/fallowmere/fallowmere fm_return
+  *comment GEN:END place_steps home:fallowmere
+
+*label fm_gg_room
+*set scenery_subplace "village_inn_room"
+*temp gg_room_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+*if (gg_room_now >= fm_gg_room_until)
+  *set fm_gg_room_active false
+*if (not(fm_gg_room_active))
+  *goto fm_gg_hall
+*comment A rented private room is open-world free time for the sidebar's Wait and Rest controls.
+*set wait_ok_page page_id
+
+[b]◈ YOUR ROOM: THE GREY GANDER[/b]
+*line_break
+The room is small and plain under the slope of the thatch, with a narrow bed under a grey wool blanket, a basin and jug on a stool, and a row of pegs for clothes and gear. A low window looks over the green and the pond.
+
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  A thin line of lamplight shows under the door, and the green beyond the window is quiet.
+*elseif (time_period = "Dusk")
+  The last light comes through the window while the room below grows louder.
+*else
+  Light lies across the foot of the bed in a bar from the window.
+
+*if (weather_severity >= 3)
+  Wind worries at the thatch overhead and presses on the window.
+*elseif (weather = "Rain")
+  Rain whispers steadily in the thatch and drips past the window.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Cold gathers at the window, though the room itself stays dry.
+
+*choice
+  # Train in your room. [~${training_hours} Hours]
+    *gosub_scene character_progression inn_room_training "grey_gander"
+    *page_break Back to your room…
+    *goto fm_gg_room
+  # Bar the door and sleep in the bed. [~8 Hours]
+    *goto fm_gg_sleep
+  # Wash in the basin. [~10 min]
+    *goto fm_gg_wash
+  # Go back down to the taproom.
+    *goto fm_gg_hall
+  # Walk back out onto the green.
+    *goto_scene Langston/fallowmere/fallowmere fm_return
+  *comment GEN:BEGIN place_steps home:fallowmere -- generated by tools/gen_city_settlements.js from its registry; edit the registry, not this block
+  # ⇥ [pvgo:home:fallowmere]
+    *goto_scene Langston/fallowmere/fallowmere fm_return
+  *comment GEN:END place_steps home:fallowmere
+
+*label fm_gg_sleep
+*set hours_to_pass 8
+*set minutes_to_pass 0
+*set time_advance_call_id "fm_gg_sleep"
+*gosub_scene calendar advance_time
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*set sleep_location_id "fallowmere_grey_gander"
+*set sleep_is_shared false
+*set sleep_is_permanent_home false
+*set sleep_is_paid_inn true
+*set sleep_tier_name "none"
+*set sleep_tier_stat1 "none"
+*set sleep_tier_bonus1 0
+*set sleep_tier_stat2 "none"
+*set sleep_tier_bonus2 0
+*gosub_scene calendar resolve_sleep
+You set your gear within reach, bar the door and settle under the grey blanket. The voices below thin to a murmur, and sleep takes you.
+*if ((time_period = "Morning") or (time_period = "Pre-Dawn"))
+  The first cart rolling out under the arch wakes you, with a carter's low word to his horse. You feel rested.
+*elseif (time_period = "Dusk")
+  You wake to a louder room below and the last light at the window. The ache of travel has eased.
+*elseif (time_period = "Night")
+  You wake in the dark to a dog barking across the green. Your fatigue has cleared.
+*else
+  Light reaches the foot of the bed when you wake, and the room carries on below. Your mind is clear.
+*if (not(sleep_gear_note = ""))
+  *line_break
+  ${sleep_gear_note}
+The key stays with you until this hour tomorrow.
+*goto fm_gg_room
+
+*label fm_gg_wash
+*set hours_to_pass 0
+*set minutes_to_pass 10
+*set time_advance_call_id "fm_gg_wash"
+*gosub_scene calendar advance_time
+*set minutes_since_wash 0
+*set hygiene_stage "Clean"
+*gosub_scene calendar update_hub_condition
+You pour water into the basin and wash the road dust away with the grey soap beside the jug. The water is cold and the towel is rough and clean.
+*line_break
+[b][🧼 Washed Up: Hygiene Restored to Clean][/b]
+*choice
+  # Set the basin aside.
+    *goto fm_gg_room
+  # Go back down to the taproom.
+    *goto fm_gg_hall
+  *comment GEN:BEGIN place_steps home:fallowmere -- generated by tools/gen_city_settlements.js from its registry; edit the registry, not this block
+  # ⇥ [pvgo:home:fallowmere]
+    *goto fm_gg_room
+  *comment GEN:END place_steps home:fallowmere
+
+*comment ── TALKING WITH IONE ── Ione answers short and level. The opening talk is about the village; each later topic is a one-time answer that leaves the menu once asked. She gives the player's name once, in the opening talk, and uses "traveller" otherwise. She names Aubrey Fenn freely (fm_know_head), because the Hall's courier board is real. The dice topic appears only while the table is down (daytime), so it is never offered at night.
+*label fm_gg_talk
+*if (not(fm_gg_talk_opened))
+  *set fm_gg_talk_opened true
+  *set minutes_to_pass 5
+  *set time_advance_call_id "fm_gg_talk_open"
+  *gosub_scene calendar advance_time
+  You rest your elbows on the bar. "What can you tell me about Fallowmere?"
+
+  Ione sets the rag down. "Barley, wheat, beans. Carts roll for Langston at first light, and folk sleep when the sun does." She glances out at the green and back. "Not the worst place to keep out of trouble." A beat. "Hm."
+
+  "I'm ${name}," you say. "And you are?"
+
+  "Ione Brackett, ${name}." She pushes a small dish of salted beans across the planks. "First dish is free."
+*goto fm_gg_talk_menu
+
+*label fm_gg_talk_menu
+*temp gg_dice_up false
+*if (time_period = "Night")
+  *set gg_dice_up true
+*if (((fm_gg_asked_work) and (fm_gg_asked_self)) and ((fm_gg_asked_dice) or (gg_dice_up)))
+  *line_break
+  Ione turns back to her mugs, and the room goes on around you.
+  *page_break Back to the bar…
+  *goto fm_gg_hall
+*choice
+  *if (not(fm_gg_asked_work))
+    # Ask where a traveller can earn some coin.
+      *goto fm_gg_talk_work
+  *if (not(fm_gg_asked_self))
+    # Ask how she came to run the Gander.
+      *goto fm_gg_talk_self
+  *if ((not(fm_gg_asked_dice)) and (not(gg_dice_up)))
+    # Ask about the dice and the slate on the high shelf.
+      *goto fm_gg_talk_dice
+  # That's enough for now.
+    *goto fm_gg_hall
+  *comment GEN:BEGIN place_steps home:fallowmere -- generated by tools/gen_city_settlements.js from its registry; edit the registry, not this block
+  # ⇥ [pvgo:home:fallowmere]
+    *goto fm_gg_hall
+  *comment GEN:END place_steps home:fallowmere
+
+*label fm_gg_talk_work
+*set fm_gg_asked_work true
+*set fm_know_head true
+*set minutes_to_pass 5
+*set time_advance_call_id "fm_gg_talk_work"
+*gosub_scene calendar advance_time
+"Where can a traveller earn some coin?" you ask.
+
+"Nowhere, unless you want to swing a scythe." Ione turns the mug a quarter turn. "Reapers get two coppers a day and blisters."
+
+"And for someone who doesn't want blisters?"
+
+"Hall's got a board by the study door. Courier work, small. Aubrey Fenn keeps it." She nods toward the long thatched house at the head of the lane. "He'll tell you in twenty minutes what I've told you in two." A pause. "Hm. Anything bigger is Langston Hall."
+*goto fm_gg_talk_menu
+
+*label fm_gg_talk_self
+*set fm_gg_asked_self true
+*set minutes_to_pass 5
+*set time_advance_call_id "fm_gg_talk_self"
+*gosub_scene calendar advance_time
+"How did you come to run the Gander?" you ask.
+
+"Potgirl," Ione says. "The old landlord took me in when I was small. My father was a reaper, and a winter chest took him twenty years back." She works the rag round the rim. "The old man kept the taps ten years more. Then he left me the house, the cask and no debts."
+
+"And your mother?"
+
+She does not answer at once. "Passing trade," she says, and slides the dish of beans a hand's width closer to you.
+*goto fm_gg_talk_menu
+
+*label fm_gg_talk_dice
+*set fm_gg_asked_dice true
+*set minutes_to_pass 5
+*set time_advance_call_id "fm_gg_talk_dice"
+*gosub_scene calendar advance_time
+"What are the dice and the slate on the shelf for?" you ask.
+
+"Carters bring them down after dark." Ione does not look at the shelf. "Small stakes, one pot. The slate says who owes what." She wipes the brass of the tap dry. "Nobody loses money until the sun's behind the barn."
+*goto fm_gg_talk_menu

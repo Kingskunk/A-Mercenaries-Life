@@ -78,6 +78,16 @@ const SETTLEMENTS = {
       leave: { name: "Leave Broadmead", steps: [S("bm_menu", "ow_here", "Langston/broadmead/broadmead.txt")], done: "You take the pasture lane out of Broadmead." }
     }
   },
+  // Fallowmere (2026-11-02, the user): the Contract Board is in the Village Head's Hall, the inn is the Grey Gander, and the way out is the Langston road.
+  fallowmere: {
+    name: "Fallowmere", start: "fallowmere", startScene: "Langston/fallowmere/fallowmere", hubFile: "Langston/fallowmere/fallowmere.txt", hubLabels: ["fallowmere", "fm_menu", "fm_return"],
+    files: ["Langston/fallowmere/grey_gander.txt", "Langston/fallowmere/village_heads_hall.txt", "Langston/fallowmere/market.txt"],
+    services: {
+      board: { name: "Contract Board", seen: "fm_hall_seen", steps: [S("fm_menu", "fm_hall", "Langston/fallowmere/fallowmere.txt"), S("fm_hall_front", "fm_hall_board", "Langston/fallowmere/village_heads_hall.txt")], done: "You are at the Contract Board." },
+      inn: { name: "The Grey Gander", seen: "fm_gg_seen", steps: [S("fm_menu", "fm_gg", "Langston/fallowmere/fallowmere.txt")], done: "You are at the Grey Gander." },
+      leave: { name: "Leave Fallowmere", steps: [S("fm_menu", "ow_here", "Langston/fallowmere/fallowmere.txt")], done: "You take the Langston road out of Fallowmere." }
+    }
+  },
   brinewick: {
     name: "Brinewick", start: "brinewick", startScene: "port_valen/brinewick/brinewick", hubFile: "port_valen/brinewick/brinewick.txt", hubLabels: ["brinewick"],
     files: ["port_valen/brinewick/reedhouse.txt", "port_valen/brinewick/saltworks.txt", "port_valen/brinewick/tide_house.txt"],

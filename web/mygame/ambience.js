@@ -97,6 +97,9 @@
     broadmead_villageheadhall: "langston_hall",   // an indoor government hall, the same soft room tone as Langston Hall
     remount_yard: "village",              // the open stable yard and muster field: a village's edge by day, a hushed one at night
     the_crooked_halter: "tavern",         // the common room: a quiet tavern by day that fills as the day ends
+    fallowmere_pond_green: "village",     // the village hub: a village by day, a hushed one at night
+    fallowmere_market: "village",         // the open market on the green
+    fallowmere_grey_gander: "tavern",     // the common room: a quiet tavern by day that fills as the day ends
     broadmead: "village",                 // the village hub and the overworld tile: a village by day, a hushed one at night
     barolo: "village",                    // the village hub and the overworld tile: a village by day, a hushed one at night
     barolo_market: "village",             // the paved market yard is open air

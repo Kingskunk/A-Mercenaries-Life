@@ -832,6 +832,61 @@ window.CITY_SETTLEMENTS = {
    }
   ]
  },
+ "fallowmere": {
+  "name": "Fallowmere",
+  "keys": [
+   "fm_menu:fm_hall",
+   "fm_hall_front:fm_hall_board",
+   "fm_menu:fm_gg",
+   "fm_menu:ow_here"
+  ],
+  "services": [
+   {
+    "id": "board",
+    "name": "Contract Board",
+    "seen": "fm_hall_seen",
+    "lock": "",
+    "lockReason": "",
+    "done": "You are at the Contract Board.",
+    "steps": [
+     "fm_menu:fm_hall",
+     "fm_hall_front:fm_hall_board"
+    ],
+    "stepMin": [
+     5,
+     5
+    ]
+   },
+   {
+    "id": "inn",
+    "name": "The Grey Gander",
+    "seen": "fm_gg_seen",
+    "lock": "",
+    "lockReason": "",
+    "done": "You are at the Grey Gander.",
+    "steps": [
+     "fm_menu:fm_gg"
+    ],
+    "stepMin": [
+     5
+    ]
+   },
+   {
+    "id": "leave",
+    "name": "Leave Fallowmere",
+    "seen": "",
+    "lock": "",
+    "lockReason": "",
+    "done": "You take the Langston road out of Fallowmere.",
+    "steps": [
+     "fm_menu:ow_here"
+    ],
+    "stepMin": [
+     0
+    ]
+   }
+  ]
+ },
  "brinewick": {
   "name": "Brinewick",
   "keys": [

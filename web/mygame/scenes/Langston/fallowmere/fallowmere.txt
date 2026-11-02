@@ -1,0 +1,250 @@
+*comment ====================================================================================
+*comment FALLOWMERE: a plain farming village on level farmland at the western edge of Langston's fields (overworld tile "fm"). Plan: Resources & Quest/WESTERN_VALE_VILLAGES_PLAN.md (Fallowmere takes over the role the plan gave Harrowfield: grain, vegetables and a little hemp for Langston; the user's call, 2026-11-02).
+*comment The hub (2026-11-02): the three description layers (place, sky, street), the arrival from the overworld tile "fm" (fm_arrive) and the three places as menu entries. The three places are the Village Head's Hall (Aubrey Fenn), the Grey Gander (Ione Brackett) and the market on the green. All three are built: the Grey Gander (grey_gander.txt), the Village Head's Hall (village_heads_hall.txt, with the Contract Board) and the market (market.txt, hours, layers and a way back; no trade panel yet). The fm_unbuilt stub is gone, as Broadmead's bm_unbuilt and Barolo's ba_unbuilt were.
+*comment Voices and facts for the two named people are in Resources & Quest/FALLOWMERE_ROLEPLAY_TEST.md. Fallowmere is meant to be ordinary: no feud, no quest and no secret. The Hall will carry a thin courier Contract Board; nowhere else has one.
+*comment Backdrops: Wallpaper/Fallowmere_Pond_Green_Day.png and _Night.png (the hub), Fallowmere_Grey_Gander_* (the inn) and Fallowmere_Market_* (the market), in scenery.js SCENE_PLACES; ambience "village" (ambience.js ALIAS). The hub picture shows the covered well AND the pond with geese, so both appear in the prose.
+*comment ====================================================================================
+
+*label fallowmere
+*gosub fm_enter
+*gosub fm_header
+*gosub fm_layers
+*goto fm_menu
+
+*comment Shared setup so a direct visit and a later return land in the same state. fm_first_hub is true only on the first visit.
+*label fm_enter
+*temp fm_first_hub false
+*if (not(fm_seen))
+  *set fm_first_hub true
+*set current_district "fallowmere"
+*set fm_seen true
+*gosub_scene calendar update_hub_condition
+*gosub fm_hours
+*gosub fm_hall_hours
+*return
+
+*comment The Village Head's Hall hours: the public room is open Morning through Afternoon. Shut at dusk, at night, in dangerous weather and on the rest day.
+*label fm_hall_hours
+*set fm_ok_hall false
+*set fm_hall_closed_reason "shut for the night"
+*if (day_of_week = "Hallowday")
+  *set fm_hall_closed_reason "closed for the rest day"
+  *return
+*if (street_life = "empty")
+  *set fm_hall_closed_reason "shut against the weather"
+  *return
+*if (time_period = "Dusk")
+  *set fm_hall_closed_reason "shut till morning"
+  *return
+*if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
+  *set fm_ok_hall true
+  *set fm_hall_closed_reason ""
+*return
+
+*comment The market's hours: Morning through Dusk, shut at night, on the rest day and while dangerous weather has emptied the streets. The Grey Gander is always open.
+*label fm_hours
+*set fm_ok_market false
+*set fm_market_closed_reason "stacked and sheeted for the night"
+*if (day_of_week = "Hallowday")
+  *set fm_market_closed_reason "stacked for the rest day"
+  *return
+*if (street_life = "empty")
+  *set fm_market_closed_reason "empty in the weather"
+  *return
+*if ((((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon")) or (time_period = "Dusk"))
+  *set fm_ok_market true
+  *set fm_market_closed_reason ""
+*return
+
+*comment The overworld's Fallowmere tile (fm) enters here. The last stretch of road between the hedges costs five minutes once per arrival.
+*label fm_arrive
+*set minutes_to_pass 5
+*set time_advance_call_id "fm_arrive_1"
+*gosub fm_walk_time
+*temp fm_first_arrival false
+*if (not(fm_arrival_seen))
+  *set fm_first_arrival true
+*set fm_arrival_seen true
+*gosub fm_enter
+*gosub fm_header
+*if (fm_first_arrival)
+  *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+    The road runs between dark hedges toward a few lit windows round a black pond, and a dog barks from a farmyard.
+  *elseif (time_period = "Dusk")
+    The road runs between hedged strips as the light fades, with carts coming in toward a cluster of thatched roofs round a village pond.
+  *else
+    The last stretch of road runs between hedged strips of wheat, barley and beans toward a cluster of thatched roofs round a village pond.
+*else
+  *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+    You follow the road between the dark hedges toward the lit windows.
+  *elseif (time_period = "Dusk")
+    You follow the road in with the last carts of the day.
+  *else
+    You follow the road between the strips into the village.
+*line_break
+*gosub fm_layers
+*goto fm_menu
+
+*label fm_walk_time
+*set hours_to_pass 0
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return
+
+*label fm_header
+[b]◈ FALLOWMERE[/b]
+*line_break
+*return
+
+*label fm_layers
+*gosub fm_place
+*gosub fm_sky
+*gosub fm_street
+*return
+
+*comment Places return here without repeating the full village description.
+*label fm_return
+*gosub fm_enter
+*gosub fm_header
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  You come back to the green, and the village is quiet around you.
+*elseif (time_period = "Dusk")
+  You come back to the green as the village settles for the evening.
+*else
+  You come back to Fallowmere's green.
+*goto fm_menu
+
+*label fm_menu
+*comment Open-world free time: the sidebar's Wait and Rest work on this page.
+*set wait_ok_page page_id
+*choice
+  *if (fm_ok_hall)
+    # [b]The Village Head's Hall[/b]: rolls, boundaries and the Contract Board. [~5 min]
+      *goto_scene Langston/fallowmere/village_heads_hall fm_hall
+  *else
+    # [b]The Village Head's Hall[/b]: ${fm_hall_closed_reason}.
+      *goto_scene Langston/fallowmere/village_heads_hall fm_hall_closed
+  # [b]The Grey Gander[/b]: meals, rooms and a cart yard. [~5 min]
+    *goto_scene Langston/fallowmere/grey_gander fm_gg
+  *if (fm_ok_market)
+    # [b]The market on the green[/b]: trestles, the grain scale and the pond. [~5 min]
+      *goto_scene Langston/fallowmere/market fm_market
+  *else
+    # [b]The market on the green[/b]: ${fm_market_closed_reason}.
+      *goto_scene Langston/fallowmere/market fm_market_closed
+  # [b]The Langston road[/b]: leave Fallowmere.
+    *set ow_pos "fm"
+    *goto_scene overworld/overworld ow_here
+  *comment GEN:BEGIN place_steps fm_menu:fm_hall fm_menu:fm_gg fm_menu:ow_here -- generated by tools/gen_city_settlements.js from its registry; edit the registry, not this block
+  *if (fm_ok_hall)
+    # ⇥ [pvgo:fm_menu:fm_hall]
+      *goto_scene Langston/fallowmere/village_heads_hall fm_hall
+  # ⇥ [pvgo:fm_menu:fm_gg]
+    *goto_scene Langston/fallowmere/grey_gander fm_gg
+  # ⇥ [pvgo:fm_menu:ow_here]
+    *set ow_pos "fm"
+    *goto_scene overworld/overworld ow_here
+  *comment GEN:END place_steps fm_menu:fm_hall fm_menu:fm_gg fm_menu:ow_here
+
+*comment ── LAYER 1: PLACE ── Fixed geography only. The long description prints once. Nothing here changes with the season, so the thatch, the hedges and the strips are never given a colour other than the plain one.
+*label fm_place
+*if (fm_first_hub)
+  Fallowmere lies on level farmland, round a wide green with a shallow pond in the middle of it. Reeds crowd the banks, and a flock of grey geese picks along the water's edge. At the near side of the green a covered well stands under its own small roof of shingle. Low cottages of whitewashed plaster and dark timber ring the green under deep thatch, each with its brick chimney, its kitchen garden and its wattle fence. Barns and haystacks stand between the houses, and a cart waits in the lane with its shafts on the ground. Beyond the roofs, hedged strips of wheat, barley and beans run flat to the horizon.
+
+  A long, low house under a deep thatch stands at the head of the lane, with a covered bench beneath a lean-to beside its door. Down by the pond a few open trestles stand near a heavy scale on a plank platform. Across the lane a long, low inn opens a wide arch to its cart yard and hangs a painted grey goose from an iron bracket over its door. Hay, wet reeds and wood smoke hang over everything.
+*else
+  Fallowmere's green lies round its pond, with the covered well at the near side, the long thatched house and its bench at the head of the lane, the trestles and the scale down by the water, and the goose sign across the lane. The strips run off flat on every side.
+*return
+
+*comment ── LAYER 2: SKY ── Weather and light only, followed by the ground's recent-weather state.
+*label fm_sky
+*temp fm_dark false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set fm_dark true
+*if (weather = "Rain")
+  Rain dimples the pond and runs from the thatch in strings, and the ruts in the lane fill with brown water.
+*elseif (weather = "Storm")
+  Wind flattens the reeds and drives rain across the green. The pond heaves brown, the thatch hisses, and every shutter bangs.
+*elseif (weather = "Fog")
+  Fog lies on the pond and hides the far strips, leaving the nearest cottages as grey shapes.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Wet snow settles on the thatch and on the roof of the well, and the strips beyond the hedges have faded to white.
+*elseif (weather = "Blizzard")
+  Driven snow hides the pond and the far end of the lane. The well roof is the farthest thing in sight.
+*elseif (weather = "Clear")
+  *if (fm_dark)
+    Starlight lies on the pond, and the strips beyond the hedges are dark silvery shapes.
+  *elseif (time_period = "Dusk")
+    The last light turns the pond to copper and lays long shadows from the hedges across the green.
+  *else
+    Soft light lies on the green, and the pond holds the thatched roofs upside down.
+*else
+  *if (fm_dark)
+    A starless sky presses down on the village, and the pond is a black patch ringed with a few lit windows.
+  *else
+    Flat grey light lies over the green and makes the thatch look darker.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Brown water stands in the ruts of the lane, and the green squelches underfoot.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The lane is dark and slick from the last rain, and the ruts hold shallow water.
+*return
+
+*comment ── LAYER 3: STREET ── Current village activity. Daytime work follows the season; the rotating vignette follows the clock (campaign_day * 24 + clock_hour). The lean man with a cord in vignette 6 is Aubrey Fenn, unnamed until he is met.
+*label fm_street
+*temp fm_vignette (((campaign_day * 24) + clock_hour) modulo 6) + 1
+*temp fm_night false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set fm_night true
+*if ((street_life = "empty") and (not(fm_night)))
+  The lane is a river of mud. Doors are shut, the geese have gone from the pond, and the only movement is water running along the ruts.
+  *return
+*if (fm_night)
+  *if (fm_vignette = 1)
+    The geese murmur on the dark water, then settle.
+  *elseif (fm_vignette = 2)
+    A dog barks from a farmyard, and another answers from across the strips.
+  *elseif (fm_vignette = 3)
+    Voices murmur at the inn door, and a latch drops.
+  *elseif (fm_vignette = 4)
+    The wind stirs the reeds, and the pond laps at its banks.
+  *elseif (fm_vignette = 5)
+    A lantern moves between two barns, then goes out.
+  *else
+    A loose shutter taps against its frame, and the lane is dark.
+  *return
+*if (time_period = "Dusk")
+  Carters back from the Langston road unyoke their horses in the lane, and lamps are lit one by one round the green.
+  *return
+*if (day_of_week = "Hallowday")
+  Doors stay shut for the rest day, and families in their better clothes walk slowly round the green. The carts stand idle in the lane, and the geese have the pond to themselves.
+  *return
+*if (day_of_week = "Marketday")
+  Carts crowd the lane toward the green, and stallholders call their goods across the noise of geese and wheels.
+  *return
+*if (current_season = "Spring")
+  Men and women bend along the strips with hoes, and seed baskets stand at the ends of the rows.
+*elseif (current_season = "Summer")
+  Haymakers turn long rows in the near meadows, and the smell of cut grass drifts over the green.
+*elseif (current_season = "Autumn")
+  Reapers cut the wheat in lines, and sheaves stand in stooks behind them.
+*else
+  Boys carry hay to the barns with their breath steaming, and smoke lies flat over the thatch.
+*if (fm_vignette = 1)
+  A carter checks the load on his cart, pulls a strap tight and clicks to the horse.
+*elseif (fm_vignette = 2)
+  A girl herds the geese along the bank with a long switch.
+*elseif (fm_vignette = 3)
+  A woman draws a bucket from the covered well and carries it home on her hip.
+*elseif (fm_vignette = 4)
+  Two neighbours lean on a wattle fence and argue cheerfully about a ditch.
+*elseif (fm_vignette = 5)
+  A dog trots along the lane with a bean stalk in its mouth.
+*else
+  A lean man with a coil of cord round one hand crosses the green toward the long thatched house, talking to himself.
+*return
