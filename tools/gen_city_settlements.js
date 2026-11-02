@@ -59,6 +59,25 @@ const SETTLEMENTS = {
       lot: { name: "The wagon lot", steps: [S("lg_menu", "lg_lot", "Langston/langston.txt", true)], done: "You are at the wagon lot.", yard: "lg", lock: "lg_lot_none", lockReason: "No line is making up" }
     }
   },
+  // Barolo and Broadmead (2026-11-02, the user): the Contract Board is in the Village Head's Hall, the inn is the Red Stave / the Crooked Halter, and the way out is the road to Langston / the pasture lane.
+  barolo: {
+    name: "Barolo", start: "barolo", startScene: "Langston/barolo/barolo", hubFile: "Langston/barolo/barolo.txt", hubLabels: ["barolo", "ba_menu", "ba_return"],
+    files: ["Langston/barolo/red_stave.txt", "Langston/barolo/village_heads_hall.txt", "Langston/barolo/market.txt", "Langston/barolo/vineyard_roads.txt"],
+    services: {
+      board: { name: "Contract Board", seen: "ba_hall_seen", steps: [S("ba_menu", "ba_hall", "Langston/barolo/barolo.txt"), S("ba_hall_front", "ba_hall_board", "Langston/barolo/village_heads_hall.txt")], done: "You are at the Contract Board." },
+      inn: { name: "The Red Stave", seen: "ba_rs_seen", steps: [S("ba_menu", "ba_rs", "Langston/barolo/barolo.txt")], done: "You are at the Red Stave." },
+      leave: { name: "Leave Barolo", steps: [S("ba_menu", "ow_here", "Langston/barolo/barolo.txt")], done: "You take the road out of Barolo." }
+    }
+  },
+  broadmead: {
+    name: "Broadmead", start: "broadmead", startScene: "Langston/broadmead/broadmead", hubFile: "Langston/broadmead/broadmead.txt", hubLabels: ["broadmead", "bm_menu", "bm_return"],
+    files: ["Langston/broadmead/crooked_halter.txt", "Langston/broadmead/village_heads_hall.txt", "Langston/broadmead/longfold_fair.txt", "Langston/broadmead/remount_yard.txt"],
+    services: {
+      board: { name: "Contract Board", seen: "bm_hall_seen", steps: [S("bm_menu", "bm_hall", "Langston/broadmead/broadmead.txt"), S("bm_hall_front", "bm_hall_board", "Langston/broadmead/village_heads_hall.txt")], done: "You are at the Contract Board." },
+      inn: { name: "The Crooked Halter", seen: "bm_ch_seen", steps: [S("bm_menu", "bm_ch", "Langston/broadmead/broadmead.txt")], done: "You are at the Crooked Halter." },
+      leave: { name: "Leave Broadmead", steps: [S("bm_menu", "ow_here", "Langston/broadmead/broadmead.txt")], done: "You take the pasture lane out of Broadmead." }
+    }
+  },
   brinewick: {
     name: "Brinewick", start: "brinewick", startScene: "port_valen/brinewick/brinewick", hubFile: "port_valen/brinewick/brinewick.txt", hubLabels: ["brinewick"],
     files: ["port_valen/brinewick/reedhouse.txt", "port_valen/brinewick/saltworks.txt", "port_valen/brinewick/tide_house.txt"],

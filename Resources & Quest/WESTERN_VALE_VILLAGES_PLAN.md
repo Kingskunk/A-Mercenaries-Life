@@ -286,20 +286,23 @@ Existing secondary candidates:
 
 Likely imports include timber and iron for casks and hoops, salt and preserved food, wool cloth, and tools.
 
-### G.U.A.R.D.S. Coverage
-
-- **G:** Village Head's Hall, the market clerk, and the official scale.
-- **U:** Untithed casks, copied seals, false vintages, and corrupt resale.
-- **A:** Barolo has no permanent chapel, temple, altar, or religious destination.
-- **R:** Vineyard Roads, vineyards, background Common Press, Barolo Market, wine, orchards, hives, and cooperage traffic.
-- **D:** Background Cask Gate, retainers, bonded cellar, controlled cart road, and lockup.
-- **S:** Red Stave and Barolo Market.
 
 ## Village Three: Broadmead
 
 ### Identity and Landscape
     
 Broadmead's best horses are not ordinary market goods. Some belong directly to the Countess, while others are raised by tenants under breeding agreements or purchased under House right of first offer. Wool and dairy goods provide the steadier village economy.
+
+### Underlying Tension: Paper Against Custom (decided 2026-11-02)
+
+Broadmead's tension is deliberately not Barolo's. Barolo has three ranked households and their heirs. Broadmead is divided by livelihood and by a rule, with the grass as the stake. There is no family triad and no heir with a private ambition.
+
+- **The agreements.** House Gault lends mares and stud rights to tenant holdings. The tenant raises the foals, and the Remount Yard has first offer on each at a fixed price. The agreement also carries the right to the Home Meadow for summer grazing and the sheltered winter pasture. About eight or nine ordinary households hold them. They are not a faction. They share a stallion, help each other through foaling nights, and mostly get along. Their friction is small: whose mare was covered first, a foal that turned out too good.
+- **The other side.** The wool and dairy households are roughly three times as many. They have grazed the lower commons longer than the agreements have existed, but they hold no paper. Each time the Home Meadow is fenced for the horses, their flocks lose ground. They resent it, and they also depend on the horse people (the stallion's fees, the yard's custom, the road).
+- **The village head** keeps the brand and grazing registers and cannot favour paper or custom openly. The head should be nothing like Barolo's Hobart Thring: a loud, weathered former drover, not a slow clerk.
+- **The Crooked Halter's root.** One agreement-holder has quietly sold a good foal past the yard because the fixed price would not cover a debt. The plan's false brands and stolen breeding papers grow from that, not from a plain villain.
+- **Naming rule.** The agreement-holders stay nameless for now. They are known by their holding ("the holding at the ford") or job, and a name is given only when a place or conversation earns it.
+- **Tone.** Blunt and practical, with weather and animals in the talk, where Barolo is polite and status-minded. Conversations are about which side of the fence a person stands on.
 
 ### Four Places of Interest
 
@@ -319,9 +322,17 @@ Any player horse purchase here should reuse or deliberately extend the existing 
 
 #### 3. Longfold Fair and the Sun Pillar
 
-**Functions:** Resources; altar; daytime social activity.
+**Functions:** Resources; trade; altar; daytime social activity. (Widened 2026-11-02 from a small fair ground into Broadmead's trading-simulator market. It has no government function, since Broadmead already has two authority places.)
 
-Permanent sheep rails, weighing pens, shearing sheds, dairy stalls, and a long watering trough surround the market ground. A weathered solar pillar serves as the village shrine. Edric can conduct rites outdoors in fair weather or beneath the shearing shed in rain.
+Permanent sheep rails, weighing pens, shearing sheds, dairy stalls, and a long watering trough surround the market ground. A covered wool hall, where fleeces are graded and weighed, and a cheese and butter hall with a cool undercroft stand beside them. A weathered solar pillar at the edge of the ground serves as the village shrine. Edric can conduct rites outdoors in fair weather or beneath the shearing shed in rain.
+
+Longfold Fair is Broadmead's trading-simulation point of interest, in the same way Barolo Market is Barolo's. It uses the shared commodity market system. **Wool, Cheese, and Butter** are the major goods; animal fat, raw hides, and eggs or dressed chicken are the minor goods. Horses stay out of the commodity system and are handled at the Countess's Remount Yard. Sheep and other livestock are scenery, lot descriptions, and rumour, never market rows.
+
+The fair is also the district's collection point, so carters and drovers from outside bring grain, salt, ironwork, timber, hemp, wine, and finished cloth. That makes it a place to sell and to buy, and it should not be only a producer's stall. Keep ordinary equipment sales limited, as in the other villages.
+
+The season sets the ground's rhythm. Late spring is shearing and fleece-grading, summer is cheese-making, and autumn is the cull and the drove before winter pasture. Marketday is the busiest day. A quiet day shows a few pens and stalls.
+
+A market warden or weigh-master keeps order and the weights. The warden is not a House Gault officer and holds no separate authority role, and a contested weight or brand is referred to the Village Head's Hall. Agreement-holders and custom grazers both sell here, and it is the one ground where they trade side by side. That tension is shown by who stands where and not through a staged conflict.
 
 #### 4. The Crooked Halter
 
@@ -330,6 +341,24 @@ Permanent sheep rails, weighing pens, shearing sheds, dairy stalls, and a long w
 The Crooked Halter is a drovers' inn with a stable yard and a private back room used for livestock bargains. False brands, stolen breeding papers, unlicensed grazing, concealed animals, and suspiciously cheap horses form its underworld.
 
 The innkeeper should know the difference between a tenant hiding one ewe from a ruinous count and an organized horse thief. Their loyalties can depend on the harm being done rather than on a blanket commitment to either law or crime.
+
+### Visual Direction (draft 2026-11-02, for scenery prompts)
+
+Invented for the scenery prompts and open to change. Keep every exterior season-neutral and overcast-friendly, so one image serves all seasons. The Remount Yard is the only crisp, tidy scene.
+
+**The village as a whole.** Broadmead sits on a broad, damp river meadow under long, low, sheep-cropped downs: green and wet below, pale brown and grassy above. Materials are dark weathered oak, grey field stone, thatch on the older roofs, and slate on House Gault's buildings. Barolo is pale limestone, tile, and terraces, so Broadmead is darker and plainer.
+
+The village's main visual theme is the fence line, which shows paper against custom. Around the Home Meadow stands neat, newer post-and-rail fencing with the Countess's brand burned into the posts. Beyond it run older dry-stone walls, hedges, and open common with no fence at all. Buildings are untidy and lived-in, and only the Remount Yard is swept and orderly.
+
+**1. Village Head's Hall.** A long, low timber-and-stone hall with a deep thatched roof, built beside the enclosed petition yard. The yard is a square of stout hurdle pens around trodden mud, with a heavy gate and a stone block where the head stands to hear a dispute. Under the eaves hang rows of weathered brand-boards, each with an iron brand-mark burned in; this is the visible register. Inside is one long public room with a plank counter and shelves of ledgers, and an inner study with a window onto the yard. The room is cluttered and smells of hay and old paper.
+
+**2. The Countess's Remount Yard.** The one properly built place, in grey stone with a slate roof. The lodge is a long two-storey building with the House Gault banner over the door. Beside it stand a stable range with split half-doors and an open smithy bay with an anvil and a dull forge glow. A tack room has saddles on racks, and everything is swept and in rows. Beyond lies the muster field, with a picket line and a straw quintain post. It looks like a small fort, and the village looks rougher beside it.
+
+**3. Longfold Fair and the Sun Pillar.** The ground lies in a long fold of the meadow, trodden bare in lanes, with rows of timber hurdles and sheep rails. At one end is the covered wool hall, an open-sided barn with fleeces and bales hung from the rafters and a hanging scale. Beside it stands the cheese and butter hall, low and stone, with wheels on slatted shelves and steps down to the undercroft. A long stone trough runs down the middle. At the far edge, on a low turf mound, stands the Sun Pillar, a weathered stone with a sun disc worn almost smooth. Tufts of wool are tied to it as offerings, and a trodden ring surrounds it. It is a working field, not a paved yard like Barolo's.
+
+**4. The Crooked Halter.** A long, low drovers' inn with whitewashed lower walls blackened by smoke and a heavy thatch. A halter hangs crooked on its bracket as the sign. The stable yard has a long hitching rail and a worn mounting block. Inside are low beams scored with tally marks, long benches, tack hung on pegs, and a bar made from an old stall partition. The back room sits behind a half-door like a stall's, with one lamp and a plain table.
+
+**Interiors worth separate art:** the Hall's public room and the Halter's common room.
 
 ### Trade Identity
 
@@ -349,14 +378,6 @@ Horses remain a mount, breeding, and political resource rather than a commodity 
 
 Likely imports include grain, salt, ironwork, timber, hemp, wine, and finished cloth.
 
-### G.U.A.R.D.S. Coverage
-
-- **G:** Village Head's Hall and the Remount Yard's sealed orders.
-- **U:** False brands, stolen papers, concealed animals, and unlawful grazing.
-- **A:** Sun Pillar at Longfold Fair.
-- **R:** Wool, dairy, pasture, livestock, and remount breeding.
-- **D:** Mounted retainers, stable yard, smithy bay, tack stores, and muster field.
-- **S:** Crooked Halter and fair-day activity at Longfold.
 
 ## Regional Trade Loop
 

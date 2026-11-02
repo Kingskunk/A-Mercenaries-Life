@@ -28,6 +28,7 @@
     woodroad: "overworld_forest_road", // an overworld tile of wooded road
     the_river_road: "overworld_hilly_road", // temporary shared open-road view, until a flat-road backdrop exists
     the_high_grey_road: "overworld_hilly_road",
+    the_northwest_road: "western_vale_road", // Langston's north-western road crosses the same open grassland (2026-11-02, the user: it was missing the Western Vale road's picture)
     marlcross: "village_green",
     barleycross: "village_green",
     ashrun_holt: "village_green",
@@ -52,6 +53,11 @@
     "Langston/barolo/village_heads_hall": "barolo_village_heads_hall",
     "Langston/barolo/market": "barolo_market",
     "Langston/barolo/vineyard_roads": "barolo_vineyard_roads",
+    "Langston/broadmead/broadmead": "broadmead",
+    "Langston/broadmead/crooked_halter": "the_crooked_halter",
+    "Langston/broadmead/remount_yard": "remount_yard",
+    "Langston/broadmead/village_heads_hall": "broadmead_villageheadhall",
+    "Langston/broadmead/longfold_fair": "longfold_fair_sun_pillar",
     "alderford/wagon_lot": "river_carters_lot",
     "timbermouth/wagon_lot": "timber_wagon_lot",
     "port_valen/radiant/caravan_lot": "vale_gate_wagon_lot",
@@ -206,7 +212,8 @@
     function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_inn_room" ? "generic_town_inn_room" : undefined; }, // Wagoner's Rest guest room and Kess's rented chamber
     function (s) { return s.sceneName === "timbermouth/split_pine_inn" && s.scenery_subplace === "town_inn_room" ? "generic_town_inn_room" : undefined; }, // Split Pine guest room
     function (s) { return s.sceneName === "Langston/pickled_hen" && s.scenery_subplace === "pickled_hen_room" ? "generic_town_inn_room" : undefined; }, // Pickled Hen guest room
-    function (s) { return s.scenery_subplace === "village_inn_room" && (s.sceneName === "alderford/drowned_oar" || s.sceneName === "alderford/redvein/red_lantern" || s.sceneName === "alderford/whitefold/white_ram" || s.sceneName === "Langston/barolo/red_stave" || s.sceneName === "port_valen/brinewick/reedhouse" || s.sceneName === "port_valen/marlcross/wayfarers_rest") ? "generic_village_inn_room" : undefined; }, // village inns and Maura's Drowned Oar rooms
+    function (s) { return s.scenery_subplace === "village_inn_room" && (s.sceneName === "alderford/drowned_oar" || s.sceneName === "alderford/redvein/red_lantern" || s.sceneName === "alderford/whitefold/white_ram" || s.sceneName === "Langston/barolo/red_stave" || s.sceneName === "Langston/broadmead/crooked_halter" || s.sceneName === "port_valen/brinewick/reedhouse" || s.sceneName === "port_valen/marlcross/wayfarers_rest") ? "generic_village_inn_room" : undefined; }, // village inns and Maura's Drowned Oar rooms
+    function (s) { return s.sceneName === "Langston/broadmead/crooked_halter" && s.scenery_subplace === "broadmead_crooked_halter_yard" ? "village_stable_yard" : undefined; }, // the Crooked Halter's open stable yard (the common room keeps its own picture)
     function (s) { return s.sceneName === "Langston/barolo/red_stave" && s.scenery_subplace === "barolo_red_stave_court" ? "village_stable_yard" : undefined; }, // the Red Stave's open stable court (the hall keeps its own picture; the rented room is the village inn room above)
     function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_lodgings" ? "generic_quiet_lodgings" : undefined; }, // Terrace Lodgings' ground-floor entry hall
     function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_tavern" ? "generic_town_inn" : undefined; }, // the Wagoner's Rest hall and rooms
@@ -348,10 +355,11 @@
   function build() {
     el = document.createElement("div");
     el.id = "scenery"; el.setAttribute("aria-hidden", "true");
-    // Two stages, each a night layer and a day layer. A background image cannot fade, so a change of place brings the OTHER stage in (with the new place's pictures) over the old one, and the old one
-    // goes when the new is fully in. The glow, haze and dim are shared on top.
-    var stage = '<div class="sc-stage"><div class="sc-layer sc-night"></div><div class="sc-layer sc-day"></div></div>';
-    el.innerHTML = stage + stage + '<div class="sc-glow"></div><div class="sc-haze"></div><div class="sc-dim"></div>';
+    // Two stages, each a night layer and a day layer plus its OWN glow, haze and dim. A background image cannot fade, so a change of place brings the OTHER stage in (with the new place's pictures and
+    // its own lighting) over the old one, and the old one goes when the new is fully in. Each stage keeps its own look (2026-11-02): while the old place fades out it must not pick up the new place's fog,
+    // dimming or colour, and the incoming stage must not slide from whatever lighting it held last (so a place never fades in as the wrong time of day).
+    var stage = '<div class="sc-stage"><div class="sc-layer sc-night"></div><div class="sc-layer sc-day"></div><div class="sc-glow"></div><div class="sc-haze"></div><div class="sc-dim"></div></div>';
+    el.innerHTML = stage + stage;
     stages = el.querySelectorAll(".sc-stage");
     document.body.insertBefore(el, document.body.firstChild);
   }
@@ -414,15 +422,24 @@
     };
     var sig = key + JSON.stringify(shared) + JSON.stringify(mine);
     if (sig === last) return; last = sig;
-    var k;
-    for (k in shared) if (shared.hasOwnProperty(k)) el.style.setProperty(k, shared[k]);
-    function paint(st) { for (var n in mine) if (mine.hasOwnProperty(n)) st.style.setProperty(n, mine[n]); }
+    // the lighting (shared) and the pictures (mine) both belong to one stage, so a place that is fading out keeps the look it had
+    function paint(st) {
+      var n;
+      for (n in shared) if (shared.hasOwnProperty(n)) st.style.setProperty(n, shared[n]);
+      for (n in mine) if (mine.hasOwnProperty(n)) st.style.setProperty(n, mine[n]);
+    }
     if (key !== curKey) {
       var next = cur === 0 ? 1 : 0;
       if (curKey === null) { stages[0].classList.remove("on", "top"); stages[1].classList.remove("on", "top"); next = 0; }   // from nothing: the whole backdrop is fading in itself
       clearTimeout(goneTimer[next]);
-      paint(stages[next]); stages[next].setAttribute("data-scene", key);
-      stages[next].classList.add("on", "top");                                    // the new place fades in over the old one...
+      // Paint the incoming stage with its transitions off, so its day/night blend, colour and haze start at their final values instead of sliding there from the last place it showed.
+      var inc = stages[next];
+      inc.classList.add("sc-instant");
+      paint(inc); inc.setAttribute("data-scene", key);
+      void inc.offsetWidth;                                                         // commit those values before anything is allowed to animate
+      inc.classList.add("on", "top");                                             // the new place fades in over the old one...
+      var settle = function () { inc.classList.remove("sc-instant"); };
+      if (window.requestAnimationFrame) window.requestAnimationFrame(function () { window.requestAnimationFrame(settle); }); else setTimeout(settle, 60);
       if (cur >= 0 && curKey !== null) {
         var old = cur; stages[old].classList.remove("top");
         goneTimer[old] = setTimeout(function () { stages[old].classList.remove("on"); }, FADE_MS);   // ...and the old one leaves once the new is in

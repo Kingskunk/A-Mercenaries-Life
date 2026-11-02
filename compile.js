@@ -312,6 +312,11 @@ function compile(){
   verifyFileName("Langston/barolo/vineyard_roads.txt");
   verifyFileName("Langston/barolo/market.txt");
   verifyFileName("Langston/barolo/village_heads_hall.txt");
+  verifyFileName("Langston/broadmead/broadmead.txt");
+  verifyFileName("Langston/broadmead/crooked_halter.txt");
+  verifyFileName("Langston/broadmead/remount_yard.txt");
+  verifyFileName("Langston/broadmead/longfold_fair.txt");
+  verifyFileName("Langston/broadmead/village_heads_hall.txt");
   verifyFileName("Langston/cord_and_kettle.txt");
   verifyFileName("Langston/pickled_hen.txt");
   verifyFileName("Langston/langston_hall.txt");

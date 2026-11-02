@@ -1,0 +1,249 @@
+*comment ====================================================================================
+*comment BROADMEAD: shepherds' and horse-keepers' village on a broad damp meadow far out on Langston's north-western road (overworld tile "bm", formerly the placeholder Thornby). Plan: Resources & Quest/WESTERN_VALE_VILLAGES_PLAN.md, Village Three.
+*comment The hub (2026-11-02): the three description layers (place, sky, street), the arrival from the overworld tile "bm" (bm_arrive) and the four places as menu entries. Built: the Crooked Halter (crooked_halter.txt), the Remount Yard (remount_yard.txt, layers and a way back only) and Longfold Fair (longfold_fair.txt, hours, layers and a way back; no trade panel yet) and the Village Head's Hall (village_heads_hall.txt, hours, layers, Mardred's talk; no Contract Board yet). All four are built, and the bm_unbuilt stub is gone, as Barolo's ba_unbuilt was. The four places are the Village Head's Hall, the Countess's Remount Yard, Longfold Fair and the Sun Pillar, and the Crooked Halter; each has its own file in this folder.
+*comment Player knowledge: the breeding agreements, the custom grazers and the quarrel over the Home Meadow are never named here. The hub shows only what an arriving traveller sees: new rail fences with a brand cut in the posts beside old stone walls and open common.
+*comment Backdrop: Wallpaper/Broadmead_Day.png and Broadmead_Night.png (scenery.js SCENE_PLACES), ambience "village" (ambience.js ALIAS).
+*comment ====================================================================================
+
+*label broadmead
+*gosub bm_enter
+*gosub bm_header
+*gosub bm_layers
+*goto bm_menu
+
+*comment Shared setup so a direct visit and a later return land in the same state. bm_first_hub is true only on the first visit.
+*label bm_enter
+*temp bm_first_hub false
+*if (not(bm_seen))
+  *set bm_first_hub true
+*set current_district "broadmead"
+*set bm_seen true
+*gosub_scene calendar update_hub_condition
+*gosub bm_hours
+*gosub bm_hall_hours
+*return
+
+*comment The Village Head's Hall hours (village_heads_hall.txt): the public room is open Morning through Afternoon. Shut at dusk, at night, in dangerous weather and on the rest day.
+*label bm_hall_hours
+*set bm_ok_hall false
+*set bm_hall_closed_reason "shut for the night"
+*if (day_of_week = "Hallowday")
+  *set bm_hall_closed_reason "closed for the rest day"
+  *return
+*if (street_life = "empty")
+  *set bm_hall_closed_reason "shut against the weather"
+  *return
+*if (time_period = "Dusk")
+  *set bm_hall_closed_reason "shut till morning"
+  *return
+*if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
+  *set bm_ok_hall true
+  *set bm_hall_closed_reason ""
+*return
+
+*comment Longfold Fair's hours (longfold_fair.txt): Morning through Dusk, shut at night and while dangerous weather has emptied the streets. Called on every hub entry and by longfold_fair.txt itself. The Hall and the Halter will add their own as needed (the Halter is always open).
+*label bm_hours
+*set bm_ok_fair false
+*set bm_fair_closed_reason "shut for the night"
+*if (street_life = "empty")
+  *set bm_fair_closed_reason "shut against the weather"
+  *return
+*if ((((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon")) or (time_period = "Dusk"))
+  *set bm_ok_fair true
+  *set bm_fair_closed_reason ""
+*return
+
+*comment The overworld's Broadmead tile (bm) enters here. The short walk down the pasture lane costs five minutes once per arrival.
+*label bm_arrive
+*set minutes_to_pass 5
+*set time_advance_call_id "bm_arrive_1"
+*gosub bm_walk_time
+*temp bm_first_arrival false
+*if (not(bm_arrival_seen))
+  *set bm_first_arrival true
+*set bm_arrival_seen true
+*gosub bm_enter
+*gosub bm_header
+*if (bm_first_arrival)
+  *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+    The pasture lane runs down between dark walls toward a few lit windows, and somewhere below you a stream is talking to itself.
+  *elseif (time_period = "Dusk")
+    The pasture lane runs down between stone walls as the light fades, with flocks and dogs moving along the meadow below.
+  *else
+    The pasture lane leaves the road and runs down between stone walls onto a broad green meadow, where a village lies along a stream.
+*else
+  *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+    You follow the pasture lane down between the dark walls toward the lit windows.
+  *elseif (time_period = "Dusk")
+    You follow the pasture lane down as the flocks come in off the meadow.
+  *else
+    You follow the pasture lane down between its walls into the village.
+*line_break
+*gosub bm_layers
+*goto bm_menu
+
+*label bm_walk_time
+*set hours_to_pass 0
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return
+
+*label bm_header
+[b]◈ BROADMEAD[/b]
+*line_break
+*return
+
+*label bm_layers
+*gosub bm_place
+*gosub bm_sky
+*gosub bm_street
+*return
+
+*comment Places will return here without repeating the full village description.
+*label bm_return
+*gosub bm_enter
+*gosub bm_header
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  You come back to the lane, and the village is quiet around you.
+*elseif (time_period = "Dusk")
+  You come back to the lane as the village settles for the evening.
+*else
+  You come back to Broadmead's lane.
+*goto bm_menu
+
+*label bm_menu
+*comment Open-world free time: the sidebar's Wait and Rest work on this page.
+*set wait_ok_page page_id
+*choice
+  *if (bm_ok_hall)
+    # [b]The Village Head's Hall[/b]: brands, grazing and disputes. [~5 min]
+      *goto_scene Langston/broadmead/village_heads_hall bm_hall
+  *else
+    # [b]The Village Head's Hall[/b]: ${bm_hall_closed_reason}.
+      *goto_scene Langston/broadmead/village_heads_hall bm_hall_closed
+  # [b]The Countess's Remount Yard[/b]: the lodge, stables and muster field. [~5 min]
+    *goto_scene Langston/broadmead/remount_yard bm_ry
+  *if (bm_ok_fair)
+    # [b]Longfold Fair and the Sun Pillar[/b]: pens, wool and dairy halls, and the standing stone. [~5 min]
+      *goto_scene Langston/broadmead/longfold_fair bm_fair
+  *else
+    # [b]Longfold Fair and the Sun Pillar[/b]: ${bm_fair_closed_reason}.
+      *goto_scene Langston/broadmead/longfold_fair bm_fair_closed
+  # [b]The Crooked Halter[/b]: meals, rooms and a drovers' yard. [~5 min]
+    *goto_scene Langston/broadmead/crooked_halter bm_ch
+  # [b]The pasture lane[/b]: leave Broadmead.
+    *set ow_pos "bm"
+    *goto_scene overworld/overworld ow_here
+  *comment GEN:BEGIN place_steps bm_menu:bm_hall bm_menu:bm_ch bm_menu:ow_here -- generated by tools/gen_city_settlements.js from its registry; edit the registry, not this block
+  *if (bm_ok_hall)
+    # ⇥ [pvgo:bm_menu:bm_hall]
+      *goto_scene Langston/broadmead/village_heads_hall bm_hall
+  # ⇥ [pvgo:bm_menu:bm_ch]
+    *goto_scene Langston/broadmead/crooked_halter bm_ch
+  # ⇥ [pvgo:bm_menu:ow_here]
+    *set ow_pos "bm"
+    *goto_scene overworld/overworld ow_here
+  *comment GEN:END place_steps bm_menu:bm_hall bm_menu:bm_ch bm_menu:ow_here
+
+*comment ── LAYER 1: PLACE ── Fixed geography only. The long description prints once. Nothing here changes with the season, so the grass and the thatch are never given a colour other than the plain one.
+*label bm_place
+*if (bm_first_hub)
+  Broadmead lies on a broad meadow of damp green grass under a long, bare down, with a shallow stream winding through it and a humped stone bridge across the water. The village runs along one rutted lane beside the stream. Its older houses are dark timber and grey fieldstone under thick thatch, and the newer ones wear slate. Fences of every age divide the grass. Close to the houses, tall post-and-rail fences stand around the best meadow, a brand cut deep into every post. Beyond them, older dry-stone walls and thorn hedges wander up the slopes, and open common runs out past them on the down.
+
+  At the head of the lane a long, low hall of timber and stone sits beside a square of hurdle pens, with rows of weathered boards under its eaves, each burned with a different mark. Across the stream a grey stone lodge and a slate-roofed stable range stand apart from the village, swept and square, a tall blue banner with a golden horse hanging over the lodge door. A low, black-thatched inn faces the lane near the bridge, a halter hanging crooked from its bracket. Below the village the meadow narrows into a long fold of trodden ground, ringed with sheep rails and open-sided barns, and a weathered standing stone rises from a low mound at its far end. Wool, hay, wet earth and wood smoke hang over everything.
+*else
+  Broadmead's rutted lane runs beside the stream, with the hall and its hurdle pens at the head, the inn near the bridge, the grey lodge across the water and the trodden fair ground in the fold below. The fences run off over the meadow, new rail beside old stone.
+*return
+
+*comment ── LAYER 2: SKY ── Weather and light only, followed by the ground's recent-weather state.
+*label bm_sky
+*temp bm_dark false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set bm_dark true
+*if (weather = "Rain")
+  Rain runs from the thatch in strings and fills the ruts in the lane, and the stream below the bridge has turned brown.
+*elseif (weather = "Storm")
+  Wind sweeps down the bare down and flattens the meadow grass. Rain drives sideways along the lane, the thatch hisses, and every fence rattles.
+*elseif (weather = "Fog")
+  Fog lies thick along the stream and hides the meadow, leaving the nearest fence posts as dark stakes in the white.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Wet snow settles on the thatch and along the tops of the walls, and the down above the village has faded to white.
+*elseif (weather = "Blizzard")
+  Driven snow hides the down, the stream and the far end of the lane. The nearest fence post is the farthest thing you can see.
+*elseif (weather = "Clear")
+  *if (bm_dark)
+    Starlight lies pale on the meadow, and the long down is a black line against the stars.
+  *elseif (time_period = "Dusk")
+    The last light turns the wet grass to copper and lays long shadows from the fence posts across the meadow.
+  *else
+    Pale sun lights the down and the damp meadow, and every fence post throws a sharp shadow.
+*else
+  *if (bm_dark)
+    A starless sky presses down on the village, and the stream is only a sound in the dark.
+  *else
+    Low grey cloud lies over the down and darkens the thatch, and the wet grass looks very green beneath it.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Brown water stands in the ruts of the lane, and the meadow squelches underfoot.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The lane is dark and slick from the last rain, and the ruts hold shallow water.
+*return
+
+*comment ── LAYER 3: STREET ── Current village activity. Daytime work follows the season; the rotating vignette follows the clock (campaign_day * 24 + clock_hour).
+*label bm_street
+*temp bm_vignette (((campaign_day * 24) + clock_hour) modulo 6) + 1
+*temp bm_night false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set bm_night true
+*if ((street_life = "empty") and (not(bm_night)))
+  The lane is a river of mud. Doors are shut, the hurdle pens stand empty, and the only movement is water running along the ruts.
+  *return
+*if (bm_night)
+  *if (bm_vignette = 1)
+    A lantern swings at the stable range across the stream, then goes out.
+  *elseif (bm_vignette = 2)
+    A horse stamps and blows in a stable somewhere across the water.
+  *elseif (bm_vignette = 3)
+    A dog barks from the lane, and the sheep in the pens shift and settle.
+  *elseif (bm_vignette = 4)
+    Voices murmur at the inn door, and a latch drops.
+  *elseif (bm_vignette = 5)
+    The stream chuckles under the bridge, and the wind rattles a loose hurdle.
+  *else
+    A single bell clinks on a sheep somewhere out on the common.
+  *return
+*if (time_period = "Dusk")
+  Shepherds drive their flocks in off the meadow with dogs low at their heels, and lamps are lit one by one along the lane.
+  *return
+*if (day_of_week = "Hallowday")
+  Doors stay shut for the rest day, and families in their better clothes walk the lane toward the standing stone. The pens are empty, and the stable range across the stream is quiet.
+  *return
+*if (day_of_week = "Marketday")
+  Carts and flocks crowd the lane toward the fair ground in the fold, and the bleating of sheep and the calls of dealers carry up the street.
+  *return
+*if (current_season = "Spring")
+  Lambs bleat in the nearer pens while women carry pails along the lane.
+*elseif (current_season = "Summer")
+  Hay lies in long rows in the nearer meadow, and men turn it with wooden rakes.
+*elseif (current_season = "Autumn")
+  Drovers bring flocks down from the down, and dust and bleating fill the lane.
+*else
+  Boys carry hay to the pens with their breath steaming, and smoke lies flat over the thatch.
+*if (bm_vignette = 1)
+  A rider in House Gault's blue trots over the bridge toward the grey lodge.
+*elseif (bm_vignette = 2)
+  A boy leads a bay mare along the lane to the water.
+*elseif (bm_vignette = 3)
+  A dog drives a handful of ewes through a gap in a stone wall, and a woman shuts the gap behind them.
+*elseif (bm_vignette = 4)
+  Two neighbours lean on a new rail fence and talk, and one of them runs a thumb over the brand cut into the post.
+*elseif (bm_vignette = 5)
+  Hens scatter from the lane as a cart rolls toward the bridge.
+*else
+  A man stops at the hall door to read the boards under the eaves, then goes in.
+*return

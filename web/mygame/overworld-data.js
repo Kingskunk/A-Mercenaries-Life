@@ -87,7 +87,7 @@
   };
   var DEFAULT_WEATHER_ZONE = "reach";
   // A district (stats.current_district) the player is in while NOT on the overworld, where it is not the default zone. Langston is a town, not a tile; a Vale dungeon or farm would be listed here too.
-  var DISTRICT_ZONE = { langston: "vale", barolo: "vale" };
+  var DISTRICT_ZONE = { langston: "vale", barolo: "vale", broadmead: "vale" };
   // The fields a zone owns: its key in a parked slot -> the stat it is swapped with.
   var WEATHER_FIELDS = { weather: "weather", tomorrow: "weather_tomorrow", missed: "forecast_missed", rain: "rain_streak", dry: "dry_streak" };
 
@@ -526,17 +526,17 @@
       hereNight: "A few window lamps show among the dark rows of vines, and the air smells of crushed grapes and cool earth.",
       hereStorm: "Rain drives across the slope and runs off the village roofs. The vine rows stream with water, the lanes between the hedges are small brooks, and every door is shut."
     },
-    // Two more placeholder villages north-west of the road tile (the user, 2026-11-01, two gold circles), joined to it and to each other as drawn. Names and prose are my stand-ins, as for the two above.
-    tb: {
-      name: "Thornby", kind: "village", x: -7.79, y: -8.56,
+    // Two more villages north-west of the road tile (the user, 2026-11-01, two gold circles), joined to it and to each other as drawn. The first is Broadmead (2026-11-02, the former placeholder Thornby; the user's pick, the village is in Langston/broadmead/broadmead.txt); the second is still a stand-in, as for the two above.
+    bm: {
+      name: "Broadmead", kind: "village", x: -7.79, y: -8.56,
       territory: "gault",
       danger: 1,
       climate: -1,
-      walk: "The road climbs north-west over rough grazing, between thorn hedges grown wide and shaggy where nobody has cut them back.",
-      info: "A village far out on Langston's north-western road, among thorn-hedged pastures. Little is known of it in the town.",
-      here: "Thorn hedges run in untidy lines round a handful of low houses, and sheep stand in the lanes between them, watching the road.",
-      hereNight: "The hedges are black shapes against the stars, and one lit window shows low among the roofs.",
-      hereStorm: "Rain flattens the grass and drips from the thorn hedges in long strings. The sheep have crowded against the lee of the walls."
+      walk: "The road climbs north-west over rough grazing, then a pasture lane turns off between stone walls and drops toward a broad, damp meadow.",
+      info: "A village of shepherds and horse-keepers on a broad river meadow, far out on Langston's north-western road. Its wool and cheese reach Langston's market, and some of the Countess's horses are said to be raised there.",
+      here: "A stream winds through a broad damp meadow below a long bare down. Thatched and slate roofs line a rutted lane beside the water, and fences of every age divide the grass.",
+      hereNight: "A few window lamps show along the lane, and the long down is a black line against the stars. Somewhere in the dark the stream murmurs over stones.",
+      hereStorm: "Rain sweeps off the down and the lane runs brown with water. The sheep have crowded against the lee of the walls, and every door is shut."
     },
     fm: {
       name: "Fallowmere", kind: "village", x: -8.4, y: -7.27,
@@ -607,10 +607,10 @@
     // The placeholder road to the north-west and village to the north (the user, 2026-11-01): real roads, 8 and 7 miles (my numbers; pulled in to about 70% of the drawn distance at the user's request, 2026-11-01).
     ["lg", "nw", 8],
     ["lg", "nv", 7],
-    // The roads drawn between the new places (the user, 2026-11-01): Barolo to the road tile, and the road tile to Thornby and Fallowmere, which join each other; miles from the drawn lengths (my numbers).
+    // The roads drawn between the new places (the user, 2026-11-01): Barolo to the road tile, and the road tile to Broadmead and Fallowmere, which join each other; miles from the drawn lengths (my numbers).
     ["nw", "nv", 5],
-    ["nw", "tb", 10],
-    ["tb", "fm", 9],
+    ["nw", "bm", 10],
+    ["bm", "fm", 9],
     ["fm", "nw", 8],
     // The small forest trails drawn through Westwood (the user, 2026-11-01): from the road tile down to Westwood, and on to Roi's Grove (both hidden until their flags are set, like the tracks to them).
     ["nw", "ww", 5, "track"],
@@ -927,8 +927,8 @@
     fg: { place: "the gate" },
     lg: { place: "the town hall", setting: "town", region: "any" },
     nv: { place: "the Village Head's Hall", setting: "village", region: "marches" },   // Barolo (2026-11-02): its Contract Board is in the Village Head's Hall (Langston/barolo/village_heads_hall.txt ba_hall_board); the village count [0, 2]
-    // The two placeholder villages below have no board of their own yet.
-    tb: { place: "the village", setting: "village", region: "marches", count: [0, 0] },
+    bm: { place: "the Village Head's Hall", setting: "village", region: "marches" },   // Broadmead (2026-11-02): its Contract Board is in the Village Head's Hall (Langston/broadmead/village_heads_hall.txt bm_hall_board); the village count [0, 2]
+    // The placeholder village below has no board of its own yet.
     fm: { place: "the village", setting: "village", region: "marches", count: [0, 0] }
   };
   // count is how many postings a board shows on a given day, rolled between the two numbers from the day and the origin (so a refresh and a return visit show the same board): a city is busiest and a village is

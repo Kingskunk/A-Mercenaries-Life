@@ -75,6 +75,8 @@ Alyndra can be encountered almost anywhere an adventure might begin. She wanders
 
 If the party encounters her while she is already traveling with another group, she goes out of her way to appear kind and gentle to reinforce her cover.
 
+How do we implement this in our world. We can have this as a repeating traveling event, region locked to the Valen Reach. 
+
 ### Roleplaying & Hooks
 
 * **Shortcuts:** Having spent years on the road, Alyndra knows countless hidden trails. She can offer guidance that halves the party’s travel time for the next week.
@@ -93,7 +95,9 @@ Alyndra longs to reunite with Captain Nolan Clarke. Her infatuation borders on a
 
 A golden coin of unknown origin. One side features a spiraling serpent, while the other bears an intricate etching of a three-eyed man. 
 
-If spun on a semi-flat surface (such as a table, a stone, or the palm of a hand), the coin continues to spin indefinitely until picked up. A creature in possession of this coin while it is spinning has **advantage on Charisma (Deception) checks**.
+If spun on a semi-flat surface (such as a table, a stone, or the palm of a hand), the coin continues to spin indefinitely until picked up. A creature in possession of this coin while it is spinning has **+ 1d6 on Charisma (Deception) checks**.
+
+How do we plan to implement this item? I'm thinking just having this on your character gives you a plus 1d6 on all deception checks mechanically.
 
 ---
 

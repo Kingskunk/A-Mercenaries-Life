@@ -722,6 +722,116 @@ window.CITY_SETTLEMENTS = {
    }
   ]
  },
+ "barolo": {
+  "name": "Barolo",
+  "keys": [
+   "ba_menu:ba_hall",
+   "ba_hall_front:ba_hall_board",
+   "ba_menu:ba_rs",
+   "ba_menu:ow_here"
+  ],
+  "services": [
+   {
+    "id": "board",
+    "name": "Contract Board",
+    "seen": "ba_hall_seen",
+    "lock": "",
+    "lockReason": "",
+    "done": "You are at the Contract Board.",
+    "steps": [
+     "ba_menu:ba_hall",
+     "ba_hall_front:ba_hall_board"
+    ],
+    "stepMin": [
+     5,
+     5
+    ]
+   },
+   {
+    "id": "inn",
+    "name": "The Red Stave",
+    "seen": "ba_rs_seen",
+    "lock": "",
+    "lockReason": "",
+    "done": "You are at the Red Stave.",
+    "steps": [
+     "ba_menu:ba_rs"
+    ],
+    "stepMin": [
+     5
+    ]
+   },
+   {
+    "id": "leave",
+    "name": "Leave Barolo",
+    "seen": "",
+    "lock": "",
+    "lockReason": "",
+    "done": "You take the road out of Barolo.",
+    "steps": [
+     "ba_menu:ow_here"
+    ],
+    "stepMin": [
+     0
+    ]
+   }
+  ]
+ },
+ "broadmead": {
+  "name": "Broadmead",
+  "keys": [
+   "bm_menu:bm_hall",
+   "bm_hall_front:bm_hall_board",
+   "bm_menu:bm_ch",
+   "bm_menu:ow_here"
+  ],
+  "services": [
+   {
+    "id": "board",
+    "name": "Contract Board",
+    "seen": "bm_hall_seen",
+    "lock": "",
+    "lockReason": "",
+    "done": "You are at the Contract Board.",
+    "steps": [
+     "bm_menu:bm_hall",
+     "bm_hall_front:bm_hall_board"
+    ],
+    "stepMin": [
+     5,
+     5
+    ]
+   },
+   {
+    "id": "inn",
+    "name": "The Crooked Halter",
+    "seen": "bm_ch_seen",
+    "lock": "",
+    "lockReason": "",
+    "done": "You are at the Crooked Halter.",
+    "steps": [
+     "bm_menu:bm_ch"
+    ],
+    "stepMin": [
+     5
+    ]
+   },
+   {
+    "id": "leave",
+    "name": "Leave Broadmead",
+    "seen": "",
+    "lock": "",
+    "lockReason": "",
+    "done": "You take the pasture lane out of Broadmead.",
+    "steps": [
+     "bm_menu:ow_here"
+    ],
+    "stepMin": [
+     0
+    ]
+   }
+  ]
+ },
  "brinewick": {
   "name": "Brinewick",
   "keys": [
