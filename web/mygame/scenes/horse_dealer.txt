@@ -1,7 +1,9 @@
 *comment ====================================================================================
 *comment THE HORSE DEALER (the first mount). One library scene, entered with *goto_scene from two places that each set horse_place first: "bc" is the rail of the pens at the Barleycross common pasture (30 silver marks,
 *comment 27 on a good bargain) and "mw" is the stalls of the Wagoner's Rest stable yard in Port Valen's Middle Ward (36, 32 on a good bargain: the yard feeds and shoes it, so it asks more). hd_buy is the sale, hd_sell the
-*comment sale back (always 15 silver marks, at either place, so no one can buy at one and sell at the other for a profit). Not in *scene_list: compile.js lists it with verifyFileName.
+*comment sale back (always 15 silver marks, at any place, so no one can buy at one and sell at another for a profit). A third place, "bm", is the Countess's Remount Yard in Broadmead (2026-11-02, Langston/broadmead/remount_yard.txt): the seller is always
+*comment Sergeant Dagny Marren (no seller is drawn from the seed), the horse is a cull of the Countess's string (34 silver marks, a fixed price with no bargaining), and the way back is the yard. DORMANT since the same day: the yard is barred to the player (the Countess's horses are not sold to strangers), so nothing sets horse_place "bm" yet; the branch is kept for the hook the user will add.
+*comment A fourth place, "bf", is the horse line at Longfold Fair in Broadmead (Marketday only, Morning through Afternoon; Langston/broadmead/longfold_fair.txt): a seller drawn from the day's seed (town names, the marches), a horse the Remount Yard looked at and passed over, 32 silver marks, 29 on a good bargain, and the way back is the fair ground. Not in *scene_list: compile.js lists it with verifyFileName.
 *comment
 *comment Who sells and which horse is for sale come from the five-day block's seed (horse_seed, stored under the page's lock so the hours the page costs cannot change the answer on a replay); each place has its own
 *comment offset, so the two never show the same person. The pen's horse is pen_*, the seller sel_*; buying copies the pen's horse into horse_*, the one the player owns. The player may try to bargain once (a check).
@@ -15,31 +17,42 @@
   *set horse_seed (((campaign_day - (campaign_day modulo 5)) / 5) + 7000)
   *if (horse_place = "mw")
     *set horse_seed (horse_seed + 1000)
+  *elseif (horse_place = "bm")
+    *set horse_seed (horse_seed + 2000)
+  *elseif (horse_place = "bf")
+    *set horse_seed (horse_seed + 3000)
   *set bc_horse_locked true
   *set locked_bc_horse_page_id page_id
 *set name_seed horse_seed
-*if (horse_place = "mw")
-  *set name_setting "middle_ward"
-  *set name_region "port"
-*else
-  *set name_setting "town"
-  *set name_region "marches"
-*gosub_scene names name_pick_race
-*set name_gender "any"
-*gosub_scene names name_make
-*set name_look_skip "hands"
-*gosub_scene names name_look
-*set name_look_skip ""
-*set sel_first name_first
-*set sel_look look_full
-*if (name_sex = "f")
+*if (horse_place = "bm")
+  *set sel_first "Dagny"
+  *set sel_look "Sergeant Dagny Marren"
   *set sel_sub "she"
   *set sel_sub_cap "She"
   *set sel_pos "her"
 *else
-  *set sel_sub "he"
-  *set sel_sub_cap "He"
-  *set sel_pos "his"
+  *if (horse_place = "mw")
+    *set name_setting "middle_ward"
+    *set name_region "port"
+  *else
+    *set name_setting "town"
+    *set name_region "marches"
+  *gosub_scene names name_pick_race
+  *set name_gender "any"
+  *gosub_scene names name_make
+  *set name_look_skip "hands"
+  *gosub_scene names name_look
+  *set name_look_skip ""
+  *set sel_first name_first
+  *set sel_look look_full
+  *if (name_sex = "f")
+    *set sel_sub "she"
+    *set sel_sub_cap "She"
+    *set sel_pos "her"
+  *else
+    *set sel_sub "he"
+    *set sel_sub_cap "He"
+    *set sel_pos "his"
 *set name_salt 41
 *set name_n 5
 *gosub_scene names name_roll
@@ -102,14 +115,36 @@
 *set horse_haggled false
 *if (horse_place = "mw")
   *set horse_price 360
+*elseif (horse_place = "bm")
+  *set horse_price 340
+*elseif (horse_place = "bf")
+  *set horse_price 320
 *else
   *set horse_price 300
 *if (horse_place = "mw")
   [b]◈ THE WAGONER'S REST: THE STALLS[/b]
+*elseif (horse_place = "bm")
+  [b]◈ THE COUNTESS'S REMOUNT YARD: THE STABLES[/b]
+*elseif (horse_place = "bf")
+  [b]◈ LONGFOLD FAIR: THE HORSE LINE[/b]
 *else
   [b]◈ THE COMMON PASTURE: THE RAIL[/b]
 *line_break
-*if (horse_place = "mw")
+*if (horse_place = "bm")
+  "I'm looking for a horse," you say.
+
+  Sergeant Marren turns from the picket line and looks at you for a moment, the way she looked at the horse beside her. "The yard doesn't sell horses," she says. "It sells culls." She walks you along the stable range without hurry and opens the third half-door with the flat of her hand.
+
+  In the stall stands a ${pen_coat} ${pen_sex}, quiet in the straw, with the yard's ring brand on ${pen_pos} near shoulder and a bar struck through it to show a cull.
+*elseif (horse_place = "bf")
+  ${sel_look} stands at the head of a horse on the rope line at the top of the ground, a bucket at ${sel_pos} feet, and watches you come up the lane between the pens.
+
+  "I'm looking for a horse," you say.
+
+  "Then you've found the line," ${sel_sub} says, and lays a hand on the horse's neck. "This one's mine."
+
+  On the rope stands a ${pen_coat} ${pen_sex}, ears turning to each new voice, with a small holding brand on ${pen_pos} near hip.
+*elseif (horse_place = "mw")
   ${sel_look} is working a curry-comb down the flank of a patient horse in the nearest stall, and looks round when you stop at the door.
 
   "I'm looking for a horse," you say.
@@ -125,7 +160,21 @@
   "Then you've come to the right rail," ${sel_sub} says, and nods at the pen. "That one's mine."
 
   In the pen stands a ${pen_coat} ${pen_sex}, eating hay from a trough with the unhurried air of an animal that has never once been in a hurry.
-*if (pen_temper = 0)
+*if (horse_place = "bm")
+  *if (pen_temper = 0)
+    "${pen_name}," ${sel_sub} says. "Six years in the string. Sound, steady, and too fond of standing still to be any use in a charge. ${pen_sub_cap}'ll stand anywhere you tie ${pen_obj}."
+  *elseif (pen_temper = 1)
+    "${pen_name}," ${sel_sub} says. "Six years in the string. Sound and willing, and clever enough to be a nuisance on the line. You'll want to tell ${pen_obj} who is asking."
+  *else
+    "${pen_name}," ${sel_sub} says. "Six years in the string. Sound, and nothing in the Vale frightens ${pen_obj}. ${pen_sub_cap} stopped for a thing on the road that the line wanted to ride over, and that was the end of ${pen_pos} charges."
+*elseif (horse_place = "bf")
+  *if (pen_temper = 0)
+    "${pen_name}," ${sel_sub} says. "Six years old, sound in wind and limb, and quiet as a milk cow. The yard passed on ${pen_obj} for standing still when the line moved. ${pen_sub_cap}'ll stand anywhere you tie ${pen_obj}."
+  *elseif (pen_temper = 1)
+    "${pen_name}," ${sel_sub} says. "Six years old, sound in wind and limb, and willing, with a mind of ${pen_pos} own. The yard passed on ${pen_obj} for arguing with the bit. You'll want to tell ${pen_obj} who is asking."
+  *else
+    "${pen_name}," ${sel_sub} says. "Six years old, sound in wind and limb, and nothing frightens ${pen_obj}. The yard passed on ${pen_obj} for being too bold for the line. I've seen ${pen_obj} step over a snake."
+*elseif (pen_temper = 0)
   "${pen_name}," ${sel_sub} says. "Six years old, sound in wind and limb, and quiet as a milk cow. ${pen_sub_cap}'ll stand anywhere you tie ${pen_obj}."
 *elseif (pen_temper = 1)
   "${pen_name}," ${sel_sub} says. "Six years old, sound in wind and limb, and willing, with a mind of ${pen_pos} own. You'll want to tell ${pen_obj} who is asking."
@@ -133,13 +182,17 @@
   "${pen_name}," ${sel_sub} says. "Six years old, sound in wind and limb, and nothing frightens ${pen_obj}. I've seen ${pen_obj} step over a snake."
 *if (horse_place = "mw")
   "Thirty-six silver marks," ${sel_sub} says, "with the bridle and the saddle. This is a stable yard, not a field. I keep ${pen_obj} fed and shod, and that is in the price."
+*elseif (horse_place = "bm")
+  "Thirty-four silver marks," ${sel_sub} says, "with the bridle and the saddle. The yard sets the price, and it doesn't move."
+*elseif (horse_place = "bf")
+  "Thirty-two silver marks," ${sel_sub} says, "with the bridle and the saddle. The yard had its look and its first offer. The price is mine to set now."
 *else
   "Thirty silver marks," ${sel_sub} says, "with the bridle and the saddle. I don't sell short and I don't sell dear."
 *label hd_choice
 *choice
   # Pay the price.
     *goto hd_pay
-  *if (not(horse_haggled))
+  *if ((not(horse_haggled)) and (not(horse_place = "bm")))
     # Try to bargain.
       *goto hd_haggle
   # Not today.
@@ -160,6 +213,9 @@ ${sel_sub_cap} shrugs, as though ${sel_sub} had not expected anything else, and 
   *if (horse_place = "mw")
     ${sel_sub_cap} sucks ${sel_pos} teeth, looks at ${pen_name}, and looks at you. "Thirty-two," ${sel_sub} says. "And that is the lowest, so don't ask me again."
     *set horse_price 320
+  *elseif (horse_place = "bf")
+    ${sel_sub_cap} sucks ${sel_pos} teeth, looks at ${pen_name}, and looks at you. "Twenty-nine," ${sel_sub} says. "And that is the lowest, so don't ask me again."
+    *set horse_price 290
   *else
     ${sel_sub_cap} sucks ${sel_pos} teeth, looks at ${pen_name}, and looks at you. "Twenty-seven," ${sel_sub} says. "And that is the lowest, so don't ask me again."
     *set horse_price 270
@@ -187,7 +243,10 @@ ${sel_sub_cap} shrugs, as though ${sel_sub} had not expected anything else, and 
   *set currency_txn_locked true
   *set locked_currency_txn_page_id page_id
 *set horse_price_silver (horse_price / 10)
-${sel_sub_cap} counts it twice, then hands you the rope and the halter with the bridle over it. "${sel_first}," ${sel_sub} says, and holds out a hand to seal it. "Be good to ${pen_obj}."
+*if (horse_place = "bm")
+  ${sel_sub_cap} counts it twice, then hands you the rope and the halter with the bridle over it. "Look after ${pen_obj}," ${sel_sub} says, and gives the halter a last small tug to settle it. "${pen_sub_cap}'ll look after you."
+*else
+  ${sel_sub_cap} counts it twice, then hands you the rope and the halter with the bridle over it. "${sel_first}," ${sel_sub} says, and holds out a hand to seal it. "Be good to ${pen_obj}."
 
 ${horse_name} follows you out without being asked, and when you put a foot in the stirrup, ${horse_sub} turns ${horse_pos} head to look at you and then stands to be mounted.
 
@@ -210,10 +269,18 @@ ${horse_name} follows you out without being asked, and when you put a foot in th
 *gosub hd_make
 *if (horse_place = "mw")
   [b]◈ THE WAGONER'S REST: THE STALLS[/b]
+*elseif (horse_place = "bm")
+  [b]◈ THE COUNTESS'S REMOUNT YARD: THE PICKET LINE[/b]
+*elseif (horse_place = "bf")
+  [b]◈ LONGFOLD FAIR: THE HORSE LINE[/b]
 *else
   [b]◈ THE COMMON PASTURE: THE RAIL[/b]
 *line_break
-*if (horse_place = "mw")
+*if (horse_place = "bm")
+  Sergeant Marren is at the picket line with a hoof-pick in her hand, and looks up as you lead ${horse_name} across the gravel.
+*elseif (horse_place = "bf")
+  ${sel_look} is at the rope line with a bucket, and looks up as you lead ${horse_name} along the lane between the pens.
+*elseif (horse_place = "mw")
   ${sel_look} is working a curry-comb down the flank of a patient horse in the nearest stall, and looks round as you lead ${horse_name} across the yard.
 *else
   ${sel_look} is at the rail of the nearest pen, mending a halter strap, and looks up as you lead ${horse_name} along the track.
@@ -221,7 +288,9 @@ ${horse_name} follows you out without being asked, and when you put a foot in th
 "I'd like to sell ${horse_obj}," you say.
 
 ${sel_sub_cap} walks all the way round ${horse_name} before ${sel_sub} says anything, running a hand down each leg and along the back.
-*if (horse_place = "mw")
+*if (horse_place = "bm")
+  "Fifteen silver marks," ${sel_sub} says at last. "The yard pays that for any horse it takes back. Sound is all I ask."
+*elseif (horse_place = "mw")
   "Fifteen silver marks," ${sel_sub} says at last. "That is what a horse like ${horse_obj} fetches here, and I'll not pay more than the going rate for one I have to feed."
 *else
   "Fifteen silver marks," ${sel_sub} says at last. "Half what ${horse_sub} cost new, and not a copper more. Sound, but not new."
@@ -257,4 +326,8 @@ ${sel_sub_cap} counts it into your hand. You take the halter off ${horse_name} y
 *label hd_back
 *if (horse_place = "mw")
   *goto_scene port_valen/port_valen_middle_ward mw_inn_yard
+*if (horse_place = "bm")
+  *goto_scene Langston/broadmead/remount_yard bm_ry_hub
+*if (horse_place = "bf")
+  *goto_scene Langston/broadmead/longfold_fair bm_fair_ground
 *goto_scene timbermouth/barleycross/pasture bc_pasture_main

@@ -7,7 +7,7 @@
 *comment   bm_fair_open_panel  where the panel opens: set shop_open "bm_fair", clear shop_rows, and the GEN:BEGIN/END bm_fair_panel_rows block with its market_rumor_check "bm_fair" call
 *comment   (add the "# ⚖ Settle up" option, bm_fair_cart_pass and bm_fair_settle by copying tm_market_* from timbermouth/market.txt with the prefix changed)
 *comment To switch trading on, the same market also needs a "bm_fair" entry in tools/market_defs.json (tile "bm", commodities true), the shop in tools/gear_catalog.json, the PILOT list in web/mygame/trade.js, and the village in the settlements list there.
-*comment Plan goods: Wool, Cheese and Butter are the major goods; animal fat, raw hides and eggs or dressed chicken are minor; carters and drovers from outside bring grain, salt, ironwork, timber, hemp, wine and finished cloth. Horses are NOT commodities (the Remount Yard), and sheep are scenery, lot
+*comment Plan goods: Wool, Cheese and Butter are the major goods; animal fat, raw hides and eggs or dressed chicken are minor; carters and drovers from outside bring grain, salt, ironwork, timber, hemp, wine and finished cloth. Horses are NOT commodities (a rope line of horses is sold on Marketday, Morning through Afternoon, through horse_dealer.txt with horse_place "bf": the Remount Yard is barred), and sheep are scenery, lot
 *comment descriptions and rumour, never rows. Not in *scene_list: compile.js lists it.
 *comment The prose shows pens, fleeces, wheels and weighing, never a price list. The Sun Pillar is described here only as scenery at the far edge of the ground: Edric's rites there are not built (plan: outdoors in fair weather, beneath the shearing shed in rain).
 *comment The weigh-master keeps order and the weights, holds no authority role, and refers a contested weight or brand to the Village Head's Hall (plan); no person is named or spoken to here yet.
@@ -43,6 +43,23 @@
 *set wait_ok_page page_id
 *choice
   *comment The "# ⚖ Settle up" option goes here when the panel is wired (see the header).
+  *if ((day_of_week = "Marketday") and (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon")))
+    *if (not(has_horse))
+      # Walk up to the horse line and ask about a horse. [~5 min]
+        *set minutes_to_pass 5
+        *set time_advance_call_id "bm_fair_horse_walk"
+        *gosub_scene calendar advance_time
+        *set horse_place "bf"
+        *set shop_open ""
+        *goto_scene horse_dealer hd_buy
+    *else
+      # Lead ${horse_name} up to the horse line to sell. [~5 min]
+        *set minutes_to_pass 5
+        *set time_advance_call_id "bm_fair_horse_walk"
+        *gosub_scene calendar advance_time
+        *set horse_place "bf"
+        *set shop_open ""
+        *goto_scene horse_dealer hd_sell
   # Walk back to the village lane.
     *set shop_open ""
     *goto_scene Langston/broadmead/broadmead bm_return
@@ -129,6 +146,8 @@
   *return
 *if (day_of_week = "Marketday")
   The ground is packed. Pens are full to the rails, carts nose in beside the trough, and dealers call lots across the noise of sheep, while the scale on its platform is never still.
+  *if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
+    At the top of the ground a rope line holds a few horses for sale, each with its seller standing at its head.
   *return
 *if (day_of_week = "Hallowday")
   The work stops for the rest day. Only a few pens stay open, and families in their better clothes stand quietly around the mound at the far end.

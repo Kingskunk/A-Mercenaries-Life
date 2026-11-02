@@ -1,7 +1,10 @@
 *comment ====================================================================================
 *comment THE COUNTESS'S REMOUNT YARD (Broadmead): House Gault's stable, smithy and muster field across the stream from the village. Plan: Resources & Quest/WESTERN_VALE_VILLAGES_PLAN.md, Village Three, place 2.
-*comment Built so far (2026-11-02, the user's instruction): the three description layers (place, sky, street) and a way back, and nothing else. There are no choices, no hours, no people to talk to and no horses to buy here yet. The sergeant (Dagny Marren, named by Olof at the Crooked Halter)
-*comment is not met or described here. The yard is the one tidy place in the village: grey stone, slate, raked gravel, and a tall navy banner with a single gold horse. Backdrop: Wallpaper/Remount_Yard_day.png and Remount_Yard_Night.png (scenery.js SCENE_PLACES), ambience "village" (ambience.js ALIAS).
+*comment Built so far (2026-11-02): the three description layers (place, sky, street), a way back, and nothing else. THE YARD IS BARRED TO THE PLAYER (the user's call: it is a military encampment and the Countess's horses are not sold to strangers). The player stops at the iron gate in the yard's stone wall;
+*comment troopers guard it at every hour and turn a stranger away in the street layer. There are no choices but the way back, no hours, and no one to talk to. The guards are unnamed and their number is not stated beyond "two".
+*comment DORMANT, for a hook the user will think of later: the sergeant (Dagny Marren, human woman, forty-odd, ex-rider, calm and level, speaks to a horse before a person; scar through her left eyebrow, pale rein-lines on both palms; invented 2026-11-02) and her horse sale are still written at the bottom of this file (bm_ry_sgt, bm_ry_sgt_menu, bm_ry_sgt_self) and in
+*comment horse_dealer.txt (horse_place "bm": a retired cull, 34 silver marks, no bargaining, buy-back 15, returns to bm_ry_hub), but nothing reaches them. To open the yard, give the hub a choice that goes to bm_ry_sgt behind the hook's condition, and rewrite the place/street layers for a player standing inside the wall.
+*comment The yard is the one tidy place in the village: grey stone, slate, raked gravel, and a tall navy banner with a single gold horse. Backdrop: Wallpaper/Remount_Yard_day.png and Remount_Yard_Night.png (scenery.js SCENE_PLACES), ambience "village" (ambience.js ALIAS).
 *comment ====================================================================================
 
 *label bm_ry
@@ -40,9 +43,9 @@
 *comment ── LAYER 1: PLACE ── Fixed geography only. The long description prints once. Nothing here changes with the season or the hour.
 *label bm_ry_place
 *if (ry_first)
-  Across the stream from the village the ground rises a little, and on it stands the one building in Broadmead that looks as if it was built to a plan. The lodge is a long grey stone house of two storeys under a slate roof, and a tall navy banner hangs over its door, the cloth edged in narrow gold and bearing a single golden horse in profile, one foreleg raised. A stable range runs beside it, its split half-doors painted and shut in even rows. Next to the stables a smithy bay stands open to the yard, with an anvil on a stump and a dull glow in the forge, and next to that a tack room open at the front shows saddles on racks and bridles in lines. The yard between them is raked gravel, swept to the edges. Beyond the buildings a gate opens onto the muster field, where a picket line runs along one side and a straw quintain post stands at the far end.
+  Across the stream from the village the ground rises a little, and on it stands the one place in Broadmead that looks as if it was built to a plan. A wall of dressed grey stone runs along the lane, and an iron-barred gate stands shut between two squared posts, with a small guardhouse beside it. Over the wall and through the bars the lodge shows, a long grey stone house of two storeys under a slate roof, and a tall navy banner hangs over its door, the cloth edged in narrow gold and bearing a single golden horse in profile, one foreleg raised. A stable range runs beside it, its split half-doors painted and shut in even rows. Next to the stables a smithy bay stands open to the yard, with an anvil on a stump and a dull glow in the forge, and next to that a tack room open at the front shows saddles on racks and bridles in lines. The yard between them is raked gravel, swept to the edges. Beyond the buildings a second gate opens onto the muster field, where a picket line runs along one side and a straw quintain post stands at the far end.
 *else
-  The yard is as before: the grey lodge under its banner, the stable range with its shut half-doors, the open smithy bay and tack room, and the raked gravel running out to the gate of the muster field.
+  The yard is as before: the grey wall and the shut iron gate, the lodge under its banner beyond, the stable range with its shut half-doors, the open smithy bay and tack room, and the raked gravel running back to the gate of the muster field.
 *return
 
 *comment ── LAYER 2: SKY ── Weather and light only, followed by the ground's recent-weather state.
@@ -79,25 +82,42 @@
   The gravel is dark from the last rain, and the raked lines hold small beads of water.
 *return
 
-*comment ── LAYER 3: STREET ── Who is about and what is happening. The day follows the clock (campaign_day * 24 + clock_hour). No named person appears here.
+*comment ── LAYER 3: STREET ── Who is about and what is happening. The day follows the clock (campaign_day * 24 + clock_hour). No named person appears here. What goes on beyond the bars comes first (bm_ry_activity), then the guards at the gate, who are there at every hour.
 *label bm_ry_street
+*gosub bm_ry_activity
 *temp ry_night false
 *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
   *set ry_night true
 *if (ry_night)
-  A sentry in a blue-edged coat stands under a lantern at the lodge door, and a horse shifts in its stall inside the stable range.
+  Two troopers in blue-edged coats stand under the lantern at the gate.
+*elseif (street_life = "empty")
+  Two troopers in blue-edged coats stand in the guardhouse doorway, watching the rain.
+*else
+  Two troopers in blue-edged coats stand either side of the gate.
+*if (ry_first)
+  As you near the bars, one of them steps into the gap. "Yard's closed to strangers," the trooper says. "Countess's business only. You'd want a sealed writ from the Hall in Langston, or the sergeant's own word. Horse for the road, ask in the village."
+*else
+  The nearer trooper looks at you, shakes their head once, and nods back toward the lane.
+*return
+
+*label bm_ry_activity
+*temp ry_night false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set ry_night true
+*if (ry_night)
+  A lamp burns over the lodge door, and a horse shifts in its stall inside the stable range.
   *return
 *if ((street_life = "empty") and (not(ry_night)))
-  The horses are inside and the half-doors are shut. A trooper in a blue-edged coat stands under the lodge porch, watching the rain.
+  The horses are inside and the half-doors are shut.
   *return
 *if (time_period = "Dusk")
   Grooms lead the last horses in from the muster field, and troopers carry saddles into the tack room and hang them in their places.
   *return
 *if (day_of_week = "Hallowday")
-  The yard is quiet for the rest day. A trooper walks out of the gate toward the village lane with an empty stoneware jug in one hand.
+  The yard beyond the bars is quiet for the rest day. A trooper walks out past the guards toward the village lane with an empty stoneware jug in one hand.
   *return
 *if (day_of_week = "Marketday")
-  Two troopers in blue-edged coats walk out of the gate toward the fair ground in the fold below the village, and a groom shuts the gate behind them.
+  Two more troopers in blue-edged coats walk out past the guards toward the fair ground in the fold below the village, and a groom shuts the gate behind them.
   *return
 *if (time_period = "Morning")
   Grooms lead horses out to the trough and back, and a boy rakes the gravel behind them into straight lines.
@@ -115,3 +135,56 @@
 *else
   A short horn call sounds from the lodge, and the grooms stop to listen before they go back to work.
 *return
+
+*comment ── DORMANT: SERGEANT DAGNY MARREN ── Nothing reaches this section while the yard is barred (see the header). Human, forty-odd; calm, level and economical, never raises her voice; speaks to a horse before she speaks to a person; fair the way a good farrier is fair (Olof's words). She is the yard's only seller. Her one free topic is her own story; no tenant, holding or family is named.
+*label bm_ry_sgt
+*set minutes_to_pass 5
+*set time_advance_call_id "bm_ry_sgt_walk"
+*gosub_scene calendar advance_time
+*if (not(bm_ry_met))
+  *set bm_ry_met true
+  *set bm_know_sergeant true
+  You cross the gravel. The woman at the picket line finishes with the horse first: a murmur, a palm run down its neck, a last check of the foreleg. Then she turns, and you see the old scar through her left eyebrow and the pale lines the reins have worn across both palms.
+
+  "Sergeant Dagny Marren," she says Her voice is low and level, and she does not raise it to be heard. "Most people who walk over here have lost something or been sent. Which are you?"
+
+  "Neither," you say. "I'm new to Broadmead, and I wanted to see the yard."
+
+  "It isn't for seeing." She looks you over, then gives a small nod. "But you crossed the gravel without startling a horse. Stand there, and ask what you like."
+*else
+  Sergeant Marren hands the horse's lead to a groom and gives you her attention.
+*goto bm_ry_sgt_menu
+
+*label bm_ry_sgt_menu
+*choice
+  *if (not(has_horse))
+    # Ask about a horse.
+      *set horse_place "bm"
+      *goto_scene horse_dealer hd_buy
+  *if (has_horse)
+    # Offer ${horse_name} for sale.
+      *set horse_place "bm"
+      *goto_scene horse_dealer hd_sell
+  *if (not(bm_ry_asked_self))
+    # Ask how she came to run the yard.
+      *goto bm_ry_sgt_self
+  # Leave her to her work.
+    *goto bm_ry_hub
+  *comment GEN:BEGIN place_steps home:broadmead -- generated by tools/gen_city_settlements.js from its registry; edit the registry, not this block
+  # ⇥ [pvgo:home:broadmead]
+    *goto bm_ry_hub
+  *comment GEN:END place_steps home:broadmead
+
+*label bm_ry_sgt_self
+*set bm_ry_asked_self true
+*set minutes_to_pass 5
+*set time_advance_call_id "bm_ry_sgt_self"
+*gosub_scene calendar advance_time
+"How did you come to run the yard?" you ask.
+
+"I rode for the Countess eleven years. A horse went down under me on the ice at Coombe Gap, and the knee that took the weight told me what the next ten would be." She flexes one scarred hand. "The mayor wanted someone who would sort a horse by what it is and not by what it's worth. The captain in Dunmow named me. I haven't asked him why."
+
+"Do you miss riding?"
+
+"Every morning. Then I put a saddle on a young horse, and I miss it less."
+*goto bm_ry_sgt_menu

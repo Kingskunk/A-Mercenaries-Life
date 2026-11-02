@@ -320,6 +320,12 @@ A retainer lodge, stable, smithy bay, tack room, and militia muster field serve 
 
 Any player horse purchase here should reuse or deliberately extend the existing mount-selection and ownership system. Horses must not be implemented as stackable commodities.
 
+**Decided 2026-11-02: the yard is barred to the player for now.** It is a military encampment, and the Countess's horses are not sold to strangers. A stone wall and an iron-barred gate (invented) stand between the lane and the yard; two troopers guard the gate at every hour of the day and night, and turn a stranger away in the street layer. The player sees the lodge, stables, smithy bay, tack room and muster field only through the bars. The user will think of a hook later that lets the player buy a horse here.
+
+*Dormant, kept for that hook:* Sergeant Dagny Marren (human woman, forty-odd, ex-rider, calm and level, scar through her left eyebrow, rein-lines on both palms; eleven years riding for the Countess until a fall on the ice at Coombe Gap) and her horse sale are still written (`bm_ry_sgt`, `bm_ry_sgt_menu` in `remount_yard.txt`, and `horse_place "bm"` in `horse_dealer.txt`: a retired cull at 34 silver marks, fixed price, buy-back 15), but nothing reaches them. Olof's talk about her at the Crooked Halter is unchanged. The yard's guard is small and unfortified: order comes from habit and the Countess's name, and its numbers are deliberately not stated beyond the two at the gate.
+
+**Decided 2026-11-02 after a roleplay test of the gate:** the village lane button now reads "The Remount Yard Gate"; the guard says a stranger needs a sealed writ from the Hall in Langston or the sergeant's own word, and points buyers to the village; Olof says the same when asked, and names the Fair's horse line. The writ is a hook for later (idea: the Hall clerk issues it at Vouched). **Where the player buys a horse instead:** Longfold Fair's horse line, Marketday only, Morning through Afternoon, through the shared dealer flow (`horse_place "bf"`). The seller is drawn from the day's five-day seed. The horse is one the yard looked at and passed over, with a small holding brand (no family or holding named). Price is 32 silver marks, or 29 on a good bargain; the buy-back is 15, as everywhere.
+
 #### 3. Longfold Fair and the Sun Pillar
 
 **Functions:** Resources; trade; altar; daytime social activity. (Widened 2026-11-02 from a small fair ground into Broadmead's trading-simulator market. It has no government function, since Broadmead already has two authority places.)
@@ -421,7 +427,7 @@ Recommended implementation principles:
 7. Approve the proposed generic Wine and Hemp commodities, including makers, prices, weights, seasonal curves, storage, and freight reach. Preserve one market row for each good.
 8. Decide which members of House Veyre, the Durnell family, and the Avenel family are present during the player's first visit, and how many household guards and principal servants each maintains.
 9. Red Stave: the innkeeper is **Odalie Hollowell**, a halfling woman (chosen 2026-11-01; the name was checked against every scene, lorebook and the name generator, and is reserved in names-data.js). Still to decide: its ordinary room and stable capacity, and decide whether a cooper works from its court as scenery or a future service without adding another permanent place.
-10. Decide whether Broadmead sells player mounts and, if so, how it reuses the established horse-selection flow.
+10. Decide whether Broadmead sells player mounts and, if so, how it reuses the established horse-selection flow. **Decided 2026-11-02: yes in principle, at the Remount Yard via the dealer flow, but the yard is barred to the player until the user adds a hook (see the Remount Yard section).**
 11. Define which Barolo Contract Board postings count toward House Gault standing, how often official, private, and public notices change, and who is authorized to confirm completion and pay each reward.
 12. Define the in-world discovery trigger for each Barolo family, estate, and named household member before adding individually gated lorebook coverage.
 
