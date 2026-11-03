@@ -1057,6 +1057,7 @@ button#statSidebar .turnRow,
     var el = document.getElementById("battleStage");
     if (el) { el.innerHTML = ""; el.hidden = true; }
     stageLastHtml = null;
+    stageFxLast = {};
     if (stageH) { stageH = 0; document.documentElement.style.setProperty("--bstage-h", "0px"); }
     document.body.classList.remove("battleStageOn");
   }
@@ -1164,7 +1165,9 @@ button#statSidebar .turnRow,
     Array.prototype.forEach.call(el.querySelectorAll(".stageTile[data-node] .stageToks"), function (t) {
       if (t.scrollTop) tileY[t.parentNode.getAttribute("data-node")] = t.scrollTop;
     });
+    var before = stageFxSnapshot(el);
     el.innerHTML = html;
+    stageFxPlay(el, s, before);
     lane = el.querySelector(".stageLane");
     if (lane && laneX) lane.scrollLeft = laneX;
     Object.keys(tileY).forEach(function (pos) {
@@ -1208,6 +1211,77 @@ button#statSidebar .turnRow,
   }
   if (window.MutationObserver) {
     new MutationObserver(markStatusLines).observe(document.documentElement, { childList: true, subtree: true });
+  }
+  // ── Stage effects (2026-11-04) ──
+  // What changed since the last drawing, shown on the board: a number rises off a token whose HP moved ("-4" red, "+3" green) with a ring
+  // bursting from its medal, a token that moved tile slides there, and a foe that drops sinks into its greyed state. Everything is worked
+  // out by comparing window.stats with the previous drawing, so the game's rules are untouched. The effects live in #stageFx, a layer of
+  // their own over the stage, because the stage itself is rebuilt whenever anything on it changes (a hover is enough) and would cut them off.
+  var stageFxLast = {};   // "kind:slot" -> { hp, pos } as of the last drawing
+  function stageFxLayer() {
+    var fx = document.getElementById("stageFx");
+    if (!fx) { fx = document.createElement("div"); fx.id = "stageFx"; fx.setAttribute("aria-hidden", "true"); document.body.appendChild(fx); }
+    return fx;
+  }
+  function stageFxNow(s, key) {
+    var bits = key.split(":"), kind = bits[0], slot = bits[1];
+    if (kind === "player") return { hp: Number(s.hp_current) || 0, pos: Number(s.combat_lane_player_position) };
+    return { hp: Number(s["combat_" + kind + slot + "_hp"]) || 0, pos: Number(s["combat_" + kind + slot + "_position"]) };
+  }
+  function stageReducedMotion() { return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); }
+  // Where each medal is on screen, in CSS pixels (the page may be zoomed to fit the window; see UI_ZOOM).
+  function stageMedalRect(tok) {
+    var m = tok.querySelector(".stageMedal"), r = (m || tok).getBoundingClientRect(), z = window.UI_ZOOM || 1;
+    return { left: r.left / z, top: r.top / z, width: r.width / z, height: r.height / z };
+  }
+  function stageFxSnapshot(el) {
+    var out = {};
+    Array.prototype.forEach.call(el.querySelectorAll(".stageToken[data-link]"), function (tok) {
+      out[tok.getAttribute("data-link")] = { rect: stageMedalRect(tok), chip: (tok.querySelector(".stageMedal i") || {}).textContent || "", kind: tok.classList.contains("enemy") ? "enemy" : (tok.classList.contains("ally") ? "ally" : "player") };
+    });
+    return out;
+  }
+  function stageFxAdd(cls, rect, html, life) {
+    var fx = stageFxLayer(), d = document.createElement("div");
+    d.className = cls;
+    d.style.left = (rect.left + rect.width / 2) + "px";
+    d.style.top = (rect.top + rect.height / 2) + "px";
+    if (html) d.innerHTML = html;
+    fx.appendChild(d);
+    setTimeout(function () { if (d.parentNode) d.parentNode.removeChild(d); }, life);
+    return d;
+  }
+  function stageFxPlay(el, s, before) {
+    var now = {}, reduce = stageReducedMotion(), SLIDE = 420;
+    Array.prototype.forEach.call(el.querySelectorAll(".stageToken[data-link]"), function (tok) {
+      var key = tok.getAttribute("data-link"), cur = stageFxNow(s, key), last = stageFxLast[key], old = before[key];
+      now[key] = cur;
+      if (!last) return;   // first sight of this combatant (or of the stage): nothing to compare with
+      var moved = isFinite(last.pos) && isFinite(cur.pos) && last.pos !== cur.pos && old && !reduce;
+      var rect = stageMedalRect(tok);
+      if (moved) {
+        // a ghost of the old medal slides from the old tile to the new one, and the token fades in under it as it lands
+        var g = stageFxAdd("fxGhost " + old.kind, old.rect, "<i>" + esc(old.chip) + "</i>", SLIDE + 60);
+        g.style.width = old.rect.width + "px"; g.style.height = old.rect.height + "px";
+        g.getBoundingClientRect();   // commit the start before the move
+        g.style.transform = "translate(-50%, -50%) translate(" + (rect.left - old.rect.left + (rect.width - old.rect.width) / 2) + "px, " + (rect.top - old.rect.top + (rect.height - old.rect.height) / 2) + "px)";
+        tok.style.opacity = "0";
+        tok.style.transition = "opacity 0.18s";
+        setTimeout(function () { tok.style.opacity = ""; }, SLIDE - 60);
+      }
+      var delta = cur.hp - last.hp;
+      if (delta) {
+        var heal = delta > 0, wait = moved ? SLIDE : 0;
+        setTimeout(function () {
+          var r = tok.isConnected ? stageMedalRect(tok) : rect;
+          stageFxAdd("fxFloat" + (heal ? " heal" : ""), r, (heal ? "+" : "\u2212") + Math.abs(delta), 1400);
+          if (!reduce) stageFxAdd("fxBurst" + (heal ? " heal" : ""), r, "", 700);
+        }, wait);
+        if (!heal && cur.hp <= 0 && last.hp > 0 && tok.classList.contains("isDown")) tok.classList.add("justDown");
+        else if (!heal) tok.classList.add("justHit");
+      }
+    });
+    stageFxLast = now;
   }
   // A resize can make the column too short for the stage (or give it room again): measure afresh.
   window.addEventListener("resize", function () {

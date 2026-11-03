@@ -233,7 +233,68 @@ body.battleStageOn #header { display: none; }
 #battleStage .stageTile.crowd .stageToken[data-friendly]:hover { box-shadow: none; transform: translateY(-2px); }
 #battleStage .stageTile.crowd .stageToken.isLinked .stageMedal { box-shadow: 0 0 0 2px var(--tok); }
 
+/* ---------------------------------------------------------------- effects (index.html, stageFxPlay)
+   A layer of their own over the stage, positioned in the page's own pixels. */
+#stageFx { position: fixed; inset: 0; z-index: 7; pointer-events: none; overflow: hidden; }
+#stageFx > div { position: fixed; transform: translate(-50%, -50%); pointer-events: none; }
+#stageFx .player { --tok: var(--ch-brass); }
+#stageFx .ally   { --tok: var(--ch-info); }
+#stageFx .enemy  { --tok: var(--ch-bad); }
+/* a number rising off the medal */
+#stageFx .fxFloat {
+  font: 800 17px/1 var(--ch-font-ui); color: #ff6b5e; white-space: nowrap;
+  text-shadow: 0 1px 0 #000, 0 0 6px rgba(0, 0, 0, 0.9), 0 0 12px rgba(255, 80, 60, 0.45);
+  animation: fxFloat 1.4s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+#stageFx .fxFloat.heal { color: #7fe08a; text-shadow: 0 1px 0 #000, 0 0 6px rgba(0, 0, 0, 0.9), 0 0 12px rgba(90, 220, 110, 0.4); }
+@keyframes fxFloat {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+  12%  { opacity: 1; transform: translate(-50%, -80%) scale(1.25); }
+  25%  { transform: translate(-50%, -95%) scale(1); }
+  70%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -210%) scale(1); }
+}
+/* a ring bursting from the medal */
+#stageFx .fxBurst {
+  width: 32px; height: 32px; border-radius: 50%; border: 3px solid rgba(255, 90, 70, 0.95); box-sizing: border-box; box-shadow: 0 0 10px rgba(255, 80, 60, 0.5);
+  animation: fxBurst 0.65s ease-out forwards;
+}
+#stageFx .fxBurst.heal { border-color: rgba(110, 225, 130, 0.9); }
+@keyframes fxBurst {
+  0%   { opacity: 0.95; transform: translate(-50%, -50%) scale(0.8); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(2.1); }
+}
+/* the old medal sliding to a new tile */
+#stageFx .fxGhost {
+  display: grid; place-items: center; box-sizing: border-box; border-radius: 50%;
+  border: 3px solid var(--tok); background: #141210; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+  transition: transform 0.42s cubic-bezier(0.25, 0.8, 0.3, 1);
+}
+#stageFx .fxGhost i { font: 800 13px/1 var(--ch-font-ui); font-style: normal; color: var(--tok); }
+/* the token itself: a shake when struck, a sink when it drops */
+#battleStage .stageToken.justHit { animation: stageHit 0.45s ease-out; }
+@keyframes stageHit {
+  0%, 100% { transform: none; }
+  15% { transform: translateX(-4px); filter: brightness(1.8) saturate(1.4); }
+  35% { transform: translateX(3px); }
+  55% { transform: translateX(-2px); }
+  75% { transform: translateX(1px); }
+}
+#battleStage .stageToken.isDown.justDown { animation: stageFall 0.7s ease-out; }
+/* a crowded tile's medals turn the token's own animations off; these two still play there */
+#battleStage .stageTile.crowd .stageToken.justHit { animation: stageHit 0.45s ease-out; }
+#battleStage .stageTile.crowd .stageToken.isDown.justDown { animation: stageFall 0.7s ease-out; }
+@keyframes stageFall {
+  0%   { opacity: 1; filter: none; transform: scale(1.06); }
+  30%  { opacity: 1; filter: brightness(1.8); transform: scale(1.06) rotate(-3deg); }
+  100% { opacity: 0.5; filter: grayscale(1); transform: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   #battleStage .stageToken, #battleStage .stageHp > span { transition: none; }
   #battleStage .stageToken.isNext, #battleStage .stageToken.isLow .stageHp > span, #battleStage .stageTile.crowd .stageToken.isNext .stageMedal { animation: none; }
+  #battleStage .stageToken.justHit, #battleStage .stageToken.isDown.justDown,
+  #battleStage .stageTile.crowd .stageToken.justHit, #battleStage .stageTile.crowd .stageToken.isDown.justDown { animation: none; }
+  #stageFx .fxFloat { animation-name: fxFade; }
+  @keyframes fxFade { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
 }
