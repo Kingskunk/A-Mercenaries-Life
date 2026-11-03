@@ -94,7 +94,28 @@ expect("in a non-lethal fight it surrenders even with room to run", s.combat_ene
 s = run("combat_morale_turn", ["enemy", 1], Object.assign(e(1, Object.assign({}, rat, { broken: true, position: 4, range: 1 })), { combat_active_target: 1, combat_enemy_creature_type: "beast", combat_enemy_range: 1 }), HIGH);
 expect("a beast with room runs: two steps toward its edge, still in the fight", [Number(s.combat_enemy1_position), s.combat_enemy1_out, Number(s.combat_enemy1_hp)], [6, "", 4]);
 s = run("combat_morale_turn", ["enemy", 1], Object.assign(e(1, Object.assign({}, rat, { broken: true, position: 6, range: 3 })), { combat_active_target: 1, combat_enemy_creature_type: "beast" }), HIGH);
-expect("...and starting a turn on the edge, it is gone", [s.combat_enemy1_out, Number(s.combat_enemy1_hp), Number(s.combat_enemies_fled)], ["fled", 0, 1]);
+expect("...and starting a turn on the edge, an even escape roll is a tie: cut off, still in the fight", [s.combat_enemy1_out, Number(s.combat_enemy1_hp), s.combat_escape_ok, s.combat_morale_stop], ["", 4, false, true]);
+const edgeRat = Object.assign(e(1, Object.assign({}, rat, { broken: true, position: 6, range: 3, prof: 2 })), { combat_active_target: 1, combat_enemy_creature_type: "beast" });
+s = run("combat_morale_turn", ["enemy", 1], Object.assign({}, edgeRat, { combat_enemy1_dexterity: 14, dexterity: 10 }), HIGH);
+expect("a quicker rat (DEX +2 against your +0) wins the escape and is gone", [s.combat_enemy1_out, Number(s.combat_enemy1_hp), Number(s.combat_enemies_fled)], ["fled", 0, 1]);
+expect("...and the roll is shown", /Escape: 13 \+2 prof \+2 DEX = 17 vs your 13 \+2 prof \+0 DEX = 15 — GETS AWAY/.test(text), true);
+s = run("combat_morale_turn", ["enemy", 1], Object.assign({}, edgeRat, { combat_enemy1_dexterity: 10, dexterity: 14 }), HIGH);
+expect("against a quicker you, it is cut off", [s.combat_enemy1_out, s.combat_escape_ok, /Is Cut Off/.test(text)], ["", false, true]);
+s = run("combat_morale_turn", ["enemy", 1], Object.assign({}, edgeRat, { combat_player_hidden: true }), HIGH);
+expect("with you hidden there is no chase: it goes", s.combat_enemy1_out, "fled");
+
+console.log("Fight results:");
+const boar = { name: "Boar", hp: 0, max_hp: 11, type_id: "beast", out: "" };
+const fight = Object.assign({ combat_enemy_count: 3, combat_active_target: 1, combat_enemy_hp: 0 }, e(1, boar), e(2, boar), e(3, Object.assign({}, boar, { out: "fled" })));
+s = run("combat_record_results", [], fight);
+expect("three boars, two dropped and one run off", [Number(s.combat_result_count), Number(s.combat_result_down), Number(s.combat_result_fled), Number(s.combat_result_surrendered), Number(s.combat_result_standing)], [3, 2, 1, 0, 0]);
+expect("...per slot", [s.combat_result1_outcome, s.combat_result3_outcome, s.combat_result3_name, s.combat_result3_type, s.combat_result4_outcome], ["down", "fled", "Boar", "beast", ""]);
+s = run("count_results", ["Boar", "down"], s);
+expect("count_results \"Boar\" \"down\" = 2", Number(s.combat_result_n), 2);
+s = run("count_results", ["beast", ""], s);
+expect("count_results \"beast\" \"\" = 3", Number(s.combat_result_n), 3);
+s = run("combat_record_results", [], Object.assign({}, fight, { combat_enemy_hp: 5, combat_enemy2_hp: 5 }));
+expect("one still up when the fight ends is standing", [s.combat_result1_outcome, s.combat_result2_outcome, Number(s.combat_result_standing)], ["standing", "standing", 2]);
 
 console.log("A wavering ally:");
 const rook = { name: "Rook", epithet: "Rook", hp: 3, max_hp: 12, wisdom: 10, morale: "normal", position: 5, target: 1 };

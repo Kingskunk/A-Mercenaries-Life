@@ -640,6 +640,7 @@
 *return
 
 *label fight_cleanup
+*gosub combat_record_results
 *comment Reaction asymmetry (2026-09-29, plan §4.5/Phase 5): same leftover-state reason as the enemy-side
 *comment oa_used reset below -- combat_begin_round already covers this at the start of every fight (via
 *comment fight_setup), but double-coverage matches that field's own established pattern.
@@ -2076,6 +2077,78 @@
   [b][🏃 ${combat_attacker_name} Closes on ${dacs_enemy_name}][/b]
   *line_break
   *set combat_turn_advanced_this_page true
+*return
+
+*comment ============================================================================
+*comment FIGHT RESULTS (2026-11-03, the user). How each enemy ended the last fight, written by fight_cleanup and kept until the next fight
+*comment ends, for the story to read after *gosub_scene combat returns:
+*comment   combat_result_count        how many enemies the fight had
+*comment   combat_result_down         how many were dropped (killed; knocked out in a non-lethal fight)
+*comment   combat_result_fled         how many ran off the field
+*comment   combat_result_surrendered  how many gave up
+*comment   combat_result_standing     how many were still fighting when it ended (you fled, lost, or the leader fell)
+*comment   combat_resultN_type / _name / _outcome  slot N's type from the catalog ("beast", "archer"; "" for a hand-built slot),
+*comment     its name ("Boar"), and "down", "fled", "surrendered" or "standing"
+*comment To count one kind, *gosub_scene combat count_results "Boar" "down" sets combat_result_n; the first is a type or a name
+*comment ("" for any), the second an outcome ("" for any). Three boars, two dead and one run off:
+*comment   *gosub_scene combat count_results "Boar" "down"
+*comment   *if (combat_result_n > 0)
+*comment     #Butcher the boar@{(combat_result_n > 1) s|}.
+*comment   *if (combat_result_fled > 0) ... the one that got away.
+*comment Morale is off in story fights (MORALE OFF at each call site); leave out *set combat_no_morale true for a fight whose enemies may run.
+*comment ============================================================================
+*label combat_record_results
+*set combat_result_count combat_enemy_count
+*set combat_result_down 0
+*set combat_result_fled 0
+*set combat_result_surrendered 0
+*set combat_result_standing 0
+*gosub fight_sync_target_out
+*temp crr_i 1
+*label combat_record_results_loop
+*if (crr_i <= combat_enemy_slot_cap)
+  *temp crr_p (("combat_enemy" & crr_i) & "_")
+  *temp crr_r ("combat_result" & crr_i)
+  *temp crr_out "standing"
+  *temp crr_name ""
+  *temp crr_type ""
+  *if (crr_i <= combat_enemy_count)
+    *set crr_name {(crr_p & "name")}
+    *set crr_type {(crr_p & "type_id")}
+    *if ({(crr_p & "out")} = "fled")
+      *set crr_out "fled"
+      *set combat_result_fled + 1
+    *elseif ({(crr_p & "out")} = "surrendered")
+      *set crr_out "surrendered"
+      *set combat_result_surrendered + 1
+    *elseif ({(crr_p & "hp")} <= 0)
+      *set crr_out "down"
+      *set combat_result_down + 1
+    *else
+      *set combat_result_standing + 1
+  *else
+    *set crr_out ""
+  *set {(crr_r & "_name")} crr_name
+  *set {(crr_r & "_type")} crr_type
+  *set {(crr_r & "_outcome")} crr_out
+  *set {(crr_p & "type_id")} ""
+  *set crr_i + 1
+  *goto combat_record_results_loop
+*return
+
+*comment Count the last fight's enemies of one type or name (cr_who, "" for any) that ended one way (cr_how, "" for any). Output: combat_result_n.
+*label count_results
+*params cr_who cr_how
+*set combat_result_n 0
+*temp cr_i 1
+*label count_results_loop
+*if (cr_i <= combat_result_count)
+  *temp cr_r ("combat_result" & cr_i)
+  *temp cr_match ((cr_who = "") or ((cr_who = {(cr_r & "_type")}) or (cr_who = {(cr_r & "_name")})))
+  *if ((cr_match) and ((cr_how = "") or (cr_how = {(cr_r & "_outcome")})))
+    *set combat_result_n + 1
+  *set cr_i + 1
+  *goto count_results_loop
 *return
 
 *label fight_victory
@@ -5562,9 +5635,10 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *comment types in combat_types.txt) decides how it rolls: fearless never checks, steady rolls with advantage, skittish with disadvantage.
 *comment combat_no_morale (a duel, a boss) turns all of it off for the fight. A failed save BREAKS it (_broken):
 *comment   An ENEMY is done fighting. A humanoid that is cornered (an opponent on its tile) or in a non-lethal fight surrenders on the spot. Anything else flees: it Dashes away from the player toward its own edge of the lane, taking the usual free swing
-*comment   if it leaves someone's reach, and when it starts a turn on that edge it leaves the fight. Until then it can be chased and cut down.
+*comment   if it leaves someone's reach, and when it starts a turn on that edge it tries to get away: a contested roll, proficiency against
+*comment   proficiency (combat_escape_contest). Win and it leaves the fight; lose and it is cut off for the turn. Until then it can be chased and cut down.
 *comment   Fled or surrendered, it is out (_out "fled" / "surrendered", HP 0, so everything that counts the living counts it as beaten), and the story
-*comment   can read combat_enemies_fled / combat_enemies_surrendered.
+*comment   can read how each enemy ended (FIGHT RESULTS, combat_record_results).
 *comment   An ALLY never leaves the player. It wavers: it falls back a step toward the player and covers up (attacks on it have disadvantage until its
 *comment   next turn) instead of attacking, and at the start of each later turn it makes the same save to rally and fight on as normal.
 *comment Every roll here happens inside a chain of turns, so a refreshed page rolls it again the same (REPLAY-SAFE TURN CHAINS); Intimidate, on the
@@ -5865,6 +5939,19 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *set combat_turn_advanced_this_page true
   *return
 *if (ceba_at_edge)
+  *gosub combat_escape_contest ceba_slot
+  *if (not(combat_escape_ok))
+    *if (ceba_v = 1)
+      $!{combat_enemy_epithet} makes for the open ground, but you are on it first and it has to turn back.
+    *if (ceba_v = 2)
+      $!{combat_enemy_epithet} tries to slip away, and you cut it off before it can.
+    *if (ceba_v = 3)
+      $!{combat_enemy_epithet} runs for it, finds the way blocked, and backs up against the edge.
+    *line_break
+    [b][⚑ ${combat_enemy_name} Is Cut Off — still in the fight, it tries again next turn][/b]
+    *line_break
+    *set combat_turn_advanced_this_page true
+    *return
   *if (ceba_v = 1)
     $!{combat_enemy_epithet} turns and runs, and does not look back.
   *if (ceba_v = 2)
@@ -5907,6 +5994,46 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *line_break
 *set combat_turn_advanced_this_page true
 *gosub fight_booming_trigger
+*return
+
+*comment THE ESCAPE (2026-11-03, the user): a broken enemy that starts its turn on its own edge of the lane does not simply leave; it has to
+*comment get away from you. A contested roll, proficiency against proficiency: it rolls d20 + its proficiency + its DEX modifier, you roll
+*comment d20 + your proficiency + your DEX modifier, and it gets away only if it beats you (a tie is yours). If you are hidden there is no
+*comment chase and it simply goes. A failed escape spends its turn, still broken, on the edge, and it tries again next turn, which gives
+*comment you a turn to close on it. Rolled inside the enemy's turn chain, so a refresh rolls it again the same. Output: combat_escape_ok.
+*label combat_escape_contest
+*params cec_slot
+*set combat_escape_ok true
+*if (combat_player_hidden)
+  *return
+*temp cec_p (("combat_enemy" & cec_slot) & "_")
+*temp cec_prof {(cec_p & "prof")}
+*if (cec_prof <= 0)
+  *set cec_prof combat_lib_prof_bonus
+*temp cec_score {(cec_p & "dexterity")}
+*gosub_scene startup score_to_mod cec_score
+*temp cec_dex sm_mod
+*gosub_scene startup score_to_mod dexterity
+*temp cec_pdex sm_mod
+*temp cec_a 1
+*temp cec_b 1
+*rand cec_a 1 20
+*rand cec_b 1 20
+*temp cec_them ((cec_a + cec_prof) + cec_dex)
+*temp cec_you ((cec_b + prof_bonus) + cec_pdex)
+*set combat_escape_ok (cec_them > cec_you)
+*temp cec_dex_str "+${cec_dex}"
+*if (cec_dex < 0)
+  *set cec_dex_str "${cec_dex}"
+*temp cec_pdex_str "+${cec_pdex}"
+*if (cec_pdex < 0)
+  *set cec_pdex_str "${cec_pdex}"
+*temp cec_verdict "CUT OFF"
+*if (combat_escape_ok)
+  *set cec_verdict "GETS AWAY"
+[b][🎲 ${combat_enemy_name} Escape: ${cec_a} +${cec_prof} prof ${cec_dex_str} DEX = ${cec_them} vs your ${cec_b} +${prof_bonus} prof ${cec_pdex_str} DEX = ${cec_you} — ${cec_verdict}][/b]
+*line_break
+*set combat_turn_advanced_this_page true
 *return
 
 *label combat_grease_gate
