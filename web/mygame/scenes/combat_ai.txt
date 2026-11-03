@@ -50,9 +50,12 @@
       *set combat_ai_terrain_score + combat_behavior_seek_high_ground
       *if (combat_behavior_seek_high_ground > 0)
         *set combat_ai_terrain_reason "high_ground"
-    *if (cstd_type = "chokepoint")
-      *set combat_ai_terrain_score + combat_behavior_hold_chokepoint
-      *if (combat_behavior_hold_chokepoint > 0)
+    *comment A chokepoint is only worth holding while it is doing its job (2026-11-03, the user: Rook held one against a lone archer, who shot
+    *comment him and then the player, who could not get past him): see combat_ai_choke_useful below.
+    *if ((cstd_type = "chokepoint") and (combat_behavior_hold_chokepoint > 0))
+      *gosub combat_ai_choke_useful cstd_actor_kind cstd_position
+      *if (combat_ai_choke_useful)
+        *set combat_ai_terrain_score + combat_behavior_hold_chokepoint
         *set combat_ai_terrain_reason "chokepoint"
   *set cstd_i + 1
   *goto combat_score_terrain_destination_loop
@@ -100,6 +103,37 @@
   *goto combat_ai_terrain_destination_is_legal_ally_loop
 *if ((catdil_chokepoint_capacity > 0) and (catdil_occupants >= catdil_chokepoint_capacity))
   *set combat_ai_terrain_destination_legal false
+*return
+
+*label combat_ai_choke_useful
+*comment IS THIS CHOKEPOINT DOING ITS JOB? (2026-11-03) Holding a narrow gap is worth it only while an opponent who fights hand to hand still has to
+*comment come through it to reach the holder's side: that is the whole point of the gap. Against nobody but archers, slingers and casters it protects
+*comment no one; the holder just stands still to be shot, and on a capacity-1 gap blocks its own side from going after them.
+*comment So: useful while a living MELEE opponent (any weapon but "ranged") stands on the gap or beyond it, on the far side. The lane runs from the
+*comment player's side (low tiles) to the enemies' (high tiles), so for an ally that is an enemy on the gap's tile or higher, and for an enemy a
+*comment player or ally on the gap's tile or lower. A hidden player still counts: they are still there to come through.
+*comment Output: combat_ai_choke_useful.
+*params ccu_actor_kind ccu_position
+*set combat_ai_choke_useful false
+*temp ccu_i 1
+*if (ccu_actor_kind = "ally")
+  *label combat_ai_choke_useful_enemy_loop
+  *if (ccu_i <= combat_enemy_count)
+    *temp ccu_p (("combat_enemy" & ccu_i) & "_")
+    *if ((({(ccu_p & "hp")} > 0) and (not({(ccu_p & "weapon_type")} = "ranged"))) and ({(ccu_p & "position")} >= ccu_position))
+      *set combat_ai_choke_useful true
+    *set ccu_i + 1
+    *goto combat_ai_choke_useful_enemy_loop
+*else
+  *if (((hp_current > 0) and (not(weapon_type = "ranged"))) and (combat_lane_player_position <= ccu_position))
+    *set combat_ai_choke_useful true
+  *label combat_ai_choke_useful_ally_loop
+  *if (ccu_i <= combat_ally_slot_cap)
+    *temp ccu_a (("combat_ally" & ccu_i) & "_")
+    *if ((({(ccu_a & "hp")} > 0) and (not({(ccu_a & "weapon_type")} = "ranged"))) and ({(ccu_a & "position")} <= ccu_position))
+      *set combat_ai_choke_useful true
+    *set ccu_i + 1
+    *goto combat_ai_choke_useful_ally_loop
 *return
 
 *label combat_choose_terrain_step
@@ -481,7 +515,10 @@
   *if (combat_score_best_kind = "enemy")
     *set cant_who {(("combat_enemy" & combat_score_best_slot) & "_name")}
   *temp cant_name {(cant_p & "name")}
-  [b][🧠 ${cant_name} → ${cant_who}: ${combat_score_reason}][/b]
+  *temp cant_why combat_score_reason
+  *if (cant_why = "")
+    *set cant_why "nothing stands out, the first in reach"
+  [b][🧠 ${cant_name} → ${cant_who}: ${cant_why}][/b]
   *line_break
 *return
 
