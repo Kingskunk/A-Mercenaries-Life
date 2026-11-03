@@ -53,6 +53,8 @@ types.forEach(function (t) {
   ["hp", "ac"].forEach(function (k) { if (!isInt(t[k]) || t[k] < 1) bad(t, k + " must be a whole number above 0"); });
   if (!CREATURE_TYPES[t.creature_type]) bad(t, "creature_type must be " + Object.keys(CREATURE_TYPES).join(" | "));
   if (!SIZES[t.size]) bad(t, "size must be " + Object.keys(SIZES).join(" | "));
+  if (!isInt(t.proficiency) || t.proficiency < 1 || t.proficiency > 9) bad(t, "proficiency must be a whole number from 1 to 9 (+2 is levels 1-4)");
+  if (!isInt(t.resolve) || t.resolve < 0 || t.resolve > 10) bad(t, "resolve must be a whole number from 0 to 10");
   if (!MORALE[t.morale]) bad(t, "morale must be " + Object.keys(MORALE).join(" | "));
   if (!PROFILES[t.profile]) bad(t, "profile '" + t.profile + "' is not one resolve_behavior_profile knows (" + Object.keys(PROFILES).join(" | ") + ")");
   var a = t.attack || {};
@@ -127,6 +129,11 @@ function genTypeLabel(t) {
       L.push(set("move2_condition_icon", q(m.condition.icon)));
     }
   }
+  // Proficiency before the derived bonuses (apply_derived_combat_bonuses adds it to the attack roll). Slot 1's is also written to its numbered
+  // combat_enemy1_ slot, where Intimidate reads it, like resolve.
+  L.push(set("prof", t.proficiency));
+  L.push("*set {((\"combat_enemy\" & combat_apply_slot) & \"_prof\")} " + t.proficiency);
+  L.push("*set {((\"combat_enemy\" & combat_apply_slot) & \"_resolve\")} " + t.resolve);
   ABILITIES.forEach(function (k) {
     L.push("*gosub apply_ability_score_range apt_p " + q(k) + " " + t.abilities[k][0] + " " + t.abilities[k][1]);
   });
