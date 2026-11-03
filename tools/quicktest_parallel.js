@@ -3,7 +3,9 @@
  * quicktest_parallel.js -- the game's quicktest split across every CPU core, or run on just the scenes a change touched.
  *
  *   node tools/quicktest_parallel.js                    every scene the full quicktest walks, spread over all cores
- *   node tools/quicktest_parallel.js --changed          only the scenes changed since main (committed or not), plus every scene that jumps or calls into one
+ *   node tools/quicktest_parallel.js --since-pass       only the scenes whose text changed since they last PASSED here, plus every scene that jumps or calls
+ *                                                       into one. Needs no git: it compares the files with a note this tool saves after each passing run.
+ *   node tools/quicktest_parallel.js --changed          only the scenes changed since main in git (committed or not), plus their callers
  *   node tools/quicktest_parallel.js --changed=<ref>    the same, against another branch or commit
  *   node tools/quicktest_parallel.js --jobs=2 [...]     use 2 workers instead of one per core
  *   node tools/quicktest_parallel.js combat combat_types   just these scenes, spread over the cores (the same as quicktest_scene.js, faster for several)
@@ -18,12 +20,15 @@
  * so a scene entered only at a label is walked there). Every worker also walks startup first, for its *create lines; that takes under a second.
  * A change to startup (or startup_parts/) can affect any scene, so --changed then tests everything.
  * Each worker's full output goes to a log file, named in the summary. Exit code 1 when any worker fails.
+ * After a run passes, the tool notes a fingerprint of every scene it tested (and startup) in tools/.quicktest-pass.json (git ignores it); a failed run notes
+ * nothing, so --since-pass keeps re-testing a scene until it passes. With no note yet, --since-pass tests every scene once.
  */
 "use strict";
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const cp = require("child_process");
+const crypto = require("crypto");
 
 const ROOT = path.resolve(__dirname, "..");
 const SCENES = path.join(ROOT, "web", "mygame", "scenes");
@@ -31,10 +36,13 @@ const SCENES = path.join(ROOT, "web", "mygame", "scenes");
 // ---------------------------------------------------------------- arguments
 let jobs = os.cpus().length || 2;
 let changedBase = null;
+let sincePass = false;
+const PASS_FILE = path.join(__dirname, ".quicktest-pass.json");
 const named = [];
 process.argv.slice(2).forEach((a) => {
   let m;
   if ((m = a.match(/^--jobs=(\d+)$/))) jobs = Math.max(1, +m[1]);
+  else if (a === "--since-pass") sincePass = true;
   else if (a === "--changed") changedBase = "";
   else if ((m = a.match(/^--changed=(.+)$/))) changedBase = m[1];
   else if (a === "--help" || a === "-h") { console.log(fs.readFileSync(__filename, "utf8").split("*/")[0]); process.exit(0); }
@@ -78,6 +86,16 @@ function reachable() {
   return [...seen];
 }
 const all = reachable();
+// A scene's fingerprint: its text, with Windows line endings read as plain ones so a checkout on either system matches.
+function fingerprint(scene) {
+  return crypto.createHash("sha1").update(read(scene).replace(/\r\n/g, "\n")).digest("hex");
+}
+function readPassNote() {
+  try { return JSON.parse(fs.readFileSync(PASS_FILE, "utf8")).scenes || {}; } catch (e) { return {}; }
+}
+function callersOf(changed) {
+  return all.filter((s) => !changed.has(s) && exists(s) && targetsOf(read(s)).some((t) => changed.has(t)));
+}
 
 // ---------------------------------------------------------------- which scenes to test
 let scenes;
@@ -85,8 +103,26 @@ let why;
 if (named.length) {
   scenes = named;
   why = "the scenes named";
+} else if (sincePass) {
+  const note = readPassNote();
+  if (!Object.keys(note).length) {
+    scenes = all;
+    why = "no passing run noted yet, so every scene is tested once";
+  } else if (note.startup !== fingerprint("startup")) {
+    scenes = all;
+    why = "startup changed since its last pass, which can affect every scene";
+  } else {
+    const changed = new Set(all.filter((s) => s !== "startup" && exists(s) && note[s] !== fingerprint(s)));
+    const callers = callersOf(changed);
+    scenes = [...changed].concat(callers);
+    why = changed.size + " scene(s) changed since they last passed" + (changed.size ? " (" + [...changed].join(", ") + ")" : "") +
+      ", plus " + callers.length + " that jump or call into them";
+  }
 } else if (changedBase !== null) {
-  const git = (args) => cp.execFileSync("git", args, { cwd: ROOT, encoding: "utf8" }).trim();
+  const git = (args) => {
+    try { return cp.execFileSync("git", args, { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim(); }
+    catch (e) { console.error("--changed needs git and a git checkout of the game (" + String(e.message).split("\n")[0] + ").\nUse --since-pass instead: it needs no git."); process.exit(2); }
+  };
   let base = changedBase;
   if (!base) {
     base = ["origin/main", "main", "origin/master", "master"].find((b) => { try { git(["rev-parse", "--verify", "-q", b]); return true; } catch (e) { return false; } });
@@ -107,7 +143,7 @@ if (named.length) {
     scenes = all;
     why = "startup changed since " + base + ", which can affect every scene";
   } else {
-    const callers = all.filter((s) => !changed.has(s) && exists(s) && targetsOf(read(s)).some((t) => changed.has(t)));
+    const callers = callersOf(changed);
     scenes = [...changed].filter(exists).concat(callers);
     why = changed.size + " scene(s) changed since " + base + (changed.size ? " (" + [...changed].join(", ") + ")" : "") +
       ", plus " + callers.length + " that jump or call into them";
@@ -186,5 +222,13 @@ Promise.all(runs).then((results) => {
     console.log("\nQUICKTEST FAILED in " + secs + "s:\n  " + failures.join("\n  "));
     process.exit(1);
   }
+  // Note what passed, for --since-pass. Every worker walked startup too, so it passed as well.
+  let note = readPassNote();
+  // Under a changed startup, only the scenes this run walked are known to pass.
+  if (note.startup !== fingerprint("startup")) note = {};
+  scenes.concat(["startup"]).forEach((s) => { note[s] = fingerprint(s); });
+  try {
+    fs.writeFileSync(PASS_FILE, JSON.stringify({ readme: "Written by tools/quicktest_parallel.js after each passing run; read by --since-pass. Safe to delete.", scenes: note }, null, 1) + "\n");
+  } catch (e) { console.log("(could not save the pass note: " + e.message + ")"); }
   console.log("\nQUICKTEST PASSED: " + scenes.length + " scene(s) in " + secs + "s on " + jobs + " worker(s).");
 });
