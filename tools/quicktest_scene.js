@@ -9,6 +9,8 @@
  * into is walked too (autotest.js scans every scene file for those entry labels), so a scene that is only ever reached at a label is covered, not skipped. What it does not do is walk
  * the scenes that call yours, so a change that breaks a CALLER (a label renamed, a *params changed) still needs the full `node quicktest.js` before a commit.
  * `--all` runs the whole game's quicktest instead (several minutes), always from the project folder.
+ * For the everyday pre-commit check use tools/quicktest_parallel.js --changed (the scenes changed since main plus their callers, on every core),
+ * and tools/quicktest_parallel.js alone for the whole game in a fraction of the single-core time.
  * Exit code 1 when the run fails.
  */
 const path = require('path');
