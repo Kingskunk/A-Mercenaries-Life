@@ -868,6 +868,19 @@
   *set {(fc_p & "stun_left")} 0
   *set {(fc_p & "stun_page")} 0
   *set {(fc_p & "stun_kind")} ""
+  *comment Target scoring's memory (2026-11-03): who last hit this slot, and who it went for.
+  *set {(fc_p & "last_hit_kind")} ""
+  *set {(fc_p & "last_hit_slot")} 0
+  *set {(fc_p & "last_hit_round")} 0
+  *set {(fc_p & "target_kind")} ""
+  *set {(fc_p & "target_slot")} 0
+  *set {(fc_p & "target_page")} 0
+  *set {(fc_p & "prev_target_kind")} ""
+  *set {(fc_p & "prev_target_slot")} 0
+  *set {(fc_p & "last_hit_page")} 0
+  *set {(fc_p & "prev_hit_kind")} ""
+  *set {(fc_p & "prev_hit_slot")} 0
+  *set {(fc_p & "prev_hit_round")} 0
   *set {(fc_p & "stun_v")} 1
   *set {(fc_p & "stun_last_round")} 0
   *set {(fc_p & "grease_page")} 0
@@ -968,6 +981,22 @@
   *comment Reaction asymmetry (2026-09-29, plan §4.5/Phase 5) -- same leftover-state reason as the enemy-side
   *comment oa_used reset above.
   *set {(("combat_ally" & fc_a_i) & "_oa_used")} false
+  *comment A stun (2026-11-03) never carries into the next fight.
+  *set {(("combat_ally" & fc_a_i) & "_stunned")} 0
+  *set {(("combat_ally" & fc_a_i) & "_stun_page")} 0
+  *set {(("combat_ally" & fc_a_i) & "_stun_last_round")} 0
+  *set {(("combat_ally" & fc_a_i) & "_last_hit_kind")} ""
+  *set {(("combat_ally" & fc_a_i) & "_last_hit_slot")} 0
+  *set {(("combat_ally" & fc_a_i) & "_last_hit_round")} 0
+  *set {(("combat_ally" & fc_a_i) & "_target_kind")} ""
+  *set {(("combat_ally" & fc_a_i) & "_target_slot")} 0
+  *set {(("combat_ally" & fc_a_i) & "_target_page")} 0
+  *set {(("combat_ally" & fc_a_i) & "_prev_target_kind")} ""
+  *set {(("combat_ally" & fc_a_i) & "_prev_target_slot")} 0
+  *set {(("combat_ally" & fc_a_i) & "_last_hit_page")} 0
+  *set {(("combat_ally" & fc_a_i) & "_prev_hit_kind")} ""
+  *set {(("combat_ally" & fc_a_i) & "_prev_hit_slot")} 0
+  *set {(("combat_ally" & fc_a_i) & "_prev_hit_round")} 0
   *comment Commit-and-chase, ally side (2026-09-29, plan §11.3/6a) -- same leftover-state reason as _range/_target
   *comment just above.
   *set {(("combat_ally" & fc_a_i) & "_chase_target")} 0
@@ -981,6 +1010,13 @@
   *set {(("combat_ally" & fc_a_i) & "_flee_hp_pct")} 0
   *set fc_a_i + 1
   *goto fight_cleanup_ally_loop
+*set player_last_hit_kind ""
+*set player_last_hit_slot 0
+*set player_last_hit_round 0
+*set player_last_hit_page 0
+*set player_prev_hit_kind ""
+*set player_prev_hit_slot 0
+*set player_prev_hit_round 0
 *set combat_player_keyed false
 *set combat_player_creature false
 *set combat_player_actions_max 1
@@ -1558,7 +1594,8 @@
 *comment This is the same decision as the per-round cap on combat_enemyN_oa_used, and the two together mean a
 *comment single enemy can hurt you at most once per round no matter how much you move around it.
 *comment
-*comment CANDIDATE RULES, all four required: living; melee weapon_type (a 5e opportunity attack is a MELEE
+*comment CANDIDATE RULES, all required. Able to react at all (combat_dice.txt combat_can_react, 2026-11-03: living, its reaction for this round still
+*comment spare, and not stunned -- a stunned enemy takes no swing until its stun has run out); melee weapon_type (a 5e opportunity attack is a MELEE
 *comment attack, and a ranged enemy already at melee suffers the close-range disadvantage penalty instead, so
 *comment giving it a parting shot too would double-punish the same approach); range 0, i.e. actually in reach of
 *comment the player, which is the entire trigger; and oa_used false, its reaction for this round still spare.
@@ -1575,8 +1612,8 @@
   *temp foa_hp {(("combat_enemy" & foa_i) & "_hp")}
   *temp foa_weapon {(("combat_enemy" & foa_i) & "_weapon_type")}
   *temp foa_range {(("combat_enemy" & foa_i) & "_range")}
-  *temp foa_oa {(("combat_enemy" & foa_i) & "_oa_used")}
-  *if ((((foa_hp > 0) and ((foa_weapon = "melee") or (foa_weapon = "reach"))) and (foa_range <= 0)) and (foa_oa = false))
+  *gosub_scene combat_dice combat_can_react "enemy" foa_i
+  *if (((combat_can_react_ok) and ((foa_weapon = "melee") or (foa_weapon = "reach"))) and (foa_range <= 0))
     *if ((combat_oa_candidate = 0) or (foa_hp < foa_best_hp))
       *set combat_oa_candidate foa_i
       *set foa_best_hp foa_hp
@@ -1653,9 +1690,11 @@
 *comment back to the lowest-HP eligible melee ally (same tiebreak as everywhere else in this file) only if the
 *comment player itself isn't eligible -- "whoever's pool is left," per the plan's own framing, not a competition
 *comment between them.
+*comment Who may react at all is combat_dice.txt combat_can_react (2026-11-03): a stunned player, or ally, has no reactions, RAW, so the chance passes on.
 *set combat_oa_against_kind ""
 *set combat_oa_against_slot 0
-*if (((((weapon_type = "melee") or (weapon_type = "finesse")) or (weapon_type = "reach")) and (combat_enemy_range <= 0)) and (not(player_oa_used)))
+*gosub_scene combat_dice combat_can_react "player" 0
+*if (((((weapon_type = "melee") or (weapon_type = "finesse")) or (weapon_type = "reach")) and (combat_enemy_range <= 0)) and (combat_can_react_ok))
   *set combat_oa_against_kind "player"
 *else
   *temp foaa_best_hp 0
@@ -1665,8 +1704,8 @@
     *temp foaa_hp {(("combat_ally" & foaa_i) & "_hp")}
     *temp foaa_weapon {(("combat_ally" & foaa_i) & "_weapon_type")}
     *temp foaa_range {(("combat_ally" & foaa_i) & "_range")}
-    *temp foaa_oa {(("combat_ally" & foaa_i) & "_oa_used")}
-    *if ((((foaa_hp > 0) and ((foaa_weapon = "melee") or (foaa_weapon = "reach"))) and (foaa_range <= 0)) and (not(foaa_oa)))
+    *gosub_scene combat_dice combat_can_react "ally" foaa_i
+    *if (((combat_can_react_ok) and ((foaa_weapon = "melee") or (foaa_weapon = "reach"))) and (foaa_range <= 0))
       *if ((combat_oa_against_slot = 0) or (foaa_hp < foaa_best_hp))
         *set combat_oa_against_slot foaa_i
         *set foaa_best_hp foaa_hp
@@ -1989,12 +2028,10 @@
   *gosub_scene combat_prose fight_narrate_ally_attack "ally" dacs_slot "enemy" dacs_target combat_ally_atk_hit
   *comment Arrived and fought -- Layer 1's ordinary select_ally_attack_target takes back over from here, not
   *comment locked onto this one enemy for the rest of the fight. Unlike the enemy side's own chase (which only
-  *comment ever attacks an ally, never changing the enemy count), this attack CAN kill an enemy, so the usual
-  *comment death/victory check applies here.
+  *comment ever attacks an ally, never changing the enemy count), this attack CAN kill an enemy, so the CALLERS run the
+  *comment death/victory check right after this *gosub (2026-11-03): fight_victory's *return must return from the fight, and from inside this
+  *comment subroutine it returned from the subroutine instead ("invalid return" the moment a chase landed the last blow).
   *set {(dacs_p & "chase_target")} 0
-  *gosub fight_check_all_dead
-  *if (combat_all_enemies_dead)
-    *goto fight_victory
 *else
   *if (dacs_rv = 1)
     $!{combat_attacker_epithet} peels away from the melee, driving hard toward ${dacs_enemy_epithet} instead.
@@ -5364,9 +5401,16 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *comment STUN GATE (2026-11-01). Called at the start of an enemy's turn: when combat_enemyN_stunned is above 0 the enemy loses the turn, the count drops by one, and combat_stun_stop is true. The finished result is stored against the page id (_stun_page, _stun_left, _stun_v), so a replay of the page
 *comment prints the same line and never counts a second turn. _stun_last_round marks the round of the last lost turn, which combat_attack_edge (combat_dice.txt) reads. The lines depend on _stun_kind: "memory" is the Philter of Remembrance.
 *label combat_stun_gate
-*params sg_slot
+*comment sg_side is "enemy" or "ally" (2026-11-03): an ally loses its turns to a stun exactly as an enemy does, through the same fields (combat_allyN_stunned and the rest).
+*params sg_side sg_slot
 *set combat_stun_stop false
 *temp sg_p (("combat_enemy" & sg_slot) & "_")
+*temp sg_epi combat_enemy_epithet
+*temp sg_name combat_enemy_name
+*if (sg_side = "ally")
+  *set sg_p (("combat_ally" & sg_slot) & "_")
+  *set sg_epi {(sg_p & "epithet")}
+  *set sg_name {(sg_p & "name")}
 *temp sg_n {(sg_p & "stunned")}
 *temp sg_page {(sg_p & "stun_page")}
 *temp sg_left 0
@@ -5388,24 +5432,25 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *if (combat_stun_stop)
   *if (sg_kind = "memory")
     *if (sg_v = 1)
-      $!{combat_enemy_epithet} stares at nothing, lips moving around a name, and the turn slips away.
+      $!{sg_epi} stares at nothing, lips moving around a name, and the turn slips away.
     *if (sg_v = 2)
-      $!{combat_enemy_epithet} sits back on their heels and rocks gently, lost in a scent that is not in the room.
+      $!{sg_epi} sits back on their heels and rocks gently, lost in a scent that is not in the room.
     *if (sg_v = 3)
-      A whimper rises from ${combat_enemy_epithet} as they reach for someone who is not there, and they make no move at you.
+      A whimper rises from ${sg_epi} as they reach for someone who is not there, and they make no move at anyone.
   *else
     *if (sg_v = 1)
-      $!{combat_enemy_epithet} stands dazed and swaying, and the turn goes by.
+      $!{sg_epi} stands dazed and swaying, and the turn goes by.
     *if (sg_v = 2)
-      $!{combat_enemy_epithet} blinks at nothing and does not move.
+      $!{sg_epi} blinks at nothing and does not move.
     *if (sg_v = 3)
-      $!{combat_enemy_epithet} shakes a heavy head and cannot gather itself to act.
+      $!{sg_epi} shakes a heavy head and cannot gather themselves to act.
   *line_break
   *if (sg_left > 0)
-    [b][💫 ${combat_enemy_name} is Stunned — turn lost | ${sg_left} more turn(s)][/b]
+    [b][💫 ${sg_name} is Stunned — turn lost | ${sg_left} more turn(s)][/b]
   *else
-    [b][💫 ${combat_enemy_name} is Stunned — turn lost | the daze is lifting][/b]
+    [b][💫 ${sg_name} is Stunned — turn lost | the daze is lifting][/b]
   *line_break
+  *set combat_turn_advanced_this_page true
 *return
 
 *label combat_grease_gate
@@ -5690,7 +5735,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *comment STUN (2026-11-01): a stunned enemy loses its turn before anything else is rolled for it (combat_stun_gate prints it and counts it down once per page).
     *temp cnt_stun_stop false
     *if (not((combat_player_surprise) and (cnt_first_pass)))
-      *gosub combat_stun_gate cnt_slot
+      *gosub combat_stun_gate "enemy" cnt_slot
       *set cnt_stun_stop combat_stun_stop
     *temp cnt_restrain_stop false
     *temp cnt_restrained {(("combat_enemy" & cnt_slot) & "_restrained_until")}
@@ -6130,6 +6175,10 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *comment Turn divider -- see the matching comment in the enemy branch above.
     ────────────────────
     *line_break
+    *comment STUN, ally side (2026-11-03): a stunned ally loses the turn before anything else, through the same gate as an enemy.
+    *gosub combat_stun_gate "ally" cnt_slot
+    *if (combat_stun_stop)
+      *goto combat_next_turn
     *temp cnt_a_chase_target {(("combat_ally" & cnt_slot) & "_chase_target")}
     *comment Ally-side rows 3-4 mirror (2026-09-29, on request): read fresh, before the chase check, since a
     *comment retreat/disengage decision needs this ally's OWN weapon/range/can_retreat -- unlike the shot-resolution
@@ -6172,6 +6221,9 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
         *set combat_turn_advanced_this_page true
       *else
         *gosub do_ally_chase_step cnt_slot
+        *gosub fight_check_all_dead
+        *if (combat_all_enemies_dead)
+          *goto fight_victory
     *elseif ((((cnt_ar_weapon = "ranged") and (cnt_ar_cornered)) and (cnt_ar_can_retreat)) and (cnt_ar_room))
       *comment Ally-side rows 3-4 mirror (2026-09-29, on request): a cornered ranged ally (weapon_type "ranged",
       *comment own range <= 0) that opted in (combat_ally<N>_can_retreat) with a melee ally already at range 0 to
@@ -6304,6 +6356,9 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
           *comment The one-roll commit-and-chase (roll_ally_chase_commit) is no longer called (2026-10-11): select_ally_attack_target already sends a melee ally at the NEAREST enemy, every turn, with no dice.
           *if ({(("combat_ally" & cnt_slot) & "_chase_target")} > 0)
             *gosub do_ally_chase_step cnt_slot
+            *gosub fight_check_all_dead
+            *if (combat_all_enemies_dead)
+              *goto fight_victory
           *else
             *comment Moves from the ally's REAL lane coordinate, one step toward its target in whichever direction that is (the old helper rebuilt the position from the stored range and only ever walked one way).
             *temp cnt_a_before_first_step {(("combat_ally" & cnt_slot) & "_position")}

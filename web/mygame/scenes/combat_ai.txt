@@ -406,71 +406,35 @@
 *return
 
 *label choose_melee_enemy_target
-*comment NEAREST-TARGET RULE (2026-10-11, on request): a melee enemy goes for the NEAREST opponent, whoever that is -- you or an ally -- by lane coordinate (combat_enemy<N>_position against
-*comment combat_lane_player_position and combat_ally<N>_position, the same coordinates the Battlefield strip draws), not for the player by default. A tie goes to the MOST WOUNDED by fraction of
-*comment maximum HP (cross-multiplied; this engine has no usable division), and if that is level too, to the lowest current HP -- the player counted like anyone else, so nobody gets special treatment. A hidden player is not a candidate (the hidden branch in combat_next_turn still covers an enemy with nobody else to go for).
-*comment It REPLACES find_intercepting_ally's "any ally in the engaged bucket" test for melee enemies (ranged enemies keep that label's own rules; they are a later step) and the old
-*comment one-roll commit-and-chase, which is no longer called for melee enemies: the nearest target IS the chase, every turn, with no dice.
-*comment Output: an ally at distance 0 goes in combat_intercepting_ally (the existing attack-the-ally branch takes it from there); an ally farther off goes in combat_enemy_goal_ally (the new
-*comment closing branch in combat_next_turn); the player, or nobody, leaves both 0 and the enemy behaves exactly as it always did.
+*comment A MELEE ENEMY'S TARGET (2026-11-03: target scoring, combat_score_targets below, replaces 2026-10-11's nearest-opponent rule). It may go for
+*comment anyone, the player (unless hidden) or any ally, and it closes on whoever it picks. Its profile decides how much the factors weigh: a feral
+*comment beast goes for the nearest or whoever just hurt it, a skirmisher slips round to a soft or isolated target, and so on.
+*comment Output: an ally at distance 0 goes in combat_intercepting_ally (the existing attack-the-ally branch takes it from there); an ally farther off
+*comment goes in combat_enemy_goal_ally (the closing branch in combat_next_turn); the player, or nobody, leaves both 0 and the enemy behaves exactly
+*comment as it always did against the player.
 *params cmet_slot
 *set combat_intercepting_ally 0
 *set combat_enemy_goal_ally 0
-*temp cmet_epos {(("combat_enemy" & cmet_slot) & "_position")}
-*temp cmet_best_d 999
-*temp cmet_best_hp 0
-*temp cmet_best_max 1
-*temp cmet_best_slot 0
-*temp cmet_found false
-*temp cmet_player_best false
-*if (not(combat_player_hidden))
-  *temp cmet_pd (cmet_epos - combat_lane_player_position)
-  *if (cmet_pd < 0)
-    *set cmet_pd (0 - cmet_pd)
-  *set cmet_best_d cmet_pd
-  *set cmet_best_hp hp_current
-  *set cmet_best_max hp_max
-  *set cmet_found true
-  *set cmet_player_best true
-*temp cmet_i 1
-*label choose_melee_enemy_target_loop
-*if (cmet_i <= combat_ally_slot_cap)
-  *temp cmet_hp {(("combat_ally" & cmet_i) & "_hp")}
-  *if (cmet_hp > 0)
-    *temp cmet_apos {(("combat_ally" & cmet_i) & "_position")}
-    *temp cmet_max {(("combat_ally" & cmet_i) & "_max_hp")}
-    *temp cmet_ad (cmet_epos - cmet_apos)
-    *if (cmet_ad < 0)
-      *set cmet_ad (0 - cmet_ad)
-    *temp cmet_lt ((cmet_hp * cmet_best_max) < (cmet_best_hp * cmet_max))
-    *temp cmet_eq ((cmet_hp * cmet_best_max) = (cmet_best_hp * cmet_max))
-    *if (((not(cmet_found)) or (cmet_ad < cmet_best_d)) or ((cmet_ad = cmet_best_d) and ((cmet_lt) or ((cmet_eq) and (cmet_hp < cmet_best_hp)))))
-      *set cmet_found true
-      *set cmet_player_best false
-      *set cmet_best_d cmet_ad
-      *set cmet_best_hp cmet_hp
-      *set cmet_best_max cmet_max
-      *set cmet_best_slot cmet_i
-  *set cmet_i + 1
-  *goto choose_melee_enemy_target_loop
-*if ((cmet_found) and (not(cmet_player_best)))
-  *if (cmet_best_d <= 0)
-    *set combat_intercepting_ally cmet_best_slot
+*gosub combat_score_targets "enemy" cmet_slot 999 false
+*gosub combat_ai_note_target "enemy" cmet_slot
+*if (combat_score_best_kind = "ally")
+  *if (combat_score_best_d <= 0)
+    *set combat_intercepting_ally combat_score_best_slot
   *else
-    *set combat_enemy_goal_ally cmet_best_slot
+    *set combat_enemy_goal_ally combat_score_best_slot
 *return
 
 *label choose_ranged_enemy_target
-*comment RANGED TARGET RULE (2026-10-11, step 3 of the nearest-target pass, on request). A ranged enemy has no use for distance, so it does not pick the NEAREST opponent; it picks the MOST WOUNDED by fraction of
-*comment maximum HP (cross-multiplied; no usable division here), the nearest as the tiebreak, then the lowest current HP -- the player counted like anyone, a hidden player not at all.
-*comment "Adjacent" means the SAME lane tile (Engaged). If any opponent shares this enemy's tile the enemy is CORNERED (combat_ranged_cornered), and the choice is limited to the opponents in its tile (it stabs
-*comment the one beside it, or, if it opted in with can_retreat, combat_next_turn has it step back first and calls this again). Otherwise every opponent is a clear shot.
-*comment Output: an ALLY target goes in combat_intercepting_ally (the existing attack-the-ally branch fires the shot); the player, or nobody, leaves it 0 and the enemy shoots the player as it always did.
-*comment This REPLACES find_intercepting_ally's Mechanisms A and B for ranged enemies (they chose by the shared "range bucket" and by lowest HP among ranged allies, never by lane position).
+*comment A RANGED ENEMY'S TARGET (2026-11-03: target scoring, combat_score_targets below, replaces 2026-10-11's most-wounded rule). Only opponents
+*comment within its own reach are candidates (2026-10-23: a slinger or a hedge-mage is medium, everything else long), and a hidden player never is.
+*comment "Adjacent" means the SAME lane tile (Engaged): if any opponent shares this enemy's tile it is CORNERED (combat_ranged_cornered) and only the
+*comment opponents in its tile are candidates (it stabs the one beside it, or, if it opted in with can_retreat, combat_next_turn has it step back first
+*comment and calls this again). With nobody in reach the enemy falls through to its closing step, as before.
+*comment Output: an ALLY target goes in combat_intercepting_ally (the existing attack-the-ally branch fires the shot); the player, or nobody, leaves it
+*comment 0 and the enemy shoots the player as it always did.
 *params crt_slot
 *set combat_intercepting_ally 0
 *set combat_ranged_cornered false
-*comment REACH (2026-10-23, the user): an opponent beyond this enemy's own reach is not a candidate, whether it is the player or an ally (a slinger or a hedge-mage is medium, everything else long = anywhere, so those are unchanged). With nobody in reach the enemy falls through to its closing step in combat_next_turn.
 *temp crt_rcls {(("combat_enemy" & crt_slot) & "_reach")}
 *gosub_scene combat_movement combat_reach_tier crt_rcls
 *temp crt_tier combat_reach_tier_result
@@ -489,39 +453,257 @@
     *set combat_ranged_cornered true
   *set crt_i + 1
   *goto choose_ranged_enemy_target_corner_loop
-*temp crt_found false
-*temp crt_best_slot 0
-*temp crt_best_d 999
-*temp crt_best_hp 0
-*temp crt_best_max 1
-*if (((not(combat_player_hidden)) and ((not(combat_ranged_cornered)) or (crt_pd <= 0))) and (crt_pd <= crt_tier))
-  *set crt_found true
-  *set crt_best_d crt_pd
-  *set crt_best_hp hp_current
-  *set crt_best_max hp_max
-*set crt_i 1
-*label choose_ranged_enemy_target_pick_loop
-*if (crt_i <= combat_ally_slot_cap)
-  *temp crt_hp {(("combat_ally" & crt_i) & "_hp")}
-  *if (crt_hp > 0)
-    *temp crt_max {(("combat_ally" & crt_i) & "_max_hp")}
-    *temp crt_apos {(("combat_ally" & crt_i) & "_position")}
-    *temp crt_d (crt_epos - crt_apos)
-    *if (crt_d < 0)
-      *set crt_d (0 - crt_d)
-    *if (((not(combat_ranged_cornered)) or (crt_d <= 0)) and (crt_d <= crt_tier))
-      *temp crt_lt ((crt_hp * crt_best_max) < (crt_best_hp * crt_max))
-      *temp crt_eq ((crt_hp * crt_best_max) = (crt_best_hp * crt_max))
-      *if (((not(crt_found)) or (crt_lt)) or ((crt_eq) and ((crt_d < crt_best_d) or ((crt_d = crt_best_d) and (crt_hp < crt_best_hp)))))
-        *set crt_found true
-        *set crt_best_slot crt_i
-        *set crt_best_d crt_d
-        *set crt_best_hp crt_hp
-        *set crt_best_max crt_max
-  *set crt_i + 1
-  *goto choose_ranged_enemy_target_pick_loop
-*if ((crt_found) and (crt_best_slot > 0))
-  *set combat_intercepting_ally crt_best_slot
+*gosub combat_score_targets "enemy" crt_slot crt_tier combat_ranged_cornered
+*gosub combat_ai_note_target "enemy" crt_slot
+*if (combat_score_best_kind = "ally")
+  *set combat_intercepting_ally combat_score_best_slot
+*return
+
+*comment After a pick: remember it (the "current" factor next turn) and, while combat_ai_explain is on, say why under the actor's turn.
+*label combat_ai_note_target
+*params cant_kind cant_slot
+*if (combat_score_best_kind = "")
+  *return
+*temp cant_p (("combat_enemy" & cant_slot) & "_")
+*if (cant_kind = "ally")
+  *set cant_p (("combat_ally" & cant_slot) & "_")
+*comment The same two-record rule as the hits (combat_dice.txt record_last_hit): the pick from an earlier page moves to prev_target_* first.
+*if (not({(cant_p & "target_page")} = page_id))
+  *set {(cant_p & "prev_target_kind")} {(cant_p & "target_kind")}
+  *set {(cant_p & "prev_target_slot")} {(cant_p & "target_slot")}
+*set {(cant_p & "target_kind")} combat_score_best_kind
+*set {(cant_p & "target_slot")} combat_score_best_slot
+*set {(cant_p & "target_page")} page_id
+*if (combat_ai_explain)
+  *temp cant_who "you"
+  *if (combat_score_best_kind = "ally")
+    *set cant_who {(("combat_ally" & combat_score_best_slot) & "_name")}
+  *if (combat_score_best_kind = "enemy")
+    *set cant_who {(("combat_enemy" & combat_score_best_slot) & "_name")}
+  *temp cant_name {(cant_p & "name")}
+  [b][🧠 ${cant_name} → ${cant_who}: ${combat_score_reason}][/b]
+  *line_break
+*return
+
+*comment ============================================================================
+*comment TARGET SCORING (2026-11-03, the user: "build all seven, including payback"). ONE routine picks who an enemy or an ally attacks. Every
+*comment opponent it may attack scores points on seven factors, each worth 0 to 10 before the actor's behaviour profile weighs it (combat_types.txt
+*comment resolve_behavior_profile, the combat_behavior_tw_* weights), and the highest total wins:
+*comment   close     10 on its own tile, 2 fewer for each step away
+*comment   wounded   how much of its maximum HP it has lost, in tenths
+*comment   drop      10 when its HP is at or below this actor's average hit (it can be finished this turn)
+*comment   payback   10 when it is the one that last hurt this actor (this round or the last); a guardian also counts a hit on anyone of its side
+*comment             (combat_behavior_tw_guard), so it turns on whoever is hurting its friends
+*comment   soft      10 for a spellcaster or a ranged fighter
+*comment   isolated  10 when none of its own side stands within one step of it
+*comment   current   10 for the target this actor went for last time, so nobody switches every turn on a near tie
+*comment A tie goes to the nearer, then the one with fewer HP, then the first found (the player, then allies or enemies by slot).
+*comment The callers keep their own limits: a ranged actor only considers opponents within its reach (cst_tier) and, when cornered, only those on its
+*comment own tile (cst_cornered); a hidden player is never a candidate. With nobody eligible the result is empty and the caller does what it always did.
+*comment Output: combat_score_best_kind ("player", "ally", "enemy" or ""), combat_score_best_slot, combat_score_best_d (the distance to it) and
+*comment combat_score_reason (the factors that counted, e.g. "isolated 20, close 8"), printed under the actor's turn while combat_ai_explain is on.
+*comment Payback reads <slot>_last_hit_kind/_slot/_round, written where damage lands (combat_dice.txt); current reads <slot>_target_kind/_slot,
+*comment written by the callers once they have picked.
+*label combat_score_targets
+*params cst_kind cst_slot cst_tier cst_cornered
+*set combat_score_best_kind ""
+*set combat_score_best_slot 0
+*set combat_score_best_d 999
+*set combat_score_reason ""
+*temp cst_p (("combat_enemy" & cst_slot) & "_")
+*if (cst_kind = "ally")
+  *set cst_p (("combat_ally" & cst_slot) & "_")
+*temp cst_pos {(cst_p & "position")}
+*temp cst_profile {(cst_p & "behavior_profile")}
+*temp cst_weapon {(cst_p & "weapon_type")}
+*gosub_scene combat_types resolve_behavior_profile cst_profile cst_weapon
+*comment Twice this actor's average hit, so the drop test stays in whole numbers: HP x 2 <= sides + 1 + 2 x bonus.
+*temp cst_avg2 (({(cst_p & "dmg_dice_sides")} + 1) + (2 * {(cst_p & "dmg_bonus")}))
+*comment Who hurt this actor, as known before this page (combat_dice.txt record_last_hit explains the two records), and who it went for on an
+*comment earlier page: both read the same on a refreshed page as they did the first time.
+*gosub combat_score_hit_of cst_p
+*temp cst_hit_kind combat_score_hit_kind
+*temp cst_hit_slot combat_score_hit_slot
+*if (combat_score_hit_round < (combat_round - 1))
+  *set cst_hit_kind ""
+*temp cst_cur_kind {(cst_p & "target_kind")}
+*temp cst_cur_slot {(cst_p & "target_slot")}
+*if ({(cst_p & "target_page")} = page_id)
+  *set cst_cur_kind {(cst_p & "prev_target_kind")}
+  *set cst_cur_slot {(cst_p & "prev_target_slot")}
+*temp cst_best_score (0 - 1)
+*temp cst_best_hp 0
+*temp cst_i 1
+*if (cst_kind = "enemy")
+  *if (not(combat_player_hidden))
+    *gosub combat_score_one "player" 0
+  *label combat_score_targets_ally_loop
+  *if (cst_i <= combat_ally_slot_cap)
+    *if ({(("combat_ally" & cst_i) & "_hp")} > 0)
+      *gosub combat_score_one "ally" cst_i
+    *set cst_i + 1
+    *goto combat_score_targets_ally_loop
+*else
+  *label combat_score_targets_enemy_loop
+  *if (cst_i <= combat_enemy_count)
+    *if ({(("combat_enemy" & cst_i) & "_hp")} > 0)
+      *gosub combat_score_one "enemy" cst_i
+    *set cst_i + 1
+    *goto combat_score_targets_enemy_loop
+*return
+
+*comment The record of who last hurt the combatant with prefix csho_p, as it stood before this page.
+*label combat_score_hit_of
+*params csho_p
+*set combat_score_hit_kind {(csho_p & "last_hit_kind")}
+*set combat_score_hit_slot {(csho_p & "last_hit_slot")}
+*set combat_score_hit_round {(csho_p & "last_hit_round")}
+*if ({(csho_p & "last_hit_page")} = page_id)
+  *set combat_score_hit_kind {(csho_p & "prev_hit_kind")}
+  *set combat_score_hit_slot {(csho_p & "prev_hit_slot")}
+  *set combat_score_hit_round {(csho_p & "prev_hit_round")}
+*return
+
+*comment One candidate for combat_score_targets (same scene, so it reads that label's cst_* temps). Fixed prefixes, never one built from cso_kind:
+*comment quicktest walks every branch whatever the values.
+*label combat_score_one
+*params cso_kind cso_slot
+*temp cso_p (("combat_enemy" & cso_slot) & "_")
+*if (cso_kind = "ally")
+  *set cso_p (("combat_ally" & cso_slot) & "_")
+*temp cso_hp {(cso_p & "hp")}
+*temp cso_max {(cso_p & "max_hp")}
+*temp cso_pos {(cso_p & "position")}
+*temp cso_w {(cso_p & "weapon_type")}
+*temp cso_prof {(cso_p & "behavior_profile")}
+*temp cso_soft (((cso_w = "ranged") or (cso_prof = "caster")) or (cso_prof = "sharpshooter"))
+*if (cso_kind = "player")
+  *set cso_hp hp_current
+  *set cso_max hp_max
+  *set cso_pos combat_lane_player_position
+  *set cso_soft ((((weapon_type = "ranged") or (character_class = "wizard")) or ((character_class = "sorcerer") or (character_class = "warlock"))) or (character_class = "bard"))
+*if (cso_max < 1)
+  *set cso_max 1
+*temp cso_d (cso_pos - cst_pos)
+*if (cso_d < 0)
+  *set cso_d (0 - cso_d)
+*if ((cso_d > cst_tier) or ((cst_cornered) and (cso_d > 0)))
+  *return
+*comment close
+*temp cso_close (10 - (2 * cso_d))
+*if (cso_close < 0)
+  *set cso_close 0
+*comment wounded: lost HP in tenths of the maximum, rounded down (this engine's / does not round, so the remainder comes off first)
+*temp cso_lost ((cso_max - cso_hp) * 10)
+*temp cso_wounded ((cso_lost - (cso_lost modulo cso_max)) / cso_max)
+*comment drop
+*temp cso_drop 0
+*if ((cso_hp * 2) <= cst_avg2)
+  *set cso_drop 10
+*comment payback, and the guardian's payback on behalf of its side
+*temp cso_payback 0
+*if ((cst_hit_kind = cso_kind) and (cst_hit_slot = cso_slot))
+  *set cso_payback 10
+*temp cso_guard 0
+*temp cso_j 1
+*temp cso_glimit combat_enemy_count
+*if (cst_kind = "ally")
+  *set cso_glimit combat_ally_slot_cap
+*if (combat_behavior_tw_guard > 0)
+  *if (cst_kind = "ally")
+    *temp cso_pk player_last_hit_kind
+    *temp cso_ps player_last_hit_slot
+    *temp cso_pr player_last_hit_round
+    *if (player_last_hit_page = page_id)
+      *set cso_pk player_prev_hit_kind
+      *set cso_ps player_prev_hit_slot
+      *set cso_pr player_prev_hit_round
+    *if (((cso_pk = cso_kind) and (cso_ps = cso_slot)) and (cso_pr >= (combat_round - 1)))
+      *set cso_guard 10
+  *label combat_score_one_guard_loop
+  *if (cso_j <= cso_glimit)
+    *temp cso_gp (("combat_enemy" & cso_j) & "_")
+    *if (cst_kind = "ally")
+      *set cso_gp (("combat_ally" & cso_j) & "_")
+    *if ((not(cso_j = cst_slot)) and ({(cso_gp & "hp")} > 0))
+      *gosub combat_score_hit_of cso_gp
+      *if (((combat_score_hit_kind = cso_kind) and (combat_score_hit_slot = cso_slot)) and (combat_score_hit_round >= (combat_round - 1)))
+        *set cso_guard 10
+    *set cso_j + 1
+    *goto combat_score_one_guard_loop
+*comment soft
+*temp cso_softv 0
+*if (cso_soft)
+  *set cso_softv 10
+*comment isolated: none of the candidate's own side within one step (the player and allies are one side, the enemies the other)
+*temp cso_isolated 10
+*temp cso_fpos 0
+*if (not(cso_kind = "enemy"))
+  *if (cso_kind = "ally")
+    *set cso_fpos (combat_lane_player_position - cso_pos)
+    *if (((cso_fpos <= 1) and (cso_fpos >= (0 - 1))) and (hp_current > 0))
+      *set cso_isolated 0
+  *set cso_j 1
+  *label combat_score_one_ally_friends
+  *if (cso_j <= combat_ally_slot_cap)
+    *if ((not((cso_kind = "ally") and (cso_j = cso_slot))) and ({(("combat_ally" & cso_j) & "_hp")} > 0))
+      *set cso_fpos ({(("combat_ally" & cso_j) & "_position")} - cso_pos)
+      *if ((cso_fpos <= 1) and (cso_fpos >= (0 - 1)))
+        *set cso_isolated 0
+    *set cso_j + 1
+    *goto combat_score_one_ally_friends
+*else
+  *set cso_j 1
+  *label combat_score_one_enemy_friends
+  *if (cso_j <= combat_enemy_count)
+    *if ((not(cso_j = cso_slot)) and ({(("combat_enemy" & cso_j) & "_hp")} > 0))
+      *set cso_fpos ({(("combat_enemy" & cso_j) & "_position")} - cso_pos)
+      *if ((cso_fpos <= 1) and (cso_fpos >= (0 - 1)))
+        *set cso_isolated 0
+    *set cso_j + 1
+    *goto combat_score_one_enemy_friends
+*comment current
+*temp cso_current 0
+*if ((cst_cur_kind = cso_kind) and (cst_cur_slot = cso_slot))
+  *set cso_current 10
+*comment The total, each factor times the profile's weight for it.
+*temp cso_t_close (cso_close * combat_behavior_tw_close)
+*temp cso_t_wounded (cso_wounded * combat_behavior_tw_wounded)
+*temp cso_t_drop (cso_drop * combat_behavior_tw_drop)
+*temp cso_t_payback ((cso_payback * combat_behavior_tw_payback) + (cso_guard * combat_behavior_tw_guard))
+*temp cso_t_soft (cso_softv * combat_behavior_tw_soft)
+*temp cso_t_isolated (cso_isolated * combat_behavior_tw_isolated)
+*temp cso_t_current (cso_current * combat_behavior_tw_current)
+*temp cso_score ((((cso_t_close + cso_t_wounded) + (cso_t_drop + cso_t_payback)) + (cso_t_soft + cso_t_isolated)) + cso_t_current)
+*if (((cso_score > cst_best_score) or ((cso_score = cst_best_score) and (cso_d < combat_score_best_d))) or (((cso_score = cst_best_score) and (cso_d = combat_score_best_d)) and (cso_hp < cst_best_hp)))
+  *set cst_best_score cso_score
+  *set cst_best_hp cso_hp
+  *set combat_score_best_kind cso_kind
+  *set combat_score_best_slot cso_slot
+  *set combat_score_best_d cso_d
+  *comment The factors that counted, in a fixed order.
+  *temp cso_sep ""
+  *set combat_score_reason ""
+  *if (cso_t_payback > 0)
+    *set combat_score_reason "${combat_score_reason}${cso_sep}payback ${cso_t_payback}"
+    *set cso_sep ", "
+  *if (cso_t_drop > 0)
+    *set combat_score_reason "${combat_score_reason}${cso_sep}can drop ${cso_t_drop}"
+    *set cso_sep ", "
+  *if (cso_t_isolated > 0)
+    *set combat_score_reason "${combat_score_reason}${cso_sep}isolated ${cso_t_isolated}"
+    *set cso_sep ", "
+  *if (cso_t_soft > 0)
+    *set combat_score_reason "${combat_score_reason}${cso_sep}soft target ${cso_t_soft}"
+    *set cso_sep ", "
+  *if (cso_t_wounded > 0)
+    *set combat_score_reason "${combat_score_reason}${cso_sep}wounded ${cso_t_wounded}"
+    *set cso_sep ", "
+  *if (cso_t_close > 0)
+    *set combat_score_reason "${combat_score_reason}${cso_sep}close ${cso_t_close}"
+    *set cso_sep ", "
+  *if (cso_t_current > 0)
+    *set combat_score_reason "${combat_score_reason}${cso_sep}current ${cso_t_current}"
 *return
 
 *label combat_ai_ally_cornered
@@ -606,64 +788,19 @@
   *if (combat_active_target > 0)
     *gosub combat_ai_reseed_ally_range saat_slot combat_active_target
   *return
+*comment TARGET SCORING (2026-11-03): the same routine the enemies use (combat_score_targets), from the ally's side. A melee ally is a guardian, so
+*comment it weighs who is hurting the player or another ally most; a ranged ally is a sharpshooter. A ranged ally with an enemy in its own tile is
+*comment cornered and only considers the enemies there (resolve_ally_attack then draws the knife, because the ally's own range, re-derived below, is 0).
 *temp saat_weapon {(("combat_ally" & saat_slot) & "_weapon_type")}
 *temp saat_pref_target 0
+*temp saat_cornered false
 *if (saat_weapon = "ranged")
-  *comment RANGED ALLY (2026-10-11, step 3): the same rule as a ranged enemy (choose_ranged_enemy_target) -- the MOST WOUNDED enemy by fraction of maximum HP, the nearest to the ally as the tiebreak, then the
-  *comment lowest HP; the old "prefer a ranged enemy anywhere" is gone. If an enemy shares the ally's lane tile it is cornered, and only the enemies in its tile are candidates (resolve_ally_attack then
-  *comment draws the knife, because the ally's own range, re-derived below, is 0).
   *gosub combat_ai_ally_cornered saat_slot
-  *temp saat_rapos {(("combat_ally" & saat_slot) & "_position")}
-  *temp saat_rbest_d 999
-  *temp saat_rbest_hp 0
-  *temp saat_rbest_max 1
-  *temp saat_ri 1
-  *label select_ally_ranged_loop
-  *if (saat_ri <= combat_enemy_count)
-    *temp saat_rhp {(("combat_enemy" & saat_ri) & "_hp")}
-    *if (saat_rhp > 0)
-      *temp saat_rmax {(("combat_enemy" & saat_ri) & "_max_hp")}
-      *temp saat_repos {(("combat_enemy" & saat_ri) & "_position")}
-      *temp saat_rd (saat_rapos - saat_repos)
-      *if (saat_rd < 0)
-        *set saat_rd (0 - saat_rd)
-      *if ((not(combat_ally_cornered)) or (saat_rd <= 0))
-        *temp saat_rlt ((saat_rhp * saat_rbest_max) < (saat_rbest_hp * saat_rmax))
-        *temp saat_req ((saat_rhp * saat_rbest_max) = (saat_rbest_hp * saat_rmax))
-        *if (((saat_pref_target = 0) or (saat_rlt)) or ((saat_req) and ((saat_rd < saat_rbest_d) or ((saat_rd = saat_rbest_d) and (saat_rhp < saat_rbest_hp)))))
-          *set saat_pref_target saat_ri
-          *set saat_rbest_d saat_rd
-          *set saat_rbest_hp saat_rhp
-          *set saat_rbest_max saat_rmax
-    *set saat_ri + 1
-    *goto select_ally_ranged_loop
-*else
-  *comment NEAREST ENEMY (2026-10-11, step 2 of the nearest-target pass): a melee ally picks the enemy NEAREST to ITSELF by lane coordinate, not the one nearest the player's front (the old
-  *comment combat_enemy<N>_range tier is the enemy's distance to YOU, which says nothing about how far it is from this ally). A tie goes to the most wounded by fraction of maximum HP, then to the
-  *comment lowest current HP -- the same rule the melee enemies use (choose_melee_enemy_target). Ranged allies keep the branch above until their own step.
-  *temp saat_apos {(("combat_ally" & saat_slot) & "_position")}
-  *temp saat_best_d 999
-  *temp saat_best_hp 0
-  *temp saat_best_max 1
-  *temp saat_i 1
-  *label select_ally_nearest_loop
-  *if (saat_i <= combat_enemy_count)
-    *temp saat_hp {(("combat_enemy" & saat_i) & "_hp")}
-    *if (saat_hp > 0)
-      *temp saat_max {(("combat_enemy" & saat_i) & "_max_hp")}
-      *temp saat_epos {(("combat_enemy" & saat_i) & "_position")}
-      *temp saat_d (saat_apos - saat_epos)
-      *if (saat_d < 0)
-        *set saat_d (0 - saat_d)
-      *temp saat_lt ((saat_hp * saat_best_max) < (saat_best_hp * saat_max))
-      *temp saat_eq ((saat_hp * saat_best_max) = (saat_best_hp * saat_max))
-      *if (((saat_pref_target = 0) or (saat_d < saat_best_d)) or ((saat_d = saat_best_d) and ((saat_lt) or ((saat_eq) and (saat_hp < saat_best_hp)))))
-        *set saat_pref_target saat_i
-        *set saat_best_d saat_d
-        *set saat_best_hp saat_hp
-        *set saat_best_max saat_max
-    *set saat_i + 1
-    *goto select_ally_nearest_loop
+  *set saat_cornered combat_ally_cornered
+*gosub combat_score_targets "ally" saat_slot 999 saat_cornered
+*gosub combat_ai_note_target "ally" saat_slot
+*if (combat_score_best_kind = "enemy")
+  *set saat_pref_target combat_score_best_slot
 *if (saat_pref_target > 0)
   *set combat_active_target saat_pref_target
   *gosub_scene combat fight_sync_target_in

@@ -264,7 +264,14 @@ if (fullGame || focusedScan) {
                 } else {
                   addFile(match[1]+".txt");
                   if (!gotoSceneLabels[match[1]]) gotoSceneLabels[match[1]] = [];
-                  gotoSceneLabels[match[1]].push({origin:sceneName, originLine:j, label:match[2]});
+                  // ONE WALK PER ENTRY LABEL (2026-11-03): the walk from a label never depends on who called it (every walk starts from the same
+                  // starting stats, and origin/originLine are not read), so a label called from many places was walked once per call site with
+                  // nothing learned: calendar's advance_time alone, called 338 times, made calendar take 20 minutes. Keep the first caller only.
+                  var knownLabel = false;
+                  for (var gl = 0; gl < gotoSceneLabels[match[1]].length; gl++) {
+                    if (gotoSceneLabels[match[1]][gl].label.toLowerCase() == match[2].toLowerCase()) { knownLabel = true; break; }
+                  }
+                  if (!knownLabel) gotoSceneLabels[match[1]].push({origin:sceneName, originLine:j, label:match[2]});
                 }
               }
             }
