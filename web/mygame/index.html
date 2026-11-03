@@ -1039,8 +1039,11 @@ button#statSidebar .turnRow,
     var h = Math.max(150, Math.min(230, Math.round(colH * 0.34)));
     return colH - h < 260 ? 0 : h;
   }
+  // The whole fight, not only the hub's pages: the HUD steps away on the pages between (a spell's targeting, the enemies' turns), and if the
+  // stage went with it the sidebar strip would flash back for a moment each time. Only the Classic list puts it away.
   function stageWanted(s) {
-    return !!s && isTruthy(s.combat_engaged) && document.body.classList.contains("battleHudOn") &&
+    var hud = window.BattleHud;
+    return !!s && isTruthy(s.combat_engaged) && !(hud && hud.isClassic && hud.isClassic()) &&
       isFinite(Number(s.combat_lane_min_position)) && isFinite(Number(s.combat_lane_max_position)) && isFinite(Number(s.combat_lane_player_position));
   }
   function stageShowing() { return document.body.classList.contains("battleStageOn"); }
@@ -1135,6 +1138,42 @@ button#statSidebar .turnRow,
     if (html === stageLastHtml) return;
     stageLastHtml = html;
     el.innerHTML = html;
+  }
+  // The round and HP lines combat.txt prints over the hub ("[⚔️ Round 2]", "[Name: HP 4/4 (AC 9)]", "[You: HP 3/7 (AC 12)]") repeat what the stage
+  // shows, so while it is up they are hidden (battlestage.css, .stageStatusLine). Each line goes with one <br> beside it, so no blank line is left,
+  // and a paragraph left with nothing else is hidden too. They are marked as the page is written (a MutationObserver runs before the page is
+  // painted), so they never flash; with the Classic list, or out of a fight, the class does nothing and they read as before.
+  var STATUS_LINE_RE = /^\[[^\[\]]*?\bRound \d+(?:\]|\s+\u2014)|^\[[^\[\]]+:\s*HP\s+-?\d+\s*\/\s*\d+[^\]]*\(AC\s+\d+/;
+  function isBlankNode(n) { return n.nodeType === 3 && !/\S/.test(n.nodeValue); }
+  function siblingBr(b, dir) {
+    var n = b[dir];
+    while (n && isBlankNode(n)) n = n[dir];
+    return n && n.nodeName === "BR" && !n.classList.contains("stageStatusLine") ? n : null;
+  }
+  function markStatusLines() {
+    var main = document.getElementById("main");
+    if (!main) return;
+    var bs = main.querySelectorAll("b:not([data-status-checked])"), touched = [];
+    for (var i = 0; i < bs.length; i++) {
+      var b = bs[i];
+      b.setAttribute("data-status-checked", "1");
+      if (!STATUS_LINE_RE.test((b.textContent || "").trim())) continue;
+      b.classList.add("stageStatusLine");
+      var br = siblingBr(b, "nextSibling") || siblingBr(b, "previousSibling");
+      if (br) br.classList.add("stageStatusLine");
+      if (b.parentNode && touched.indexOf(b.parentNode) < 0) touched.push(b.parentNode);
+    }
+    touched.forEach(function (p) {
+      if (p.nodeName !== "P") return;
+      for (var n = p.firstChild; n; n = n.nextSibling) {
+        if (isBlankNode(n)) continue;
+        if (n.nodeType !== 1 || !n.classList.contains("stageStatusLine")) return;
+      }
+      p.classList.add("stageStatusLine");
+    });
+  }
+  if (window.MutationObserver) {
+    new MutationObserver(markStatusLines).observe(document.documentElement, { childList: true, subtree: true });
   }
   // A resize can make the column too short for the stage (or give it room again): measure afresh.
   window.addEventListener("resize", function () {

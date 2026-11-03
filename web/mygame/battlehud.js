@@ -570,5 +570,8 @@
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
 
-  window.BattleHud = { scan: scan, parseLabel: parseLabel };
+  // Extend, not replace: BattleHud.pick (above) is what the sidebar's ally-order buttons press.
+  window.BattleHud.scan = scan;
+  window.BattleHud.parseLabel = parseLabel;
+  window.BattleHud.isClassic = function () { return classic; };   // the battle stage (index.html) stands down with the Classic list
 })();
