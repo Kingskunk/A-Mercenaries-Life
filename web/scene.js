@@ -970,6 +970,7 @@ Scene.prototype.execute = function execute() {
     // stats, which is the one object every one of those reconstructed Scene
     // instances shares, and is only ever (re)set from resetPage() below,
     // which is the actual "a real new page began" signal.
+    this.pageReplayGuard();
     this.printLoop();
 };
 
@@ -1194,9 +1195,94 @@ Scene.prototype.resetPage = function resetPage() {
       self.save("");
       self.prevLine = "empty";
       self.screenEmpty = true;
+      // See pageReplayGuard: the page about to run is a first pass, not a replay.
+      self._pageFirstPass = true;
       self.execute();
     });
 };
+
+// EXACT REPLAY OF FIGHT PAGES (2026-11-03, A Mercenary's Life). A refresh, or the Stats screen and back, runs the
+// current page again from its start line, but on top of the variables the first pass already changed (see
+// refreshSavedProgress), so anything a page does without its own lock happens twice, and dice re-roll. During a
+// fight (stats.combat_engaged) every page now guards itself: when it begins, the value of every variable is noted
+// (page_replay_snap) and the dice are seeded (page_replay_seed); when that page is run again from its start line,
+// the values are put back and the dice seeded the same, so it replays exactly -- the same rolls, the same lines,
+// the same results. When the page pauses, the note is trimmed to the variables the page changed, with their values
+// at the pause (refreshSavedProgress), and a later replay restores only those that still hold that value: a change
+// made after the pause (a spell cast from the sidebar) is left alone. Engine bookkeeping (choice_*), the note itself
+// and "scene" are never noted. A test harness that fixes the dice sets __combatFixedRandom; its dice are left alone.
+function pageReplayGlobal() { return (typeof window !== "undefined") ? window : globalThis; }
+function pageReplaySeed(seed) {
+  var G = pageReplayGlobal();
+  if (G.__pageReplayRandom && Math.random === G.__pageReplayRandom) Math.random = G.__pageReplayOrigRandom;
+  if (seed === null || G.__combatFixedRandom) return;
+  var a = Number(seed) >>> 0;
+  G.__pageReplayOrigRandom = Math.random;
+  G.__pageReplayRandom = function () { a = (a + 0x6D2B79F5) | 0; var t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  Math.random = G.__pageReplayRandom;
+}
+function pageReplayKey(k) { return k !== "scene" && k !== "sceneName" && !/^page_replay_/.test(k) && !/^choice_/.test(k); }
+Scene.prototype.pageReplayGuard = function pageReplayGuard() {
+  var S = this.stats;
+  if (!S) return;
+  if (this._pageFirstPass) {
+    delete this._pageFirstPass;
+    pageReplaySeed(null);
+    if (S.combat_engaged === true || S.combat_engaged === "true") {
+      S.page_replay_page = S.page_id;
+      S.page_replay_seed = Math.floor(Math.random() * 2147483646) + 1;
+      var copy = {};
+      for (var k in S) if (S.hasOwnProperty(k) && pageReplayKey(k)) copy[k] = S[k];
+      // The page's *temp values too: an option's body reads temps the hub worked out before the choice (combat_push_past...),
+      // and a save holds the temps from the END of the page, after the hub has run again.
+      // Where the page began: a page that crosses into another scene file and back has its start moved by the engine (see
+      // execute()), and a resume from that moved point is not a replay of this page, so nothing is restored then.
+      S.page_replay_snap = JSON.stringify({ at: S.choice_page_start_scene + ":" + S.choice_page_start_line, start: copy, tstart: JSON.parse(JSON.stringify(this.temps || {})) });
+      pageReplaySeed(S.page_replay_seed);
+    } else if (S.page_replay_snap) {
+      S.page_replay_page = 0;
+      S.page_replay_snap = "";
+    }
+    return;
+  }
+  // Only a scene resumed from the save (util.js restoreGame marks it) is a replay: the engine also rebuilds a scene
+  // mid-page, at any line, whenever a *gosub_scene returns, and that must never be mistaken for one.
+  if (this._pageResumed && S.page_replay_snap && S.page_replay_page === S.page_id && this.name === S.choice_page_start_scene &&
+      this.lineNum === S.choice_page_start_line) {
+    delete this._pageResumed;
+    var note = JSON.parse(S.page_replay_snap), start = note.start, end = note.end;
+    if (note.at !== this.name + ":" + this.lineNum) return;
+    for (var j in start) {
+      if (!start.hasOwnProperty(j)) continue;
+      if (end && end.hasOwnProperty(j) && JSON.stringify(S[j]) !== JSON.stringify(end[j])) continue;
+      S[j] = start[j];
+    }
+    if (note.tstart && this.temps) {
+      for (var t in note.tstart) if (note.tstart.hasOwnProperty(t)) this.temps[t] = note.tstart[t];
+      (note.tnew || []).forEach(function (n) { delete this.temps[n]; }, this);
+    }
+    pageReplaySeed(S.page_replay_seed);
+  }
+};
+// Trims the note to what the page changed (called as the page pauses, before the save is written). The temps are only
+// comparable when the page pauses in the scene it started in; otherwise they are kept whole.
+function pageReplayTrim(S, scene) {
+  if (!S || !S.page_replay_snap || S.page_replay_page !== S.page_id) return;
+  var note = JSON.parse(S.page_replay_snap);
+  if (note.end) return;
+  var start = {}, end = {};
+  for (var k in note.start) {
+    if (note.start.hasOwnProperty(k) && JSON.stringify(note.start[k]) !== JSON.stringify(S[k])) { start[k] = note.start[k]; end[k] = S[k]; }
+  }
+  var tstart = note.tstart || {}, tnew = [];
+  if (scene && scene.temps && scene.name === S.choice_page_start_scene) {
+    var changed = {};
+    for (var t in tstart) if (tstart.hasOwnProperty(t) && JSON.stringify(tstart[t]) !== JSON.stringify(scene.temps[t])) changed[t] = tstart[t];
+    for (var u in scene.temps) if (scene.temps.hasOwnProperty(u) && !tstart.hasOwnProperty(u)) tnew.push(u);
+    tstart = changed;
+  }
+  S.page_replay_snap = JSON.stringify({ at: note.at, start: start, end: end, tstart: tstart, tnew: tnew });
+}
 
 /* The function needs some explaining.
 We want the game to be "refreshable," e.g. on the web.
@@ -1258,6 +1344,7 @@ Scene.prototype.refreshSavedProgress = function refreshSavedProgress() {
     }
     // A label fallback inside a helper may render a page before its missing
     // *return. Keep older recovery snapshots until that return is resolved.
+    pageReplayTrim(this.stats, this);
     var recoveryPending = !!this.temps.choice_resume_fell_back_to_label;
     if (!recoveryPending && typeof markSafeAutosaveRecoverySucceeded === "function") markSafeAutosaveRecoverySucceeded();
     var value = computeCookie(this.stats, this.temps, lineNum, indent);

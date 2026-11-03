@@ -1163,6 +1163,8 @@ function restoreGame(state, forcedScene, userRestored, forcedStats, forcedTemps)
         scene.savedResumeLabel = state.resumeLabel;
         scene.savedResumeOffset = state.resumeOffset;
         scene.savedResumeLineText = state.resumeLineText;
+        // A resume from the save: the page about to run again from its start is a replay (web/scene.js pageReplayGuard).
+        scene._pageResumed = true;
       }
       if (userRestored) {
         scene.temps.choice_user_restored = true;

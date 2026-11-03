@@ -255,6 +255,8 @@ function refreshCheck(sc, where) {
   D.mode = "replay"; printed.length = 0; timeout = null; D.refreshChecks++;
   var rs = new Scene(replayStats.sceneName || startScene, replayStats, nav, { debugMode: false });
   rs.temps = deep(snapTemps); rs.lineNum = line; rs.indent = indent;
+  // What the engine's restoreGame marks on the scene it resumes from the save (web/util.js), so the page knows it is a replay.
+  rs._pageResumed = true;
   try { rs.execute(); } catch (e) { D.refreshDiffs.push(where + " @ " + startScene + ":" + line + ": EXCEPTION " + e.message); }
   var replayText = pageText(printed);
   D.mode = savedMode; timeout = savedTimeout; stats = savedStats; SEEDED.a = savedSeed; Math.random = savedRandom;
@@ -268,7 +270,8 @@ function refreshCheck(sc, where) {
     if (JSON.stringify(replayStats[k]) !== JSON.stringify(D.replaySet[k])) D.refreshDiffs.push(where + " @ " + startScene + ":" + line + ": replaySet " + k + " was forced to " + JSON.stringify(D.replaySet[k]) + " and the replay left it " + JSON.stringify(replayStats[k]));
   });
   Object.keys(snapStats).forEach(function (k) {
-    if (IGNORE[k] || D.replaySet.hasOwnProperty(k)) return;
+    // page_replay_*: the engine's own note of how a fight page started (web/scene.js pageReplayGuard), bookkeeping like choice_crc.
+    if (IGNORE[k] || /^page_replay_/.test(k) || D.replaySet.hasOwnProperty(k)) return;
     if (JSON.stringify(snapStats[k]) !== JSON.stringify(replayStats[k])) D.refreshDiffs.push(where + " @ " + startScene + ":" + line + ": " + k + " " + JSON.stringify(snapStats[k]) + " -> " + JSON.stringify(replayStats[k]));
   });
 }
