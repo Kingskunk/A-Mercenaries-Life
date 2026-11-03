@@ -188,6 +188,10 @@
     *set so_delta - combat_enemy_atk_bonus
     *set combat_enemy_move2_atk_bonus + so_delta
   *set combat_enemy_atk_bonus combat_enemy_atk_override
+*comment Resolve (2026-11-03): how hard slot 1 is to Intimidate, beyond its type's (it lives on the numbered slot, like morale).
+*if (not(combat_enemy_resolve_override = 999))
+  *set combat_enemy1_resolve combat_enemy_resolve_override
+  *set combat_enemy_resolve_override 999
 *if (not(combat_enemy_size_override = ""))
   *set combat_enemy_size combat_enemy_size_override
 *if (not(combat_enemy_creature_type_override = ""))
@@ -357,6 +361,10 @@
 *temp aso_atk_ov {(aso_p & "atk_override")}
 *temp aso_size_ov {(aso_p & "size_override")}
 *temp aso_creature_type_ov {(aso_p & "creature_type_override")}
+*temp aso_resolve_ov {(aso_p & "resolve_override")}
+*if (not(aso_resolve_ov = 999))
+  *set {(aso_p & "resolve")} aso_resolve_ov
+  *set {(aso_p & "resolve_override")} 999
 *temp aso_delta 0
 *if (not(aso_hp_ov = 999))
   *set {(aso_p & "hp")} aso_hp_ov
@@ -880,6 +888,8 @@
   *set {(fc_p & "target_slot")} 0
   *set {(fc_p & "target_page")} 0
   *comment Morale (2026-11-03).
+  *set {(fc_p & "prof")} 0
+  *set {(fc_p & "resolve")} 0
   *set {(fc_p & "morale")} "normal"
   *set {(fc_p & "broken")} false
   *set {(fc_p & "morale_bloodied")} false
@@ -2731,9 +2741,7 @@
   *if (((({(cci_p & "hp")} > 0) and (not({(cci_p & "morale")} = "fearless"))) and (not({(cci_p & "broken")}))) and (not({(cci_p & "intimidated")})))
     *set combat_can_intimidate true
     *set combat_intim_epithet {(cci_p & "epithet")}
-    *temp cci_score {(cci_p & "wisdom")}
-    *gosub_scene startup score_to_mod cci_score
-    *set combat_intim_dc (10 + sm_mod)
+    *gosub combat_intimidate_dc combat_active_target
 *temp combat_can_dodge false
 *if (combat_player_actions_left > 0)
   *if (not(dodge_active))
@@ -3976,8 +3984,8 @@
       *goto fight_action_spent
 
   *if (combat_can_intimidate)
-    # [b][ACTION][/b] [b][Intimidate][/b] Shake ${combat_intim_epithet}'s nerve.@{show_stat_hints  [Intimidation (DC ${combat_intim_dc}); success forces a morale check]|}
-      *comment INTIMIDATE (2026-11-03, MORALE): an Intimidation check against 10 + the target's WIS; on a success the target makes its morale save at
+    # [b][ACTION][/b] [b][Intimidate][/b] Shake ${combat_intim_epithet}'s nerve.@{show_stat_hints  [Intimidation (${combat_intim_dc_text}); success forces a morale check]|}
+      *comment INTIMIDATE (2026-11-03, MORALE): an Intimidation check against combat_intimidate_dc (WIS, proficiency, resolve and the moment); on a success the target makes its morale save at
       *comment once (a steady one with advantage, a skittish one with disadvantage) and, if it breaks, runs or yields on its own turn. One try per
       *comment enemy per fight. This page is the player's own, not a chain of turns, so the morale dice are drawn once behind a page lock and passed
       *comment in (combat_morale_forced_a/_b): a refresh rolls the same.
@@ -5612,6 +5620,77 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 [b][🎲 ${cmc_name} Morale (${cmc_reason}): ${cmc_roll} ${cmc_mod_str}${cmc_note} = ${cmc_total} vs DC 10 — ${cmc_verdict}][/b]
 *line_break
 *set combat_turn_advanced_this_page true
+*return
+
+*comment THE DC TO INTIMIDATE an enemy (2026-11-03, the user): 10 + its WIS modifier + its proficiency bonus + its resolve (a type's own extra
+*comment nerve: a guard +2, a captain +5; tools/enemy_catalog.json, or a fight's combat_enemyN_resolve_override), then the moment:
+*comment   -2 it is badly hurt (below half its HP)        -2 half or more of its side is down
+*comment   +2 someone tougher on its side still stands      +2 your side is the one losing (you below half, or half your allies down)
+*comment Never below 5. Output: combat_intim_dc, and combat_intim_dc_note naming what moved it ("badly hurt -2, guard +2"), for the option.
+*label combat_intimidate_dc
+*params cid_slot
+*temp cid_p (("combat_enemy" & cid_slot) & "_")
+*temp cid_score {(cid_p & "wisdom")}
+*gosub_scene startup score_to_mod cid_score
+*temp cid_prof {(cid_p & "prof")}
+*if (cid_prof <= 0)
+  *set cid_prof combat_lib_prof_bonus
+*temp cid_resolve {(cid_p & "resolve")}
+*temp cid_dc (((10 + sm_mod) + cid_prof) + cid_resolve)
+*temp cid_note ""
+*temp cid_sep ""
+*if (cid_resolve > 0)
+  *set cid_note "resolve +${cid_resolve}"
+  *set cid_sep ", "
+*temp cid_hp {(cid_p & "hp")}
+*temp cid_max {(cid_p & "max_hp")}
+*if ((cid_hp * 2) < cid_max)
+  *set cid_dc - 2
+  *set cid_note "${cid_note}${cid_sep}badly hurt -2"
+  *set cid_sep ", "
+*temp cid_total 0
+*temp cid_down 0
+*temp cid_tougher false
+*temp cid_i 1
+*label combat_intimidate_dc_loop
+*if (cid_i <= combat_enemy_count)
+  *set cid_total + 1
+  *temp cid_ihp {(("combat_enemy" & cid_i) & "_hp")}
+  *if (cid_ihp <= 0)
+    *set cid_down + 1
+  *elseif ((not(cid_i = cid_slot)) and ({(("combat_enemy" & cid_i) & "_max_hp")} > cid_max))
+    *set cid_tougher true
+  *set cid_i + 1
+  *goto combat_intimidate_dc_loop
+*if ((cid_total > 1) and ((cid_down * 2) >= cid_total))
+  *set cid_dc - 2
+  *set cid_note "${cid_note}${cid_sep}its side half down -2"
+  *set cid_sep ", "
+*if (cid_tougher)
+  *set cid_dc + 2
+  *set cid_note "${cid_note}${cid_sep}someone tougher beside it +2"
+  *set cid_sep ", "
+*temp cid_ours 1
+*temp cid_ours_down 0
+*set cid_i 1
+*label combat_intimidate_dc_ally_loop
+*if (cid_i <= combat_ally_count)
+  *set cid_ours + 1
+  *if ({(("combat_ally" & cid_i) & "_hp")} <= 0)
+    *set cid_ours_down + 1
+  *set cid_i + 1
+  *goto combat_intimidate_dc_ally_loop
+*if (((hp_current * 2) < hp_max) or ((cid_ours > 1) and ((cid_ours_down * 2) >= cid_ours)))
+  *set cid_dc + 2
+  *set cid_note "${cid_note}${cid_sep}your side is losing +2"
+*if (cid_dc < 5)
+  *set cid_dc 5
+*set combat_intim_dc cid_dc
+*set combat_intim_dc_note cid_note
+*comment The option's bracket ("DC 14: resolve +2"), built here because a multireplace cannot nest inside the show_stat_hints one.
+*set combat_intim_dc_text "DC ${cid_dc}"
+*if (not(cid_note = ""))
+  *set combat_intim_dc_text "DC ${cid_dc}: ${cid_note}"
 *return
 
 *comment The start of an enemy's or ally's turn: check the triggers, then act on a broken nerve. combat_morale_stop is true when that spent the turn.

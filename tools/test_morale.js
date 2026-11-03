@@ -107,5 +107,21 @@ expect("an ally checks when the player is badly hurt", s.combat_ally1_morale_str
 s = run("combat_morale_turn", ["ally", 1], Object.assign({ combat_ally_count: 1 }, a(1, Object.assign({}, rook, { morale: "fearless" })), e(1, thug)), LOW);
 expect("a fearless blight twig never wavers", s.combat_ally1_broken, false);
 
+console.log("Intimidate's DC (10 + WIS + proficiency + resolve, then the moment):");
+const guardE = { name: "Guard", epithet: "the guard", hp: 8, max_hp: 8, wisdom: 10, prof: 2, resolve: 2 };
+s = run("combat_intimidate_dc", [1], e(1, guardE));
+expect("a fresh guard: 10 + 0 + 2 + resolve 2 = 14", [Number(s.combat_intim_dc), s.combat_intim_dc_note], [14, "resolve +2"]);
+s = run("combat_intimidate_dc", [2], Object.assign({ combat_enemy_count: 2 }, e(1, Object.assign({}, thug, { name: "Captain", max_hp: 24, hp: 24, prof: 2 })), e(2, guardE)));
+expect("...with its captain still standing: 16", Number(s.combat_intim_dc), 16);
+const pack = Object.assign({ combat_enemy_count: 2 }, e(1, Object.assign({}, rat, { hp: 0, prof: 2 })), e(2, Object.assign({}, rat, { hp: 1, prof: 2 })));
+s = run("combat_intimidate_dc", [2], pack);
+expect("a bleeding rat whose pack is half down: 12 - 2 - 2 = 8", [Number(s.combat_intim_dc), s.combat_intim_dc_note], [8, "badly hurt -2, its side half down -2"]);
+s = run("combat_intimidate_dc", [2], Object.assign({}, pack, { hp_current: 5, hp_max: 20 }));
+expect("...but with you below half HP: +2 = 10", Number(s.combat_intim_dc), 10);
+s = run("combat_intimidate_dc", [1], e(1, Object.assign({}, rat, { hp: 1, wisdom: 1, prof: 1 })));
+expect("never below 5", Number(s.combat_intim_dc), 5);
+s = run("combat_intimidate_dc", [1], e(1, Object.assign({}, guardE, { prof: 0 })));
+expect("no proficiency set: the library's +2 stands in", Number(s.combat_intim_dc), 14);
+
 if (failed) { console.error(failed + " morale case(s) failed."); process.exit(1); }
 console.log("Morale OK.");
