@@ -1,7 +1,7 @@
 *comment ====================================================================================
 *comment LANGSTON: reusable town hub for the Western Vale.
 *comment This first pass owns the town-level view, arrival, repeat visits and road exit only.
-*comment Inns, shops, civic buildings, the chapel and quest locations remain separate future files.
+*comment Inns, shops, civic buildings, the chapel and quest locations remain separate future files. The Market Bays (market.txt, 2026-11-02) is the town's open trading ground, a place of its own.
 *comment ====================================================================================
 
 *label langston
@@ -21,6 +21,7 @@
 *set codex_western_vale true
 *gosub_scene calendar update_hub_condition
 *gosub lg_hours
+*gosub lg_market_hours
 *gosub_scene Langston/tomlin_cottage lg_tomlin_hours
 *gosub lg_lot_hours
 *return
@@ -80,6 +81,12 @@
   *if (not(lg_ok_store))
     # [b]The Cord & Kettle[/b]: ${lg_store_closed_reason}.
       *goto lg_store_closed
+  *if (lg_ok_market)
+    # [b]The Market Bays[/b]: wagons, covered scales and counting rooms. [~5 min]
+      *goto_scene Langston/market lg_market
+  *else
+    # [b]The Market Bays[/b]: ${lg_market_closed_reason}.
+      *goto_scene Langston/market lg_market_closed
   # [b]The Pickled Hen[/b]: meals and private rooms. [~5 min]
     *goto_scene Langston/pickled_hen lg_hen
   *if (((wol_quest_stage = "active") and (not(wol_chapter_2_complete))) and (lg_tomlin_open))
@@ -296,6 +303,21 @@ People still cross the square, but few linger. Conversations fall quiet when str
 *if ((((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon")) or (time_period = "Dusk"))
   *set lg_ok_store true
   *set lg_store_closed_reason ""
+*return
+
+*comment The Market Bays (Langston/market.txt): Morning through Dusk, closed on Hallowday (the weigh-houses are shut; only food sellers work the near bays), at night and while dangerous weather has emptied the streets. Called on every hub entry and by market.txt itself.
+*label lg_market_hours
+*set lg_ok_market false
+*set lg_market_closed_reason "shuttered for the night"
+*if (day_of_week = "Hallowday")
+  *set lg_market_closed_reason "closed to trade for the rest day"
+  *return
+*if (street_life = "empty")
+  *set lg_market_closed_reason "tied down against the weather"
+  *return
+*if ((((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon")) or (time_period = "Dusk"))
+  *set lg_ok_market true
+  *set lg_market_closed_reason ""
 *return
 
 *label lg_store_closed

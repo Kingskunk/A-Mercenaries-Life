@@ -487,11 +487,29 @@
     lastSig = "";
   }
 
+  function idle() {
+    var el = document.getElementById(HUD_ID);
+    if (!el || el.classList.contains("bhud-idle")) return;
+    el.classList.add("bhud-idle");
+    el.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("battleHudOn");
+    hideTip();
+    closeFly();
+    lastSig = "";   // the next hub page rebuilds the dock
+  }
+
   function scan() {
     var s = statsNow();
     var inFight = truthy(s.combat_engaged);
     if (!inFight) seen = [];
     var items = (inFight && !classic) ? hubItems() : null;
+    if (!items && inFight && !classic && document.getElementById(HUD_ID)) {
+      // A page between the hub's pages (a spell's targeting, the enemies' turns, a page turning): the dock stays where it is, dimmed and
+      // inert, so the story frame and the battle stage above it do not jump down and back up after every click. The plain choice list is
+      // shown again (battleHudOn off), because this page's options are not the hub's. The fight's end or the Classic list removes the dock.
+      idle();
+      return;
+    }
     if (!items) {
       // Classic list asked for, or not the hub: put the dock away. When classic, leave a small way back.
       remove();
@@ -521,6 +539,8 @@
       document.body.appendChild(el);
     }
     el.innerHTML = build();
+    el.classList.remove("bhud-idle");
+    el.removeAttribute("aria-hidden");
     document.body.classList.add("battleHudOn");
     lastSig = sig;
     dockHeight();
@@ -570,5 +590,8 @@
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
 
-  window.BattleHud = { scan: scan, parseLabel: parseLabel };
+  // Extend, not replace: BattleHud.pick (above) is what the sidebar's ally-order buttons press.
+  window.BattleHud.scan = scan;
+  window.BattleHud.parseLabel = parseLabel;
+  window.BattleHud.isClassic = function () { return classic; };   // the battle stage (index.html) stands down with the Classic list
 })();

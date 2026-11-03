@@ -73,7 +73,7 @@
    * A merchant listed in PILOT is priced by web/mygame/market.js (finite stock and purse, slippage, buy-back) instead of by the flat prices above. The market is one saved string per merchant
    * (stats.market_<key>); the panel reads it brought up to today, prices the cart against it, and writes the new state only when the trade is confirmed, together with the totals it agreed
    * (market_cost, market_credit, market_on), which equipment.txt shop_check then takes in place of its own. */
-  var PILOT = { halda: true, barley_farm: true, tm_market: true, bw_market: true, ah_market: true, mc_market: true, af_market: true, rv_market: true, wf_market: true, pv_market: true };
+  var PILOT = { halda: true, barley_farm: true, tm_market: true, bw_market: true, ah_market: true, mc_market: true, af_market: true, rv_market: true, wf_market: true, pv_market: true, lg_market: true, fm_market: true, bm_fair: true, ba_market: true };
   function marketOn(trade) { return !!(trade && PILOT[trade.key] && window.Market && window.MARKET_DEFS && window.MARKET_DEFS[trade.key]); }
   function today() { return num(statsNow().campaign_day); }
   // The market's definition for today: the generated one with the season and the makers' shocks applied (web/mygame/world.js). world_seed is a saved stat (0 until the game picks one).
@@ -335,8 +335,8 @@
 
   if (typeof document === "undefined") return; // node tests stop here (mirrors inventory.js)
 
-  var dlg, elTitle, elPurse, elBody, elFoot, elTabs, elControls, elRail, elTools, elSearch, elSort, elFlags, elCats;
-  var view = { key: "", tab: "buy", category: "", q: "", sort: "group", flags: {}, fold: {} };
+  var dlg, elReceipt, elTitle, elPurse, elBody, elFoot, elTabs, elControls, elRail, elTools, elSearch, elSort, elFlags, elCats;
+  var view = { key: "", tab: "buy", category: "", q: "", sort: "group", flags: {}, fold: {}, receipt: "", pending: false, dirty: false };
   var cart = { buy: {}, sell: {} };
   var reopen = false;
   var confirmedLabel = null; // the settle option we clicked; the old page can linger while ChoiceScript fades it out
@@ -357,7 +357,7 @@
         '<div class="trd-tools"><input type="search" class="trd-search" data-act="search" placeholder="Search goods" aria-label="Search goods" autocomplete="off"><select class="trd-sort" data-act="sort" aria-label="Sort"></select><span class="trd-flags"></span></div>' +
         '<div class="trd-cats"></div>' +
         '<div class="trd-keys">Shift-click: ten at a time<br>Ctrl-click +: the most you can afford<br>Ctrl-click −: clear the line</div>' +
-      '</div><div class="trd-right"><div class="trd-body"></div><div class="trd-foot"></div></div></div>';
+      '</div><div class="trd-right"><div class="trd-body"></div><div class="trd-receipt" role="status" hidden></div><div class="trd-foot"></div></div></div>';
     document.body.appendChild(dlg);
     elTitle = dlg.querySelector(".trd-title");
     elPurse = dlg.querySelector(".trd-purse");
@@ -370,6 +370,7 @@
     elFlags = dlg.querySelector(".trd-flags");
     elCats = dlg.querySelector(".trd-cats");
     elBody = dlg.querySelector(".trd-body");
+    elReceipt = dlg.querySelector(".trd-receipt");
     elFoot = dlg.querySelector(".trd-foot");
     dlg.addEventListener("click", onClick);
     dlg.addEventListener("change", onChange);
@@ -386,11 +387,17 @@
       if ((ev.key === "Enter" || ev.key === " ") && ev.target && ev.target.getAttribute && ev.target.hasAttribute("data-fold")) { ev.preventDefault(); toggleFold(ev.target.getAttribute("data-fold")); }
     });
     dlg.addEventListener("mousedown", function (ev) { if (ev.target === dlg) close(); });
-    dlg.addEventListener("close", function () { render(); });
+    dlg.addEventListener("close", function () {
+      view.receipt = "";   // the receipt belongs to the visit: it is gone when the panel closes (the user, 2026-11-02)
+      render();
+      // A market trade is settled without a page change (confirm, below), so the page behind is stale (the clock moved, coin and goods changed). It is rebuilt ONCE, as the panel closes.
+      if (view.dirty) { view.dirty = false; if (typeof window.returnFromStats === "function") window.returnFromStats(); }
+    });
   }
 
   function setQty(kind, id, n, max) {
     n = Math.max(0, Math.min(max, n));
+    view.receipt = "";
     if (n) cart[kind][id] = n; else delete cart[kind][id];
   }
 
@@ -697,7 +704,8 @@
       lines += '<div class="trd-line trd-line-load' + (over ? " trd-neg" : "") + '"><span>Load</span><span>' + f(cl.now) + " → " + f(cl.after) + " of " + f(cl.capacity) + "</span></div>";
       // 2026-10-25 (the user): going over the limit is shown by the Load line turning red, in its own slot; no second "Over your limit" line.
     }
-    var can = (t.buying || t.selling) && !t.short && (!q || q.ok);
+    var can = (t.buying || t.selling) && !t.short && (!q || q.ok) && !view.pending;
+    if (elReceipt) { elReceipt.textContent = view.receipt || ""; elReceipt.hidden = !view.receipt; }
     elFoot.innerHTML = '<div class="trd-sum">' + lines + "</div>" +
       '<div class="trd-actions">' +
         '<button type="button" class="trd-clear" data-act="clear"' + ((t.buying || t.selling) ? "" : " disabled") + ">Clear</button>" +
@@ -705,10 +713,37 @@
       "</div>";
   }
 
+  // The counter shops that settle in place too (the user, 2026-11-02: the tailor and the pawnshop first, then every other shop). Each needs its cart-pass label named in choicescript_stats.txt ctn_pass.
+  var QUIET_SHOPS = { halda: true, ambrose: true, hollis: true, vael: true, tailor: true, inklamp: true, jeweler: true, pawn: true, works: true, tmstore: true, tomlin: true, lgstore: true, afstore: true, torvald: true, trapper: true, hideyard: true };
+
+  // Settle the cart the panel has just written into the stats, in place: the page behind stays untouched, the result goes in the receipt strip, and the page is rebuilt once when the panel closes.
+  function quietSettle() {
+    cart = { buy: {}, sell: {} };
+    view.pending = true; view.receipt = "";
+    render();
+    window.GameQuietRun("codex_trade_now", function (ok) {
+      var st = statsNow(), msg = String(st.trade_toast || "");
+      st.trade_toast = "";
+      view.pending = false;
+      view.receipt = msg || (ok ? "" : "That did not finish. Try again.");
+      view.dirty = true;
+      if (dlg && dlg.open) render();
+    });
+  }
+
   function confirm() {
     var trade = currentTrade(), settle = findSettle();
     if (!trade || !settle) return;
     var s = statsNow();
+    // An open market is settled WITHOUT a page change (2026-11-02, the user: the panel must not force-close on purchase, and the receipt belongs in the panel, as with crafting). ChoiceScript still does
+    // all the work (choicescript_stats codex_trade_now, run by inventory.js quietRun); a counter shop keeps the hidden-option route below.
+    var quiet = (marketOn(trade) || QUIET_SHOPS[trade.key]) && typeof window.GameQuietRun === "function";
+    if (quiet && view.pending) return;
+    if (quiet && (s.hunger_stage === "Starving" || s.fatigue_stage === "Collapsing") && num(s.hp_current) <= 2) {
+      view.receipt = "You are too starved and spent to bargain for the time it takes without it costing what little you have left. Eat, or sleep, first.";
+      render();
+      return;
+    }
     if (marketOn(trade)) {
       var mkt = marketState(trade), mq = marketQuote(trade, mkt, cart);
       if (!mq.ok || purse(s) + mq.sellTotal < mq.buyTotal) return;
@@ -730,11 +765,12 @@
     s.cart_sell_ids = Object.keys(cart.sell).filter(function (id) { return ("cart_sell_" + id) in s && cart.sell[id] > 0; }).map(function (id) { return "|" + id; }).join("");
     if (s.cart_buy_ids) s.cart_buy_ids += "|";
     if (s.cart_sell_ids) s.cart_sell_ids += "|";
+    if (quiet) { quietSettle(); return; }
     var radio = settle.querySelector("input[type=radio]");
     if (!radio) return;
     var form = radio.form;
     cart = { buy: {}, sell: {} };
-    reopen = true;
+    reopen = false; // the panel stays closed after a trade (the user, 2026-11-02): the result page and the market page come back clean, and T or the Trade button opens it again
     confirmedLabel = settle;
     close();
     radio.checked = true;
@@ -760,7 +796,7 @@
     }
     var act = t.getAttribute("data-act");
     if (act === "close") return close();
-    if (act === "clear") { cart = { buy: {}, sell: {} }; render(); return; }
+    if (act === "clear") { cart = { buy: {}, sell: {} }; view.receipt = ""; render(); return; }
     if (act === "resetfilters") { view.q = ""; view.flags = {}; view.category = ""; if (elSearch) elSearch.value = ""; render(); return; }
     if (act === "confirm") { if (!t.disabled) confirm(); }
   }
@@ -779,6 +815,7 @@
     if (!isActive()) return;
     build();
     if (dlg.open) return;
+    view.receipt = "";
     var tr0 = currentTrade(); if (marketOn(tr0)) remember(tr0, { def: marketDef(tr0), st: marketState(tr0) });
     render();
     if (!dlg.showModal) { window.alert("This browser is too old to show the Trade panel."); return; }
@@ -799,7 +836,7 @@
   /* ------------------------------------------------------------------ keeping the page in step */
 
   // The settle option is an implementation detail: hide it while the panel exists, show the Trade button, and
-  // reopen the panel after a trade so several purchases in a row do not need a trip to the header each time.
+  // (The panel used to reopen itself after every trade; the user found closing it again a nuisance, 2026-11-02, so it now waits for T or the Trade button.)
   var scanQueued = false;
 
   // style.css rounds the choice box with .choice > div:first-child / :last-child. Hiding the settle row leaves

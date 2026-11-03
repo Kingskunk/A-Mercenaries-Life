@@ -46,6 +46,7 @@
     "timbermouth/split_pine_inn": "generic_town_inn",
     "Langston/pickled_hen": "generic_town_inn",
     "Langston/cord_and_kettle": "generic_trade_shop",
+    "Langston/market": "town_market",
     "Langston/tomlin_cottage": "tomlin_cottage",
     "Langston/tomlin_shop": "tomlin_herbalist_workroom",
     "Langston/langston_hall": "langston_hall",

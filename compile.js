@@ -321,6 +321,7 @@ function compile(){
   verifyFileName("Langston/fallowmere/grey_gander.txt");
   verifyFileName("Langston/fallowmere/village_heads_hall.txt");
   verifyFileName("Langston/fallowmere/market.txt");
+  verifyFileName("Langston/market.txt");
   verifyFileName("Langston/cord_and_kettle.txt");
   verifyFileName("Langston/pickled_hen.txt");
   verifyFileName("Langston/langston_hall.txt");

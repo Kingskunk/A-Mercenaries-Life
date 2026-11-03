@@ -233,6 +233,116 @@ Cast, read your abilities, or change interface settings. Rest and Wait are in th
 *script if (stats.scene) stats.scene.screenEmpty = true;
 *finish
 
+*comment TRADE SETTLE (2026-11-02, the user: the trade panel must not force-close on a purchase, and the receipt belongs in the panel, as crafting's does). The trade panel (trade.js) writes the cart and the agreed totals into the stats and runs this label
+*comment through quietRun, with no page change. It is the same settle the open markets' (and, via ctn_pass, the tailor's and the pawnshop's) scenes run (shop_begin, the shared cart routine, shop_check, apply, coin, time), keyed by shop_open, with the result as one line in trade_toast. The time lock is saved and put back, as crafting does.
+*label codex_trade_now
+*if (combat_engaged)
+  *set trade_toast "You cannot trade in the middle of a fight."
+  *finish
+*temp ctn_time_locked time_advance_locked
+*temp ctn_time_page locked_time_advance_page_id
+*temp ctn_time_id locked_time_advance_id
+*temp ctn_time_call time_advance_call_id
+*temp ctn_sell (shop_open & "_sell")
+*set time_advance_locked false
+*gosub_scene equipment shop_begin
+*gosub ctn_pass
+*gosub_scene equipment shop_check
+*if (shop_verdict = "ok")
+  *set shop_mode "apply"
+  *gosub ctn_pass
+  *set currency_add_amount (shop_tot_credit - shop_tot_cost)
+  *gosub_scene economy currency_add
+  *if ((shop_tot_bought > 0) and (shop_tot_sold > 0))
+    *set trade_toast "Bought ${shop_recv} for ${shop_cost_desc}. Sold ${shop_sold_list} for ${shop_credit_desc}."
+  *elseif (shop_tot_bought > 0)
+    *set trade_toast "Bought ${shop_recv} for ${shop_cost_desc}."
+  *else
+    *set trade_toast "Sold ${shop_sold_list} for ${shop_credit_desc}."
+  *if (shop_fit)
+    *set trade_toast "${trade_toast} Armor Class ${armor_class}."
+  *comment The time a shop takes, as its own settle page does: the goods' minutes, plus a few for a sale (Halda's forge ten, the trapper and the hide yard none), and the pawnshop a flat ten.
+  *temp ctn_sale_minutes 5
+  *if (shop_open = "halda")
+    *set ctn_sale_minutes 10
+  *if ((shop_open = "trapper") or (shop_open = "hideyard"))
+    *set ctn_sale_minutes 0
+  *set hours_to_pass 0
+  *set minutes_to_pass shop_tot_minutes
+  *if (shop_tot_sold > 0)
+    *set minutes_to_pass (minutes_to_pass + ctn_sale_minutes)
+  *if (shop_open = "pawn")
+    *set minutes_to_pass 10
+  *set time_advance_call_id "codex_trade_now"
+  *gosub_scene calendar advance_time
+  *gosub_scene calendar recalc_hp_from_neglect
+*else
+  *set shop_mode "clear"
+  *gosub ctn_pass
+  *if (shop_verdict = "short")
+    *set trade_toast "Not enough coin for that. Nothing changed hands."
+  *else
+    *set trade_toast "Nothing was set aside."
+*set time_advance_locked ctn_time_locked
+*set locked_time_advance_page_id ctn_time_page
+*set locked_time_advance_id ctn_time_id
+*set time_advance_call_id ctn_time_call
+*script if (stats.scene) stats.scene.screenEmpty = true;
+*finish
+
+*comment The cart pass for the shop in shop_open (the shared one for every open market; a counter shop's own generated pass, named here once, in its scene). Every counter shop is here; a new one needs its line here AND an entry in QUIET_SHOPS in trade.js.
+*label ctn_pass
+*if (shop_open = "tailor")
+  *gosub_scene port_valen/port_valen_upper_wharves pq_tailor_cart_pass
+  *return
+*if (shop_open = "pawn")
+  *gosub_scene port_valen/port_valen_dredge_end cut_pawn_cart_pass
+  *return
+*if (shop_open = "halda")
+  *gosub_scene port_valen/port_valen_middle_ward mw_halda_cart_pass
+  *return
+*if (shop_open = "ambrose")
+  *gosub_scene port_valen/port_valen_middle_ward mw_ambrose_cart_pass
+  *return
+*if (shop_open = "hollis")
+  *gosub_scene port_valen/port_valen_middle_ward mw_hollis_cart_pass
+  *return
+*if (shop_open = "vael")
+  *gosub_scene port_valen/port_valen_middle_ward mw_vael_cart_pass
+  *return
+*if (shop_open = "inklamp")
+  *gosub_scene port_valen/port_valen_upper_wharves pq_ink_lamp_cart_pass
+  *return
+*if (shop_open = "jeweler")
+  *gosub_scene port_valen/port_valen_upper_wharves pq_bright_cart_pass
+  *return
+*if (shop_open = "works")
+  *gosub_scene timbermouth/workshops tm_works_cart_pass
+  *return
+*if (shop_open = "tmstore")
+  *gosub_scene timbermouth/general_store tm_store_cart_pass
+  *return
+*if (shop_open = "tomlin")
+  *gosub_scene Langston/tomlin_shop lg_tshop_cart_pass
+  *return
+*if (shop_open = "lgstore")
+  *gosub_scene Langston/cord_and_kettle lg_store_cart_pass
+  *return
+*if (shop_open = "afstore")
+  *gosub_scene alderford/lower_wharf_market af_store_cart_pass
+  *return
+*if (shop_open = "torvald")
+  *gosub_scene alderford/timber_smithy af_smith_cart_pass
+  *return
+*if (shop_open = "trapper")
+  *gosub_scene longshade/longshade_forest lsf_tw_cart_pass
+  *return
+*if (shop_open = "hideyard")
+  *gosub_scene timbermouth/ashrun_holt/hide_yard ah_hy_cart_pass
+  *return
+*gosub_scene equipment shop_cart_run "market" ctn_sell shop_open
+*return
+
 *comment ONE-SHOT CASTS (2026-10-02). What the sidebar spellbook's Cast button runs: it opens the dossier AT one of these labels, which casts at once and ends with *finish, so the game hands the player straight
 *comment back to the page they were on, with no menu to click through. The one-line result goes through spell_cast_toast, which the sidebar shows and clears. A refused cast says why in the same line.
 *label codex_cast_now_mage_armor

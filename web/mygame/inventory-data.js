@@ -358,6 +358,20 @@
       use: true
     },
     {
+      id: "grapes", category: "consumables", owned: "has_grapes",
+      weight: 0.5, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_grapes) || 0); return "Grapes" + (n > 1 ? " ×" + n : ""); },
+      description: "Dark bunch of vineyard grapes, still dusty with bloom.",
+      badge: "Holds off about 5 hours of hunger",
+      use: true
+    },
+    {
+      id: "wine", category: "provisions", owned: "has_wine",
+      weight: 20, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_wine) || 0); return "Wine Barrel" + (n > 1 ? " ×" + n : ""); },
+      description: "Small iron-hooped barrel of red vineyard wine."
+    },
+    {
       id: "root_vegetable_bundle", category: "provisions", owned: "has_root_vegetable_bundle",
       weight: 1, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_root_vegetable_bundle) || 0); return "Root-Vegetable Bundle" + (n > 1 ? " ×" + n : ""); },
@@ -942,6 +956,12 @@
       weight: 2, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_wool) || 0); return "Wool" + (n > 1 ? " ×" + n : ""); },
       description: "Sack of washed fleece, ready for the spinner."
+    },
+    {
+      id: "hemp", category: "provisions", owned: "has_hemp",
+      weight: 3, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_hemp) || 0); return "Hemp" + (n > 1 ? " ×" + n : ""); },
+      description: "Bale of retted hemp fibre, for the ropewalk and the loom."
     },
     {
       id: "wool_cloth", category: "provisions", owned: "has_wool_cloth",
