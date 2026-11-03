@@ -191,6 +191,8 @@
 *comment The enemy as defender: the active target's scratch fields, with its slot for wet and defense_known. Every player attack and spell packet comes through here.
 *label adjust_outgoing_damage_packet
 *params aodp_amount aodp_type
+*comment PAYBACK (2026-11-03): the enemy the player just hit remembers it, for target scoring (combat_ai.txt combat_score_targets).
+*gosub record_last_hit "enemy" combat_active_target "player" 0
 *gosub adjust_damage_packet "combat_enemy_" aodp_amount aodp_type combat_active_target
 *return
 
@@ -640,6 +642,8 @@ ${combat_player_dmg_roll_banner}
     *comment this point (fight_sync_target_in, combat.txt), same as every other field this label reads.
     *if (((combat_enemy_condition_name = "Pinned") or (combat_enemy_condition_name = "Hobbled")) or (combat_enemy_condition_name = "Off-Balance"))
       *set player_movement_restricted true
+  *if (combat_enemy_hit_success)
+    *gosub record_last_hit "player" 0 "enemy" combat_active_target
   *set combat_stun_inflicted false
   *if ((combat_enemy_hit_success) and (combat_enemy_inflicts_stun))
     *set player_stunned true
@@ -905,6 +909,7 @@ ${combat_player_dmg_roll_banner}
       *set {(reao_ap & "stun_kind")} ""
       *set {(reao_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${reao_dmg} ${reao_dmg_bonus_str} = ${reao_dmg_total}${reao_tag} | ${combat_enemy_stun_icon} ${combat_enemy_stun_name}][/b]"
     *set combat_enemy_dmg_on_ally_dealt reao_dmg_total
+    *gosub record_last_hit "ally" reao_a_slot "enemy" combat_active_target
     *set {(reao_ap & "hp")} - reao_dmg_total
     *if ({(reao_ap & "hp")} < 0)
       *set {(reao_ap & "hp")} 0
@@ -944,6 +949,39 @@ ${combat_player_dmg_roll_banner}
 *comment Inputs: raa_a_slot (1-4, which combat_allyN_*), raa_e_slot (1-6, which combat_enemyN_* it's attacking)
 *comment Outputs: combat_ally_atk_hit, combat_ally_dmg_dealt; combat_enemyN_hp is reduced directly
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment WHO LAST HIT WHOM (2026-11-03), for target scoring's payback (combat_ai.txt combat_score_targets): the victim ("player", "ally" or
+*comment "enemy" and its slot) remembers its attacker's kind and slot and the round. Called on every landed hit: the player's damage packets
+*comment (adjust_outgoing_damage_packet, which every player attack and spell goes through), an ally's hit, and an enemy's hit on the player or an ally.
+*comment Fixed prefixes, never one built from rlh_victim: quicktest walks every branch.
+*label record_last_hit
+*comment REPLAY-SAFE (2026-11-03): a refreshed page keeps what the first pass wrote, so a hit landed late on this page would be seen by a turn
+*comment that, the first time, came before it. Each victim keeps two records: last_hit_* (the newest, and the page it was written on) and
+*comment prev_hit_* (the newest from any EARLIER page). A new page rolls last into prev before writing; the scorer reads prev while last is from
+*comment the current page. So a turn reads the same thing on a replay as it did the first time.
+*params rlh_victim rlh_vslot rlh_kind rlh_slot
+*if (rlh_victim = "player")
+  *if (not(player_last_hit_page = page_id))
+    *set player_prev_hit_kind player_last_hit_kind
+    *set player_prev_hit_slot player_last_hit_slot
+    *set player_prev_hit_round player_last_hit_round
+  *set player_last_hit_kind rlh_kind
+  *set player_last_hit_slot rlh_slot
+  *set player_last_hit_round combat_round
+  *set player_last_hit_page page_id
+*else
+  *temp rlh_p (("combat_enemy" & rlh_vslot) & "_")
+  *if (rlh_victim = "ally")
+    *set rlh_p (("combat_ally" & rlh_vslot) & "_")
+  *if (not({(rlh_p & "last_hit_page")} = page_id))
+    *set {(rlh_p & "prev_hit_kind")} {(rlh_p & "last_hit_kind")}
+    *set {(rlh_p & "prev_hit_slot")} {(rlh_p & "last_hit_slot")}
+    *set {(rlh_p & "prev_hit_round")} {(rlh_p & "last_hit_round")}
+  *set {(rlh_p & "last_hit_kind")} rlh_kind
+  *set {(rlh_p & "last_hit_slot")} rlh_slot
+  *set {(rlh_p & "last_hit_round")} combat_round
+  *set {(rlh_p & "last_hit_page")} page_id
+*return
+
 *comment CAN THIS COMBATANT REACT? (2026-11-03, the user: "that will come back to bite us the first moment we give an enemy a spell or ability that stuns").
 *comment The one place that answers it, for the player, an ally or an enemy: every reaction asks here before it fires -- an opportunity attack either way
 *comment (combat.txt find_opportunity_attacker, find_opportunity_attacker_against), Shield and Hellish Rebuke (resolve_enemy_attack). A new reaction
@@ -1146,6 +1184,7 @@ ${combat_player_dmg_roll_banner}
     *temp raa_dmg_tag combat_packet_suffix
     *set {(raa_dmg_bannername)} "[b][🎲 ${raa_name} Damage: ${raa_dmg} ${raa_dmg_bonus_str} = ${raa_dmg_total}${raa_dmg_tag}][/b]"
     *set combat_ally_dmg_dealt raa_dmg_after
+    *gosub record_last_hit "enemy" raa_e_slot "ally" raa_a_slot
     *set {(raa_ep & "hp")} - raa_dmg_after
     *if ({(raa_ep & "hp")} < 0)
       *set {(raa_ep & "hp")} 0

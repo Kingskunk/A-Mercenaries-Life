@@ -868,6 +868,19 @@
   *set {(fc_p & "stun_left")} 0
   *set {(fc_p & "stun_page")} 0
   *set {(fc_p & "stun_kind")} ""
+  *comment Target scoring's memory (2026-11-03): who last hit this slot, and who it went for.
+  *set {(fc_p & "last_hit_kind")} ""
+  *set {(fc_p & "last_hit_slot")} 0
+  *set {(fc_p & "last_hit_round")} 0
+  *set {(fc_p & "target_kind")} ""
+  *set {(fc_p & "target_slot")} 0
+  *set {(fc_p & "target_page")} 0
+  *set {(fc_p & "prev_target_kind")} ""
+  *set {(fc_p & "prev_target_slot")} 0
+  *set {(fc_p & "last_hit_page")} 0
+  *set {(fc_p & "prev_hit_kind")} ""
+  *set {(fc_p & "prev_hit_slot")} 0
+  *set {(fc_p & "prev_hit_round")} 0
   *set {(fc_p & "stun_v")} 1
   *set {(fc_p & "stun_last_round")} 0
   *set {(fc_p & "grease_page")} 0
@@ -972,6 +985,18 @@
   *set {(("combat_ally" & fc_a_i) & "_stunned")} 0
   *set {(("combat_ally" & fc_a_i) & "_stun_page")} 0
   *set {(("combat_ally" & fc_a_i) & "_stun_last_round")} 0
+  *set {(("combat_ally" & fc_a_i) & "_last_hit_kind")} ""
+  *set {(("combat_ally" & fc_a_i) & "_last_hit_slot")} 0
+  *set {(("combat_ally" & fc_a_i) & "_last_hit_round")} 0
+  *set {(("combat_ally" & fc_a_i) & "_target_kind")} ""
+  *set {(("combat_ally" & fc_a_i) & "_target_slot")} 0
+  *set {(("combat_ally" & fc_a_i) & "_target_page")} 0
+  *set {(("combat_ally" & fc_a_i) & "_prev_target_kind")} ""
+  *set {(("combat_ally" & fc_a_i) & "_prev_target_slot")} 0
+  *set {(("combat_ally" & fc_a_i) & "_last_hit_page")} 0
+  *set {(("combat_ally" & fc_a_i) & "_prev_hit_kind")} ""
+  *set {(("combat_ally" & fc_a_i) & "_prev_hit_slot")} 0
+  *set {(("combat_ally" & fc_a_i) & "_prev_hit_round")} 0
   *comment Commit-and-chase, ally side (2026-09-29, plan §11.3/6a) -- same leftover-state reason as _range/_target
   *comment just above.
   *set {(("combat_ally" & fc_a_i) & "_chase_target")} 0
@@ -985,6 +1010,13 @@
   *set {(("combat_ally" & fc_a_i) & "_flee_hp_pct")} 0
   *set fc_a_i + 1
   *goto fight_cleanup_ally_loop
+*set player_last_hit_kind ""
+*set player_last_hit_slot 0
+*set player_last_hit_round 0
+*set player_last_hit_page 0
+*set player_prev_hit_kind ""
+*set player_prev_hit_slot 0
+*set player_prev_hit_round 0
 *set combat_player_keyed false
 *set combat_player_creature false
 *set combat_player_actions_max 1
@@ -1996,12 +2028,10 @@
   *gosub_scene combat_prose fight_narrate_ally_attack "ally" dacs_slot "enemy" dacs_target combat_ally_atk_hit
   *comment Arrived and fought -- Layer 1's ordinary select_ally_attack_target takes back over from here, not
   *comment locked onto this one enemy for the rest of the fight. Unlike the enemy side's own chase (which only
-  *comment ever attacks an ally, never changing the enemy count), this attack CAN kill an enemy, so the usual
-  *comment death/victory check applies here.
+  *comment ever attacks an ally, never changing the enemy count), this attack CAN kill an enemy, so the CALLERS run the
+  *comment death/victory check right after this *gosub (2026-11-03): fight_victory's *return must return from the fight, and from inside this
+  *comment subroutine it returned from the subroutine instead ("invalid return" the moment a chase landed the last blow).
   *set {(dacs_p & "chase_target")} 0
-  *gosub fight_check_all_dead
-  *if (combat_all_enemies_dead)
-    *goto fight_victory
 *else
   *if (dacs_rv = 1)
     $!{combat_attacker_epithet} peels away from the melee, driving hard toward ${dacs_enemy_epithet} instead.
@@ -6191,6 +6221,9 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
         *set combat_turn_advanced_this_page true
       *else
         *gosub do_ally_chase_step cnt_slot
+        *gosub fight_check_all_dead
+        *if (combat_all_enemies_dead)
+          *goto fight_victory
     *elseif ((((cnt_ar_weapon = "ranged") and (cnt_ar_cornered)) and (cnt_ar_can_retreat)) and (cnt_ar_room))
       *comment Ally-side rows 3-4 mirror (2026-09-29, on request): a cornered ranged ally (weapon_type "ranged",
       *comment own range <= 0) that opted in (combat_ally<N>_can_retreat) with a melee ally already at range 0 to
@@ -6323,6 +6356,9 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
           *comment The one-roll commit-and-chase (roll_ally_chase_commit) is no longer called (2026-10-11): select_ally_attack_target already sends a melee ally at the NEAREST enemy, every turn, with no dice.
           *if ({(("combat_ally" & cnt_slot) & "_chase_target")} > 0)
             *gosub do_ally_chase_step cnt_slot
+            *gosub fight_check_all_dead
+            *if (combat_all_enemies_dead)
+              *goto fight_victory
           *else
             *comment Moves from the ally's REAL lane coordinate, one step toward its target in whichever direction that is (the old helper rebuilt the position from the stored range and only ever walked one way).
             *temp cnt_a_before_first_step {(("combat_ally" & cnt_slot) & "_position")}
