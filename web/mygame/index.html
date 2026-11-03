@@ -1031,13 +1031,13 @@ button#statSidebar .turnRow,
     }
     return el;
   }
-  // The stage height: about half the framed column, within limits. Zero when the column is too short to give it room.
+  // The stage height: about a third of the framed column, within limits, so the prose keeps most of the frame. Zero when the column is too short to give it room.
   function stageHeightFor() {
     var col = document.getElementById("container1");
     if (!col) return 0;
     var z = window.UI_ZOOM || 1, colH = col.getBoundingClientRect().height / z + (stageH || 0);   // the column as it would be without the stage
-    var h = Math.max(190, Math.min(340, Math.round(colH * 0.52)));
-    return colH - h < 210 ? 0 : h;
+    var h = Math.max(150, Math.min(230, Math.round(colH * 0.34)));
+    return colH - h < 260 ? 0 : h;
   }
   function stageWanted(s) {
     return !!s && isTruthy(s.combat_engaged) && document.body.classList.contains("battleHudOn") &&
@@ -1085,8 +1085,9 @@ button#statSidebar .turnRow,
   function stageOccupants(s, pos) {
     var out = laneOccupants(s, pos), cap = Number(s.combat_enemy_slot_cap) || 0;
     for (var i = 1; i <= cap; i++) {
+      // An unused slot carries the name "none" and no HP; only a real combatant that was knocked down is drawn.
       var name = fmt(s["combat_enemy" + i + "_name"]);
-      if (name && (Number(s["combat_enemy" + i + "_hp"]) || 0) <= 0 && Number(s["combat_enemy" + i + "_position"]) === pos) {
+      if (name && String(name).toLowerCase() !== "none" && (Number(s["combat_enemy" + i + "_max_hp"]) || 0) > 0 && (Number(s["combat_enemy" + i + "_hp"]) || 0) <= 0 && Number(s["combat_enemy" + i + "_position"]) === pos) {
         out.push({ kind: "enemy", slot: i, chip: String(i), name: name, hp: 0, max: Number(s["combat_enemy" + i + "_max_hp"]) || 0, down: true });
       }
     }
@@ -1095,9 +1096,17 @@ button#statSidebar .turnRow,
   function battleStageHtml(s) {
     var min = Number(s.combat_lane_min_position), max = Number(s.combat_lane_max_position), player = Number(s.combat_lane_player_position);
     if (max < min) return "";
-    var icons = window.BATTLEFIELD_ICONS || {}, seenTypes = [], tiles = "";
-    for (var pos = min; pos <= max; pos++) {
+    var icons = window.BATTLEFIELD_ICONS || {}, seenTypes = [], tiles = "", prevTier = "", tierRun = 0;
+    // As on the sidebar strip, the far end is drawn only as far as anything is there (plus one empty step), never short of Long Range.
+    // The near end is never trimmed: those are the places you can fall back to.
+    var hi = Math.min(max, player + (String(s.combat_range_mode || "legacy4") === "expanded6" ? 5 : 3));
+    for (var q = min; q <= max; q++) {
+      if (terrainTypesAt(s, q).length || stageOccupants(s, q).length) hi = Math.max(hi, Math.min(max, q + 1));
+    }
+    for (var pos = min; pos <= hi; pos++) {
       var rel = pos - player, label = rel === 0 ? "You" : (rel < 0 ? "Back " + (-rel) : rangeTierName(rel, s));
+      // past the last named band the tiles share its name: number the extra ones (Long Range, Long Range 2, ...)
+      if (rel > 0) { tierRun = label === prevTier ? tierRun + 1 : 1; prevTier = label; if (tierRun > 1) label += " " + tierRun; }
       var types = terrainTypesAt(s, pos), art = "", tags = "", toks = "";
       types.forEach(function (t) { if (seenTypes.indexOf(t) < 0) seenTypes.push(t); });
       if (types.length && icons[types[0]]) art = "<span class=\"stageArt\" style=\"background-image:url(" + icons[types[0]] + ")\"></span>";
