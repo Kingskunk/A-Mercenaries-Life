@@ -15,6 +15,8 @@
 body.battleStageOn #main { margin-bottom: calc(var(--bstage-h) + 6px); }
 /* the round and HP lines over the hub repeat the stage: hidden while it is up (marked in index.html, see markStatusLines) */
 body.battleStageOn .stageStatusLine { display: none; }
+/* the game's title banner gives its room to the fight */
+body.battleStageOn #header { display: none; }
 
 #battleStage {
   position: fixed;
@@ -52,7 +54,8 @@ body.battleStageOn .stageStatusLine { display: none; }
 #battleStage .stageLane {
   flex: 0 1 auto; min-height: 0;
   display: flex; gap: 5px; padding: 6px;
-  overflow-x: auto; overflow-y: hidden; scrollbar-width: thin;
+  overflow-x: auto; overflow-y: hidden;
+  scrollbar-width: thin; scrollbar-color: rgba(201, 151, 68, 0.45) rgba(0, 0, 0, 0.3);   /* a last resort: empty tiles narrow first (below) */
   background:
     radial-gradient(ellipse at 50% 120%, rgba(201, 151, 68, 0.06), transparent 60%),
     linear-gradient(rgba(14, 12, 11, 0.96), rgba(20, 17, 15, 0.97));
@@ -74,6 +77,10 @@ body.battleStageOn .stageStatusLine { display: none; }
   transition: border-color 0.15s, background-color 0.15s;
 }
 #battleStage .stageTile:hover { border-color: var(--ch-line-hi); }
+/* an empty tile with nothing special on it is a step you can take, not a place to read: it gives its width to the busy ones */
+#battleStage .stageTile.empty:not(.terrain) { flex-grow: 0.5; min-width: 44px; padding-left: 2px; padding-right: 2px; }
+#battleStage .stageTile.empty:not(.terrain) .stageLabel { font-size: 9.5px; letter-spacing: 0.03em; padding: 0 2px; }
+#battleStage .stageTile.empty.terrain { min-width: 76px; }
 #battleStage .stageTile.behind { background: linear-gradient(rgba(255, 255, 255, 0.012), rgba(0, 0, 0, 0.12)); }
 #battleStage .stageTile.behind.empty { opacity: 0.75; }
 #battleStage .stageTile.here {
@@ -106,8 +113,12 @@ body.battleStageOn .stageStatusLine { display: none; }
 #battleStage .stageToks {
   position: relative; z-index: 1; flex: 1 1 auto; min-height: 0;
   display: flex; flex-direction: column; align-items: center; justify-content: safe center; gap: 10px; padding: 10px 0 1px;
-  overflow-y: auto; scrollbar-width: none;
+  overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(201, 151, 68, 0.45) transparent;
 }
+#battleStage .stageLane::-webkit-scrollbar, #battleStage .stageToks::-webkit-scrollbar { width: 6px; height: 6px; }
+#battleStage .stageLane::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); border-radius: 3px; }
+#battleStage .stageToks::-webkit-scrollbar-track { background: transparent; }
+#battleStage .stageLane::-webkit-scrollbar-thumb, #battleStage .stageToks::-webkit-scrollbar-thumb { background: rgba(201, 151, 68, 0.45); border-radius: 3px; }
 
 /* ---------------------------------------------------------------- a combatant */
 #battleStage .stageToken {
@@ -194,7 +205,35 @@ body.battleStageOn .stageStatusLine { display: none; }
   #battleStage .stageTag { top: auto; bottom: -8px; }
 }
 
+/* ---------------------------------------------------------------- a crowded tile: medals side by side
+   Two or more on one tile stand in a row as medals (the HP ring, the number, a thin bar) and wrap if there are more than fit, so the stage
+   stays one token tall. The name, numbers and tags give way: the hover card names each, a brass ring marks the target, a pulse who acts next. */
+#battleStage .stageTile.crowd .stageToks { flex-direction: row; flex-wrap: wrap; justify-content: center; align-content: safe center; gap: 6px 6px; }
+#battleStage .stageTile.crowd .stageToken {
+  width: auto; max-width: none; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 2px; border: none; border-radius: 50% 50% 4px 4px; background: none; box-shadow: none; animation: none;
+}
+#battleStage .stageTile.crowd .stageName,
+#battleStage .stageTile.crowd .stageNum,
+#battleStage .stageTile.crowd .stageTag,
+#battleStage .stageTile.crowd .stageToken.isPicked::after { display: none; }
+#battleStage .stageTile.crowd .stageMedal { width: 30px; height: 30px; border-width: 3px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5); }
+#battleStage .stageTile.crowd .stageMedal i { font-size: 12px; }
+#battleStage .stageTile.crowd .stageHp { width: 26px; height: 3px; }
+#battleStage .stageTile.crowd .stageToken.isPicked .stageMedal { box-shadow: 0 0 0 2px var(--ch-brass), 0 0 10px rgba(201, 151, 68, 0.45); }
+#battleStage .stageTile.crowd .stageToken.isNext .stageMedal { animation: stageNextMedal 1.8s ease-in-out infinite; }
+#battleStage .stageTile.crowd .stageToken.isPicked.isNext .stageMedal { animation: none; }
+@keyframes stageNextMedal {
+  0%, 100% { box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5); }
+  50%      { box-shadow: 0 0 0 2px var(--tok), 0 0 10px rgba(200, 70, 60, 0.45); }
+}
+#battleStage .stageTile.crowd .stageToken.isDown .stageMedal { width: 24px; height: 24px; border-width: 2px; }
+#battleStage .stageTile.crowd .stageToken.isLinked,
+#battleStage .stageTile.crowd .stageToken[data-target]:hover,
+#battleStage .stageTile.crowd .stageToken[data-friendly]:hover { box-shadow: none; transform: translateY(-2px); }
+#battleStage .stageTile.crowd .stageToken.isLinked .stageMedal { box-shadow: 0 0 0 2px var(--tok); }
+
 @media (prefers-reduced-motion: reduce) {
   #battleStage .stageToken, #battleStage .stageHp > span { transition: none; }
-  #battleStage .stageToken.isNext, #battleStage .stageToken.isLow .stageHp > span { animation: none; }
+  #battleStage .stageToken.isNext, #battleStage .stageToken.isLow .stageHp > span, #battleStage .stageTile.crowd .stageToken.isNext .stageMedal { animation: none; }
 }

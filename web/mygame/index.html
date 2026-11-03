@@ -1112,11 +1112,11 @@ button#statSidebar .turnRow,
     var min = Number(s.combat_lane_min_position), max = Number(s.combat_lane_max_position), player = Number(s.combat_lane_player_position);
     if (max < min) return "";
     var icons = window.BATTLEFIELD_ICONS || {}, seenTypes = [], tiles = "", prevTier = "", tierRun = 0;
-    // As on the sidebar strip, the far end is drawn only as far as anything is there (plus one empty step), never short of Long Range.
+    // The far end is drawn only as far as anything is there, never short of Long Range; past that there is nothing to see or to step to.
     // The near end is never trimmed: those are the places you can fall back to.
     var hi = Math.min(max, player + (String(s.combat_range_mode || "legacy4") === "expanded6" ? 5 : 3));
     for (var q = min; q <= max; q++) {
-      if (terrainTypesAt(s, q).length || stageOccupants(s, q).length) hi = Math.max(hi, Math.min(max, q + 1));
+      if (terrainTypesAt(s, q).length || stageOccupants(s, q).length) hi = Math.max(hi, Math.min(max, q));
     }
     for (var pos = min; pos <= hi; pos++) {
       var rel = pos - player, label = rel === 0 ? "You" : (rel < 0 ? "Back " + (-rel) : rangeTierName(rel, s));
@@ -1126,9 +1126,16 @@ button#statSidebar .turnRow,
       types.forEach(function (t) { if (seenTypes.indexOf(t) < 0) seenTypes.push(t); });
       if (types.length && icons[types[0]]) art = "<span class=\"stageArt\" style=\"background-image:url(" + icons[types[0]] + ")\"></span>";
       if (types.length) tags = "<span class=\"stageTerrain\">" + types.map(function (t) { return esc(terrainLabel(t)); }).join(" · ") + "</span>";
-      stageOccupants(s, pos).forEach(function (o) { toks += stageTokenHtml(s, o); });
-      var cls = "stageTile" + (rel === 0 ? " here" : (rel < 0 ? " behind" : " ahead")) + (types.length ? " terrain" : "") + (toks ? "" : " empty");
-      tiles += "<div class=\"" + cls + "\" data-node=\"" + pos + "\"><span class=\"stageLabel\">" + esc(label) + "</span>" + art +
+      var here = stageOccupants(s, pos);
+      here.forEach(function (o) { toks += stageTokenHtml(s, o); });
+      // Two or more on one tile stand side by side as medals (battlestage.css, .crowd), so the stage is always one token tall.
+      // An empty tile with nothing special on it is drawn narrow with a short name, so a fight spread down the lane fits without scrolling.
+      var cls = "stageTile" + (rel === 0 ? " here" : (rel < 0 ? " behind" : " ahead")) + (types.length ? " terrain" : "") +
+        (here.length ? (here.length > 1 ? " crowd" : "") : " empty");
+      if (!here.length && !types.length && rel !== 0) label = label.replace("Mid-Range", "Mid").replace("Long Range", "Long");
+      // a crowded tile is given room for its medals in one row (up to four), so it does not wrap while empty tiles sit wide beside it
+      var room = here.length > 1 ? " style=\"min-width:" + (Math.min(4, here.length) * 37 + 12) + "px\"" : "";
+      tiles += "<div class=\"" + cls + "\" data-node=\"" + pos + "\"" + room + "><span class=\"stageLabel\">" + esc(label) + "</span>" + art +
         "<div class=\"stageToks\">" + toks + "</div>" + tags + "</div>";
     }
     var present = seenTypes.length ? seenTypes.map(terrainLabel).join(" · ") : "Open ground";
@@ -1151,7 +1158,19 @@ button#statSidebar .turnRow,
     var html = battleStageHtml(s);
     if (html === stageLastHtml) return;
     stageLastHtml = html;
+    // The rebuild replaces every element, which would throw the lane's sideways scroll and a crowded tile's scroll back to the start
+    // (a hover alone rebuilds it, to light the linked card): hand each its position back.
+    var lane = el.querySelector(".stageLane"), laneX = lane ? lane.scrollLeft : 0, tileY = {};
+    Array.prototype.forEach.call(el.querySelectorAll(".stageTile[data-node] .stageToks"), function (t) {
+      if (t.scrollTop) tileY[t.parentNode.getAttribute("data-node")] = t.scrollTop;
+    });
     el.innerHTML = html;
+    lane = el.querySelector(".stageLane");
+    if (lane && laneX) lane.scrollLeft = laneX;
+    Object.keys(tileY).forEach(function (pos) {
+      var t = el.querySelector(".stageTile[data-node=\"" + pos + "\"] .stageToks");
+      if (t) t.scrollTop = tileY[pos];
+    });
     fitStage(el);
   }
   // The round and HP lines combat.txt prints over the hub ("[⚔️ Round 2]", "[Name: HP 4/4 (AC 9)]", "[You: HP 3/7 (AC 12)]") repeat what the stage
