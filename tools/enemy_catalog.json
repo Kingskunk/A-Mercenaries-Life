@@ -1,0 +1,454 @@
+{
+  "readme": [
+    "ENEMY LIBRARY CATALOG. One entry per library type a fight can name in combat_lib_N (combat.txt fight_library).",
+    "Edit this file, then run: node tools/gen_enemies.js   (it rewrites the GEN blocks in web/mygame/scenes/combat_types.txt).",
+    "node tools/gen_enemies.js --check fails when the blocks are stale; node tools/test_enemy_catalog.js builds every type in the real engine and checks it.",
+    "A new type also needs its prose: a *label flavor_type_<id> and its line in flavor_from_type (combat_prose.txt). The generator refuses a type without them.",
+    "Fields:",
+    "  id            the combat_lib_N value, also the slot's flavor_type. lower_snake_case.",
+    "  name, epithet the banner name and the in-prose reference (\"the archer\"). A fight can rename either with the _override variables.",
+    "  hp, ac        hit points (also max) and armour class. A fight can override both per slot.",
+    "  creature_type humanoid | beast | plant | undead (rules-facing: items, abilities, encounter logic).",
+    "  size          small | medium | large (Shove and the like).",
+    "  profile       behaviour profile, resolved by combat_types.txt resolve_behavior_profile: feral | bruiser | skirmisher | sharpshooter | caster | guardian.",
+    "                The profile sets chase chance, retreat and the wounded flee point; a type never sets those itself.",
+    "  reach         a ranged type's reach class: touch | short | medium | long (default long). Ignored for melee.",
+    "  attack        weapon_type melee | ranged, dice (damage die sides), dmg_type; optional atk_bonus / dmg_bonus to fix the numbers instead of",
+    "                deriving them from the rolled ability scores (apply_derived_combat_bonuses).",
+    "  abilities     [low, high] roll range for each of the six scores.",
+    "  move2         optional special move: chance (percent), atk_bonus (added to the basic attack's), dice, dmg_bonus, dmg_type, and an optional",
+    "                condition {name, icon} it leaves on a hit.",
+    "  sidearm       optional close-range weapon a ranged type draws when cornered: weapon_type, dice, dmg_type, and atk_bonus / dmg_bonus as a",
+    "                number or \"weapon\" (the same bonus as its main attack, e.g. a DEX archer's dagger).",
+    "  vulnerable    optional damage types it takes double from, space-separated.",
+    "  notes         design notes, copied into the generated label as comments."
+  ],
+  "types": [
+    {
+      "id": "swordsman",
+      "name": "Swordsman",
+      "epithet": "the swordsman",
+      "hp": 10,
+      "ac": 12,
+      "creature_type": "humanoid",
+      "size": "medium",
+      "profile": "bruiser",
+      "attack": {"weapon_type":"melee","dice":6,"dmg_type":"slashing"},
+      "abilities": {
+        "strength": [12,14],
+        "dexterity": [12,14],
+        "constitution": [12,14],
+        "intelligence": [8,10],
+        "wisdom": [9,11],
+        "charisma": [8,10]
+      },
+      "move2": {
+        "chance": 30,
+        "atk_bonus": 2,
+        "dice": 4,
+        "dmg_bonus": 0,
+        "dmg_type": "slashing",
+        "condition": {"name":"Off-Guard","icon":"🗡️"}
+      },
+      "notes": [
+        "Sword fighter: measured cuts and thrusts, a little harder to hit (AC 12). Move 2 (30%) is a beat and a double cut",
+        "that drives the player off guard (Off-Guard). Not balance-simmed."
+      ]
+    },
+    {
+      "id": "axeman",
+      "name": "Axeman",
+      "epithet": "the axeman",
+      "hp": 10,
+      "ac": 11,
+      "creature_type": "humanoid",
+      "size": "medium",
+      "profile": "bruiser",
+      "attack": {"weapon_type":"melee","dice":6,"dmg_type":"slashing"},
+      "abilities": {
+        "strength": [14,16],
+        "dexterity": [8,10],
+        "constitution": [13,15],
+        "intelligence": [7,9],
+        "wisdom": [8,10],
+        "charisma": [8,10]
+      },
+      "move2": {
+        "chance": 30,
+        "atk_bonus": 2,
+        "dice": 4,
+        "dmg_bonus": 0,
+        "dmg_type": "slashing",
+        "condition": {"name":"Bleeding","icon":"🩸"}
+      },
+      "notes": [
+        "Axe fighter: short, brutal chops. Move 2 (30%) is a wild full-strength swing that tears a deep gash and leaves the",
+        "player Bleeding (disadvantage on the next attack, like every condition-on-hit here -- the name is flavor)."
+      ]
+    },
+    {
+      "id": "knifeman",
+      "name": "Knifeman",
+      "epithet": "the knifeman",
+      "hp": 10,
+      "ac": 11,
+      "creature_type": "humanoid",
+      "size": "medium",
+      "profile": "skirmisher",
+      "attack": {"weapon_type":"melee","dice":6,"dmg_type":"piercing"},
+      "abilities": {
+        "strength": [9,11],
+        "dexterity": [14,16],
+        "constitution": [10,12],
+        "intelligence": [8,10],
+        "wisdom": [9,11],
+        "charisma": [9,11]
+      },
+      "move2": {
+        "chance": 30,
+        "atk_bonus": 2,
+        "dice": 4,
+        "dmg_bonus": 0,
+        "dmg_type": "piercing",
+        "condition": {"name":"Poisoned","icon":"🤢"}
+      },
+      "notes": [
+        "Knife fighter: quick, close, short-reach cuts. Move 2 (30%) is a blade smeared with something dark and foul that",
+        "leaves the player Poisoned. The only human type that poisons."
+      ]
+    },
+    {
+      "id": "maceman",
+      "name": "Maceman",
+      "epithet": "the maceman",
+      "hp": 10,
+      "ac": 11,
+      "creature_type": "humanoid",
+      "size": "medium",
+      "profile": "bruiser",
+      "attack": {"weapon_type":"melee","dice":6,"dmg_type":"bludgeoning"},
+      "abilities": {
+        "strength": [14,16],
+        "dexterity": [8,10],
+        "constitution": [13,15],
+        "intelligence": [7,9],
+        "wisdom": [8,10],
+        "charisma": [8,10]
+      },
+      "move2": {
+        "chance": 30,
+        "atk_bonus": 2,
+        "dice": 4,
+        "dmg_bonus": 0,
+        "dmg_type": "bludgeoning",
+        "condition": {"name":"Dazed","icon":"😵"}
+      },
+      "notes": [
+        "Mace fighter: heavy, close, brutal swings. Move 2 (30%) is a two-handed overhead skull-crack that leaves the",
+        "player Dazed."
+      ]
+    },
+    {
+      "id": "spearman",
+      "name": "Spearman",
+      "epithet": "the spearman",
+      "hp": 10,
+      "ac": 11,
+      "creature_type": "humanoid",
+      "size": "medium",
+      "profile": "skirmisher",
+      "attack": {"weapon_type":"melee","dice":6,"dmg_type":"piercing"},
+      "abilities": {
+        "strength": [12,14],
+        "dexterity": [11,13],
+        "constitution": [12,14],
+        "intelligence": [8,10],
+        "wisdom": [10,12],
+        "charisma": [8,10]
+      },
+      "move2": {
+        "chance": 30,
+        "atk_bonus": 2,
+        "dice": 4,
+        "dmg_bonus": 0,
+        "dmg_type": "piercing",
+        "condition": {"name":"Pinned","icon":"📌"}
+      },
+      "notes": [
+        "Spear fighter: long reach, thrusts and sweeps. Move 2 (30%) pins the player's weapon arm against the shaft",
+        "(Pinned). Not balance-simmed."
+      ]
+    },
+    {
+      "id": "hookman",
+      "name": "Hookman",
+      "epithet": "the hookman",
+      "hp": 10,
+      "ac": 11,
+      "creature_type": "humanoid",
+      "size": "medium",
+      "profile": "skirmisher",
+      "attack": {"weapon_type":"melee","dice":6,"dmg_type":"piercing"},
+      "abilities": {
+        "strength": [12,14],
+        "dexterity": [10,12],
+        "constitution": [12,14],
+        "intelligence": [7,9],
+        "wisdom": [8,10],
+        "charisma": [8,10]
+      },
+      "move2": {
+        "chance": 30,
+        "atk_bonus": 2,
+        "dice": 4,
+        "dmg_bonus": 0,
+        "dmg_type": "bludgeoning",
+        "condition": {"name":"Off-Balance","icon":"🌀"}
+      },
+      "notes": [
+        "Hooked-pole fighter: long reach, hooks and drags. Move 2 (30%) snags the player and hauls them off their feet,",
+        "leaving them Off-Balance."
+      ]
+    },
+    {
+      "id": "archer",
+      "name": "Archer",
+      "epithet": "the archer",
+      "hp": 7,
+      "ac": 10,
+      "creature_type": "humanoid",
+      "size": "medium",
+      "profile": "sharpshooter",
+      "attack": {"weapon_type":"ranged","dice":6,"dmg_type":"piercing"},
+      "abilities": {
+        "strength": [9,11],
+        "dexterity": [15,16],
+        "constitution": [10,12],
+        "intelligence": [9,11],
+        "wisdom": [11,13],
+        "charisma": [8,10]
+      },
+      "move2": {
+        "chance": 25,
+        "atk_bonus": 2,
+        "dice": 4,
+        "dmg_bonus": 0,
+        "dmg_type": "piercing",
+        "condition": {"name":"Hobbled","icon":"🦵"}
+      },
+      "sidearm": {"weapon_type":"melee","atk_bonus":"weapon","dice":4,"dmg_bonus":"weapon","dmg_type":"piercing"},
+      "notes": [
+        "Bow fighter: fragile (7 HP, AC 10) but hits hard from range. Move 2 (25%) is a shot at the legs (Hobbled).",
+        "Not balance-simmed."
+      ]
+    },
+    {
+      "id": "slinger",
+      "name": "Slinger",
+      "epithet": "the slinger",
+      "hp": 6,
+      "ac": 10,
+      "creature_type": "humanoid",
+      "size": "medium",
+      "profile": "sharpshooter",
+      "reach": "medium",
+      "attack": {"weapon_type":"ranged","dice":4,"dmg_type":"bludgeoning"},
+      "abilities": {
+        "strength": [9,11],
+        "dexterity": [13,15],
+        "constitution": [9,11],
+        "intelligence": [7,9],
+        "wisdom": [8,10],
+        "charisma": [8,10]
+      },
+      "move2": {
+        "chance": 25,
+        "atk_bonus": 2,
+        "dice": 2,
+        "dmg_bonus": 0,
+        "dmg_type": "bludgeoning",
+        "condition": {"name":"Blinded","icon":"🌫️"}
+      },
+      "sidearm": {"weapon_type":"melee","atk_bonus":"weapon","dice":4,"dmg_bonus":"weapon","dmg_type":"piercing"},
+      "notes": [
+        "Sling fighter, deliberately weak (6 HP, AC 10, +2 for d4) so a bruiser-and-slinger ambush lands near the",
+        "Silt-Lurker's overall difficulty rather than a wipe for casters (see the balance sim). Move 2 (25%) is a fistful",
+        "of grit in the eyes -> Blinded.",
+        "Reach medium: a sling cannot hit from the far end of the lane, so it must close (an archer is long)."
+      ]
+    },
+    {
+      "id": "guard",
+      "name": "Guard",
+      "epithet": "the guard",
+      "hp": 8,
+      "ac": 12,
+      "creature_type": "humanoid",
+      "size": "medium",
+      "profile": "guardian",
+      "attack": {"weapon_type":"melee","dice":4,"dmg_type":"bludgeoning"},
+      "abilities": {
+        "strength": [11,13],
+        "dexterity": [10,12],
+        "constitution": [11,13],
+        "intelligence": [9,11],
+        "wisdom": [10,12],
+        "charisma": [9,11]
+      },
+      "notes": [
+        "Plain mace-armed hired muscle, no movepool/condition. fight_rennick_guards (Alderford's curing shed) fills two",
+        "slots with it, renamed Left and Right."
+      ]
+    },
+    {
+      "id": "lacedon",
+      "name": "Lacedon",
+      "epithet": "the lacedon",
+      "hp": 12,
+      "ac": 12,
+      "creature_type": "undead",
+      "size": "medium",
+      "profile": "feral",
+      "attack": {"weapon_type":"melee","dice":6,"dmg_type":"slashing"},
+      "abilities": {
+        "strength": [13,15],
+        "dexterity": [13,15],
+        "constitution": [14,16],
+        "intelligence": [6,8],
+        "wisdom": [8,10],
+        "charisma": [6,8]
+      },
+      "notes": [
+        "A drowned, clawing undead: quick, close, hard to hold. Stats are the Silt-Lurker of Alderford's cellar quest.",
+        "Mindless -- never sets combat_enemy_chase_chance (2026-09-29), so it stays at the *create default of 0",
+        "and roll_enemy_chase_commit's own >0 gate always skips it. It fights whatever's in front of it and",
+        "never breaks formation to hunt a squishier target; that's a human, tactical judgment call this undead",
+        "doesn't make."
+      ]
+    },
+    {
+      "id": "zombie",
+      "name": "Zombie",
+      "epithet": "the zombie",
+      "hp": 22,
+      "ac": 8,
+      "creature_type": "undead",
+      "size": "medium",
+      "profile": "feral",
+      "attack": {"weapon_type":"melee","dice":6,"dmg_type":"bludgeoning"},
+      "abilities": {
+        "strength": [12,13],
+        "dexterity": [8,8],
+        "constitution": [15,15],
+        "intelligence": [3,3],
+        "wisdom": [6,6],
+        "charisma": [5,5]
+      },
+      "notes": [
+        "A risen corpse (the Zombie of Chapter 5; the source's Risen Corpse: 22 HP, AC 8, Slam +3 for 1d6+1 bludgeoning, poison immunity; set the immunity on the fight, combat_enemy_immune_override \"poison\"). UNDEAD FORTITUDE (RAW) belongs to this library type:",
+        "when damage drops it to 0 HP it makes a Constitution save (DC 5 + the damage) and stays up at 1 HP on a success, unless the damage is radiant or the blow was a natural 20 (combat.txt fight_undead_fortitude reads the slot's flavor_type \"zombie\"). Mindless: it",
+        "keeps the *create default chase chance of 0 and fights whatever is in front of it."
+      ]
+    },
+    {
+      "id": "beast",
+      "name": "Beast",
+      "epithet": "the beast",
+      "hp": 9,
+      "ac": 11,
+      "creature_type": "beast",
+      "size": "medium",
+      "profile": "feral",
+      "attack": {"weapon_type":"melee","dice":6,"dmg_type":"piercing"},
+      "abilities": {
+        "strength": [12,14],
+        "dexterity": [12,14],
+        "constitution": [12,14],
+        "intelligence": [3,5],
+        "wisdom": [11,13],
+        "charisma": [5,7]
+      },
+      "notes": [
+        "A generic natural-attack monster with no special move: 9 HP, AC 11, +3 to hit, d6+1. A scene makes it a wolf, a",
+        "boar or a ghoul by naming it, and a tougher or weaker one with the hp, ac and atk overrides. Not balance-simmed.",
+        "Mindless -- same reasoning as apply_type_lacedon's own comment: never sets combat_enemy_chase_chance,",
+        "stays at 0, never breaks formation."
+      ]
+    },
+    {
+      "id": "mire_rat",
+      "name": "Mire-Rat",
+      "epithet": "the mire-rat",
+      "hp": 4,
+      "ac": 9,
+      "creature_type": "beast",
+      "size": "small",
+      "profile": "feral",
+      "attack": {"weapon_type":"melee","dice":4,"dmg_type":"piercing"},
+      "abilities": {
+        "strength": [6,8],
+        "dexterity": [13,15],
+        "constitution": [8,10],
+        "intelligence": [3,5],
+        "wisdom": [9,11],
+        "charisma": [4,6]
+      },
+      "notes": [
+        "Big-as-a-cat vermin: fragile and fast, meant to come in threes. Stats are Alderford's granary rats.",
+        "Mindless -- same reasoning as apply_type_lacedon's own comment: never sets combat_enemy_chase_chance,",
+        "stays at 0, never breaks formation.",
+        "2026-11-03: slots 2 and up used to roll DEX 14-16 against slot 1's 13-15 (a copy that drifted); the catalog keeps slot 1's 13-15 for every slot."
+      ]
+    },
+    {
+      "id": "hedge_mage",
+      "name": "Hedge-Mage",
+      "epithet": "the hedge-mage",
+      "hp": 22,
+      "ac": 12,
+      "creature_type": "humanoid",
+      "size": "medium",
+      "profile": "caster",
+      "reach": "medium",
+      "attack": {"weapon_type":"ranged","dice":12,"dmg_type":"poison","atk_bonus":4,"dmg_bonus":0},
+      "abilities": {
+        "strength": [9,11],
+        "dexterity": [12,14],
+        "constitution": [12,14],
+        "intelligence": [15,16],
+        "wisdom": [12,14],
+        "charisma": [10,12]
+      },
+      "sidearm": {"weapon_type":"melee","atk_bonus":4,"dice":6,"dmg_bonus":2,"dmg_type":"bludgeoning"},
+      "notes": [
+        "A wandering caster: 22 HP, AC 12, and Poison Spray from range, an ordinary ranged attack at +4 for 1d12 poison (the engine has no save-based attacks for enemies, so the spell is a spell attack). When the player gets close he drops to the",
+        "quarterstaff sidearm, 1d6+2 (the same machinery the archers use for a dagger; flavor_type_hedge_mage_dagger), and falls back when he can. Sharpshooter profile. Not balance-simmed. The Burning Grove's Dubhar (longshade_forest.txt).",
+        "Reach medium: Poison Spray reaches 30 feet, so like a player casting it he must be within Mid-Range."
+      ]
+    },
+    {
+      "id": "twig_blight",
+      "name": "Twig Blight",
+      "epithet": "the twig blight",
+      "hp": 7,
+      "ac": 14,
+      "creature_type": "plant",
+      "size": "small",
+      "profile": "feral",
+      "attack": {"weapon_type":"melee","dice":4,"dmg_type":"slashing","atk_bonus":3,"dmg_bonus":2},
+      "abilities": {
+        "strength": [8,10],
+        "dexterity": [12,14],
+        "constitution": [10,12],
+        "intelligence": [3,5],
+        "wisdom": [8,10],
+        "charisma": [3,5]
+      },
+      "vulnerable": "fire",
+      "notes": [
+        "A small plant creature of twig and bramble: 7 HP, AC 14, a claw of knotted wood for 1d4+2, and vulnerable to fire (double fire damage: Control Flames' spread and Alchemist's Fire catch a whole pack). Mindless like the lacedon: never sets",
+        "a chase chance, so it fights whatever is in front of it. Small. Not balance-simmed."
+      ]
+    }
+  ]
+}
