@@ -1085,7 +1085,15 @@ button#statSidebar .turnRow,
     }
     if (o.kind !== "player" && combatantInfo(o.kind, o.slot)) attrs += " data-combatant=\"" + key + "\"";
     if (pct <= 35 && !o.down) cls += " isLow";
-    return "<div class=\"" + cls + "\" style=\"--hp:" + pct + "\"" + attrs + ">" +
+    // conditions and effects as a row of small icons on the token's lower edge (on a crowded tile, the first two and a count); the hover card names them
+    var pips = "", sts = o.down ? [] : statusesOf(s, o.kind, o.slot);
+    if (sts.length) {
+      pips = "<span class=\"stagePips\" aria-label=\"" + esc(sts.map(function (c) { return c.label; }).join(", ")) + "\">" +
+        sts.map(function (c, i) { return "<i class=\"stagePip t-" + c.tone + (i > 1 ? " more" : "") + "\" title=\"" + esc(c.tip) + "\">" + c.glyph + "</i>"; }).join("") +
+        (sts.length > 2 ? "<i class=\"stagePip t-grey count\" title=\"" + esc(sts.slice(2).map(function (c) { return c.label; }).join(", ")) + "\">+" + (sts.length - 2) + "</i>" : "") + "</span>";
+      cls += " hasPips";
+    }
+    return "<div class=\"" + cls + "\" style=\"--hp:" + pct + "\"" + attrs + ">" + pips +
       (actingNextKey === key && !o.down ? "<em class=\"stageTag\">Acts next</em>" : "") +
       "<span class=\"stageMedal\"><i>" + esc(o.chip) + "</i>" + badge + "</span>" +
       "<span class=\"stageName\">" + stageNameHtml(o.name) + "</span>" +
@@ -2103,12 +2111,43 @@ button#statSidebar .turnRow,
   // Active conditions on one combatant, read from per-slot "rounds left" variables (0 = none). To show a new
   // condition, add its variable suffix and label here; the game writes the value, this only reads it.
   var CONDITION_KEYS = [["slowed", "Slowed"], ["frightened", "Frightened"], ["greased", "Greased"], ["prone", "Prone"], ["burning", "Burning"], ["wet", "Wet"]];
-  function conditionsOf(p, s) {
-    var out = [];
-    for (var i = 0; i < CONDITION_KEYS.length; i++) {
-      var raw = s[p + CONDITION_KEYS[i][0]], left = (raw === true || raw === "true") ? 1 : Number(raw);   // prone is a flag, the others count rounds or attempts
-      if (isFinite(left) && left > 0) out.push(CONDITION_KEYS[i][1]);
+  // ── Statuses (2026-11-04): every condition and effect on a combatant, for the stage's token icons and the hover card's condition line,
+  // so the two never disagree. Each reads the state combat.txt keeps; nothing here decides a rule. A round-limited effect counts while
+  // combat_round has not passed its last round (restrained_until, bane_expires_round, favored_foe_expires_round), as the hub reads them.
+  //   glyph: the icon's one character; tone: its colour (battlestage.css .stagePip.t-<tone>); tip: one line for the icon's tooltip.
+  var STATUS_GLYPHS = {
+    slowed: ["\u2744", "cold", "Slowed: cannot Dash on its next turn"], frightened: ["!", "fear", "Frightened: will not close on you"],
+    greased: ["\u25d0", "amber", "Greased: may slip and fall"], prone: ["\u2193", "grey", "Prone: knocked down"],
+    burning: ["\u2739", "fire", "Burning: takes fire damage each turn"], wet: ["\u223f", "cold", "Wet: soaked through"]
+  };
+  function statusesOf(s, kind, slot) {
+    var out = [], round = Number(s.combat_round) || 0;
+    function add(label, glyph, tone, tip) { out.push({ label: label, glyph: glyph, tone: tone, tip: tip }); }
+    if (kind === "player") {
+      if (isTruthy(s.player_stunned)) add("Stunned", "\u2726", "gold", "Stunned: you lose your next turn");
+      if (isTruthy(s.shield_active)) add("Shield", "\u25c8", "cold", "Shield: +5 AC until your next turn");
+      if (isTruthy(s.blade_ward_active)) add("Blade Ward", "\u25c7", "cold", "Blade Ward: resisting weapon damage");
+      if (isTruthy(s.dodge_active)) add("Dodging", "\u21af", "good", "Dodging: attacks against you have disadvantage");
+      if (isTruthy(s.combat_reckless_active)) add("Reckless", "\u203c", "fire", "Reckless: your attacks and theirs have advantage");
+      if (Number(s.poisoned_minutes_left) > 0) add("Poisoned", "\u2620", "good", "Poisoned: your d20 rolls have disadvantage");
+      return out;
     }
+    var p = (kind === "enemy" ? "combat_enemy" : "combat_ally") + slot + "_";
+    for (var i = 0; i < CONDITION_KEYS.length; i++) {
+      var k = CONDITION_KEYS[i][0], raw = s[p + k], left = (raw === true || raw === "true") ? 1 : Number(raw);   // prone is a flag, the others count rounds or attempts
+      if (isFinite(left) && left > 0) add(CONDITION_KEYS[i][1], STATUS_GLYPHS[k][0], STATUS_GLYPHS[k][1], STATUS_GLYPHS[k][2]);
+    }
+    if (kind !== "enemy") return out;
+    slot = Number(slot);
+    if (Number(s[p + "stunned"]) > 0 || isTruthy(s[p + "stunned"])) add("Stunned", "\u2726", "gold", "Stunned: loses its next turn");
+    var until = Number(s[p + "restrained_until"]) || 0;
+    if (until > 0 && round <= until) add("Restrained", "\u2297", "good", "Restrained: held fast by thorny vines");
+    var bane = Number(s[p + "bane_expires_round"]) || 0;
+    if (bane > 0 && bane >= round) add("Baned", "\u2198", "fear", "Bane: -1d4 on its attacks");
+    if (isTruthy(s.hex_active) && Number(s.hex_target_slot) === slot) add("Hexed", "\u2736", "fear", "Hex: your hits deal an extra 1d6 necrotic");
+    if (Number(s.favored_foe_target_slot) === slot && (Number(s.favored_foe_expires_round) || 0) >= round) add("Marked", "\u25ce", "good", "Hunter's Mark: your weapon hits deal extra damage");
+    if (isTruthy(s[p + "disadvantage"])) add("Disadvantage", "\u25bc", "cold", "Its next attack has disadvantage");
+    if (isTruthy(s[p + "advantage"])) add("Advantage", "\u25b2", "fire", "Its next attack has advantage");
     return out;
   }
   // Structured read of one combatant. Returns null when there is nothing honest to show (inert slot 0,
@@ -2168,7 +2207,7 @@ button#statSidebar .turnRow,
       dmg: sides === null ? null : (sides > 1 ? "1d" + sides : "") + (bonus ? modStr(bonus) : ""),
       hp: num("hp"), maxHp: num("max_hp"),
       abilities: abilities,
-      conditions: conditionsOf(p, s),
+      conditions: statusesOf(s, kind, slot).map(function (c) { return c.label; }),
       extra: extraLines(s, kind, slot)
     };
     return (info.ac !== null || info.atk !== null || info.dmg !== null || abilities.length) ? info : null;
