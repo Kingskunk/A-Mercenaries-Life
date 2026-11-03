@@ -29,6 +29,7 @@ const MAP = {
   disengage: "Action/Disengage_Icon.webp",
   dodge: "Passive_feature/Uncanny_Dodge_Icon.webp",       // no plain Dodge art in the library; a figure slipping a blow reads right
   hide: "Action/Hide_Icon.webp",
+  intimidate: "Action/Intimidating_Presence_Icon.webp",   // the morale action (combat.txt MORALE)
   shove: "Action/Shove_Icon.webp",
   throw: "Action/Throw_Icon.webp",   // the one Throw button on the bar; its fly-out shows each item in its own art (below)
   // Each thrown item's own art, keyed throw_<slug of its title>: battlehud.js variantArt reads "Throw: Grease Flask" as throw_grease_flask.

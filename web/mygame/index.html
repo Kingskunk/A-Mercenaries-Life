@@ -1098,7 +1098,7 @@ button#statSidebar .turnRow,
       "<span class=\"stageMedal\"><i>" + esc(o.chip) + "</i>" + badge + "</span>" +
       "<span class=\"stageName\">" + stageNameHtml(o.name) + "</span>" +
       "<span class=\"stageHp\"><span style=\"width:" + pct + "%\"></span></span>" +
-      "<span class=\"stageNum\">" + (o.down ? "Down" : hp + " / " + max) + "</span>" +
+      "<span class=\"stageNum\">" + (o.down ? outLabel(s, o.kind, o.slot) : hp + " / " + max) + "</span>" +
       "</div>";
   }
   // The name fits one line. In a pack ("Black Mire-Rat (Lead)", "(Flank)", "(Rear)") the part that tells them apart is the role in brackets,
@@ -1621,7 +1621,7 @@ button#statSidebar .turnRow,
             // A downed enemy still gets the card: its AC/Atk/abilities are what tell you whether the
             // remaining target is worth finishing, and a dead row that shows nothing reads as broken.
             rows += "<div class=\"statRow turnRow" + (cDead ? " turnRowDead" : "") + "\"" + cBar + combatantAttr(kind, slot) + "><span>" + cNameHtml +
-              "</span><span>" + (cDead ? "Down" : (cHp + "/" + cMax)) + "</span></div>";
+              "</span><span>" + (cDead ? outLabel(s, kind, slot) : (cHp + "/" + cMax)) + "</span></div>";
           }
         }
       }
@@ -2120,6 +2120,11 @@ button#statSidebar .turnRow,
     greased: ["\u25d0", "amber", "Greased: may slip and fall"], prone: ["\u2193", "grey", "Prone: knocked down"],
     burning: ["\u2739", "fire", "Burning: takes fire damage each turn"], wet: ["\u223f", "cold", "Wet: soaked through"]
   };
+  // How a combatant at 0 HP left the fight: "Fled" or "Surrendered" when its morale broke (combat.txt MORALE), else "Down".
+  function outLabel(s, kind, slot) {
+    var out = kind === "player" ? "" : String(s[(kind === "enemy" ? "combat_enemy" : "combat_ally") + slot + "_out"] || "");
+    return out === "fled" ? "Fled" : (out === "surrendered" ? "Surrendered" : "Down");
+  }
   function statusesOf(s, kind, slot) {
     var out = [], round = Number(s.combat_round) || 0;
     function add(label, glyph, tone, tip) { out.push({ label: label, glyph: glyph, tone: tone, tip: tip }); }
@@ -2138,6 +2143,8 @@ button#statSidebar .turnRow,
       if (isFinite(left) && left > 0) add(CONDITION_KEYS[i][1], STATUS_GLYPHS[k][0], STATUS_GLYPHS[k][1], STATUS_GLYPHS[k][2]);
     }
     if (Number(s[p + "stunned"]) > 0 || isTruthy(s[p + "stunned"])) add("Stunned", "\u2726", "gold", "Stunned: loses its next turn, no reactions, easy to hit");
+    if (isTruthy(s[p + "broken"])) add("Broken", "\u2691", "fear", kind === "enemy" ? "Broken: its nerve is gone; it will run or yield" : "Wavering: covering up instead of fighting until it rallies");
+    if (kind === "ally" && isTruthy(s[p + "dodging"])) add("Covering up", "\u21af", "good", "Covering up: attacks on it have disadvantage");
     if (kind !== "enemy") return out;
     slot = Number(slot);
     var until = Number(s[p + "restrained_until"]) || 0;
