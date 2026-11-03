@@ -250,9 +250,12 @@ const MAP = {
   furs: "../Generic/Furs_Generated_Source.png",             // the user's own art (2026-10-24)
   leather: "../Generic/Cured_Hides_Generated_Source.png",
   wool: "../Generic/Wool_Generated_Source.png",
+  hemp: "../Generic/Hemp.png",                                 // the user's own art (2026-11-02)
   wool_cloth: "../Generic/Wool_Cloth_Generated_Source.png",
   cheese: "FOOD_Durinbold_Cheese_Wedge_Unfaded_Icon.png",
   orchard_apple: "FOOD_Apple_Unfaded_Icon.png",
+  grapes: "FOOD_Purple_Grapes_Unfaded_Icon.png",             // purple vineyard grapes (2026-11-02): Barolo's wine grapes
+  wine: "../Generic/Weathered Wine Barrel Icon.png",          // the user's own art (2026-11-02): one barrel row for all wine
   root_vegetable_bundle: "FOOD_Turnip_Unfaded_Icon.png",
   farm_eggs: "FOOD_Egg_Unfaded_Icon.png",
   dried_pork_sausage: "FOOD_Dried_Pork_Sausage_Unfaded_Icon.png",

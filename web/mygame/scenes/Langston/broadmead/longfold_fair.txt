@@ -1,4 +1,5 @@
 *comment ====================================================================================
+*comment TRADE PANEL WIRED (2026-11-02, the trade pass): this ground is an open market (catalog trade "bm_fair", market_defs.json tile "bm", trade.js PILOT, startup_parts/48_market.txt market_bm_fair). Any older note below that says there is no trade panel yet is superseded; bm_fair_open_panel and bm_fair_settle are the live labels.
 *comment LONGFOLD FAIR AND THE SUN PILLAR (Broadmead): the open market ground in the long fold of the meadow below the village. Plan: Resources & Quest/WESTERN_VALE_VILLAGES_PLAN.md, Village Three, place 3 (widened 2026-11-02 into the village's trading-simulator market).
 *comment Built so far (2026-11-02): the hours, the three description layers and the way back. There is no trade panel yet, by the user's instruction: the trade hub and the rumours are built in after the last village. The labels are laid out like barolo/market.txt and
 *comment timbermouth/market.txt so the panel and rumours drop in without moving anything:
@@ -42,7 +43,8 @@
 *comment Open-world free time: the sidebar's Wait and Rest work on this page.
 *set wait_ok_page page_id
 *choice
-  *comment The "# ⚖ Settle up" option goes here when the panel is wired (see the header).
+  # ⚖ Settle up with the dealers.
+    *goto bm_fair_settle
   *if ((day_of_week = "Marketday") and (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon")))
     *if (not(has_horse))
       # Walk up to the horse line and ask about a horse. [~5 min]
@@ -69,10 +71,76 @@
     *goto_scene Langston/broadmead/broadmead bm_return
   *comment GEN:END place_steps home:broadmead
 
-*comment The trade panel's home. Empty until the market is wired to the trading system (see the header).
+*comment The trade panel's home: one open market for the whole ground, every commodity bought and the shelf sold from what it holds. Settling takes the panel's agreed totals (equipment.txt shop_check).
 *label bm_fair_open_panel
-*comment GEN:BEGIN bm_fair_panel_rows goes here once tools/gen_markets.js knows the market
+*set shop_open "bm_fair"
+*set shop_rows ""
+*comment GEN:BEGIN bm_fair_panel_rows
+*gosub_scene equipment market_rumor_check "bm_fair"
+*comment GEN:END bm_fair_panel_rows
 *return
+
+*label bm_fair_cart_pass
+*comment GEN:BEGIN bm_fair_cart_pass
+*gosub_scene equipment shop_cart_run "market" "bm_fair_sell" "bm_fair"
+*comment GEN:END bm_fair_cart_pass
+*return
+
+*label bm_fair_settle
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *gosub_scene equipment shop_begin
+  *gosub bm_fair_cart_pass
+  *gosub_scene equipment shop_check
+  *if (shop_verdict = "ok")
+    *set shop_mode "apply"
+    *gosub bm_fair_cart_pass
+    *set currency_add_amount (shop_tot_credit - shop_tot_cost)
+    *gosub_scene economy currency_add
+  *else
+    *set shop_mode "clear"
+    *gosub bm_fair_cart_pass
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*if (shop_verdict = "empty")
+  You stand a moment by the trough with nothing set aside, and the fair goes on around you.
+  *page_break Back to the market…
+  *goto bm_fair_ground
+*if (shop_verdict = "short")
+  You count your coin against the sums chalked on the lots and come up short. The goods stay where they are.
+  *page_break Back to the market…
+  *goto bm_fair_ground
+*if ((shop_tot_bought > 0) and (shop_tot_sold > 0))
+  You work from pen to pen and hall to hall, setting your goods on the weigh-master's iron scale and taking others up, until what is owed passes from hand to hand and comes out square.
+*elseif (shop_tot_bought > 0)
+  You go from lot to lot, having each weighed and counting out the coin, and a drover's boy carries your purchases to the edge of the fold.
+*else
+  At one lot after another you set your goods on the iron scale, and each dealer counts out the coin from a belt pouch.
+*if (not(shop_quote_line = ""))
+  *line_break
+  ${shop_quote_line}
+*if (not(shop_note_line = ""))
+  *line_break
+  ${shop_note_line}
+*if (shop_tot_sold > 0)
+  *line_break
+  [b][💰 Sold: ${shop_sold_list} for ${shop_credit_desc}][/b]
+*if (shop_tot_bought > 0)
+  *line_break
+  [b][🛒 Bought: ${shop_recv} for ${shop_cost_desc}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass shop_tot_minutes
+*if (shop_tot_sold > 0)
+  *set minutes_to_pass (minutes_to_pass + 5)
+*set time_advance_call_id "bm_fair_trade"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Back to the market…
+*goto bm_fair_ground
 
 *label bm_fair_closed
 [b]◈ LONGFOLD FAIR[/b]

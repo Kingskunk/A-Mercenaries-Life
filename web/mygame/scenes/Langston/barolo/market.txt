@@ -1,4 +1,5 @@
 *comment ====================================================================================
+*comment TRADE PANEL WIRED (2026-11-02, the trade pass): this ground is an open market (catalog trade "ba_market", market_defs.json tile "nv", trade.js PILOT, startup_parts/48_market.txt market_ba_market). Any older note below that says there is no trade panel yet is superseded; ba_market_open_panel and ba_market_settle are the live labels.
 *comment BAROLO MARKET: the paved yard where the village lane meets the road from the arch. Plan: Resources & Quest/WESTERN_VALE_VILLAGES_PLAN.md, Village Two, place 2.
 *comment Built so far: the hours, the three description layers and the way back. There is no trade panel yet, by the user's instruction (2026-11-01); the labels are laid out like
 *comment timbermouth/market.txt so the panel and rumours drop in without moving anything:
@@ -40,7 +41,8 @@
 *comment Open-world free time: the sidebar's Wait and Rest work on this page.
 *set wait_ok_page page_id
 *choice
-  *comment The "# ⚖ Settle up" option goes here when the panel is wired (see the header).
+  # ⚖ Settle up at the tables.
+    *goto ba_market_settle
   # Walk back to the village lane.
     *set shop_open ""
     *goto_scene Langston/barolo/barolo ba_return
@@ -50,10 +52,76 @@
     *goto_scene Langston/barolo/barolo ba_return
   *comment GEN:END place_steps home:barolo
 
-*comment The trade panel's home. Empty until the market is wired to the trading system (see the header).
+*comment The trade panel's home: one open market for the whole ground, every commodity bought and the shelf sold from what it holds. Settling takes the panel's agreed totals (equipment.txt shop_check).
 *label ba_market_open_panel
-*comment GEN:BEGIN ba_market_panel_rows goes here once tools/gen_markets.js knows the market
+*set shop_open "ba_market"
+*set shop_rows ""
+*comment GEN:BEGIN ba_market_panel_rows
+*gosub_scene equipment market_rumor_check "ba_market"
+*comment GEN:END ba_market_panel_rows
 *return
+
+*label ba_market_cart_pass
+*comment GEN:BEGIN ba_market_cart_pass
+*gosub_scene equipment shop_cart_run "market" "ba_market_sell" "ba_market"
+*comment GEN:END ba_market_cart_pass
+*return
+
+*label ba_market_settle
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *gosub_scene equipment shop_begin
+  *gosub ba_market_cart_pass
+  *gosub_scene equipment shop_check
+  *if (shop_verdict = "ok")
+    *set shop_mode "apply"
+    *gosub ba_market_cart_pass
+    *set currency_add_amount (shop_tot_credit - shop_tot_cost)
+    *gosub_scene economy currency_add
+  *else
+    *set shop_mode "clear"
+    *gosub ba_market_cart_pass
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*if (shop_verdict = "empty")
+  You stand a moment under the canopies with nothing set aside, and the market goes on around you.
+  *page_break Back to the market…
+  *goto ba_market_ground
+*if (shop_verdict = "short")
+  You count your coin against the sums chalked on the tables and come up short. The goods stay where they are.
+  *page_break Back to the market…
+  *goto ba_market_ground
+*if ((shop_tot_bought > 0) and (shop_tot_sold > 0))
+  You go from table to table, setting your goods on the scale under the painted shield and taking others up, and the clerk chalks each sum until what is owed comes out square.
+*elseif (shop_tot_bought > 0)
+  You go from table to table, having each lot weighed and counting out the coin, and a porter carries your purchases to the lane.
+*else
+  At one table after another you set your goods on the scale, and each seller counts out the coin from a purse.
+*if (not(shop_quote_line = ""))
+  *line_break
+  ${shop_quote_line}
+*if (not(shop_note_line = ""))
+  *line_break
+  ${shop_note_line}
+*if (shop_tot_sold > 0)
+  *line_break
+  [b][💰 Sold: ${shop_sold_list} for ${shop_credit_desc}][/b]
+*if (shop_tot_bought > 0)
+  *line_break
+  [b][🛒 Bought: ${shop_recv} for ${shop_cost_desc}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass shop_tot_minutes
+*if (shop_tot_sold > 0)
+  *set minutes_to_pass (minutes_to_pass + 5)
+*set time_advance_call_id "ba_market_trade"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Back to the market…
+*goto ba_market_ground
 
 *label ba_mk_closed
 [b]◈ BAROLO MARKET[/b]
