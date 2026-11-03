@@ -1085,10 +1085,16 @@ button#statSidebar .turnRow,
     return "<div class=\"" + cls + "\" style=\"--hp:" + pct + "\"" + attrs + ">" +
       (actingNextKey === key && !o.down ? "<em class=\"stageTag\">Acts next</em>" : "") +
       "<span class=\"stageMedal\"><i>" + esc(o.chip) + "</i>" + badge + "</span>" +
-      "<span class=\"stageName\">" + esc(o.name) + "</span>" +
+      "<span class=\"stageName\">" + stageNameHtml(o.name) + "</span>" +
       "<span class=\"stageHp\"><span style=\"width:" + pct + "%\"></span></span>" +
       "<span class=\"stageNum\">" + (o.down ? "Down" : hp + " / " + max) + "</span>" +
       "</div>";
+  }
+  // The name fits one line. In a pack ("Black Mire-Rat (Lead)", "(Flank)", "(Rear)") the part that tells them apart is the role in brackets,
+  // so it goes first and anything cut is the shared kind: "Flank · Black Mire-Rat" rather than "Black Mire-R...".
+  function stageNameHtml(name) {
+    var m = /^(.*\S)\s*\(([^()]+)\)$/.exec(String(name || ""));
+    return m ? "<b>" + esc(m[2]) + "</b> \u00b7 " + esc(m[1]) : esc(name);
   }
   // Downed enemies stay on their tile, greyed, so a fight's shape is still readable after a kill.
   function stageOccupants(s, pos) {

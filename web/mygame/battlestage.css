@@ -113,8 +113,11 @@ body.battleStageOn .stageStatusLine { display: none; }
 #battleStage .stageToken {
   --tok: var(--ch-dim);
   position: relative; width: 100%; max-width: 168px; box-sizing: border-box;
-  display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto auto; column-gap: 8px; row-gap: 3px; align-items: center;
-  padding: 5px 7px 5px 5px;
+  /* two thin rows: the name with the HP numbers beside it, then the bar. The name is one line; the number chip, the hover card and the
+     sidebar all carry the full name, so a long one is cut short here rather than given a second line. */
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "medal name num" "medal hp hp";
+  column-gap: 7px; row-gap: 4px; align-items: center;
+  padding: 4px 7px 4px 4px;
   border: 1px solid rgba(255, 255, 255, 0.09); border-left: 3px solid var(--tok);
   border-radius: 6px;
   background: rgba(10, 9, 8, 0.82);
@@ -126,25 +129,25 @@ body.battleStageOn .stageStatusLine { display: none; }
 #battleStage .stageToken.enemy  { --tok: var(--ch-bad); }
 
 #battleStage .stageMedal {
-  grid-row: 1 / span 3; position: relative;
-  display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; box-sizing: border-box;
+  grid-area: medal; position: relative;
+  display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; box-sizing: border-box;
   border: 3px solid transparent;
   background: linear-gradient(#141210, #141210) padding-box, conic-gradient(var(--tok) calc(var(--hp, 100) * 1%), rgba(255, 255, 255, 0.10) 0) border-box;
 }
-#battleStage .stageMedal i { font: 800 15px/1 var(--ch-font-ui); font-style: normal; color: var(--tok); }
+#battleStage .stageMedal i { font: 800 13px/1 var(--ch-font-ui); font-style: normal; color: var(--tok); }
 #battleStage .stageDarts {
   position: absolute; right: -6px; top: -6px; min-width: 16px; height: 16px; padding: 0 3px; box-sizing: border-box; border-radius: 8px;
   background: var(--ch-brass); color: #1a1208; font: 800 10px/16px var(--ch-font-ui); text-align: center; border: 1px solid #000;
 }
 #battleStage .stageName {
-  min-width: 0; overflow: hidden; overflow-wrap: break-word;
-  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
+  grid-area: name; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   font: 600 12.5px/1.2 var(--ch-font-ui); color: var(--ch-head-text);
 }
 #battleStage .stageToken.enemy .stageName { color: #e8a7a0; }
-#battleStage .stageHp { height: 5px; border-radius: 2px; background: rgba(255, 255, 255, 0.10); overflow: hidden; }
+#battleStage .stageName b { font-weight: 800; }
+#battleStage .stageHp { grid-area: hp; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.10); overflow: hidden; }
 #battleStage .stageHp > span { display: block; height: 100%; border-radius: 2px; background: var(--tok); transition: width 0.3s; }
-#battleStage .stageNum { display: flex; justify-content: space-between; gap: 4px; font: 600 11px/1.1 var(--ch-font-ui); color: var(--ch-dim); white-space: nowrap; }
+#battleStage .stageNum { grid-area: num; font: 600 11px/1.1 var(--ch-font-ui); color: var(--ch-dim); white-space: nowrap; }
 #battleStage .stageToken.isDown .stageNum { text-transform: uppercase; letter-spacing: 0.06em; }
 /* "Acts next" sits on the token's top edge, at the left; "Target" (below) at the right */
 #battleStage .stageTag {
@@ -174,20 +177,21 @@ body.battleStageOn .stageStatusLine { display: none; }
 @keyframes stageLow { 50% { opacity: 0.45; } }
 #battleStage .stageToken.isDown { --tok: #5c5752; opacity: 0.5; filter: grayscale(1); border-style: dashed; box-shadow: none; }
 #battleStage .stageToken.isDown .stageHp { display: none; }
-#battleStage .stageToken.isDown .stageMedal { width: 26px; height: 26px; border-width: 2px; }
+#battleStage .stageToken.isDown { grid-template-areas: "medal name num"; padding-top: 3px; padding-bottom: 3px; }
+#battleStage .stageToken.isDown .stageMedal { width: 22px; height: 22px; border-width: 2px; }
 #battleStage .stageToken.isDown .stageMedal i { font-size: 11px; }
 #battleStage .stageToken.isDown .stageName { text-decoration: line-through; color: var(--ch-dim); }
 
-/* a narrow tile (a small window, or a lane of nine): the medal over the name, the tags above and below */
+/* a narrow tile (a small window, or a lane of nine): the same two rows with a smaller medal; the HP numbers give way to the name (the bar
+   and the hover card still carry them), and the tags move to the bottom edge so "Acts next" and "Target" do not collide */
 @container (max-width: 112px) {
-  #battleStage .stageToken { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; padding: 8px 6px 6px; row-gap: 4px; }
-  #battleStage .stageMedal { grid-row: auto; width: 28px; height: 28px; }
-  #battleStage .stageToken.isDown { grid-template-columns: auto minmax(0, 1fr); justify-items: start; text-align: left; padding: 4px 6px; }
-  #battleStage .stageToken.isDown .stageMedal { grid-row: 1 / span 2; }
+  #battleStage .stageToken { grid-template-areas: "medal name" "medal hp"; grid-template-columns: auto minmax(0, 1fr); column-gap: 5px; padding: 4px 5px 4px 3px; }
+  #battleStage .stageToken.isDown { grid-template-areas: "medal name"; }
+  #battleStage .stageNum { display: none; }
+  #battleStage .stageMedal { width: 22px; height: 22px; border-width: 2px; }
+  #battleStage .stageMedal i { font-size: 11px; }
   #battleStage .stageName { font-size: 11.5px; }
-  #battleStage .stageHp { width: 100%; }
-  #battleStage .stageTag { top: auto; bottom: -8px; left: 50%; transform: translateX(-50%); white-space: nowrap; }
-  #battleStage .stageToken.isPicked::after { right: 50%; transform: translateX(50%); }
+  #battleStage .stageTag { top: auto; bottom: -8px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
