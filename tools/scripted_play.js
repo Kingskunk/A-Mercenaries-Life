@@ -40,6 +40,8 @@
  *   day       Ironday, Tideday, Marketday, Hearthday, Forgeday, Greyday or Hallowday (sets campaign_day)
  *   stats     object of variables set last, so they win over weather/time/day and the preset
  *   rand      the forced roll before the first step that sets its own (default "mid")
+ *   seed      a number: real-looking random dice instead of forced rolls, the same sequence every run for the same seed (the "rand" settings are then
+ *             ignored). This is what play is like, so the game's own replay guards are exercised (combat.txt combat_chain_begin seeds a chain's dice).
  *   steps     [{ "pick": "text in the option" | number (1 = first option), "rand": "low"|"mid"|"high"|0..1,
  *               "whileAvail": true, "optional": true }]  whileAvail repeats the step until its option is gone (attack rounds); optional skips the step
  *               when its option is not on offer, instead of stopping with "pick not found" (one move list can then run through many different fights)
@@ -48,6 +50,7 @@
  *   requireNoDeadSpace  true: fail this scenario if a *line_break prints an empty line
  *   refresh   true: after every page, replay it on a copy (what opening Stats and returning does) and
  *             report any variable that changes; a reward or a time advance that is not guarded shows up here
+ *   refreshText  true (with refresh): also report a replay whose printed text differs from the first pass's
  *   sabotage  variables forced false on the replay copy, to prove the refresh check can see a double apply
  *   replaySet object of variables forced to a value on the replay copy, standing for what the dossier wrote before it closed (a spell cast from the sidebar); the
  *             refresh check reports any of them the replayed page then changed again, e.g. {"guidance_active":true} when a roll on the page wipes a fresh Guidance
@@ -124,7 +127,15 @@ function parseRand(v) {
   if (v === "mid") return 0.5;
   return v;
 }
-Math.random = function () { return D.rand; };
+var forcedRandom = function () { return D.rand; };
+Math.random = forcedRandom;
+// The dice are fixed here, so combat.txt combat_chain_begin must not seed its own over them (see REPLAY-SAFE TURN CHAINS). A "seed" run clears it.
+globalThis.__combatFixedRandom = true;
+// A "seed" run's dice: mulberry32, its state kept on SEEDED so a refresh check can put it back (a replay must not use up the run's own rolls).
+var SEEDED = { a: 0 };
+function seededRandom() { SEEDED.a = (SEEDED.a + 0x6D2B79F5) | 0; var t = Math.imul(SEEDED.a ^ (SEEDED.a >>> 15), 1 | SEEDED.a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }
+// The words a page printed, markup and spacing aside, for refreshText.
+function pageText(chunks) { return chunks.join("").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim(); }
 
 // Moves whatever the engine has printed since the last flush into one "prose" event.
 function flush() {
@@ -237,13 +248,22 @@ function refreshCheck(sc, where) {
   var replayStats = deep(snapStats);
   D.sabotage.forEach(function (k) { replayStats[k] = false; });
   Object.keys(D.replaySet).forEach(function (k) { replayStats[k] = D.replaySet[k]; });
-  var savedPrinted = printed.slice(), savedTimeout = timeout, savedMode = D.mode, savedStats = stats;
+  var savedPrinted = printed.slice(), savedTimeout = timeout, savedMode = D.mode, savedStats = stats, savedSeed = SEEDED.a, savedRandom = Math.random;
+  // A choice page has already flushed its text into the last prose event; a page_break page still has it in printed.
+  var lastEv = D.events[D.events.length - 1];
+  var firstText = savedPrinted.length ? pageText(savedPrinted) : (lastEv && lastEv.type === "prose" ? lastEv.text.replace(/\s+/g, " ").trim() : "");
   D.mode = "replay"; printed.length = 0; timeout = null; D.refreshChecks++;
   var rs = new Scene(replayStats.sceneName || startScene, replayStats, nav, { debugMode: false });
   rs.temps = deep(snapTemps); rs.lineNum = line; rs.indent = indent;
   try { rs.execute(); } catch (e) { D.refreshDiffs.push(where + " @ " + startScene + ":" + line + ": EXCEPTION " + e.message); }
-  D.mode = savedMode; timeout = savedTimeout; stats = savedStats;
+  var replayText = pageText(printed);
+  D.mode = savedMode; timeout = savedTimeout; stats = savedStats; SEEDED.a = savedSeed; Math.random = savedRandom;
   printed.length = 0; Array.prototype.push.apply(printed, savedPrinted);
+  if (D.refreshText && replayText !== firstText) {
+    var at = 0;
+    while (at < firstText.length && firstText[at] === replayText[at]) at++;
+    D.refreshDiffs.push(where + " @ " + startScene + ":" + line + ": TEXT differs from the first pass at \"" + firstText.slice(Math.max(0, at - 40), at + 60) + "\" -> \"" + replayText.slice(Math.max(0, at - 40), at + 60) + "\"");
+  }
   Object.keys(D.replaySet).forEach(function (k) {
     if (JSON.stringify(replayStats[k]) !== JSON.stringify(D.replaySet[k])) D.refreshDiffs.push(where + " @ " + startScene + ":" + line + ": replaySet " + k + " was forced to " + JSON.stringify(D.replaySet[k]) + " and the replay left it " + JSON.stringify(replayStats[k]));
   });
@@ -330,7 +350,9 @@ function play(scn) {
   var purseBefore = purse(), repBefore = stats.port_watch_rep, hpBefore = stats.hp_current;
   resetRun();
   D.mode = "drive"; D.steps = scn.steps || []; D.rand = parseRand(scn.rand0 !== undefined ? scn.rand0 : (scn.rand !== undefined ? scn.rand : "mid"));
-  D.refreshAll = !!scn.refresh; D.sabotage = scn.sabotage || []; D.replaySet = scn.replaySet || {};
+  D.refreshAll = !!scn.refresh; D.refreshText = !!scn.refreshText; D.sabotage = scn.sabotage || []; D.replaySet = scn.replaySet || {};
+  if (scn.seed !== undefined) { SEEDED.a = Number(scn.seed) >>> 0; Math.random = seededRandom; globalThis.__combatFixedRandom = false; }
+  else { Math.random = forcedRandom; globalThis.__combatFixedRandom = true; }
   var sc = new Scene(scn.scene || "port_valen/port_valen", stats, nav, { debugMode: false });
   if (scn.label) sc.targetLabel = { label: scn.label, origin: "startup", originLine: 0 };
   runLoop(sc);

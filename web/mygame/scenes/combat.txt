@@ -1080,6 +1080,8 @@
 *set combat_turn_needs_advance false
 *set combat_turn_advanced_this_page false
 *set combat_player_chosen_target 0
+*comment A fight that ends during a chain of turns ends the chain too (see REPLAY-SAFE TURN CHAINS).
+*gosub combat_chain_end
 *return
 
 *comment ============================================================================
@@ -2196,11 +2198,34 @@
   *set locked_blade_ward_tick_page_id page_id
 *return
 
+*comment ============================================================================
+*comment REPLAY-SAFE TURN CHAINS (2026-11-03). The engine saves the CURRENT variables with the page's START line, so a browser refresh, or the
+*comment Stats screen and back, runs the page again on top of its own results (web/scene.js refreshSavedProgress). A page of enemy and ally turns
+*comment used to be guarded one effect at a time (the attack, narration and stun locks), and everything without a lock happened twice: an ally or
+*comment an enemy stepped again, a chase moved on, an ally lost HP again.
+*comment The chain now guards itself as a whole. combat_chain_begin runs where every chain starts (fight_end_player_turn, and the fight's opening
+*comment dispatch in fight_round_hub). The first time on a page it notes every variable's value (combat_chain_snap) and draws a seed; on a replay
+*comment of that page it puts those values back first. Either way it seeds the dice from combat_chain_seed for the length of the chain, so the
+*comment replay rolls the same numbers, makes the same choices and prints the same lines. combat_chain_end runs where the chain hands back to the
+*comment player, or the fight ends (fight_cleanup): it trims the note to just the variables the chain changed (usually a few hundred bytes in the
+*comment save) and hands the dice back. The per-effect locks are kept; with the chain restored they simply roll their first-pass values again.
+*comment Engine bookkeeping (choice_*) and the chain's own fields are never noted. A test harness that fixes the dice itself sets
+*comment __combatFixedRandom, so its fixed rolls are left alone.
+*label combat_chain_begin
+*script (function () { var G = (typeof window !== "undefined") ? window : globalThis, S = stats, pid = S.page_id; if (G.__combatChainRandom && Math.random === G.__combatChainRandom) Math.random = G.__combatChainOrigRandom; if (S.combat_chain_page === pid && S.combat_chain_snap) { var snap = JSON.parse(S.combat_chain_snap); Object.keys(snap).forEach(function (k) { S[k] = snap[k]; }); } else { S.combat_chain_page = pid; S.combat_chain_seed = Math.floor(Math.random() * 2147483646) + 1; var copy = {}; Object.keys(S).forEach(function (k) { if (k !== "scene" && !/^combat_chain_/.test(k) && !/^choice_/.test(k)) copy[k] = S[k]; }); S.combat_chain_snap = JSON.stringify(copy); S.combat_chain_pruned = false; } if (!G.__combatFixedRandom) { var a = Number(S.combat_chain_seed) >>> 0; G.__combatChainOrigRandom = Math.random; G.__combatChainRandom = function () { a = (a + 0x6D2B79F5) | 0; var t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; Math.random = G.__combatChainRandom; } })();
+*return
+
+*label combat_chain_end
+*script (function () { var G = (typeof window !== "undefined") ? window : globalThis, S = stats; if (S.combat_chain_page === S.page_id && S.combat_chain_snap && !S.combat_chain_pruned) { var snap = JSON.parse(S.combat_chain_snap), kept = {}; Object.keys(snap).forEach(function (k) { if (JSON.stringify(snap[k]) !== JSON.stringify(S[k])) kept[k] = snap[k]; }); S.combat_chain_snap = JSON.stringify(kept); S.combat_chain_pruned = true; } if (G.__combatChainRandom && Math.random === G.__combatChainRandom) Math.random = G.__combatChainOrigRandom; })();
+*return
+
 *label fight_end_player_turn
 *comment The ONE place a player turn legitimately ends, so the tick that ages Blade Ward has exactly one
 *comment caller. Reached from the stun skip, the "nothing left to spend" auto-end, and the End your turn
 *comment option. Deliberately NOT the fight's opening dispatch (fight_round_hub's combat_turn_needs_advance
 *comment branch, where no turn has happened yet) and NOT the enemy branch's own recursion.
+*comment The chain of enemy and ally turns starts here (see REPLAY-SAFE TURN CHAINS above).
+*gosub combat_chain_begin
 *gosub blade_ward_tick
 *goto combat_next_turn
 
@@ -2290,6 +2315,7 @@
 *comment turn) leaves the flag false and falls straight through to the banner below, exactly as before.
 *if (combat_turn_needs_advance)
   *set combat_turn_needs_advance false
+  *gosub combat_chain_begin
   *goto combat_next_turn
 *comment Shield is only a held reaction while the caster still has both resources it needs. A slot or reaction can
 *comment be spent after arming (for example, Magic Missile or an opportunity attack), so retire the stale arm before
@@ -5627,6 +5653,8 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *set shield_armed false
   *set shield_active false
   *gosub_scene combat_movement fight_pick_target
+  *comment The chain hands back to the player here (see REPLAY-SAFE TURN CHAINS).
+  *gosub combat_chain_end
   *if (combat_turn_advanced_this_page)
     *page_break Hold your ground...
   *goto fight_round_hub
