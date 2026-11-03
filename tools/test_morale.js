@@ -66,7 +66,17 @@ s = run("combat_morale_check", ["enemy", 1, "test"], Object.assign(e(1, thug), {
 expect("steady keeps the higher of two dice (6 and 15: holds)", s.combat_enemy1_broken, false);
 s = run("combat_morale_check", ["enemy", 1, "test"], Object.assign(e(1, thug), { combat_morale_forced_a: 15, combat_morale_forced_b: 6, combat_enemy1_morale: "skittish" }), HIGH);
 expect("skittish keeps the lower (15 and 6: breaks)", s.combat_enemy1_broken, true);
-expect("...and the banner says so", /Morale \(test\): 6 \+0 \(Disadvantage: skittish\) = 6 vs DC 10 — BREAKS/.test(text), true);
+expect("...and the banner says so", /Morale \(test\): 6 \+0 WIS \+2 prof \(Disadvantage: skittish\) = 8 vs DC 10 — BREAKS/.test(text), true);
+s = run("combat_morale_check", ["enemy", 1, "test"], Object.assign(e(1, Object.assign({}, thug, { resolve: 2 })), { combat_morale_forced_a: 7, combat_morale_forced_b: 7 }), LOW);
+expect("proficiency and resolve add to the save: a 7 +2 prof +2 resolve = 11 holds", [s.combat_enemy1_broken, /7 \+0 WIS \+2 prof \+2 resolve = 11/.test(text)], [false, true]);
+s = run("combat_morale_check", ["enemy", 1, "test"], Object.assign(e(1, thug), { combat_morale_forced_a: 4, combat_morale_forced_b: 15, hp_current: 8, hp_max: 20 }), LOW);
+expect("you below half HP: its side is winning, advantage (4 and 15: holds)", [s.combat_enemy1_broken, /Advantage: its side is winning/.test(text)], [false, true]);
+s = run("combat_morale_check", ["enemy", 1, "test"], Object.assign(e(1, thug), { combat_morale_forced_a: 4, combat_morale_forced_b: 15, hp_current: 12, hp_max: 20 }), LOW);
+expect("...not when you are above half (4: breaks)", s.combat_enemy1_broken, true);
+s = run("combat_morale_check", ["enemy", 1, "test"], Object.assign(e(1, Object.assign({}, rat)), { combat_morale_forced_a: 4, combat_morale_forced_b: 15, hp_current: 8, hp_max: 20 }), LOW);
+expect("skittish and winning cancel: a straight roll (4: breaks)", [s.combat_enemy1_broken, /a straight roll/.test(text)], [true, true]);
+s = run("combat_morale_check", ["ally", 1, "test"], Object.assign({ combat_ally_count: 1, combat_enemy_count: 2 }, a(1, { name: "Rook", hp: 3, max_hp: 12, wisdom: 10, morale: "normal" }), e(1, Object.assign({}, thug, { hp: 0 })), e(2, thug), { combat_morale_forced_a: 4, combat_morale_forced_b: 15 }), LOW);
+expect("an ally with half the enemies down has advantage too (4 and 15: holds)", s.combat_ally1_broken, false);
 s = run("combat_morale_check", ["enemy", 1, "test"], Object.assign(e(1, thug), { combat_enemy1_morale: "fearless" }), LOW);
 expect("fearless never breaks", s.combat_enemy1_broken, false);
 s = run("combat_morale_check", ["enemy", 1, "test"], Object.assign(e(1, thug), { combat_no_morale: true }), LOW);

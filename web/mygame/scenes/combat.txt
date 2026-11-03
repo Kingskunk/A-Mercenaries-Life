@@ -5713,7 +5713,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *comment   strongest down the strongest of its own side (the most maximum HP, and more than its own) is down; for an ally, the player is below a quarter of their HP
 *comment   half down      half or more of its side is down (out of the fight, by any means)
 *comment and Intimidate (the player's action) can force a check at any time.
-*comment THE CHECK: a Wisdom save, d20 + WIS against DC 10. The type's morale (combat_<side>N_morale, from tools/enemy_catalog.json and the ally
+*comment THE CHECK: a Wisdom save, d20 + WIS + proficiency + resolve (an enemy's) against DC 10, with advantage when its side is winning. The type's morale (combat_<side>N_morale, from tools/enemy_catalog.json and the ally
 *comment types in combat_types.txt) decides how it rolls: fearless never checks, steady rolls with advantage, skittish with disadvantage.
 *comment combat_no_morale (a duel, a boss) turns all of it off for the fight. A failed save BREAKS it (_broken):
 *comment   An ENEMY is done fighting. A humanoid that is cornered (an opponent on its tile) or in a non-lethal fight surrenders on the spot. Anything else flees: it Dashes away from the player toward its own edge of the lane, taking the usual free swing
@@ -5750,20 +5750,68 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *set cmc_a combat_morale_forced_a
   *set cmc_b combat_morale_forced_b
   *set combat_morale_forced_a 0
+*comment Nerve is experience (2026-11-03, the user): proficiency and, for an enemy, its resolve add to the save, as they do to Intimidate's DC.
+*temp cmc_prof {(cmc_p & "prof")}
+*if (cmc_prof <= 0)
+  *set cmc_prof combat_lib_prof_bonus
+*temp cmc_resolve 0
+*if (cmc_side = "enemy")
+  *set cmc_resolve {(("combat_enemy" & cmc_slot) & "_resolve")}
+*comment Advantage when its own side is winning (2026-11-03, the user): nobody walks away from a fight they are about to win.
+*comment   An enemy: you are below half your HP, or half or more of your allies are down.
+*comment   An ally: half or more of the enemies on the field are down (a reinforcement still on its way does not count).
+*temp cmc_winning false
+*temp cmc_i 1
+*temp cmc_tot 0
+*temp cmc_down 0
+*if (cmc_side = "enemy")
+  *if ((hp_current * 2) < hp_max)
+    *set cmc_winning true
+  *label combat_morale_check_ally_loop
+  *if (cmc_i <= combat_ally_count)
+    *set cmc_tot + 1
+    *if ({(("combat_ally" & cmc_i) & "_hp")} <= 0)
+      *set cmc_down + 1
+    *set cmc_i + 1
+    *goto combat_morale_check_ally_loop
+*else
+  *label combat_morale_check_enemy_loop
+  *if (cmc_i <= combat_enemy_count)
+    *if (not({(("combat_enemy" & cmc_i) & "_out")} = "reserve"))
+      *set cmc_tot + 1
+      *if ({(("combat_enemy" & cmc_i) & "_hp")} <= 0)
+        *set cmc_down + 1
+    *set cmc_i + 1
+    *goto combat_morale_check_enemy_loop
+*if ((cmc_tot > 0) and ((cmc_down * 2) >= cmc_tot))
+  *set cmc_winning true
+*comment Advantage (steady, or winning) and disadvantage (skittish) cancel out, as in 5e.
+*temp cmc_adv ((cmc_kind = "steady") or (cmc_winning))
+*temp cmc_dis (cmc_kind = "skittish")
+*temp cmc_why_adv "steady"
+*if (cmc_winning)
+  *set cmc_why_adv "its side is winning"
+  *if (cmc_kind = "steady")
+    *set cmc_why_adv "steady, its side is winning"
 *temp cmc_roll cmc_a
 *temp cmc_note ""
-*if (cmc_kind = "steady")
+*if ((cmc_adv) and (cmc_dis))
+  *set cmc_note " (skittish, but ${cmc_why_adv}: a straight roll)"
+*elseif (cmc_adv)
   *if (cmc_b > cmc_roll)
     *set cmc_roll cmc_b
-  *set cmc_note " (Advantage: steady)"
-*if (cmc_kind = "skittish")
+  *set cmc_note " (Advantage: ${cmc_why_adv})"
+*elseif (cmc_dis)
   *if (cmc_b < cmc_roll)
     *set cmc_roll cmc_b
   *set cmc_note " (Disadvantage: skittish)"
-*temp cmc_total (cmc_roll + cmc_mod)
-*temp cmc_mod_str "+${cmc_mod}"
+*temp cmc_total (((cmc_roll + cmc_mod) + cmc_prof) + cmc_resolve)
+*temp cmc_mod_str "+${cmc_mod} WIS"
 *if (cmc_mod < 0)
-  *set cmc_mod_str "${cmc_mod}"
+  *set cmc_mod_str "${cmc_mod} WIS"
+*set cmc_mod_str "${cmc_mod_str} +${cmc_prof} prof"
+*if (cmc_resolve > 0)
+  *set cmc_mod_str "${cmc_mod_str} +${cmc_resolve} resolve"
 *set combat_morale_broke (cmc_total < 10)
 *temp cmc_verdict "HOLDS"
 *if (combat_morale_broke)
