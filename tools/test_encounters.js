@@ -81,6 +81,7 @@ catalog.encounters.forEach(function (enc) {
     if (s.e.atk !== undefined) expect(w + "attack bonus", state[p + "atk_bonus"], s.e.atk);
     if (s.e.resolve !== undefined) expect(w + "resolve", state[p + "resolve"], s.e.resolve);
     if (s.range !== undefined) expect(w + "opening range", state[p + "range"], s.range);
+    if (s.e.arrives !== undefined) expect(w + "arrives", state[p + "arrives"], s.e.arrives);
   });
   const left = Object.keys(state).filter((k) => /_override$/.test(k) && String(state[k]) !== String(base[k]));
   expect(at + "every override consumed", left.join(","), "");
@@ -100,6 +101,38 @@ if (firstState && firstState.n >= 3) {
   expect("results: count_results " + group + " fled", s.combat_result_n, 1);
   expect("results: the group is cleared off the slot afterwards", s.combat_enemy1_group, "");
   console.log("  ok  after the fight, the story counts " + group + ": 2 down, 1 fled");
+}
+// REINFORCEMENTS: the first template with an "arrives" enemy.
+const reinf = catalog.encounters.find((enc) => enc.enemies.some((e) => e.arrives));
+if (reinf) {
+  const slotOf = (function () { let n = 0, at = 0, round = 0; reinf.enemies.forEach((e) => { const c = e.count || 1; for (let i = 0; i < c; i++) { n++; if (e.arrives && !at) { at = n; round = e.arrives; } } }); return { slot: at, round: round }; })();
+  const p = "combat_enemy" + slotOf.slot + "_";
+  function fresh() { const st = Object.assign({}, base); run("fight_" + reinf.id, st); return st; }
+  let st = fresh();
+  expect("reinforcement: waits off the field", [st[p + "out"], Number(st[p + "hp"]), Number(st[p + "reserve_hp"]) === Number(st[p + "max_hp"]), Number(st[p + "arrives"])].join(), ["reserve", 0, true, slotOf.round].join());
+  st.combat_round = slotOf.round - 1;
+  run("combat_reinforcements_arrive", st, [false]);
+  expect("reinforcement: not before its round", st[p + "out"], "reserve");
+  st.combat_round = slotOf.round;
+  run("combat_reinforcements_arrive", st, [false]);
+  const edge = Number(st[p + "side"]) === -1 ? st.combat_lane_min_position : st.combat_lane_max_position;
+  expect("reinforcement: on its round it arrives, HP back, on its own edge", [st[p + "out"], Number(st[p + "hp"]) === Number(st[p + "max_hp"]), Number(st[p + "position"]), st.combat_reinforcement_arrived].join(), ["", true, Number(edge), true].join());
+  st = fresh();
+  st.combat_leader_slot = 0;
+  for (let k = 1; k <= Number(st.combat_enemy_count); k++) if (k !== slotOf.slot) st["combat_enemy" + k + "_hp"] = 0;
+  st.combat_enemy_hp = 0;
+  run("fight_check_all_dead", st);
+  expect("reinforcement: the rest down early, it arrives at once and the fight goes on", [st.combat_all_enemies_dead, st[p + "out"], Number(st[p + "hp"]) > 0].join(), [false, "", true].join());
+  if (reinf.leader) {
+    st = fresh();
+    st["combat_enemy" + reinf.leader + "_hp"] = 0;
+    if (reinf.leader === 1) st.combat_enemy_hp = 0;
+    run("fight_check_all_dead", st);
+    expect("reinforcement: the leader down still ends the fight, and it never comes", [st.combat_all_enemies_dead, st[p + "out"]].join(), [true, "reserve"].join());
+    run("combat_record_results", st);
+    expect("reinforcement: never arrived, so it counts as standing", st["combat_result" + slotOf.slot + "_outcome"], "standing");
+  }
+  console.log("  ok  reinforcements: " + reinf.id + " slot " + slotOf.slot + " arrives on round " + slotOf.round);
 }
 if (failed) { console.error(failed + " encounter check(s) failed."); process.exit(1); }
 console.log("Encounter templates OK: " + catalog.encounters.length + " built through the real engine and matching the catalog.");

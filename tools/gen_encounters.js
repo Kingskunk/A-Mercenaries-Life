@@ -63,6 +63,7 @@ var encounters = (catalog.encounters || []).map(function (enc) {
     if (!isInt(count) || count < 1) fail(ew, "count must be a whole number, 1 or more");
     ["hp", "ac", "atk", "resolve"].forEach(function (k) { if (e[k] !== undefined && !isInt(e[k])) fail(ew, k + " must be a whole number"); });
     if (e.hp !== undefined && e.hp < 1) fail(ew, "hp must be 1 or more");
+    if (e.arrives !== undefined && (!isInt(e.arrives) || e.arrives < 2)) fail(ew, "arrives must be a round number, 2 or later");
     var ranges = Array.isArray(e.range) ? e.range : null;
     if (ranges && ranges.length !== count) fail(ew, "range lists " + ranges.length + " tiers for " + count + " enemies");
     var name = e.name || t.name;
@@ -74,9 +75,10 @@ var encounters = (catalog.encounters || []).map(function (enc) {
       var epithet;
       if (e.epithet) epithet = count > 1 ? e.epithet.replace(/^the /, "the " + ORDINALS[i] + " ") : e.epithet;
       else epithet = count > 1 ? "the " + ORDINALS[i] + " " + name.toLowerCase() : "the " + name.toLowerCase();
-      slots.push({ type: e.type, name: slotName, epithet: epithet, group: group, hp: e.hp, ac: e.ac, atk: e.atk, resolve: e.resolve, range: range });
+      slots.push({ type: e.type, name: slotName, epithet: epithet, group: group, hp: e.hp, ac: e.ac, atk: e.atk, resolve: e.resolve, range: range, arrives: e.arrives });
     }
   });
+  if (slots.length && slots[0].arrives !== undefined) fail(where, "the first enemy is there from the start; put a reinforcement later in the list");
   if (slots.length > SLOT_CAP) fail(where, slots.length + " enemies; a fight holds " + SLOT_CAP + " at most");
   ["leader", "nonlethal_slot"].forEach(function (k) {
     if (enc[k] !== undefined && (!isInt(enc[k]) || enc[k] < 1 || enc[k] > slots.length)) fail(where, k + " must be a slot from 1 to " + slots.length);
@@ -111,6 +113,7 @@ function genLabel(x) {
     if (s.ac !== undefined) out.push("*set " + field(n, "ac_override") + " " + s.ac);
     if (s.atk !== undefined) out.push("*set " + field(n, "atk_override") + " " + s.atk);
     if (s.resolve !== undefined) out.push("*set " + field(n, "resolve_override") + " " + s.resolve);
+    if (s.arrives !== undefined) out.push("*set combat_enemy" + n + "_arrives " + s.arrives);
     if (s.range !== undefined) out.push("*set " + (n === 1 ? "combat_enemy_range" : "combat_enemy" + n + "_range") + " " + s.range);
   });
   out.push("*goto fight_library");

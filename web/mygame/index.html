@@ -1113,6 +1113,8 @@ button#statSidebar .turnRow,
     for (var i = 1; i <= cap; i++) {
       // An unused slot carries the name "none" and no HP; only a real combatant that was knocked down is drawn.
       var name = fmt(s["combat_enemy" + i + "_name"]);
+      // A reinforcement still on its way (combat.txt REINFORCEMENTS) is not on the field at all yet.
+      if (String(s["combat_enemy" + i + "_out"] || "") === "reserve") continue;
       if (name && String(name).toLowerCase() !== "none" && (Number(s["combat_enemy" + i + "_max_hp"]) || 0) > 0 && (Number(s["combat_enemy" + i + "_hp"]) || 0) <= 0 && Number(s["combat_enemy" + i + "_position"]) === pos) {
         out.push({ kind: "enemy", slot: i, chip: String(i), name: name, hp: 0, max: Number(s["combat_enemy" + i + "_max_hp"]) || 0, down: true });
       }
@@ -2120,10 +2122,10 @@ button#statSidebar .turnRow,
     greased: ["\u25d0", "amber", "Greased: may slip and fall"], prone: ["\u2193", "grey", "Prone: knocked down"],
     burning: ["\u2739", "fire", "Burning: takes fire damage each turn"], wet: ["\u223f", "cold", "Wet: soaked through"]
   };
-  // How a combatant at 0 HP left the fight: "Fled" or "Surrendered" when its morale broke (combat.txt MORALE), else "Down".
+  // How a combatant at 0 HP left the fight: "Fled" or "Surrendered" when its morale broke (combat.txt MORALE), "Not arrived" for a reinforcement still on its way (REINFORCEMENTS), else "Down".
   function outLabel(s, kind, slot) {
     var out = kind === "player" ? "" : String(s[(kind === "enemy" ? "combat_enemy" : "combat_ally") + slot + "_out"] || "");
-    return out === "fled" ? "Fled" : (out === "surrendered" ? "Surrendered" : "Down");
+    return out === "fled" ? "Fled" : (out === "surrendered" ? "Surrendered" : (out === "reserve" ? "Not arrived" : "Down"));
   }
   function statusesOf(s, kind, slot) {
     var out = [], round = Number(s.combat_round) || 0;
