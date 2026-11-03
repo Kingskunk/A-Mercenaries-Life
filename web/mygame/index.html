@@ -101,6 +101,7 @@ either express or implied.
 <link href="dungeonmap.css" rel="stylesheet" type="text/css">
 <link href="overworldmap.css" rel="stylesheet" type="text/css">
 <link href="shell.css" rel="stylesheet" type="text/css">
+<link href="battlestage.css" rel="stylesheet" type="text/css">
 <link href="scenery.css" rel="stylesheet" type="text/css">
 <link href="ambience.css" rel="stylesheet" type="text/css">
 <!--[if IE 6]><style>.alertify-logs { position: absolute; }</style><![endif]-->
@@ -1012,6 +1013,146 @@ button#statSidebar .turnRow,
     return "<div class=\"battlefieldStrip\" aria-label=\"Battlefield lane\"><div class=\"battlefieldStripHead\"><span>Battlefield</span><small>" +
       esc(present) + "</small></div><div class=\"battlefieldScroll\"><div class=\"battlefieldLane\">" + nodes + "</div></div></div>";
   }
+  // ── Battle stage (2026-11-03) ──────────────────────────────────────────────────────────────────────────
+  // While the battle HUD is up, the hub's choice list is hidden and the framed story column used to stand mostly empty. The stage draws the
+  // battlefield lane in that space, full width, with every combatant as a token standing on its tile. The prose keeps the top of the frame and
+  // scrolls as before. Like the sidebar strip, it only formats window.stats: a token click goes through the same data-target / data-friendly
+  // handlers the turn-order rows use, and the hover cards are the same #csTip cards. While the stage shows, the sidebar strip is left out.
+  // It shows only when the column is tall enough to give it room; otherwise the sidebar strip stays as it was. Classic list hides it too.
+  var stageLastHtml = null, stageH = 0, actingNextKey = null;
+  function stageEl() {
+    var el = document.getElementById("battleStage");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "battleStage";
+      el.setAttribute("aria-label", "Battlefield");
+      document.body.appendChild(el);
+      bindStage(el);
+    }
+    return el;
+  }
+  // The stage height: about half the framed column, within limits. Zero when the column is too short to give it room.
+  function stageHeightFor() {
+    var col = document.getElementById("container1");
+    if (!col) return 0;
+    var z = window.UI_ZOOM || 1, colH = col.getBoundingClientRect().height / z + (stageH || 0);   // the column as it would be without the stage
+    var h = Math.max(190, Math.min(340, Math.round(colH * 0.52)));
+    return colH - h < 210 ? 0 : h;
+  }
+  function stageWanted(s) {
+    return !!s && isTruthy(s.combat_engaged) && document.body.classList.contains("battleHudOn") &&
+      isFinite(Number(s.combat_lane_min_position)) && isFinite(Number(s.combat_lane_max_position)) && isFinite(Number(s.combat_lane_player_position));
+  }
+  function stageShowing() { return document.body.classList.contains("battleStageOn"); }
+  function hideStage() {
+    var el = document.getElementById("battleStage");
+    if (el) { el.innerHTML = ""; el.hidden = true; }
+    stageLastHtml = null;
+    if (stageH) { stageH = 0; document.documentElement.style.setProperty("--bstage-h", "0px"); }
+    document.body.classList.remove("battleStageOn");
+  }
+  // One token: a medallion (its ring is its HP, as on the sidebar pawns), the name, and an HP bar.
+  function stageTokenHtml(s, o) {
+    var key = o.kind + ":" + o.slot, cls = "stageToken " + o.kind, attrs = " data-link=\"" + key + "\"", badge = "";
+    var hp = o.kind === "player" ? (Number(s.hp_current) || 0) : o.hp, max = o.kind === "player" ? (Number(s.hp_max) || 0) : o.max;
+    var pct = max > 0 ? Math.max(0, Math.min(100, Math.round(100 * hp / max))) : 100;
+    var friendlyOn = isTruthy(s.combat_friendly_targeting_active);
+    if (linkKey === key) cls += " isLinked";
+    if (actingNextKey === key) cls += " isNext";
+    if (o.down) {
+      cls += " isDown";
+    } else if (o.kind === "enemy") {
+      if (!friendlyOn) attrs += " data-target=\"" + o.slot + "\"";
+      if (Number(s.combat_player_chosen_target) === o.slot) cls += " isPicked";
+      var darts = Number(s["combat_mm_darts_" + o.slot]) || 0;
+      if (darts > 0) badge = "<b class=\"stageDarts\" title=\"Darts assigned\">" + darts + "</b>";
+    } else if (friendlyOn) {
+      var fslot = o.kind === "player" ? 0 : o.slot;
+      attrs += " data-friendly=\"" + fslot + "\"";
+      if ((Number(s.combat_friendly_target) || 0) === fslot) cls += " isPicked";
+    }
+    if (o.kind !== "player" && combatantInfo(o.kind, o.slot)) attrs += " data-combatant=\"" + key + "\"";
+    if (pct <= 35 && !o.down) cls += " isLow";
+    return "<div class=\"" + cls + "\" style=\"--hp:" + pct + "\"" + attrs + ">" +
+      (actingNextKey === key && !o.down ? "<em class=\"stageTag\">Acts next</em>" : "") +
+      "<span class=\"stageMedal\"><i>" + esc(o.chip) + "</i>" + badge + "</span>" +
+      "<span class=\"stageName\">" + esc(o.name) + "</span>" +
+      "<span class=\"stageHp\"><span style=\"width:" + pct + "%\"></span></span>" +
+      "<span class=\"stageNum\">" + (o.down ? "Down" : hp + " / " + max) + "</span>" +
+      "</div>";
+  }
+  // Downed enemies stay on their tile, greyed, so a fight's shape is still readable after a kill.
+  function stageOccupants(s, pos) {
+    var out = laneOccupants(s, pos), cap = Number(s.combat_enemy_slot_cap) || 0;
+    for (var i = 1; i <= cap; i++) {
+      var name = fmt(s["combat_enemy" + i + "_name"]);
+      if (name && (Number(s["combat_enemy" + i + "_hp"]) || 0) <= 0 && Number(s["combat_enemy" + i + "_position"]) === pos) {
+        out.push({ kind: "enemy", slot: i, chip: String(i), name: name, hp: 0, max: Number(s["combat_enemy" + i + "_max_hp"]) || 0, down: true });
+      }
+    }
+    return out;
+  }
+  function battleStageHtml(s) {
+    var min = Number(s.combat_lane_min_position), max = Number(s.combat_lane_max_position), player = Number(s.combat_lane_player_position);
+    if (max < min) return "";
+    var icons = window.BATTLEFIELD_ICONS || {}, seenTypes = [], tiles = "";
+    for (var pos = min; pos <= max; pos++) {
+      var rel = pos - player, label = rel === 0 ? "You" : (rel < 0 ? "Back " + (-rel) : rangeTierName(rel, s));
+      var types = terrainTypesAt(s, pos), art = "", tags = "", toks = "";
+      types.forEach(function (t) { if (seenTypes.indexOf(t) < 0) seenTypes.push(t); });
+      if (types.length && icons[types[0]]) art = "<span class=\"stageArt\" style=\"background-image:url(" + icons[types[0]] + ")\"></span>";
+      if (types.length) tags = "<span class=\"stageTerrain\">" + types.map(function (t) { return esc(terrainLabel(t)); }).join(" · ") + "</span>";
+      stageOccupants(s, pos).forEach(function (o) { toks += stageTokenHtml(s, o); });
+      var cls = "stageTile" + (rel === 0 ? " here" : (rel < 0 ? " behind" : " ahead")) + (types.length ? " terrain" : "") + (toks ? "" : " empty");
+      tiles += "<div class=\"" + cls + "\" data-node=\"" + pos + "\"><span class=\"stageLabel\">" + esc(label) + "</span>" + art +
+        "<div class=\"stageToks\">" + toks + "</div>" + tags + "</div>";
+    }
+    var present = seenTypes.length ? seenTypes.map(terrainLabel).join(" · ") : "Open ground";
+    var round = Number(s.combat_round) || 0;
+    return "<div class=\"stageHead\"><span class=\"stageRound\">" + (round ? "Round " + round : "Battle") + "</span>" +
+      "<span class=\"stageDir\"><span>← Retreat</span><span>Advance →</span></span>" +
+      "<span class=\"stageField\">" + esc(present) + "</span></div>" +
+      "<div class=\"stageLane\">" + tiles + "</div>";
+  }
+  function renderBattleStage(s) {
+    if (!stageWanted(s)) return hideStage();
+    var h = stageShowing() ? stageH : stageHeightFor();
+    if (!h) return hideStage();
+    var el = stageEl();
+    if (h !== stageH) { stageH = h; document.documentElement.style.setProperty("--bstage-h", h + "px"); }
+    document.body.classList.add("battleStageOn");
+    el.hidden = false;
+    var html = battleStageHtml(s);
+    if (html === stageLastHtml) return;
+    stageLastHtml = html;
+    el.innerHTML = html;
+  }
+  // A resize can make the column too short for the stage (or give it room again): measure afresh.
+  window.addEventListener("resize", function () {
+    if (!stageShowing()) return;
+    stageH = 0; document.documentElement.style.setProperty("--bstage-h", "0px");
+    document.body.classList.remove("battleStageOn");
+    stageLastHtml = null;
+    renderBattleStage(window.stats);
+  });
+  // Hover plumbing, the same as the sidebar's: a token opens its combatant card, a bare tile its lane card, and a token and its turn-order
+  // card light each other. Clicks need nothing here: the document-wide data-target / data-friendly handlers already serve the stage.
+  function bindStage(el) {
+    el.addEventListener("mouseover", function (ev) {
+      var t = ev.target, tok = t && t.closest ? t.closest(".stageToken[data-combatant]") : null;
+      var tile = t && t.closest ? t.closest(".stageTile[data-node]") : null, linked = t && t.closest ? t.closest("[data-link]") : null;
+      if (tok) showTip(tok.getAttribute("data-combatant"), ev.clientX, ev.clientY);
+      else if (tile && !(t.closest && t.closest(".stageToken"))) showTip("node:" + tile.getAttribute("data-node"), ev.clientX, ev.clientY);
+      else hideTip();
+      setLink(linked ? linked.getAttribute("data-link") : null);
+    });
+    el.addEventListener("mousemove", function (ev) {
+      if (!tipKey) return;
+      tipX = ev.clientX; tipY = ev.clientY; placeTip();
+    });
+    el.addEventListener("mouseleave", function () { hideTip(); setLink(null); });
+  }
+
   // Ally orders are a sidebar surface, not player actions. The ChoiceScript option remains the authority for
   // legality and costs; this UI state only remembers which companion's compact, left-opening tray is visible.
   var allyOrderSlot = 0;
@@ -1067,10 +1208,12 @@ button#statSidebar .turnRow,
     var s = window.stats;
     if (!s || !s.intake_completed || s.intake_completed === "false") {
       el.style.display = "none";
+      hideStage();
       return;
     }
     el.style.display = "";
     var inCombat = isTruthy(s.combat_engaged);
+    if (!inCombat) actingNextKey = null;
     // HP as a bar over the frame art (stage 3 of the interface redesign), with the temporary hit points and False Life's timer on a row of their own.
     var hpNow = Number(s.hp_current) || 0, hpMax = Number(s.hp_max) || 0;
     var hpPct = hpMax > 0 ? Math.max(0, Math.min(1, hpNow / hpMax)) : 0;
@@ -1274,6 +1417,7 @@ button#statSidebar .turnRow,
       // The player is always somewhere in the order, so "who acts next" is the first combatant after their
       // own row; if they happen to be last, fall back to the round's first so the row is never blank.
       var upcoming = nextAfter || firstAny;
+      actingNextKey = upcoming ? upcoming.kind + ":" + upcoming.slot : null;
       if (upcoming) {
         var atag = "<span class=\"rangeTag\" title=\"Distance from you\">(" + esc(upcoming.tier) + ")</span>";
         var asub = combatantSubLine(s, upcoming.kind, upcoming.slot);
@@ -1369,7 +1513,7 @@ button#statSidebar .turnRow,
           nonprofHtml +
           resourceHtml) +
       "</div>" +
-      (inCombat ? "<div class=\"sbPanel\"><div class=\"shead\">Turn order</div>" + battlefieldStripHtml(s) + foldHtml("turnorder", "Combatants", orderSummaryHtml, bottomSectionHtml) + "</div>"
+      (inCombat ? "<div class=\"sbPanel\"><div class=\"shead\">Turn order</div>" + (stageWanted(s) && stageShowing() ? "" : battlefieldStripHtml(s)) + foldHtml("turnorder", "Combatants", orderSummaryHtml, bottomSectionHtml) + "</div>"
                 : "<div class=\"sbPanel\">" + foldHtml("today", "Today", "<span class=\"sbSumStack\"><span>" + fmt(s.clock_time) + " &middot; " + dayDisplay + "</span><small>" + fmt(s.time_period) + " &middot; " + weatherDisplay + "</small></span>", bottomSectionHtml) + "</div>") +
       "<div class=\"sbPanel sbSpells\">" + spellSectionHtml() + "</div>" +
       activeQuestHtml +
@@ -1413,6 +1557,7 @@ button#statSidebar .turnRow,
           : "")) +
         "</div>"
         : "");
+    renderBattleStage(s);   // after the turn order, so the stage knows who acts next
     // Rebuild only when something changed. The rebuild replaces every element, which drops a scrollbar drag in progress and puts the battlefield
     // strip's horizontal scroll back at the start, so an unchanged page is left alone, and a changed one hands the strip its scroll position back.
     if (sbHtml === sbLastHtml) return;
@@ -2048,7 +2193,7 @@ button#statSidebar .turnRow,
     }
     if (tipKey.indexOf("node:") === 0) {
       // A lane node: re-resolve under the pointer, repaint (the lane may have moved), or drop the card.
-      var nel = document.elementFromPoint(tipX, tipY), nnode = nel && nel.closest ? nel.closest("#statSidebar .battlefieldNode[data-node]") : null;
+      var nel = document.elementFromPoint(tipX, tipY), nnode = nel && nel.closest ? nel.closest("#statSidebar .battlefieldNode[data-node], #battleStage .stageTile[data-node]") : null;
       if (!nnode) return hideTip();
       tipKey = "node:" + nnode.getAttribute("data-node");
       if (!paintNodeCard(tipKey.slice(5))) return hideTip();
@@ -2057,7 +2202,7 @@ button#statSidebar .turnRow,
     var isSpell = tipKey.indexOf("spell:") === 0;
     var bare = isSpell ? tipKey.slice(6) : tipKey;
     var el = document.elementFromPoint(tipX, tipY);
-    var sel = isSpell ? "#statSidebar .spellRow[data-spell]" : "#statSidebar .turnRow[data-combatant], #statSidebar .battlefieldPawn[data-combatant]";
+    var sel = isSpell ? "#statSidebar .spellRow[data-spell]" : "#statSidebar .turnRow[data-combatant], #statSidebar .battlefieldPawn[data-combatant], #battleStage .stageToken[data-combatant]";
     var row = el && el.closest ? el.closest(sel) : null;
     if (!row) return hideTip();
     var key = isSpell ? row.getAttribute("data-spell") : row.getAttribute("data-combatant");
