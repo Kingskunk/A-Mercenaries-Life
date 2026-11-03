@@ -1019,7 +1019,7 @@ button#statSidebar .turnRow,
   // scrolls as before. Like the sidebar strip, it only formats window.stats: a token click goes through the same data-target / data-friendly
   // handlers the turn-order rows use, and the hover cards are the same #csTip cards. While the stage shows, the sidebar strip is left out.
   // It shows only when the column is tall enough to give it room; otherwise the sidebar strip stays as it was. Classic list hides it too.
-  var stageLastHtml = null, stageH = 0, actingNextKey = null;
+  var stageLastHtml = null, stageH = 0, stageMax = 0, actingNextKey = null;
   function stageEl() {
     var el = document.getElementById("battleStage");
     if (!el) {
@@ -1031,13 +1031,19 @@ button#statSidebar .turnRow,
     }
     return el;
   }
-  // The stage height: about a third of the framed column, within limits, so the prose keeps most of the frame. Zero when the column is too short to give it room.
-  function stageHeightFor() {
+  // The most the stage may take: about a third of the framed column, within limits, so the prose keeps most of the frame. Zero when the column
+  // is too short to give it room. The stage is usually shorter: it is only as tall as its tallest stack of tokens (see fitStage).
+  function stageMaxFor() {
     var col = document.getElementById("container1");
     if (!col) return 0;
-    var z = window.UI_ZOOM || 1, colH = col.getBoundingClientRect().height / z + (stageH || 0);   // the column as it would be without the stage
-    var h = Math.max(150, Math.min(230, Math.round(colH * 0.34)));
-    return colH - h < 260 ? 0 : h;
+    var z = window.UI_ZOOM || 1, colH = col.getBoundingClientRect().height / z - 76;   // inside the frame's 38px border
+    var h = Math.max(140, Math.min(240, Math.round(colH * 0.36)));
+    return colH - h < 240 ? 0 : h;
+  }
+  // The story gives up exactly what the stage uses: measure it after each rebuild and publish it as --bstage-h.
+  function fitStage(el) {
+    var z = window.UI_ZOOM || 1, h = Math.ceil(el.getBoundingClientRect().height / z) - 76;
+    if (h > 0 && h !== stageH) { stageH = h; document.documentElement.style.setProperty("--bstage-h", h + "px"); }
   }
   // The whole fight, not only the hub's pages: the HUD steps away on the pages between (a spell's targeting, the enemies' turns), and if the
   // stage went with it the sidebar strip would flash back for a moment each time. Only the Classic list puts it away.
@@ -1128,16 +1134,19 @@ button#statSidebar .turnRow,
   }
   function renderBattleStage(s) {
     if (!stageWanted(s)) return hideStage();
-    var h = stageShowing() ? stageH : stageHeightFor();
-    if (!h) return hideStage();
+    if (!stageShowing()) {
+      stageMax = stageMaxFor();
+      if (!stageMax) return hideStage();
+      document.documentElement.style.setProperty("--bstage-max", stageMax + "px");
+    }
     var el = stageEl();
-    if (h !== stageH) { stageH = h; document.documentElement.style.setProperty("--bstage-h", h + "px"); }
     document.body.classList.add("battleStageOn");
     el.hidden = false;
     var html = battleStageHtml(s);
     if (html === stageLastHtml) return;
     stageLastHtml = html;
     el.innerHTML = html;
+    fitStage(el);
   }
   // The round and HP lines combat.txt prints over the hub ("[⚔️ Round 2]", "[Name: HP 4/4 (AC 9)]", "[You: HP 3/7 (AC 12)]") repeat what the stage
   // shows, so while it is up they are hidden (battlestage.css, .stageStatusLine). Each line goes with one <br> beside it, so no blank line is left,
