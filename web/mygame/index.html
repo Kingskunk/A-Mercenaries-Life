@@ -48,6 +48,7 @@ either express or implied.
 <script src="spell-icons.js"></script>
 <script src="action-icons.js"></script>
 <script src="battlefield-icons.js"></script>
+<script src="spell-reach.generated.js"></script>
 <script src="equipment-data.generated.js"></script>
 <script src="equipment-panel.js"></script>
 <script src="item-icons.js"></script>
@@ -1057,6 +1058,8 @@ button#statSidebar .turnRow,
     var el = document.getElementById("battleStage");
     if (el) { el.innerHTML = ""; el.hidden = true; }
     stageLastHtml = null;
+    stageFxLast = {};
+    stagePreview = null;
     if (stageH) { stageH = 0; document.documentElement.style.setProperty("--bstage-h", "0px"); }
     document.body.classList.remove("battleStageOn");
   }
@@ -1131,7 +1134,7 @@ button#statSidebar .turnRow,
       // Two or more on one tile stand side by side as medals (battlestage.css, .crowd), so the stage is always one token tall.
       // An empty tile with nothing special on it is drawn narrow with a short name, so a fight spread down the lane fits without scrolling.
       var cls = "stageTile" + (rel === 0 ? " here" : (rel < 0 ? " behind" : " ahead")) + (types.length ? " terrain" : "") +
-        (here.length ? (here.length > 1 ? " crowd" : "") : " empty");
+        (here.length ? (here.length > 1 ? " crowd" : "") : " empty") + stagePreviewTileClass(s, pos, player);
       if (!here.length && !types.length && rel !== 0) label = label.replace("Mid-Range", "Mid").replace("Long Range", "Long");
       // a crowded tile is given room for its medals in one row (up to four), so it does not wrap while empty tiles sit wide beside it
       var room = here.length > 1 ? " style=\"min-width:" + (Math.min(4, here.length) * 37 + 12) + "px\"" : "";
@@ -1141,7 +1144,8 @@ button#statSidebar .turnRow,
     var present = seenTypes.length ? seenTypes.map(terrainLabel).join(" · ") : "Open ground";
     var round = Number(s.combat_round) || 0;
     return "<div class=\"stageHead\"><span class=\"stageRound\">" + (round ? "Round " + round : "Battle") + "</span>" +
-      "<span class=\"stageDir\"><span>← Retreat</span><span>Advance →</span></span>" +
+      (stagePreview ? "<span class=\"stageDir stagePreviewNote\">" + esc(stagePreview.note) + "</span>"
+                    : "<span class=\"stageDir\"><span>← Retreat</span><span>Advance →</span></span>") +
       "<span class=\"stageField\">" + esc(present) + "</span></div>" +
       "<div class=\"stageLane\">" + tiles + "</div>";
   }
@@ -1164,7 +1168,9 @@ button#statSidebar .turnRow,
     Array.prototype.forEach.call(el.querySelectorAll(".stageTile[data-node] .stageToks"), function (t) {
       if (t.scrollTop) tileY[t.parentNode.getAttribute("data-node")] = t.scrollTop;
     });
+    var before = stageFxSnapshot(el);
     el.innerHTML = html;
+    stageFxPlay(el, s, before);
     lane = el.querySelector(".stageLane");
     if (lane && laneX) lane.scrollLeft = laneX;
     Object.keys(tileY).forEach(function (pos) {
@@ -1208,6 +1214,146 @@ button#statSidebar .turnRow,
   }
   if (window.MutationObserver) {
     new MutationObserver(markStatusLines).observe(document.documentElement, { childList: true, subtree: true });
+  }
+  // ── Reach preview (2026-11-04) ──
+  // Hovering (or focusing) an action in the battle HUD shows on the stage how far it reaches: the tiles in reach are lit, the rest dimmed,
+  // and the header says how far ("Ray of Frost reaches up to Mid-Range"). Advance and Fall back mark the tile the step lands on.
+  // Reach follows the hub's own rules (combat.txt, REACH CLASSES): touch / melee is your own tile (a reach weapon one step more), short is up
+  // to Close, medium up to combat_reach_medium (Mid-Range; one band further in the six-band lane), long the whole field. Spells take their
+  // class from tools/spell_catalog.json (spell-reach.generated.js), weapons from the loadout (weapon_reach / sidearm_reach). It only shows the
+  // reach: whether the option is offered, and who it hits, is still decided by combat.txt.
+  var stagePreview = null;   // { lo, hi, friendly, note } or { moveTo, note }
+  function stageWeaponReach(s, hand) {
+    var type = s[hand + "_type"], cls = s[hand + "_reach"];
+    if (type === "ranged") return cls || "long";
+    return type === "reach" ? "reach" : "touch";
+  }
+  function stageReachSteps(s, cls) {
+    if (cls === "touch") return 0;
+    if (cls === "reach" || cls === "short") return 1;
+    if (cls === "medium") return Number(s.combat_reach_medium) || 2;
+    return Infinity;
+  }
+  // HUD slot ids whose reach is not a catalogued spell's: a weapon's, or fixed by the hub (thrown items are medium; Shove, Reckless Attack
+  // and Arms of Hadar need an Engaged enemy). "primary" / "sidearm" mean the reach of that weapon.
+  var STAGE_REACH_FIXED = { "throw": "medium", shove: "touch", reckless_attack: "touch", arms_of_hadar: "touch", booming_blade: "primary",
+    shoot: "primary", dual_shot: "primary", true_strike: "primary", ensnaring_strike: "primary", primary_attack: "primary", sidearm_attack: "sidearm" };
+  function stageTileName(s, rel) { return rel === 0 ? "your tile" : (rel < 0 ? "Back " + (-rel) : rangeTierName(rel, s)); }
+  function stagePreviewFor(s, id, parent, name) {
+    var player = Number(s.combat_lane_player_position), lo = Number(s.combat_lane_min_position), hi = Number(s.combat_lane_max_position);
+    if (!isFinite(player)) return null;
+    if (id === "push_forward" || id === "fall_back") {
+      var to = Math.max(lo, Math.min(hi, player + (id === "push_forward" ? 1 : -1)));
+      if (to === player) return null;
+      return { moveTo: to, note: (id === "push_forward" ? "Advance" : "Fall back") + " \u2192 " + stageTileName(s, to - player) };
+    }
+    if (id === "healing_word") {
+      var fr = Number(s.combat_friendly_reach) || 3;
+      return { lo: player - fr, hi: player + fr, friendly: true, note: "Healing Word reaches an ally up to " + fr + (fr === 1 ? " step" : " steps") + " away" };
+    }
+    var key = STAGE_REACH_FIXED[id] ? id : (STAGE_REACH_FIXED[parent] ? parent : "");
+    var cls = key ? STAGE_REACH_FIXED[key] : ((window.SPELL_REACH || {})[id] || (window.SPELL_REACH || {})[parent]);
+    if (!cls) return null;
+    if (cls === "primary") cls = stageWeaponReach(s, "weapon");
+    else if (cls === "sidearm") cls = stageWeaponReach(s, "sidearm");
+    var steps = stageReachSteps(s, cls);
+    var label = String(name || "").replace(/^Attack with your /, "");
+    var how = steps === 0 ? "reaches your own tile only (Engaged)" : (steps === Infinity ? "reaches the whole field" : "reaches up to " + rangeTierName(steps, s));
+    return { lo: steps === Infinity ? -Infinity : player - steps, hi: player + steps, note: label + " " + how };
+  }
+  function stagePreviewTileClass(s, pos, player) {
+    var p = stagePreview;
+    if (!p) return "";
+    if (p.moveTo !== undefined) return pos === p.moveTo ? " moveTo" : "";
+    return pos >= p.lo && pos <= p.hi ? " inReach" + (p.friendly ? " friendly" : "") : " outReach";
+  }
+  function stageSetPreview(p) {
+    if ((p && p.note) === (stagePreview && stagePreview.note)) return;
+    stagePreview = p;
+    if (stageShowing()) renderBattleStage(window.stats);
+  }
+  // The HUD's slots, its pop-up's buttons (Throw: Alchemist's Fire, True Strike: Radiant), Advance and Retreat. Each carries the hub
+  // option's id (the slug of its name: "ray_of_frost", "push_forward") and, in the pop-up, its parent slot's id ("throw").
+  function stageSlotAt(el) { return el && el.closest ? el.closest("#battleHud .bhud-slot, #battleHud .bhud-adv, #battleHud .bhud-weapon, #battleHudFly .bfly-btn") : null; }
+  function stagePreviewFromSlot(slot) {
+    if (!slot || !window.stats) return stageSetPreview(null);
+    var id = slot.getAttribute("data-id") || "", parent = slot.getAttribute("data-parent") || "";
+    stageSetPreview(stagePreviewFor(window.stats, id, parent, slot.getAttribute("aria-label") || id.replace(/_/g, " ")));
+  }
+  document.addEventListener("mouseover", function (ev) { stagePreviewFromSlot(stageSlotAt(ev.target)); });
+  document.addEventListener("focusin", function (ev) { var sl = stageSlotAt(ev.target); if (sl) stagePreviewFromSlot(sl); });
+  document.addEventListener("focusout", function () { stageSetPreview(null); });
+
+  // ── Stage effects (2026-11-04) ──
+  // What changed since the last drawing, shown on the board: a number rises off a token whose HP moved ("-4" red, "+3" green) with a ring
+  // bursting from its medal, a token that moved tile slides there, and a foe that drops sinks into its greyed state. Everything is worked
+  // out by comparing window.stats with the previous drawing, so the game's rules are untouched. The effects live in #stageFx, a layer of
+  // their own over the stage, because the stage itself is rebuilt whenever anything on it changes (a hover is enough) and would cut them off.
+  var stageFxLast = {};   // "kind:slot" -> { hp, pos } as of the last drawing
+  function stageFxLayer() {
+    var fx = document.getElementById("stageFx");
+    if (!fx) { fx = document.createElement("div"); fx.id = "stageFx"; fx.setAttribute("aria-hidden", "true"); document.body.appendChild(fx); }
+    return fx;
+  }
+  function stageFxNow(s, key) {
+    var bits = key.split(":"), kind = bits[0], slot = bits[1];
+    if (kind === "player") return { hp: Number(s.hp_current) || 0, pos: Number(s.combat_lane_player_position) };
+    return { hp: Number(s["combat_" + kind + slot + "_hp"]) || 0, pos: Number(s["combat_" + kind + slot + "_position"]) };
+  }
+  function stageReducedMotion() { return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); }
+  // Where each medal is on screen, in CSS pixels (the page may be zoomed to fit the window; see UI_ZOOM).
+  function stageMedalRect(tok) {
+    var m = tok.querySelector(".stageMedal"), r = (m || tok).getBoundingClientRect(), z = window.UI_ZOOM || 1;
+    return { left: r.left / z, top: r.top / z, width: r.width / z, height: r.height / z };
+  }
+  function stageFxSnapshot(el) {
+    var out = {};
+    Array.prototype.forEach.call(el.querySelectorAll(".stageToken[data-link]"), function (tok) {
+      out[tok.getAttribute("data-link")] = { rect: stageMedalRect(tok), chip: (tok.querySelector(".stageMedal i") || {}).textContent || "", kind: tok.classList.contains("enemy") ? "enemy" : (tok.classList.contains("ally") ? "ally" : "player") };
+    });
+    return out;
+  }
+  function stageFxAdd(cls, rect, html, life) {
+    var fx = stageFxLayer(), d = document.createElement("div");
+    d.className = cls;
+    d.style.left = (rect.left + rect.width / 2) + "px";
+    d.style.top = (rect.top + rect.height / 2) + "px";
+    if (html) d.innerHTML = html;
+    fx.appendChild(d);
+    setTimeout(function () { if (d.parentNode) d.parentNode.removeChild(d); }, life);
+    return d;
+  }
+  function stageFxPlay(el, s, before) {
+    var now = {}, reduce = stageReducedMotion(), SLIDE = 420;
+    Array.prototype.forEach.call(el.querySelectorAll(".stageToken[data-link]"), function (tok) {
+      var key = tok.getAttribute("data-link"), cur = stageFxNow(s, key), last = stageFxLast[key], old = before[key];
+      now[key] = cur;
+      if (!last) return;   // first sight of this combatant (or of the stage): nothing to compare with
+      var moved = isFinite(last.pos) && isFinite(cur.pos) && last.pos !== cur.pos && old && !reduce;
+      var rect = stageMedalRect(tok);
+      if (moved) {
+        // a ghost of the old medal slides from the old tile to the new one, and the token fades in under it as it lands
+        var g = stageFxAdd("fxGhost " + old.kind, old.rect, "<i>" + esc(old.chip) + "</i>", SLIDE + 60);
+        g.style.width = old.rect.width + "px"; g.style.height = old.rect.height + "px";
+        g.getBoundingClientRect();   // commit the start before the move
+        g.style.transform = "translate(-50%, -50%) translate(" + (rect.left - old.rect.left + (rect.width - old.rect.width) / 2) + "px, " + (rect.top - old.rect.top + (rect.height - old.rect.height) / 2) + "px)";
+        tok.style.opacity = "0";
+        tok.style.transition = "opacity 0.18s";
+        setTimeout(function () { tok.style.opacity = ""; }, SLIDE - 60);
+      }
+      var delta = cur.hp - last.hp;
+      if (delta) {
+        var heal = delta > 0, wait = moved ? SLIDE : 0;
+        setTimeout(function () {
+          var r = tok.isConnected ? stageMedalRect(tok) : rect;
+          stageFxAdd("fxFloat" + (heal ? " heal" : ""), r, (heal ? "+" : "\u2212") + Math.abs(delta), 1400);
+          if (!reduce) stageFxAdd("fxBurst" + (heal ? " heal" : ""), r, "", 700);
+        }, wait);
+        if (!heal && cur.hp <= 0 && last.hp > 0 && tok.classList.contains("isDown")) tok.classList.add("justDown");
+        else if (!heal) tok.classList.add("justHit");
+      }
+    });
+    stageFxLast = now;
   }
   // A resize can make the column too short for the stage (or give it room again): measure afresh.
   window.addEventListener("resize", function () {
