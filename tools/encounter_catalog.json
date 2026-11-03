@@ -1,0 +1,53 @@
+{
+  "_doc": [
+    "Encounter templates: a named group of enemies a story scene calls in one line, *gosub_scene combat fight_<id>.",
+    "Edit here, then run: node tools/gen_encounters.js   (writes the fight_<id> labels into combat.txt and the dev hub menu).",
+    "Template fields:",
+    "  id        the label is fight_<id>; lower case, digits and _ only",
+    "  title     the dev hub's menu line",
+    "  notes     a comment written above the label",
+    "  morale    true (default): enemies can break, flee and surrender; false: they fight to the end (combat_no_morale)",
+    "  nonlethal true: the whole fight is non-lethal (enemies are knocked out, humanoids surrender when broken)",
+    "  no_flee   true: the player cannot run from it",
+    "  leader    a slot number: the fight ends the moment that enemy falls",
+    "  nonlethal_slot  a slot number: only that enemy's defeat is non-lethal",
+    "  enemies   a list; each entry fills one or more slots, in order (6 at most in all):",
+    "    type     an enemy type from tools/enemy_catalog.json (required)",
+    "    name     the display name (default the type's name); with count > 1 each gets a number: Boar 1, Boar 2",
+    "    epithet  how prose names it (default 'the ' + the name in lower case); with count > 1: the first boar, the second boar",
+    "    group    what the story counts it as after the fight (default the name): count_results \"Boar\" \"down\"",
+    "    count    how many (default 1)",
+    "    hp, ac, atk, resolve   override the type's own numbers",
+    "    range    the tier it opens at (0 Engaged, 1 Close, 2 Mid-Range, 3 Long Range); one number, or one per enemy",
+    "The caller still decides combat_player_can_die and the allies, as for any fight."
+  ],
+  "encounters": [
+    {
+      "id": "boar_pack",
+      "title": "🐗 Boar Pack -- 3 wild boars (template, morale on: they can run)",
+      "notes": "Three wild boars rooting at the edge of a wood. Skittish beasts: hurt one badly or drop two and the rest may bolt.",
+      "enemies": [
+        { "type": "beast", "name": "Boar", "count": 3, "hp": 7, "ac": 10, "atk": 2, "range": [1, 1, 2] }
+      ]
+    },
+    {
+      "id": "wolf_pair",
+      "title": "🐺 Wolf Pair -- 2 grey wolves (template, morale on)",
+      "notes": "Two grey wolves that circle in from Close range.",
+      "enemies": [
+        { "type": "beast", "name": "Grey Wolf", "group": "Wolf", "count": 2, "hp": 11, "ac": 13, "atk": 4, "range": 1 }
+      ]
+    },
+    {
+      "id": "roadside_bandits",
+      "title": "🗡️ Roadside Bandits -- a bandit chief, a cutthroat and an archer (template, ends when the chief falls)",
+      "notes": "A bandit chief with a cutthroat at his side and an archer hanging back. Cut the chief down and the rest give it up.",
+      "leader": 1,
+      "enemies": [
+        { "type": "swordsman", "name": "Bandit Chief", "epithet": "the bandit chief", "group": "Bandit", "hp": 16, "resolve": 2, "range": 1 },
+        { "type": "knifeman", "name": "Cutthroat", "group": "Bandit", "range": 1 },
+        { "type": "archer", "name": "Bandit Archer", "group": "Bandit", "range": 2 }
+      ]
+    }
+  ]
+}
