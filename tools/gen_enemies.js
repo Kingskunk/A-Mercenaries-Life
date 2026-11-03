@@ -31,6 +31,7 @@ var ABILITIES = ["strength", "dexterity", "constitution", "intelligence", "wisdo
 var CREATURE_TYPES = { humanoid: 1, beast: 1, plant: 1, undead: 1 };
 var SIZES = { small: 1, medium: 1, large: 1 };
 var REACH = { touch: 1, short: 1, medium: 1, long: 1 };
+var MORALE = { fearless: 1, steady: 1, normal: 1, skittish: 1 };
 var WEAPONS = { melee: 1, ranged: 1 };
 var DMG_TYPES = { slashing: 1, piercing: 1, bludgeoning: 1, poison: 1, fire: 1, cold: 1, lightning: 1, thunder: 1, acid: 1, necrotic: 1, radiant: 1, psychic: 1, force: 1 };
 // The profiles resolve_behavior_profile knows (feral is its default: every knob at zero).
@@ -52,6 +53,7 @@ types.forEach(function (t) {
   ["hp", "ac"].forEach(function (k) { if (!isInt(t[k]) || t[k] < 1) bad(t, k + " must be a whole number above 0"); });
   if (!CREATURE_TYPES[t.creature_type]) bad(t, "creature_type must be " + Object.keys(CREATURE_TYPES).join(" | "));
   if (!SIZES[t.size]) bad(t, "size must be " + Object.keys(SIZES).join(" | "));
+  if (!MORALE[t.morale]) bad(t, "morale must be " + Object.keys(MORALE).join(" | "));
   if (!PROFILES[t.profile]) bad(t, "profile '" + t.profile + "' is not one resolve_behavior_profile knows (" + Object.keys(PROFILES).join(" | ") + ")");
   var a = t.attack || {};
   if (!WEAPONS[a.weapon_type]) bad(t, "attack.weapon_type must be melee | ranged");
@@ -198,6 +200,7 @@ function setRegion(name, lines) {
 setRegion("enemy_profile_map", genMap("aeb_type", "aeb_profile", "profile", "feral"));
 setRegion("enemy_reach_map", genMap("aer_type", "aer_class", "reach", "long"));
 setRegion("enemy_size_map", genMap("aes_type", "aes_size", "size", "medium"));
+setRegion("enemy_morale_map", genMap("aem_type", "aem_morale", "morale", "normal"));
 setRegion("enemy_creature_type_map", genCreatureMap());
 setRegion("enemy_type_dispatch", genDispatch());
 setRegion("enemy_type_labels", genTypeLabels());

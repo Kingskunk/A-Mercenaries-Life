@@ -194,4 +194,39 @@ if (allyEvasion.direction !== "evasive" || allyEvasion.destination !== 2 || ally
   throw new Error("Ally sharpshooter did not create space from a Dash-capable enemy: " + JSON.stringify(allyEvasion));
 }
 
-console.log("Terrain AI policy: terrain scores, legal terrain steps, player/NPC melee-threat evasion, and Difficult Terrain prediction passed.");
+// CHOKEPOINTS ARE HELD ONLY WHILE THEY DO THEIR JOB (2026-11-03, from play: Rook held one against a lone archer two tiles beyond, who shot him and
+// then the player, who could not get past). combat_choose_terrain_step for a melee actor standing on a capacity-1 chokepoint at tile 4.
+function chokeHold(actorKind, overrides) {
+  const state = Object.assign({}, baseStats, {
+    combat_terrain1_type: "chokepoint", combat_terrain1_position: 4, combat_terrain1_capacity: 1,
+    combat_lane_player_position: 3, hp_current: 20, weapon_type: "melee"
+  }, overrides);
+  const scene = new Scene("combat_ai", state, nav, false);
+  scene.loadScene();
+  scene.temps.param = [actorKind, 1, actorKind === "ally" ? 6 : 3, true, false];
+  scene.goto("combat_choose_terrain_step");
+  scene.execute();
+  return { hold: state.combat_ai_terrain_hold_position, reason: state.combat_ai_terrain_step_reason };
+}
+const rook = { combat_ally1_hp: 12, combat_ally1_behavior_profile: "guardian", combat_ally1_weapon_type: "melee", combat_ally1_position: 4 };
+const loneArcher = chokeHold("ally", Object.assign({ combat_enemy_count: 1, combat_enemy1_hp: 7, combat_enemy1_weapon_type: "ranged", combat_enemy1_position: 6 }, rook));
+if (loneArcher.hold || loneArcher.reason === "chokepoint") {
+  throw new Error("A guardian ally held a chokepoint against nothing but an archer: " + JSON.stringify(loneArcher));
+}
+const swordComing = chokeHold("ally", Object.assign({ combat_enemy_count: 2, combat_enemy1_hp: 7, combat_enemy1_weapon_type: "ranged", combat_enemy1_position: 6,
+  combat_enemy2_hp: 10, combat_enemy2_weapon_type: "melee", combat_enemy2_position: 7 }, rook));
+if (!swordComing.hold || swordComing.reason !== "chokepoint") {
+  throw new Error("A guardian ally did not hold the chokepoint against a swordsman coming through it: " + JSON.stringify(swordComing));
+}
+const swordDown = chokeHold("ally", Object.assign({ combat_enemy_count: 2, combat_enemy1_hp: 7, combat_enemy1_weapon_type: "ranged", combat_enemy1_position: 6,
+  combat_enemy2_hp: 0, combat_enemy2_weapon_type: "melee", combat_enemy2_position: 7 }, rook));
+if (swordDown.hold) throw new Error("A guardian ally kept holding after the last melee enemy fell: " + JSON.stringify(swordDown));
+const guardEnemy = { combat_enemy_count: 1, combat_enemy1_hp: 8, combat_enemy1_behavior_profile: "guardian", combat_enemy1_weapon_type: "melee", combat_enemy1_position: 4 };
+const vsBowman = chokeHold("enemy", Object.assign({ weapon_type: "ranged" }, guardEnemy));
+if (vsBowman.hold) throw new Error("A guardian enemy held a chokepoint against a bow-armed player with no melee ally: " + JSON.stringify(vsBowman));
+const vsSword = chokeHold("enemy", Object.assign({ weapon_type: "melee" }, guardEnemy));
+if (!vsSword.hold || vsSword.reason !== "chokepoint") throw new Error("A guardian enemy did not hold against a sword-armed player: " + JSON.stringify(vsSword));
+const vsBowmanAndRook = chokeHold("enemy", Object.assign({ weapon_type: "ranged", combat_ally1_hp: 12, combat_ally1_weapon_type: "melee", combat_ally1_position: 2 }, guardEnemy));
+if (!vsBowmanAndRook.hold) throw new Error("A guardian enemy did not hold against a melee ally coming up behind an archer player: " + JSON.stringify(vsBowmanAndRook));
+
+console.log("Terrain AI policy: terrain scores, legal terrain steps, player/NPC melee-threat evasion, Difficult Terrain prediction, and chokepoints held only while useful passed.");

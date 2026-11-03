@@ -115,7 +115,7 @@ if (named.length) {
     const changed = new Set(all.filter((s) => s !== "startup" && exists(s) && note[s] !== fingerprint(s)));
     const callers = callersOf(changed);
     scenes = [...changed].concat(callers);
-    why = changed.size + " scene(s) changed since they last passed" + (changed.size ? " (" + [...changed].join(", ") + ")" : "") +
+    why = changed.size + " scene(s) changed since they last passed" + (changed.size ? " (" + [...changed].slice(0, 8).join(", ") + (changed.size > 8 ? ", and " + (changed.size - 8) + " more" : "") + ")" : "") +
       ", plus " + callers.length + " that jump or call into them";
   }
 } else if (changedBase !== null) {
@@ -145,7 +145,7 @@ if (named.length) {
   } else {
     const callers = callersOf(changed);
     scenes = [...changed].filter(exists).concat(callers);
-    why = changed.size + " scene(s) changed since " + base + (changed.size ? " (" + [...changed].join(", ") + ")" : "") +
+    why = changed.size + " scene(s) changed since " + base + (changed.size ? " (" + [...changed].slice(0, 8).join(", ") + (changed.size > 8 ? ", and " + (changed.size - 8) + " more" : "") + ")" : "") +
       ", plus " + callers.length + " that jump or call into them";
   }
 } else {

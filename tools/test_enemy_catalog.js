@@ -106,11 +106,12 @@ catalog.forEach(function (t) {
     }
     const expect = {
       name: t.name, epithet: t.epithet, hp: t.hp, max_hp: t.hp, ac: t.ac,
-      behavior_profile: t.profile, size: t.size, creature_type: t.creature_type, flavor_type: t.id
+      behavior_profile: t.profile, size: t.size, creature_type: t.creature_type, flavor_type: t.id, morale: t.morale
     };
     if (t.reach) expect.reach = t.reach;
     Object.keys(expect).forEach(function (k) {
-      const got = one[k] !== undefined ? one[k] : String(baseStats["combat_enemy_" + k]);
+      const dflt = baseStats["combat_enemy_" + k] !== undefined ? baseStats["combat_enemy_" + k] : baseStats["combat_enemy1_" + k];
+      const got = one[k] !== undefined ? one[k] : String(dflt);
       if (expect[k] !== undefined && got !== String(expect[k])) {
         failures.push(t.id + " (" + rand + "): " + k + " is " + JSON.stringify(one[k]) + ", catalog says " + JSON.stringify(expect[k]));
       }

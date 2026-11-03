@@ -154,6 +154,9 @@
 *set combat_friendly_target 0
 *set combat_outcome ""
 *set combat_engaged true
+*comment Morale (2026-11-03): the story reads how many enemies fled or surrendered after the fight, so they are only cleared when the next one starts.
+*set combat_enemies_fled 0
+*set combat_enemies_surrendered 0
 *comment Condition-on-hit and movepool resets live in fight_cleanup, not
 *comment here -- every fight_<name> label sets its own opt-in fields THEN
 *comment calls *gosub fight_setup, so resetting them here would wipe out
@@ -687,6 +690,7 @@
 *set combat_player_surprise false
 *set combat_opens_engaged false
 *set combat_no_flee false
+*set combat_no_morale false
 *set combat_cure_kind ""
 *set combat_philter_stuns false
 *set combat_philter_dc 14
@@ -875,6 +879,15 @@
   *set {(fc_p & "target_kind")} ""
   *set {(fc_p & "target_slot")} 0
   *set {(fc_p & "target_page")} 0
+  *comment Morale (2026-11-03).
+  *set {(fc_p & "morale")} "normal"
+  *set {(fc_p & "broken")} false
+  *set {(fc_p & "morale_bloodied")} false
+  *set {(fc_p & "morale_strong")} false
+  *set {(fc_p & "morale_half")} false
+  *set {(fc_p & "out")} ""
+  *set {(fc_p & "intimidated")} false
+  *set {(fc_p & "dodging")} false
   *set {(fc_p & "prev_target_kind")} ""
   *set {(fc_p & "prev_target_slot")} 0
   *set {(fc_p & "last_hit_page")} 0
@@ -991,6 +1004,14 @@
   *set {(("combat_ally" & fc_a_i) & "_target_kind")} ""
   *set {(("combat_ally" & fc_a_i) & "_target_slot")} 0
   *set {(("combat_ally" & fc_a_i) & "_target_page")} 0
+  *set {(("combat_ally" & fc_a_i) & "_morale")} "normal"
+  *set {(("combat_ally" & fc_a_i) & "_broken")} false
+  *set {(("combat_ally" & fc_a_i) & "_morale_bloodied")} false
+  *set {(("combat_ally" & fc_a_i) & "_morale_strong")} false
+  *set {(("combat_ally" & fc_a_i) & "_morale_half")} false
+  *set {(("combat_ally" & fc_a_i) & "_out")} ""
+  *set {(("combat_ally" & fc_a_i) & "_intimidated")} false
+  *set {(("combat_ally" & fc_a_i) & "_dodging")} false
   *set {(("combat_ally" & fc_a_i) & "_prev_target_kind")} ""
   *set {(("combat_ally" & fc_a_i) & "_prev_target_slot")} 0
   *set {(("combat_ally" & fc_a_i) & "_last_hit_page")} 0
@@ -2362,22 +2383,22 @@
 *else
   [b][⚔️ Round ${combat_round}][/b]
   *line_break
-  [b][${combat_enemy1_name}: HP ${combat_enemy1_hp}/${combat_enemy1_max_hp}@{(combat_enemy1_hp <= 0)  (Down)|} (AC ${combat_enemy1_ac})][/b]
+  [b][${combat_enemy1_name}: HP ${combat_enemy1_hp}/${combat_enemy1_max_hp}@{((combat_enemy1_hp <= 0) and (combat_enemy1_out = ""))  (Down)|}@{(combat_enemy1_out = "fled")  (Fled)|}@{(combat_enemy1_out = "surrendered")  (Surrendered)|} (AC ${combat_enemy1_ac})][/b]
   *line_break
   *if (combat_enemy_count >= 2)
-    [b][${combat_enemy2_name}: HP ${combat_enemy2_hp}/${combat_enemy2_max_hp}@{(combat_enemy2_hp <= 0)  (Down)|} (AC ${combat_enemy2_ac})][/b]
+    [b][${combat_enemy2_name}: HP ${combat_enemy2_hp}/${combat_enemy2_max_hp}@{((combat_enemy2_hp <= 0) and (combat_enemy2_out = ""))  (Down)|}@{(combat_enemy2_out = "fled")  (Fled)|}@{(combat_enemy2_out = "surrendered")  (Surrendered)|} (AC ${combat_enemy2_ac})][/b]
     *line_break
   *if (combat_enemy_count >= 3)
-    [b][${combat_enemy3_name}: HP ${combat_enemy3_hp}/${combat_enemy3_max_hp}@{(combat_enemy3_hp <= 0)  (Down)|} (AC ${combat_enemy3_ac})][/b]
+    [b][${combat_enemy3_name}: HP ${combat_enemy3_hp}/${combat_enemy3_max_hp}@{((combat_enemy3_hp <= 0) and (combat_enemy3_out = ""))  (Down)|}@{(combat_enemy3_out = "fled")  (Fled)|}@{(combat_enemy3_out = "surrendered")  (Surrendered)|} (AC ${combat_enemy3_ac})][/b]
     *line_break
   *if (combat_enemy_count >= 4)
-    [b][${combat_enemy4_name}: HP ${combat_enemy4_hp}/${combat_enemy4_max_hp}@{(combat_enemy4_hp <= 0)  (Down)|} (AC ${combat_enemy4_ac})][/b]
+    [b][${combat_enemy4_name}: HP ${combat_enemy4_hp}/${combat_enemy4_max_hp}@{((combat_enemy4_hp <= 0) and (combat_enemy4_out = ""))  (Down)|}@{(combat_enemy4_out = "fled")  (Fled)|}@{(combat_enemy4_out = "surrendered")  (Surrendered)|} (AC ${combat_enemy4_ac})][/b]
     *line_break
   *if (combat_enemy_count >= 5)
-    [b][${combat_enemy5_name}: HP ${combat_enemy5_hp}/${combat_enemy5_max_hp}@{(combat_enemy5_hp <= 0)  (Down)|} (AC ${combat_enemy5_ac})][/b]
+    [b][${combat_enemy5_name}: HP ${combat_enemy5_hp}/${combat_enemy5_max_hp}@{((combat_enemy5_hp <= 0) and (combat_enemy5_out = ""))  (Down)|}@{(combat_enemy5_out = "fled")  (Fled)|}@{(combat_enemy5_out = "surrendered")  (Surrendered)|} (AC ${combat_enemy5_ac})][/b]
     *line_break
   *if (combat_enemy_count >= 6)
-    [b][${combat_enemy6_name}: HP ${combat_enemy6_hp}/${combat_enemy6_max_hp}@{(combat_enemy6_hp <= 0)  (Down)|} (AC ${combat_enemy6_ac})][/b]
+    [b][${combat_enemy6_name}: HP ${combat_enemy6_hp}/${combat_enemy6_max_hp}@{((combat_enemy6_hp <= 0) and (combat_enemy6_out = ""))  (Down)|}@{(combat_enemy6_out = "fled")  (Fled)|}@{(combat_enemy6_out = "surrendered")  (Surrendered)|} (AC ${combat_enemy6_ac})][/b]
     *line_break
   [b][You: HP ${hp_current}/${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|} (AC ${ac_shown}@{shield_active  (Shield)|})][/b]
 *if (rebuke_armed)
@@ -2700,6 +2721,19 @@
 *if ((has_bramble_heart) and (combat_player_actions_left > 0))
   *if ((not(bramble_heart_day = campaign_day)) and (combat_ally_count < combat_ally_slot_cap))
     *set combat_can_summon_blights true
+*comment INTIMIDATE (2026-11-03, MORALE): an unspent action, morale in play, and a current target that still has a nerve to break: living, not
+*comment fearless, not already broken, and not tried before this fight. Read from the target's own slot (the scratch can be stale at menu time).
+*temp combat_can_intimidate false
+*set combat_intim_epithet ""
+*set combat_intim_dc 10
+*if (((combat_player_actions_left > 0) and (not(combat_no_morale))) and (combat_active_target > 0))
+  *temp cci_p (("combat_enemy" & combat_active_target) & "_")
+  *if (((({(cci_p & "hp")} > 0) and (not({(cci_p & "morale")} = "fearless"))) and (not({(cci_p & "broken")}))) and (not({(cci_p & "intimidated")})))
+    *set combat_can_intimidate true
+    *set combat_intim_epithet {(cci_p & "epithet")}
+    *temp cci_score {(cci_p & "wisdom")}
+    *gosub_scene startup score_to_mod cci_score
+    *set combat_intim_dc (10 + sm_mod)
 *temp combat_can_dodge false
 *if (combat_player_actions_left > 0)
   *if (not(dodge_active))
@@ -3939,6 +3973,36 @@
       *comment Stats-screen page replay re-running it changes nothing. fight_action_spent handles the action
       *comment cost with its own existing lock.
       *set dodge_active true
+      *goto fight_action_spent
+
+  *if (combat_can_intimidate)
+    # [b][ACTION][/b] [b][Intimidate][/b] Shake ${combat_intim_epithet}'s nerve.@{show_stat_hints  [Intimidation (DC ${combat_intim_dc}); success forces a morale check]|}
+      *comment INTIMIDATE (2026-11-03, MORALE): an Intimidation check against 10 + the target's WIS; on a success the target makes its morale save at
+      *comment once (a steady one with advantage, a skittish one with disadvantage) and, if it breaks, runs or yields on its own turn. One try per
+      *comment enemy per fight. This page is the player's own, not a chain of turns, so the morale dice are drawn once behind a page lock and passed
+      *comment in (combat_morale_forced_a/_b): a refresh rolls the same.
+      *temp cin_slot combat_active_target
+      *if (not(combat_intimidate_locked)) or (not(locked_combat_intimidate_page_id = page_id))
+        *rand combat_intimidate_a 1 20
+        *rand combat_intimidate_b 1 20
+        *set combat_intimidate_locked true
+        *set locked_combat_intimidate_page_id page_id
+      *set {(("combat_enemy" & cin_slot) & "_intimidated")} true
+      *gosub_scene dice_engine roll_skill_check (combat_intim_dc + 0) "intimidation" "" "" "" "" ""
+      *if (check_success)
+        *gosub_scene combat_prose flavor_intimidate_success
+        *line_break
+        *set combat_morale_forced_a combat_intimidate_a
+        *set combat_morale_forced_b combat_intimidate_b
+        *gosub combat_morale_check "enemy" cin_slot "intimidated"
+        *if (combat_morale_broke)
+          [b][⚑ Its nerve is gone: it will run or yield on its turn][/b]
+          *line_break
+      *else
+        *gosub_scene combat_prose flavor_intimidate_fail
+        *line_break
+        [b][😠 $!{combat_intim_epithet} is not impressed][/b]
+        *line_break
       *goto fight_action_spent
 
   *if (combat_can_hide)
@@ -5479,6 +5543,293 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *set combat_turn_advanced_this_page true
 *return
 
+*comment ============================================================================
+*comment MORALE (2026-11-03, the user's design). A combatant's nerve can break when the fight turns against it.
+*comment WHEN: at the start of its own turn, each of these is checked once per fight, the first time it is true:
+*comment   badly hurt     its HP is below half
+*comment   strongest down the strongest of its own side (the most maximum HP, and more than its own) is down; for an ally, the player is below a quarter of their HP
+*comment   half down      half or more of its side is down (out of the fight, by any means)
+*comment and Intimidate (the player's action) can force a check at any time.
+*comment THE CHECK: a Wisdom save, d20 + WIS against DC 10. The type's morale (combat_<side>N_morale, from tools/enemy_catalog.json and the ally
+*comment types in combat_types.txt) decides how it rolls: fearless never checks, steady rolls with advantage, skittish with disadvantage.
+*comment combat_no_morale (a duel, a boss) turns all of it off for the fight. A failed save BREAKS it (_broken):
+*comment   An ENEMY is done fighting. A humanoid that is cornered (an opponent on its tile) or in a non-lethal fight surrenders on the spot. Anything else flees: it Dashes away from the player toward its own edge of the lane, taking the usual free swing
+*comment   if it leaves someone's reach, and when it starts a turn on that edge it leaves the fight. Until then it can be chased and cut down.
+*comment   Fled or surrendered, it is out (_out "fled" / "surrendered", HP 0, so everything that counts the living counts it as beaten), and the story
+*comment   can read combat_enemies_fled / combat_enemies_surrendered.
+*comment   An ALLY never leaves the player. It wavers: it falls back a step toward the player and covers up (attacks on it have disadvantage until its
+*comment   next turn) instead of attacking, and at the start of each later turn it makes the same save to rally and fight on as normal.
+*comment Every roll here happens inside a chain of turns, so a refreshed page rolls it again the same (REPLAY-SAFE TURN CHAINS); Intimidate, on the
+*comment player's own page, passes its stored dice in through combat_morale_forced_a/_b.
+*comment ============================================================================
+
+*comment One morale save for the slot (cmc_side "enemy" or "ally"), with a banner. Output: combat_morale_broke (and _broken set on a failure).
+*label combat_morale_check
+*params cmc_side cmc_slot cmc_reason
+*set combat_morale_broke false
+*temp cmc_p (("combat_enemy" & cmc_slot) & "_")
+*if (cmc_side = "ally")
+  *set cmc_p (("combat_ally" & cmc_slot) & "_")
+*temp cmc_kind {(cmc_p & "morale")}
+*if ((cmc_kind = "fearless") or (combat_no_morale))
+  *set combat_morale_forced_a 0
+  *return
+*temp cmc_name {(cmc_p & "name")}
+*temp cmc_score {(cmc_p & "wisdom")}
+*gosub_scene startup score_to_mod cmc_score
+*temp cmc_mod sm_mod
+*temp cmc_a 0
+*temp cmc_b 0
+*rand cmc_a 1 20
+*rand cmc_b 1 20
+*if (combat_morale_forced_a > 0)
+  *set cmc_a combat_morale_forced_a
+  *set cmc_b combat_morale_forced_b
+  *set combat_morale_forced_a 0
+*temp cmc_roll cmc_a
+*temp cmc_note ""
+*if (cmc_kind = "steady")
+  *if (cmc_b > cmc_roll)
+    *set cmc_roll cmc_b
+  *set cmc_note " (Advantage: steady)"
+*if (cmc_kind = "skittish")
+  *if (cmc_b < cmc_roll)
+    *set cmc_roll cmc_b
+  *set cmc_note " (Disadvantage: skittish)"
+*temp cmc_total (cmc_roll + cmc_mod)
+*temp cmc_mod_str "+${cmc_mod}"
+*if (cmc_mod < 0)
+  *set cmc_mod_str "${cmc_mod}"
+*set combat_morale_broke (cmc_total < 10)
+*temp cmc_verdict "HOLDS"
+*if (combat_morale_broke)
+  *set cmc_verdict "BREAKS"
+  *set {(cmc_p & "broken")} true
+*if (cmc_reason = "rally")
+  *set cmc_verdict "RALLIES"
+  *if (combat_morale_broke)
+    *set cmc_verdict "STILL SHAKEN"
+[b][🎲 ${cmc_name} Morale (${cmc_reason}): ${cmc_roll} ${cmc_mod_str}${cmc_note} = ${cmc_total} vs DC 10 — ${cmc_verdict}][/b]
+*line_break
+*set combat_turn_advanced_this_page true
+*return
+
+*comment The start of an enemy's or ally's turn: check the triggers, then act on a broken nerve. combat_morale_stop is true when that spent the turn.
+*comment For an enemy, the caller has synced its scratch fields (fight_sync_target_in), as for the rest of its turn.
+*label combat_morale_turn
+*params cmt_side cmt_slot
+*set combat_morale_stop false
+*set combat_boom_killed false
+*temp cmt_p (("combat_enemy" & cmt_slot) & "_")
+*if (cmt_side = "ally")
+  *set cmt_p (("combat_ally" & cmt_slot) & "_")
+  *set {(cmt_p & "dodging")} false
+*temp cmt_hp {(cmt_p & "hp")}
+*temp cmt_max {(cmt_p & "max_hp")}
+*if (((cmt_hp <= 0) or (combat_no_morale)) or ({(cmt_p & "morale")} = "fearless"))
+  *return
+*temp cmt_just_broke false
+*comment Badly hurt.
+*if ((not({(cmt_p & "broken")})) and (not({(cmt_p & "morale_bloodied")})))
+  *if ((cmt_hp * 2) < cmt_max)
+    *set {(cmt_p & "morale_bloodied")} true
+    *gosub combat_morale_check cmt_side cmt_slot "badly hurt"
+    *set cmt_just_broke combat_morale_broke
+*comment The strongest of its side down (an enemy), or the player in a bad way (an ally).
+*if ((not({(cmt_p & "broken")})) and (not({(cmt_p & "morale_strong")})))
+  *temp cmt_strong_down false
+  *if (cmt_side = "ally")
+    *set cmt_strong_down ((hp_current * 4) < hp_max)
+  *else
+    *temp cmt_best 0
+    *temp cmt_best_max 0
+    *temp cmt_i 1
+    *label combat_morale_turn_strong_loop
+    *if (cmt_i <= combat_enemy_count)
+      *if ((not(cmt_i = cmt_slot)) and ({(("combat_enemy" & cmt_i) & "_max_hp")} > cmt_best_max))
+        *set cmt_best cmt_i
+        *set cmt_best_max {(("combat_enemy" & cmt_i) & "_max_hp")}
+      *set cmt_i + 1
+      *goto combat_morale_turn_strong_loop
+    *comment Only someone TOUGHER than this one counts as "the strongest" (a captain, a bear among wolves): among equals, a rat's nerve does not
+    *comment hang on another rat; a pack of equals checks when half of it is down instead.
+    *if ((cmt_best > 0) and (cmt_best_max > cmt_max))
+      *set cmt_strong_down ({(("combat_enemy" & cmt_best) & "_hp")} <= 0)
+  *if (cmt_strong_down)
+    *set {(cmt_p & "morale_strong")} true
+    *temp cmt_why "the strongest has fallen"
+    *if (cmt_side = "ally")
+      *set cmt_why "you are badly hurt"
+    *gosub combat_morale_check cmt_side cmt_slot cmt_why
+    *set cmt_just_broke combat_morale_broke
+*comment Half its side down.
+*if ((not({(cmt_p & "broken")})) and (not({(cmt_p & "morale_half")})))
+  *temp cmt_total 0
+  *temp cmt_down 0
+  *temp cmt_j 1
+  *if (cmt_side = "ally")
+    *set cmt_total 1
+    *if (hp_current <= 0)
+      *set cmt_down 1
+    *label combat_morale_turn_ally_side_loop
+    *if (cmt_j <= combat_ally_count)
+      *set cmt_total + 1
+      *if ({(("combat_ally" & cmt_j) & "_hp")} <= 0)
+        *set cmt_down + 1
+      *set cmt_j + 1
+      *goto combat_morale_turn_ally_side_loop
+  *else
+    *label combat_morale_turn_enemy_side_loop
+    *if (cmt_j <= combat_enemy_count)
+      *set cmt_total + 1
+      *if ({(("combat_enemy" & cmt_j) & "_hp")} <= 0)
+        *set cmt_down + 1
+      *set cmt_j + 1
+      *goto combat_morale_turn_enemy_side_loop
+  *if ((cmt_total > 1) and ((cmt_down * 2) >= cmt_total))
+    *set {(cmt_p & "morale_half")} true
+    *gosub combat_morale_check cmt_side cmt_slot "half its side is down"
+    *set cmt_just_broke combat_morale_broke
+*if (not({(cmt_p & "broken")}))
+  *return
+*set combat_morale_stop true
+*if (cmt_side = "ally")
+  *comment A wavering ally tries to rally first, unless its nerve went only this moment.
+  *if (not(cmt_just_broke))
+    *gosub combat_morale_check "ally" cmt_slot "rally"
+    *if (not(combat_morale_broke))
+      *set {(cmt_p & "broken")} false
+      *set combat_morale_stop false
+      *temp cmt_epi {(cmt_p & "epithet")}
+      $!{cmt_epi} steadies, and comes back into the fight.
+      *line_break
+      *return
+  *gosub combat_ally_waver cmt_slot
+  *return
+*gosub combat_enemy_broken_act cmt_slot
+*return
+
+*comment A wavering ally's turn: a step toward the player (if it is not already beside them and the step is legal), then it covers up.
+*label combat_ally_waver
+*params caw_slot
+*temp caw_p (("combat_ally" & caw_slot) & "_")
+*temp caw_pos {(caw_p & "position")}
+*temp caw_name {(caw_p & "name")}
+*temp caw_epi {(caw_p & "epithet")}
+*set combat_ally_waver_epithet caw_epi
+*temp caw_dest caw_pos
+*if (caw_pos > combat_lane_player_position)
+  *set caw_dest (caw_pos - 1)
+*if (caw_pos < combat_lane_player_position)
+  *set caw_dest (caw_pos + 1)
+*temp caw_moved false
+*if (not(caw_dest = caw_pos))
+  *gosub_scene combat_ai combat_ai_terrain_destination_is_legal "ally" caw_slot caw_dest
+  *if (combat_ai_terrain_destination_legal)
+    *gosub_scene combat_movement combat_lane_move_ally_to_position caw_slot 0 caw_dest
+    *set caw_moved true
+*set {(caw_p & "dodging")} true
+*temp caw_v 1
+*rand caw_v 1 3
+*if (caw_v = 1)
+  $!{caw_epi} gives ground, shield arm up, no longer looking for a fight, only for a way through this one.
+*if (caw_v = 2)
+  Shaken, ${caw_epi} backs toward you and does nothing more than keep every blow away.
+*if (caw_v = 3)
+  $!{caw_epi} has lost the stomach for it, and spends the turn covering up rather than striking.
+*line_break
+*if (caw_moved)
+  [b][⚑ ${caw_name} Wavers — falls back toward you and covers up][/b]
+*else
+  [b][⚑ ${caw_name} Wavers — covers up][/b]
+*line_break
+*set combat_turn_advanced_this_page true
+*return
+
+*comment A broken enemy's turn: surrender, flee a step further, or leave the field. Its scratch fields are synced (the active target is this slot).
+*comment Output for the caller: the slot may now be out (HP 0), or have died to a free swing on the way; the turn tail checks for victory either way.
+*label combat_enemy_broken_act
+*params ceba_slot
+*temp ceba_p (("combat_enemy" & ceba_slot) & "_")
+*temp ceba_pos {(ceba_p & "position")}
+*temp ceba_side {(ceba_p & "side")}
+*temp ceba_edge combat_lane_max_position
+*if (ceba_side = (0 - 1))
+  *set ceba_edge combat_lane_min_position
+*temp ceba_cornered false
+*if ((not(combat_player_hidden)) and (combat_lane_player_position = ceba_pos))
+  *set ceba_cornered true
+*temp ceba_i 1
+*label combat_enemy_broken_act_corner_loop
+*if (ceba_i <= combat_ally_slot_cap)
+  *if (({(("combat_ally" & ceba_i) & "_hp")} > 0) and ({(("combat_ally" & ceba_i) & "_position")} = ceba_pos))
+    *set ceba_cornered true
+  *set ceba_i + 1
+  *goto combat_enemy_broken_act_corner_loop
+*temp ceba_at_edge (ceba_pos = ceba_edge)
+*temp ceba_v 1
+*rand ceba_v 1 3
+*if ((combat_enemy_creature_type = "humanoid") and ((combat_is_nonlethal) or (ceba_cornered)))
+  *if (ceba_v = 1)
+    $!{combat_enemy_epithet} throws the weapon down and backs off with both hands open, done with this.
+  *if (ceba_v = 2)
+    "Enough!" ${combat_enemy_epithet} lets the weapon fall and sinks to one knee, hands raised.
+  *if (ceba_v = 3)
+    $!{combat_enemy_epithet} stops fighting all at once, steps back and shows empty hands.
+  *line_break
+  [b][🏳️ ${combat_enemy_name} Surrenders — out of the fight][/b]
+  *line_break
+  *set {(ceba_p & "out")} "surrendered"
+  *set combat_enemies_surrendered + 1
+  *set {(ceba_p & "hp")} 0
+  *set combat_enemy_hp 0
+  *set combat_turn_advanced_this_page true
+  *return
+*if (ceba_at_edge)
+  *if (ceba_v = 1)
+    $!{combat_enemy_epithet} turns and runs, and does not look back.
+  *if (ceba_v = 2)
+    With one last look over a shoulder, ${combat_enemy_epithet} is gone.
+  *if (ceba_v = 3)
+    $!{combat_enemy_epithet} breaks into a flat run and is lost from sight.
+  *line_break
+  [b][🏃 ${combat_enemy_name} Flees the Fight — out of the fight][/b]
+  *line_break
+  *set {(ceba_p & "out")} "fled"
+  *set combat_enemies_fled + 1
+  *set {(ceba_p & "hp")} 0
+  *set combat_enemy_hp 0
+  *set combat_turn_advanced_this_page true
+  *return
+*comment Still on the lane: leaving someone's reach draws the usual free swing (the same rule as a retreat), then it Dashes two steps away.
+*if (ceba_cornered)
+  *gosub find_opportunity_attacker_against
+  *if (combat_oa_against_kind = "player")
+    *set player_oa_used true
+    *gosub resolve_reverse_oa_player
+    *gosub fight_sync_target_out
+  *elseif (combat_oa_against_kind = "ally")
+    *set {(("combat_ally" & combat_oa_against_slot) & "_oa_used")} true
+    *gosub resolve_reverse_oa_ally combat_oa_against_slot
+    *gosub fight_sync_target_in
+  *if (combat_enemy_hp <= 0)
+    *return
+*gosub_scene combat_movement combat_lane_move_enemy_relative_to_player ceba_slot "away"
+*gosub_scene combat_movement combat_lane_move_enemy_relative_to_player ceba_slot "away"
+*gosub_scene combat_movement combat_range_name combat_enemy_range
+*if (ceba_v = 1)
+  $!{combat_enemy_epithet} breaks and runs, the fight gone out of them.
+*if (ceba_v = 2)
+  Nerve gone, ${combat_enemy_epithet} turns tail and scrambles away.
+*if (ceba_v = 3)
+  $!{combat_enemy_epithet} bolts, wanting only to be anywhere but here.
+*line_break
+[b][⚑ ${combat_enemy_name} Flees to ${combat_range_display_name} — it leaves the fight if it makes the edge][/b]
+*line_break
+*set combat_turn_advanced_this_page true
+*gosub fight_booming_trigger
+*return
+
 *label combat_grease_gate
 *comment GREASE GATE (2026-10-12). Called at the start of an enemy's turn when it is greased or prone, with whether the enemy means to move this turn. Prints what happens and sets combat_grease_stop true when the turn is spent.
 *comment Prone: it stands up (its movement), and the turn is spent if it meant to move; one that only wanted to swing gets up and swings. Greased and moving: DC 10 Dexterity check; a pass scrapes the grease off and it moves normally, a miss drops it prone with the turn lost and one fewer attempt on the grease
@@ -5780,6 +6131,13 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *if (((((cnt_prone) or (cnt_greased > 0)) and (not(cnt_restrain_stop))) and (not(cnt_stun_stop))) and (not((combat_player_surprise) and (cnt_first_pass))))
       *gosub combat_grease_gate cnt_slot cnt_wants_move
       *set cnt_grease_stop combat_grease_stop
+    *comment MORALE (2026-11-03): the triggers are checked, and a broken nerve acted on, before anything else it would do this turn (see MORALE).
+    *temp cnt_morale_stop false
+    *if ((((not(cnt_stun_stop)) and (not(cnt_restrain_stop))) and (not(cnt_grease_stop))) and (not((combat_player_surprise) and (cnt_first_pass))))
+      *gosub combat_morale_turn "enemy" cnt_slot
+      *set cnt_morale_stop combat_morale_stop
+      *if (combat_boom_killed)
+        *goto cnt_boom_tail
     *if (combat_player_surprise) and (cnt_first_pass)
       *comment Three variants, via *rand -- none lead with combat_enemy_epithet (usually a lowercase "the X"),
       *comment so the printed sentence never opens on an uncapitalized word.
@@ -5802,6 +6160,9 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
       *set combat_turn_advanced_this_page true
     *elseif (cnt_grease_stop)
       *comment The gate has already printed what happened (a fall, or getting up); the turn is spent.
+      *set combat_turn_advanced_this_page true
+    *elseif (cnt_morale_stop)
+      *comment Broken: it surrendered, fled a step, or left the field (combat_enemy_broken_act); the turn is spent.
       *set combat_turn_advanced_this_page true
     *elseif (((((combat_enemy_weapon_type = "ranged") and (combat_ranged_cornered)) and (combat_enemy_can_retreat)) and (cnt_e_room)) and (not(combat_cornered_choice = "stay")))
       *comment (2026-10-11) Cornered now means ANY opponent shares this enemy's lane tile (combat_ranged_cornered, choose_ranged_enemy_target), not "engaged with the player and a player's ally nearby".
@@ -6206,6 +6567,10 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *comment STUN, ally side (2026-11-03): a stunned ally loses the turn before anything else, through the same gate as an enemy.
     *gosub combat_stun_gate "ally" cnt_slot
     *if (combat_stun_stop)
+      *goto combat_next_turn
+    *comment MORALE (2026-11-03): a wavering ally falls back and covers up instead of fighting (see MORALE).
+    *gosub combat_morale_turn "ally" cnt_slot
+    *if (combat_morale_stop)
       *goto combat_next_turn
     *temp cnt_a_chase_target {(("combat_ally" & cnt_slot) & "_chase_target")}
     *comment Ally-side rows 3-4 mirror (2026-09-29, on request): read fresh, before the chase check, since a
