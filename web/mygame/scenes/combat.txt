@@ -333,6 +333,8 @@
 *comment needs_advance flag means the very next *goto fight_round_hub (every fight_<name> label already ends with
 *comment this, unedited) dispatches through combat_next_turn instead of assuming the player goes first.
 *gosub combat_roll_initiative
+*comment Reinforcements (REINFORCEMENTS) take their place in the turn order above, then step off the field until their round.
+*gosub combat_reinforcements_hold
 *set combat_current_turn_index 0
 *set combat_turn_needs_advance true
 *set combat_turn_advanced_this_page false
@@ -897,6 +899,8 @@
   *set {(fc_p & "morale_strong")} false
   *set {(fc_p & "morale_half")} false
   *set {(fc_p & "out")} ""
+  *set {(fc_p & "arrives")} 0
+  *set {(fc_p & "reserve_hp")} 0
   *set {(fc_p & "intimidated")} false
   *set {(fc_p & "dodging")} false
   *set {(fc_p & "prev_target_kind")} ""
@@ -1934,10 +1938,18 @@
   *set fcd_i + 1
   *goto fight_check_all_dead_loop
 *comment A fight with a leader (combat_leader_slot) is won when the leader falls, whoever else is still on their feet.
+*temp fcd_leader_down false
 *if (combat_leader_slot > 0)
   *temp fcd_lhp {(("combat_enemy" & combat_leader_slot) & "_hp")}
   *if (fcd_lhp <= 0)
-    *set combat_all_enemies_dead true
+    *set fcd_leader_down true
+*comment Everyone on the field is down but reinforcements are still on their way (REINFORCEMENTS): they arrive now, and the fight goes on.
+*if ((combat_all_enemies_dead) and (not(fcd_leader_down)))
+  *gosub combat_reinforcements_arrive true
+  *if (combat_reinforcement_arrived)
+    *set combat_all_enemies_dead false
+*if (fcd_leader_down)
+  *set combat_all_enemies_dead true
 *return
 
 *label do_enemy_chase_step
@@ -2080,16 +2092,79 @@
 *return
 
 *comment ============================================================================
+*comment REINFORCEMENTS (2026-11-03, the user). An enemy can join the fight late: combat_enemyN_arrives is the round it arrives on (0 or 1:
+*comment there from the start; an encounter template's "arrives"). Slot 1 is always there from the start.
+*comment   SETUP (combat_reinforcements_hold, after initiative, so it already has its place in the turn order): it steps off the field: _out
+*comment     "reserve", its HP kept in _reserve_hp and set to 0, so targeting, the AI and every "who is still standing" check pass over it. The
+*comment     morale and Intimidate checks leave it out of its side altogether.
+*comment   ARRIVAL (combat_reinforcements_arrive): at the start of its round (combat_next_turn, as the round turns over), on its own edge of the
+*comment     lane with its HP back. If everyone else on its side is down first (fight_check_all_dead), every one still on its way arrives at
+*comment     once and the fight goes on, unless the fight's leader fell (that still ends it).
+*comment   A reinforcement that never arrived (you fled first) counts as "standing" in the FIGHT RESULTS.
+*comment ============================================================================
+*label combat_reinforcements_hold
+*temp crh_i 2
+*label combat_reinforcements_hold_loop
+*if (crh_i <= combat_enemy_count)
+  *temp crh_p (("combat_enemy" & crh_i) & "_")
+  *if ({(crh_p & "arrives")} > 1)
+    *set {(crh_p & "reserve_hp")} {(crh_p & "hp")}
+    *set {(crh_p & "hp")} 0
+    *set {(crh_p & "out")} "reserve"
+  *set crh_i + 1
+  *goto combat_reinforcements_hold_loop
+*return
+
+*comment Bring in every reinforcement whose round has come (cra_now true: all of them, now). Output: combat_reinforcement_arrived.
+*label combat_reinforcements_arrive
+*params cra_now
+*set combat_reinforcement_arrived false
+*temp cra_i 2
+*label combat_reinforcements_arrive_loop
+*if (cra_i <= combat_enemy_count)
+  *temp cra_p (("combat_enemy" & cra_i) & "_")
+  *if (({(cra_p & "out")} = "reserve") and ((cra_now) or ({(cra_p & "arrives")} <= combat_round)))
+    *set {(cra_p & "out")} ""
+    *set {(cra_p & "hp")} {(cra_p & "reserve_hp")}
+    *set {(cra_p & "reserve_hp")} 0
+    *temp cra_edge combat_lane_max_position
+    *if ({(cra_p & "side")} = (0 - 1))
+      *set cra_edge combat_lane_min_position
+    *gosub_scene combat_movement combat_lane_move_enemy_to_position cra_i cra_edge
+    *if (combat_active_target = cra_i)
+      *gosub fight_sync_target_in
+    *temp cra_name {(cra_p & "name")}
+    *temp cra_epithet {(cra_p & "epithet")}
+    *temp cra_range {(cra_p & "range")}
+    *gosub_scene combat_movement combat_range_name cra_range
+    *temp cra_v (cra_i modulo 3)
+    *line_break
+    *if (cra_v = 0)
+      $!{cra_epithet} comes up from behind the others, late but ready to fight.
+    *if (cra_v = 1)
+      There is movement at the far edge, and ${cra_epithet} joins the fight.
+    *if (cra_v = 2)
+      $!{cra_epithet} arrives at a run and throws in with the rest.
+    *line_break
+    [b][⚔️ ${cra_name} Joins the Fight — at ${combat_range_display_name}][/b]
+    *line_break
+    *set combat_reinforcement_arrived true
+    *set combat_turn_advanced_this_page true
+  *set cra_i + 1
+  *goto combat_reinforcements_arrive_loop
+*return
+
+*comment ============================================================================
 *comment FIGHT RESULTS (2026-11-03, the user). How each enemy ended the last fight, written by fight_cleanup and kept until the next fight
 *comment ends, for the story to read after *gosub_scene combat returns:
 *comment   combat_result_count        how many enemies the fight had
 *comment   combat_result_down         how many were dropped (killed; knocked out in a non-lethal fight)
 *comment   combat_result_fled         how many ran off the field
 *comment   combat_result_surrendered  how many gave up
-*comment   combat_result_standing     how many were still fighting when it ended (you fled, lost, or the leader fell)
-*comment   combat_resultN_type / _name / _outcome  slot N's type from the catalog ("beast", "archer"; "" for a hand-built slot),
-*comment     its name ("Boar"), and "down", "fled", "surrendered" or "standing"
-*comment To count one kind, *gosub_scene combat count_results "Boar" "down" sets combat_result_n; the first is a type or a name
+*comment   combat_result_standing     how many were still fighting when it ended (you fled, lost, or the leader fell; or a reinforcement never arrived)
+*comment   combat_resultN_type / _name / _group / _outcome  slot N's type from the catalog ("beast", "archer"; "" for a hand-built slot),
+*comment     its name ("Boar 2"), its group (an encounter template's "Boar"; "" otherwise), and "down", "fled", "surrendered" or "standing"
+*comment To count one kind, *gosub_scene combat count_results "Boar" "down" sets combat_result_n; the first is a type, a name or a group
 *comment ("" for any), the second an outcome ("" for any). Three boars, two dead and one run off:
 *comment   *gosub_scene combat count_results "Boar" "down"
 *comment   *if (combat_result_n > 0)
@@ -2112,10 +2187,15 @@
   *temp crr_out "standing"
   *temp crr_name ""
   *temp crr_type ""
+  *temp crr_group ""
   *if (crr_i <= combat_enemy_count)
     *set crr_name {(crr_p & "name")}
     *set crr_type {(crr_p & "type_id")}
-    *if ({(crr_p & "out")} = "fled")
+    *set crr_group {(crr_p & "group")}
+    *if ({(crr_p & "out")} = "reserve")
+      *comment A reinforcement that never arrived (REINFORCEMENTS) was still out there.
+      *set combat_result_standing + 1
+    *elseif ({(crr_p & "out")} = "fled")
       *set crr_out "fled"
       *set combat_result_fled + 1
     *elseif ({(crr_p & "out")} = "surrendered")
@@ -2130,13 +2210,15 @@
     *set crr_out ""
   *set {(crr_r & "_name")} crr_name
   *set {(crr_r & "_type")} crr_type
+  *set {(crr_r & "_group")} crr_group
+  *set {(crr_p & "group")} ""
   *set {(crr_r & "_outcome")} crr_out
   *set {(crr_p & "type_id")} ""
   *set crr_i + 1
   *goto combat_record_results_loop
 *return
 
-*comment Count the last fight's enemies of one type or name (cr_who, "" for any) that ended one way (cr_how, "" for any). Output: combat_result_n.
+*comment Count the last fight's enemies of one type, name or group (cr_who, "" for any) that ended one way (cr_how, "" for any). Output: combat_result_n.
 *label count_results
 *params cr_who cr_how
 *set combat_result_n 0
@@ -2144,7 +2226,7 @@
 *label count_results_loop
 *if (cr_i <= combat_result_count)
   *temp cr_r ("combat_result" & cr_i)
-  *temp cr_match ((cr_who = "") or ((cr_who = {(cr_r & "_type")}) or (cr_who = {(cr_r & "_name")})))
+  *temp cr_match ((cr_who = "") or ((cr_who = {(cr_r & "_type")}) or ((cr_who = {(cr_r & "_name")}) or (cr_who = {(cr_r & "_group")}))))
   *if ((cr_match) and ((cr_how = "") or (cr_how = {(cr_r & "_outcome")})))
     *set combat_result_n + 1
   *set cr_i + 1
@@ -2466,22 +2548,22 @@
 *else
   [b][⚔️ Round ${combat_round}][/b]
   *line_break
-  [b][${combat_enemy1_name}: HP ${combat_enemy1_hp}/${combat_enemy1_max_hp}@{((combat_enemy1_hp <= 0) and (combat_enemy1_out = ""))  (Down)|}@{(combat_enemy1_out = "fled")  (Fled)|}@{(combat_enemy1_out = "surrendered")  (Surrendered)|} (AC ${combat_enemy1_ac})][/b]
+  [b][${combat_enemy1_name}: HP ${combat_enemy1_hp}/${combat_enemy1_max_hp}@{((combat_enemy1_hp <= 0) and (combat_enemy1_out = ""))  (Down)|}@{(combat_enemy1_out = "fled")  (Fled)|}@{(combat_enemy1_out = "surrendered")  (Surrendered)|}@{(combat_enemy1_out = "reserve")  (Not arrived)|} (AC ${combat_enemy1_ac})][/b]
   *line_break
   *if (combat_enemy_count >= 2)
-    [b][${combat_enemy2_name}: HP ${combat_enemy2_hp}/${combat_enemy2_max_hp}@{((combat_enemy2_hp <= 0) and (combat_enemy2_out = ""))  (Down)|}@{(combat_enemy2_out = "fled")  (Fled)|}@{(combat_enemy2_out = "surrendered")  (Surrendered)|} (AC ${combat_enemy2_ac})][/b]
+    [b][${combat_enemy2_name}: HP ${combat_enemy2_hp}/${combat_enemy2_max_hp}@{((combat_enemy2_hp <= 0) and (combat_enemy2_out = ""))  (Down)|}@{(combat_enemy2_out = "fled")  (Fled)|}@{(combat_enemy2_out = "surrendered")  (Surrendered)|}@{(combat_enemy2_out = "reserve")  (Not arrived)|} (AC ${combat_enemy2_ac})][/b]
     *line_break
   *if (combat_enemy_count >= 3)
-    [b][${combat_enemy3_name}: HP ${combat_enemy3_hp}/${combat_enemy3_max_hp}@{((combat_enemy3_hp <= 0) and (combat_enemy3_out = ""))  (Down)|}@{(combat_enemy3_out = "fled")  (Fled)|}@{(combat_enemy3_out = "surrendered")  (Surrendered)|} (AC ${combat_enemy3_ac})][/b]
+    [b][${combat_enemy3_name}: HP ${combat_enemy3_hp}/${combat_enemy3_max_hp}@{((combat_enemy3_hp <= 0) and (combat_enemy3_out = ""))  (Down)|}@{(combat_enemy3_out = "fled")  (Fled)|}@{(combat_enemy3_out = "surrendered")  (Surrendered)|}@{(combat_enemy3_out = "reserve")  (Not arrived)|} (AC ${combat_enemy3_ac})][/b]
     *line_break
   *if (combat_enemy_count >= 4)
-    [b][${combat_enemy4_name}: HP ${combat_enemy4_hp}/${combat_enemy4_max_hp}@{((combat_enemy4_hp <= 0) and (combat_enemy4_out = ""))  (Down)|}@{(combat_enemy4_out = "fled")  (Fled)|}@{(combat_enemy4_out = "surrendered")  (Surrendered)|} (AC ${combat_enemy4_ac})][/b]
+    [b][${combat_enemy4_name}: HP ${combat_enemy4_hp}/${combat_enemy4_max_hp}@{((combat_enemy4_hp <= 0) and (combat_enemy4_out = ""))  (Down)|}@{(combat_enemy4_out = "fled")  (Fled)|}@{(combat_enemy4_out = "surrendered")  (Surrendered)|}@{(combat_enemy4_out = "reserve")  (Not arrived)|} (AC ${combat_enemy4_ac})][/b]
     *line_break
   *if (combat_enemy_count >= 5)
-    [b][${combat_enemy5_name}: HP ${combat_enemy5_hp}/${combat_enemy5_max_hp}@{((combat_enemy5_hp <= 0) and (combat_enemy5_out = ""))  (Down)|}@{(combat_enemy5_out = "fled")  (Fled)|}@{(combat_enemy5_out = "surrendered")  (Surrendered)|} (AC ${combat_enemy5_ac})][/b]
+    [b][${combat_enemy5_name}: HP ${combat_enemy5_hp}/${combat_enemy5_max_hp}@{((combat_enemy5_hp <= 0) and (combat_enemy5_out = ""))  (Down)|}@{(combat_enemy5_out = "fled")  (Fled)|}@{(combat_enemy5_out = "surrendered")  (Surrendered)|}@{(combat_enemy5_out = "reserve")  (Not arrived)|} (AC ${combat_enemy5_ac})][/b]
     *line_break
   *if (combat_enemy_count >= 6)
-    [b][${combat_enemy6_name}: HP ${combat_enemy6_hp}/${combat_enemy6_max_hp}@{((combat_enemy6_hp <= 0) and (combat_enemy6_out = ""))  (Down)|}@{(combat_enemy6_out = "fled")  (Fled)|}@{(combat_enemy6_out = "surrendered")  (Surrendered)|} (AC ${combat_enemy6_ac})][/b]
+    [b][${combat_enemy6_name}: HP ${combat_enemy6_hp}/${combat_enemy6_max_hp}@{((combat_enemy6_hp <= 0) and (combat_enemy6_out = ""))  (Down)|}@{(combat_enemy6_out = "fled")  (Fled)|}@{(combat_enemy6_out = "surrendered")  (Surrendered)|}@{(combat_enemy6_out = "reserve")  (Not arrived)|} (AC ${combat_enemy6_ac})][/b]
     *line_break
   [b][You: HP ${hp_current}/${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|} (AC ${ac_shown}@{shield_active  (Shield)|})][/b]
 *if (rebuke_armed)
@@ -5631,7 +5713,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *comment   strongest down the strongest of its own side (the most maximum HP, and more than its own) is down; for an ally, the player is below a quarter of their HP
 *comment   half down      half or more of its side is down (out of the fight, by any means)
 *comment and Intimidate (the player's action) can force a check at any time.
-*comment THE CHECK: a Wisdom save, d20 + WIS against DC 10. The type's morale (combat_<side>N_morale, from tools/enemy_catalog.json and the ally
+*comment THE CHECK: a Wisdom save, d20 + WIS + proficiency + resolve (an enemy's) against DC 10, with advantage when its side is winning. The type's morale (combat_<side>N_morale, from tools/enemy_catalog.json and the ally
 *comment types in combat_types.txt) decides how it rolls: fearless never checks, steady rolls with advantage, skittish with disadvantage.
 *comment combat_no_morale (a duel, a boss) turns all of it off for the fight. A failed save BREAKS it (_broken):
 *comment   An ENEMY is done fighting. A humanoid that is cornered (an opponent on its tile) or in a non-lethal fight surrenders on the spot. Anything else flees: it Dashes away from the player toward its own edge of the lane, taking the usual free swing
@@ -5668,20 +5750,68 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *set cmc_a combat_morale_forced_a
   *set cmc_b combat_morale_forced_b
   *set combat_morale_forced_a 0
+*comment Nerve is experience (2026-11-03, the user): proficiency and, for an enemy, its resolve add to the save, as they do to Intimidate's DC.
+*temp cmc_prof {(cmc_p & "prof")}
+*if (cmc_prof <= 0)
+  *set cmc_prof combat_lib_prof_bonus
+*temp cmc_resolve 0
+*if (cmc_side = "enemy")
+  *set cmc_resolve {(("combat_enemy" & cmc_slot) & "_resolve")}
+*comment Advantage when its own side is winning (2026-11-03, the user): nobody walks away from a fight they are about to win.
+*comment   An enemy: you are below half your HP, or half or more of your allies are down.
+*comment   An ally: half or more of the enemies on the field are down (a reinforcement still on its way does not count).
+*temp cmc_winning false
+*temp cmc_i 1
+*temp cmc_tot 0
+*temp cmc_down 0
+*if (cmc_side = "enemy")
+  *if ((hp_current * 2) < hp_max)
+    *set cmc_winning true
+  *label combat_morale_check_ally_loop
+  *if (cmc_i <= combat_ally_count)
+    *set cmc_tot + 1
+    *if ({(("combat_ally" & cmc_i) & "_hp")} <= 0)
+      *set cmc_down + 1
+    *set cmc_i + 1
+    *goto combat_morale_check_ally_loop
+*else
+  *label combat_morale_check_enemy_loop
+  *if (cmc_i <= combat_enemy_count)
+    *if (not({(("combat_enemy" & cmc_i) & "_out")} = "reserve"))
+      *set cmc_tot + 1
+      *if ({(("combat_enemy" & cmc_i) & "_hp")} <= 0)
+        *set cmc_down + 1
+    *set cmc_i + 1
+    *goto combat_morale_check_enemy_loop
+*if ((cmc_tot > 0) and ((cmc_down * 2) >= cmc_tot))
+  *set cmc_winning true
+*comment Advantage (steady, or winning) and disadvantage (skittish) cancel out, as in 5e.
+*temp cmc_adv ((cmc_kind = "steady") or (cmc_winning))
+*temp cmc_dis (cmc_kind = "skittish")
+*temp cmc_why_adv "steady"
+*if (cmc_winning)
+  *set cmc_why_adv "its side is winning"
+  *if (cmc_kind = "steady")
+    *set cmc_why_adv "steady, its side is winning"
 *temp cmc_roll cmc_a
 *temp cmc_note ""
-*if (cmc_kind = "steady")
+*if ((cmc_adv) and (cmc_dis))
+  *set cmc_note " (skittish, but ${cmc_why_adv}: a straight roll)"
+*elseif (cmc_adv)
   *if (cmc_b > cmc_roll)
     *set cmc_roll cmc_b
-  *set cmc_note " (Advantage: steady)"
-*if (cmc_kind = "skittish")
+  *set cmc_note " (Advantage: ${cmc_why_adv})"
+*elseif (cmc_dis)
   *if (cmc_b < cmc_roll)
     *set cmc_roll cmc_b
   *set cmc_note " (Disadvantage: skittish)"
-*temp cmc_total (cmc_roll + cmc_mod)
-*temp cmc_mod_str "+${cmc_mod}"
+*temp cmc_total (((cmc_roll + cmc_mod) + cmc_prof) + cmc_resolve)
+*temp cmc_mod_str "+${cmc_mod} WIS"
 *if (cmc_mod < 0)
-  *set cmc_mod_str "${cmc_mod}"
+  *set cmc_mod_str "${cmc_mod} WIS"
+*set cmc_mod_str "${cmc_mod_str} +${cmc_prof} prof"
+*if (cmc_resolve > 0)
+  *set cmc_mod_str "${cmc_mod_str} +${cmc_resolve} resolve"
 *set combat_morale_broke (cmc_total < 10)
 *temp cmc_verdict "HOLDS"
 *if (combat_morale_broke)
@@ -5728,9 +5858,12 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *temp cid_i 1
 *label combat_intimidate_dc_loop
 *if (cid_i <= combat_enemy_count)
-  *set cid_total + 1
   *temp cid_ihp {(("combat_enemy" & cid_i) & "_hp")}
-  *if (cid_ihp <= 0)
+  *if (not({(("combat_enemy" & cid_i) & "_out")} = "reserve"))
+    *set cid_total + 1
+  *if ({(("combat_enemy" & cid_i) & "_out")} = "reserve")
+    *comment A reinforcement still on its way (REINFORCEMENTS) is neither down nor beside it yet.
+  *elseif (cid_ihp <= 0)
     *set cid_down + 1
   *elseif ((not(cid_i = cid_slot)) and ({(("combat_enemy" & cid_i) & "_max_hp")} > cid_max))
     *set cid_tougher true
@@ -5799,7 +5932,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *temp cmt_i 1
     *label combat_morale_turn_strong_loop
     *if (cmt_i <= combat_enemy_count)
-      *if ((not(cmt_i = cmt_slot)) and ({(("combat_enemy" & cmt_i) & "_max_hp")} > cmt_best_max))
+      *if (((not(cmt_i = cmt_slot)) and (not({(("combat_enemy" & cmt_i) & "_out")} = "reserve"))) and ({(("combat_enemy" & cmt_i) & "_max_hp")} > cmt_best_max))
         *set cmt_best cmt_i
         *set cmt_best_max {(("combat_enemy" & cmt_i) & "_max_hp")}
       *set cmt_i + 1
@@ -5834,9 +5967,11 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *else
     *label combat_morale_turn_enemy_side_loop
     *if (cmt_j <= combat_enemy_count)
-      *set cmt_total + 1
-      *if ({(("combat_enemy" & cmt_j) & "_hp")} <= 0)
-        *set cmt_down + 1
+      *comment A reinforcement still on its way (REINFORCEMENTS) is not part of the side yet.
+      *if (not({(("combat_enemy" & cmt_j) & "_out")} = "reserve"))
+        *set cmt_total + 1
+        *if ({(("combat_enemy" & cmt_j) & "_hp")} <= 0)
+          *set cmt_down + 1
       *set cmt_j + 1
       *goto combat_morale_turn_enemy_side_loop
   *if ((cmt_total > 1) and ((cmt_down * 2) >= cmt_total))
@@ -6201,6 +6336,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *set stat_bump_locked true
     *set locked_stat_bump_page_id page_id
   *gosub combat_begin_round
+  *gosub combat_reinforcements_arrive false
 *temp cnt_kind {("combat_turn_kind_" & combat_current_turn_index)}
 *temp cnt_slot {("combat_turn_slot_" & combat_current_turn_index)}
 *if (cnt_kind = "player")
@@ -7077,6 +7213,89 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *goto fight_round_hub
 
 *comment The named fights below are thin callers of fight_library: they say who is in the fight and nothing else.
+
+*comment ENCOUNTER TEMPLATES (2026-11-03): fights written as data in tools/encounter_catalog.json. Each is a fight_<id> label below, called like
+*comment any other (*gosub_scene combat fight_boar_pack, then read combat_outcome and the FIGHT RESULTS). A template sets its own morale
+*comment (on unless it says "morale": false), so the MORALE OFF line at a story call site does not apply to it.
+*comment GEN:BEGIN encounter_labels -- generated by tools/gen_encounters.js from tools/encounter_catalog.json; edit the catalog, not this block
+*label fight_boar_pack
+*comment Encounter template "boar_pack": Three wild boars rooting at the edge of a wood. Skittish beasts: hurt one badly or drop two and the rest may bolt.
+*set combat_is_nonlethal false
+*set combat_no_morale false
+*set combat_lib_1 "beast"
+*set combat_enemy_name_override "Boar 1"
+*set combat_enemy_epithet_override "the first boar"
+*set combat_enemy1_group "Boar"
+*set combat_enemy_hp_override 7
+*set combat_enemy_ac_override 10
+*set combat_enemy_atk_override 2
+*set combat_enemy_range 1
+*set combat_lib_2 "beast"
+*set combat_enemy2_name_override "Boar 2"
+*set combat_enemy2_epithet_override "the second boar"
+*set combat_enemy2_group "Boar"
+*set combat_enemy2_hp_override 7
+*set combat_enemy2_ac_override 10
+*set combat_enemy2_atk_override 2
+*set combat_enemy2_range 1
+*set combat_lib_3 "beast"
+*set combat_enemy3_name_override "Boar 3"
+*set combat_enemy3_epithet_override "the third boar"
+*set combat_enemy3_group "Boar"
+*set combat_enemy3_hp_override 7
+*set combat_enemy3_ac_override 10
+*set combat_enemy3_atk_override 2
+*set combat_enemy3_range 2
+*goto fight_library
+
+*label fight_wolf_pair
+*comment Encounter template "wolf_pair": Two grey wolves that circle in from Close range.
+*set combat_is_nonlethal false
+*set combat_no_morale false
+*set combat_lib_1 "beast"
+*set combat_enemy_name_override "Grey Wolf 1"
+*set combat_enemy_epithet_override "the first grey wolf"
+*set combat_enemy1_group "Wolf"
+*set combat_enemy_hp_override 11
+*set combat_enemy_ac_override 13
+*set combat_enemy_atk_override 4
+*set combat_enemy_range 1
+*set combat_lib_2 "beast"
+*set combat_enemy2_name_override "Grey Wolf 2"
+*set combat_enemy2_epithet_override "the second grey wolf"
+*set combat_enemy2_group "Wolf"
+*set combat_enemy2_hp_override 11
+*set combat_enemy2_ac_override 13
+*set combat_enemy2_atk_override 4
+*set combat_enemy2_range 1
+*goto fight_library
+
+*label fight_roadside_bandits
+*comment Encounter template "roadside_bandits": A bandit chief with a cutthroat at his side; an archer catches up on round 3. Cut the chief down and the rest give it up.
+*set combat_is_nonlethal false
+*set combat_no_morale false
+*set combat_leader_slot 1
+*set combat_lib_1 "swordsman"
+*set combat_enemy_name_override "Bandit Chief"
+*set combat_enemy_epithet_override "the bandit chief"
+*set combat_enemy1_group "Bandit"
+*set combat_enemy_hp_override 16
+*set combat_enemy_resolve_override 2
+*set combat_enemy_range 1
+*set combat_lib_2 "knifeman"
+*set combat_enemy2_name_override "Cutthroat"
+*set combat_enemy2_epithet_override "the cutthroat"
+*set combat_enemy2_group "Bandit"
+*set combat_enemy2_range 1
+*set combat_lib_3 "archer"
+*set combat_enemy3_name_override "Bandit Archer"
+*set combat_enemy3_epithet_override "the bandit archer"
+*set combat_enemy3_group "Bandit"
+*set combat_enemy3_arrives 3
+*goto fight_library
+
+*comment GEN:END encounter_labels
+
 
 *comment THE MAGE IN THE BURNING GROVE (2026-10-21): the one definition of Dubhar's fight, called by longshade/longshade_forest.txt lsf_r15_fight and by the dev hub. combat_dubhar_blights (0 to 2) says how many Twig Blights stand with him; the caller raises combat_player_can_die if the fight is to be lethal. The fight cannot be fled (combat_no_flee), ends the moment the mage falls (combat_leader_slot), and only the mage's defeat is non-lethal (combat_nonlethal_slot), so the blights keep creature lines. The mage opens at Mid-Range, the blights at Close.
 *label fight_dubhar
