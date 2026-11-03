@@ -81,6 +81,7 @@ types.forEach(function (t) {
     dmgType(t, "sidearm", s.dmg_type);
     ["atk_bonus", "dmg_bonus"].forEach(function (k) { if (s[k] !== "weapon" && !isInt(s[k])) bad(t, "sidearm." + k + " must be a whole number or \"weapon\""); });
   }
+  if (t.stun !== undefined && (!t.stun || !t.stun.name || !t.stun.icon)) bad(t, "stun needs a name and an icon");
   if (t.vulnerable !== undefined) String(t.vulnerable).split(/\s+/).forEach(function (v) { dmgType(t, "vulnerable", v); });
   // The type's own hit, miss and special-move lines: fight_narrate_enemy_turn finds them by flavor_type.
   if (prose.indexOf("*label flavor_type_" + t.id + "\n") === -1 && prose.indexOf("*label flavor_type_" + t.id + "\r\n") === -1) {
@@ -139,6 +140,11 @@ function genTypeLabel(t) {
     L.push(set("sidearm_dmg_type", q(s.dmg_type)));
   }
   if (t.vulnerable) L.push(set("vulnerable_types", q(t.vulnerable)));
+  if (t.stun) {
+    L.push(set("inflicts_stun", "true"));
+    L.push(set("stun_name", q(t.stun.name)));
+    L.push(set("stun_icon", q(t.stun.icon)));
+  }
   L.push("*return");
   return L;
 }

@@ -490,6 +490,9 @@ ${combat_player_dmg_roll_banner}
   *comment Reckless Attack (the Barbarian's, until their next turn): every attack roll against the player has advantage.
   *if (combat_reckless_active)
     *set combat_enemy_advantage true
+  *comment A stunned player is easy to hit (2026-11-03, RAW: attacks against a stunned creature have advantage), as a stunned enemy already is (combat_attack_edge).
+  *if (player_stunned)
+    *set combat_enemy_advantage true
   *comment Frightened (Cause Fear): a frightened enemy attacks with disadvantage.
   *temp cea_fright {(("combat_enemy" & combat_active_target) & "_frightened")}
   *if (cea_fright > 0)
@@ -589,7 +592,8 @@ ${combat_player_dmg_roll_banner}
         *set cea_shield_cannot_block true
       *else
         *set cea_shield_can_block true
-  *if (((((cea_shield_can_block) and (shield_armed)) and (not(shield_active))) and (not(player_oa_used))) and (wizard_spell_slots > 0))
+  *gosub combat_can_react "player" 0
+  *if (((((cea_shield_can_block) and (shield_armed)) and (not(shield_active))) and (combat_can_react_ok)) and (wizard_spell_slots > 0))
     *set shield_armed false
     *set shield_active true
     *set wizard_spell_slots - 1
@@ -713,7 +717,9 @@ ${combat_player_dmg_roll_banner}
         *set hp_current 1
     *comment HELLISH REBUKE (Warlock): armed earlier, it fires on the first hit that actually damages the player, spending a Pact Magic slot and the reaction. The attacker makes a
     *comment Dexterity save; 2d10 fire, half on a save. Anything that resists or is vulnerable to fire is handled by the same outgoing check as every other player damage.
-    *if (((rebuke_armed) and (combat_enemy_dmg_dealt > 0)) and (not(player_oa_used)))
+    *comment A hit that stuns also takes the reaction it would have answered with (the stun lands with the blow, just above), RAW.
+    *gosub combat_can_react "player" 0
+    *if (((rebuke_armed) and (combat_enemy_dmg_dealt > 0)) and (combat_can_react_ok))
       *set rebuke_armed false
       *set warlock_spell_slots - 1
       *set player_oa_used true
@@ -804,6 +810,9 @@ ${combat_player_dmg_roll_banner}
 *if (not(reao_already_locked))
   *if (combat_reckless_active)
     *set combat_enemy_advantage true
+  *comment A stunned ally is easy to hit (2026-11-03, RAW), the same as a stunned player.
+  *if ({(reao_ap & "stunned")} > 0)
+    *set combat_enemy_advantage true
   *temp reao_roll 0
   *rand reao_roll 1 20
   *temp reao_adv_label ""
@@ -890,6 +899,11 @@ ${combat_player_dmg_roll_banner}
     *set combat_ally_blow_blocked combat_packet_blocked
     *set reao_dmg_total combat_packet_damage
     *set {(reao_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${reao_dmg} ${reao_dmg_bonus_str} = ${reao_dmg_total}${reao_tag}][/b]"
+    *comment A stunning blow (2026-11-03) stuns an ally just as it stuns the player (resolve_enemy_attack): the ally loses its next turn (combat.txt combat_stun_gate "ally").
+    *if ((combat_enemy_inflicts_stun) and ({(reao_ap & "hp")} > reao_dmg_total))
+      *set {(reao_ap & "stunned")} 1
+      *set {(reao_ap & "stun_kind")} ""
+      *set {(reao_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${reao_dmg} ${reao_dmg_bonus_str} = ${reao_dmg_total}${reao_tag} | ${combat_enemy_stun_icon} ${combat_enemy_stun_name}][/b]"
     *set combat_enemy_dmg_on_ally_dealt reao_dmg_total
     *set {(reao_ap & "hp")} - reao_dmg_total
     *if ({(reao_ap & "hp")} < 0)
@@ -930,6 +944,30 @@ ${combat_player_dmg_roll_banner}
 *comment Inputs: raa_a_slot (1-4, which combat_allyN_*), raa_e_slot (1-6, which combat_enemyN_* it's attacking)
 *comment Outputs: combat_ally_atk_hit, combat_ally_dmg_dealt; combat_enemyN_hp is reduced directly
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment CAN THIS COMBATANT REACT? (2026-11-03, the user: "that will come back to bite us the first moment we give an enemy a spell or ability that stuns").
+*comment The one place that answers it, for the player, an ally or an enemy: every reaction asks here before it fires -- an opportunity attack either way
+*comment (combat.txt find_opportunity_attacker, find_opportunity_attacker_against), Shield and Hellish Rebuke (resolve_enemy_attack). A new reaction
+*comment asks here too, and a new condition that takes reactions away (incapacitated, paralysed, unconscious) is added here once.
+*comment Rules: alive; its one reaction this round not yet spent (player_oa_used / combat_<kind>N_oa_used, which Shocking Grasp and Arms of Hadar also spend);
+*comment and not stunned (player_stunned, or a stun count above 0). Output: combat_can_react_ok.
+*label combat_can_react
+*params ccr_kind ccr_slot
+*set combat_can_react_ok false
+*if (ccr_kind = "player")
+  *if (((hp_current > 0) and (not(player_oa_used))) and (not(player_stunned)))
+    *set combat_can_react_ok true
+*else
+  *comment Fixed prefixes, not one built from ccr_kind: quicktest walks every branch whatever the values, and "combat_player0_" names nothing.
+  *temp ccr_p (("combat_enemy" & ccr_slot) & "_")
+  *if (ccr_kind = "ally")
+    *set ccr_p (("combat_ally" & ccr_slot) & "_")
+  *temp ccr_hp {(ccr_p & "hp")}
+  *temp ccr_used {(ccr_p & "oa_used")}
+  *temp ccr_stun {(ccr_p & "stunned")}
+  *if (((ccr_hp > 0) and (not(ccr_used))) and (ccr_stun <= 0))
+    *set combat_can_react_ok true
+*return
+
 *label combat_attack_edge
 *comment ADVANTAGE FROM THE TARGET (2026-10-12): the one place that answers "does the thing being attacked give this attack advantage?", for every kind of attacker. The player's roll (combat.txt combat_hidden_attack_roll) and an ally's (resolve_ally_attack below) both ask it, so a new way
 *comment to gain advantage is one rule here and every attacker has it. Inputs: the distance between attacker and target in range tiers, the target's enemy slot, and a tag for the kind of attack ("" for an ordinary one; "fire" will be tested here once fire attacks are wired).
