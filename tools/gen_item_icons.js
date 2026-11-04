@@ -101,6 +101,7 @@ const MAP = {
   potion: "POT_Potion_of_Healing_Unfaded_Icon.png",
   grease: "GRN_Grease_Bottle_Unfaded_Icon.png",
   mortar_pestle: "Mortar_And_Pestle_Unfaded_Icon.png",
+  storage_chest: "Small_Traveling_Chest_A_Unfaded_Icon.webp",                 // the Storage tab (2026-11-03)
   empty_potion_vial: "05-empty-vial.png",                              // the user's own art: the herbalist's corked vial
   portable_burner: "07-portable-burner.png",
   althea_phial: "../Generic/Saint_Altheas_Water_Generated_Source.png",  // Saint Althea's wax-stoppered healing water

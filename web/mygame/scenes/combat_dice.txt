@@ -305,11 +305,22 @@ ${combat_player_dmg_roll_banner}
   *if (cwh_sneak_ok)
     *set combat_sneak_spent true
     *set combat_sneak_attack_triggered true
+    *comment One d6 for each of rogue_sneak_dice (character_progression.txt refresh_class_resource_maxs), summed into a single packet.
     *temp cwh_sneak_die 0
-    *rand cwh_sneak_die 1 6
-    *set combat_player_dmg_dealt + cwh_sneak_die
-    *set cwh_extra_str "${cwh_extra_str} +${cwh_sneak_die} (Sneak Attack)"
-    *set cwh_running + cwh_sneak_die
+    *temp cwh_sneak_sum 0
+    *temp cwh_sneak_i 0
+    *temp cwh_sneak_label "Sneak Attack"
+    *if (rogue_sneak_dice > 1)
+      *set cwh_sneak_label ("Sneak Attack " & rogue_sneak_attack_die)
+    *label cwh_sneak_loop
+    *if (cwh_sneak_i < rogue_sneak_dice)
+      *rand cwh_sneak_die 1 6
+      *set cwh_sneak_sum + cwh_sneak_die
+      *set cwh_sneak_i + 1
+      *goto cwh_sneak_loop
+    *set combat_player_dmg_dealt + cwh_sneak_sum
+    *set cwh_extra_str "${cwh_extra_str} +${cwh_sneak_sum} (${cwh_sneak_label})"
+    *set cwh_running + cwh_sneak_sum
   *comment HEX AND HUNTER'S MARK are not part of the weapon's damage (the user approved the split, 2026-10-31, RAW): each is its own packet, rolled below after the weapon's, with its own type (Hex necrotic, Hunter's Mark force in the 2024 rules this game follows), so a target that is immune to
   *comment the weapon's damage still takes them. Sneak Attack IS the weapon's damage type and stays in its packet.
   *set combat_player_dmg_roll_banner "[b][🎲 Weapon Damage: ${cwh_roll} ${cwh_bonus_str}${cwh_extra_str} = ${cwh_running}][/b]"

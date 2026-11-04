@@ -153,6 +153,7 @@ function genCreates() {
   ((CRAFT.CRAFT_RECIPES || {}).cooking || []).forEach(function (r) { L.push("*create recipe_" + r.id + " false"); });
   // SPELL SOURCES (2026-10-20): dungeon.txt dg_spell_source reads has_scroll_<spell id> for ANY spell it is asked about, so the flag exists for every spell of level 1 and up even before its scroll does (the scroll items above create their own).
   spellIdsOfLevelOneUp().forEach(function (id) { if (!items.some(function (it) { return it.id === "scroll_" + id; })) L.push("*create has_scroll_" + id + " false"); });
+  (CATALOG.containers || []).forEach(function (ct) { L.push("*create stow_layout_" + ct.id + " \"\""); });   // where each thing sits in the container grid (inventory.js, like inv_layout)
   (CATALOG.containers || []).forEach(function (ct) { listed().forEach(function (it) { L.push("*create stow_" + ct.id + "_" + it.id + " 0"); if (it.holds) L.push("*create stow_" + ct.id + "_" + it.holds.var + " 0"); }); });   // what is in each container (web/mygame/inventory.js)
   items.forEach(function (it) { if (buys[it.id]) L.push("*create cart_buy_" + it.id + " 0"); });
   items.forEach(function (it) { if (sells[it.id]) L.push("*create cart_sell_" + it.id + " 0"); });

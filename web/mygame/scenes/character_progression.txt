@@ -113,6 +113,10 @@
     *set warlock_spell_slots_max 3
   *if (character_level >= 17)
     *set warlock_spell_slots_max 4
+*if (character_class = "rogue")
+  *comment Sneak Attack, RAW: 1d6 at levels 1-2, 2d6 at 3-4, and one more d6 every two levels (half the level, rounded up).
+  *set rogue_sneak_dice ((character_level + (character_level modulo 2)) / 2)
+  *set rogue_sneak_attack_die (rogue_sneak_dice & "d6")
 *if (character_class = "wizard")
   *set wizard_spell_slots_max 2
   *if (character_level >= 2)
@@ -375,7 +379,9 @@
 *return
 
 *comment The price of the next level: tune the numbers HERE. 0 means no next level is defined yet, so nothing shows and nothing is
-*comment ready. The same quest pool is meant to feed level 3 with a higher number. level_up_ready is derived, so it is safe to repeat.
+*comment ready. The same quest pool feeds every level with a higher number. level_up_ready is derived, so it is safe to repeat.
+*comment The numbers are TOTALS, not the cost of one step (nothing is spent): level 2 needs 30 sessions and 10 quests; level 3 needs 15 more quests and
+*comment 30 more sessions on top of that (2026-11-03, the user's design), so 60 sessions and 25 quests in all.
 *label refresh_level_up_progress
 *gosub refresh_quests_finished
 *set level_up_sessions_needed 0
@@ -383,6 +389,9 @@
 *if (character_level = 1)
   *set level_up_sessions_needed 30
   *set level_up_quests_needed 10
+*if (character_level = 2)
+  *set level_up_sessions_needed 60
+  *set level_up_quests_needed 25
 *set level_up_ready false
 *if (level_up_sessions_needed > 0)
   *if ((training_sessions >= level_up_sessions_needed) and (quests_finished >= level_up_quests_needed))
@@ -533,30 +542,62 @@ You make space beside the bed, bar the door, and give the room over to a few uni
 *set known_thaumaturgy (((((((((((wizard_cantrip = "thaumaturgy") or (wizard_cantrip_2 = "thaumaturgy")) or (wizard_cantrip_3 = "thaumaturgy")) or (warlock_cantrip = "thaumaturgy")) or (warlock_cantrip_2 = "thaumaturgy")) or (bard_cantrip = "thaumaturgy")) or (bard_cantrip_2 = "thaumaturgy")) or (race_cantrip = "thaumaturgy")) or (race_cantrip_2 = "thaumaturgy"))) and (not(spells_blocked)))
 *set known_control_flames (((((((((((wizard_cantrip = "control_flames") or (wizard_cantrip_2 = "control_flames")) or (wizard_cantrip_3 = "control_flames")) or (warlock_cantrip = "control_flames")) or (warlock_cantrip_2 = "control_flames")) or (bard_cantrip = "control_flames")) or (bard_cantrip_2 = "control_flames")) or (race_cantrip = "control_flames")) or (race_cantrip_2 = "control_flames"))) and (not(spells_blocked)))
 *set known_poison_spray (((((((((((wizard_cantrip = "poison_spray") or (wizard_cantrip_2 = "poison_spray")) or (wizard_cantrip_3 = "poison_spray")) or (warlock_cantrip = "poison_spray")) or (warlock_cantrip_2 = "poison_spray")) or (bard_cantrip = "poison_spray")) or (bard_cantrip_2 = "poison_spray")) or (race_cantrip = "poison_spray")) or (race_cantrip_2 = "poison_spray"))) and (not(spells_blocked)))
-*set known_alarm ((((((((((((((wizard_spell = "alarm") or (wizard_spell_2 = "alarm")) or (wizard_spell_3 = "alarm")) or ((warlock_spell = "alarm") or (warlock_spell_2 = "alarm"))) or (bard_spell = "alarm")) or (bard_spell_2 = "alarm")) or (bard_spell_3 = "alarm")) or (ranger_spell = "alarm")) or (ranger_spell_2 = "alarm")) or (ranger_spell_3 = "alarm")) or (race_cantrip = "alarm")) or (race_cantrip_2 = "alarm"))) and (not(spells_blocked)))
-*set known_arms_of_hadar ((((((((((((((wizard_spell = "arms_of_hadar") or (wizard_spell_2 = "arms_of_hadar")) or (wizard_spell_3 = "arms_of_hadar")) or ((warlock_spell = "arms_of_hadar") or (warlock_spell_2 = "arms_of_hadar"))) or (bard_spell = "arms_of_hadar")) or (bard_spell_2 = "arms_of_hadar")) or (bard_spell_3 = "arms_of_hadar")) or (ranger_spell = "arms_of_hadar")) or (ranger_spell_2 = "arms_of_hadar")) or (ranger_spell_3 = "arms_of_hadar")) or (race_cantrip = "arms_of_hadar")) or (race_cantrip_2 = "arms_of_hadar"))) and (not(spells_blocked)))
-*set known_hellish_rebuke ((((((((((((((wizard_spell = "hellish_rebuke") or (wizard_spell_2 = "hellish_rebuke")) or (wizard_spell_3 = "hellish_rebuke")) or ((warlock_spell = "hellish_rebuke") or (warlock_spell_2 = "hellish_rebuke"))) or (bard_spell = "hellish_rebuke")) or (bard_spell_2 = "hellish_rebuke")) or (bard_spell_3 = "hellish_rebuke")) or (ranger_spell = "hellish_rebuke")) or (ranger_spell_2 = "hellish_rebuke")) or (ranger_spell_3 = "hellish_rebuke")) or (race_cantrip = "hellish_rebuke")) or (race_cantrip_2 = "hellish_rebuke"))) and (not(spells_blocked)))
-*set known_cause_fear ((((((((((((((wizard_spell = "cause_fear") or (wizard_spell_2 = "cause_fear")) or (wizard_spell_3 = "cause_fear")) or ((warlock_spell = "cause_fear") or (warlock_spell_2 = "cause_fear"))) or (bard_spell = "cause_fear")) or (bard_spell_2 = "cause_fear")) or (bard_spell_3 = "cause_fear")) or (ranger_spell = "cause_fear")) or (ranger_spell_2 = "cause_fear")) or (ranger_spell_3 = "cause_fear")) or (race_cantrip = "cause_fear")) or (race_cantrip_2 = "cause_fear"))) and (not(spells_blocked)))
-*set known_armor_of_agathys ((((((((((((((wizard_spell = "armor_of_agathys") or (wizard_spell_2 = "armor_of_agathys")) or (wizard_spell_3 = "armor_of_agathys")) or ((warlock_spell = "armor_of_agathys") or (warlock_spell_2 = "armor_of_agathys"))) or (bard_spell = "armor_of_agathys")) or (bard_spell_2 = "armor_of_agathys")) or (bard_spell_3 = "armor_of_agathys")) or (ranger_spell = "armor_of_agathys")) or (ranger_spell_2 = "armor_of_agathys")) or (ranger_spell_3 = "armor_of_agathys")) or (race_cantrip = "armor_of_agathys")) or (race_cantrip_2 = "armor_of_agathys"))) and (not(spells_blocked)))
-*set known_bane ((((((((((((((wizard_spell = "bane") or (wizard_spell_2 = "bane")) or (wizard_spell_3 = "bane")) or ((warlock_spell = "bane") or (warlock_spell_2 = "bane"))) or (bard_spell = "bane")) or (bard_spell_2 = "bane")) or (bard_spell_3 = "bane")) or (ranger_spell = "bane")) or (ranger_spell_2 = "bane")) or (ranger_spell_3 = "bane")) or (race_cantrip = "bane")) or (race_cantrip_2 = "bane"))) and (not(spells_blocked)))
-*set known_charm_person ((((((((((((((wizard_spell = "charm_person") or (wizard_spell_2 = "charm_person")) or (wizard_spell_3 = "charm_person")) or ((warlock_spell = "charm_person") or (warlock_spell_2 = "charm_person"))) or (bard_spell = "charm_person")) or (bard_spell_2 = "charm_person")) or (bard_spell_3 = "charm_person")) or (ranger_spell = "charm_person")) or (ranger_spell_2 = "charm_person")) or (ranger_spell_3 = "charm_person")) or (race_cantrip = "charm_person")) or (race_cantrip_2 = "charm_person"))) and (not(spells_blocked)))
-*set known_comprehend_languages ((((((((((((((wizard_spell = "comprehend_languages") or (wizard_spell_2 = "comprehend_languages")) or (wizard_spell_3 = "comprehend_languages")) or ((warlock_spell = "comprehend_languages") or (warlock_spell_2 = "comprehend_languages"))) or (bard_spell = "comprehend_languages")) or (bard_spell_2 = "comprehend_languages")) or (bard_spell_3 = "comprehend_languages")) or (ranger_spell = "comprehend_languages")) or (ranger_spell_2 = "comprehend_languages")) or (ranger_spell_3 = "comprehend_languages")) or (race_cantrip = "comprehend_languages")) or (race_cantrip_2 = "comprehend_languages"))) and (not(spells_blocked)))
-*set known_detect_magic ((((((((((((((wizard_spell = "detect_magic") or (wizard_spell_2 = "detect_magic")) or (wizard_spell_3 = "detect_magic")) or ((warlock_spell = "detect_magic") or (warlock_spell_2 = "detect_magic"))) or (bard_spell = "detect_magic")) or (bard_spell_2 = "detect_magic")) or (bard_spell_3 = "detect_magic")) or (ranger_spell = "detect_magic")) or (ranger_spell_2 = "detect_magic")) or (ranger_spell_3 = "detect_magic")) or (race_cantrip = "detect_magic")) or (race_cantrip_2 = "detect_magic"))) and (not(spells_blocked)))
-*set known_disguise_self ((((((((((((((wizard_spell = "disguise_self") or (wizard_spell_2 = "disguise_self")) or (wizard_spell_3 = "disguise_self")) or ((warlock_spell = "disguise_self") or (warlock_spell_2 = "disguise_self"))) or (bard_spell = "disguise_self")) or (bard_spell_2 = "disguise_self")) or (bard_spell_3 = "disguise_self")) or (ranger_spell = "disguise_self")) or (ranger_spell_2 = "disguise_self")) or (ranger_spell_3 = "disguise_self")) or (race_cantrip = "disguise_self")) or (race_cantrip_2 = "disguise_self"))) and (not(spells_blocked)))
-*set known_dissonant_whispers ((((((((((((((wizard_spell = "dissonant_whispers") or (wizard_spell_2 = "dissonant_whispers")) or (wizard_spell_3 = "dissonant_whispers")) or ((warlock_spell = "dissonant_whispers") or (warlock_spell_2 = "dissonant_whispers"))) or (bard_spell = "dissonant_whispers")) or (bard_spell_2 = "dissonant_whispers")) or (bard_spell_3 = "dissonant_whispers")) or (ranger_spell = "dissonant_whispers")) or (ranger_spell_2 = "dissonant_whispers")) or (ranger_spell_3 = "dissonant_whispers")) or (race_cantrip = "dissonant_whispers")) or (race_cantrip_2 = "dissonant_whispers"))) and (not(spells_blocked)))
-*set known_false_life ((((((((((((((wizard_spell = "false_life") or (wizard_spell_2 = "false_life")) or (wizard_spell_3 = "false_life")) or ((warlock_spell = "false_life") or (warlock_spell_2 = "false_life"))) or (bard_spell = "false_life")) or (bard_spell_2 = "false_life")) or (bard_spell_3 = "false_life")) or (ranger_spell = "false_life")) or (ranger_spell_2 = "false_life")) or (ranger_spell_3 = "false_life")) or (race_cantrip = "false_life")) or (race_cantrip_2 = "false_life"))) and (not(spells_blocked)))
-*set known_feather_fall ((((((((((((((wizard_spell = "feather_fall") or (wizard_spell_2 = "feather_fall")) or (wizard_spell_3 = "feather_fall")) or ((warlock_spell = "feather_fall") or (warlock_spell_2 = "feather_fall"))) or (bard_spell = "feather_fall")) or (bard_spell_2 = "feather_fall")) or (bard_spell_3 = "feather_fall")) or (ranger_spell = "feather_fall")) or (ranger_spell_2 = "feather_fall")) or (ranger_spell_3 = "feather_fall")) or (race_cantrip = "feather_fall")) or (race_cantrip_2 = "feather_fall"))) and (not(spells_blocked)))
-*set known_healing_word ((((((((((((((wizard_spell = "healing_word") or (wizard_spell_2 = "healing_word")) or (wizard_spell_3 = "healing_word")) or ((warlock_spell = "healing_word") or (warlock_spell_2 = "healing_word"))) or (bard_spell = "healing_word")) or (bard_spell_2 = "healing_word")) or (bard_spell_3 = "healing_word")) or (ranger_spell = "healing_word")) or (ranger_spell_2 = "healing_word")) or (ranger_spell_3 = "healing_word")) or (race_cantrip = "healing_word")) or (race_cantrip_2 = "healing_word"))) and (not(spells_blocked)))
-*set known_hex ((((((((((((((wizard_spell = "hex") or (wizard_spell_2 = "hex")) or (wizard_spell_3 = "hex")) or ((warlock_spell = "hex") or (warlock_spell_2 = "hex"))) or (bard_spell = "hex")) or (bard_spell_2 = "hex")) or (bard_spell_3 = "hex")) or (ranger_spell = "hex")) or (ranger_spell_2 = "hex")) or (ranger_spell_3 = "hex")) or (race_cantrip = "hex")) or (race_cantrip_2 = "hex"))) and (not(spells_blocked)))
-*set known_ensnaring_strike (((((ranger_spell = "ensnaring_strike") or (ranger_spell_2 = "ensnaring_strike")) or (ranger_spell_3 = "ensnaring_strike"))) and (not(spells_blocked)))
-*set known_hunters_mark ((((((((((((((wizard_spell = "hunters_mark") or (wizard_spell_2 = "hunters_mark")) or (wizard_spell_3 = "hunters_mark")) or ((warlock_spell = "hunters_mark") or (warlock_spell_2 = "hunters_mark"))) or (bard_spell = "hunters_mark")) or (bard_spell_2 = "hunters_mark")) or (bard_spell_3 = "hunters_mark")) or (ranger_spell = "hunters_mark")) or (ranger_spell_2 = "hunters_mark")) or (ranger_spell_3 = "hunters_mark")) or (race_cantrip = "hunters_mark")) or (race_cantrip_2 = "hunters_mark"))) and (not(spells_blocked)))
-*set known_identify ((((((((((((((wizard_spell = "identify") or (wizard_spell_2 = "identify")) or (wizard_spell_3 = "identify")) or ((warlock_spell = "identify") or (warlock_spell_2 = "identify"))) or (bard_spell = "identify")) or (bard_spell_2 = "identify")) or (bard_spell_3 = "identify")) or (ranger_spell = "identify")) or (ranger_spell_2 = "identify")) or (ranger_spell_3 = "identify")) or (race_cantrip = "identify")) or (race_cantrip_2 = "identify"))) and (not(spells_blocked)))
-*set known_jump ((((((((((((((wizard_spell = "jump") or (wizard_spell_2 = "jump")) or (wizard_spell_3 = "jump")) or ((warlock_spell = "jump") or (warlock_spell_2 = "jump"))) or (bard_spell = "jump")) or (bard_spell_2 = "jump")) or (bard_spell_3 = "jump")) or (ranger_spell = "jump")) or (ranger_spell_2 = "jump")) or (ranger_spell_3 = "jump")) or (race_cantrip = "jump")) or (race_cantrip_2 = "jump"))) and (not(spells_blocked)))
-*set known_mage_armor ((((((((((((((wizard_spell = "mage_armor") or (wizard_spell_2 = "mage_armor")) or (wizard_spell_3 = "mage_armor")) or ((warlock_spell = "mage_armor") or (warlock_spell_2 = "mage_armor"))) or (bard_spell = "mage_armor")) or (bard_spell_2 = "mage_armor")) or (bard_spell_3 = "mage_armor")) or (ranger_spell = "mage_armor")) or (ranger_spell_2 = "mage_armor")) or (ranger_spell_3 = "mage_armor")) or (race_cantrip = "mage_armor")) or (race_cantrip_2 = "mage_armor"))) and (not(spells_blocked)))
-*set known_magic_missile ((((((((((((((wizard_spell = "magic_missile") or (wizard_spell_2 = "magic_missile")) or (wizard_spell_3 = "magic_missile")) or ((warlock_spell = "magic_missile") or (warlock_spell_2 = "magic_missile"))) or (bard_spell = "magic_missile")) or (bard_spell_2 = "magic_missile")) or (bard_spell_3 = "magic_missile")) or (ranger_spell = "magic_missile")) or (ranger_spell_2 = "magic_missile")) or (ranger_spell_3 = "magic_missile")) or (race_cantrip = "magic_missile")) or (race_cantrip_2 = "magic_missile"))) and (not(spells_blocked)))
-*set known_shield ((((((((((((((wizard_spell = "shield") or (wizard_spell_2 = "shield")) or (wizard_spell_3 = "shield")) or ((warlock_spell = "shield") or (warlock_spell_2 = "shield"))) or (bard_spell = "shield")) or (bard_spell_2 = "shield")) or (bard_spell_3 = "shield")) or (ranger_spell = "shield")) or (ranger_spell_2 = "shield")) or (ranger_spell_3 = "shield")) or (race_cantrip = "shield")) or (race_cantrip_2 = "shield"))) and (not(spells_blocked)))
-*set known_speak_with_animals ((((((((((((((wizard_spell = "speak_with_animals") or (wizard_spell_2 = "speak_with_animals")) or (wizard_spell_3 = "speak_with_animals")) or ((warlock_spell = "speak_with_animals") or (warlock_spell_2 = "speak_with_animals"))) or (bard_spell = "speak_with_animals")) or (bard_spell_2 = "speak_with_animals")) or (bard_spell_3 = "speak_with_animals")) or (ranger_spell = "speak_with_animals")) or (ranger_spell_2 = "speak_with_animals")) or (ranger_spell_3 = "speak_with_animals")) or (race_cantrip = "speak_with_animals")) or (race_cantrip_2 = "speak_with_animals"))) and (not(spells_blocked)))
-*set known_unseen_servant ((((((((((((((wizard_spell = "unseen_servant") or (wizard_spell_2 = "unseen_servant")) or (wizard_spell_3 = "unseen_servant")) or ((warlock_spell = "unseen_servant") or (warlock_spell_2 = "unseen_servant"))) or (bard_spell = "unseen_servant")) or (bard_spell_2 = "unseen_servant")) or (bard_spell_3 = "unseen_servant")) or (ranger_spell = "unseen_servant")) or (ranger_spell_2 = "unseen_servant")) or (ranger_spell_3 = "unseen_servant")) or (race_cantrip = "unseen_servant")) or (race_cantrip_2 = "unseen_servant"))) and (not(spells_blocked)))
+*comment GEN:BEGIN spell_book_refresh -- generated by tools/gen_spell_book.js from tools/spell_book.json; edit the book, not this block
+*comment HELD = the spell is in one of a class's slots (learn_spell fills them). KNOWN = held or a racial grant, and not spells_blocked (untrained armor or a shield).
+*comment Generated by tools/gen_spell_book.js from tools/spell_book.json; scenes read held_<id> and known_<id>, never a slot.
+*set held_alarm false
+*set held_arms_of_hadar false
+*set held_hellish_rebuke false
+*set held_cause_fear false
+*set held_armor_of_agathys false
+*set held_bane false
+*set held_charm_person false
+*set held_comprehend_languages false
+*set held_detect_magic false
+*set held_disguise_self false
+*set held_dissonant_whispers false
+*set held_false_life false
+*set held_feather_fall false
+*set held_healing_word false
+*set held_hex false
+*set held_ensnaring_strike false
+*set held_hunters_mark false
+*set held_identify false
+*set held_jump false
+*set held_mage_armor false
+*set held_magic_missile false
+*set held_shield false
+*set held_speak_with_animals false
+*set held_unseen_servant false
+*gosub book_scan "wizard_spell" 12
+*gosub book_scan "warlock_spell" 6
+*gosub book_scan "bard_spell" 8
+*gosub book_scan "ranger_spell" 3
+*set known_alarm ((((held_alarm) or (race_cantrip = "alarm")) or (race_cantrip_2 = "alarm")) and (not(spells_blocked)))
+*set known_arms_of_hadar ((((held_arms_of_hadar) or (race_cantrip = "arms_of_hadar")) or (race_cantrip_2 = "arms_of_hadar")) and (not(spells_blocked)))
+*set known_hellish_rebuke ((((held_hellish_rebuke) or (race_cantrip = "hellish_rebuke")) or (race_cantrip_2 = "hellish_rebuke")) and (not(spells_blocked)))
+*set known_cause_fear ((((held_cause_fear) or (race_cantrip = "cause_fear")) or (race_cantrip_2 = "cause_fear")) and (not(spells_blocked)))
+*set known_armor_of_agathys ((((held_armor_of_agathys) or (race_cantrip = "armor_of_agathys")) or (race_cantrip_2 = "armor_of_agathys")) and (not(spells_blocked)))
+*set known_bane ((((held_bane) or (race_cantrip = "bane")) or (race_cantrip_2 = "bane")) and (not(spells_blocked)))
+*set known_charm_person ((((held_charm_person) or (race_cantrip = "charm_person")) or (race_cantrip_2 = "charm_person")) and (not(spells_blocked)))
+*set known_comprehend_languages ((((held_comprehend_languages) or (race_cantrip = "comprehend_languages")) or (race_cantrip_2 = "comprehend_languages")) and (not(spells_blocked)))
+*set known_detect_magic ((((held_detect_magic) or (race_cantrip = "detect_magic")) or (race_cantrip_2 = "detect_magic")) and (not(spells_blocked)))
+*set known_disguise_self ((((held_disguise_self) or (race_cantrip = "disguise_self")) or (race_cantrip_2 = "disguise_self")) and (not(spells_blocked)))
+*set known_dissonant_whispers ((((held_dissonant_whispers) or (race_cantrip = "dissonant_whispers")) or (race_cantrip_2 = "dissonant_whispers")) and (not(spells_blocked)))
+*set known_false_life ((((held_false_life) or (race_cantrip = "false_life")) or (race_cantrip_2 = "false_life")) and (not(spells_blocked)))
+*set known_feather_fall ((((held_feather_fall) or (race_cantrip = "feather_fall")) or (race_cantrip_2 = "feather_fall")) and (not(spells_blocked)))
+*set known_healing_word ((((held_healing_word) or (race_cantrip = "healing_word")) or (race_cantrip_2 = "healing_word")) and (not(spells_blocked)))
+*set known_hex ((((held_hex) or (race_cantrip = "hex")) or (race_cantrip_2 = "hex")) and (not(spells_blocked)))
+*set known_ensnaring_strike ((((held_ensnaring_strike) or (race_cantrip = "ensnaring_strike")) or (race_cantrip_2 = "ensnaring_strike")) and (not(spells_blocked)))
+*set known_hunters_mark ((((held_hunters_mark) or (race_cantrip = "hunters_mark")) or (race_cantrip_2 = "hunters_mark")) and (not(spells_blocked)))
+*set known_identify ((((held_identify) or (race_cantrip = "identify")) or (race_cantrip_2 = "identify")) and (not(spells_blocked)))
+*set known_jump ((((held_jump) or (race_cantrip = "jump")) or (race_cantrip_2 = "jump")) and (not(spells_blocked)))
+*set known_mage_armor ((((held_mage_armor) or (race_cantrip = "mage_armor")) or (race_cantrip_2 = "mage_armor")) and (not(spells_blocked)))
+*set known_magic_missile ((((held_magic_missile) or (race_cantrip = "magic_missile")) or (race_cantrip_2 = "magic_missile")) and (not(spells_blocked)))
+*set known_shield ((((held_shield) or (race_cantrip = "shield")) or (race_cantrip_2 = "shield")) and (not(spells_blocked)))
+*set known_speak_with_animals ((((held_speak_with_animals) or (race_cantrip = "speak_with_animals")) or (race_cantrip_2 = "speak_with_animals")) and (not(spells_blocked)))
+*set known_unseen_servant ((((held_unseen_servant) or (race_cantrip = "unseen_servant")) or (race_cantrip_2 = "unseen_servant")) and (not(spells_blocked)))
+*comment GEN:END spell_book_refresh
 *comment Otherworldly Leap lets the Warlock cast Jump, so the Warlock knows it.
 *if ((inv_otherworldly_leap) and (not(spells_blocked)))
   *set known_jump true
@@ -569,6 +610,152 @@ You make space beside the bed, bar the door, and give the room over to a few uni
   *set item_cantrip_desc "Guidance, from the Officer's Signet Ring: a soft, murmured working that steadies your hand or sharpens your mind for one task. It lasts only while you wear the ring."
   *set known_guidance true
 *return
+
+*comment GEN:BEGIN spell_book_subs -- generated by tools/gen_spell_book.js from tools/spell_book.json; edit the book, not this block
+*comment BOOK SCAN: reads every slot of one class (book_scan "wizard_spell" 12) and marks each spell found as held. Slot 1 is the bare name, slot N is name_N.
+*label book_scan
+*params bs_prefix bs_cap
+*temp bs_i 1
+*temp bs_name ""
+*temp bs_id "none"
+*label book_scan_loop
+*if (bs_i <= bs_cap)
+  *set bs_name bs_prefix
+  *if (bs_i > 1)
+    *set bs_name ((bs_prefix & "_") & bs_i)
+  *set bs_id {(bs_name)}
+  *if (not(bs_id = "none"))
+    *gosub held_mark bs_id
+  *set bs_i + 1
+  *goto book_scan_loop
+*return
+
+*comment HELD MARK: one line per learnable spell, so a spell id read from a slot sets its own flag. An id that is not listed in tools/spell_book.json sets nothing.
+*label held_mark
+*params hm_id
+*if (hm_id = "alarm")
+  *set held_alarm true
+*if (hm_id = "arms_of_hadar")
+  *set held_arms_of_hadar true
+*if (hm_id = "hellish_rebuke")
+  *set held_hellish_rebuke true
+*if (hm_id = "cause_fear")
+  *set held_cause_fear true
+*if (hm_id = "armor_of_agathys")
+  *set held_armor_of_agathys true
+*if (hm_id = "bane")
+  *set held_bane true
+*if (hm_id = "charm_person")
+  *set held_charm_person true
+*if (hm_id = "comprehend_languages")
+  *set held_comprehend_languages true
+*if (hm_id = "detect_magic")
+  *set held_detect_magic true
+*if (hm_id = "disguise_self")
+  *set held_disguise_self true
+*if (hm_id = "dissonant_whispers")
+  *set held_dissonant_whispers true
+*if (hm_id = "false_life")
+  *set held_false_life true
+*if (hm_id = "feather_fall")
+  *set held_feather_fall true
+*if (hm_id = "healing_word")
+  *set held_healing_word true
+*if (hm_id = "hex")
+  *set held_hex true
+*if (hm_id = "ensnaring_strike")
+  *set held_ensnaring_strike true
+*if (hm_id = "hunters_mark")
+  *set held_hunters_mark true
+*if (hm_id = "identify")
+  *set held_identify true
+*if (hm_id = "jump")
+  *set held_jump true
+*if (hm_id = "mage_armor")
+  *set held_mage_armor true
+*if (hm_id = "magic_missile")
+  *set held_magic_missile true
+*if (hm_id = "shield")
+  *set held_shield true
+*if (hm_id = "speak_with_animals")
+  *set held_speak_with_animals true
+*if (hm_id = "unseen_servant")
+  *set held_unseen_servant true
+*return
+
+*comment BOOK CLEAR EXTRA: empties every slot after the first of every class (the Dev Hub's reset back to a level 1 loadout; a preset then sets slot 1 itself).
+*label book_clear_extra
+*set wizard_spell_2 "none"
+*set wizard_spell_3 "none"
+*set wizard_spell_4 "none"
+*set wizard_spell_5 "none"
+*set wizard_spell_6 "none"
+*set wizard_spell_7 "none"
+*set wizard_spell_8 "none"
+*set wizard_spell_9 "none"
+*set wizard_spell_10 "none"
+*set wizard_spell_11 "none"
+*set wizard_spell_12 "none"
+*set warlock_spell_2 "none"
+*set warlock_spell_3 "none"
+*set warlock_spell_4 "none"
+*set warlock_spell_5 "none"
+*set warlock_spell_6 "none"
+*set bard_spell_2 "none"
+*set bard_spell_3 "none"
+*set bard_spell_4 "none"
+*set bard_spell_5 "none"
+*set bard_spell_6 "none"
+*set bard_spell_7 "none"
+*set bard_spell_8 "none"
+*set ranger_spell_2 "none"
+*set ranger_spell_3 "none"
+*return
+
+*comment LEARN SPELL: puts a spell in the class's first free slot, with its description, then recomputes held_ and known_. A pick menu calls it and nothing else, for any level.
+*comment learn_spell "wizard" "magic_missile" "Magic Missile—three darts of force."   Output spell_learn_result: "learned", "known" (already in the book, nothing changed) or "full" (no free slot).
+*comment Repeating a call changes nothing, so a page that replays it is safe.
+*label learn_spell
+*params ls_class ls_id ls_desc
+*temp ls_cap 0
+*if (ls_class = "wizard")
+  *set ls_cap 12
+*if (ls_class = "warlock")
+  *set ls_cap 6
+*if (ls_class = "bard")
+  *set ls_cap 8
+*if (ls_class = "ranger")
+  *set ls_cap 3
+*temp ls_prefix (ls_class & "_spell")
+*temp ls_i 1
+*temp ls_name ""
+*set spell_learn_result "full"
+*label learn_spell_find
+*if (ls_i <= ls_cap)
+  *set ls_name ls_prefix
+  *if (ls_i > 1)
+    *set ls_name ((ls_prefix & "_") & ls_i)
+  *if ({(ls_name)} = ls_id)
+    *set spell_learn_result "known"
+    *set ls_i ls_cap
+  *set ls_i + 1
+  *goto learn_spell_find
+*set ls_i 1
+*label learn_spell_place
+*if ((ls_i <= ls_cap) and (spell_learn_result = "full"))
+  *set ls_name ls_prefix
+  *if (ls_i > 1)
+    *set ls_name ((ls_prefix & "_") & ls_i)
+  *if ({(ls_name)} = "none")
+    *set {(ls_name)} ls_id
+    *set {(ls_name & "_desc")} ls_desc
+    *set spell_learn_result "learned"
+  *set ls_i + 1
+  *goto learn_spell_place
+*if (spell_learn_result = "learned")
+  *gosub refresh_known_spells
+*return
+*comment GEN:END spell_book_subs
 
 *comment ELDRITCH INVOCATIONS: recomputes every inv_<id> flag from the three slots, and sees_in_dark. Fixed-value sets. Called at the top of refresh_known_spells, which update_dnd_stats, fight_setup and the level-up page run.
 *label refresh_invocations
@@ -611,7 +798,7 @@ You make space beside the bed, bar the door, and give the room over to a few uni
   *set inv_desc "You can cast Jump on yourself without expending a spell slot. (Requires level 2.)"
 *return
 
-*comment WARLOCK LEVEL 2: two more Eldritch Invocations, three in all (5e). Each pick leaves out what is already known; Agonizing Blast needs Eldritch Blast and Otherworldly Leap needs level 2, which a level 2
+*comment WARLOCK LEVEL 2: two more Eldritch Invocations, three in all (5e), then a third bound spell (a level 2 Warlock knows three, level_up_warlock_2_spell). Each pick leaves out what is already known; Agonizing Blast needs Eldritch Blast and Otherworldly Leap needs level 2, which a level 2
 *comment character has. A Warlock with nothing left to pick is offered a way past. Each pick is a plain *set, so a refresh of the page changes nothing.
 *label level_up_warlock_2
 *line_break
@@ -648,7 +835,7 @@ You make space beside the bed, bar the door, and give the room over to a few uni
       *goto level_up_warlock_2_second
   # You have learned all you can for now.
     *set warlock_invocation_2 "none"
-    *goto level_up_warlock_2_done
+    *goto level_up_warlock_2_spell
 
 *label level_up_warlock_2_second
 *line_break
@@ -658,36 +845,74 @@ And the second.
   *if (((not(warlock_invocation_1 = "agonizing_blast")) and (not(warlock_invocation_2 = "agonizing_blast"))) and (((warlock_cantrip = "eldritch_blast") or (warlock_cantrip_2 = "eldritch_blast")) or ((race_cantrip = "eldritch_blast") or (race_cantrip_2 = "eldritch_blast"))))
     # Agonizing Blast. Add your Charisma modifier to the damage of Eldritch Blast.@{show_stat_hints  [Invocation: Agonizing Blast]|}
       *set warlock_invocation_3 "agonizing_blast"
-      *goto level_up_warlock_2_done
+      *goto level_up_warlock_2_spell
   *if (((not(warlock_invocation_1 = "repelling_blast")) and (not(warlock_invocation_2 = "repelling_blast"))) and (((warlock_cantrip = "eldritch_blast") or (warlock_cantrip_2 = "eldritch_blast")) or ((race_cantrip = "eldritch_blast") or (race_cantrip_2 = "eldritch_blast"))))
     # Repelling Blast. When Eldritch Blast hits a Large or smaller creature, it is driven back one range step.@{show_stat_hints  [Invocation: Repelling Blast]|}
       *set warlock_invocation_3 "repelling_blast"
-      *goto level_up_warlock_2_done
+      *goto level_up_warlock_2_spell
   *if ((not(warlock_invocation_1 = "armor_of_shadows")) and (not(warlock_invocation_2 = "armor_of_shadows")))
     # Armor of Shadows. You can cast Mage Armor on yourself at will: while you wear no armor, your base Armor Class is 13 + your Dexterity modifier.@{show_stat_hints  [Invocation: Armor of Shadows]|}
       *set warlock_invocation_3 "armor_of_shadows"
-      *goto level_up_warlock_2_done
+      *goto level_up_warlock_2_spell
   *if ((not(warlock_invocation_1 = "fiendish_vigor")) and (not(warlock_invocation_2 = "fiendish_vigor")))
     # Fiendish Vigor. You can cast False Life on yourself at will, without a spell slot.@{show_stat_hints  [Invocation: Fiendish Vigor]|}
       *set warlock_invocation_3 "fiendish_vigor"
-      *goto level_up_warlock_2_done
+      *goto level_up_warlock_2_spell
   *if ((not(warlock_invocation_1 = "mask_of_many_faces")) and (not(warlock_invocation_2 = "mask_of_many_faces")))
     # Mask of Many Faces. You can cast Disguise Self at will, without a spell slot.@{show_stat_hints  [Invocation: Mask of Many Faces]|}
       *set warlock_invocation_3 "mask_of_many_faces"
-      *goto level_up_warlock_2_done
+      *goto level_up_warlock_2_spell
   *if ((not(warlock_invocation_1 = "devils_sight")) and (not(warlock_invocation_2 = "devils_sight")))
     # Devil's Sight. Dungeon darkness no longer imposes disadvantage, consumes light, or hides explored rooms from the map.@{show_stat_hints  [Invocation: Devil's Sight]|}
       *set warlock_invocation_3 "devils_sight"
-      *goto level_up_warlock_2_done
+      *goto level_up_warlock_2_spell
   *if ((not(warlock_invocation_1 = "otherworldly_leap")) and (not(warlock_invocation_2 = "otherworldly_leap")))
     # Otherworldly Leap. You can cast Jump on yourself without expending a spell slot.@{show_stat_hints  [Invocation: Otherworldly Leap]|}
       *set warlock_invocation_3 "otherworldly_leap"
-      *goto level_up_warlock_2_done
+      *goto level_up_warlock_2_spell
   # You have learned all you can for now.
     *set warlock_invocation_3 "none"
-    *goto level_up_warlock_2_done
+    *goto level_up_warlock_2_spell
 
-*comment The second pact spell is picked at creation now (class_select.txt), so level 2 ends with the invocations.
+*label level_up_warlock_2_spell
+*line_break
+[b][⭐ New: A Third Bound Spell][/b] The pact binds one more working into you. Choose it.
+
+*choice
+  *if ((not(held_hex)) and (not(race = "hexblood")))
+    # Hex. Curse a foe so your hits deal extra damage.@{show_stat_hints  [Spell: Hex]|}
+      *gosub learn_spell "warlock" "hex" "Hex—a murmured curse bound to one target for ten rounds. Each attack-roll hit against it deals another 1d6 necrotic damage, and if it falls you can move the curse with a bonus action."
+      *goto level_up_warlock_2_done
+  *if (not(held_comprehend_languages))
+    # Comprehend Languages. Understand any tongue, spoken or written.@{show_stat_hints  [Spell: Comprehend Languages]|}
+      *gosub learn_spell "warlock" "comprehend_languages" "Comprehend Languages—for a short while, every language spoken or written around you becomes as plain as your own tongue."
+      *goto level_up_warlock_2_done
+  *if (not(held_unseen_servant))
+    # Unseen Servant. An invisible servant that fetches and carries.@{show_stat_hints  [Spell: Unseen Servant]|}
+      *gosub learn_spell "warlock" "unseen_servant" "Unseen Servant—an invisible, mindless force you can summon to fetch, carry, clean, or open things at your spoken command."
+      *goto level_up_warlock_2_done
+  *if (not(held_armor_of_agathys))
+    # Armor of Agathys. A frost shell that bites back at attackers.@{show_stat_hints  [Spell: Armor of Agathys]|}
+      *gosub learn_spell "warlock" "armor_of_agathys" "Armor of Agathys—a spectral rime of frost that sheathes your skin, punishing anyone who lands a blow against you with biting, unnatural cold in return."
+      *goto level_up_warlock_2_done
+  *if (not(held_false_life))
+    # False Life. Temporary hit points drawn from death itself.@{show_stat_hints  [Spell: False Life]|}
+      *gosub learn_spell "warlock" "false_life" "False Life—a dark surge of unholy vitality drawn straight from the damp earth, granting a temporary shield of extra hit points."
+      *goto level_up_warlock_2_done
+  *if (not(held_arms_of_hadar))
+    # Arms of Hadar. Black arms of force lash every foe beside you.@{show_stat_hints  [Spell: Arms of Hadar]|}
+      *gosub learn_spell "warlock" "arms_of_hadar" "Arms of Hadar—black, cold arms of force burst out around you and lash every foe within reach, and the ones they catch cannot answer you until their next turn."
+      *goto level_up_warlock_2_done
+  *if (not(held_hellish_rebuke))
+    # Hellish Rebuke. Scorch whoever wounds you, as a reaction.@{show_stat_hints  [Spell: Hellish Rebuke]|}
+      *gosub learn_spell "warlock" "hellish_rebuke" "Hellish Rebuke—a vengeful retort held ready, so that whoever next wounds you answers for it in hellfire, burned in the moment they hurt you."
+      *goto level_up_warlock_2_done
+  *if (not(held_cause_fear))
+    # Cause Fear. Frighten one foe into keeping its distance.@{show_stat_hints  [Spell: Cause Fear]|}
+      *gosub learn_spell "warlock" "cause_fear" "Cause Fear—a whispered dread planted straight into one mind. The target is frightened for as long as the fear holds: its blows come with disadvantage, and it will not willingly come closer."
+      *goto level_up_warlock_2_done
+
+*comment A level 2 Warlock knows three spells, as in 5e: two from creation (class_select.txt) and this one. Each later level adds one more menu of this shape.
 *label level_up_warlock_2_done
 *return
 
@@ -724,8 +949,7 @@ And the second.
 *comment picks come from the narrative spells already built. This is the first pick step on the level-up page, so it is the pattern for the rest: a
 *comment *choice per pick, the second excluding the first, each *set a plain value, so a refresh of the page changes nothing.
 *label level_up_ranger_2
-*set ranger_spell "hunters_mark"
-*set ranger_spell_desc "Hunter's Mark—a long look, and one creature becomes your quarry. For a time every weapon hit on it lands truer, and you can pick the mark up and set it on a new quarry the moment the first one falls."
+*gosub_scene character_progression learn_spell "ranger" "hunters_mark" "Hunter's Mark—a long look, and one creature becomes your quarry. For a time every weapon hit on it lands truer, and you can pick the mark up and set it on a new quarry the moment the first one falls."
 *line_break
 [b][⭐ New: Spellcasting][/b] Wisdom is your casting ability, and you now have ${ranger_spell_slots} first-level spell slots. A Short Rest restores half your maximum slots, rounded up; a Long Rest restores them all. Hunter's Mark is always ready, and once your free casts are gone a slot can pay for it.
 *line_break
@@ -733,24 +957,19 @@ Two more workings come to you from long hours reading the wild. Choose the first
 
 *choice
   # Alarm. A quiet ward laid over a doorway or a stretch of ground, silent to everyone but you the instant it is crossed.@{show_stat_hints  [Spell: Alarm]|}
-    *set ranger_spell_2 "alarm"
-    *set ranger_spell_2_desc "Alarm—a quiet ward laid over a doorway, a tent flap, or a stretch of open ground, silent to everyone but you the instant an uninvited step crosses it."
+    *gosub_scene character_progression learn_spell "ranger" "alarm" "Alarm—a quiet ward laid over a doorway, a tent flap, or a stretch of open ground, silent to everyone but you the instant an uninvited step crosses it."
     *goto level_up_ranger_2_second
   # Detect Magic. A moment's focus, and every working nearby reveals itself as a shimmer only you can see.@{show_stat_hints  [Spell: Detect Magic]|}
-    *set ranger_spell_2 "detect_magic"
-    *set ranger_spell_2_desc "Detect Magic—a moment's focus, and every active working nearby—wards, curses, blessings, enchanted steel—reveals itself as a faint shimmer only you can see."
+    *gosub_scene character_progression learn_spell "ranger" "detect_magic" "Detect Magic—a moment's focus, and every active working nearby—wards, curses, blessings, enchanted steel—reveals itself as a faint shimmer only you can see."
     *goto level_up_ranger_2_second
   # Jump. A word and a touch, and a stride carries three times as far as it should.@{show_stat_hints  [Spell: Jump]|}
-    *set ranger_spell_2 "jump"
-    *set ranger_spell_2_desc "Jump—a word and a touch to yourself or another, and a single stride carries three times as far as it should, gravity forgetting the leaper for one heartbeat."
+    *gosub_scene character_progression learn_spell "ranger" "jump" "Jump—a word and a touch to yourself or another, and a single stride carries three times as far as it should, gravity forgetting the leaper for one heartbeat."
     *goto level_up_ranger_2_second
   # Ensnaring Strike. Thorned vines burst from your next weapon blow and bind whoever fails to tear free.@{show_stat_hints  [Spell: Ensnaring Strike, a bonus action]|}
-    *set ranger_spell_2 "ensnaring_strike"
-    *set ranger_spell_2_desc "Ensnaring Strike—the next weapon blow you land calls up thorned vines from the strike. A foe that cannot tear free is bound where it stands, takes the thorns every turn, and is easy to hit."
+    *gosub_scene character_progression learn_spell "ranger" "ensnaring_strike" "Ensnaring Strike—the next weapon blow you land calls up thorned vines from the strike. A foe that cannot tear free is bound where it stands, takes the thorns every turn, and is easy to hit."
     *goto level_up_ranger_2_second
   # Speak with Animals. For a short while, every beast's chatter and posture resolves into something close enough to words.@{show_stat_hints  [Spell: Speak with Animals]|}
-    *set ranger_spell_2 "speak_with_animals"
-    *set ranger_spell_2_desc "Speak with Animals—for a short while, every beast's chatter, posture, and warning call resolves into something close enough to words to actually understand."
+    *gosub_scene character_progression learn_spell "ranger" "speak_with_animals" "Speak with Animals—for a short while, every beast's chatter, posture, and warning call resolves into something close enough to words to actually understand."
     *goto level_up_ranger_2_second
 
 *label level_up_ranger_2_second
@@ -758,30 +977,25 @@ Two more workings come to you from long hours reading the wild. Choose the first
 And a second.
 
 *choice
-  *if (not(ranger_spell_2 = "alarm"))
+  *if (not(held_alarm))
     # Alarm. A quiet ward laid over a doorway or a stretch of ground, silent to everyone but you the instant it is crossed.@{show_stat_hints  [Spell: Alarm]|}
-      *set ranger_spell_3 "alarm"
-      *set ranger_spell_3_desc "Alarm—a quiet ward laid over a doorway, a tent flap, or a stretch of open ground, silent to everyone but you the instant an uninvited step crosses it."
+      *gosub_scene character_progression learn_spell "ranger" "alarm" "Alarm—a quiet ward laid over a doorway, a tent flap, or a stretch of open ground, silent to everyone but you the instant an uninvited step crosses it."
       *goto level_up_ranger_2_style
-  *if (not(ranger_spell_2 = "detect_magic"))
+  *if (not(held_detect_magic))
     # Detect Magic. A moment's focus, and every working nearby reveals itself as a shimmer only you can see.@{show_stat_hints  [Spell: Detect Magic]|}
-      *set ranger_spell_3 "detect_magic"
-      *set ranger_spell_3_desc "Detect Magic—a moment's focus, and every active working nearby—wards, curses, blessings, enchanted steel—reveals itself as a faint shimmer only you can see."
+      *gosub_scene character_progression learn_spell "ranger" "detect_magic" "Detect Magic—a moment's focus, and every active working nearby—wards, curses, blessings, enchanted steel—reveals itself as a faint shimmer only you can see."
       *goto level_up_ranger_2_style
-  *if (not(ranger_spell_2 = "jump"))
+  *if (not(held_jump))
     # Jump. A word and a touch, and a stride carries three times as far as it should.@{show_stat_hints  [Spell: Jump]|}
-      *set ranger_spell_3 "jump"
-      *set ranger_spell_3_desc "Jump—a word and a touch to yourself or another, and a single stride carries three times as far as it should, gravity forgetting the leaper for one heartbeat."
+      *gosub_scene character_progression learn_spell "ranger" "jump" "Jump—a word and a touch to yourself or another, and a single stride carries three times as far as it should, gravity forgetting the leaper for one heartbeat."
       *goto level_up_ranger_2_style
-  *if (not(ranger_spell_2 = "ensnaring_strike"))
+  *if (not(held_ensnaring_strike))
     # Ensnaring Strike. Thorned vines burst from your next weapon blow and bind whoever fails to tear free.@{show_stat_hints  [Spell: Ensnaring Strike, a bonus action]|}
-      *set ranger_spell_3 "ensnaring_strike"
-      *set ranger_spell_3_desc "Ensnaring Strike—the next weapon blow you land calls up thorned vines from the strike. A foe that cannot tear free is bound where it stands, takes the thorns every turn, and is easy to hit."
+      *gosub_scene character_progression learn_spell "ranger" "ensnaring_strike" "Ensnaring Strike—the next weapon blow you land calls up thorned vines from the strike. A foe that cannot tear free is bound where it stands, takes the thorns every turn, and is easy to hit."
       *goto level_up_ranger_2_style
-  *if (not(ranger_spell_2 = "speak_with_animals"))
+  *if (not(held_speak_with_animals))
     # Speak with Animals. For a short while, every beast's chatter and posture resolves into something close enough to words.@{show_stat_hints  [Spell: Speak with Animals]|}
-      *set ranger_spell_3 "speak_with_animals"
-      *set ranger_spell_3_desc "Speak with Animals—for a short while, every beast's chatter, posture, and warning call resolves into something close enough to words to actually understand."
+      *gosub_scene character_progression learn_spell "ranger" "speak_with_animals" "Speak with Animals—for a short while, every beast's chatter, posture, and warning call resolves into something close enough to words to actually understand."
       *goto level_up_ranger_2_style
 
 *label level_up_ranger_2_style
@@ -1081,51 +1295,42 @@ And a second.
 
 *label level_up_bard_2_spell
 *line_break
-[b][⭐ New: A Third Verse][/b] Your repertoire widens by one more working. Choose it.
+[b][⭐ New: A Fifth Verse][/b] Your repertoire widens by one more working, five in all. Choose it.
 
 *choice
-  *if ((not(bard_spell = "charm_person")) and (not(bard_spell_2 = "charm_person")))
+  *if (not(held_charm_person))
     # Charm Person. A warm, persuasive undertone woven into your words that makes a listener want, quite genuinely, to see things your way.@{show_stat_hints  [Spell: Charm Person]|}
-      *set bard_spell_3 "charm_person"
-      *set bard_spell_3_desc "Charm Person—a warm, persuasive undertone woven into your words, making a listener genuinely inclined to see things your way, at least for a while."
+      *gosub_scene character_progression learn_spell "bard" "charm_person" "Charm Person—a warm, persuasive undertone woven into your words, making a listener genuinely inclined to see things your way, at least for a while."
       *goto level_up_bard_2_done
-  *if ((not(bard_spell = "healing_word")) and (not(bard_spell_2 = "healing_word")))
+  *if (not(held_healing_word))
     # Healing Word. A single, sharp word of command that knits a wound shut and puts fight back into a dying comrade's eyes.@{show_stat_hints  [Spell: Healing Word]|}
-      *set bard_spell_3 "healing_word"
-      *set bard_spell_3_desc "Healing Word—a single, sharp word of command, spoken from a distance, that knits a wound shut and puts fight back into a comrade who needs it."
+      *gosub_scene character_progression learn_spell "bard" "healing_word" "Healing Word—a single, sharp word of command, spoken from a distance, that knits a wound shut and puts fight back into a comrade who needs it."
       *goto level_up_bard_2_done
-  *if (((not(bard_spell = "disguise_self")) and (not(bard_spell_2 = "disguise_self"))) and (not(race = "hexblood")))
+  *if ((not(held_disguise_self)) and (not(race = "hexblood")))
     # Disguise Self. A verse under your breath, and your face and voice blur into someone else's for as long as you need them to.@{show_stat_hints  [Spell: Disguise Self]|}
-      *set bard_spell_3 "disguise_self"
-      *set bard_spell_3_desc "Disguise Self—a verse under your breath blurs your face and voice into someone else's for as long as you need to hold the lie."
+      *gosub_scene character_progression learn_spell "bard" "disguise_self" "Disguise Self—a verse under your breath blurs your face and voice into someone else's for as long as you need to hold the lie."
       *goto level_up_bard_2_done
-  *if ((not(bard_spell = "comprehend_languages")) and (not(bard_spell_2 = "comprehend_languages")))
+  *if (not(held_comprehend_languages))
     # Comprehend Languages. For a short while, every tongue—spoken or written—becomes as plain to you as your own.@{show_stat_hints  [Spell: Comprehend Languages]|}
-      *set bard_spell_3 "comprehend_languages"
-      *set bard_spell_3_desc "Comprehend Languages—for a short while, every language spoken or written around you becomes as plain as your own tongue."
+      *gosub_scene character_progression learn_spell "bard" "comprehend_languages" "Comprehend Languages—for a short while, every language spoken or written around you becomes as plain as your own tongue."
       *goto level_up_bard_2_done
-  *if ((not(bard_spell = "dissonant_whispers")) and (not(bard_spell_2 = "dissonant_whispers")))
+  *if (not(held_dissonant_whispers))
     # Dissonant Whispers. A whispered dissonance planted directly in someone's mind, ugly enough that they flinch and recoil before they understand why.@{show_stat_hints  [Spell: Dissonant Whispers]|}
-      *set bard_spell_3 "dissonant_whispers"
-      *set bard_spell_3_desc "Dissonant Whispers—a whispered dissonance planted directly in one mind, discordant enough that the target flinches and recoils before they even understand why."
+      *gosub_scene character_progression learn_spell "bard" "dissonant_whispers" "Dissonant Whispers—a whispered dissonance planted directly in one mind, discordant enough that the target flinches and recoils before they even understand why."
       *goto level_up_bard_2_done
-  *if ((not(bard_spell = "bane")) and (not(bard_spell_2 = "bane")))
+  *if (not(held_bane))
     # Bane. A thread of ill luck you can loop around up to three throats at once, souring every blow and every plea they try to make afterward.@{show_stat_hints  [Spell: Bane]|}
-      *set bard_spell_3 "bane"
-      *set bard_spell_3_desc "Bane—a thread of ill luck looped around up to three throats at once, souring every blow and every plea they attempt afterward."
+      *gosub_scene character_progression learn_spell "bard" "bane" "Bane—a thread of ill luck looped around up to three throats at once, souring every blow and every plea they attempt afterward."
       *goto level_up_bard_2_done
-  *if ((not(bard_spell = "detect_magic")) and (not(bard_spell_2 = "detect_magic")))
+  *if (not(held_detect_magic))
     # Detect Magic. A moment's focus, and every working nearby—wards, curses, blessings—reveals itself to your sight as a shimmer only you can see.@{show_stat_hints  [Spell: Detect Magic]|}
-      *set bard_spell_3 "detect_magic"
-      *set bard_spell_3_desc "Detect Magic—a moment's focus, and every active working nearby—wards, curses, blessings, enchanted steel—reveals itself as a faint shimmer only you can see."
+      *gosub_scene character_progression learn_spell "bard" "detect_magic" "Detect Magic—a moment's focus, and every active working nearby—wards, curses, blessings, enchanted steel—reveals itself as a faint shimmer only you can see."
       *goto level_up_bard_2_done
-  *if ((not(bard_spell = "speak_with_animals")) and (not(bard_spell_2 = "speak_with_animals")))
+  *if (not(held_speak_with_animals))
     # Speak with Animals. For a short while, every beast's chatter and posture resolves into something close enough to words.@{show_stat_hints  [Spell: Speak with Animals]|}
-      *set bard_spell_3 "speak_with_animals"
-      *set bard_spell_3_desc "Speak with Animals—for a short while, every beast's chatter, posture, and warning call resolves into something close enough to words to actually understand."
+      *gosub_scene character_progression learn_spell "bard" "speak_with_animals" "Speak with Animals—for a short while, every beast's chatter, posture, and warning call resolves into something close enough to words to actually understand."
       *goto level_up_bard_2_done
   # You have learned all you can for now.
-    *set bard_spell_3 "none"
     *goto level_up_bard_2_done
 
 *label level_up_bard_2_done
@@ -1154,160 +1359,33 @@ And a second.
   *if (skill_arcana)
     # Arcana. Double your proficiency bonus on Arcana checks.@{show_stat_hints  [Expertise: Arcana]|}
       *set wizard_expertise_1 "Arcana"
-      *goto level_up_wizard_2_spell1
+      *goto level_up_wizard_2_done
   *if (skill_history)
     # History. Double your proficiency bonus on History checks.@{show_stat_hints  [Expertise: History]|}
       *set wizard_expertise_1 "History"
-      *goto level_up_wizard_2_spell1
+      *goto level_up_wizard_2_done
   *if (skill_investigation)
     # Investigation. Double your proficiency bonus on Investigation checks.@{show_stat_hints  [Expertise: Investigation]|}
       *set wizard_expertise_1 "Investigation"
-      *goto level_up_wizard_2_spell1
+      *goto level_up_wizard_2_done
   *if (skill_medicine)
     # Medicine. Double your proficiency bonus on Medicine checks.@{show_stat_hints  [Expertise: Medicine]|}
       *set wizard_expertise_1 "Medicine"
-      *goto level_up_wizard_2_spell1
+      *goto level_up_wizard_2_done
   *if (skill_nature)
     # Nature. Double your proficiency bonus on Nature checks.@{show_stat_hints  [Expertise: Nature]|}
       *set wizard_expertise_1 "Nature"
-      *goto level_up_wizard_2_spell1
+      *goto level_up_wizard_2_done
   *if (skill_religion)
     # Religion. Double your proficiency bonus on Religion checks.@{show_stat_hints  [Expertise: Religion]|}
       *set wizard_expertise_1 "Religion"
-      *goto level_up_wizard_2_spell1
+      *goto level_up_wizard_2_done
   *if (lws_n = 0)
     # You have no skill of that kind to sharpen.
       *set wizard_expertise_1 "none"
-      *goto level_up_wizard_2_spell1
+      *goto level_up_wizard_2_done
 
-*label level_up_wizard_2_spell1
-*line_break
-[b][⭐ New: Two More Spells][/b] Your spellbook grows by two entries. Copy in the first.
-
-*choice
-  *if (not(wizard_spell = "identify"))
-    # Identify. Hold an object or study a working for a moment, and its true properties and nature lay themselves bare to you.@{show_stat_hints  [Spell: Identify]|}
-      *set wizard_spell_2 "identify"
-      *set wizard_spell_2_desc "Identify—hold an object or observe a spell for a moment, and its true properties, function, and nature become plain to you."
-      *goto level_up_wizard_2_spell2
-  *if (not(wizard_spell = "feather_fall"))
-    # Feather Fall. A word and a gesture, and a fall that should break bone instead settles you to the ground like a dropped feather.@{show_stat_hints  [Spell: Feather Fall]|}
-      *set wizard_spell_2 "feather_fall"
-      *set wizard_spell_2_desc "Feather Fall—a word and a gesture slow a fall to a drift, turning what should be broken bones into a soft landing."
-      *goto level_up_wizard_2_spell2
-  *if (not(wizard_spell = "comprehend_languages"))
-    # Comprehend Languages. For a short while, every tongue—spoken or written—becomes as plain to you as your own.@{show_stat_hints  [Spell: Comprehend Languages]|}
-      *set wizard_spell_2 "comprehend_languages"
-      *set wizard_spell_2_desc "Comprehend Languages—for a short while, every language spoken or written around you becomes as plain as your own tongue."
-      *goto level_up_wizard_2_spell2
-  *if (not(wizard_spell = "mage_armor"))
-    # Mage Armor. A working laid over your own skin each morning, a shell of unseen force standing in for the plate you'll never wear.@{show_stat_hints  [Spell: Mage Armor, +AC unarmored]|}
-      *set wizard_spell_2 "mage_armor"
-      *set wizard_spell_2_desc "Mage Armor—a shell of unseen magical force laid over your skin each morning, standing in for the armor a wizard's training never included."
-      *goto level_up_wizard_2_spell2
-  *if (not(wizard_spell = "shield"))
-    # Shield. An instinctive, reflexive barrier of invisible arcane force that flares to life in a split second to deflect incoming strikes.@{show_stat_hints  [Spell: Shield, Emergency Reaction]|}
-      *set wizard_spell_2 "shield"
-      *set wizard_spell_2_desc "Shield—an instinctive, reflexive barrier of invisible arcane force that flares to life in a split second, deflecting incoming arrows and lethal strikes."
-      *goto level_up_wizard_2_spell2
-  *if (not(wizard_spell = "magic_missile"))
-    # Magic Missile. Three luminous darts of unerring magical force that strike with absolute certainty, bypassing armor and cover without fail.@{show_stat_hints  [Spell: Magic Missile, Auto-Hit]|}
-      *set wizard_spell_2 "magic_missile"
-      *set wizard_spell_2_desc "Magic Missile—three luminous darts of unerring magical force that strike with absolute certainty, bypassing armor, cover, and evasive dodges without fail."
-      *goto level_up_wizard_2_spell2
-  *if (not(wizard_spell = "false_life"))
-    # False Life. A grim, necromantic rite that bolsters your body with a necromantic facsimile of life, granting a temporary shield of extra vitality.@{show_stat_hints  [Spell: False Life, +5 Temp HP]|}
-      *set wizard_spell_2 "false_life"
-      *set wizard_spell_2_desc "False Life—a grim, necromantic rite that bolsters your body with a necromantic facsimile of life, granting a temporary shield of extra hit points."
-      *goto level_up_wizard_2_spell2
-  *if (not(wizard_spell = "jump"))
-    # Jump. A word and a touch, and a stride carries three times as far as it should, gravity forgetting you exist for one heartbeat.@{show_stat_hints  [Spell: Jump]|}
-      *set wizard_spell_2 "jump"
-      *set wizard_spell_2_desc "Jump—a word and a touch to yourself or another, and a single stride carries three times as far as it should, gravity forgetting the leaper for one heartbeat."
-      *goto level_up_wizard_2_spell2
-  *if (not(wizard_spell = "alarm"))
-    # Alarm. A quiet working laid over a doorway or a campsite, silent to everyone but you the instant it's crossed.@{show_stat_hints  [Spell: Alarm]|}
-      *set wizard_spell_2 "alarm"
-      *set wizard_spell_2_desc "Alarm—a quiet ward laid over a doorway, a tent flap, or a stretch of open ground, silent to everyone but you the instant an uninvited step crosses it."
-      *goto level_up_wizard_2_spell2
-  *if (not(wizard_spell = "detect_magic"))
-    # Detect Magic. A moment's focus, and every working nearby—wards, curses, blessings—reveals itself to your sight as a shimmer only you can see.@{show_stat_hints  [Spell: Detect Magic]|}
-      *set wizard_spell_2 "detect_magic"
-      *set wizard_spell_2_desc "Detect Magic—a moment's focus, and every active working nearby—wards, curses, blessings, enchanted steel—reveals itself as a faint shimmer only you can see."
-      *goto level_up_wizard_2_spell2
-  *if (not(wizard_spell = "cause_fear"))
-    # Cause Fear. A whispered dread, planted straight into one mind, that sends the target reeling and too afraid to come close.
-      *set wizard_spell_2 "cause_fear"
-      *set wizard_spell_2_desc "Cause Fear—a whispered dread planted straight into one mind. The target is frightened for as long as the fear holds: its blows come with disadvantage, and it will not willingly come closer."
-      *goto level_up_wizard_2_spell2
-  # You have copied all you can for now.
-    *set wizard_spell_2 "none"
-    *goto level_up_wizard_2_done
-
-*label level_up_wizard_2_spell2
-*line_break
-And the second.
-
-*choice
-  *if ((not(wizard_spell = "identify")) and (not(wizard_spell_2 = "identify")))
-    # Identify. Hold an object or study a working for a moment, and its true properties and nature lay themselves bare to you.@{show_stat_hints  [Spell: Identify]|}
-      *set wizard_spell_3 "identify"
-      *set wizard_spell_3_desc "Identify—hold an object or observe a spell for a moment, and its true properties, function, and nature become plain to you."
-      *goto level_up_wizard_2_done
-  *if ((not(wizard_spell = "feather_fall")) and (not(wizard_spell_2 = "feather_fall")))
-    # Feather Fall. A word and a gesture, and a fall that should break bone instead settles you to the ground like a dropped feather.@{show_stat_hints  [Spell: Feather Fall]|}
-      *set wizard_spell_3 "feather_fall"
-      *set wizard_spell_3_desc "Feather Fall—a word and a gesture slow a fall to a drift, turning what should be broken bones into a soft landing."
-      *goto level_up_wizard_2_done
-  *if ((not(wizard_spell = "comprehend_languages")) and (not(wizard_spell_2 = "comprehend_languages")))
-    # Comprehend Languages. For a short while, every tongue—spoken or written—becomes as plain to you as your own.@{show_stat_hints  [Spell: Comprehend Languages]|}
-      *set wizard_spell_3 "comprehend_languages"
-      *set wizard_spell_3_desc "Comprehend Languages—for a short while, every language spoken or written around you becomes as plain as your own tongue."
-      *goto level_up_wizard_2_done
-  *if ((not(wizard_spell = "mage_armor")) and (not(wizard_spell_2 = "mage_armor")))
-    # Mage Armor. A working laid over your own skin each morning, a shell of unseen force standing in for the plate you'll never wear.@{show_stat_hints  [Spell: Mage Armor, +AC unarmored]|}
-      *set wizard_spell_3 "mage_armor"
-      *set wizard_spell_3_desc "Mage Armor—a shell of unseen magical force laid over your skin each morning, standing in for the armor a wizard's training never included."
-      *goto level_up_wizard_2_done
-  *if ((not(wizard_spell = "shield")) and (not(wizard_spell_2 = "shield")))
-    # Shield. An instinctive, reflexive barrier of invisible arcane force that flares to life in a split second to deflect incoming strikes.@{show_stat_hints  [Spell: Shield, Emergency Reaction]|}
-      *set wizard_spell_3 "shield"
-      *set wizard_spell_3_desc "Shield—an instinctive, reflexive barrier of invisible arcane force that flares to life in a split second, deflecting incoming arrows and lethal strikes."
-      *goto level_up_wizard_2_done
-  *if ((not(wizard_spell = "magic_missile")) and (not(wizard_spell_2 = "magic_missile")))
-    # Magic Missile. Three luminous darts of unerring magical force that strike with absolute certainty, bypassing armor and cover without fail.@{show_stat_hints  [Spell: Magic Missile, Auto-Hit]|}
-      *set wizard_spell_3 "magic_missile"
-      *set wizard_spell_3_desc "Magic Missile—three luminous darts of unerring magical force that strike with absolute certainty, bypassing armor, cover, and evasive dodges without fail."
-      *goto level_up_wizard_2_done
-  *if ((not(wizard_spell = "false_life")) and (not(wizard_spell_2 = "false_life")))
-    # False Life. A grim, necromantic rite that bolsters your body with a necromantic facsimile of life, granting a temporary shield of extra vitality.@{show_stat_hints  [Spell: False Life, +5 Temp HP]|}
-      *set wizard_spell_3 "false_life"
-      *set wizard_spell_3_desc "False Life—a grim, necromantic rite that bolsters your body with a necromantic facsimile of life, granting a temporary shield of extra hit points."
-      *goto level_up_wizard_2_done
-  *if ((not(wizard_spell = "jump")) and (not(wizard_spell_2 = "jump")))
-    # Jump. A word and a touch, and a stride carries three times as far as it should, gravity forgetting you exist for one heartbeat.@{show_stat_hints  [Spell: Jump]|}
-      *set wizard_spell_3 "jump"
-      *set wizard_spell_3_desc "Jump—a word and a touch to yourself or another, and a single stride carries three times as far as it should, gravity forgetting the leaper for one heartbeat."
-      *goto level_up_wizard_2_done
-  *if ((not(wizard_spell = "alarm")) and (not(wizard_spell_2 = "alarm")))
-    # Alarm. A quiet working laid over a doorway or a campsite, silent to everyone but you the instant it's crossed.@{show_stat_hints  [Spell: Alarm]|}
-      *set wizard_spell_3 "alarm"
-      *set wizard_spell_3_desc "Alarm—a quiet ward laid over a doorway, a tent flap, or a stretch of open ground, silent to everyone but you the instant an uninvited step crosses it."
-      *goto level_up_wizard_2_done
-  *if ((not(wizard_spell = "detect_magic")) and (not(wizard_spell_2 = "detect_magic")))
-    # Detect Magic. A moment's focus, and every working nearby—wards, curses, blessings—reveals itself to your sight as a shimmer only you can see.@{show_stat_hints  [Spell: Detect Magic]|}
-      *set wizard_spell_3 "detect_magic"
-      *set wizard_spell_3_desc "Detect Magic—a moment's focus, and every active working nearby—wards, curses, blessings, enchanted steel—reveals itself as a faint shimmer only you can see."
-      *goto level_up_wizard_2_done
-  *if ((not(wizard_spell = "cause_fear")) and (not(wizard_spell_2 = "cause_fear")))
-    # Cause Fear. A whispered dread, planted straight into one mind, that sends the target reeling and too afraid to come close.
-      *set wizard_spell_3 "cause_fear"
-      *set wizard_spell_3_desc "Cause Fear—a whispered dread planted straight into one mind. The target is frightened for as long as the fear holds: its blows come with disadvantage, and it will not willingly come closer."
-      *goto level_up_wizard_2_done
-  # You have copied all you can for now.
-    *set wizard_spell_3 "none"
-    *goto level_up_wizard_2_done
-
+*comment The Wizard's four spells are picked at creation now (class_select.txt), so level 2 ends with Scholar.
 *label level_up_wizard_2_done
 *return
 

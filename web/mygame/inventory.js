@@ -330,7 +330,7 @@
       if (q > 0) { total += (Number(item.weight) || 0) * q + heldWeight(item, Math.min(q, stowedOf(cid, item.held ? item.held.var : "", s))); entries.push({ item: item, qty: q }); }
     });
     var cap = c.capacity || 0, note = c.note || "";
-    if (c.rider) { var body = bodyWeight(s); cap = Math.max(0, cap - body); note += " You weigh " + fmtLoad(body) + " of its " + fmtLoad(c.capacity) + " pounds, so " + fmtLoad(cap) + " are left for cargo."; }
+    if (c.rider) cap = Math.max(0, cap - bodyWeight(s));
     return { id: cid, name: c.name, note: note, capacity: cap, total: total, entries: entries, present: !c.needs || truthyS(s[c.needs]), why: containerBlock(cid, s) };
   }
   // The containers the character has, or that still hold something while out of reach.
@@ -642,7 +642,7 @@
     var cs = visibleContainers(s);
     if (view.left === "you") elDoll.innerHTML = leftTabsHtml(cs) + html;
     else if (view.left === "craft") elDoll.innerHTML = leftTabsHtml(cs) + craftPaneHtml(s);
-    else elDoll.innerHTML = leftTabsHtml(cs) + containerPaneHtml(containerOf(view.left, s), s);
+    else { view.store = view.left; elDoll.innerHTML = leftTabsHtml(cs) + containerPaneHtml(containerOf(view.left, s), s, storeBarHtml(cs)); }
   }
 
   /* ---------------------------------------------------------------- the bag */
@@ -677,6 +677,7 @@
   }
 
   var MIN_CELLS = 30, COLS = 6;
+  var C_MIN_CELLS = 30, C_COLS = 5;   // a container's grid: six rows of five, one empty row past the last item, then it scrolls
 
   // The layout string: "id:cell,id:cell" (ids are plain letters, digits and underscores), in cell order.
   function parseLayout(str) {
@@ -692,25 +693,33 @@
   }
   // Where every carried item sits: its saved cell if that is free, else the first free cell (a new item). Written back at once, so a sold item's cell stays empty and a new
   // one never shifts the rest; items no longer carried drop out of the string.
-  function placeItems(current, s) {
-    var saved = parseLayout(s.inv_layout), used = {}, placed = {}, next = 0;
+  function placeItems(current, s, key) {
+    key = key || "inv_layout";
+    var saved = parseLayout(s[key]), used = {}, placed = {}, next = 0;
     current.forEach(function (r) { var c = saved[r.id]; if (c !== undefined && used[c] === undefined) { used[c] = r.id; placed[r.id] = c; } });
     current.forEach(function (r) { if (placed[r.id] === undefined) { while (used[next] !== undefined) next++; used[next] = r.id; placed[r.id] = next; } });
     var str = serializeLayout(placed);
-    if (str !== String(s.inv_layout || "")) s.inv_layout = str;
+    if (str !== String(s[key] || "")) s[key] = str;
     return placed;
   }
   // Drop an item on a cell: an empty cell takes it, an occupied one swaps places with it.
-  function moveItem(id, cell) {
-    var s = statsNow(), placed = placeItems(owned(s), s);
+  function moveItem(id, cell) { moveCell("inv_layout", owned(statsNow()), id, cell, false); }
+  // The same for any laid-out list (the bag, or what is in a container). `onlyEmpty` leaves an occupied cell alone instead of swapping.
+  function moveCell(key, list, id, cell, onlyEmpty) {
+    var s = statsNow(), placed = placeItems(list, s, key);
     if (placed[id] === undefined || placed[id] === cell) return;
     var other = null;
     Object.keys(placed).forEach(function (k) { if (placed[k] === cell && k !== id) other = k; });
+    if (other && onlyEmpty) return;
     if (other) placed[other] = placed[id];
     placed[id] = cell;
-    s.inv_layout = serializeLayout(placed);
+    s[key] = serializeLayout(placed);
     render();
   }
+  // What a container holds, as the layout sees it, and the stat that remembers where each thing sits (one per container).
+  function stowedList(cid, s) { var c = containerOf(cid, s); return c ? c.entries.map(function (e) { return { id: e.item.id }; }) : []; }
+  function stowKey(cid) { return "stow_layout_" + cid; }
+  function moveStowed(cid, id, cell, onlyEmpty) { moveCell(stowKey(cid), stowedList(cid, statsNow()), id, cell, onlyEmpty); }
   // Sort: everything packed to the front, by kind (the catalog's category order) and then by name.
   function sortBag() {
     var s = statsNow(), order = {}, list = owned(s);
@@ -839,12 +848,23 @@
 
   function leftTabsHtml(list) {
     var html = '<div class="inv-ctabs" role="tablist"><button type="button" class="inv-ctab" data-left="you" aria-pressed="' + (view.left === "you") + '">You</button>';
-    list.forEach(function (c) {
-      html += '<button type="button" class="inv-ctab' + (c.present ? "" : " inv-ctab-off") + '" data-left="' + esc(c.id) + '" aria-pressed="' + (view.left === c.id) + '"' + (c.why ? ' title="' + esc(c.why) + '"' : "") + ">" +
-        esc(c.name) + (c.entries.length ? "<small>" + c.entries.length + "</small>" : "") + "</button>";
-    });
+    // one Storage tab however many containers there are (2026-11-03, the user); the containers are its own row, in the pane (storeBarHtml). It appears once the character has one.
+    if (list.length) html += '<button type="button" class="inv-ctab inv-ctab-craft" data-left="storage" aria-pressed="' + (containerOpen()) + '">' + iconImg("storage_chest") + "Storage</button>";
     html += '<button type="button" class="inv-ctab inv-ctab-craft" data-left="craft" aria-pressed="' + (view.left === "craft") + '">' + iconImg("mortar_pestle") + "Craft</button>";   // STAND-IN icon: the mortar's, until the user picks one
     return html + "</div>";
+  }
+
+  // The Storage tab's own row: one button per container (greyed, with the reason on hover, while one is out of reach), like the Craft tab's modes.
+  function storeBarHtml(list) {
+    return '<div class="inv-craft-modes inv-store-modes" role="tablist">' + list.map(function (c) {
+      return '<button type="button" class="inv-ctab' + (c.present ? "" : " inv-ctab-off") + '" data-left="' + esc(c.id) + '" aria-pressed="' + (view.left === c.id) + '"' + (c.why ? ' title="' + esc(c.why) + '"' : "") + ">" +
+        esc(c.name) + (c.entries.length ? "<small>" + c.entries.length + "</small>" : "") + "</button>";
+    }).join("") + "</div>";
+  }
+  // Which container the Storage tab opens: the last one looked at if it is still listed, else the first one within reach, else the first.
+  function storeTarget(list) {
+    var last = list.filter(function (c) { return c.id === view.store; })[0] || list.filter(function (c) { return c.present; })[0] || list[0];
+    return last ? last.id : "you";
   }
 
   /* ---------------------------------------------------------------- crafting (2026-10-23, the user's design)
@@ -1150,20 +1170,23 @@
   }
 
   // The open container in place of the paper doll: its meter, its note, why it is out of reach if it is, and a grid of what is in it.
-  function containerPaneHtml(c, s) {
+  function containerPaneHtml(c, s, bar) {
     var ratio = c.capacity > 0 ? c.total / c.capacity : 0;
-    var html = '<div class="inv-cpane"><div class="inv-loadbar inv-sbbar' + (ratio >= 0.9 ? " inv-load-near" : "") + '">' +
+    var html = '<div class="inv-cpane">' + (bar || "") + '<div class="inv-loadbar inv-sbbar' + (ratio >= 0.9 ? " inv-load-near" : "") + '">' +
       '<span class="inv-load-name">' + esc(c.name) + '</span><span class="inv-load-num">' + fmtLoad(c.total) + " / " + fmtLoad(c.capacity) + "</span>" +
       '<span class="inv-load-track"><i style="width:' + Math.min(100, Math.round(ratio * 100)) + '%"></i></span></div>' +
       (c.note ? '<div class="inv-cnote">' + esc(c.note) + "</div>" : "") +
       (c.why ? '<div class="inv-cwhy">' + esc(c.why) + "</div>" : "") + '<div class="inv-grid inv-cgrid">';
-    c.entries.forEach(function (e) {
+    var placed = placeItems(stowedList(c.id, s), s, stowKey(c.id)), byCell = {}, last = -1;
+    c.entries.forEach(function (e) { var p = placed[e.item.id]; byCell[p] = e; if (p > last) last = p; });
+    var cells = Math.max(C_MIN_CELLS, (Math.floor(last / C_COLS) + 2) * C_COLS);
+    for (var cell = 0; cell < cells; cell++) {
+      var e = byCell[cell];
+      if (!e) { html += '<span class="inv-tile inv-blank inv-cblank" data-ccell="' + cell + '" aria-hidden="true"></span>'; continue; }
       var r = stowedEntry(c.id, e.item.id, s), cn = splitCount(r.name);
-      html += '<button type="button" class="inv-tile inv-bagitem inv-citem' + (view.csel === r.id ? " inv-sel" : "") + '" data-citem="' + esc(r.id) + '" draggable="true" aria-label="' + esc(cn.name) + '">' + iconImg(itemIconKey(r)) +
+      html += '<button type="button" class="inv-tile inv-bagitem inv-citem' + (view.csel === r.id ? " inv-sel" : "") + '" data-citem="' + esc(r.id) + '" data-ccell="' + cell + '" draggable="true" aria-label="' + esc(cn.name) + '">' + iconImg(itemIconKey(r)) +
         (cn.count > 1 ? '<span class="inv-cnt">' + cn.count + "</span>" : "") + "</button>";
-    });
-    var cells = Math.max(15, Math.ceil(c.entries.length / 5) * 5);
-    for (var i = c.entries.length; i < cells; i++) html += '<span class="inv-tile inv-blank" aria-hidden="true"></span>';
+    }
     return html + "</div></div>";
   }
 
@@ -1292,6 +1315,7 @@
   function containerOpen() { return view.left !== "you" && view.left !== "craft"; }
   function overPane(ev) { return !!(ev.target && ev.target.closest && ev.target.closest(".inv-cpane")); }
   function onDragEnd() { clearDrag(); }
+  function ccellOf(ev) { var c = ev.target && ev.target.closest ? ev.target.closest("[data-ccell]") : null; return c && containerOpen() ? c : null; }
   function cellOf(ev) { var c = ev.target && ev.target.closest ? ev.target.closest("[data-cell]") : null; return c && elBag.contains(c) ? c : null; }
   // Where a worn piece being dragged may land: the pack (take off), or its swap partner.
   function slotDropKind(ev) {
@@ -1309,7 +1333,12 @@
       if (kind) { ev.preventDefault(); if (kind === "swap") t.classList.add("inv-over"); }
       return;
     }
-    if (view.dragC) { if (elBag.contains(ev.target)) ev.preventDefault(); return; }
+    if (view.dragC) {
+      if (elBag.contains(ev.target)) { ev.preventDefault(); return; }
+      var cc = ccellOf(ev);
+      if (cc && cc.getAttribute("data-citem") !== view.dragC) { ev.preventDefault(); cc.classList.add("inv-over"); }
+      return;
+    }
     if (!view.drag) return;
     var bin = ev.target && ev.target.closest ? ev.target.closest("[data-bin]") : null;
     if (bin) { ev.preventDefault(); bin.classList.add("inv-over"); return; }
@@ -1333,9 +1362,10 @@
       return;
     }
     if (view.dragC) {
-      var cid = view.dragC, onBag = elBag.contains(ev.target);
+      var cid = view.dragC, onBag = elBag.contains(ev.target), cc = ccellOf(ev);
       clearDrag();
       if (onBag) { ev.preventDefault(); doMove("take", cid, 99999); }
+      else if (cc) { ev.preventDefault(); view.csel = null; moveStowed(view.left, cid, Number(cc.getAttribute("data-ccell")), false); }
       return;
     }
     var t = ev.target && ev.target.closest ? ev.target.closest("[data-slot]") : null;
@@ -1347,7 +1377,13 @@
     if (containerOpen() && overPane(ev)) {
       var sr = findOwned(id);
       clearDrag();
-      if (sr && sr.stow) { ev.preventDefault(); doMove("stow", id, 99999); }
+      if (sr && sr.stow) {
+        ev.preventDefault();
+        var want = ccellOf(ev), cid3 = view.left;
+        want = want && !want.hasAttribute("data-citem") ? Number(want.getAttribute("data-ccell")) : null;
+        doMove("stow", id, 99999);
+        if (want !== null && stowedOf(cid3, id, statsNow()) > 0) moveStowed(cid3, id, want, true);   // it lands on the cell it was dropped on, when that one is free
+      }
       return;
     }
     var dbx = ev.target && ev.target.closest ? ev.target.closest("[data-box]") : null;
@@ -1502,7 +1538,7 @@
   }
 
   function onClick(ev) {
-    var t = ev.target && ev.target.closest ? ev.target.closest("[data-act], [data-cat], [data-item], [data-slot], .inv-blank[data-cell], [data-takeoff], [data-pop-shield], [data-attune], [data-swap-sidearm], [data-equip-sel], [data-use], [data-left], [data-citem], [data-qty], [data-qty-set], [data-xfer], [data-box], [data-craft-go], [data-craft-tab], [data-craft-mode], [data-recipe], [data-discard-step], [data-discard-go], [data-discard-cancel], [data-discard-veil]") : null;
+    var t = ev.target && ev.target.closest ? ev.target.closest("[data-act], [data-cat], [data-item], [data-slot], .inv-blank[data-cell], .inv-cblank[data-ccell], [data-takeoff], [data-pop-shield], [data-attune], [data-swap-sidearm], [data-equip-sel], [data-use], [data-left], [data-citem], [data-qty], [data-qty-set], [data-xfer], [data-box], [data-craft-go], [data-craft-tab], [data-craft-mode], [data-recipe], [data-discard-step], [data-discard-go], [data-discard-cancel], [data-discard-veil]") : null;
     if (!t || !dlg.contains(t)) {
       if (view.slot) { view.slot = null; render(); }   // a click on empty space puts the lit slot away
       return;
@@ -1510,6 +1546,7 @@
     var act = t.getAttribute("data-act");
     if (act === "close") return close();
     if (act === "sort") { sortBag(); return; }
+    if (t.classList.contains("inv-cblank")) { if (view.csel && containerOpen()) { var mc = view.csel; moveStowed(view.left, mc, Number(t.getAttribute("data-ccell")), false); } return; }
     if (t.classList.contains("inv-blank")) { if (view.sel) moveItem(view.sel, Number(t.getAttribute("data-cell"))); return; }
     if (act === "trade") {
       // The trade panel (trade.js) sits over the shop menus; from here it is one tap away.
@@ -1518,7 +1555,7 @@
       return;
     }
     if (t.hasAttribute("data-left")) {
-      view.left = t.getAttribute("data-left"); view.sel = null; view.csel = null; view.slot = null; view.qty = 1; note("");
+      view.left = t.getAttribute("data-left"); if (view.left === "storage") view.left = storeTarget(visibleContainers(statsNow())); view.sel = null; view.csel = null; view.slot = null; view.qty = 1; note("");
       render();
       return;
     }
