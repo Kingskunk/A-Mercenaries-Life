@@ -1779,7 +1779,7 @@ A 1st-level spell costs 10 sessions. Training is once a day, and copying never t
 *gosub_scene dungeon dg_tide_check
 [b]🕳️ DEVELOPER TESTING: DUNGEON ENCOUNTER PICKER[/b]
 *line_break
-Table: the Silt-Gate channels (silt_conduits). It is ${clock_time} (${time_period}), so the tide is [b]${dg_tide}[/b]. Low water is Morning through Dusk; high water is Night and Pre-Dawn.
+Table: [b]${dg_table}[/b]. It is ${clock_time} (${time_period}), so the tide is [b]${dg_tide}[/b]. Low water is Morning through Dusk; high water is Night and Pre-Dawn.
 *line_break
 Last roll: [b]${dg_encounter}[/b]. Rolled this run: ${dg_pick_count}.
 *if (dg_pick_count >= 1)
@@ -1801,33 +1801,40 @@ Last roll: [b]${dg_encounter}[/b]. Rolled this run: ${dg_pick_count}.
     , ${dg_pick_8}
 
 *choice
-  # Roll an encounter at this tide
-    *set dg_table "silt_conduits"
+  # 🎲 Roll an encounter at this tide (${dg_table})
     *set dg_call_id "dev_roll"
     *gosub_scene dungeon dg_pick
     *goto dev_dungeon_test_hub
-  # Set the clock to 10:00 (Morning, low tide)
+  # 📋 Switch encounter table: ${dg_table}
+    *if (dg_table = "silt_conduits")
+      *set dg_table "longshade_forest"
+    *else
+      *set dg_table "silt_conduits"
+    *goto dev_dungeon_test_hub
+  # 🕰 Set the clock to 10:00 (Morning, low tide)
     *set clock_hour 10
     *set clock_minute 0
     *set clock_time "10:00"
     *set time_period "Morning"
     *goto dev_dungeon_test_hub
-  # Set the clock to 23:00 (Night, high tide)
+  # 🕰 Set the clock to 23:00 (Night, high tide)
     *set clock_hour 23
     *set clock_minute 0
     *set clock_time "23:00"
     *set time_period "Night"
     *goto dev_dungeon_test_hub
-  # Start a fresh run (clear the history)
+  # 🔄 Start a fresh run (clear the history)
     *gosub_scene dungeon dg_run_begin
     *goto dev_dungeon_test_hub
-  # Sample 100 rolls at this tide (a fresh run for each)
+  # 📊 Sample 100 rolls at this tide (a fresh run for each)
     *goto dev_dungeon_sample
-  # Harvest a kill (Survival check; ingredients are sold to Ambrose)
+  # 🌿 Harvest a kill (Survival check; ingredients are sold to Ambrose)
     *goto dev_dungeon_harvest
-  # Walk the Silt-Gate channels (the 8-junction map, light, darkness and encounter rolls)
+  # 🗼 Walk the Silt-Gate channels (8-junction map, light, darkness, encounter rolls)
     *goto dev_dungeon_walk_menu
-  # Back to the Developer Scene Select
+  # 🌲 Walk the Longshade Forest (south mouth; lit by day)
+    *goto dev_dungeon_walk_longshade
+  # ↩ Back to the Developer Scene Select
     *goto dev_scene_select
 
 *label dev_dungeon_sample
@@ -1846,7 +1853,6 @@ Last roll: [b]${dg_encounter}[/b]. Rolled this run: ${dg_pick_count}.
 *label dev_dungeon_sample_loop
 *set ds_i + 1
 *gosub_scene dungeon dg_run_begin
-*set dg_table "silt_conduits"
 *set dg_call_id ("sample_" & ds_i)
 *gosub_scene dungeon dg_pick
 *if (dg_encounter = "mire_rats")
@@ -1919,7 +1925,7 @@ Survival check after a kill (frog 10, centipede 12, viper 13, lacedon 14). Ingre
 *label dev_dungeon_walk_menu
 [b]🕯 DEVELOPER TESTING: WALK THE SILT-GATE CHANNELS[/b]
 *line_break
-Pick the way in. The map is in port_valen/port_valen_silt_conduits.txt: 8 hallway junctions, 5 rooms (the Landing and the Gate Hall are written, the other three are stubs) and 3 dead-end exits. It is ${clock_time} (${time_period}). You @{sees_in_dark see|do not see} in the dark.
+Pick a way into the Silt-Gate channels (8 hallway junctions, 5 rooms, 3 dead-end exits). It is ${clock_time} (${time_period}). You @{sees_in_dark see|do not see} in the dark.
 *gosub_scene equipment gear_count "pitch_torch"
 *temp dwm_torches gear_qty
 *gosub_scene equipment gear_count "lamp_oil"
@@ -1932,38 +1938,24 @@ Light in your pack: ${dwm_torches} torches, @{has_hooded_lantern a lantern|no la
 The dungeon was last refilled on day ${dg_reset_day_silt_conduits} (it is day ${campaign_day}) and refills every ${dg_respawn_days} days on the next entry.
 
 *choice
-  # Go in by the channel mouth
+  # 🗼 Silt-Gate channels — channel mouth (the iron grating above the waterline)
     *set dg_table "silt_conduits"
     *set dg_start "silt_x1"
     *set dg_dev_entry true
     *gosub_scene dungeon dg_run_begin
     *goto_scene port_valen/port_valen_silt_conduits pvsc_begin
-  # Go in by the cellar ladder
+  # 🗼 Silt-Gate channels — cellar ladder (bolted from above)
     *set dg_table "silt_conduits"
     *set dg_start "silt_x2"
     *set dg_dev_entry true
     *gosub_scene dungeon dg_run_begin
     *goto_scene port_valen/port_valen_silt_conduits pvsc_begin
-  # Go in by the cistern ladder
+  # 🗼 Silt-Gate channels — cistern ladder (Wash-House yard)
     *set dg_table "silt_conduits"
     *set dg_start "silt_x3"
     *set dg_dev_entry true
     *gosub_scene dungeon dg_run_begin
     *goto_scene port_valen/port_valen_silt_conduits pvsc_begin
-  # Go in by the Longshade Forest south mouth (the Longshade's way in; lit by day)
-    *set dg_table "longshade_forest"
-    *set dg_start "lsf_x1"
-    *set dg_daylit true
-    *set dg_dev_entry true
-    *gosub_scene dungeon dg_run_begin
-    *goto_scene longshade/longshade_forest lsf_begin
-  # Go in by the Longshade Forest east mouth (West Longshade's way in; lit by day)
-    *set dg_table "longshade_forest"
-    *set dg_start "lsf_x2"
-    *set dg_daylit true
-    *set dg_dev_entry true
-    *gosub_scene dungeon dg_run_begin
-    *goto_scene longshade/longshade_forest lsf_begin
   # Fill the pack for the test (3 torches, a lantern, 2 flasks of oil, 2 bundles of chalk)
     *set has_chalk_sticks true
     *set spare_chalk_sticks 1
@@ -1998,6 +1990,39 @@ The dungeon was last refilled on day ${dg_reset_day_silt_conduits} (it is day ${
   # Forget the map and every chalk mark (and empty the open bundle)
     *gosub_scene dungeon dg_forget_map
     *goto dev_dungeon_walk_menu
+  # Back to the picker
+    *goto dev_dungeon_test_hub
+
+*label dev_dungeon_walk_longshade
+[b]🌲 DEVELOPER TESTING: WALK THE LONGSHADE FOREST[/b]
+*line_break
+Pick a way into the Longshade Forest (two mouths, one shared trail table; lit by day). It is ${clock_time} (${time_period}). You @{sees_in_dark see|do not see} in the dark.
+*line_break
+*gosub_scene equipment gear_count "pitch_torch"
+*temp dlw_torches gear_qty
+*gosub_scene equipment gear_count "lamp_oil"
+*temp dlw_oil gear_qty
+*line_break
+*gosub_scene equipment gear_count "chalk_sticks"
+*temp dlw_chalk gear_qty
+Light in your pack: ${dlw_torches} torches, @{has_hooded_lantern a lantern|no lantern}, ${dlw_oil} flasks of lamp oil. Chalk: ${dlw_chalk} bundles, plus ${dg_chalk_left} marks left on the one in use.
+*line_break
+
+*choice
+  # 🌲 Longshade Forest — south mouth (the Longshade's way in; lit by day)
+    *set dg_table "longshade_forest"
+    *set dg_start "lsf_x1"
+    *set dg_daylit true
+    *set dg_dev_entry true
+    *gosub_scene dungeon dg_run_begin
+    *goto_scene longshade/longshade_forest lsf_begin
+  # 🌲 Longshade Forest — east mouth (West Longshade's way in; lit by day)
+    *set dg_table "longshade_forest"
+    *set dg_start "lsf_x2"
+    *set dg_daylit true
+    *set dg_dev_entry true
+    *gosub_scene dungeon dg_run_begin
+    *goto_scene longshade/longshade_forest lsf_begin
   # Back to the picker
     *goto dev_dungeon_test_hub
 
