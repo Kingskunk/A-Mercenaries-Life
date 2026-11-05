@@ -1,14 +1,11 @@
 --- START OF FILE valen_reach_alyndra.txt ---
-
 *comment ====================================================================================
-*comment VALEN REACH -- SIDE QUEST: THE INNOCENT SMILE
-*comment Alyndra Valcyne honey-traps the player with cheap supplies and a "shortcut",
-*comment leading toward a slaver ambush tied to Captain Nolan Clarke.
-*comment
-*comment Mechanics used:
-*comment   - Suspicion score: aly_suspicion (0 to 3) determines ambush surprise.
-*comment   - Replay-safe stat/currency locks via locked_stat_bump_page_id.
-*comment   - Combat via combat/fight_library against the Slaver Enforcer.
+*comment VALEN REACH -- SIDE QUEST: THE INNOCENT SMILE (SCENE 1: THE TAVERN)
+*comment Features:
+*comment   - Modular tavern entrance suitable for any wayside inn in the Reach.
+*comment   - Dynamic dialogue styles: Bold/Flirtatious, Guarded/Direct, or Watchful.
+*comment   - Suspicion system hooks: Assessing eyes, rehearsed tragedy, hilt calluses.
+*comment   - Integrated 50% outfitter barter before departure.
 *comment ====================================================================================
 
 *label aly_start
@@ -16,372 +13,258 @@
   *set aly_quest_started true
   *set aly_quest_stage "active"
   *set aly_suspicion 0
-  *set aly_checkpoint "meeting"
+  *set aly_checkpoint "tavern_floor"
 *goto aly_resume
 
 *label aly_resume
-*if (aly_checkpoint = "meeting")
-  *goto aly_meeting
-*if (aly_checkpoint = "camp")
-  *goto aly_camp
-*if (aly_checkpoint = "cavern")
-  *goto aly_cavern
-*if (aly_checkpoint = "fight")
-  *goto aly_fight
-*if (aly_checkpoint = "aftermath")
-  *goto aly_aftermath
-*set aly_checkpoint "meeting"
-*goto aly_meeting
+*if (aly_checkpoint = "tavern_floor")
+  *goto aly_tavern_entry
+*if (aly_checkpoint = "table_talk")
+  *goto aly_table_hub
+*if (aly_checkpoint = "the_deal")
+  *goto aly_deal_menu
+*if (aly_checkpoint = "barter")
+  *goto aly_barter_menu
+*set aly_checkpoint "tavern_floor"
+*goto aly_tavern_entry
 
-*comment ────────────────────────────────────────────────────────────────────────────────────
-*comment SCENE 1: THE INNOCENT SMILE (THE HOOK)
-*comment ────────────────────────────────────────────────────────────────────────────────────
-*label aly_meeting
+*label aly_tavern_entry
 *set scenery_subplace "valen_reach_roadside"
 
-The wayside tavern near the border of the Valen Reach is quiet save for the crackle of green pine in the hearth and the dull clatter of pewter plates. 
+The heavy oak door swings shut against the damp chill of the Valen Reach, cutting off the evening wind. Inside, the air smells of peat smoke, boiled greens, and stale small beer. 
 
-At a corner table beneath an unglazed window, an elven woman sits sharpening an iron camp knife. She looks no older than a youth, with delicate features, pale golden hair bound in simple leather cords, and a wide, sunlit smile that seems almost comical in a place as grim as the Reach.
+A handful of locals—timber-haulers with grime under their nails, a peddler counting lead tokens, and a pair of turnpike guards—huddle over their trenchers in muted conversation.
 
-As you approach the bar, she looks up. Her bright hazel eyes lock onto yours, and her smile broadens with effortless warmth.
+Across the room, sitting at a corner table with a clear line of sight to the door, is an elf woman. She wears travel-stained leathers and a moss-green cloak, her pale golden hair braided with plain leather cord. She is idly peeling an apple with a small folding knife.
 
-"A traveler with salt on their boots and iron at their hip," she says, her voice light and musical. "I was beginning to think only timber-carters and taxmen took this road."
-
-She stands, setting her knife aside, and gives a respectful, graceful half-bow.
-
-"I am Alyndra. Alyndra Valcyne."
+As you step across the threshold, her eyes flick up. Her gaze traces your silhouette with practiced speed—noting your bearing, your step, and whatever iron or arcane focus you carry—before blooming into a radiant, innocent smile. She raises her cider cup in a cheerful, wordless tavern greeting.
 
 *choice
-  # "${name}" What brings an elf so far out onto the Reach road alone?"
-    *goto aly_talk_past
-  # "${name}" Study her gear and posture before answering.@{show_stat_hints  [Insight DC 13]|}
-    *gosub_scene dice_engine roll_skill_check 13 "insight" "" "perception" "" "" ""
+  # Approach boldly and take a seat at her table.
+    *set aly_approach "bold"
+    You cross the room and slide onto the bench across from her. 
+    
+    "See anything you like?" you ask with a dry smirk.
+    
+    Alyndra doesn’t flinch. Instead, her smile tilts into something amused and conspiratorial as she sets her knife down.
+    
+    "Bold of you," she says, resting her chin in her hands. "And perhaps I did. A woman spends three days sharing a room with carters who smell of wet mule, and in walks someone who looks like they have real business on the road."
+    *goto aly_table_hub
+    
+  # Walk over with your guard up and address her directly.
+    *set aly_approach "direct"
+    You walk to her table, resting one hand near your hip. 
+    
+    "You measured me up the second I cleared the door," you say quietly. "What's on your mind?"
+    
+    Alyndra blinks, looking slightly sheepish, though her warm smile doesn't falter. She sets her knife down on the trencher and gestures to the empty bench.
+    
+    "Guilty," she laughs softly, her voice melodic and disarming. "No offense intended, traveler. Out here, a lone woman learns to watch the door closely. Won't you sit? I'd welcome company with better manners than the bailiffs."
+    *goto aly_table_hub
+    
+  # Watch her from the bar first before deciding.@{show_stat_hints  [Perception DC 12]|}
+    *gosub_scene dice_engine roll_skill_check 12 "perception" "" "insight" "" "" ""
     *if (check_success)
       *set aly_suspicion (aly_suspicion + 1)
-      Her dress is that of a common outrider—scuffed boots, road-stained wool, a barmaid's silver apron pin tucked into her lapel. But beneath the table her rapier rests in a scabbard lined with imported velvet, and her knuckles bear the distinct hard calluses of one who drills relentlessly with light blades. 
-
-      Her innocent demeanor is practiced. It sits over her like a polished visor.
-      *goto aly_talk_deal
+      From the counter, you watch her over the rim of an ale mug. Her innocent demeanor never wavers, but her knife work is remarkably clean—rapid, balanced strokes with zero wasted motion. 
+      
+      Leaning behind her bench, half-concealed beneath her pack, sits a slender scabbard wrapped in fine velvet. Not the rough machete of an outrider, but an urban duelist's rapier.
+      
+      When she catches you watching, she tilts her head and offers a bright, inviting wave.
     *else
-      She appears just as she presents herself: an adventurous common girl trying her luck on the frontier roads. Her open expression disarms any immediate suspicion.
-      *goto aly_talk_deal
-  # ${name} you say and nod politely and ask what business she has with you.
-    *goto aly_talk_deal
+      She appears to be exactly what she looks like: an elven outrider or wanderer taking a quiet meal away from the rowdier locals. When she notices your gaze, she offers an encouraging, friendly smile.
+    
+    You leave the bar and take a seat at her table.
+    *goto aly_table_hub
 
-*label aly_talk_past
-" Misfortune turned to opportunity," she answers smoothly, tilting her head. "My village was burned during the border feuds, and a kind tavernkeeper took me in. But there is little life in wiping down grease-boards. I bought a horse, took to the high trails, and found I had a knack for the wilderness."
+*comment ────────────────────────────────────────────────────────────────────────────────────
+*comment TABLE CONVERSATION HUB
+*comment ────────────────────────────────────────────────────────────────────────────────────
+*label aly_table_hub
+*set aly_checkpoint "table_talk"
 
-Her smile softens into something wistful. "The world is wide. Why stay behind an ale tap when there is fortune waiting beyond the trees?"
-*goto aly_talk_deal
+Alyndra slides a clean slice of apple across the platter toward you.
 
-*label aly_talk_deal
-"I see you carry heavy gear," Alyndra says, stepping closer and lowering her voice conspiratorially. "I know a hunter's path through the limestone bluffs that cuts three days of hard climbing down to one."
-
-She unhooks a bundle from her chair—well-kept rope, iron rations, and an oiled tinderbox.
-
-"I also buy and barter from folks on the trail. If you walk the trail with me, I will sell you my trail kit at half tavern price, and guide you past the crags for free. Adventurers should look out for one another, shouldn't they?"
+"I'm Alyndra," she says brightly. "And you have the look of someone with a purpose in the Reach. Merchant, sellsword, or wanderer?"
 
 *choice
-  # Accept her offer and agree to travel together.
-    *set aly_checkpoint "camp"
-    You agree to the arrangement. Alyndra claps her hands in delight, her eyes sparkling.
-    
-    "Splendid! We should make camp near the limestone cut before dusk settles."
-    *page_break Set out onto the trail…
-    *goto aly_camp
-  # Inquire about purchasing her discounted trail kit first.
-    *goto aly_shop_menu
-  # Decline her guidance; you prefer to travel alone.
+  *if (not(aly_asked_story))
+    # Ask about her story and what brings her out here alone.
+      *set aly_asked_story true
+      *goto aly_topic_story
+      
+  *if (not(aly_asked_watching))
+    # Deduce her motive: she's looking for someone capable and trustworthy.
+      *set aly_asked_watching true
+      *goto aly_topic_scouting
+      
+  *if (not(aly_asked_reach))
+    # Ask what she knows about the road ahead through the Reach.
+      *set aly_asked_reach true
+      *goto aly_topic_reach
+      
+  # Cut to business: ask what proposal she has for you.
+    *goto aly_topic_pitch
+
+*label aly_topic_story
+"Misfortune turned to curiosity," she answers, her tone dropping into a softer, wistful cadence. 
+
+"My parents were wood elves—modest merchants. Sickness took them when I was young, and the local lord burned our steading fearing plague. A tavernkeep took me in and hid my heritage behind an apron." 
+
+She gives a light, self-deprecating shrug. "I spent years wiping beer grease and watching dashing adventurers ride off toward the horizon. One morning I took my parents' horse, bought a hunting knife, and rode out. Better to freeze on the high trails than die an old maid with dishwater hands."
+
+*choice
+  # Listen for sincerity in her tragic tale.@{show_stat_hints  [Insight DC 13]|}
+    *gosub_scene dice_engine roll_skill_check 13 "insight" "" "" "" "" ""
+    *if (check_success)
+      *set aly_suspicion (aly_suspicion + 1)
+      Her eyes grow suitably misty, and the quiver in her voice hits every emotional note with theatrical precision. It is a compelling tale—and delivered with the polished perfection of a monologue rehearsed a hundred times.
+    *else
+      Her grief seems touchingly genuine, the common tragedy of an orphan girl seeking freedom from a dull life.
+    *goto aly_table_hub
+  # Nod in sympathy and ask what she does now.
+    "I learned the trails," she says with a bright smile. "Found that being small and quiet lets you hear things the timber-carters miss."
+    *goto aly_table_hub
+
+*label aly_topic_scouting
+"Let me guess," you say, leaning in. "You found something in the wilderness, you can't tackle it alone, and you're watching the door for someone capable who won't slit your throat in your sleep."
+
+A light flush touches her cheekbones, and she looks down at the table with a soft, bashful laugh.
+
+"Guilty as charged," she murmurs. "You're sharp. Sharper than the usual carters. It's rare to find a traveler out here who understands how dangerous this road is for a woman alone. Timber-thugs only understand the cudgel. Scholars and true sellswords have rules."
+
+*set aly_suspicion (aly_suspicion - 1)
+*comment Letting the player feel smart lowers her apparent threat.
+*if (aly_suspicion < 0)
+  *set aly_suspicion 0
+*goto aly_table_hub
+
+*label aly_topic_reach
+"Mud, broken axles, and extortionate tolls," Alyndra says plainly. "The high turnpike takes three days of slog around the limestone crags, and Baron Karr's bailiffs charge an arm and a leg at the gap. The back-trails through the bluffs are twice as fast—if you know which ravine doesn't end in a sea-chasm."
+*goto aly_table_hub
+
+*comment ────────────────────────────────────────────────────────────────────────────────────
+*comment THE HOOK & THE DEAL
+*comment ────────────────────────────────────────────────────────────────────────────────────
+*label aly_topic_pitch
+Alyndra leans across the table, her hazel eyes gleaming with suppressed excitement.
+
+"Three weeks ago, following a wash-out along the coastal bluffs, I found a collapsed archway beneath the roots of an ironwood tree. Worked stone—Imperial granite, smooth as glass. Inside is a sealed vault door with interlocking bronze rings and arcane glyphs."
+
+She watches your face carefully.
+
+"I didn't dare crack it alone. The coastal bluffs have wolves and tide hazards, and warding seals are beyond me. But with someone of your talents? We take the smuggler's cut through the bluffs—halves the travel time to the coast. We reach the vault, bypass the seals, and split whatever Imperial relics are inside straight down the middle. Equal shares."
+
+*label aly_deal_menu
+*set aly_checkpoint "the_deal"
+
+*choice
+  # Agree to the partnership and shake on it.
+    *goto aly_handshake
+  # Ask why an ancient vault hasn't been looted yet.
+    "The winter mudslides only exposed the arch last month," she answers without a beat of hesitation. "Before that, it was buried under forty feet of limestone scree. It's untouched, Lucius."
+    *goto aly_deal_menu
+  # Decline the venture; you travel alone.
     *goto aly_refuse_warning
 
-*label aly_shop_menu
-"Take whatever keeps you whole on the road," she says cheerfully, laying her pack flat.
+*label aly_handshake
+She beams, her relief looking completely unfeigned. "Splendid! It's a deal, then."
+
+Alyndra extends her slender right hand across the pine boards to seal the contract.
 
 *choice
-  *if ((((gold * 100) + (silver * 10)) + copper) >= 15)
-    # Buy a bundle of Iron Trail Rations (15 Copper).
+  # Take her hand firmly.
+    *goto aly_feel_calluses
+  # Shake cautiously, keeping an eye on her eyes.
+    *goto aly_feel_calluses
+
+*label aly_feel_calluses
+You take her hand. Her grip is surprisingly firm and sure. 
+
+*gosub_scene dice_engine roll_skill_check 12 "perception" "" "insight" "" "" ""
+*if (check_success)
+  *set aly_suspicion (aly_suspicion + 1)
+  Her skin is clean and scented with clover, but against your palm you register an unmistakable tell: tough, defined ridges along the inside of her knuckles and the base of her index finger. 
+  
+  These are not the chapped, softened hands of a girl who scrubbed tavern dishes. They are the dense calluses of someone who drills daily with a rapier and parrying dagger.
+*else
+  Her hand is warm and slender, returning your grip with earnest enthusiasm.
+
+She pulls her hand back with an eager bounce. "Before we turn in, how are your provisions? The coastal bluffs are jagged, and that vault will be pitch black."
+
+She hoists a tidy, oilcloth-wrapped bundle from beneath the bench.
+
+"Old Gerrick at the bar charges robber's rates for travel kit. I bought an outrider's surplus on the high road two days ago. If you need rope, torches, or rations, take what you need from my pack for half coin. An investment in our partnership."
+
+*label aly_barter_menu
+*set aly_checkpoint "barter"
+
+*choice
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 10)
+    # Buy a coil of Silk Rope (50 ft) for 1 Silver Mark (10 Copper).
       *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-        *set currency_add_amount -15
+        *set currency_add_amount -10
+        *gosub_scene economy currency_add
+        *gosub_scene equipment grant_gear "silk_rope" 1
+        *set currency_txn_locked true
+        *set locked_stat_bump_page_id page_id
+      [b][💰 Paid: 1 Silver Mark][/b]
+      [b][🪢 Received: Silk Rope (50 ft)][/b]
+      *goto aly_barter_menu
+
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 5)
+    # Buy 3 Oiled Torches & Tinder for 5 Copper.
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+        *set currency_add_amount -5
+        *gosub_scene economy currency_add
+        *gosub_scene equipment grant_gear "torch" 3
+        *set currency_txn_locked true
+        *set locked_stat_bump_page_id page_id
+      [b][💰 Paid: 5 Copper][/b]
+      [b][🔥 Received: Torch x3][/b]
+      *goto aly_barter_menu
+
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 8)
+    # Buy Iron Rations (2 Days) for 8 Copper.
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+        *set currency_add_amount -8
         *gosub_scene economy currency_add
         *gosub_scene equipment grant_gear "trail_rations" 2
         *set currency_txn_locked true
-        *set locked_currency_txn_page_id page_id
-      [b][💰 Paid: 15 Copper][/b]
+        *set locked_stat_bump_page_id page_id
+      [b][💰 Paid: 8 Copper][/b]
       [b][🍖 Received: Trail Rations x2][/b]
-      *goto aly_shop_done
-  # Thank her and agree to walk the trail together.
-    *set aly_checkpoint "camp"
-    *page_break Set out onto the trail…
-    *goto aly_camp
+      *goto aly_barter_menu
 
-*label aly_shop_done
-Alyndra packs the remainder of her bundle with neat, efficient motions. "Now then—to the high trails."
+  # "My pack is ready. Let's get some rest and meet at dawn."
+    *goto aly_night_retire
+
+*label aly_night_retire
+Alyndra ties the cords on her pack with deft, nimble fingers and rises from the table, flashing her wide, radiant smile one last time.
+
+"First light, then. Rest well, partner—tomorrow we find out what the Empire left behind."
+
+She slips gracefully through the common room toward the guest loft, leaving you with an empty trencher and the low hum of the tavern.
+
 *set aly_checkpoint "camp"
-*page_break Set out onto the trail…
-*goto aly_camp
-
-*label aly_refuse_warning
-Alyndra's smile falters for a fraction of a second before recovering.
-
-"A cautious soul," she sighs playfully. "I can hardly blame you in these hills. But the offer stands if you change your mind before sunset. The road ahead is lonely, traveler."
-
-*choice
-  # Reconsider and accept her company.
-    *goto aly_talk_deal
-  # Part ways firmly and take the high road alone.
-    You turn your back on the smiling elf and head into the Reach on your own. Whatever fortune waits in the crags, you will face it without companions.
-    *set aly_quest_stage "abandoned"
-    *page_break Continue your journey…
-    *goto_scene overworld/overworld ow_here
-
-*comment ────────────────────────────────────────────────────────────────────────────────────
-*comment SCENE 2: THE CAMPFIRE & THE EVER-SPINNING COIN
-*comment ────────────────────────────────────────────────────────────────────────────────────
-*label aly_camp
-*set scenery_subplace "valen_reach_camp"
-*set minutes_to_pass 240
-*set time_advance_call_id "aly_walk_to_camp"
-*gosub_scene calendar advance_time
-
-Night settles fast over the Valen Reach. You pitch camp in a sheltered hollow between two limestone fins, where a thin pine canopy cuts the wind.
-
-Alyndra is an effortless companion. She gathers dry kindling before you can ask, cleans the skillet without complaint, and keeps up an easy patter of trail gossip and jokes that takes the edge off a long day's march.
-
-After supper, as the fire dies down to glowing red embers, she leans back against a boulder. From her vest pocket, she draws a heavy golden coin.
-
-She gives it a flick of her wrist upon a smooth, flat river stone.
-
-The coin spins. 
-
-It does not wobble. It does not slow. It twirls on its gilded edge with a faint, hypnotic hum, catching the red firelight: on one side a coiled serpent, on the other the embossed face of a three-eyed man.
-
-Alyndra's gaze stays fixed on the spinning metal. The playful warmth vanishes from her face, replaced by a hollow, predatory longing.
-
-*choice
-  # Ask her about the coin.
-    *goto aly_coin_ask
-  # Watch her in silence and study the token.@{show_stat_hints  [Arcana or Investigation DC 14]|}
-    *gosub_scene dice_engine roll_skill_check 14 "investigation" "" "arcana" "" "" ""
-    *if (check_success)
-      *set aly_suspicion (aly_suspicion + 1)
-      *set aly_coin_identified true
-      The coin is no ordinary roadside trinket. The enchantment is subtle—an enduring illusion and enchantment weave designed to hold attention and grease the tongue. 
-
-      More telling is the mark: the coiled serpent is the seal of Captain Nolan Clarke, an infamous slaver whose privateer vessel The Maiden's Toll operates out of the eastern straits. 
-
-      This girl isn't a wanderer. She is a bird dog.
-      *goto aly_camp_retire
-    *else
-      It spins impossibly long, surely balance magic or a conjurer's pocket toy. Alyndra slaps her palm over it a moment later, breaking the silence with an embarrassed chuckle.
-      *goto aly_camp_retire
-  # Quietly check your weapons and feign sleep.
-    You roll into your blankets with your hand resting near your hilt. Alyndra remains beside the stone for a long time, whispering softly to herself in a dialect of sailors' cant you can barely catch.
-    *goto aly_camp_morning
-
-*label aly_coin_ask
-"Where did you come by that coin?" you ask.
-
-Her hand snaps down, trapping the spinning coin flat against the stone. For a heartbeat her eyes are cold, but then the innocent smile reasserts itself like water closing over a stone.
-
-"A keepsake," she murmurs, slipping it back into her vest. "From a gentleman across the water. A captain. He taught me that in this world, some things never stop turning until someone bold enough reaches out and takes them."
-
-She stretches like a cat and rises. "We should sleep. The cavern trail begins at dawn."
-*goto aly_camp_morning
-
-*label aly_camp_retire
-She slaps her palm down, cutting the coin's hum short, and looks up with her trademark bright smile.
-
-"Just an old good-luck charm," she says breezily. "Get some rest. Tomorrow our shortcut brings us straight to the coast."
-*goto aly_camp_morning
-
-*label aly_camp_morning
 *set minutes_to_pass 480
-*set time_advance_call_id "aly_night_sleep"
+*set time_advance_call_id "aly_inn_night"
 *gosub_scene calendar advance_time
 *gosub_scene character_progression free_short_rest
 
-Morning comes grey and damp with sea mist. You break camp quickly and follow Alyndra through a narrow ravine where the smell of brine grows heavy in the air.
+*page_break Set out onto the high trails at dawn…
+*goto_scene quests/valen_reach_alyndra_scene2 aly_camp_start
 
-*page_break Reach the cavern entrance…
-*goto aly_cavern
+*label aly_refuse_warning
+Alyndra's smile wavers for a brief, cold second before she recovers her playful posture.
 
-*comment ────────────────────────────────────────────────────────────────────────────────────
-*comment SCENE 3: THE SUNKEN CAVERN (THE TRAP)
-*comment ────────────────────────────────────────────────────────────────────────────────────
-*label aly_cavern
-*set scenery_subplace "valen_reach_sea_cave"
-*set aly_checkpoint "cavern"
-
-The trail pinches between jagged sea cliffs and terminates at the dark mouth of a cavern. The sound of subterranean breakers echoes from within, smelling of wet kelp and old iron.
-
-"Through here," Alyndra says, her pace quickening. She gestures with a cheerful wave toward the opening. "The tunnel cuts straight beneath the headland. Just mind your footing in the dark."
-
-*if (aly_suspicion >= 2)
-  *goto aly_spot_ambush
-*else
-  *goto aly_walk_into_trap
-
-*label aly_spot_ambush
-You pause at the cavern threshold. 
-
-Fresh drag marks cut through the damp sand—iron-banded crates, heavy sea-boots, and the telltale clink of chain link echoing against the limestone. In the shadows just beyond the light, you spot the dull glint of a cocked crossbow.
-
-Alyndra has stopped five paces ahead, her hand already drifting toward her rapier.
+"A pity," she sighs, packing her apple knife away. "A cautious traveler lives longer, they say. But if you change your mind before morning, I'll be having breakfast by the hearth. Safe roads, traveler."
 
 *choice
-  # Draw your weapon and call her out before entering.
-    *set combat_player_surprise true
-    *goto aly_confront
-  # Ready a spell or weapon and spring the ambush on your own terms.@{show_stat_hints  [Stealth DC 12]|}
-    *gosub_scene dice_engine roll_skill_check 12 "stealth" "" "" "" "" ""
-    *if (check_success)
-      *set combat_player_surprise true
-      You slip between the stalagmites silently, catching the waiting slavers out of position.
-      *goto aly_fight
-    *else
-      Your boot skuffs loose gravel. A voice bellows from the dark: "Spring it!"
-      *goto aly_fight
-
-*label aly_walk_into_trap
-You follow her into the gloom. Ten paces in, Alyndra suddenly darts to the left, ducking behind a heavy stone pillar with supernatural elven grace.
-
-"Now, boys!" she calls out, her voice ringing clear and devoid of warmth. "Keep the skull intact—Clarke likes them pretty!"
-
-A heavy rope drops from the ceiling, dumping a weighted iron net onto the passage, and rough shouts fill the cavern.
-
-*set combat_enemy_advantage true
-*page_break Fight for your life!
-*goto aly_fight
-
-*label aly_confront
-"Step back from the cave, Alyndra," you say, your blade clearing the scabbard. "Tell Nolan Clarke his dogs are going to starve today."
-
-The sweet, girlish innocence peels from her face like dead skin. Her lip curls in a sneer, and she draws her rapier with fluid speed.
-
-"Pity," she purrs, whistling a sharp signal into the cave. "Clarke pays double for the ones that don't need beating first."
-
-*page_break Draw steel!
-*goto aly_fight
-
-*comment ────────────────────────────────────────────────────────────────────────────────────
-*comment SCENE 4: COMBAT (THE AMBUSH)
-*comment ────────────────────────────────────────────────────────────────────────────────────
-*label aly_fight
-*set aly_checkpoint "fight"
-*set scenery_combat_place scenery_subplace
-
-A burly human brute in salt-crusted boiled leather steps from the shadows swinging an iron manacle-flail, while Alyndra dances along the flanks with her rapier bared.
-
-*set combat_is_nonlethal false
-*set combat_no_flee true
-*set combat_player_can_die true
-*set combat_no_morale true
-
-*comment Primary target: The Slaver Enforcer
-*set combat_lib_1 "thug"
-*set combat_enemy_name_override "Slaver Enforcer"
-*set combat_enemy_epithet_override "the slaver enforcer"
-*set combat_enemy_hp_override 28
-*set combat_enemy_ac_override 13
-*set combat_enemy_atk_override 4
-
-*gosub_scene combat fight_library
-
-*set combat_player_can_die false
-*set scenery_combat_place ""
-
-*if (combat_outcome = "player_died")
-  *goto aly_death
-*goto aly_victory
-
-*label aly_death
-*set death_cause "combat"
-*set death_location_name "the Sunken Cavern of the Reach"
-*set death_enemy_epithet "Nolan Clarke's Slavers"
-
-The heavy iron catches you across the temple. You collapse into the cold sand as the world turns black. The last sound you hear is Alyndra's melodic laugh and the rattling of chains being locked around your wrists.
-*goto_scene death death_screen
-
-*comment ────────────────────────────────────────────────────────────────────────────────────
-*comment SCENE 5: RESOLUTION & AFTERMATH
-*comment ────────────────────────────────────────────────────────────────────────────────────
-*label aly_victory
-*set aly_checkpoint "aftermath"
-*set scenery_subplace "valen_reach_sea_cave"
-
-The enforcer crashes onto the stones with a rattling gasp, his flail splashing into the tidal pool.
-
-Alyndra retreats to the edge of the cavern's surf, her back pressed against the salt-bleached timbers of a smuggler's rowboat. Blood runs down her sleeve, and her rapier point wavers. For the first time, her innocent smile is nowhere to be seen—she looks small, cornered, and desperate.
-
-"Nolan will hunt you to the edge of the earth," she spits, though her voice trembles. "His ship is anchored two miles out. You'll never leave the Reach alive."
-
-*choice
-  # "Drop your blade and yield, Alyndra. It's over."@{show_stat_hints  [Intimidation DC 13]|}
-    *gosub_scene dice_engine roll_skill_check 13 "intimidation" "" "" "" "" ""
-    *if (check_success)
-      *goto aly_yield
-    *else
-      *goto aly_last_stand
-  # Challenge her delusion about Captain Clarke.@{show_stat_hints  [Persuasion DC 15]|}
-    *gosub_scene dice_engine roll_skill_check 15 "persuasion" "" "insight" "" "" ""
-    *if (check_success)
-      *goto aly_redeem
-    *else
-      *goto aly_last_stand
-  # Strike her down without words.
-    *goto aly_execute
-
-*label aly_yield
-Her fingers slacken, and the rapier clatters against the wet stones. She drops to her knees in the surf, tears cutting through the grime on her cheeks.
-
-"I won't go in chains," she whispers. "I won't let him see me in chains."
-
-You bind her hands with the slavers' own rope. The local authorities in the Reach will pay a handsome bounty for Clarke's chief scout.
-*goto aly_rewards
-
-*label aly_redeem
-"Clarke doesn't love you, Alyndra," you say evenly. "He made you a hound to catch prey he was too cowardly to hunt himself. When you outlive your usefulness, you will end up in those same holds."
-
-She flinches as if struck across the face. Her eyes dart down to her vest, where the outline of the Ever-Spinning Coin rests over her chest. The delusion fractures; she lets out a ragged, broken sob and rips the coin from her vest, throwing it into the wet gravel at your feet.
-
-Without another word, she scrambles into the surf, clambering up the jagged sea cliffs into the mist. She leaves her weapons, her coin, and Nolan Clarke behind.
-*goto aly_rewards
-
-*label aly_last_stand
-Desperation turns to snarling fury. "Nolan is my life!" she shrieks, lunging with her dagger.
-
-You sidestep her wild thrust and drive your blade home. Alyndra Valcyne gasps, her eyes wide with shock, before collapsing into the tide pools. The water turns pale pink around her.
-*goto aly_rewards
-
-*label aly_execute
-You give her no chance to spin more deceit. With a clean, swift stroke, you end the smiling scout's trade. Her body falls back into the rowboat, motionless.
-*goto aly_rewards
-
-*label aly_rewards
-*set aly_quest_complete true
-*set aly_quest_stage "complete"
-
-In the slavers' camp inside the cavern, you find the spoils of their illicit trade. Among the broken crates lie purses of recovered coin and Alyndra's enchanted token.
-
-*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
-  *gosub_scene equipment grant_gear "ever_spinning_coin" 1
-  *set currency_add_amount 45
-  *gosub_scene economy currency_add
-  *set stat_bump_locked true
-  *set locked_stat_bump_page_id page_id
-
-[b][🎁 Received: Ever-Spinning Coin][/b]
-[b][💰 Received: 45 Copper Bits (Recovered Slaver Bounty)][/b]
-
-You pick up the gold coin from the sand. Even wet with salt water, it feels warm to the touch, ready to spin whenever its owner needs to weave a lie.
-
-With the cavern cleared and the trap broken, you climb out of the bluffs back onto the high road of the Valen Reach.
-
-*set minutes_to_pass 90
-*set time_advance_call_id "aly_walk_back"
-*gosub_scene calendar advance_time
-
-*page_break Return to the high road…
-*goto_scene overworld/overworld ow_here
-
---- END OF FILE valen_reach_alyndra.txt ---
+  # Reconsider and accept the partnership.
+    *goto aly_deal_menu
+  # Leave her table and carry on with your own journey.
+    *set aly_quest_stage "declined"
+    You step away from the smiling elf and return to your own business in the Reach.
+    *page_break Back to your journey…
+    *goto_scene overworld/overworld ow_here
