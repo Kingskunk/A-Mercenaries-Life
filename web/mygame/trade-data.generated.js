@@ -2101,6 +2101,56 @@ window.TRADE_DATA = {
     "countVar": ""
    }
   },
+  "scroll_grease": {
+   "name": "grease scroll",
+   "title": "Grease Scroll",
+   "kind": "consumable",
+   "group": "",
+   "tier": "",
+   "retail": 50,
+   "weight": 0.05,
+   "minutes": 5,
+   "hint": "Read in a fight: a slick under a foe and everything beside it, Dexterity save or fall",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 0,
+    "countVar": ""
+   }
+  },
+  "scroll_thunderwave": {
+   "name": "thunderwave scroll",
+   "title": "Thunderwave Scroll",
+   "kind": "consumable",
+   "group": "",
+   "tier": "",
+   "retail": 60,
+   "weight": 0.05,
+   "minutes": 5,
+   "hint": "Read in a fight: 2d8 thunder to every foe beside you, Constitution save for half and a shove",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 0,
+    "countVar": ""
+   }
+  },
   "gem_agate": {
    "name": "agate",
    "title": "Agate",
@@ -4007,7 +4057,9 @@ window.TRADE_DATA = {
     "scroll_jump",
     "scroll_speak_with_animals",
     "scroll_charm_person",
-    "scroll_remove_curse"
+    "scroll_remove_curse",
+    "scroll_grease",
+    "scroll_thunderwave"
    ],
    "sell": [
     "scroll_magic_missile",
@@ -4019,7 +4071,9 @@ window.TRADE_DATA = {
     "scroll_jump",
     "scroll_speak_with_animals",
     "scroll_charm_person",
-    "scroll_remove_curse"
+    "scroll_remove_curse",
+    "scroll_grease",
+    "scroll_thunderwave"
    ]
   },
   "jeweler": {

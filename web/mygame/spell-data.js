@@ -274,12 +274,14 @@
     "charm_person": "scroll_charm_person",
     "detect_magic": "scroll_detect_magic",
     "false_life": "scroll_false_life",
+    "grease": "scroll_grease",
     "healing_word": "scroll_healing_word",
     "jump": "scroll_jump",
     "mage_armor": "scroll_mage_armor",
     "magic_missile": "scroll_magic_missile",
     "remove_curse": "scroll_remove_curse",
-    "speak_with_animals": "scroll_speak_with_animals"
+    "speak_with_animals": "scroll_speak_with_animals",
+    "thunderwave": "scroll_thunderwave"
     };
   var COPY_COST_PER_LEVEL = 10;
   var COPY_CLASSES = ["wizard"];
