@@ -48,6 +48,12 @@ const ART = [
   ["silhouette_warlock",    "UiElements/warlock_silhouette_man.png",   320, 640, 0.9],
   ["btn2on",    "UiElements/button2_ready_on.png",       128,  128, 0.92],   // square bronze-framed crimson button, stretched tall for the HUD's Advance and Retreat
   ["stone",     "UiElements/mid_background.png",         1280, 640, 0.60],   // the dark stone behind everything (nearly black, so it compresses hard)
+  // The overworld map's sheet (overworldmap.css .ow-mapbox): the map panel is a drawn map on paper, and this is the paper. It does NOT tile: it is one sheet laid over the
+  // map and moves with it. It TILES: the world will grow many times over, and one stretched picture would distort, blur and eventually run out, so the sixth field asks for a
+  // seamless tile (see the canvas below) and overworldmap.css repeats it at a fixed size in drawn units. The source is in /Wallpaper with the place
+  // backdrops (one level above ICONS) because it is a photograph-sized texture, not an interface piece -- but in /Wallpaper/Textures, NOT /Wallpaper itself, because every loose
+  // picture in /Wallpaper is read below as a place backdrop and a texture is not a place. Any future texture goes in that folder too.
+  ["parchment", "../Wallpaper/Textures/parcment.png",    1300, 1300, 0.80, "mirror"],
 
   // the left rail's icons, named i_<button>
   ["i_stats",   "Interface/Abilities_Icon.png",          72,   72,  0.92],
@@ -58,6 +64,16 @@ const ART = [
   ["i_menu",    "Menu/Magic_Icon.png",                   72,   72,  0.92],
   ["i_read",    "Interface/Antique Bronze Speaker Emblem.png", 72, 72, 0.92],   // read aloud (the TTS reader)
   ["i_map",     "Item/Miscellaneous_item/Book/Map_World_A_Item_Icon.png", 72, 72, 0.92],   // the dungeon map button
+  ["i_spells",  "Interface/Spellbook_Icon.png",          72,   72,  0.92],   // the spellbook button
+
+  // the spellbook panel (web/mygame/spellbook.css), from the Cartography set. book_page is ONE page with its leather spine down the left edge, so the
+  // panel draws it twice and mirrors the left copy: the two spines meet in the middle and read as one open book. book_tab is the leather index tab the
+  // level orbs sit on, and book_folio is the aged board behind the whole spread.
+  ["book_page",  "UiElements/Interface/Cartography/pieces/journal-page.png", 512, 683, 0.84],
+  ["book_tab",   "UiElements/Interface/Cartography/pieces/leather-tab.png",  216, 65,  0.90],
+  ["book_folio", "UiElements/Interface/Cartography/pieces/map-folio.png",    512, 732, 0.80],
+  ["book_clip",  "UiElements/Interface/Cartography/icons/paperclip.png",     64,  64,  0.92],   // marks a spell an ITEM grants: a slip clipped in, not written in
+  ["book_seal",  "UiElements/Interface/Cartography/icons/wax-seal.png",      96,  96,  0.90],   // the flourish at the foot of the reading page
 
   // the sidebar's portrait ring, named c_<class> (character_class)
   ["c_fighter",   "HUD/Class_Fighter_Plain_Icon.png",    96,   96,  0.92],
@@ -229,13 +245,26 @@ const getJson = (url, timeoutMs) => new Promise((resolve, reject) => {
 
     const iconsUrl = "file:///" + path.join(ROOT, "ICONS").replace(/\\/g, "/") + "/";
     const out = {};
-    for (const [name, src, w, h, q] of todo) {
+    for (const [name, src, w, h, q, mode] of todo) {
       const uri = await evaluate(`new Promise((resolve, reject) => {
         const img = new Image();
         img.onload = () => {
           const H = ${h} || Math.round(img.naturalHeight * ${w} / img.naturalWidth);
           const c = document.createElement("canvas"); c.width = ${w}; c.height = H;
-          const g = c.getContext("2d"); g.imageSmoothingQuality = "high"; g.drawImage(img, 0, 0, ${w}, H);
+          const g = c.getContext("2d"); g.imageSmoothingQuality = "high";
+          if (${mode === "mirror"}) {
+            // A SEAMLESS tile out of a picture that is not one: the middle square of the source is drawn into the top-left quarter, then mirrored across and down.
+            // Mirrored edges always meet without a seam, whatever the picture, and the price -- the tile is symmetrical about its own middle -- cannot be read on a
+            // texture with no features in it. So a tiling sheet needs no specially made art and no hand retouching.
+            const s = Math.min(img.naturalWidth, img.naturalHeight);
+            const sx = (img.naturalWidth - s) / 2, sy = (img.naturalHeight - s) / 2;
+            const hw = ${w} / 2, hh = H / 2;
+            g.drawImage(img, sx, sy, s, s, 0, 0, hw, hh);
+            g.save(); g.translate(${w}, 0); g.scale(-1, 1); g.drawImage(c, 0, 0, hw, hh, 0, 0, hw, hh); g.restore();
+            g.save(); g.translate(0, H); g.scale(1, -1); g.drawImage(c, 0, 0, ${w}, hh, 0, 0, ${w}, hh); g.restore();
+          } else {
+            g.drawImage(img, 0, 0, ${w}, H);
+          }
           resolve(c.toDataURL("image/webp", ${q}));
         };
         img.onerror = () => reject(new Error("could not load " + ${JSON.stringify(src)}));

@@ -371,6 +371,51 @@ Cast, read your abilities, or change interface settings. Rest and Wait are in th
 
 *comment Guidance (2026-10-03): cast ahead from the spellbook so no scene needs its own "[Cantrip: Guidance]" option. A cantrip, so it costs nothing and takes no time. Fixed-value sets, so the page
 *comment underneath replaying when the dossier closes cannot double anything. guidance_duration_minutes (startup.txt) is how long it waits for a check; the clock counts it down (calendar.txt).
+*comment CARRYING A SPELL FOR THE DAY (2026-11-04). The spellbook panel sets prepare_target_id and prepare_target_on, then runs this through
+*comment quietRun (inventory.js), so the book stays open and the page behind it never turns -- the same route the Craft, Use and trade buttons take.
+*comment The panel only ASKS: every rule lives in prepare_set (character_progression.txt), which refuses a spell that is not in the book and refuses
+*comment to carry more than prepared_max. The one-line answer goes back through spell_cast_toast, which the panel reads and shows.
+*comment A fight is no time to re-read your book, so it is refused there.
+*comment WRITING A SCROLL INTO THE BOOK (2026-11-04). The spellbook panel sets copy_target_id, then runs this through quietRun, so the book
+*comment stays open and the page behind it never turns. The panel only ASKS: every rule lives in copy_spell (character_progression.txt),
+*comment which checks the class list, the room left in the book and the training banked, and which never consumes the scroll.
+*comment A fight is no time to sit and copy, so it is refused there.
+*label codex_copy_now
+*if (combat_engaged)
+  *set spell_cast_toast "There is no time to sit and copy in the middle of a fight."
+  *finish
+*gosub_scene character_progression copy_spell copy_target_id
+*if (copy_result = "copied")
+  *set spell_cast_toast "Written into your book. It cost ${copy_cost} training sessions; ${training_budget_left} left."
+*if (copy_result = "not_your_book")
+  *set spell_cast_toast "You keep no spellbook to copy into."
+*if (copy_result = "not_on_list")
+  *set spell_cast_toast "That working is not one you can learn, however long you study it."
+*if (copy_result = "already_known")
+  *set spell_cast_toast "It is already written in your book."
+*if (copy_result = "book_full")
+  *set spell_cast_toast "Every page of your book is written on."
+*if (copy_result = "not_enough_training")
+  *set spell_cast_toast "It would take ${copy_cost} training sessions and you have ${training_budget_left}."
+*finish
+
+*label codex_prepare_now
+*if (combat_engaged)
+  *set spell_cast_toast "There is no time to study in the middle of a fight."
+  *finish
+*gosub_scene character_progression prepare_set prepare_target_id prepare_target_on
+*if (prepare_result = "set")
+  *set spell_cast_toast "Carried for today."
+*if (prepare_result = "cleared")
+  *set spell_cast_toast "Put back in the book."
+*if (prepare_result = "full")
+  *set spell_cast_toast "You can carry no more today. Put one back first."
+*if (prepare_result = "not_held")
+  *set spell_cast_toast "That working is not in your book."
+*if (prepare_result = "no_preparation")
+  *set spell_cast_toast "You do not prepare spells: everything you know is ready."
+*finish
+
 *label codex_cast_now_guidance
 *if (combat_engaged)
   *set spell_cast_toast "You cannot work a spell like this in the middle of a fight."
@@ -950,10 +995,22 @@ You change into it and settle the fit.
   *line_break
   • [b]Healing Word — Combat: Bonus Action · anywhere in the current fight.[/b] Restore 1d4 + casting modifier HP, minimum 1, to yourself or a living ally selected in the sidebar.
   A single, sharp word of command, spoken from a distance, that knits a wound shut and puts fight back into a comrade who needs it.
+*if (ability_id = "grease")
+  *line_break
+  • [b]Grease — Combat: Action · Medium Reach · Dexterity Save (DC ${spell_save_dc}) · 6 rounds.[/b] The slick covers the target and every living enemy standing at the same range, whatever anyone rolls. A failed save puts that enemy prone at once, costing it the movement of its next turn getting up. While the slick holds, an enemy in it that tries to move must pass a DC 10 Dexterity check or fall and lose the turn; three failures, or six rounds, wears it away.
+  A slick of caustic grease conjured across the ground under a foe and everything standing with it.
+*if (ability_id = "cure_wounds")
+  *line_break
+  • [b]Cure Wounds — Combat: Action · Touch.[/b] Restores 2d8 + casting modifier HP, minimum 1, to yourself or to a living ally standing at your own range, selected in the sidebar. An ally further off than that is refused, with the reason given: close the distance first, or use Healing Word.
+  A hand laid on a wound and held there while the flesh closes under it.
 *if (ability_id = "dissonant_whispers")
   *line_break
   • [b]Dissonant Whispers — Combat: Action · Medium Reach · Wisdom Save (DC ${spell_save_dc}).[/b] Deals 3d6 + casting modifier Psychic damage on a failed save, half on a success. It does not force movement.
   A whispered dissonance planted directly in one mind, discordant enough that the target flinches and recoils before it understands why.
+*if (ability_id = "thunderwave")
+  *line_break
+  • [b]Thunderwave — Combat: Action · every living enemy Engaged with you · Constitution Save (DC ${spell_save_dc}).[/b] Deals 2d8 Thunder damage on a failed save, half on a success, from one shared roll. Each enemy that fails is also driven back one range step, forced movement with no opportunity attack, if it is Large or smaller and has anywhere to go.
+  A wave of thunderous force that rolls out from you in every direction, hard enough to lift what it catches off its feet.
 *if (ability_id = "bane")
   *line_break
   • [b]Bane — Combat: Action · up to three living enemies · Charisma Save (DC ${spell_save_dc}) · 10 rounds.[/b] Each failed target subtracts a fresh 1d4 from every attack roll and saving throw. The current implementation selects enemies front-to-back and does not use concentration.

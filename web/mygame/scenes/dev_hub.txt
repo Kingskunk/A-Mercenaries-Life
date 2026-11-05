@@ -456,6 +456,9 @@ Select an archetype to automatically initialize stats, inventory, squad assignme
 *set met_lyra true
 *set codex_black_sinks true
 *gosub_scene character_stats update_dnd_stats
+*comment A preset writes its spells straight into the slots instead of going through learn_spell, so nothing has chosen what a preparing
+*comment class is carrying. This hands it a full set, the way waking from a long rest would.
+*gosub_scene character_progression prepare_auto_fill
 *goto dev_scene_select
 
 *label dev_scene_select
@@ -1112,6 +1115,8 @@ Jump to a system's test harness:
     *goto dev_combat_test_hub
   # 🕳️ Test the Dungeon Encounter Picker (dungeon.txt) -- roll the Silt-Gate conduit table at low or high tide
     *goto dev_dungeon_test_hub
+  # 📖 Copy a spell into your spellbook (character_progression.txt copy_spell) -- the training cost, the book, and every refusal
+    *goto dev_copy_spell_hub
   # 🌟 Heroic Inspiration +1 (dice_engine.txt heroic_award) -- one more point, up to the cap of 4, then back to this menu; the sidebar's Use button arms it
     *if (heroic_inspiration < heroic_inspiration_max)
       *set heroic_inspiration + 1
@@ -1684,6 +1689,92 @@ Every template in tools/encounter_catalog.json. After each fight the result line
 *comment Rolls dungeon.txt's silt_conduits table by hand (one pick at a time, the no-repeat history on show), sets the clock to a low-tide or high-tide hour,
 *comment and samples 100 fresh-run rolls so the weights can be read against what they should give. Touches only the dg_ variables and the clock.
 *comment ──────────────────────────────────────────────────────────────
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment COPYING A SPELL INTO THE BOOK (2026-11-04): a harness for character_progression.txt copy_spell while the spellbook panel has no
+*comment button for it yet. It is also the only way to drive the mechanic by hand, so it lists every refusal rather than hiding what cannot
+*comment be copied: a spell off the class list, one already written in, a full book, and not enough training all have to be visible to test.
+*comment Healing Word is deliberately on the list below although no wizard may learn it -- it is the proof that the class list is enforced.
+*label dev_copy_spell_hub
+*gosub_scene character_progression refresh_known_spells
+*gosub_scene character_progression refresh_copy_budget
+[b]📖 DEVELOPER TESTING: COPY A SPELL INTO YOUR BOOK[/b]
+*line_break
+Testing as: [b]${class_name}[/b], level ${character_level}.
+*if (not(class_copies))
+  *line_break
+  [b]This class keeps no spellbook[/b], so nothing here can be copied. Choose a wizard preset from the character menu to test it.
+*line_break
+[b]Training[/b]: ${training_sessions} sessions done in all, ${training_spent_on_spells} already poured into spells, [b]${training_budget_left}[/b] left to spend.
+*line_break
+A 1st-level spell costs 10 sessions. Training is once a day, and copying never touches the sessions the level-up gates count.
+
+*choice
+  # Magic Missile
+    *gosub_scene character_progression copy_spell "magic_missile"
+    *goto dev_copy_report
+  # Mage Armor
+    *gosub_scene character_progression copy_spell "mage_armor"
+    *goto dev_copy_report
+  # Detect Magic
+    *gosub_scene character_progression copy_spell "detect_magic"
+    *goto dev_copy_report
+  # False Life
+    *gosub_scene character_progression copy_spell "false_life"
+    *goto dev_copy_report
+  # Jump
+    *gosub_scene character_progression copy_spell "jump"
+    *goto dev_copy_report
+  # Shield
+    *gosub_scene character_progression copy_spell "shield"
+    *goto dev_copy_report
+  # Identify
+    *gosub_scene character_progression copy_spell "identify"
+    *goto dev_copy_report
+  # Alarm
+    *gosub_scene character_progression copy_spell "alarm"
+    *goto dev_copy_report
+  # Feather Fall
+    *gosub_scene character_progression copy_spell "feather_fall"
+    *goto dev_copy_report
+  # Cause Fear
+    *gosub_scene character_progression copy_spell "cause_fear"
+    *goto dev_copy_report
+  # Comprehend Languages
+    *gosub_scene character_progression copy_spell "comprehend_languages"
+    *goto dev_copy_report
+  # Healing Word
+    *gosub_scene character_progression copy_spell "healing_word"
+    *goto dev_copy_report
+  # ➕ Grant 10 more training sessions (testing only)
+    *set training_sessions (training_sessions + 10)
+    *goto dev_copy_spell_hub
+  # ♻️ Empty the book past its first spell and give every spent session back
+    *set training_spent_on_spells 0
+    *gosub_scene character_progression book_clear_extra
+    *gosub_scene character_progression refresh_known_spells
+    *goto dev_copy_spell_hub
+  # ← Back to the systems menu
+    *goto dev_menu_systems
+
+*label dev_copy_report
+*if (copy_result = "copied")
+  [b]Copied.[/b] ${spell_desc_text}
+  *line_break
+  It cost ${copy_cost} training sessions; ${training_budget_left} left.
+*if (copy_result = "not_your_book")
+  [b]No book.[/b] A ${class_name} keeps no spellbook to copy into.
+*if (copy_result = "not_on_list")
+  [b]Not your school.[/b] That working is not one a ${class_name} can learn, however long you study it.
+*if (copy_result = "already_known")
+  [b]Already written.[/b] It is in your book; copying it again would waste the training.
+*if (copy_result = "book_full")
+  [b]No room.[/b] Every page of the book is written on.
+*if (copy_result = "not_enough_training")
+  [b]Not enough study.[/b] It would take ${copy_cost} training sessions and you have ${training_budget_left}.
+*page_break Back to the copying tests…
+*goto dev_copy_spell_hub
+
 *label dev_dungeon_test_hub
 *gosub_scene dungeon dg_tide_check
 [b]🕳️ DEVELOPER TESTING: DUNGEON ENCOUNTER PICKER[/b]

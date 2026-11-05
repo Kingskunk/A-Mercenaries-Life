@@ -105,11 +105,17 @@
   // web/mygame/overworld-art/<art>.svg, which tools/gen_overworld_art.js turns into overworld-art.js (read it for how to draw). Clicking a feature in the panel shows its card; nothing routes through one.
   // Added 2026-10-11 from the user's drawing: the Coldspine runs east and west across the north with a gap, where Stonewatch stands, due north of the Crossfield Road, and its last low spur turns south at the
   // east end toward the Black Sinks.
-  var FEATURES = [
+  var FEATURES = [];
+  var FEATURES_UNUSED = [
     {
-      id: "coldspine", name: "The Coldspine", kind: "range", art: "coldspine", label: [-1.5, -5.18],
+      id: "coldspine", name: "The Coldspine", kind: "range", art: "coldspine-mountain", label: [-1.5, -5.18],
       info: "A broken mountain barrier that runs east and west across the whole north, between the Highlands and the lowlands the Gilded Scales hold. Its southern foothills hold the mines and quarries of Redvein and Whitefold, and its last low spur turns south to the Black Sinks. In the west the range bends away to the north, past Langston, into country no road reaches.",
       line: "Closed to travel on foot. The one way over it is the pass at Stonewatch."
+    },
+    {
+      id: "longshade", name: "The Longshade", kind: "forest", art: "longshade-forest", label: [-2.91, -1.93],
+      info: "The old forest that fills the ground between Timbermouth, Ashrun Holt and Longshade Edge. Its edges are worked for timber, charcoal and hides, and the Crossfield Road carries what comes out of it north-east without troubling Port Valen. Its interior is another matter: thick, pathless, and entered by few people who have no business there.",
+      line: "No road crosses it. Going in means overland, at half the pace of a made road."
     }
   ];
 

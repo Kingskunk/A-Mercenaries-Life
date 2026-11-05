@@ -142,10 +142,16 @@
 
   // Mirrors refresh_known_spells (character_progression.txt): known_<spell> is true when the spell is in one of the character's slots AND casting is not spoiled; what an item grants
   // (item_cantrip, the worn ring's cantrip) is not the character's own casting and stays. Every known_ stat is a spell, so the ids come from the stats themselves.
-  var KNOWN_SLOTS = ["wizard_cantrip", "wizard_cantrip_2", "wizard_cantrip_3", "warlock_cantrip", "warlock_cantrip_2", "bard_cantrip", "bard_cantrip_2", "race_cantrip", "race_cantrip_2",
-    "wizard_spell", "wizard_spell_2", "wizard_spell_3", "warlock_spell", "warlock_spell_2", "bard_spell", "bard_spell_2", "bard_spell_3", "ranger_spell", "ranger_spell_2", "ranger_spell_3"];
+  // The slots to read are spell-data.js's own list (window.SPELL_SLOTS, part of it generated from tools/spell_book.json), less item_cantrip, which the
+  // line at the end of this function grants whether or not casting is spoiled. This was a hand-written copy and it went stale: it stopped at slot 3 while
+  // the book grew to 12 wizard, 6 warlock and 8 bard slots, so refreshing equipment set a bard's fourth verse or a warlock's third pact spell back to
+  // unknown. Read at call time, so the script load order in index.html does not matter.
+  function knownSlots() {
+    var all = window.SPELL_SLOTS || [];
+    return all.filter(function (f) { return f !== "item_cantrip"; });
+  }
   EQ.refreshKnown = function refreshKnown(s) {
-    var blocked = truthy(s.spells_blocked);
+    var blocked = truthy(s.spells_blocked), KNOWN_SLOTS = knownSlots();
     Object.keys(s).forEach(function (k) {
       if (k.indexOf("known_") !== 0) return;
       var id = k.slice(6);

@@ -2698,6 +2698,17 @@
 *elseif ((((held_hex) and (warlock_spell_slots > 0)) or ((race_cantrip_2 = "hex") and (not(hexblood_hex_used)))) and (not(hex_active)))
   *set combat_can_hex true
 *gosub combat_ally_hurt_check
+*comment Cure Wounds (Bard or Ranger, 2026-11-04): a slot of the caster's own pool and somebody wounded to lay a hand on. Reach is NOT asked here -- the spell is Touch, and
+*comment combat_friendly_validate is what refuses an ally who is standing too far off, so the player is told why rather than finding the option quietly gone.
+*temp combat_can_cure_wounds false
+*temp ccw_slots 0
+*if (character_class = "bard")
+  *set ccw_slots bard_spell_slots
+*if (character_class = "ranger")
+  *set ccw_slots ranger_spell_slots
+*if ((known_cure_wounds) and (ccw_slots > 0))
+  *if ((hp_current < hp_max) or (combat_ally_hurt_exists))
+    *set combat_can_cure_wounds true
 *temp combat_can_healing_word false
 *if ((known_healing_word) and (bard_spell_slots > 0))
   *if ((hp_current < hp_max) or (combat_ally_hurt_exists))
@@ -2710,6 +2721,8 @@
 *temp combat_read_mage_armor false
 *temp combat_read_bane false
 *temp combat_read_false_life false
+*temp combat_read_grease false
+*temp combat_read_thunderwave false
 *if ((has_scroll_magic_missile) and (combat_player_actions_left > 0))
   *gosub fight_read_can_magic_missile
   *if (combat_read_ok)
@@ -2730,6 +2743,14 @@
   *gosub fight_read_can_false_life
   *if (combat_read_ok)
     *set combat_read_false_life true
+*if ((has_scroll_grease) and (combat_player_actions_left > 0))
+  *gosub fight_read_can_grease
+  *if (combat_read_ok)
+    *set combat_read_grease true
+*if ((has_scroll_thunderwave) and (combat_player_actions_left > 0))
+  *gosub fight_read_can_thunderwave
+  *if (combat_read_ok)
+    *set combat_read_thunderwave true
 *comment GEN:END combat_read_check
 *temp combat_can_second_wind false
 *if ((character_class = "fighter") and (fighter_second_wind_uses > 0))
@@ -2782,6 +2803,27 @@
   *temp ccf_now {(("combat_enemy" & combat_active_target) & "_frightened")}
   *if ((ccf_slots > 0) and (ccf_now <= 0))
     *set combat_can_fear true
+*comment Grease (Wizard, 2026-11-04): a wizard slot, an unspent action, the spell carried, and a living target whose footing is not already slick. The slick spreads under everything standing in the
+*comment target's own range band, so the gate only has to ask about the target itself -- resolve_cast_grease finds the rest.
+*temp combat_can_grease false
+*if ((((character_class = "wizard") and (known_grease)) and (wizard_spell_slots > 0)) and (combat_player_actions_left > 0))
+  *temp cgr_now {(("combat_enemy" & combat_active_target) & "_greased")}
+  *temp cgr_hp {(("combat_enemy" & combat_active_target) & "_hp")}
+  *if ((cgr_now <= 0) and (cgr_hp > 0))
+    *set combat_can_grease true
+*comment Thunderwave (Wizard or Bard, 2026-11-04): a slot of the caster's own pool, an unspent action, and a living enemy Engaged with the caster -- the same emanation Arms of Hadar needs, so it asks
+*comment combat_hadar_check rather than walking the slots a second time.
+*temp combat_can_thunderwave false
+*if ((combat_player_actions_left > 0) and (known_thunderwave))
+  *temp ctw_slots 0
+  *if (character_class = "wizard")
+    *set ctw_slots wizard_spell_slots
+  *if (character_class = "bard")
+    *set ctw_slots bard_spell_slots
+  *if (ctw_slots > 0)
+    *gosub combat_hadar_check
+    *if (combat_hadar_ok)
+      *set combat_can_thunderwave true
 *temp combat_can_dual_shot false
 *if (((combat_can_attack) and (fighting_style = "dual_shot")) and (weapon_type = "ranged"))
   *gosub combat_dual_shot_check
@@ -3065,6 +3107,7 @@
 *temp spell_reach_ok_hex combat_in_medium
 *temp spell_reach_ok_hunters_mark combat_in_medium
 *temp spell_reach_ok_bane combat_in_medium
+*temp spell_reach_ok_grease combat_in_medium
 *comment GEN:END spell_reach_flags
 *comment Tell the player why a short-reach spell or weapon has gone from the menu, instead of letting it vanish without a word.
 *if ((combat_in_long) and (not(combat_in_medium)))
@@ -4061,6 +4104,22 @@
       *gosub_scene combat_spells resolve_cast_cause_fear
       *goto fight_action_spent
 
+  *if (((combat_can_grease) and (spell_reach_ok_grease)) and (not(spells_blocked)))
+    # [b][ACTION][/b] [b][Grease][/b] Slick the ground under ${combat_med_epithet} and whatever is standing with it.@{show_stat_hints  [Dexterity Save, Prone]|}
+      *gosub_scene combat_movement fight_pick_target
+      *gosub_scene combat_movement fight_retarget_by_class "medium"
+      *gosub_scene combat_prose flavor_grease
+      *line_break
+      *gosub_scene combat_spells resolve_cast_grease
+      *goto fight_action_spent
+
+  *if ((combat_can_thunderwave) and (not(spells_blocked)))
+    # [b][ACTION][/b] [b][Thunderwave][/b] A wave of thunder rolls out from you and throws back whatever stands too close.@{show_stat_hints  [Constitution Save, 2d8 Thunder, Push]|}
+      *gosub_scene combat_prose flavor_thunderwave
+      *line_break
+      *gosub_scene combat_spells resolve_cast_thunderwave
+      *goto fight_check_enemy_hp
+
   *if ((combat_can_hadar) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Arms of Hadar][/b] Black arms lash every foe within reach, and what they catch cannot strike back.@{show_stat_hints  [Strength Save, 2d6 Necrotic]|}
       *gosub_scene combat_prose flavor_arms_of_hadar
@@ -4096,6 +4155,25 @@
       *line_break
       *goto fight_bonus_spent
 
+  *if (((combat_can_cure_wounds) and (combat_player_actions_left > 0)) and (not(spells_blocked)))
+    # [b][ACTION][/b] [b][Cure Wounds][/b] @{combat_ally_alive_exists Lay a hand on your own wound, or on one beside you.|Lay a hand on the worst of your wounds and hold it there.}@{show_stat_hints  [Heals 2d8 plus your casting modifier, at arm's length]|}
+      *comment Touch, so combat_friendly_reach is 0: the ally has to be standing at the same range as the caster. With nobody else on the field it simply heals the caster, as Healing Word does.
+      *set combat_friendly_target 0
+      *if (combat_ally_alive_exists)
+        *set combat_friendly_reach 0
+        *if (hp_current < hp_max)
+          *set combat_friendly_target 0
+        *else
+          *set combat_friendly_target combat_ally_hurt_first
+        *set combat_friendly_targeting_active true
+        *goto fight_target_friendly_cure_wounds
+      *gosub_scene combat_spells resolve_cast_cure_wounds
+      You press a palm flat to the worst of it and hold it there until the bleeding stops under your hand.
+      *line_break
+      [b][🩸 Cure Wounds: Restored ${combat_cast_result} HP | HP: ${hp_current}/${hp_max}][/b]
+      *line_break
+      *goto fight_action_spent
+
   *comment THE SPELL SCROLLS (the user, 2026-10-19; generated 2026-10-20). "Read: <Title>" options fold into one Read button on the battle bar, like Throw. combat_scroll_id makes the spell's own resolve label spend the scroll where it would spend a slot
   *comment (combat_spells.txt, equipment.txt cast_mage_armor). Each option goes to its body label, fight_read_<spell>, below.
   *comment GEN:BEGIN combat_read_options -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
@@ -4119,6 +4197,14 @@
     # [b][ACTION][/b] [b][Read: False Life Scroll][/b] Weave a shroud over your flesh: 1d4 + 4 temporary hit points for 12 hours.
       *set combat_scroll_id "scroll_false_life"
       *goto fight_read_false_life
+  *if (combat_read_grease)
+    # [b][ACTION][/b] [b][Read: Grease Scroll][/b] A word, a turn of the wrist, and thick grease wells up out of nothing across the ground where your foe is standing.@{show_stat_hints  [Dexterity save or fall; the slick spreads to everything beside them]|}
+      *set combat_scroll_id "scroll_grease"
+      *goto fight_read_grease
+  *if (combat_read_thunderwave)
+    # [b][ACTION][/b] [b][Read: Thunderwave Scroll][/b] You clap your hands together and the sound does not stop at sound: it rolls out of you as a wall of hard air.@{show_stat_hints  [2d8 Thunder, Constitution save for half, pushed back a step on a failure]|}
+      *set combat_scroll_id "scroll_thunderwave"
+      *goto fight_read_thunderwave
   *comment GEN:END combat_read_options
 
   *if (combat_can_dodge)
@@ -4774,6 +4860,42 @@ ${use_text}
 *comment when the page is built, and would go stale the instant a sidebar click changed the count afterward.
 *comment Its body re-sums the per-slot counts fresh at the moment it's actually picked, which is what matters --
 *comment casting with nothing assigned just explains why and loops back rather than silently doing nothing.
+*label fight_target_friendly_cure_wounds
+*comment Cure Wounds aimed in the sidebar, the same shape as Healing Word's page below, with one difference that matters: combat_friendly_reach was set to 0 at the
+*comment call site, so combat_friendly_validate refuses an ally who is not standing right beside the caster and says so instead of leaving the player guessing.
+*choice
+  # Cast Cure Wounds on the one you picked in the sidebar.
+    *if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
+      *gosub combat_friendly_validate
+      *if (not(combat_friendly_ok))
+        ${combat_friendly_why}
+        *line_break
+        Click yourself or a wounded ally standing beside you in the sidebar, then cast.
+        *line_break
+        *goto fight_target_friendly_cure_wounds
+    *set combat_friendly_targeting_active false
+    *gosub_scene combat_spells resolve_cast_cure_wounds
+    *gosub combat_cure_wounds_cast_text
+    *goto fight_action_spent
+  # Cancel.
+    *set combat_friendly_targeting_active false
+    You take your hand back, the working unspent.
+    *line_break
+    *goto fight_round_hub
+
+*label combat_cure_wounds_cast_text
+*comment The text after Cure Wounds, for whoever it landed on. Reads the persisted result, so a replay prints the same thing.
+*if (combat_friendly_target = 0)
+  You press a palm flat to the worst of it and hold it there until the bleeding stops under your hand.
+  *line_break
+  [b][🩸 Cure Wounds: Restored ${combat_cast_result} HP | HP: ${hp_current}/${hp_max}][/b]
+*else
+  You get a hand onto ${combat_friendly_name} and hold it against the wound until the edges of it close.
+  *line_break
+  [b][🩸 Cure Wounds: ${combat_friendly_name} restored ${combat_cast_result} HP][/b]
+*line_break
+*return
+
 *label fight_target_friendly_healing_word
 *comment Healing Word aimed in the sidebar: click yourself or an ally, then cast. The pick is combat_friendly_target (0 = you); it defaults to you when you are hurt, otherwise to the first wounded ally.
 *comment Validation runs only before the cast, never on a replay of the finished page (the cast has already healed them, so a second check would wrongly call them unwounded).
@@ -4827,6 +4949,14 @@ ${use_text}
 *return
 
 *label fight_read_can_bane
+*set combat_read_ok true
+*return
+
+*label fight_read_can_grease
+*set combat_read_ok true
+*return
+
+*label fight_read_can_thunderwave
 *set combat_read_ok true
 *return
 
@@ -4887,6 +5017,22 @@ You break the seal and speak the line aloud. Warmth floods through you, and the 
 You unroll the dark paper and read it low and fast, and ill fortune threads itself around throat after throat in the same breath.
 *line_break
 *gosub_scene combat_spells resolve_cast_bane
+*goto fight_action_spent
+
+*comment Grease read from a scroll: the same targeting as the spell version (fight_pick_target then fight_retarget_by_class "medium"), so resolve_cast_grease has an active target to read combat_enemyN_range from.
+*label fight_read_grease
+*gosub_scene combat_movement fight_pick_target
+*gosub_scene combat_movement fight_retarget_by_class "medium"
+You unfold the greasy slip and read the smeared line aloud, and the ground under ${combat_enemy_epithet} goes dark and wet and slick.
+*line_break
+*gosub_scene combat_spells resolve_cast_grease
+*goto fight_action_spent
+
+*comment Thunderwave read from a scroll: no individual target, exactly like Bane above -- resolve_cast_thunderwave picks every Engaged enemy itself.
+*label fight_read_thunderwave
+You unroll the humming strip and read the line aloud, and the sound does not stop at sound: it rolls out of you as a wall of hard air.
+*line_break
+*gosub_scene combat_spells resolve_cast_thunderwave
 *goto fight_action_spent
 
 *label fight_read_mage_armor
@@ -7759,18 +7905,4 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *set combat_enemy2_range 2
 *goto fight_library
 
-*label fight_night_list_thugs
-*comment Black Oath: The Night List (black_oath_night_list.txt, night_list_fight). The two who step out of the
-*comment lane to take the takings -- a knifeman and a slinger, the same pairing as the Stolen Shroud's pair, so
-*comment it inherits that fight's balance-simmed ~64% level-1 win rate. Only ever started after a failed
-*comment approach roll, and the caller sets combat_enemy_advantage first, so the real number is worse than that.
-*comment NON-LETHAL. The errand's worst case is a stolen purse and a line crossed with Hask's people, not a
-*comment corpse on a courier run, and these are street thugs in a scene about carrying a bag -- the same reason
-*comment fight_shroud_thieves is non-lethal. Reports combat_outcome like any other; the CALLER handles "rescued"
-*comment and "fled" (the existing robbery prose) and "player_died" per the fight_player_died contract.
-*set combat_is_nonlethal true
-*set combat_lib_1 "knifeman"
-*set combat_lib_2 "slinger"
-*comment Formation: front-line knifeman at Close, slinger at Mid-Range; see fight_dredge_ambush.
-*set combat_enemy2_range 2
-*goto fight_library
+*label fight_night_li

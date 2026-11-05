@@ -35,7 +35,9 @@ if (typeof process != "undefined") {
   require(path.join(__dirname, 'tools', 'build_startup.js')).write();
   // The backdrops (Wallpaper/ -> scenery/) and the sounds (Sounds/ -> ambience/) are converted copies the game loads. Rebuild any whose source is newer, so replacing a picture or a recording
   // and compiling is all it takes. Each tool's --check says whether anything is stale (and is quick); the rebuild needs Chrome (headless) and takes about a minute per few files. A failure only warns.
-  [['gen_ui_art.js', ['--scenery']], ['make_ambience.js', []]].forEach(function(job) {
+  // gen_overworld_art.js is in the same list: the overworld's drawn features (overworld-art/*.svg) are art like the backdrops are, and nobody should have to remember a
+  // step after drawing one. Its --check is instant and it needs no Chrome, so it costs nothing on a compile where the map has not changed.
+  [['gen_ui_art.js', ['--scenery']], ['make_ambience.js', []], ['gen_overworld_art.js', []]].forEach(function(job) {
     var cp = require('child_process'), script = path.join(__dirname, 'tools', job[0]);
     if (cp.spawnSync(process.execPath, [script].concat(job[1], ['--check']), {stdio: 'ignore'}).status !== 0) {
       console.log('Rebuilding with tools/' + job[0] + ' (a source is newer than its converted copy)...');

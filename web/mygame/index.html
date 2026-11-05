@@ -73,6 +73,7 @@ either express or implied.
 <script src="levelup.js"></script>
 <script src="battlehud.js"></script>
 <script src="dungeonmap.js"></script>
+<script src="spellbook.js"></script>
 <script src="overworld-data.js"></script>
 <script src="overworld-art.js"></script>
 <script src="overworldmap.js"></script>
@@ -100,6 +101,7 @@ either express or implied.
 <link href="levelup.css" rel="stylesheet" type="text/css">
 <link href="battlehud.css" rel="stylesheet" type="text/css">
 <link href="dungeonmap.css" rel="stylesheet" type="text/css">
+<link href="spellbook.css" rel="stylesheet" type="text/css">
 <link href="overworldmap.css" rel="stylesheet" type="text/css">
 <link href="shell.css" rel="stylesheet" type="text/css">
 <link href="battlestage.css" rel="stylesheet" type="text/css">
@@ -2515,7 +2517,16 @@ button#statSidebar .turnRow,
   //
   // Deliberately NOT gated on class or race: reading every SPELL_SLOTS field means a fighter simply
   // gets "no workings known" (all of them are "none"), with no conditional at all.
-  var SPELL_TABS = [0, 1, 2, 3, 4];   // cantrip, L1..L4 -- the levels this game's pools reach
+  // Cantrips plus every spell level that actually has entries, and never fewer than five, so the tab row keeps a stable shape today and
+  // grows by itself when a 2nd-level spell (or a level-20 wizard's 9th) is added. The book panel (spellbook.js) derives its tabs the
+  // same way; neither needs editing when the pools grow.
+  function spellTabLevels() {
+    var top = 4;
+    (window.SPELL_DATA || []).forEach(function (sp) { if (sp.level > top) top = sp.level; });
+    var out = [];
+    for (var i = 0; i <= top; i++) out.push(i);
+    return out;
+  }
   // These live in module scope rather than being read back off the live DOM because the sidebar's
   // innerHTML is replaced wholesale every 400ms; the markup is re-rendered FROM these each time.
   var spellOpen = false, spellTab = 0, spellPicked = null;
@@ -2635,8 +2646,9 @@ button#statSidebar .turnRow,
     var spells = knownSpells();
     var orbs = window.SPELL_TAB_ORBS || {};
     var tabs = "", byLevel = {}, t, list, i;
-    for (t = 0; t < SPELL_TABS.length; t++) {
-      var lvl = SPELL_TABS[t];
+    var tabLevels = spellTabLevels();
+    for (t = 0; t < tabLevels.length; t++) {
+      var lvl = tabLevels[t];
       list = spells.filter(function (sp) { return sp.meta.level === lvl; });
       byLevel[lvl] = list;
       var orb = orbs[lvl] ? "<img src=\"" + orbs[lvl] + "\" alt=\"\">" : "";
@@ -2684,8 +2696,9 @@ button#statSidebar .turnRow,
     return "<details class=\"spellbook\"" + (spellOpen ? " open" : "") + ">" +
              "<summary>Spellbook" + (spells.length ? " (" + spells.length + ")" : "") + "</summary>" +
              "<div class=\"spellTabs\">" + tabs + "</div>" + body +
+             // The standing "Select a spell to read it..." instruction was removed (the user, 2026-11-04): in a narrow sidebar it cost two lines
+             // every time to explain something a click teaches at once. The blocked-casting note stays -- that one carries a fact, not an instruction.
              ((spells.length && isTruthy((window.stats || {}).spells_blocked)) ? "<div class=\"spellNote spellBlocked\">" + esc(String((window.stats || {}).spells_blocked_why || "")) + " Scrolls and what an item grants still work.</div>" : "") +
-             "<div class=\"spellNote\">Select a spell to read it. Spells that can be cast outside a fight have a Cast button.</div>" +
            "</details>";
   }
   // Tab and spell clicks are delegated on the sidebar for the same reason the combatant card's are: the

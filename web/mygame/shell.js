@@ -49,6 +49,10 @@
     // The dungeon map: not a mirror of a page button, it opens dungeonmap.js. Hidden unless a dungeon run is on and something has been mapped (see sync).
     html += "<button type=\"button\" class=\"rbtn\" data-open=\"dungeonmap\" data-i=\"map\" title=\"Map (M)\" hidden><i></i></button>" +
             "<div class=\"rlabel\" data-for=\"dungeonmap\" hidden>Map</div>";
+    // The spellbook: also not a mirror of a page button, it opens spellbook.js. Hidden until the character has some magic, however they came by it (a class
+    // pick, a racial grant, a worn item), so a fighter never meets an empty book. The sidebar keeps its own Spellbook section either way.
+    html += "<button type=\"button\" class=\"rbtn\" data-open=\"spellbook\" data-i=\"spells\" title=\"Spellbook (B)\" hidden><i></i></button>" +
+            "<div class=\"rlabel\" data-for=\"spellbook\" hidden>Spells</div>";
     html += "<div class=\"rspacer\"></div>" +
             "<button type=\"button\" class=\"rlevel\" data-real=\"levelUpButton\" title=\"You have earned a level\" hidden>&#9733;<br>LEVEL<br>UP</button>" +
             "<button type=\"button\" class=\"rbtn\" data-real=\"menuButton\" data-i=\"menu\" title=\"Menu\"><i></i><span class=\"rbadge\" hidden></span></button>" +
@@ -63,6 +67,9 @@
         else if (t.getAttribute("data-open") === "dungeonmap") {
           // The Map button opens the dungeon map inside a dungeon run (it is not shown anywhere else; the overworld has its own M key).
           if (window.DungeonMap && window.DungeonMap.available()) window.DungeonMap.toggle();
+        }
+        else if (t.getAttribute("data-open") === "spellbook") {
+          if (window.SpellBook && window.SpellBook.available()) window.SpellBook.toggle();
         }
         else realClick(t.getAttribute("data-real"));
       }
@@ -183,6 +190,11 @@
     var haveMap = !!(window.DungeonMap && window.DungeonMap.available());
     if (mapBtn && mapBtn.hidden === haveMap) mapBtn.hidden = !haveMap;
     if (mapLab && mapLab.hidden === haveMap) mapLab.hidden = !haveMap;
+    // the spellbook button shows as soon as the character knows anything castable (spellbook.js reads the slots; an item that grants a spell counts)
+    var spBtn = rail.querySelector("[data-open=\"spellbook\"]"), spLab = rail.querySelector(".rlabel[data-for=\"spellbook\"]");
+    var haveSpells = !!(window.SpellBook && window.SpellBook.available());
+    if (spBtn && spBtn.hidden === haveSpells) spBtn.hidden = !haveSpells;
+    if (spLab && spLab.hidden === haveSpells) spLab.hidden = !haveSpells;
     // room is reserved for the sidebar only while it is showing (it hides itself until the character exists)
     var sb = document.getElementById("statSidebar");
     var side = !!(sb && sb.style.display !== "none");

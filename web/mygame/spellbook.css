@@ -1,0 +1,309 @@
+/*
+ * SPELLBOOK PANEL (2026-11-04) -- the sidebar's Spellbook section as a real open book on the rail.
+ *
+ * The book is drawn from three pieces of art in ICONS/UiElements/Interface/Cartography, inlined by tools/gen_ui_art.js:
+ *   --art-book_folio  the aged board behind everything
+ *   --art-book_page   ONE page, with its leather spine down the LEFT edge. The spread draws it twice and mirrors the left
+ *                     copy (scaleX(-1)), so the two spines meet in the middle and read as a single bound book.
+ *   --art-book_tab    the leather index tab the level orbs sit on, down the outer edge of the right page.
+ *
+ * The page art is a photograph of paper, so the text on it is DARK -- this is the one part of the interface that is not on
+ * the game's dark ground, and it carries its own ink colours rather than the --ch-* tokens.
+ *
+ * Narrow screens drop to one page at a time (.sb-book.one): the list, or the reading, with a back arrow.
+ */
+
+/* NO BRONZE FRAME (the user, 2026-11-04). The other panels are framed with --art-frame, but this one already contains a
+   frame -- the folio's brass corners -- and a bound book inside that. Three nested borders made the book look small and
+   kept it reading as a window with a book in it. The dialog is transparent now: the book itself is the panel, with only a
+   deep shadow holding it off the page behind. */
+#spellBook {
+  box-sizing: border-box; border: 0; border-radius: 0;
+  background: transparent; color: var(--ch-text); color-scheme: dark;
+  padding: 0; margin: auto; overflow: visible;
+  width: min(1040px, calc((100vw / var(--z, 1)) - 1.5rem)); height: min(780px, calc((100vh / var(--z, 1)) - 1.5rem));
+  font-family: Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.45;
+  filter: drop-shadow(0 18px 44px rgba(0, 0, 0, 0.75));
+}
+#spellBook::backdrop { background: rgba(0, 0, 0, 0.62); }
+#spellBook[open] { display: flex; flex-direction: column; }
+#spellBook * { box-sizing: border-box; }
+#spellBook button { font: inherit; color: inherit; cursor: pointer; }
+
+/* ---------------------------------------------------------------- head */
+/* The head carries its own background now that the dialog has none. */
+#spellBook .sb-head {
+  display: flex; align-items: center; gap: 0.75em; padding: 0.7em 1em 0.7em 1.25em; flex: 0 0 auto;
+  background: var(--ch-head); color: var(--ch-head-text); border-bottom: 2px solid var(--ch-crimson);
+}
+#spellBook .sb-head h2 { margin: 0; font: 600 14px var(--ch-font-head); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ch-brass); }
+#spellBook .sb-who { font-size: 0.9em; opacity: 0.75; }
+#spellBook .sb-spacer { flex: 1; }
+#spellBook .sb-close { background: none; border: none; font-size: 1.5em; line-height: 1; padding: 0 0.3em; color: var(--ch-head-text); opacity: 0.75; }
+#spellBook .sb-close:hover { opacity: 1; }
+
+/* ---------------------------------------------------------------- the board and the book */
+#spellBook .sb-board {
+  /* place-items:center sized the book to its content: with a level-20 wizard's 25 boxes the book grew to 1518px inside a 780px
+     panel and spilled out of it. Stretching the single grid cell and pinning min-height to 0 at every level makes the sheet
+     scroll instead, which is what a page of a book should do. */
+  flex: 1 1 auto; min-height: 0; padding: 16px 18px; display: grid; place-items: stretch;
+  grid-template-rows: minmax(0, 1fr); grid-template-columns: minmax(0, 1fr); overflow: hidden;
+  background-color: var(--ch-bg-deep); background-image: var(--art-book_folio); background-size: cover; background-position: center;
+}
+#spellBook .sb-book {
+  position: relative; width: 100%; height: 100%; min-height: 0; max-height: 100%; display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0;
+  filter: drop-shadow(0 10px 26px rgba(0, 0, 0, 0.6));
+}
+/* Each half is the same page picture, and the content sits in its own layer above it (so it is never mirrored with the art).
+   A BOUND BOOK HAS ONE SPINE. The left page is mirrored, which puts its leather spine on its inner (right) edge, at the centre
+   of the spread; the right page's own spine is then cropped off the inner edge, or the two would meet and read as two books
+   touching. So: the left page supplies the spine, the right page starts at bare paper. --sb-spine is how wide that strip is,
+   and the sheets below use it to keep their text off it. */
+#spellBook .sb-book { --sb-spine: 58px; }
+#spellBook .sb-page { position: relative; min-width: 0; min-height: 0; overflow: hidden; }
+#spellBook .sb-page::before {
+  content: ""; position: absolute; inset: 0; background-image: var(--art-book_page); background-size: 100% 100%; background-repeat: no-repeat;
+}
+#spellBook .sb-page.left::before { transform: scaleX(-1); }
+#spellBook .sb-page.right::before {
+  background-size: calc(100% + var(--sb-spine)) 100%; background-position: calc(-1 * var(--sb-spine)) 0;
+}
+/* PAGE CURL: paper bends down into the binding and lifts a little at the outer edge. Two gradients per page -- a shadow
+   deepening toward the gutter, and a thin highlight along the outer edge where the sheet catches the light. Purely
+   decorative, so it never takes a click. */
+#spellBook .sb-page::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+}
+#spellBook .sb-page.left::after {
+  background:
+    linear-gradient(to right, rgba(255, 246, 225, 0.22) 0%, rgba(255, 246, 225, 0) 7%),
+    linear-gradient(to right, rgba(60, 38, 14, 0) 72%, rgba(60, 38, 14, 0.16) 92%, rgba(48, 29, 10, 0.3) 100%);
+}
+#spellBook .sb-page.right::after {
+  background:
+    linear-gradient(to left, rgba(255, 246, 225, 0.22) 0%, rgba(255, 246, 225, 0) 7%),
+    linear-gradient(to left, rgba(60, 38, 14, 0) 72%, rgba(60, 38, 14, 0.16) 92%, rgba(48, 29, 10, 0.3) 100%);
+}
+/* The gutter shadow over the seam where the cropped right page butts against the left page's spine. Without it that join is a
+   hard vertical line; with it the paper reads as curving down into the binding. */
+#spellBook .sb-book::after {
+  content: ""; position: absolute; top: 1.5%; bottom: 1.5%; left: 50%; width: 34px; transform: translateX(-52%); pointer-events: none;
+  background: linear-gradient(to right, rgba(40,24,10,0) 0%, rgba(40,24,10,0.34) 38%, rgba(26,14,4,0.52) 50%, rgba(40,24,10,0.30) 64%, rgba(40,24,10,0) 100%);
+}
+/* The paper is set in a SERIF. Everything else in the interface is Helvetica on dark stone, which on a photograph of parchment
+   read as a web panel with a paper background rather than as a book. Palatino and Georgia are already in the heading stack, so
+   this needs no new font. The dialog's chrome above stays sans, like the rest of the game's panels. */
+#spellBook .sb-sheet {
+  /* The sheet is the page MINUS the foot, not the whole page with padding: the running head and folio line are fixed over the leaf,
+     so a scrolling page ran its last lines underneath them. Ending the scroll region above the foot is what keeps them clear. */
+  position: absolute; left: 0; right: 0; top: 0; bottom: 84px; height: auto; max-height: none;
+  overflow: auto; overscroll-behavior: contain;
+  padding: 30px 26px 12px 26px; color: #2f2416;
+  font-family: "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif; font-size: 15.5px; line-height: 1.55;
+}
+/* The inner edge is where the spine is, so that is the side that needs the room -- not the outer one. The right page also
+   keeps its outer margin clear of the level tabs, which hang off that edge. */
+#spellBook .sb-page.left .sb-sheet { padding-right: calc(var(--sb-spine) + 14px); }
+#spellBook .sb-page.right .sb-sheet { padding-right: 84px; }
+#spellBook .sb-sheet::-webkit-scrollbar { width: 9px; }
+#spellBook .sb-sheet::-webkit-scrollbar-thumb { background: rgba(80, 56, 28, 0.42); border-radius: 5px; }
+
+/* ---------------------------------------------------------------- the left page: the list */
+#spellBook .sb-pagetitle {
+  margin: 0 0 0.6em; font: 600 13px var(--ch-font-head); letter-spacing: 0.15em; text-transform: uppercase;
+  color: #6a4a1f; border-bottom: 1px solid rgba(106, 74, 31, 0.4); padding-bottom: 0.45em;
+}
+#spellBook .sb-list { display: flex; flex-direction: column; gap: 2px; }
+#spellBook .sb-row {
+  display: flex; align-items: center; gap: 0.6em; width: 100%; text-align: left;
+  background: none; border: 1px solid transparent; border-radius: 3px; padding: 0.4em 0.5em; color: #2f2416;
+}
+#spellBook .sb-row:hover { background: rgba(120, 86, 40, 0.13); border-color: rgba(120, 86, 40, 0.3); }
+#spellBook .sb-row[aria-pressed="true"] { background: rgba(140, 36, 36, 0.16); border-color: rgba(140, 36, 36, 0.45); }
+#spellBook .sb-row img { width: 30px; height: 30px; flex: 0 0 auto; border-radius: 3px; }
+#spellBook .sb-row .sb-ini {
+  width: 30px; height: 30px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 3px;
+  background: rgba(106, 74, 31, 0.22); font: 600 12px var(--ch-font-head); color: #6a4a1f;
+}
+/* DOT LEADERS, like the index page of a real book: the name, a run of dots, then the school. The dots are a repeating
+   gradient on a flexible span, so they fill whatever gap is left however long the name is. */
+#spellBook .sb-row .sb-name { min-width: 0; font-size: 1.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#spellBook .sb-row .sb-leader {
+  flex: 1 1 auto; min-width: 12px; height: 1em; margin: 0 0.4em; align-self: flex-end; margin-bottom: 0.28em;
+  background-image: radial-gradient(circle, rgba(106, 74, 31, 0.55) 1px, transparent 1.2px);
+  background-size: 6px 6px; background-repeat: repeat-x; background-position: bottom;
+}
+#spellBook .sb-row .sb-school { font-size: 0.82em; opacity: 0.62; font-style: italic; flex: 0 0 auto; }
+#spellBook .sb-empty { color: #6a4a1f; opacity: 0.8; font-style: italic; padding: 0.6em 0.2em; }
+
+/* ---------------------------------------------------------------- the right page: the reading */
+#spellBook .sb-read h3 { margin: 0 0 0.15em; font: 600 1.35em var(--ch-font-head); color: #4a1f1f; }
+#spellBook .sb-read .sb-meta {
+  font: 600 11px var(--ch-font-head); letter-spacing: 0.12em; text-transform: uppercase; color: #6a4a1f; opacity: 0.85;
+  padding-bottom: 0.6em; margin-bottom: 0.8em; border-bottom: 1px solid rgba(106, 74, 31, 0.4);
+}
+/* The reference block: casting time, range, components, duration, as a two-column ledger of label and value. */
+#spellBook .sb-facts { margin: 0 0 1em; display: grid; grid-template-columns: auto 1fr; gap: 0.15em 0.7em; font-size: 0.93em; }
+#spellBook .sb-facts .sb-fact { display: contents; }
+#spellBook .sb-facts dt {
+  font: 600 10px var(--ch-font-head); letter-spacing: 0.1em; text-transform: uppercase;
+  color: #6a4a1f; opacity: 0.8; padding-top: 0.35em; white-space: nowrap;
+}
+#spellBook .sb-facts dd { margin: 0; color: #3b2d1a; }
+#spellBook .sb-read .sb-body { font-size: 1.02em; text-align: justify; hyphens: auto; }
+/* An opening capital, the way a written page starts. Only on the reading, never in the list. */
+#spellBook .sb-read .sb-body::first-letter {
+  float: left; font-family: var(--ch-font-head); font-size: 2.9em; line-height: 0.82;
+  padding: 0.06em 0.09em 0 0; color: #7a2020;
+}
+#spellBook .sb-read .sb-art { float: right; width: 72px; height: 72px; margin: 0 0 0.6em 0.8em; border-radius: 4px; }
+#spellBook .sb-cast {
+  margin-top: 1.1em; padding: 0.5em 1.2em; background: rgba(140, 36, 36, 0.14);
+  border: 1px solid rgba(140, 36, 36, 0.55); border-radius: 3px; color: #4a1f1f; font-weight: 600;
+}
+#spellBook .sb-cast:hover:not(:disabled) { background: rgba(140, 36, 36, 0.25); }
+#spellBook .sb-cast:disabled { opacity: 0.45; cursor: not-allowed; }
+#spellBook .sb-note { margin-top: 1.2em; font-size: 0.86em; color: #6a4a1f; opacity: 0.85; font-style: italic; }
+#spellBook .sb-blocked { color: #7a2020; font-style: normal; }
+
+/* ---------------------------------------------------------------- the clip, and the seal */
+/* A spell an ITEM grants is a slip clipped into the book, not a working written in it. The clip sits over the row's inner
+   edge, and the reading page shows the same clip with a line saying it leaves when the item does. */
+#spellBook .sb-row.sb-clipped, #spellBook .sb-read.sb-readClipped { position: relative; }
+#spellBook .sb-row.sb-clipped::after, #spellBook .sb-read.sb-readClipped::after {
+  content: ""; position: absolute; background-image: var(--art-book_clip); background-size: contain;
+  background-repeat: no-repeat; pointer-events: none;
+}
+#spellBook .sb-row.sb-clipped::after { width: 21px; height: 21px; right: 1px; top: -6px; transform: rotate(14deg); opacity: 0.92; }
+/* On the reading page the clip hangs off the TOP edge of the entry, not its left: at the left it sat on the first letter of
+   the spell's name. The sheet's own top padding gives it the room. */
+#spellBook .sb-read.sb-readClipped::after { width: 30px; height: 30px; left: 1px; top: -23px; transform: rotate(-12deg); }
+#spellBook .sb-origin {
+  margin-top: 1em; padding-left: 0.7em; border-left: 2px solid rgba(106, 74, 31, 0.45);
+  font-size: 0.88em; font-style: italic; color: #6a4a1f;
+}
+#spellBook .sb-origin.sb-clipped { border-left-color: rgba(122, 32, 32, 0.5); }
+/* ---------------------------------------------------------------- the foot of the page */
+/* The running head and folio line sit in the PAGE, not in the scrolling sheet, so they hold still while an entry is read.
+   The sheet reserves room for them with its own bottom padding (below). */
+#spellBook .sb-foot {
+  /* Clear of the page's torn, stained bottom edge: sat at 26px the line fell on the dark worn band and could not be read. */
+  position: absolute; left: 26px; right: 26px; bottom: 58px; display: flex; align-items: baseline; gap: 0.8em;
+  padding-top: 0.45em; border-top: 1px solid rgba(106, 74, 31, 0.32);
+  font: 600 10px var(--ch-font-head); letter-spacing: 0.13em; text-transform: uppercase; color: #6a4a1f; opacity: 0.85;
+}
+#spellBook .sb-page.left .sb-foot { left: 26px; right: calc(var(--sb-spine) + 14px); }
+#spellBook .sb-page.right .sb-foot { left: 26px; right: 84px; }
+#spellBook .sb-foot .sb-runhead { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#spellBook .sb-foot .sb-folio { flex: 0 0 auto; font-style: normal; }
+#spellBook .sb-sheet { padding-bottom: 12px; }
+
+/* The wax seal closes the outer corner of the reading page, the way a written leaf would be signed off. Decoration only. */
+#spellBook .sb-seal {
+  position: absolute; right: 18px; bottom: 44px; width: 56px; height: 56px; pointer-events: none;
+  background-image: var(--art-book_seal); background-size: contain; background-repeat: no-repeat; opacity: 0.85;
+  filter: drop-shadow(0 2px 3px rgba(60, 38, 14, 0.4));
+}
+
+/* ---------------------------------------------------------------- the level tabs */
+#spellBook .sb-tabs {
+  position: absolute; top: 34px; right: 8px; display: flex; flex-direction: column; gap: 7px; z-index: 2;
+}
+#spellBook .sb-tab {
+  width: 62px; height: 34px; display: grid; place-items: center; padding: 0;
+  background: none; border: 0; border-image: var(--art-book_tab) 26 fill / 17px stretch;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5)); transition: transform 0.12s ease;
+}
+#spellBook .sb-tab img { width: 22px; height: 22px; }
+#spellBook .sb-tab .sb-tabword { font: 600 9px var(--ch-font-head); letter-spacing: 0.08em; text-transform: uppercase; color: #e8d2a8; }
+#spellBook .sb-tab:hover { transform: translateX(4px); }
+#spellBook .sb-tab[aria-pressed="true"] { transform: translateX(8px); }
+#spellBook .sb-tab.sb-tabEmpty { opacity: 0.4; }
+
+/* ---------------------------------------------------------------- carrying spells for the day */
+/* THE CARRIED PAGE. A preparing class (the wizard) chooses each morning which of the book it carries; the right page becomes that set,
+   and the ribbon switches between it and the entry being read. The number of boxes IS prepared_max, so the limit is seen rather than
+   explained. A spell is dragged from the facing page into a box, or clicked -- click does everything drag does, because dragging is no
+   use on a touch screen or from a keyboard. */
+#spellBook .sb-ribbon { display: flex; gap: 6px; margin-bottom: 0.9em; }
+#spellBook .sb-rib {
+  flex: 1 1 auto; padding: 0.3em 0.6em; background: rgba(120, 86, 40, 0.1);
+  border: 1px solid rgba(106, 74, 31, 0.4); border-radius: 3px; color: #6a4a1f;
+  font: 600 10px var(--ch-font-head); letter-spacing: 0.1em; text-transform: uppercase;
+}
+#spellBook .sb-rib[aria-pressed="true"] { background: rgba(140, 36, 36, 0.16); border-color: rgba(140, 36, 36, 0.5); color: #4a1f1f; }
+
+#spellBook .sb-carrycount {
+  font: 600 11px var(--ch-font-head); letter-spacing: 0.12em; text-transform: uppercase;
+  color: #6a4a1f; opacity: 0.85; margin: -0.3em 0 0.8em;
+}
+/* The boxes flow into however many columns the page can hold, so four read as a short list and a level-20 wizard's twenty-five
+   fill the page instead of becoming a long scroll. */
+#spellBook .sb-boxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); gap: 6px; align-content: start; }
+#spellBook .sb-box {
+  display: flex; align-items: center; gap: 0.5em; width: 100%; min-height: 38px; text-align: left; min-width: 0;
+  padding: 0.35em 0.6em; border-radius: 3px; border: 1px dashed rgba(106, 74, 31, 0.5); background: rgba(120, 86, 40, 0.06);
+}
+#spellBook .sb-box.full {
+  border-style: solid; border-color: rgba(140, 36, 36, 0.45); background: rgba(140, 36, 36, 0.1); color: #2f2416;
+}
+#spellBook .sb-box.full:hover:not(:disabled) { background: rgba(140, 36, 36, 0.18); }
+#spellBook .sb-box.full:disabled { opacity: 0.55; cursor: progress; }
+#spellBook .sb-box.over { border-color: rgba(140, 36, 36, 0.8); background: rgba(140, 36, 36, 0.16); border-style: solid; }
+#spellBook .sb-box img, #spellBook .sb-box .sb-ini { width: 28px; height: 28px; flex: 0 0 auto; border-radius: 3px; }
+#spellBook .sb-box .sb-boxname { flex: 1; min-width: 0; font-size: 0.98em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#spellBook .sb-box .sb-boxhint {
+  font: 600 10px var(--ch-font-head); letter-spacing: 0.14em; text-transform: uppercase; color: #6a4a1f; opacity: 0.5;
+}
+#spellBook .sb-carryhint { margin-top: 1em; font-size: 0.9em; color: #4a3a22; }
+#spellBook .sb-spare {
+  display: inline-block; margin: 0 0.3em 0.35em 0; padding: 0.2em 0.6em;
+  background: rgba(120, 86, 40, 0.1); border: 1px solid rgba(106, 74, 31, 0.4); border-radius: 3px; color: #3b2d1a; font-size: 0.95em;
+}
+#spellBook .sb-spare:hover:not(:disabled) { background: rgba(120, 86, 40, 0.22); }
+#spellBook .sb-spare:disabled { opacity: 0.5; cursor: progress; }
+/* What ChoiceScript answered: carried, put back, or a refusal. */
+#spellBook .sb-toast {
+  margin-top: 1em; padding: 0.4em 0.7em; border-left: 2px solid rgba(140, 36, 36, 0.5);
+  background: rgba(140, 36, 36, 0.08); font-size: 0.92em; color: #4a1f1f;
+}
+/* A row in the book says whether it is with you today, so the facing page can be read without switching. */
+#spellBook .sb-row.sb-carried .sb-name::after {
+  content: "\2022"; margin-left: 0.5em; color: #7a2020; font-size: 1.2em; line-height: 0;
+}
+#spellBook .sb-row.sb-inbook { opacity: 0.82; }
+#spellBook .sb-row[draggable="true"] { cursor: grab; }
+
+/* ---------------------------------------------------------------- loose leaves */
+/* Scrolls in the pack whose spell could be written into the book. They sit under the written spells on the left leaf, because that is
+   what they are: slips you carry, not entries you own. A refusal shows its reason in place of the button rather than hiding the row --
+   knowing a scroll is twenty sessions away is the useful part. */
+#spellBook .sb-leaves {
+  margin-top: 1.4em; padding-top: 0.7em; border-top: 1px dashed rgba(106, 74, 31, 0.4);
+}
+#spellBook .sb-leafhead {
+  margin: 0 0 0.5em; font: 600 10px var(--ch-font-head); letter-spacing: 0.14em; text-transform: uppercase;
+  color: #6a4a1f; opacity: 0.85;
+}
+#spellBook .sb-leaf {
+  display: flex; align-items: center; gap: 0.55em; padding: 0.3em 0.4em 0.3em 0.5em; margin-bottom: 3px;
+  border-radius: 3px; background: rgba(120, 86, 40, 0.07); border: 1px solid rgba(106, 74, 31, 0.28);
+  position: relative;
+}
+/* The same brass clip that marks an item's spell: a slip held against the page rather than written on it. */
+#spellBook .sb-leaf::before {
+  content: ""; position: absolute; left: -7px; top: -5px; width: 16px; height: 16px; transform: rotate(-14deg);
+  background-image: var(--art-book_clip); background-size: contain; background-repeat: no-repeat; opacity: 0.85; pointer-events: none;
+}
+#spellBook .sb-leaf img, #spellBook .sb-leaf .sb-ini { width: 24px; height: 24px; flex: 0 0 auto; border-radius: 3px; }
+#spellBook .sb-leaf .sb-leafname { flex: 1; min-width: 0; font-size: 0.98em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#spellBook .sb-leafbtn {
+  flex: 0 0 auto; padding: 0.2em 0.6em; border-radius: 3px; font-size: 0.86em; font-weight: 600; color: #4a1f1f;
+  background: rgba(140, 36, 36, 0.14); border: 1px solid rgba(140, 36, 36, 0.5);
+}
+#spellBook .sb-leafbtn:hover:not(:disabled) { background: rgba(140, 36, 36, 0.26); }
+#spellBook .sb-leafbtn:disabled { opacity: 0.5; cursor: progress; }
+#spellBook .sb-leaf.barred { opacity: 0.72; }
+#spellBook .sb-leaf .sb-leafwhy { flex: 0 0 auto; font-size: 0.8em; font-style: italic; color: #6a4a1f; }

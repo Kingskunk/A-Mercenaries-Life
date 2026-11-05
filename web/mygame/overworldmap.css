@@ -1,15 +1,17 @@
 /* Overworld map (2026-10-07): the point-and-click travel map docked on the overworld page: drag to pan, wheel to zoom, click a tile for its card. Colours and fonts come from the game's own theme
    tokens (theme.css); the one extra thing here is a colour per tile kind. No icons yet: a tile is a coloured dot and a name, and a tile with an image in the data shows it in the circle. */
 
+/* The marks for the kinds of place, inked for the parchment sheet (2026-11-04). They are on #overworldMap, not on .ow-mapbox with the rest of the ink, because the
+   LEGEND under the map uses the same swatches and sits outside the frame: one place, so a key can never disagree with the mark it names. */
 :root {
-  --ow-city: #d9a441;     /* brass: the free port */
-  --ow-town: #e2a25f;     /* warm amber: a road town */
-  --ow-village: #c9b56b;  /* straw: a village */
-  --ow-fort: #9b5d55;     /* brick: a fortified gate */
-  --ow-road: #a99f90;     /* dust: the open road */
-  --ow-hills: #9a7d5e;    /* earth: the climb */
-  --ow-woodroad: #8c9a5c; /* moss: a road under close trees */
-  --ow-forest: #6fa377;   /* green: the Longshade */
+  --ow-city: #8c4a12;     /* the free port */
+  --ow-town: #a9662a;     /* a road town */
+  --ow-village: #8d7a3f;  /* a village */
+  --ow-fort: #7d3b32;     /* a fortified gate */
+  --ow-road: #7a6850;     /* the open road */
+  --ow-hills: #6f5a3c;    /* the climb */
+  --ow-woodroad: #5f6b35; /* a road under close trees */
+  --ow-forest: #456b45;   /* the Longshade */
 }
 
 /* the plain list and the Next button under it are put away while the map is up (Travel presses the real option itself); the toggle brings them back */
@@ -23,34 +25,126 @@ body.owMapOn #main form, body.owMapOn #main > button.next { display: none; }
 #overworldMap button { font: inherit; color: inherit; cursor: pointer; }
 
 #overworldMap .ow-main { display: flex; flex-wrap: wrap; gap: 0.9em; align-items: stretch; }
-#overworldMap .ow-mapbox { position: relative; flex: 1 1 22rem; min-width: 0; height: 32rem; max-height: 70vh; background: var(--ch-bg); border: 1px solid var(--ch-line); border-radius: 4px; overflow: hidden; }
-#overworldMap .ow-svg { display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+/* THE SHEET (2026-11-04). The map is a drawn map on paper: the frame holds one parchment picture (--art-parchment, from tools/gen_ui_art.js) laid over it with cover, not
+   tiled, so it can carry its own blotches and a burnt edge without a repeat the eye can catch. The paper does NOT pan with the ink: it is the frame's background, so it
+   stays put while the map drags over it and never repaints during a drag. The inset shadow is the edge-burn that makes it read as a sheet and not a wall.
+
+   THE INK. Everything drawn on the sheet reads its colour from the game's theme tokens, which are dark-on-light the wrong way round for paper, so the tokens are redefined
+   HERE, on the frame only. Nothing outside .ow-mapbox sees them: the card beside the map, the legend and the rest of the page keep the normal dark theme, and the map reads
+   as an object lying on it. Change a colour of the drawn map here, not in theme.css. */
+#overworldMap .ow-mapbox {
+  position: relative; flex: 1 1 22rem; min-width: 0; height: 32rem; max-height: 70vh; border: 1px solid var(--ch-line); border-radius: 4px; overflow: hidden;
+  background: #ddcdab;   /* the paper's own colour, seen only in the moment before the texture is decoded */
+  /* ink on paper, in place of the dark theme's light-on-dark */
+  --ch-text: #3b2c1c;        /* the names of places: full-strength ink */
+  --ch-dim: #6d5942;         /* faded ink: the mileages, a range's name */
+  --ch-bg: #e7d9bb;          /* the halo painted behind a label so the ink stays readable over art (paint-order: stroke) */
+  --ch-bg-deep: #e3d3b0;     /* the pale ring drawn round a town's mark */
+  --ch-line: #8a7050;
+  --ch-line-hi: #7a6244;     /* the wash a mountain range is filled with, and the hairline round the small paper tabs */
+  --ow-ink-road: #4a3a26;    /* the roads: a drawn line, near the strength of a place name */
+  --ow-ink-mile: #5a4429;    /* the mileage beside a road: quieter than a name, but still ink and not a stain */
+  --ch-card: #e6d7b6;        /* the zoom buttons and the compass face: small paper tabs */
+  --ch-brass: #9d3c18;       /* rust red: the route you have picked, and what is selected */
+}
+/* THE SHEET ITSELF. It is part of the DRAWING, not the frame's background: it is moved and scaled by overworldmap.js applyView() with exactly the view the ink is drawn
+   at, so the paper travels under the roads instead of the map sliding over a still background. It is drawn once, larger than the whole world, and the player zooms in
+   to it. It does NOT turn when the map is turned: parchment grain has no direction, so nothing gives it away, and leaving the turn out keeps the maths to a translate
+   and a scale. Behind it is the dark of .ow-mapbox, which is what you see if you pan off the edge of the paper. */
+/* TWO LAYERS of the one tile, at two sizes that never come back into step (overworldmap.js PAPER_TILE and PAPER_TILE2). The tile is made by mirroring, so on its own it
+   lays down a regular grid of symmetry axes, and THAT is what the eye picks up as a repeat, not the grain. A second copy at an unrelated size, shifted off the first and
+   blended softly over it, leaves a combined pattern whose period is far larger than any view, so there is nothing to catch. The sizes and offsets are set in the panel,
+   which is the only place that knows the zoom. The layer written FIRST is the one on top. */
+#overworldMap .ow-paper {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background-color: #ddcdab;
+  background-image: var(--art-parchment, none), var(--art-parchment, none);
+  background-repeat: repeat, repeat;
+  background-blend-mode: soft-light, normal;
+  box-shadow: inset 0 0 5rem rgba(78, 54, 28, 0.45), inset 0 0 1.4rem rgba(78, 54, 28, 0.3);
+}
+#overworldMap .ow-svg { position: relative; z-index: 1; display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
 #overworldMap .ow-svg.dragging { cursor: grabbing; }
 /* zoomed far out, only the tile you stand on and the one you picked keep their names */
 #overworldMap .ow-svg.ow-far .ow-node:not(.ow-here):not(.ow-sel) .ow-name, #overworldMap .ow-svg.ow-far .ow-miles { display: none; }
 /* the zoom and view buttons, in the corner of the map */
 #overworldMap .ow-ctl { position: absolute; top: 0.5em; right: 0.5em; display: flex; flex-direction: column; gap: 0.3em; }
-#overworldMap .ow-ctl button { min-width: 2.2em; padding: 0.25em 0.4em; border: 1px solid var(--ch-line-hi); border-radius: 4px; background: var(--ch-card); opacity: 0.92; font-size: 0.9em; }
+/* colour is named, not inherited: these sit INSIDE the sheet, where the ink tokens are redefined, but `inherit` would take the page's light text from the panel outside and leave them unreadable on paper */
+#overworldMap .ow-ctl button { min-width: 2.2em; padding: 0.25em 0.4em; border: 1px solid var(--ch-line-hi); border-radius: 4px; background: var(--ch-card); color: var(--ch-text); opacity: 0.92; font-size: 0.9em; }
 #overworldMap .ow-ctl button:hover { border-color: var(--ch-brass); opacity: 1; }
 
 /* things drawn under the tiles that are not tiles: the mountain range is hand-drawn art (overworld-art/*.svg), a gap in it is a pass; click it for its card. Its colours live here, not in the SVG. */
 #overworldMap .ow-feature { cursor: pointer; outline: none; }
+/* scenery (an unnamed group, or one named with a leading _): drawn, and otherwise not there as far as the mouse is concerned */
+#overworldMap .ow-decor { pointer-events: none; cursor: default; }
 #overworldMap .ow-feature path { fill: var(--ch-line-hi); fill-opacity: 0.5; stroke: var(--ch-line-hi); stroke-width: 2; stroke-linejoin: round; stroke-opacity: 0.8; }
+/* A WASH: the one big shape that gives a feature its outline, drawn under the stamps, with class="wash" on it (Inkscape: Ctrl+Shift+X, + , name "class", value "wash").
+
+   IT IS INVISIBLE EXCEPT ON A CLICK (the user's call, 2026-11-04, and it means exactly that): not on hover, not at any zoom, not when the map is drawn far out. A tint
+   over the paper is a colour the parchment did not ask for, so the only thing that may put one there is the player asking for it by clicking the feature. Selecting it is
+   a question -- how far does this wood reach? -- and the wash is the answer; everything else is decoration, and the stamps say where the wood is well enough on their own.
+   A zoom is NOT a click: if the glyphs are too small to read when the whole world is in view, that is a reason to draw more of them, not to paint the paper.
+
+   It also takes no pointer: hovering open ground inside a wood must not light the wood up, because the shape is far bigger than anything drawn in it, and it would make a
+   dead area that swallows every hover. Only the glyphs themselves are a target, and clicking one selects the feature, which is what shows the wash. The hover and focus
+   rules below are written out rather than left to inheritance so that no kind's own rule can ever raise the wash by accident; the selectors carry .ow-svg so they outrank
+   a kind's rules wherever those sit in this file.
+
+   Every state says stroke:none of its own accord. The shared hover, focus and selected rules further down put a line round a feature's paths, which on a wash draws the
+   outline of the whole wood -- the very thing that must not appear on a hover -- so each rule here has to turn it off rather than inherit it. The hover and focus rules
+   also stand aside once the feature IS selected (:not(.ow-feature-sel)), or they would out-rank the selected rule and hide the one wash the player asked to see. */
+#overworldMap .ow-svg .ow-feature path.wash { fill-opacity: 0; stroke: none; pointer-events: none; transition: fill-opacity 0.25s ease; }
+#overworldMap .ow-svg .ow-feature:hover:not(.ow-feature-sel) path.wash,
+#overworldMap .ow-svg .ow-feature:focus:not(.ow-feature-sel) path.wash { fill-opacity: 0; stroke: none; }
+#overworldMap .ow-svg.ow-far .ow-feature:not(.ow-feature-sel) path.wash { fill-opacity: 0; stroke: none; }
+#overworldMap .ow-svg .ow-feature-sel path.wash { fill-opacity: 0.26; stroke: none; }
 #overworldMap .ow-feature path.ridge { fill: none; stroke: var(--ch-dim); stroke-width: 3; stroke-opacity: 0.7; pointer-events: none; }
 #overworldMap .ow-feature:hover path:not(.ridge), #overworldMap .ow-feature:focus path:not(.ridge) { fill-opacity: 0.68; stroke: var(--ch-text); }
 #overworldMap .ow-feature-sel path:not(.ridge) { fill-opacity: 0.68; stroke: var(--ch-brass); stroke-width: 3; stroke-opacity: 1; }
 #overworldMap .ow-feature-name { fill: var(--ch-dim); font: 700 17px var(--ch-font-head); letter-spacing: 0.32em; text-transform: uppercase; opacity: 0.85; pointer-events: none; paint-order: stroke; stroke: var(--ch-bg); stroke-width: 3px; }
 #overworldMap .ow-f-range-key { background: var(--ch-line-hi); }
+/* A WOOD. Drawn as one wash for the shape of it with the tree glyphs stamped on top (overworld-art/_stamps.svg), so the wash carries it when the whole world is in view
+   and the trees carry it close to. The trees are not outlined: at a few hundred paths an outline each is weight for something too small to see. The green is the one the
+   forest tiles use, so a drawn wood and a forest tile read as the same thing. */
+#overworldMap .ow-f-forest path { fill: #4f6b46; fill-opacity: 0.5; stroke: none; }
+#overworldMap .ow-f-forest:hover path, #overworldMap .ow-f-forest:focus path { fill-opacity: 0.66; stroke: none; }
+#overworldMap .ow-feature-sel.ow-f-forest path { fill-opacity: 0.72; stroke: none; }
+#overworldMap .ow-f-forest-key { background: #4f6b46; }
+
+/* THE KINDS a feature may be, named in Inkscape's Title box and nowhere else. A kind that fills ground (forest, hills, marsh, area) is a wash plus its stamps; a kind that
+   is a LINE (coast, border, river) is stroke-only, because a coastline has no inside -- filling it would flood half the map. "area" is what a feature with no Title gets,
+   so something always draws. Adding a kind is a pair of rules here and nothing else; the drawing side already works. */
+#overworldMap .ow-f-hills path { fill: #6f5a3c; fill-opacity: 0.45; stroke: none; }
+#overworldMap .ow-f-marsh path { fill: #5c6b55; fill-opacity: 0.45; stroke: none; }
+#overworldMap .ow-f-water path { fill: #5a7383; fill-opacity: 0.42; stroke: none; }
+#overworldMap .ow-f-area path  { fill: var(--ch-line-hi); fill-opacity: 0.4; stroke: none; }
+#overworldMap .ow-f-coast path { fill: none; stroke: #4b5a63; stroke-width: 3; stroke-opacity: 0.85; stroke-linejoin: round; }
+#overworldMap .ow-f-river path { fill: none; stroke: #4b5a63; stroke-width: 3.5; stroke-opacity: 0.85; stroke-linecap: round; }
+#overworldMap .ow-f-border path { fill: none; stroke: #6a4a3a; stroke-width: 3; stroke-opacity: 0.85; stroke-dasharray: 10 7; }
+/* a line kind has no inside to tint, so its wash stays off even when it is the selected feature */
+#overworldMap .ow-svg .ow-f-coast path.wash, #overworldMap .ow-svg .ow-f-river path.wash, #overworldMap .ow-svg .ow-f-border path.wash { fill-opacity: 0; }
+
+/* The dot on a feature's card and in the legend. These carry .ow-key as well as the kind so they outrank the plain .ow-key further down this file, which otherwise
+   paints every one of them road-grey whatever the feature is. */
+#overworldMap .ow-key.ow-f-range-key  { background: var(--ch-line-hi); }
+#overworldMap .ow-key.ow-f-forest-key { background: #4f6b46; }
+#overworldMap .ow-key.ow-f-hills-key  { background: #6f5a3c; }
+#overworldMap .ow-key.ow-f-marsh-key  { background: #5c6b55; }
+#overworldMap .ow-key.ow-f-water-key  { background: #5a7383; }
+#overworldMap .ow-key.ow-f-coast-key  { background: #4b5a63; }
+#overworldMap .ow-key.ow-f-river-key  { background: #4b5a63; }
+#overworldMap .ow-key.ow-f-border-key { background: #6a4a3a; }
+#overworldMap .ow-key.ow-f-area-key   { background: var(--ch-line-hi); }
 
 /* the roads and the tiles */
-#overworldMap .ow-edge { stroke: var(--ch-line-hi); stroke-width: 6; stroke-linecap: round; opacity: 0.8; }
+#overworldMap .ow-edge { stroke: var(--ow-ink-road, var(--ch-line-hi)); stroke-width: 6; stroke-linecap: round; opacity: 0.95; }
 #overworldMap .ow-edge-route { stroke: var(--ch-brass); opacity: 1; stroke-width: 7; }
 /* pathless ground is drawn broken, so it reads as a slog at a glance; an impassable way is broken and faint (it is never walked) */
 #overworldMap .ow-edge-overland { stroke-dasharray: 2 11; stroke-width: 6; }
 /* a seldom-used dirt track is dotted too, but with longer dots than pathless ground, and it walks at road pace */
 #overworldMap .ow-edge-track { stroke-dasharray: 4 8; stroke-width: 6; }
 #overworldMap .ow-edge-blocked { stroke-dasharray: 2 11; opacity: 0.35; }
-#overworldMap .ow-miles { fill: var(--ch-dim); font: 600 13px var(--ch-font-ui); }
+#overworldMap .ow-miles { fill: var(--ow-ink-mile, var(--ch-dim)); font: 600 13px var(--ch-font-ui); paint-order: stroke; stroke: var(--ch-bg); stroke-width: 3px; }
 #overworldMap .ow-node { cursor: pointer; outline: none; }
 #overworldMap .ow-dot { stroke: var(--ch-bg-deep); stroke-width: 3; }
 #overworldMap .ow-img { pointer-events: none; }

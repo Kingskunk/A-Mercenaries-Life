@@ -552,3 +552,182 @@ ${combat_fear_banner}
 ${combat_player_dmg_roll_banner}
 *line_break
 *return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SPELL: GREASE (Wizard, 1st level, 2026-11-04): a slick conjured under the active target and everything standing in the SAME RANGE BAND with it -- this engine places combatants in bands
+*comment rather than on a grid, so a band is the honest reading of the RAW ten-foot square. Every living enemy in that band has the slick under it for three move attempts or six rounds, stored in
+*comment the grease flask's own per-slot fields (combat_enemyN_greased / _grease_until) and read by combat_grease_gate in combat.txt, so nothing new tracks this. Each also makes a Dexterity save
+*comment against spell_save_dc: one that FAILS goes prone at once (combat_enemyN_prone, which costs it the movement of its next turn standing back up); one that saves keeps its feet, but the ground
+*comment under it is slick all the same -- the spell makes the ground greasy whatever anyone rolls, and the save is only about falling over now.
+*comment Costs a wizard slot, or the scroll when read instead (combat_scroll_id, set by the Read option before this runs -- see fight_read_grease, combat.txt). Replay-locked (combat_cast_locked);
+*comment the per-target lines are kept in combat_mm_banner_1..6, Magic Missile's per-slot banner fields, and printed after the lock, the same shape Arms of Hadar uses above.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label resolve_cast_grease
+*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
+  *if (combat_scroll_id = "")
+    *set wizard_spell_slots - 1
+  *else
+    *gosub_scene equipment spend_consumable combat_scroll_id
+  *temp rcg_band {(("combat_enemy" & combat_active_target) & "_range")}
+  *temp rcg_until (combat_round + 6)
+  *set combat_mm_banner_1 ""
+  *set combat_mm_banner_2 ""
+  *set combat_mm_banner_3 ""
+  *set combat_mm_banner_4 ""
+  *set combat_mm_banner_5 ""
+  *set combat_mm_banner_6 ""
+  *temp rcg_i 1
+  *label resolve_cast_grease_loop
+  *if (rcg_i <= combat_enemy_count)
+    *temp rcg_p (("combat_enemy" & rcg_i) & "_")
+    *temp rcg_hp {(rcg_p & "hp")}
+    *temp rcg_range {(rcg_p & "range")}
+    *if ((rcg_hp > 0) and (rcg_range = rcg_band))
+      *temp rcg_name {(rcg_p & "name")}
+      *gosub_scene combat_dice resolve_enemy_save rcg_p "dexterity" "Dexterity" rcg_i
+      *comment check_success is inverted here (resolve_enemy_save: true = the enemy FAILED the save).
+      *temp rcg_failed check_success
+      *set {(rcg_p & "greased")} 3
+      *set {(rcg_p & "grease_until")} rcg_until
+      *temp rcg_line ""
+      *if (rcg_failed)
+        *set {(rcg_p & "prone")} true
+        *set rcg_line "${rcg_name} loses its footing and goes down in the grease"
+      *else
+        *set rcg_line "${rcg_name} keeps its feet, but the ground under it is slick now"
+      *set {(("combat_mm_banner_" & rcg_i))} "[b][🧴 ${rcg_line}][/b]"
+    *set rcg_i + 1
+    *goto resolve_cast_grease_loop
+  *set combat_cast_locked true
+  *set locked_combat_cast_page_id page_id
+*temp rcg_pi 1
+*label resolve_cast_grease_print_loop
+*if (rcg_pi <= combat_enemy_slot_cap)
+  *temp rcg_pval {(("combat_mm_banner_" & rcg_pi))}
+  *if (not(rcg_pval = ""))
+    ${rcg_pval}
+    *line_break
+  *set rcg_pi + 1
+  *goto resolve_cast_grease_print_loop
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SPELL: THUNDERWAVE (Wizard and Bard, 1st level, 2026-11-04): 2d8 thunder to every living enemy Engaged with the caster, Constitution save for half. RAW the wave fills a fifteen-foot cube
+*comment from the caster; this engine places combatants in bands rather than on a grid, so Engaged (range 0) is the honest reading, the same one Arms of Hadar uses above.
+*comment ONE 2d8 roll is shared by every target, RAW, and carries NO casting modifier -- the burst spells here are flat (Arms of Hadar's 2d6) while the single-target save spells add it (Dissonant
+*comment Whispers). A target that FAILS is also driven back one range step: forced movement, no opportunity attack, Large or smaller only, and nothing moves at the back of the lane. That is the same
+*comment step Repelling Blast and Shove use (combat_movement combat_shift_target_range), so nothing new moves anybody.
+*comment Costs a slot of the caster's own pool, or the scroll when read instead (combat_scroll_id -- see fight_read_thunderwave, combat.txt; anyone can read it, so the slot branch below still asks
+*comment character_class rather than assuming a wizard). Replay-locked (combat_cast_locked); the per-target lines are kept in combat_mm_banner_1..6, Magic Missile's per-slot banner fields, and
+*comment printed after the lock. combat_active_target is deliberately left on the last enemy the wave reached, exactly as Arms of Hadar leaves it, because fight_check_enemy_hp reads it on the way out.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label resolve_cast_thunderwave
+*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
+  *if (not(combat_scroll_id = ""))
+    *gosub_scene equipment spend_consumable combat_scroll_id
+  *elseif (character_class = "bard")
+    *set bard_spell_slots - 1
+  *else
+    *set wizard_spell_slots - 1
+  *temp tw_d1 0
+  *temp tw_d2 0
+  *rand tw_d1 1 8
+  *rand tw_d2 1 8
+  *temp tw_total (tw_d1 + tw_d2)
+  *set combat_player_dmg_roll_banner "[b][🎲 Thunderwave: ${tw_d1}+${tw_d2} = ${tw_total} thunder][/b]"
+  *set combat_player_dmg_type "thunder"
+  *set combat_mm_banner_1 ""
+  *set combat_mm_banner_2 ""
+  *set combat_mm_banner_3 ""
+  *set combat_mm_banner_4 ""
+  *set combat_mm_banner_5 ""
+  *set combat_mm_banner_6 ""
+  *temp tw_i 1
+  *label resolve_cast_thunderwave_loop
+  *if (tw_i <= combat_enemy_count)
+    *temp tw_p (("combat_enemy" & tw_i) & "_")
+    *temp tw_hp {(tw_p & "hp")}
+    *temp tw_range {(tw_p & "range")}
+    *if ((tw_hp > 0) and (tw_range <= 0))
+      *gosub_scene combat_dice resolve_enemy_save tw_p "constitution" "Constitution" tw_i
+      *comment check_success is inverted here (resolve_enemy_save: true = the enemy FAILED the save).
+      *temp tw_failed check_success
+      *if (tw_failed)
+        *set combat_player_dmg_dealt tw_total
+      *else
+        *set combat_player_dmg_dealt ((tw_total - (tw_total modulo 2)) / 2)
+      *set combat_active_target tw_i
+      *gosub_scene combat fight_sync_target_in
+      *gosub_scene combat_dice apply_outgoing_damage_resist_vuln
+      *set combat_enemy_hp - combat_player_dmg_dealt
+      *if (combat_enemy_hp < 0)
+        *set combat_enemy_hp 0
+      *gosub_scene combat fight_sync_target_out
+      *comment The push comes AFTER the damage is written back, so the sync-out never carries a stale range, and only a creature that both failed and is still standing is moved.
+      *temp tw_shove ""
+      *if ((tw_failed) and (combat_enemy_hp > 0))
+        *gosub_scene combat combat_size_rank combat_enemy_size
+        *if ((combat_size_rank_value <= 3) and (combat_enemy_range < combat_max_range))
+          *gosub_scene combat_movement combat_shift_target_range combat_active_target "away"
+          *gosub_scene combat fight_sync_target_in
+          *gosub_scene combat_movement combat_range_name combat_enemy_range
+          *set tw_shove ", thrown back to ${combat_range_display_name}"
+      *temp tw_line ""
+      *if (tw_failed)
+        *set tw_line "${combat_enemy_name}: ${combat_player_dmg_dealt} thunder damage${combat_outgoing_dmg_suffix}${tw_shove}"
+      *else
+        *set tw_line "${combat_enemy_name}: ${combat_player_dmg_dealt} thunder damage${combat_outgoing_dmg_suffix} (braced, half)"
+      *if (combat_enemy_hp <= 0)
+        *set tw_line "${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} thunder damage${combat_outgoing_dmg_suffix}"
+      *set {(("combat_mm_banner_" & tw_i))} "[b][⚡ ${tw_line}][/b]"
+    *set tw_i + 1
+    *goto resolve_cast_thunderwave_loop
+  *set combat_cast_locked true
+  *set locked_combat_cast_page_id page_id
+${combat_player_dmg_roll_banner}
+*line_break
+*temp tw_pi 1
+*label resolve_cast_thunderwave_print_loop
+*if (tw_pi <= combat_enemy_slot_cap)
+  *temp tw_pval {(("combat_mm_banner_" & tw_pi))}
+  *if (not(tw_pval = ""))
+    ${tw_pval}
+    *line_break
+  *set tw_pi + 1
+  *goto resolve_cast_thunderwave_print_loop
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SPELL: CURE WOUNDS (Bard and Ranger, 1st level, 2026-11-04): 2d8 + the casting modifier of healing, to the caster or to an ally standing beside them. It is Healing Word's machinery with a
+*comment bigger die, a whole ACTION instead of a bonus action, and Touch instead of Far -- the reach is enforced at the call site by combat_friendly_reach 0, not here.
+*comment The modifier is spell_damage_mod, so it is the Bard's Charisma, the Ranger's Wisdom, or the reader's own ability for a scroll, exactly as Healing Word resolves it. A minimum of one hit point
+*comment is restored, since a bad roll and a negative modifier should still close something. Costs a slot of the caster's own pool. Replay-locked (combat_cast_locked).
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label resolve_cast_cure_wounds
+*comment Heals the player when combat_friendly_target is 0, otherwise the ally in that slot (chosen in the sidebar, see fight_target_friendly_cure_wounds).
+*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
+  *if (character_class = "ranger")
+    *set ranger_spell_slots - 1
+  *else
+    *set bard_spell_slots - 1
+  *temp cw_d1 0
+  *temp cw_d2 0
+  *rand cw_d1 1 8
+  *rand cw_d2 1 8
+  *set combat_cast_result (((cw_d1 + cw_d2)) + spell_damage_mod)
+  *if (combat_cast_result < 1)
+    *set combat_cast_result 1
+  *if (combat_friendly_target = 0)
+    *set hp_current + combat_cast_result
+    *if (hp_current > hp_max)
+      *set hp_current hp_max
+  *else
+    *temp cw_hp {(("combat_ally" & combat_friendly_target) & "_hp")}
+    *temp cw_max {(("combat_ally" & combat_friendly_target) & "_max_hp")}
+    *set cw_hp + combat_cast_result
+    *if (cw_hp > cw_max)
+      *set cw_hp cw_max
+    *set {(("combat_ally" & combat_friendly_target) & "_hp")} cw_hp
+  *set combat_cast_locked true
+  *set locked_combat_cast_page_id page_id
+*return

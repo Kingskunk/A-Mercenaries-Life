@@ -132,7 +132,7 @@
       minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
     });
     // a drawn feature (a mountain range) stays in view with the tiles: the corners of its art's box, in map units, turned like a tile
-    (OW.features || []).forEach(function (f) {
+    featureList().forEach(function (f) {
       var art = (window.OVERWORLD_ART || {})[f.art];
       if (!art) return;
       [[art.bbox[0], art.bbox[1]], [art.bbox[2], art.bbox[1]], [art.bbox[0], art.bbox[3]], [art.bbox[2], art.bbox[3]]].forEach(function (c) {
@@ -163,11 +163,31 @@
     view = { cx: pn.x, cy: pn.y, w: 760 };
   }
 
+  // THE PAPER the map is drawn on (overworldmap.css .ow-paper). It fills the frame and repeats a seamless tile, and the grain is pinned to the WORLD, not to the screen:
+  // the tile is PAPER_TILE drawn units across whatever the zoom, and its origin is the world's origin, so the paper travels and scales with the roads exactly as a sheet
+  // under them would. It is done with background-size and background-position rather than a sheet of a fixed size because the world will grow many times over: a single
+  // stretched picture would distort as the world got longer than it is tall, go blurry as it covered more ground, and run out at the edge. A tile does none of those.
+  // It is not turned when the map is turned: parchment grain has no direction, so nothing gives it away.
+  var PAPER_TILE = 900;    // drawn units across one repeat of the grain: about the span between two tiles, so the texture reads as paper and not as a pattern
+  var PAPER_TILE2 = 1456;  // the second layer, PAPER_TILE x 1.618: a ratio that does not come back into step, so the two grids never agree twice in one view
+  var PAPER_SKEW = [337, 211];   // and the second layer starts offset by this much, so its mirror axes do not sit on the first layer's
+  function applyPaper(bx, h) {
+    var el = document.getElementById(PANEL_ID), paper = el && el.querySelector(".ow-paper");
+    if (!paper || !view) return;
+    var k = bx.w / view.w;                                 // screen pixels to one drawn unit
+    var vx = view.cx - view.w / 2, vy = view.cy - h / 2;   // the corner of what is in view, in drawn units
+    var t = PAPER_TILE * k, t2 = PAPER_TILE2 * k;
+    var x = -vx * k, y = -vy * k;
+    paper.style.backgroundSize = t2 + "px " + t2 + "px, " + t + "px " + t + "px";
+    paper.style.backgroundPosition = (x + PAPER_SKEW[0] * k) + "px " + (y + PAPER_SKEW[1] * k) + "px, " + x + "px " + y + "px";
+  }
+
   function applyView() {
     var bx = box();
     if (!bx || !view) return;
     var h = view.w * (bx.h / bx.w);
     bx.el.setAttribute("viewBox", (view.cx - view.w / 2) + " " + (view.cy - h / 2) + " " + view.w + " " + h);
+    applyPaper(bx, h);
     var far = view.w > FAR_W;
     if (bx.el.classList.contains("ow-far") !== far) bx.el.classList.toggle("ow-far", far);
   }
@@ -184,6 +204,30 @@
     applyView();
   }
 
+  // THE FEATURES ON THE MAP are not listed anywhere by hand. Each one is a named layer or group in an SVG under overworld-art/, and tools/gen_overworld_art.js writes
+  // its name, kind, card text and label position into window.OVERWORLD_ART beside its paths, all taken from Inkscape's Object Properties. So drawing a new wood, range
+  // or coast needs no code at all: draw it, name the layer, fill in Title and Description, run the tool. overworld-data.js FEATURES stays as an override for the rare
+  // case where a field has to be set from the game rather than the drawing; anything it names by the same key wins.
+  function featureList() {
+    var art = window.OVERWORLD_ART || {}, over = {}, out = [];
+    var hand = OW.features || [];
+    hand.forEach(function (h) { over[h.art || h.id] = h; });
+    Object.keys(art).forEach(function (key) {
+      var a = art[key] || {}, f = over[key] || {};
+      out.push({
+        id: f.id || key, art: key,
+        name: f.name || a.name || key,
+        kind: f.kind || a.kind || "area",
+        info: f.info || a.info || "",
+        line: f.line || a.line || "",
+        label: f.label || a.label || null,
+        width: f.width || a.width || null,
+        decor: a.decor === true && !over[key]
+      });
+    });
+    return out;
+  }
+
   /* ---------------------------------------------------------------- drawing */
 
   function svg(here, sel) {
@@ -195,12 +239,22 @@
     var out = "";
     // Features first, so the roads and tiles sit on top of them. The art is drawn in its own units (130 to a map unit), so the group scales it to the panel and turns it with the map (a quarter turn
     // is rotate(90), the same turn P() gives a tile); the paths come straight from the SVG file (tools/gen_overworld_art.js). The name sits on the range, upright.
-    (OW.features || []).forEach(function (f) {
+    featureList().forEach(function (f) {
       var art = (window.OVERWORLD_ART || {})[f.art];
       if (!art) return;
-      out += "<g class=\"ow-feature ow-f-" + esc(f.kind) + (selectedFeature === f.id ? " ow-feature-sel" : "") + "\" data-ow-feature=\"" + esc(f.id) + "\" tabindex=\"0\" role=\"button\" aria-label=\"" + esc(f.name) + "\" transform=\"rotate(" + (90 * rot) + ") scale(" + (SCALE / art.unit) + ")\">" +
-        art.paths.map(function (p) { return "<path d=\"" + esc(p.d) + "\"" + (p.c ? " class=\"" + esc(p.c) + "\"" : "") + (p.t ? " transform=\"" + esc(p.t) + "\"" : "") + "/>"; }).join("") + "</g>";
-      if (f.label) { var lp = P({ x: f.label[0], y: f.label[1] }); out += "<text class=\"ow-feature-name\" x=\"" + lp.x + "\" y=\"" + lp.y + "\" text-anchor=\"middle\">" + esc(f.name) + "</text>"; }
+            // scenery takes no part in any of it: no data-ow-feature for the click handler to find, no tabindex to tab onto, no aria-label to read out, and the CSS takes its
+      // pointer away as well, so it cannot even swallow a hover meant for the map underneath it
+      var open = f.decor
+        ? "<g class=\"ow-feature ow-decor ow-f-" + esc(f.kind) + "\" aria-hidden=\"true\" transform=\"rotate(" + (90 * rot) + ") scale(" + (SCALE / art.unit) + ")\">"
+        : "<g class=\"ow-feature ow-f-" + esc(f.kind) + (selectedFeature === f.id ? " ow-feature-sel" : "") + "\" data-ow-feature=\"" + esc(f.id) + "\" tabindex=\"0\" role=\"button\" aria-label=\"" + esc(f.name) + "\" transform=\"rotate(" + (90 * rot) + ") scale(" + (SCALE / art.unit) + ")\">";
+      out += open +
+        art.paths.map(function (p) {
+          // "Width: n" in the feature's Description overrides the kind's own stroke-width (overworldmap.css .ow-f-coast and so on) for its plain paths only --
+          // the wash (never stroked) and ridge lines (always thinner than the feature they sit on) keep their own fixed look regardless.
+          var sw = (f.width && !p.c) ? " style=\"stroke-width:" + f.width + "px\"" : "";
+          return "<path d=\"" + esc(p.d) + "\"" + (p.c ? " class=\"" + esc(p.c) + "\"" : "") + (p.t ? " transform=\"" + esc(p.t) + "\"" : "") + sw + "/>";
+        }).join("") + "</g>";
+      if (f.label && !f.decor) { var lp = P({ x: f.label[0], y: f.label[1] }); out += "<text class=\"ow-feature-name\" x=\"" + lp.x + "\" y=\"" + lp.y + "\" text-anchor=\"middle\">" + esc(f.name) + "</text>"; }
     });
     // Rectangles the "10 mi" labels must keep clear of: every town circle and every name (as drawn below), then the labels already placed.
     var taken = [];
@@ -269,7 +323,7 @@
     html += "<button type=\"button\" class=\"ow-btn\" data-ow-act=\"unpick\">Back to where I stand</button>";
     return html + "</div>";
   }
-  function featureById(id) { var r = null; (OW.features || []).forEach(function (f) { if (f.id === id) r = f; }); return r; }
+  function featureById(id) { var r = null; featureList().forEach(function (f) { if (f.id === id) r = f; }); return r; }
 
   function card(here, sel, opts) {
     var show = sel || here, n = OW.nodes[show], html = "<div class=\"ow-card\">";
@@ -333,7 +387,7 @@
     if (!OW.nodes[here]) return "";
     var sel = selected && OW.nodes[selected] ? selected : null;
     var feat = selectedFeature ? featureById(selectedFeature) : null;
-    return "<div class=\"ow-main\"><div class=\"ow-mapbox\">" + svg(here, sel) + compass() + controls() + "</div>" + (feat ? featureCard(feat) : card(here, sel, opts)) + "</div>" + legend();
+    return "<div class=\"ow-main\"><div class=\"ow-mapbox\"><div class=\"ow-paper\"></div>" + svg(here, sel) + compass() + controls() + "</div>" + (feat ? featureCard(feat) : card(here, sel, opts)) + "</div>" + legend();
   }
 
   /* ---------------------------------------------------------------- no page-turn while travelling */

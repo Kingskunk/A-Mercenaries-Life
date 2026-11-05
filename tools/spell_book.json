@@ -1,28 +1,352 @@
 {
   "_readme": [
-    "SPELL BOOK: the single source for how many leveled-spell slots each class has and which spells can sit in them.",
-    "Edit this file, then run `node tools/gen_spell_book.js`. It rewrites the GEN blocks named spell_book_* in character_progression.txt,",
-    "choicescript_stats.txt and startup_parts/02_character_profile.txt (then run `node tools/build_startup.js`). Never edit inside a generated block.",
+    "SPELL BOOK: the single source for how many leveled-spell slots each class has, which spells each class may learn, and what it costs",
+    "a wizard to copy one out of a scroll -- AND, since 2026-11-04, for the pick-menu text itself: the options a player sees when choosing",
+    "a spell at creation or on a level-up are GENERATED from this file, not hand-written. Edit this file, then run",
+    "`node tools/gen_spell_book.js` (then `node tools/build_startup.js`). It rewrites the GEN blocks named spell_book_* in",
+    "character_progression.txt, choicescript_stats.txt, prologue/class_select.txt, startup_parts/02_character_profile.txt and",
+    "web/mygame/spell-data.js. Never edit inside a generated block.",
     "",
     "A slot is a pair of variables: <class>_spell (slot 1), <class>_spell_2 (slot 2) ... and <class>_spell_N_desc beside each.",
     "learn_spell (character_progression.txt) puts a spell in the class's first free slot and refuses a spell already in the book.",
     "Every spell in a slot sets held_<id> (it is in a class's book); known_<id> is held_<id> or a racial grant, and not spells_blocked.",
     "Scenes ask held_<id> or known_<id>; they never read a slot. A new level that teaches a spell is one pick menu calling learn_spell.",
     "",
-    "classes.<name>.slots  how many slots to create. Raise it when a class needs more; run the generator and build_startup.",
-    "classes.<name>.empty  the text of a slot that holds nothing yet.",
-    "learnable             every spell id that can be in a slot. A spell that is not here cannot be learned. Adding one needs a *create known_<id> too."
+    "PREPARATION: a class either PREPARES its spells (a wizard chooses each morning which of the book it carries) or KNOWS them",
+    "(a bard, warlock or ranger can cast everything in their list, always). classes.<name>.prepares is the ability score that sets",
+    "how many are carried -- \"int\", \"wis\" or \"cha\" -- or false for a class that knows its spells. The count is <ability> mod +",
+    "character_level, never below 1, and prepared_<id> says which ones are carried today.",
+    "known_<id> means CASTABLE RIGHT NOW: held or granted, prepared if the class prepares, and not spells_blocked. Scenes already",
+    "ask known_<id>, so every one of them honours preparation without a single scene changing.",
+    "",
+    "COPYING FROM A SCROLL (the user, 2026-11-04): a class with copies:true (the wizard) can write a spell out of a scroll into its own",
+    "book. The scroll is NOT consumed and no coin is spent; the price is TRAINING, and training is the ditch, not the water.",
+    "training_sessions is a lifetime total that only ever grows, and the level-up gates read it, so copying NEVER sets it back.",
+    "training_spent_on_spells is what has been poured into that ditch, and it can never exceed the total. A spell costs",
+    "copy_cost_per_level x its level, so a 1st-level spell is 10 sessions and a 2nd-level one is 20. Training is once a day, so a",
+    "copied spell is weeks of play: the picks a level-up gives are the cheap way to learn, and a wizard still has reason to carry",
+    "scrolls, since copying does not destroy one.",
+    "",
+    "PICK MENUS (2026-11-04): every 'choose a spell' *choice a player sees -- at creation (prologue/class_select.txt) or on a level-up",
+    "(character_progression.txt) -- is now generated. gen_spell_book.js carries its OWN manifest (MENUS, in that file, not here) saying",
+    "which class and which marker name belongs at each menu, because that is scene wiring (label names), not spell data. Every option",
+    "is ALWAYS guarded by `not(held_<id>)` plus any race_exclude, regardless of position in a sequence -- so a first-of-a-run menu with",
+    "guards that are all trivially true looks identical to the hand-written version it replaced, and a spell already granted outside the",
+    "menu (Hunter's Mark, auto-learned before the ranger's two picks) is correctly never offered without the menu needing to know that.",
+    "A pool is always a class's FULL learnable list (listOf(cls)); there is no notion of 'this menu only offers a subset'.",
+    "",
+    "classes.<name>.slots     how many slots to create. Raise it when a class needs more; run the generator and build_startup.",
+    "classes.<name>.empty     the text of a slot that holds nothing yet.",
+    "classes.<name>.prepares  the ability that sets the prepared count, or false if the class simply knows its spells.",
+    "classes.<name>.copies    true if this class can copy a spell out of a scroll into its book.",
+    "learnable.<id>.name      the display name, used by every generated menu line and the copied-in book entry.",
+    "learnable.<id>.level     the spell's level, which sets the copying cost.",
+    "learnable.<id>.lists     every class that may learn it. A class's pick menus and its copying check both read this.",
+    "learnable.<id>.pitch     the short one-line pitch a pick menu shows next to the name. Required for every spell: every learnable",
+    "                         spell is offered through a generated menu now, not just the copyable ones.",
+    "learnable.<id>.hint      optional. The exact bracket text for a @{show_stat_hints [...]|} tag on this spell's menu option, when the",
+    "                         plain default is not enough (False Life's temp-HP math, Ensnaring Strike's bonus-action note). Omit it and a",
+    "                         creation-menu option (prologue/class_select.txt) gets no tag at all, a level-up option gets '[Spell: <Name>]'.",
+    "learnable.<id>.race_exclude   optional array of race ids. Adds `and (not(race = \"<r>\"))` to every menu guard for this spell, for one",
+    "                         a race already grants innately (Disguise Self and Hex, both excluded for \"hexblood\") so it is never offered",
+    "                         twice.",
+    "learnable.<id>.desc      the long entry: the book's own written word for it, passed to learn_spell and shown when the spell is copied",
+    "                         in. Usually one string shared by every class that can learn it -- but a FEW spells are flavoured differently",
+    "                         per class (False Life: a wizard's necromantic rite reads nothing like a warlock's dark surge of vitality), so",
+    "                         this can instead be an object keyed by class name. Required for every class in `lists`, not only a copying one."
   ],
+  "copy_cost_per_level": 10,
   "classes": {
-    "wizard":  { "slots": 12, "empty": "Your spellbook holds nothing more yet." },
-    "warlock": { "slots": 6,  "empty": "You have bound no further spell to your pact yet." },
-    "bard":    { "slots": 8,  "empty": "You have no further verse bound to magic yet." },
-    "ranger":  { "slots": 3,  "empty": "You have learned no further working from the wild yet." }
+    "wizard": {
+      "slots": 12,
+      "empty": "Your spellbook holds nothing more yet.",
+      "prepares": "int",
+      "copies": true
+    },
+    "warlock": {
+      "slots": 6,
+      "empty": "You have bound no further spell to your pact yet.",
+      "prepares": false,
+      "copies": false
+    },
+    "bard": {
+      "slots": 8,
+      "empty": "You have no further verse bound to magic yet.",
+      "prepares": false,
+      "copies": false
+    },
+    "ranger": {
+      "slots": 3,
+      "empty": "You have learned no further working from the wild yet.",
+      "prepares": false,
+      "copies": false
+    }
   },
-  "learnable": [
-    "alarm", "arms_of_hadar", "hellish_rebuke", "cause_fear", "armor_of_agathys", "bane", "charm_person",
-    "comprehend_languages", "detect_magic", "disguise_self", "dissonant_whispers", "false_life", "feather_fall",
-    "healing_word", "hex", "ensnaring_strike", "hunters_mark", "identify", "jump", "mage_armor", "magic_missile",
-    "shield", "speak_with_animals", "unseen_servant"
-  ]
+  "learnable": {
+    "alarm": {
+      "name": "Alarm",
+      "level": 1,
+      "lists": [
+        "wizard",
+        "ranger"
+      ],
+      "pitch": "A silent ward that wakes you at a breach.",
+      "desc": "Alarm—a quiet ward laid over a doorway, a tent flap, or a stretch of open ground, silent to everyone but you the instant an uninvited step crosses it."
+    },
+    "arms_of_hadar": {
+      "name": "Arms of Hadar",
+      "level": 1,
+      "lists": [
+        "warlock"
+      ],
+      "pitch": "Black arms of force lash every foe beside you.",
+      "desc": "Arms of Hadar—black, cold arms of force burst out around you and lash every foe within reach, and the ones they catch cannot answer you until their next turn."
+    },
+    "hellish_rebuke": {
+      "name": "Hellish Rebuke",
+      "level": 1,
+      "lists": [
+        "warlock"
+      ],
+      "pitch": "Scorch whoever wounds you, as a reaction.",
+      "desc": "Hellish Rebuke—a vengeful retort held ready, so that whoever next wounds you answers for it in hellfire, burned in the moment they hurt you."
+    },
+    "cause_fear": {
+      "name": "Cause Fear",
+      "level": 1,
+      "lists": [
+        "wizard",
+        "warlock"
+      ],
+      "pitch": "Frighten one foe into keeping its distance.",
+      "desc": "Cause Fear—a whispered dread planted straight into one mind. The target is frightened for as long as the fear holds: its blows come with disadvantage, and it will not willingly come closer."
+    },
+    "armor_of_agathys": {
+      "name": "Armor of Agathys",
+      "level": 1,
+      "lists": [
+        "warlock"
+      ],
+      "pitch": "A frost shell that bites back at attackers.",
+      "desc": "Armor of Agathys—a spectral rime of frost that sheathes your skin, punishing anyone who lands a blow against you with biting, unnatural cold in return."
+    },
+    "bane": {
+      "name": "Bane",
+      "level": 1,
+      "lists": [
+        "bard"
+      ],
+      "pitch": "Sour the attacks and saves of up to three foes.",
+      "desc": "Bane—a thread of ill luck looped around up to three throats at once, souring every blow and every plea they attempt afterward."
+    },
+    "charm_person": {
+      "name": "Charm Person",
+      "level": 1,
+      "lists": [
+        "bard"
+      ],
+      "pitch": "A persuasive spell that makes a listener friendly.",
+      "desc": "Charm Person—a warm, persuasive undertone woven into your words, making a listener genuinely inclined to see things your way, at least for a while."
+    },
+    "comprehend_languages": {
+      "name": "Comprehend Languages",
+      "level": 1,
+      "lists": [
+        "wizard",
+        "warlock",
+        "bard"
+      ],
+      "pitch": "Understand any tongue, spoken or written.",
+      "desc": "Comprehend Languages—for a short while, every language spoken or written around you becomes as plain as your own tongue."
+    },
+    "cure_wounds": {
+      "name": "Cure Wounds",
+      "level": 1,
+      "lists": [
+        "bard",
+        "ranger"
+      ],
+      "pitch": "A hand on a wound: 2d8 healing at arm’s length.",
+      "desc": "Cure Wounds—a hand laid on a wound and held there while the flesh closes under it. It mends far more than a word shouted across a room does, and it costs your whole action and the walk to get there, because it only works at arm's length."
+    },
+    "detect_magic": {
+      "name": "Detect Magic",
+      "level": 1,
+      "lists": [
+        "wizard",
+        "bard",
+        "ranger"
+      ],
+      "pitch": "Sense the magic nearby.",
+      "desc": "Detect Magic—a moment's focus, and every active working nearby—wards, curses, blessings, enchanted steel—reveals itself as a faint shimmer only you can see."
+    },
+    "disguise_self": {
+      "name": "Disguise Self",
+      "level": 1,
+      "lists": [
+        "bard"
+      ],
+      "pitch": "Change your face and voice for a while.",
+      "race_exclude": [
+        "hexblood"
+      ],
+      "desc": "Disguise Self—a verse under your breath blurs your face and voice into someone else's for as long as you need to hold the lie."
+    },
+    "dissonant_whispers": {
+      "name": "Dissonant Whispers",
+      "level": 1,
+      "lists": [
+        "bard"
+      ],
+      "pitch": "A whisper of agony that makes a foe flee.",
+      "desc": "Dissonant Whispers—a whispered dissonance planted directly in one mind, discordant enough that the target flinches and recoils before they even understand why."
+    },
+    "false_life": {
+      "name": "False Life",
+      "level": 1,
+      "lists": [
+        "wizard",
+        "warlock"
+      ],
+      "pitch": "Temporary hit points drawn from death itself.",
+      "hint": "1d4+4 Temp HP for 12 Hours",
+      "desc": {
+        "wizard": "False Life—a grim, necromantic rite that bolsters your body with a necromantic facsimile of life, granting a temporary shield of extra hit points.",
+        "warlock": "False Life—a dark surge of unholy vitality drawn straight from the damp earth, granting a temporary shield of extra hit points."
+      }
+    },
+    "feather_fall": {
+      "name": "Feather Fall",
+      "level": 1,
+      "lists": [
+        "wizard"
+      ],
+      "pitch": "Soften a fall that would break bone.",
+      "desc": "Feather Fall—a word and a gesture slow a fall to a drift, turning what should be broken bones into a soft landing."
+    },
+    "grease": {
+      "name": "Grease",
+      "level": 1,
+      "lists": [
+        "wizard"
+      ],
+      "pitch": "A slick of conjured grease: foes in it fall.",
+      "desc": "Grease—a slick of caustic grease conjured across the ground under a foe and everything standing with it. Those that fail to keep their footing go down at once, and every step taken in the slick afterward risks another fall until it wears away."
+    },
+    "healing_word": {
+      "name": "Healing Word",
+      "level": 1,
+      "lists": [
+        "bard"
+      ],
+      "pitch": "A word that heals and rallies, at range.",
+      "desc": "Healing Word—a single, sharp word of command, spoken from a distance, that knits a wound shut and puts fight back into a comrade who needs it."
+    },
+    "hex": {
+      "name": "Hex",
+      "level": 1,
+      "lists": [
+        "warlock"
+      ],
+      "pitch": "Curse a foe so your hits deal extra damage.",
+      "race_exclude": [
+        "hexblood"
+      ],
+      "desc": "Hex—a murmured curse bound to one target for ten rounds. Each attack-roll hit against it deals another 1d6 necrotic damage, and if it falls you can move the curse with a bonus action."
+    },
+    "ensnaring_strike": {
+      "name": "Ensnaring Strike",
+      "level": 1,
+      "lists": [
+        "ranger"
+      ],
+      "pitch": "Thorned vines burst from your next weapon blow and bind whoever fails to tear free.",
+      "hint": "Spell: Ensnaring Strike, a bonus action",
+      "desc": "Ensnaring Strike—the next weapon blow you land calls up thorned vines from the strike. A foe that cannot tear free is bound where it stands, takes the thorns every turn, and is easy to hit."
+    },
+    "hunters_mark": {
+      "name": "Hunter's Mark",
+      "level": 1,
+      "lists": [
+        "ranger"
+      ],
+      "pitch": "Mark one foe as your quarry: your hits on it land truer.",
+      "desc": "Hunter's Mark—a long look, and one creature becomes your quarry. For a time every weapon hit on it lands truer, and you can pick the mark up and set it on a new quarry the moment the first one falls."
+    },
+    "identify": {
+      "name": "Identify",
+      "level": 1,
+      "lists": [
+        "wizard"
+      ],
+      "pitch": "Learn what an object or working truly is.",
+      "desc": "Identify—hold an object or observe a spell for a moment, and its true properties, function, and nature become plain to you."
+    },
+    "jump": {
+      "name": "Jump",
+      "level": 1,
+      "lists": [
+        "wizard",
+        "ranger"
+      ],
+      "pitch": "Triple your jump distance.",
+      "desc": "Jump—a word and a touch to yourself or another, and a single stride carries three times as far as it should, gravity forgetting the leaper for one heartbeat."
+    },
+    "mage_armor": {
+      "name": "Mage Armor",
+      "level": 1,
+      "lists": [
+        "wizard"
+      ],
+      "pitch": "A shell of force: AC 13 + Dex with no armor.",
+      "desc": "Mage Armor—a shell of unseen magical force laid over your skin each morning, standing in for the armor a wizard's training never included."
+    },
+    "magic_missile": {
+      "name": "Magic Missile",
+      "level": 1,
+      "lists": [
+        "wizard"
+      ],
+      "pitch": "Three darts of force that never miss.",
+      "desc": "Magic Missile—three luminous darts of unerring magical force that strike with absolute certainty, bypassing armor, cover, and evasive dodges without fail."
+    },
+    "shield": {
+      "name": "Shield",
+      "level": 1,
+      "lists": [
+        "wizard"
+      ],
+      "pitch": "A reflex barrier: +5 AC against one attack.",
+      "desc": "Shield—an instinctive, reflexive barrier of invisible arcane force that flares to life in a split second, deflecting incoming arrows and lethal strikes."
+    },
+    "speak_with_animals": {
+      "name": "Speak with Animals",
+      "level": 1,
+      "lists": [
+        "bard",
+        "ranger"
+      ],
+      "pitch": "Understand beasts for a short while.",
+      "desc": "Speak with Animals—for a short while, every beast's chatter, posture, and warning call resolves into something close enough to words to actually understand."
+    },
+    "thunderwave": {
+      "name": "Thunderwave",
+      "level": 1,
+      "lists": [
+        "wizard",
+        "bard"
+      ],
+      "pitch": "A wave of thunder that throws back what is close.",
+      "desc": "Thunderwave—a wave of thunderous force that rolls out from you in every direction, hard enough to lift what it catches off its feet. Those that fail to brace take the full weight of it and are thrown back a step; those that brace take the noise and keep their ground."
+    },
+    "unseen_servant": {
+      "name": "Unseen Servant",
+      "level": 1,
+      "lists": [
+        "warlock"
+      ],
+      "pitch": "An invisible servant that fetches and carries.",
+      "desc": "Unseen Servant—an invisible, mindless force you can summon to fetch, carry, clean, or open things at your spoken command."
+    }
+  }
 }
