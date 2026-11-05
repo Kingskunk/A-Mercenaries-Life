@@ -158,11 +158,13 @@
         return c;
       },
       goal: function (s) {
-        var g = { emergency: "Save what you can at the broken wall on the Limestone Cut road.",
+        var g = {
+          emergency: "Save what you can at the broken wall on the Limestone Cut road.",
           investigation: "Gather the accounts of Whitefold's people and bring them back to Edda Cale.",
           wall: "Read what the broken wall shows and prepare for the repair.",
           repair: "Choose what Whitefold gives up to repair the road.",
-          reckoning: "Attend the Common's meeting at the Fleecefold." };
+          reckoning: "Attend the Common's meeting at the Fleecefold."
+        };
         return g[s.weight_road_quest_stage] || "";
       },
       active: function (s) { return ["emergency", "investigation", "wall", "repair", "reckoning"].indexOf(s.weight_road_quest_stage) >= 0; }
@@ -322,7 +324,12 @@
     {
       id: "black_oath_night_list", title: "The Night List", place: "Dredge-End",
       active: function (s) { return s.black_oath_night_list_stage === "active"; }
+    },
+    {
+      id: "innocent_smile", title: "The Innocent Smile", place: "Valen Reach",
+      active: function (s) { return s.aly_quest_stage === "active"; }
     }
+
   ];
 
   // Hiring Hall jobs and courier parcels are listed under their own heading.
