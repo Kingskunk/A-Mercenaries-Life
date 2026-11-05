@@ -420,6 +420,11 @@ function compile(){
   verifyFileName("overworld/overworld.txt");
   verifyFileName("overworld/travel_events.txt");
   verifyFileName("overworld/river_transport.txt");
+  // The Innocent Smile (Alyndra's Valen Reach tavern pitch, scene 1): a *goto_scene-only side quest
+  // reached from the Dev Hub for now. NOT in *scene_list, needs its own line here or a compiled build
+  // fails with "scene doesn't exist" the moment the player (or the dev menu) walks into it. Its
+  // *goto_scene at aly_night_retire targets quests/valen_reach_alyndra_scene2, which does not exist yet.
+  verifyFileName("overworld/valen_reach_alyndra.txt");
   verifyFileName("horse_dealer.txt");
   // The hub that lists signed jobs and routes to them (reached from the Trunk Road and the Patrician Avenue).
   verifyFileName("port_valen/radiant/radiant_hub.txt");

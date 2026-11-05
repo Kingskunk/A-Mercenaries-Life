@@ -480,5 +480,5 @@
   }
   function start() { hookPageRender(); update(); setInterval(update, 1000); }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
-  window.Scenery = { update: update, daylight: daylight, placeNames: placeNames, key: function () { return window.stats ? sceneKey(window.stats) : null; }, setOff: function (b) { off = !!b; try { window.localStorage.setItem("scenery", b ? "off" : "on"); } catch (e) {} update(); } };
+  window.Scenery = { update: update, daylight: daylight, placeNames: placeNames, key: function () { return window.stats ? sceneKey(window.stats) : null; }, setOff: function (b) { off = !!b; try { window.localStorage.setItem("scenery", b ? "off" : "on"); } catch (e) { } update(); } };
 })();
