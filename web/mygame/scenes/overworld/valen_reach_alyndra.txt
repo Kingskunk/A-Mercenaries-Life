@@ -3,10 +3,9 @@
 *comment ====================================================================================
 *comment VALEN REACH -- SIDE QUEST: THE INNOCENT SMILE (SCENE 1: THE TAVERN)
 *comment Features:
-*comment   - Linear flowing conversation (no cyclical dialogue hub).
+*comment   - Linear flowing conversation.
 *comment   - Paper doll visual assessment (${feet_prose}, ${armor_prose}, ${weapon_prose}, ${cloak_prose}).
 *comment   - Suspicion score increments invisibly on player skill checks and observations.
-*comment   - Integrated dev-hub barter panel using engine shop cart routines.
 *comment ====================================================================================
 
 *label aly_start
@@ -24,8 +23,6 @@
   *goto aly_seated
 *if (aly_checkpoint = "the_deal")
   *goto aly_deal_menu
-*if (aly_checkpoint = "barter")
-  *goto aly_barter_menu
 *set aly_checkpoint "tavern_floor"
 *goto aly_tavern_entry
 
@@ -87,9 +84,9 @@ She tips her cup of cider toward you in a polite, wordless tavern greeting, wait
     "A pleasure, ${name}," she answers, setting her apple knife aside. "I'm Alyndra."
     *goto aly_seated
 
-* 
+*comment ────────────────────────────────────────────────────────────────────────────────────
 *comment SCENE 1, PART 2: LINEAR CONVERSATION & THE COVER STORY
-* 
+*comment ────────────────────────────────────────────────────────────────────────────────────
 *label aly_seated
 *set aly_checkpoint "table_talk"
 
@@ -113,7 +110,7 @@ Alyndra slides a clean slice of apple across the wooden platter toward you.
 *label aly_her_story
 "As for me," Alyndra continues, her voice softening into a wistful, reflective cadence. "Misfortune turned into wanderlust, I suppose. My parents were wood elves, modest merchants. Sickness took them when I was young, and the local lord burned our steading fearing plague. A kind tavernkeep took me in and hid my heritage behind an apron."
 
-She gives a light, self deprecating shrug of one shoulder.
+She gives a light, self-deprecating shrug of one shoulder.
 
 "I spent years wiping beer grease and watching sellswords ride off toward the horizon. One morning I took my parents' old horse, bought a hunting knife, and rode out. Better to freeze on the high trails than die an old maid with dishwater hands. Now I scout paths, trade gear, and search old ruins for treasure."
 
@@ -142,9 +139,9 @@ She gives a light, self deprecating shrug of one shoulder.
     She grins, a dimple showing on her cheek. "Straight to the point. I like that."
     *goto aly_topic_pitch
 
-*comment 
+*comment ────────────────────────────────────────────────────────────────────────────────────
 *comment SCENE 1, PART 3: THE PITCH & THE HANDSHAKE
-*comment 
+*comment ────────────────────────────────────────────────────────────────────────────────────
 *label aly_topic_pitch
 Alyndra leans across the table, her hazel eyes gleaming with suppressed excitement.
 
@@ -192,84 +189,9 @@ You take her hand. Her grip is surprisingly firm and sure.
 *else
   Her hand is warm and slender, returning your grip with earnest enthusiasm.
 
-She pulls her hand back with an eager bounce. "Before we turn in, how are your provisions? The coastal bluffs are jagged, and that vault will be pitch black."
+She pulls her hand back with an eager bounce and rises from the bench.
 
-She hoists a tidy, oilcloth-wrapped bundle from beneath the bench.
-
-"Old Gerrick at the bar charges robber's rates for travel kit. I bought an outrider's surplus on the high road two days ago. If you need rope, torches, or rations, take what you need from my pack for half coin. An investment in our partnership."
-
-*comment 
-*comment SCENE 1, PART 4: THE BARTER & RETIRING FOR THE NIGHT
-*comment 
-*label aly_barter_menu
-*set aly_checkpoint "barter"
-
-[b]Alyndra's Surplus[/b]
-*line_break
-She lifts the oilcloth bundle from beneath the bench. "Half coin, as I said. What do you need?"
-
-*choice
-  *if ((((gold * 100) + (silver * 10)) + copper) >= 10)
-    # Buy a coil of Hemp Rope (50 ft) for 1 Silver Mark (10 Copper).
-      *set cart_buy_hemp_rope 1
-      *goto aly_barter_menu
-  *if ((((gold * 100) + (silver * 10)) + copper) >= 5)
-    # Buy 3 Pitch Torches & Tinder for 5 Copper.
-      *set cart_buy_pitch_torch 3
-      *goto aly_barter_menu
-  *if ((((gold * 100) + (silver * 10)) + copper) >= 8)
-    # Buy Iron Rations (2 Days) for 8 Copper.
-      *set cart_buy_trail_rations 2
-      *goto aly_barter_menu
-  # Settle up the trade panel.
-    *goto aly_barter_settle
-  # "My pack is ready. Let's get some rest and meet at dawn."
-    *goto aly_night_retire
-
-*label aly_barter_settle
-*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-  *gosub_scene equipment shop_begin
-  *if (cart_buy_hemp_rope > 0)
-    *gosub_scene equipment shop_cart_buy "hemp_rope"
-  *if (cart_buy_pitch_torch > 0)
-    *gosub_scene equipment shop_cart_buy "pitch_torch"
-  *if (cart_buy_trail_rations > 0)
-    *gosub_scene equipment shop_cart_buy "trail_rations"
-  *gosub_scene equipment shop_check
-  *if (shop_verdict = "ok")
-    *set shop_mode "apply"
-    *if (cart_buy_hemp_rope > 0)
-      *gosub_scene equipment shop_cart_buy "hemp_rope"
-    *if (cart_buy_pitch_torch > 0)
-      *gosub_scene equipment shop_cart_buy "pitch_torch"
-    *if (cart_buy_trail_rations > 0)
-      *gosub_scene equipment shop_cart_buy "trail_rations"
-    *set currency_add_amount (shop_tot_credit - shop_tot_cost)
-    *gosub_scene economy currency_add
-  *else
-    *set shop_mode "clear"
-    *if (cart_buy_hemp_rope > 0)
-      *gosub_scene equipment shop_cart_buy "hemp_rope"
-    *if (cart_buy_pitch_torch > 0)
-      *gosub_scene equipment shop_cart_buy "pitch_torch"
-    *if (cart_buy_trail_rations > 0)
-      *gosub_scene equipment shop_cart_buy "trail_rations"
-  *set currency_txn_locked true
-  *set locked_currency_txn_page_id page_id
-*if (shop_tot_bought > 0)
-  Alyndra wraps each purchase in a twist of paper, naming the price as she goes.
-  [b][🛒 Bought: ${shop_recv} for ${shop_cost_desc}][/b]
-*set hours_to_pass 0
-*set minutes_to_pass shop_tot_minutes
-*set time_advance_call_id "aly_barter_trade"
-*gosub_scene calendar advance_time
-*page_break Back to her pack…
-*goto aly_barter_menu
-
-*label aly_night_retire
-Alyndra ties the cords on her pack with deft, nimble fingers and rises from the table, flashing her wide, radiant smile one last time.
-
-"First light, then. Rest well, partner—tomorrow we find out what the Empire left behind."
+"First light, then! Get whatever rest you can tonight, ${name}. The climb through the limestone fins is steep, and tomorrow we find out what the Empire left behind."
 
 She slips gracefully through the common room toward the guest loft, leaving you with an empty trencher and the low hum of the tavern.
 
