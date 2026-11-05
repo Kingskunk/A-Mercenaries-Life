@@ -1,10 +1,12 @@
+--- START OF FILE valen_reach_alyndra.txt ---
+
 *comment ====================================================================================
 *comment VALEN REACH -- SIDE QUEST: THE INNOCENT SMILE (SCENE 1: THE TAVERN)
 *comment Features:
-*comment   - Modular tavern entrance suitable for any wayside inn in the Reach.
-*comment   - Dynamic dialogue styles: Bold/Flirtatious, Guarded/Direct, or Watchful.
-*comment   - Suspicion system hooks: Assessing eyes, rehearsed tragedy, hilt calluses.
-*comment   - Integrated 50% outfitter barter before departure.
+*comment   - Linear flowing conversation (no cyclical dialogue hub).
+*comment   - Paper doll visual assessment (${feet_prose}, ${armor_prose}, ${weapon_prose}, ${cloak_prose}).
+*comment   - Suspicion score increments invisibly on player skill checks and observations.
+*comment   - Integrated dev-hub barter panel using engine shop cart routines.
 *comment ====================================================================================
 
 *label aly_start
@@ -19,12 +21,16 @@
 *if (aly_checkpoint = "tavern_floor")
   *goto aly_tavern_entry
 *if (aly_checkpoint = "table_talk")
-  *goto aly_table_hub
+  *goto aly_seated
+*if (aly_checkpoint = "the_deal")
+  *goto aly_deal_menu
+*if (aly_checkpoint = "barter")
+  *goto aly_barter_menu
 *set aly_checkpoint "tavern_floor"
 *goto aly_tavern_entry
 
 *label aly_tavern_entry
-*set scenery_subplace "village_inn_hall"
+*set scenery_subplace "generic_tavern_inn"
 
 The heavy oak door swings shut against the damp chill of the Valen Reach, cutting off the whistle of the evening wind. Inside, the air smells of peat smoke, boiled greens, and stale small beer. 
 
@@ -43,117 +49,106 @@ She tips her cup of cider toward you in a polite, wordless tavern greeting, wait
   # Approach boldly and take a seat at her table.
     *set aly_approach "bold"
     You cross the grit-dusted boards and slide onto the bench across from her. 
-    
+
     "See anything you like?" you ask with a smirk. "I'm ${name}."
-    
+
     Alyndra doesn’t flinch. Instead, her smile tilts into something conspiratorial and amused as she sets her knife down.
-    
+
     "Bold of you, ${name}," she says, leaning forward on her elbows and resting her chin in her palms. Her eyes trace your ${weapon_prose} with playful curiosity. "And perhaps I did. A woman spends three days sharing a room with carters who smell of wet mule, and in walks someone with salt on their boots and a sense of purpose."
-    *goto aly_table_hub
-    
+    *goto aly_seated
+
   # Walk over with your guard up and address her directly.
     *set aly_approach "direct"
     You walk to her table, one hand resting naturally near your ${weapon_prose}.
-    
+
     "You measured me up the second I cleared the door," you say evenly. "I'm ${name}. What's on your mind?"
-    
+
     Alyndra blinks, looking slightly sheepish, though her warm smile never wavers. She sets her knife down on the platter and gestures to the empty bench across from her.
-    
+
     "Guilty," she laughs softly, her voice light and melodic. "No offense intended, ${name}. Out on the Reach, a woman traveling alone learns to watch the door closely. Won't you sit? I'd welcome company with better manners than the bailiffs."
-    *goto aly_table_hub
-    
+    *goto aly_seated
+
   # Watch her from the bar first before approaching.@{show_stat_hints  [Perception DC 12]|}
     *gosub_scene dice_engine roll_skill_check 12 "perception" "" "insight" "" "" ""
     *if (check_success)
       *set aly_suspicion (aly_suspicion + 1)
       From the counter, you watch her over the rim of an ale mug. Her innocent demeanor never wavers, but her knife work is remarkably clean—rapid, balanced strokes with zero wasted motion. 
-      
+
       Leaning behind her bench, half-concealed beneath her travel pack, sits a slender scabbard wrapped in fine velvet. Not the rough machete of a frontier outrider, but an urban duelist's rapier.
-      
+
       When she catches you watching her, she tilts her head, smiles warmly, and raises her cider cup again in an unmistakable invitation.
     *else
       She appears to be exactly what she presents: an elven outrider or wandering trader resting away from the louder locals. When she catches your eye, she offers an encouraging, friendly smile.
-    
-    You leave the bar and cross the room, taking a seat at her bench.
-    
-    "I'm ${name}," you say, nodding to her.
-    
-    "A pleasure, ${name}," she answers, setting her apple knife aside. "I'm Alyndra."
-    *goto aly_table_hub
 
-*comment ────────────────────────────────────────────────────────────────────────────────────
-*comment TABLE CONVERSATION HUB
-*comment ────────────────────────────────────────────────────────────────────────────────────
-*label aly_table_hub
+    You leave the bar and cross the room, taking a seat at her bench.
+
+    "I'm ${name}," you say, nodding to her.
+
+    "A pleasure, ${name}," she answers, setting her apple knife aside. "I'm Alyndra."
+    *goto aly_seated
+
+* 
+*comment SCENE 1, PART 2: LINEAR CONVERSATION & THE COVER STORY
+* 
+*label aly_seated
 *set aly_checkpoint "table_talk"
 
-Alyndra slides a clean slice of apple across the platter toward you.
+Alyndra slides a clean slice of apple across the wooden platter toward you.
 
-"I'm Alyndra," she says brightly. "And you have the look of someone with a purpose in the Reach. Merchant, sellsword, or wanderer?"
-
-*choice
-  *if (not(aly_asked_story))
-    # Ask about her story and what brings her out here alone.
-      *set aly_asked_story true
-      *goto aly_topic_story
-
-  *if (not(aly_asked_watching))
-    # Deduce her motive: she's looking for someone capable and trustworthy.
-      *set aly_asked_watching true
-      *goto aly_topic_scouting
-
-  *if (not(aly_asked_reach))
-    # Ask what she knows about the road ahead through the Reach.
-      *set aly_asked_reach true
-      *goto aly_topic_reach
-
-  # Cut to business: ask what proposal she has for you.
-    *goto aly_topic_pitch
-
-*label aly_topic_story
-"Misfortune turned to curiosity," she answers, her tone dropping into a softer, wistful cadence.
-
-"My parents were wood elves—modest merchants. Sickness took them when I was young, and the local lord burned our steading fearing plague. A tavernkeep took me in and hid my heritage behind an apron."
-
-She gives a light, self-deprecating shrug. "I spent years wiping beer grease and watching dashing adventurers ride off toward the horizon. One morning I took my parents' horse, bought a hunting knife, and rode out. Better to freeze on the high trails than die an old maid with dishwater hands."
+"You have the cut of someone who knows the rough road, ${name}," she says, resting her elbows on the pine table. "What brings someone with a ${weapon_prose} out into the Reach? Looking for coin, or just trying to get across the gap without paying Baron Karr's bailiffs?"
 
 *choice
-  # Listen for sincerity in her tragic tale.@{show_stat_hints  [Insight DC 13]|}
+  # "Looking for coin and work. The Reach roads usually have both."
+    "They certainly do," she smiles, her eyes brightening. "Though out here, most work ends with an axe in your hand or a shovel in the ditch. Real coin takes a bit more initiative."
+    *goto aly_her_story
+
+  # "Knowledge and old ground. The Reach has plenty of history buried in it."
+    "More than most people realize," she agrees, leaning in slightly. "Old Imperial forts, collapsed watchposts, ruins that the turnpike carters just walk right past because they never look up from the mud."
+    *goto aly_her_story
+
+  # "My business is my own. What's yours, Alyndra?"
+    She laughs softly, entirely unfazed by your bluntness. "Fair enough. A cautious tongue keeps a head on its shoulders out here."
+    *goto aly_her_story
+
+*label aly_her_story
+"As for me," Alyndra continues, her voice softening into a wistful, reflective cadence. "Misfortune turned into wanderlust, I suppose. My parents were wood elves, modest merchants. Sickness took them when I was young, and the local lord burned our steading fearing plague. A kind tavernkeep took me in and hid my heritage behind an apron."
+
+She gives a light, self deprecating shrug of one shoulder.
+
+"I spent years wiping beer grease and watching sellswords ride off toward the horizon. One morning I took my parents' old horse, bought a hunting knife, and rode out. Better to freeze on the high trails than die an old maid with dishwater hands. Now I scout paths, trade gear, and search old ruins for treasure."
+
+*choice
+  # Listen closely to her tragic tale.@{show_stat_hints  [Insight DC 13]|}
+    *set aly_asked_story true
     *gosub_scene dice_engine roll_skill_check 13 "insight" "" "" "" "" ""
     *if (check_success)
       *set aly_suspicion (aly_suspicion + 1)
-      Her eyes grow suitably misty, and the quiver in her voice hits every emotional note with theatrical precision. It is a compelling tale—and delivered with the polished perfection of a monologue rehearsed a hundred times.
+      Her voice trembles in just the right places, and her eyes grow misted right on cue. It is a compelling tale—and delivered with the polished perfection of a monologue recited a dozen times before.
     *else
-      Her grief seems touchingly genuine, the common tragedy of an orphan girl seeking freedom from a dull life.
-    *goto aly_table_hub
-  # Nod in sympathy and ask what she does now.
-    "I learned the trails," she says with a bright smile. "Found that being small and quiet lets you hear things the timber-carters miss."
-    *goto aly_table_hub
+      Her grief sounds quiet and genuine—the common tragedy of an orphan girl who chose the danger of the open road over a life of scrubbing boards.
+    *goto aly_topic_pitch
 
-*label aly_topic_scouting
-"Let me guess," you say, leaning in. "You found something in the wilderness, you can't tackle it alone, and you're watching the door for someone capable who won't slit your throat in your sleep."
+  # "Is that why you're watching strangers? Found something out there you can't tackle alone?"
+    *set aly_asked_watching true
+    A light flush touches her cheekbones, and she looks down at the table with a soft, sheepish laugh.
 
-A light flush touches her cheekbones, and she looks down at the table with a soft, bashful laugh.
+    "Guilty as charged," she murmurs. "You're sharp. Sharper than the usual carters. It's rare to find someone out here who understands how dangerous this road is for a woman alone."
+    *set aly_suspicion (aly_suspicion - 1)
+    *if (aly_suspicion < 0)
+      *set aly_suspicion 0
+    *goto aly_topic_pitch
 
-"Guilty as charged," she murmurs. "You're sharp. Sharper than the usual carters. It's rare to find a traveler out here who understands how dangerous this road is for a woman alone. Timber-thugs only understand the cudgel. Scholars and true sellswords have rules."
+  # "A hard road. But you didn't flag me down just to reminisce about the past."
+    She grins, a dimple showing on her cheek. "Straight to the point. I like that."
+    *goto aly_topic_pitch
 
-*set aly_suspicion (aly_suspicion - 1)
-*comment Letting the player feel smart lowers her apparent threat.
-*if (aly_suspicion < 0)
-  *set aly_suspicion 0
-*goto aly_table_hub
-
-*label aly_topic_reach
-"Mud, broken axles, and extortionate tolls," Alyndra says plainly. "The high turnpike takes three days of slog around the limestone crags, and Baron Karr's bailiffs charge an arm and a leg at the gap. The back-trails through the bluffs are twice as fast—if you know which ravine doesn't end in a sea-chasm."
-*goto aly_table_hub
-
-*comment ────────────────────────────────────────────────────────────────────────────────────
-*comment THE HOOK & THE DEAL
-*comment ────────────────────────────────────────────────────────────────────────────────────
+*comment 
+*comment SCENE 1, PART 3: THE PITCH & THE HANDSHAKE
+*comment 
 *label aly_topic_pitch
 Alyndra leans across the table, her hazel eyes gleaming with suppressed excitement.
 
-"Three weeks ago, following a wash-out along the coastal bluffs, I found a collapsed archway beneath the roots of an ironwood tree. Worked stone—Imperial granite, smooth as glass. Inside is a sealed vault door with interlocking bronze rings and arcane glyphs."
+"Three weeks ago, following a wash-out along the coastal bluffs, I found a collapsed archway beneath the roots of a tree. Worked stone—Imperial granite, smooth as glass. Inside is a sealed vault door with interlocking bronze rings and arcane glyphs."
 
 She watches your face carefully.
 
@@ -165,9 +160,11 @@ She watches your face carefully.
 *choice
   # Agree to the partnership and shake on it.
     *goto aly_handshake
-  # Ask why an ancient vault hasn't been looted yet.
-    "The winter mudslides only exposed the arch last month," she answers without a beat of hesitation. "Before that, it was buried under forty feet of limestone scree. It's untouched, Lucius."
+
+  # Ask why an ancient vault hasn't been looted already.
+    "The winter mudslides only exposed the arch last month," she answers without a beat of hesitation. "Before that, it was buried under forty feet of limestone scree. It's untouched, ${name}."
     *goto aly_deal_menu
+
   # Decline the venture; you travel alone.
     *goto aly_refuse_warning
 
@@ -179,7 +176,8 @@ Alyndra extends her slender right hand across the pine boards to seal the contra
 *choice
   # Take her hand firmly.
     *goto aly_feel_calluses
-  # Shake cautiously, keeping an eye on her eyes.
+
+  # Shake cautiously, keeping an eye on her posture.
     *goto aly_feel_calluses
 
 *label aly_feel_calluses
@@ -200,6 +198,9 @@ She hoists a tidy, oilcloth-wrapped bundle from beneath the bench.
 
 "Old Gerrick at the bar charges robber's rates for travel kit. I bought an outrider's surplus on the high road two days ago. If you need rope, torches, or rations, take what you need from my pack for half coin. An investment in our partnership."
 
+*comment 
+*comment SCENE 1, PART 4: THE BARTER & RETIRING FOR THE NIGHT
+*comment 
 *label aly_barter_menu
 *set aly_checkpoint "barter"
 
@@ -278,11 +279,8 @@ She slips gracefully through the common room toward the guest loft, leaving you 
 *gosub_scene calendar advance_time
 *gosub_scene character_progression free_short_rest
 
-*comment Scene 2 (the coastal-bluff trek to the vault) isn't written yet. Until it exists, loop the
-*comment quest back to its own start rather than *goto_scene-ing to a file that doesn't exist, so this
-*comment stays playable end-to-end while scene 2 is built incrementally -- just move this *label
-*comment aly_night_retire block's *goto_scene target here once that scene exists.
-[i]( End of Scene 1. Alyndra's story continues at dawn—for now, the tale loops back to the tavern door. )[/i]
+*comment Loopback stub for dev testing until Scene 2 is added.
+[i]( End of Scene 1. Alyndra's story continues at dawn—for now, the loop returns to the tavern door. )[/i]
 
 *page_break Set out onto the high trails at dawn…
 *set aly_quest_started false
@@ -308,3 +306,5 @@ Alyndra's smile wavers for a brief, cold second before she recovers her playful 
     You step away from the smiling elf and return to your own business in the Reach.
     *page_break Back to your journey…
     *goto_scene overworld/overworld ow_here
+
+--- END OF FILE valen_reach_alyndra.txt ---
