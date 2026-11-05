@@ -32,6 +32,7 @@
     marlcross: "village_green",
     barleycross: "village_green",
     ashrun_holt: "village_green",
+    fallowmere: "fallowmere_pond_green", // Fallowmere overworld tile uses the village pond green view
     port_valen: "port_valen_river_gate", // the overworld node is the River Gate approach, not the quays
     silt_conduits: "sewer",       // the Silt-Gate channels
     compound: "carrion_compound", // the Carrion compound, where the story starts
