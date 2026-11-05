@@ -63,6 +63,8 @@ window.DISCARD_DATA = {
   "scroll_speak_with_animals": {"kind":"consumable"},
   "scroll_charm_person": {"kind":"consumable"},
   "scroll_remove_curse": {"kind":"consumable"},
+  "scroll_grease": {"kind":"consumable"},
+  "scroll_thunderwave": {"kind":"consumable"},
   "cooking_pot": {"kind":"tool"},
   "dripping_roasted_boar": {"kind":"consumable"},
   "onion_seared_venison": {"kind":"consumable"},

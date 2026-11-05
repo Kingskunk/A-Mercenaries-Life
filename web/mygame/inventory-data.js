@@ -563,6 +563,20 @@
       use: true
     },
     {
+      id: "scroll_grease", category: "consumables", owned: "has_scroll_grease",
+      weight: 0.05, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_scroll_grease) || 0); return "Grease Scroll" + (n > 1 ? " ×" + n : ""); },
+      description: "Greasy, finger-marked slip that smells of tallow.",
+      badge: "Read in a fight: a slick under a foe and everything beside it, Dexterity save or fall"
+    },
+    {
+      id: "scroll_thunderwave", category: "consumables", owned: "has_scroll_thunderwave",
+      weight: 0.05, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_scroll_thunderwave) || 0); return "Thunderwave Scroll" + (n > 1 ? " ×" + n : ""); },
+      description: "Tightly rolled strip of paper that hums faintly.",
+      badge: "Read in a fight: 2d8 thunder to every foe beside you, Constitution save for half and a shove"
+    },
+    {
       id: "cooking_pot", category: "provisions", owned: "has_cooking_pot",
       weight: 4, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_cooking_pot) || 0); return "Iron Cooking Pot" + (n > 1 ? " ×" + n : ""); },
