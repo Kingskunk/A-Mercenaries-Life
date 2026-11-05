@@ -44,6 +44,7 @@
   // scenes (the file under scenes/, as the engine reports it in stats.sceneName) that are a kind of place of their own
   var SCENE_PLACES = {
     "alderford/drowned_oar": "tavern",
+    "overworld/valen_reach_alyndra": "generic_tavern_inn",
     "timbermouth/split_pine_inn": "generic_town_inn",
     "Langston/pickled_hen": "generic_town_inn",
     "Langston/cord_and_kettle": "generic_trade_shop",
