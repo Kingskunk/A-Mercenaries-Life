@@ -243,7 +243,8 @@
       active: function (s) { return s.wol_quest_stage === "active" || s.wol_quest_stage === "asked" || s.wol_quest_stage === "offered"; }
     },
     {
-      id: "hale_ring", title: "The Hale Ring",
+      id: "hale_ring",
+      title: function (s) { return (truthy(s.hale_ring_cassia_spoken) || truthy(s.hale_ring_oswin_spoken)) ? "Ressa Hale's Ring" : "A Ring on the River Road"; },
       giver: function (s) { return truthy(s.hale_ring_cassia_spoken) ? "Cassia Rell, the Bright Setting" : "A ring found on the River Road"; },
       place: function (s) { return (truthy(s.hale_ring_cassia_spoken) || truthy(s.hale_ring_oswin_spoken)) ? "Timbermouth · the Split Pine" : "Port Valen · the Bright Setting"; },
       goal: function (s) { return (truthy(s.hale_ring_cassia_spoken) || truthy(s.hale_ring_oswin_spoken)) ? "Return Ressa Hale's ring to her at the Split Pine in Timbermouth." : "Show the gold ring engraved R. H. to Cassia Rell at the Bright Setting."; },

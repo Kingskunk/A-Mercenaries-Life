@@ -1729,7 +1729,7 @@
     {
       id: "ressa_hale_ring", category: "documents", owned: "has_ressa_hale_ring",
       weight: 0.05,
-      name: "Ressa Hale's Ring",
+      name: function (s) { return (truthy(s.hale_ring_cassia_spoken) || truthy(s.hale_ring_oswin_spoken)) ? "Ressa Hale's Ring" : "Engraved Gold Ring"; },
       description: function (s) { return truthy(s.hale_ring_cut_known) ? "A worn gold ring engraved R. H., set with a small diamond cut in an unusual, deliberate pattern." : "A worn gold ring engraved R. H., set with a small, sharply cut diamond."; },
       badge: "Quest Item"
     },

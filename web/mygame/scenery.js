@@ -21,6 +21,11 @@
   var root = document.documentElement, el = null, last = "", off = false, stages = null, cur = -1, curKey = null, goneTimer = [0, 0];
   var FADE_MS = 320;    // matches the quick stage transition in scenery.css, plus a little
   try { off = window.localStorage.getItem("scenery") === "off"; } catch (e) { off = false; }
+  // Diagnostic-only toggle (localStorage "sceneryEffects" = "off"): freezes the glow/haze/dim/saturation/brightness
+  // layer at neutral values but leaves the backdrop image and the day/night crossfade alone, to tell apart a
+  // flicker caused by the picture/place logic from one caused by the lighting overlay riding on top of it.
+  var effectsOff = false;
+  try { effectsOff = window.localStorage.getItem("sceneryEffects") === "off"; } catch (e) { effectsOff = false; }
 
   // a place name that should wear another key's picture: name -> key (a name that is already a picture key needs no line)
   var ALIAS = {
@@ -65,6 +70,13 @@
     "Langston/fallowmere/grey_gander": "fallowmere_grey_gander",
     "Langston/fallowmere/village_heads_hall": "generic_village_gathering_hall",
     "Langston/fallowmere/market": "fallowmere_market",
+    // Only a fallback: the dg_in_run RULES entry above (each dungeon's own rooms) matches first and wins
+    // whenever a run is actually under way. This is what shows during the walk-in/out line, before dg_run_begin
+    // has set dg_in_run (every entry calls dg_time -- a time advance, which can itself trigger the hub-condition
+    // refresh -- before dg_run_begin right after it) and after dg_run_end clears it, instead of the district
+    // fallback (longshade/longshade_forest, port_valen_silt_conduits: same *goto_scene-only shape, same gap).
+    "longshade/longshade_forest": "longshade_forest",
+    "port_valen/port_valen_silt_conduits": "silt_conduits",
     "alderford/wagon_lot": "river_carters_lot",
     "timbermouth/wagon_lot": "timber_wagon_lot",
     "port_valen/radiant/caravan_lot": "vale_gate_wagon_lot",
@@ -105,13 +117,29 @@
   var CONTEXT_CHILD_SCENES = {
     calendar: 1, economy: 1, character_buffs: 1, character_progression: 1, character_stats: 1,
     combat_ai: 1, combat_dice: 1, combat_movement: 1, combat_prose: 1, combat_spells: 1,
-    combat_types: 1, dice_engine: 1, equipment: 1
+    combat_types: 1, dice_engine: 1, equipment: 1, crafting: 1, names: 1,
+    // dungeon.txt is a shared step/time/dark-check library every dungeon file *gosub_scenes into (dg_run_begin
+    // on entry, dg_step/dg_time/dg_dark_check while walking); no RULES entry ever keys off sceneName === "dungeon"
+    // itself -- real in-run art comes from dg_in_run/dg_table/scenery_subplace, set by the caller before the
+    // gosub either way -- so masking it back to the real dungeon file it was called from (never the player
+    // standing in "dungeon" itself) only closes the entry-setup gap (dg_run_begin sets dg_in_run partway through
+    // its OWN body, so the moment it's entered dg_in_run briefly still reads false) without changing anything
+    // a real run already shows.
+    dungeon: 1
   };
 
   function slug(v) { return String(v || "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, ""); }
 
   function storyContext(s, subscenes) {
-    if (!CONTEXT_CHILD_SCENES[String(s.sceneName || "")]) return s;
+    // A helper can itself briefly *gosub_scene into an ORDINARY story scene purely for bookkeeping -- e.g.
+    // character_progression.txt's refresh_quests_finished tallies the quest pool by calling each quest file's
+    // own count_finished_<place> label in turn (prologue/alderford, port_valen/port_valen, longshade_forest...).
+    // That real scene's name is correctly NOT in CONTEXT_CHILD_SCENES (the player does visit it for real), so
+    // checking only the current sceneName misses this: the fix also looks at who called it. The immediate
+    // caller (the end of the stack) being a known helper is proof this "visit" is the helper's own detour, not
+    // the player standing there, so the walk below still applies and finds the real place beneath it all.
+    var topCaller = subscenes.length ? String(subscenes[subscenes.length - 1].name || "") : "";
+    if (!CONTEXT_CHILD_SCENES[String(s.sceneName || "")] && !CONTEXT_CHILD_SCENES[topCaller]) return s;
     for (var i = subscenes.length - 1; i >= 0; i--) {
       var caller = String(subscenes[i].name || "");
       if (caller && !CONTEXT_CHILD_SCENES[caller]) {
@@ -223,6 +251,8 @@
     function (s) { return s.sceneName === "Langston/fallowmere/grey_gander" && s.scenery_subplace === "fallowmere_grey_gander_yard" ? "village_stable_yard" : undefined; }, // the Grey Gander's open cart yard (the taproom keeps its own picture)
     function (s) { return s.sceneName === "Langston/broadmead/crooked_halter" && s.scenery_subplace === "broadmead_crooked_halter_yard" ? "village_stable_yard" : undefined; }, // the Crooked Halter's open stable yard (the common room keeps its own picture)
     function (s) { return s.sceneName === "Langston/barolo/red_stave" && s.scenery_subplace === "barolo_red_stave_court" ? "village_stable_yard" : undefined; }, // the Red Stave's open stable court (the hall keeps its own picture; the rented room is the village inn room above)
+    function (s) { return s.sceneName === "port_valen/brinewick/reedhouse" && s.scenery_subplace === "reedhouse_stable_yard" ? "village_stable_yard" : undefined; }, // the Reedhouse's raised stable yard (the hall keeps its own picture)
+    function (s) { return s.sceneName === "port_valen/marlcross/wayfarers_rest" && s.scenery_subplace === "wayfarers_rest_stable_yard" ? "village_stable_yard" : undefined; }, // the Wayfarer's Rest stable yard (the hall keeps its own picture)
     function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_lodgings" ? "generic_quiet_lodgings" : undefined; }, // Terrace Lodgings' ground-floor entry hall
     function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_tavern" ? "generic_town_inn" : undefined; }, // the Wagoner's Rest hall and rooms
     function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_bakehouse" ? "middle_ward_bakehouse" : undefined; }, // Mother Marda's communal bakehouse
@@ -385,6 +415,15 @@
       last = "";
       return;
     }
+    // A scene handoff (*goto_scene, *gosub_scene, and the *return back) sets stats.sceneName the instant the new
+    // Scene object is built, but that scene's own lines -- including its *set scenery_subplace -- only run after
+    // an async callback (web/scene.js loadScene/loadSceneFast). The 1-second poll below can land inside that gap,
+    // reading a sceneName paired with the OLD scenery_subplace and briefly painting the wrong place or nothing at
+    // all. screenEmpty is cleared only once the live scene actually prints a paragraph, so it is a ready-made
+    // signal that nothing it just set has taken effect yet; a silent *gosub_scene library (economy, calendar,
+    // dice_engine) never prints at all, so this also covers the whole length of a gambling round's wager/time-advance
+    // calls, reinforcing storyContext() below rather than replacing it.
+    if (s.scene && s.scene.screenEmpty) return;
     // choicescript_stats is the dossier overlay. Re-resolving that bookkeeping scene would fall through to a
     // stale district (or no place) and replace the view the player was just standing in. Reuse the displayed
     // key instead; the lighting below still reads the current clock, so waiting through dusk changes the view.
@@ -416,25 +455,34 @@
     var day = daylight(h);
     var wet = !!s.weather_wet, poor = s.weather_visibility === "poor", storm = Number(s.weather_severity) >= 3, over = s.weather === "Overcast";
     var dark = !!(s.dg_in_run && s.dg_dark);
-    var shared = {
+    var shared = effectsOff ? { "--sc-glow": "0", "--sc-sat": "1", "--sc-bright": "1", "--sc-haze": "0", "--sc-dim": "0" } : {
       "--sc-glow": single ? "0" : (0.55 * Math.sin(Math.PI * Math.max(0.001, Math.min(0.999, day)))).toFixed(3),   // the dawn and dusk warmth, strongest half way
       "--sc-sat": (wet || over || poor ? 0.7 : 1).toFixed(2),
       "--sc-bright": (storm ? 0.62 : wet ? 0.78 : over ? 0.85 : 1).toFixed(2),
       "--sc-haze": poor && !storm ? "0.55" : (over ? "0.15" : "0"),
       "--sc-dim": dark ? "0.55" : (single ? (0.5 * (1 - day)).toFixed(2) : "0")   // a single picture is darkened at night instead of swapped
     };
-    var mine = {
+    var blend = { "--sc-day": single ? "1" : day.toFixed(3) };
+    // The pictures themselves (the url()s behind background-image) are a pure function of key + its version stamp,
+    // so they are IDENTICAL on every call that does not change place. Rewriting a custom property that feeds a
+    // background-image with its own unchanged value still makes Chrome re-touch that paint, which is visible as a
+    // flicker on a page that repaints often for an unrelated reason (dice rounds re-run this every ~15 game-minutes
+    // purely because the day/night blend ticks). Only set these when a stage is actually taking on a new place.
+    var pictures = {
       "--sc-img-day": 'url("' + urlOf(key, "day") + '")',
-      "--sc-img-night": 'url("' + urlOf(key, "night") + '")',
-      "--sc-day": single ? "1" : day.toFixed(3)
+      "--sc-img-night": 'url("' + urlOf(key, "night") + '")'
     };
-    var sig = key + JSON.stringify(shared) + JSON.stringify(mine);
+    var sig = key + JSON.stringify(shared) + JSON.stringify(blend);
     if (sig === last) return; last = sig;
-    // the lighting (shared) and the pictures (mine) both belong to one stage, so a place that is fading out keeps the look it had
+    // the lighting (shared) and the day/night blend (blend) both belong to one stage, so a place that is fading out keeps the look it had
     function paint(st) {
       var n;
       for (n in shared) if (shared.hasOwnProperty(n)) st.style.setProperty(n, shared[n]);
-      for (n in mine) if (mine.hasOwnProperty(n)) st.style.setProperty(n, mine[n]);
+      for (n in blend) if (blend.hasOwnProperty(n)) st.style.setProperty(n, blend[n]);
+    }
+    function paintPictures(st) {
+      var n;
+      for (n in pictures) if (pictures.hasOwnProperty(n)) st.style.setProperty(n, pictures[n]);
     }
     if (key !== curKey) {
       var next = cur === 0 ? 1 : 0;
@@ -443,7 +491,7 @@
       // Paint the incoming stage with its transitions off, so its day/night blend, colour and haze start at their final values instead of sliding there from the last place it showed.
       var inc = stages[next];
       inc.classList.add("sc-instant");
-      paint(inc); inc.setAttribute("data-scene", key);
+      paint(inc); paintPictures(inc); inc.setAttribute("data-scene", key);
       void inc.offsetWidth;                                                         // commit those values before anything is allowed to animate
       inc.classList.add("on", "top");                                             // the new place fades in over the old one...
       var settle = function () { inc.classList.remove("sc-instant"); };
@@ -481,5 +529,16 @@
   }
   function start() { hookPageRender(); update(); setInterval(update, 1000); }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
-  window.Scenery = { update: update, daylight: daylight, placeNames: placeNames, key: function () { return window.stats ? sceneKey(window.stats) : null; }, setOff: function (b) { off = !!b; try { window.localStorage.setItem("scenery", b ? "off" : "on"); } catch (e) { } update(); } };
+  window.Scenery = {
+    update: update, daylight: daylight, placeNames: placeNames,
+    key: function () { return window.stats ? sceneKey(window.stats) : null; },
+    setOff: function (b) { off = !!b; try { window.localStorage.setItem("scenery", b ? "off" : "on"); } catch (e) { } update(); },
+    getEffectsOff: function () { return effectsOff; },
+    setEffectsOff: function (b) {
+      effectsOff = !!b;
+      try { window.localStorage.setItem("sceneryEffects", b ? "off" : "on"); } catch (e) { }
+      last = "";   // force the next update() to repaint even if key/clock/weather haven't moved
+      update();
+    }
+  };
 })();

@@ -292,7 +292,7 @@ The mug goes from hand to hand round the bare circle, and the bone dice rattle o
 
 *choice
   *if ((gander_dice_bankroll > 0) and ((((gold * 100) + (silver * 10)) + copper) >= 4))
-    # Drop 4 Copper Bits and take a throw.${hint_gander_dice}
+    # Settle in at the board for a round.${hint_gander_dice}
       *set wager_bankroll_var "gander_dice_bankroll"
       *set wager_ante_copper 4
       *set wager_win_copper 8
@@ -300,16 +300,23 @@ The mug goes from hand to hand round the bare circle, and the bone dice rattle o
       *set check_dc 13
       *set check_skill "Sleight of Hand"
       *gosub_scene economy resolve_wager
+      *set hours_to_pass 0
+      *set minutes_to_pass 15
+      *set time_advance_call_id "fm_gg_dice"
+      *gosub_scene calendar advance_time
+      *gosub_scene calendar recalc_hp_from_neglect
+      *if (hp_current <= 0)
+        *set death_cause "exhaustion"
+        *goto_scene death death_screen
       *if (check_success)
-        You tip the mug and the dice run out clean across the board, a high point, and the table groans before the carter has finished looking.
+        You trade the mug round the board with the rest of the table for the better part of a quarter hour, until the dice finally run out clean, a high point, and the table groans before the carter has finished looking.
         The carter pushes the coppers across with two fingers and no comment. "Good wrist," he says. "Careful with it."
         [b][🎲 Dice Wager Won: +8 Copper Bits][/b]
       *else
-        The dice skitter off the end of the board and drop to the floor. The carter rakes the ante into the pot. "Floor's not on the slate," he says.
+        You stay at the board a good quarter hour, trading throws with the rest of the table, but the mug never runs your way. The dice skitter off the end of the board and drop to the floor. The carter rakes the ante into the pot. "Floor's not on the slate," he says.
         From behind the bar Ione says, "Hm."
       *if (wager_bankroll_busted)
         The carter turns the pot out on the board, and a button and a nail roll across the wood. "That's the pot," he says. "Tomorrow, if you're about."
-      *page_break The mug goes round the table…
       *goto fm_gg_dice_menu
   # Leave the table.
     *goto fm_gg_hall

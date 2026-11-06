@@ -247,7 +247,7 @@ function showMenu() {
           curl();
         });
       } else if (option.settings) {
-        textOptionsMenu({ size: 1, color: 1, family: 1, animation: window.animationProperty, sliding: window.isMobile, sound: 1 });
+        textOptionsMenu({ size: 1, color: 1, family: 1, animation: window.animationProperty, sliding: window.isMobile, sound: 1, scenery: 1 });
       } else if (option.credits) {
         absolutizeAboutLink();
         aboutClick();
@@ -359,6 +359,16 @@ function textOptionsMenu(categories) {
       if (snd.vol <= 0) options[options.length-1].unselectable = true;
       options.push({name: snd.mute ? "Unmute the sound." : "Mute the sound.", group:"choice", sound:"toggleMute"});
     }
+    // The backdrop's lighting/weather overlay (web/mygame/scenery.js): on by default, off leaves the backdrop
+    // picture and its day/night crossfade alone but freezes the glow/haze/dim/saturation/brightness layer that
+    // rides on top of it, in case that layer's own per-page updates are what someone is seeing as a flicker.
+    if (categories.scenery && window.Scenery && window.Scenery.getEffectsOff) {
+      var effectsCurrentlyOff = window.Scenery.getEffectsOff();
+      options.push({
+        name: effectsCurrentlyOff ? "Turn background scenery effects back on." : "Turn off background scenery effects.",
+        group: "choice", sceneryEffectsOff: !effectsCurrentlyOff
+      });
+    }
     if (categories.size) {
       options.push(
         {name:"Make the text bigger.", group:"choice", bigger:true},
@@ -414,6 +424,8 @@ function textOptionsMenu(categories) {
         changeFontFamily(option.family);
       } else if (option.sound) {
         window.Ambience[option.sound]();
+      } else if (option.sceneryEffectsOff !== undefined) {
+        window.Scenery.setEffectsOff(option.sceneryEffectsOff);
       } else {
         changeFontSize(option.bigger);
       }
@@ -952,12 +964,26 @@ function printCheckboxes(options, submitButtonNameFunction, callback) {
   printButton(submitButtonNameFunction(checked ? options.length : 0), form, true);
 }
 
+// A choice's callback often runs several *gosub_scene hops in a row (a wager's resolve_wager/calendar
+// calls, say), each a real async hand-off (web/scene.js loadSceneFast), so the page a rapid repeat
+// click (or Enter-key repeat) lands on can still be showing the OLD choice, not yet replaced, when the
+// click fires again. Guarding just the one <form> instance isn't enough: a second submit that starts
+// before the first has cleared the screen can render its own new page on top without anything removing
+// the old one first, leaving two live forms and two overlapping chains both mutating the same shared
+// choice_subscene_stack -- read by the scenery backdrop (web/mygame/scenery.js) as a corrupted location.
+// This flag blocks any submission anywhere while one is already resolving, and is cleared only once a
+// genuinely new page's own options are being built, so one click can never race another.
+var choiceSubmitInFlight = false;
+
 function printOptions(groups, options, callback) {
+  choiceSubmitInFlight = false;
   var form = document.createElement("form");
   main.appendChild(form);
   var self = this;
   form.action="#";
   form.onsubmit = function() {
+      if (choiceSubmitInFlight) return false;
+      choiceSubmitInFlight = true;
       safeCall(self, function() {
         var currentOptions = options;
         var option, group;
@@ -976,6 +1002,7 @@ function printOptions(groups, options, callback) {
                 if (/^[aeiou].*/i.test(group)) article = "an";
                 asyncAlert("Please choose " + article + " " + group + " first.");
               }
+              choiceSubmitInFlight = false;   // nothing actually ran; an incomplete submit must still be retryable
               return;
             }
             option = currentOptions[value];
@@ -983,6 +1010,7 @@ function printOptions(groups, options, callback) {
 
         if (groups.length > 1 && option.unselectable) {
           asyncAlert("Sorry, that combination of choices is not allowed. Please select a different " + groups[groups.length-1] + ".");
+          choiceSubmitInFlight = false;
           return;
         }
         safeCall(null, function() {callback(option);});
