@@ -327,6 +327,15 @@
     },
     {
       id: "innocent_smile", title: "The Innocent Smile", place: "Valen Reach",
+      giver: "Alyndra, the Wanderer",
+      goal: function (s) { return "Meet Alyndra at first light and travel the coastal bluffs to the Imperial vault." },
+      clues: function (s) {
+        var c = [];
+        if (truthy(s.aly_monologue)) c.push("Alyndra gave you a tragic tale that sounded like it's been praticed to perfection.");
+        if (truthy(s.aly_knife_work)) c.push("Despite her innocent demeanor, Alyndra is skilled with a knife and possess a duelist rapier.");
+        if (truthy(s.aly_hands)) c.push("You suspect that Alyndra has lived a much tougher life than she initially informed you about.");
+        return c;
+      },
       active: function (s) { return s.aly_quest_stage === "active"; }
     }
 

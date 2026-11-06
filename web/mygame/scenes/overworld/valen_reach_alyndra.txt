@@ -5,7 +5,7 @@
 *comment Features:
 *comment   - Linear flowing conversation.
 *comment   - Paper doll visual assessment (${feet_prose}, ${armor_prose}, ${weapon_prose}, ${cloak_prose}).
-*comment   - Suspicion score increments invisibly on player skill checks and observations.
+*comment   - Skill checks quietly set named clue flags (aly_knife_work, aly_monologue, aly_hands), surfaced on the quest card once found.
 *comment ====================================================================================
 
 *label aly_start
@@ -42,7 +42,6 @@ She tips her cup of cider toward you in a polite, wordless tavern greeting, wait
 
 *choice
   # Approach boldly and take a seat at her table.
-    *set aly_approach "bold"
     You cross the grit-dusted boards and slide onto the bench across from her. 
 
     "See anything you like?" you ask with a smirk. "I'm ${name}."
@@ -53,7 +52,6 @@ She tips her cup of cider toward you in a polite, wordless tavern greeting, wait
     *goto aly_seated
 
   # Walk over with your guard up and address her directly.
-    *set aly_approach "direct"
     You walk to her table, one hand resting naturally near your ${weapon_prose}.
 
     "You measured me up the second I cleared the door," you say evenly. "I'm ${name}. What's on your mind?"
@@ -63,10 +61,10 @@ She tips her cup of cider toward you in a polite, wordless tavern greeting, wait
     "Guilty," she laughs softly, her voice light and melodic. "No offense intended, ${name}. Out on the Reach, a woman traveling alone learns to watch the door closely. Won't you sit? I'd welcome company with better manners than the bailiffs."
     *goto aly_seated
 
-  # Watch her from the bar first before approaching.@{show_stat_hints  [Perception DC 12]|}
-    *gosub_scene dice_engine roll_skill_check 12 "perception" "" "insight" "" "" ""
+  # Watch her from the bar first before approaching.@{show_stat_hints  [Perception/Insight DC 15]|}
+    *gosub_scene dice_engine roll_skill_check 15 "perception" "" "insight" "" "" ""
     *if (check_success)
-      *set aly_suspicion (aly_suspicion + 1)
+      *set aly_knife_work true
       From the counter, you watch her over the rim of an ale mug. Her innocent demeanor never wavers, but her knife work is remarkably clean—rapid, balanced strokes with zero wasted motion. 
 
       Leaning behind her bench, half-concealed beneath her travel pack, sits a slender scabbard wrapped in fine velvet. Not the rough machete of a frontier outrider, but an urban duelist's rapier.
@@ -113,11 +111,11 @@ She gives a light, self-deprecating shrug of one shoulder.
 "I spent years wiping beer grease and watching sellswords ride off toward the horizon. One morning I took my parents' old horse, bought a hunting knife, and rode out. Better to freeze on the high trails than die an old maid with dishwater hands. Now I scout paths, trade gear, and search old ruins for treasure."
 
 *choice
-  # Listen closely to her tragic tale.@{show_stat_hints  [Insight DC 13]|}
+  # Listen closely to her tragic tale.@{show_stat_hints  [Insight DC 15]|}
     *set aly_asked_story true
-    *gosub_scene dice_engine roll_skill_check 13 "insight" "" "" "" "" ""
+    *gosub_scene dice_engine roll_skill_check 15 "insight" "" "" "" "" ""
     *if (check_success)
-      *set aly_suspicion (aly_suspicion + 1)
+      *set aly_monologue true
       Her voice trembles in just the right places, and her eyes grow misted right on cue. It is a compelling tale—and delivered with the polished perfection of a monologue recited a dozen times before.
     *else
       Her grief sounds quiet and genuine—the common tragedy of an orphan girl who chose the danger of the open road over a life of scrubbing boards.
@@ -128,9 +126,6 @@ She gives a light, self-deprecating shrug of one shoulder.
     A light flush touches her cheekbones, and she looks down at the table with a soft, sheepish laugh.
 
     "Guilty as charged," she murmurs. "You're sharp. Sharper than the usual carters. It's rare to find someone out here who understands how dangerous this road is for a woman alone."
-    *set aly_suspicion (aly_suspicion - 1)
-    *if (aly_suspicion < 0)
-      *set aly_suspicion 0
     *goto aly_topic_pitch
 
   # "A hard road. But you didn't flag me down just to reminisce about the past."
@@ -155,10 +150,11 @@ She watches your face carefully.
 *choice
   # Agree to the partnership and shake on it.
     *goto aly_handshake
-
-  # Ask why an ancient vault hasn't been looted already.
-    "The winter mudslides only exposed the arch last month," she answers without a beat of hesitation. "Before that, it was buried under forty feet of limestone scree. It's untouched, ${name}."
-    *goto aly_deal_menu
+  *if (not(aly_asked_why_unlooted))
+    # Ask why an ancient vault hasn't been looted already.
+      "The winter mudslides only exposed the arch last month," she answers without a beat of hesitation. "Before that, it was buried under forty feet of limestone scree. It's untouched, ${name}."
+      *set aly_asked_why_unlooted true
+      *goto aly_deal_menu
 
   # Decline the venture; you travel alone.
     *goto aly_refuse_warning
@@ -169,13 +165,12 @@ She beams, her relief looking completely unfeigned. "Splendid! It's a deal, then
 Alyndra extends her slender right hand across the pine boards to seal the contract.
 
 *choice
-  # Take her hand firmly.
+  # Take her hand firmly.@{show_stat_hints  [Insight/Perception DC 15]|}
     *set aly_quest_started true
     *set aly_quest_stage "active"
     *goto aly_feel_calluses
-    
 
-  # Shake cautiously, keeping an eye on her posture.
+  # Shake cautiously, keeping an eye on her posture.@{show_stat_hints  [Insight/Perception DC 15]|}
     *set aly_quest_started true
     *set aly_quest_stage "active"
     *goto aly_feel_calluses
@@ -183,12 +178,12 @@ Alyndra extends her slender right hand across the pine boards to seal the contra
 *label aly_feel_calluses
 You take her hand. Her grip is surprisingly firm and sure.
 
-*gosub_scene dice_engine roll_skill_check 12 "perception" "" "insight" "" "" ""
+*gosub_scene dice_engine roll_skill_check 14 "perception" "" "insight" "" "" ""
 *if (check_success)
-  *set aly_suspicion (aly_suspicion + 1)
+  *set aly_hands true
   Her skin is clean and scented with clover, but against your palm you register an unmistakable tell: tough, defined ridges along the inside of her knuckles and the base of her index finger.
 
-  These are not the chapped, softened hands of a girl who scrubbed tavern dishes. They are the dense calluses of someone who drills daily with a rapier and parrying dagger.
+  These are not the chapped, softened hands of a girl who once scrubbed tavern dishes. They are the dense calluses of someone who has worked with their hands for years—a trade, a weapon, or both.
 *else
   Her hand is warm and slender, returning your grip with earnest enthusiasm.
 
@@ -210,12 +205,13 @@ She slips gracefully through the common room toward the guest loft, leaving you 
 *page_break Set out onto the high trails at dawn…
 *set aly_quest_started false
 *set aly_quest_stage "unstarted"
-*set aly_suspicion 0
 *set aly_checkpoint "tavern_floor"
-*set aly_approach ""
 *set aly_asked_story false
 *set aly_asked_watching false
-*set aly_asked_reach false
+*set aly_asked_why_unlooted false
+*set aly_knife_work false
+*set aly_monologue false
+*set aly_hands false
 *goto aly_start
 
 *label aly_refuse_warning
@@ -230,16 +226,17 @@ Alyndra's smile wavers for a brief, cold second before she recovers her playful 
     *set aly_quest_stage "declined"
     You step away from the smiling elf and return to your own business in the Reach.
     *page_break Back to your journey…
-    *comment returning to the start of the quest, reminder to change this to return to whatever place the 
+    *comment returning to the dev menu, reminder to change this to return to whatever place the 
     *comment the player came from when we actually plug this into the main game.
     *set aly_quest_started false
     *set aly_quest_stage "unstarted"
-    *set aly_suspicion 0
     *set aly_checkpoint "tavern_floor"
-    *set aly_approach ""
     *set aly_asked_story false
     *set aly_asked_watching false
-    *set aly_asked_reach false
-    *goto aly_start
+    *set aly_asked_why_unlooted false 
+    *set aly_knife_work false
+    *set aly_monologue false
+    *set aly_hands false
+    *goto_scene dev_hub dev_menu_quests
 
 --- END OF FILE valen_reach_alyndra.txt ---
