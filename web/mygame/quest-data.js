@@ -334,6 +334,7 @@
         if (truthy(s.aly_monologue)) c.push("Alyndra gave you a tragic tale that sounded like it's been praticed to perfection.");
         if (truthy(s.aly_knife_work)) c.push("Despite her innocent demeanor, Alyndra is skilled with a knife and possess a duelist rapier.");
         if (truthy(s.aly_hands)) c.push("You suspect that Alyndra has lived a much tougher life than she initially informed you about.");
+        if (truthy(s.aly_gear_prepared)) c.push("Despite her claims of being a former barmaid with only a few months on the road, she carries her gear with the unthinking economy of someone much more experienced.");
         return c;
       },
       active: function (s) { return s.aly_quest_stage === "active"; }
