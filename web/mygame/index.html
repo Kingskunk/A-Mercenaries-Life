@@ -1552,7 +1552,15 @@ button#statSidebar .turnRow,
 
     var dayDisplay = s.day_of_week ? fmt(s.day_of_week) : ("Day " + fmt(s.campaign_day || "1"));
     var dateDisplay = fmt(s.calendar_date);
+    var dateShort = String(s.calendar_date || "").split(",")[0];
     var weatherDisplay = fmt(s.weather || "Clear");
+    var purseDisplay = (function () {
+      var g = Number(s.gold) || 0, si = Number(s.silver) || 0, c = Number(s.copper) || 0, t = "";
+      if (g) t += g + "g ";
+      if (si) t += si + "s ";
+      if (c || !t) t += c + "c";
+      return t.replace(/\s+$/, "");
+    })();
 
     // Combat state (2026-09-27): date/time/weather/purse give way to a live turn-order list, reusing
     // combat_turn_kind_*/_slot_* (startup.txt/combat.txt) -- the exact order combat_roll_initiative built, not
@@ -1754,7 +1762,7 @@ button#statSidebar .turnRow,
           resourceHtml) +
       "</div>" +
       (inCombat ? "<div class=\"sbPanel\"><div class=\"shead\">Turn order</div>" + (stageWanted(s) && stageShowing() ? "" : battlefieldStripHtml(s)) + foldHtml("turnorder", "Combatants", orderSummaryHtml, bottomSectionHtml) + "</div>"
-                : "<div class=\"sbPanel\">" + foldHtml("today", "Today", "<span class=\"sbSumStack\"><span>" + fmt(s.clock_time) + " &middot; " + dayDisplay + "</span><small>" + fmt(s.time_period) + " &middot; " + weatherDisplay + "</small></span>", bottomSectionHtml) + "</div>") +
+                : "<div class=\"sbPanel\">" + foldHtml("today", "Today", "<span class=\"sbSumStack\"><span>" + fmt(s.clock_time) + " &middot; " + dayDisplay + "</span><small>" + fmt(s.time_period) + " &middot; " + weatherDisplay + "</small><small>" + esc(dateShort) + " &middot; " + esc(purseDisplay) + "</small></span>", bottomSectionHtml) + "</div>") +
       "<div class=\"sbPanel sbSpells\">" + spellSectionHtml() + "</div>" +
       activeQuestHtml +
       (isTruthy(s.food_buff_active) || isTruthy(s.drink_buff_active) || isTruthy(s.unique_buff1_active) || isTruthy(s.unique_buff2_active) || isTruthy(s.unique_buff3_active) || isTruthy(s.sleep_buff1_active) || isTruthy(s.sleep_buff2_active) || isTruthy(s.guidance_active) || isTruthy(s.heroic_inspiration_armed) ?

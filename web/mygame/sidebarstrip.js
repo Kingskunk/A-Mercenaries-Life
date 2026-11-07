@@ -4,7 +4,7 @@
  * The sidebar (#statSidebar, drawn by index.html's renderStatSidebar) is a fixed column; the story reserves its width (--side-w) while it shows. This module adds:
  *   - a way to fold it away: the round portrait at the top of the sidebar (index.html puts data-ss-collapse on it) turns on html.sbHidden, remembered in localStorage;
  *   - a strip beside the place banner, drawn outside the page containers (the engine copies and animates those on every page turn, so nothing can live inside them), showing what the player needs to see
- *     out of combat: hunger, fatigue and hygiene as pills, the time, day and date, the period and weather, the purse, Wait / Rest / Travel, the spellbook for a caster, and the button that opens the sidebar again;
+ *     out of combat: hunger, fatigue and hygiene as pills, the time, day and date, the period and weather, the purse, Wait / Rest / Travel, and the button that opens the sidebar again (the spellbook is reached from there);
  *   - on a narrow window (the same 1100px line index.html hides the sidebar at, where it used to be missing altogether) the sidebar opens as a drawer over the story instead of a docked column.
  * In a fight on a wide window the sidebar comes back by itself (it holds the turn order); folding it while the fight lasts is allowed, and the fight's end returns to the player's choice.
  *
@@ -61,13 +61,10 @@
   function stripHtml(s) {
     var date = String(s.calendar_date || "").split(",")[0], day = s.day_of_week ? String(s.day_of_week) : "";
     var dayLine = (day && date) ? day + ", " + date : (day || date);
-    // the spellbook button is for a player who has spells: the sidebar's own summary reads "Spellbook (4)"
-    var sum = document.querySelector("#statSidebar .spellbook > summary"), spells = !!sum && (Number((/\((\d+)\)/.exec(sum.textContent) || [])[1]) || 0) > 0;
     return "<span class=\"ssWhen\"><span class=\"ssNow\"><b>" + esc(s.clock_time || "") + "</b><span class=\"ssPer\">" + esc((s.time_period ? " · " + s.time_period : "") + (s.weather ? " · " + s.weather : "")) + "</span></span><small class=\"ssDate\">" + esc(dayLine) + "</small></span>" +
       "<span class=\"ssConds\">" + pillsHtml(s) + "</span>" +
       "<span class=\"ssPurse\" title=\"Your purse\">" + esc(purseText(s)) + "</span>" +
       "<span class=\"ssBtns\">" + proxyBtn("Wait", "data-wait-open", "wait") + proxyBtn("Rest", "data-rest-open", "rest") + proxyBtn("Travel", "data-travel-open", "travel") +
-      (spells ? "<button type=\"button\" class=\"ssBtn\" data-ss-spells=\"1\" title=\"Open the spellbook\">Spells</button>" : "") +
       "<button type=\"button\" class=\"ssBtn ssOpen\" data-ss-expand=\"1\" title=\"Show the full sidebar\" aria-label=\"Show the full sidebar\">«</button></span>";
   }
 
@@ -135,17 +132,6 @@
     if ((b = t.closest("[data-ss-proxy]"))) {
       var attr = { wait: "data-wait-open", rest: "data-rest-open", travel: "data-travel-open" }[b.getAttribute("data-ss-proxy")], real = attr ? realBtn(attr) : null;
       if (real && !real.disabled) real.click();
-      return;
-    }
-    if ((b = t.closest("[data-ss-spells]"))) {
-      expand();
-      // the spellbook is a <details> the sidebar toggles from its summary: open it (once the sidebar has been drawn showing) and bring it into view
-      window.setTimeout(function () {
-        var sum = document.querySelector("#statSidebar .spellbook > summary"), det = sum && sum.parentNode;
-        if (sum && det && !det.hasAttribute("open")) sum.click();
-        var box = document.querySelector("#statSidebar .sbSpells");
-        if (box && box.scrollIntoView) box.scrollIntoView({ block: "nearest" });
-      }, 60);
       return;
     }
     // a drawer closes when the story is tapped
