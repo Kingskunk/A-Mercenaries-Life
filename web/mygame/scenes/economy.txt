@@ -65,18 +65,39 @@
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment REUSABLE ENGINE PRIMITIVE: GAMBLING WAGER
-*comment Inputs: wager_bankroll_var, wager_ante_copper, wager_win_copper, check_stat/dc/skill
-*comment Outputs: check_success, wager_bankroll_busted
+*comment Inputs: wager_bankroll_var, wager_ante_copper, wager_win_copper, check_dc.
+*comment This is a straight roll, not a Sleight of Hand check: winning a dice game fairly is luck, not cheating, so no ability
+*comment score, proficiency or Guidance reaches it (check_stat "none" matches none of roll_d20_check's six ability branches,
+*comment check_add_prof_bonus stays false, check_no_guidance is set). Still routed through roll_d20_check rather than a bare
+*comment *rand so a natural 20/1 keep their usual crit flavor and a Halfling's Lucky reroll still saves a natural 1 -- those are
+*comment universal, not a skill bonus. (Earlier shape: a caller-set check_stat "dex"/check_skill "Sleight of Hand" pair, which
+*comment first meant the DEX+proficiency bonus never reached the roll, then meant a Rogue's proficiency unfairly did -- both
+*comment wrong for a fair game of dice.)
+*comment The day's bankroll is rolled down once, the first table a player sits at that day, to a random point between 6 and the
+*comment tavern's own max (not a flat refill): the house decides how much it will risk losing before it calls the game for the
+*comment day, and that point moves around instead of being a fixed, grindable number. wager_bankroll_var's matching
+*comment "_rolled_day" variable (53_tavern_gambling.txt) is the lock, keyed to campaign_day so it only happens once per day
+*comment per tavern no matter how many rounds are played or pages replayed.
+*comment Outputs: check_success, wager_bankroll_busted (prints its own neutral closing line when it flips true, so no
+*comment tavern needs its own "cleaned out" flavor text -- a day whose random roll above came up low closes the table
+*comment after a perfectly ordinary small win, and a bespoke "you robbed us blind" line would read wrong for that).
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_wager
 *if (wager_bankroll_var = "")
   *set wager_bankroll_var "taphouse_dice_bankroll"
+*if (not({(wager_bankroll_var & "_rolled_day")} = campaign_day))
+  *set {(wager_bankroll_var & "_rolled_day")} campaign_day
+  *rand {wager_bankroll_var} 6 {(wager_bankroll_var & "_max")}
 *if (not(wager_ante_locked)) or (not(locked_wager_ante_page_id = page_id))
   *set currency_add_amount 0 - wager_ante_copper
   *gosub currency_add
   *set {wager_bankroll_var} + wager_ante_copper
   *set wager_ante_locked true
   *set locked_wager_ante_page_id page_id
+*set check_stat "none"
+*set check_skill "the dice"
+*set check_add_prof_bonus false
+*set check_no_guidance true
 *gosub_scene dice_engine roll_d20_check
 *set wager_bankroll_busted ({wager_bankroll_var} <= 0)
 *if (check_success)
@@ -90,6 +111,8 @@
     *set wager_win_locked true
     *set locked_wager_win_page_id page_id
   *set wager_bankroll_busted ({wager_bankroll_var} <= 0)
+*if (wager_bankroll_busted)
+  The game breaks up — nobody's willing to risk any more today.
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
