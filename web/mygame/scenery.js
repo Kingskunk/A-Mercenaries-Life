@@ -187,11 +187,16 @@
     function (s) { return s.scenery_subplace === "vane_contract_office" ? "vane_contract_office" : undefined; }, // Captain Vane's compact contract and dispatch office
     function (s) { return s.sceneName === "port_valen/varren_quests/varren_errand" && s.scenery_subplace === "varren_armory_shed" ? "varren_armory_shed" : undefined; }, // Varren's armory and its offer/report pages (port_valen/port_valen's own visits are covered by its passthrough rule below)
     function (s) { return s.sceneName === "port_valen/varren_quests/varren_errand" && s.scenery_subplace === "middle_ward_tavern" ? "generic_town_inn" : undefined; }, // Oswin's questions at the Wagoner's Rest should keep the inn backdrop
-    function (s) { return s.sceneName === "port_valen/radiant/hall_perform" && s.rj_perf_venue === 1 ? "generic_town_inn" : undefined; }, // Wagoner's Rest common room
-    function (s) { return s.sceneName === "port_valen/radiant/hall_perform" && s.rj_perf_venue === 2 ? "generic_tavern_inn" : undefined; }, // Cleaved Keel taproom
-    function (s) { return s.sceneName === "port_valen/radiant/hall_perform" && s.rj_perf_venue === 3 ? "port_valen_private_supper" : undefined; }, // Middle Ward private supper
-    function (s) { return s.sceneName === "port_valen/radiant/hall_perform" && s.rj_perf_venue === 4 ? "port_valen_wedding_hall" : undefined; }, // hired wedding hall
-    function (s) { return s.sceneName === "port_valen/radiant/hall_perform" && s.rj_perf_venue === 5 ? "port_valen_patrician_gala_salon" : undefined; }, // Patrician Quarter gala salon
+    // Number(...): rj_perf_venue is set by a plain *set (a ChoiceScript number), but ChoiceScript's own *if coerces
+    // string/number mismatches silently, while JS === does not -- a save/restore round trip (or the dossier's stat
+    // screen) can hand it back as the STRING "1", which a bare === 1 here would never match, falling through to the
+    // district picture with no error anywhere. Every other numeric check in this file already guards this way
+    // (Number(s.es_next_leg) === 0 above); these five just hadn't been written that way yet (found 2026-11-07).
+    function (s) { return s.sceneName === "port_valen/radiant/hall_perform" && Number(s.rj_perf_venue) === 1 ? "generic_town_inn" : undefined; }, // Wagoner's Rest common room
+    function (s) { return s.sceneName === "port_valen/radiant/hall_perform" && Number(s.rj_perf_venue) === 2 ? "generic_tavern_inn" : undefined; }, // Cleaved Keel taproom
+    function (s) { return s.sceneName === "port_valen/radiant/hall_perform" && Number(s.rj_perf_venue) === 3 ? "port_valen_private_supper" : undefined; }, // Middle Ward private supper
+    function (s) { return s.sceneName === "port_valen/radiant/hall_perform" && Number(s.rj_perf_venue) === 4 ? "port_valen_wedding_hall" : undefined; }, // hired wedding hall
+    function (s) { return s.sceneName === "port_valen/radiant/hall_perform" && Number(s.rj_perf_venue) === 5 ? "port_valen_patrician_gala_salon" : undefined; }, // Patrician Quarter gala salon
     function (s) { if (s.sceneName !== "port_valen/radiant/radiant_hub") return undefined; if (s.rh_from === "avenue") return "patrician_avenue"; if (s.rh_from === "harbor") return "city_harbour"; return "generic_city_street"; }, // the posting hub is read standing exactly where the player already was (the Trunk Road, the Avenue or the Quayside), never a place of its own
     function (s) { return s.sceneName === "port_valen/radiant/hall_haul" ? "port_valen_middle_ward_house_move" : undefined; }, // the Middle Ward house, stairs, lane and waiting handcart
     function (s) { return s.sceneName === "port_valen/radiant/hall_watch" ? "port_valen_cargo_warehouse_watch" : undefined; }, // the Cargo Quay warehouse through all three night-watch stretches
@@ -231,6 +236,7 @@
     function (s) { return s.sceneName === "prologue/alderford" && s.scenery_subplace === "prologue_sewer" ? "sewer" : undefined; }, // culvert and grain undercroft
     function (s) { return s.sceneName === "timbermouth/ashrun_holt/longhouse" && s.scenery_subplace === "ashrun_holt_old_ash" ? "ashrun_holt_clearing" : undefined; }, // stepping outside to the ribboned Old Ash
     function (s) { return s.sceneName === "timbermouth/ashrun_holt/ashrun_house" && s.scenery_subplace === "ashrun_holt_inn_room" ? "generic_village_inn_room" : undefined; }, // a plain hired room above the Ashrun House
+    function (s) { return s.sceneName === "timbermouth/ashrun_holt/ashrun_house" && s.scenery_subplace === "ashrun_holt_stables" ? "forrest_village_stable" : undefined; }, // the stable rails along the house's long side
     function (s) { return s.sceneName === "timbermouth/barleycross/lane" && s.scenery_subplace === "barleycross_hayloft" ? "generic_farm_hayloft" : undefined; }, // paid loft above a Barleycross farmstead
     function (s) { return s.sceneName === "port_valen/radiant/notice_board" && s.cr_origin === "tm" ? "shared_factors_hall" : undefined; }, // Timbermouth's board is inside its Factor's Hall
     function (s) { return s.sceneName === "port_valen/radiant/notice_board" && s.cr_origin === "fv" ? "generic_village_gathering_hall" : undefined; }, // Barleycross's board is inside its village hall

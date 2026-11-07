@@ -62,6 +62,8 @@ async function main() {
     console.log("radiant_hub rh_hub, from the Trunk Road ->", await land("port_valen/radiant/radiant_hub", "rh_hub", { rh_from: "road" }));
     console.log("radiant_hub rh_hub, from Patrician Avenue ->", await land("port_valen/radiant/radiant_hub", "rh_hub", { rh_from: "avenue", current_district: "upper_wharves" }));
     console.log("radiant_hub rh_hub, from the Harbor Quayside ->", await land("port_valen/radiant/radiant_hub", "rh_hub", { rh_from: "harbor", current_district: "harbor" }));
+    console.log("ashrun_house ah_inn_stables ->", await land("timbermouth/ashrun_holt/ashrun_house", "ah_inn_stables", { current_district: "ashrun_holt", has_horse: false }));
+    console.log("hall_perform rj_perf_arrive, rj_perf_venue AS A STRING '1' ->", await land("port_valen/radiant/hall_perform", "rj_perf_arrive", { rj_perf_walked_in: false, rj_perf_venue: "1" }));
   } finally {
     if (ws) try { ws.close(); } catch (e) {}
     try { chrome.kill(); } catch (e) {}
