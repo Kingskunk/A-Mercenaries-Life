@@ -168,6 +168,7 @@
     generic_warehouse_undercroft: "undercroft",
     talia_loft: "lodgings",
     janna_hearth_alcove: "lodgings",
+    dredge_corve_parlor: "lodgings",
     dredge_corve_private_chamber: "lodgings",
     saint_althea_chapel: "civic_indoor",
     black_sinks_causeway_before: "siege",
@@ -241,7 +242,13 @@
   function targets(s) {
     var t = {};
     if (cfg.mute || document.hidden || !window.Scenery) return t;
-    var names = placeNames(s), p = place(s, names), d = window.Scenery.daylight((Number(s.clock_hour) || 0) + (Number(s.clock_minute) || 0) / 60);
+    var names = placeNames(s), d = window.Scenery.daylight((Number(s.clock_hour) || 0) + (Number(s.clock_minute) || 0) / 60);
+    // A scene can *set this to any kind name in SOUND to replace the normal place bed for this page only, with
+    // no scenery.js/ambience.js wiring, for a one-off beat the real location's bed would get wrong (a thief's
+    // empty, silent smithy at night, not the generic hammering). "none" mutes the bed, weather and overlays
+    // entirely. Clear it (back to "" or false) when the beat ends, or it keeps overriding the next pages too.
+    var forced = s.ambience_force_kind ? String(s.ambience_force_kind) : "";
+    var p = forced ? (forced !== "none" && SOUND[forced] ? { kind: forced, spec: SOUND[forced] } : null) : place(s, names);
     function put(name, v) { if (name && has(name) && v > 0) t[name] = Math.max(t[name] || 0, v); }
     if (p) {
       var sp = p.spec, siege = p.kind === "siege";
@@ -261,7 +268,7 @@
     // Halda's is an enclosed forge in Port Valen: keep the hammering foreground, with the city interior's
     // low room tone beneath it. Other smithies remain just their local forge bed.
     if (s.shop_open === "halda" && p && p.kind === "blacksmith") put("city_indoor", 0.34);
-    for (var i = 0; i < names.length; i++) {
+    for (var i = 0; i < (forced ? 0 : names.length); i++) {
       var layersHere = OVERLAY[names[i]] || [];
       for (var j = 0; j < layersHere.length; j++) {
         var ol = layersHere[j], level = Number(ol.level) || 1;

@@ -85,6 +85,7 @@ const MAP = {
   boots: "Boots_Leather_Unfaded_Icon.png",
   boots_talia: "../Generic/Talias_Deck_Boots_Generated_Source.png",
   boots_iron_heel: "../Generic/Brants_Iron_Heel_Boots_Generated_Source.png", // Brant's shipyard reward
+  wooden_clogs: "../Generic/Wooden_Clogs_Generated_Source.png",
   boots_rain: "Boots_Leather_A_Unfaded_Icon.png",             // Rain Boots
   boots_winter: "Shoes_Barbarian_Unfaded_Icon.png",          // Winter Boots
   shoes_dancing: "Camp_Shoes_C_Unfaded_Icon.webp",            // Swallowstep Shoes
@@ -360,7 +361,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     let list = null;
     for (let i = 0; i < 40; i++) {
       await sleep(250);
-      try { list = await (await fetch("http://127.0.0.1:" + PORT + "/json/list")).json(); if (list.some((t) => t.type === "page")) break; } catch (e) {}
+      try { list = await (await fetch("http://127.0.0.1:" + PORT + "/json/list")).json(); if (list.some((t) => t.type === "page")) break; } catch (e) { }
     }
     const target = list && list.find((t) => t.type === "page");
     if (!target) throw new Error("no browser page appeared (is Chrome at " + CHROME + "? set CHROME=...)");
@@ -399,10 +400,10 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     fs.writeFileSync(OUT, body);
     console.log("wrote " + path.relative(ROOT, OUT) + " (" + Object.keys(out).length + " icons, " + Math.round(body.length / 1024) + " KB)");
   } finally {
-    if (ws) try { ws.close(); } catch (e) {}
+    if (ws) try { ws.close(); } catch (e) { }
     // kill the whole tree this script started (the GPU and renderer children outlive chrome.kill()); by PID, never by name, so the person's own browser is untouched
-    try { chrome.kill(); } catch (e) {}
+    try { chrome.kill(); } catch (e) { }
     // The browser leaves helper processes behind that a plain kill misses, and they do not share a process tree with it. Find them by THIS run's own profile folder (never by program name, which would also close the person's browser).
-    try { require("child_process").spawnSync("powershell", ["-NoProfile", "-Command", "Get-CimInstance Win32_Process -Filter \"Name='chrome.exe'\" | Where-Object { $_.CommandLine -like '*" + profileDirName + "*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }"], { stdio: "ignore" }); } catch (e) {}
+    try { require("child_process").spawnSync("powershell", ["-NoProfile", "-Command", "Get-CimInstance Win32_Process -Filter \"Name='chrome.exe'\" | Where-Object { $_.CommandLine -like '*" + profileDirName + "*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }"], { stdio: "ignore" }); } catch (e) { }
   }
 })().catch((e) => { console.error("FAILED: " + e.message); process.exit(1); });

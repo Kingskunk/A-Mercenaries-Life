@@ -36,7 +36,7 @@
     the_northwest_road: "western_vale_road", // Langston's north-western road crosses the same open grassland (2026-11-02, the user: it was missing the Western Vale road's picture)
     marlcross: "village_green",
     barleycross: "village_green",
-    ashrun_holt: "village_green",
+    ashrun_holt: "ashrun_holt_clearing", // match the Ashrun Holt overworld tile to its entered clearing
     fallowmere: "fallowmere_pond_green", // Fallowmere overworld tile uses the village pond green view
     port_valen: "port_valen_river_gate", // the overworld node is the River Gate approach, not the quays
     silt_conduits: "sewer",       // the Silt-Gate channels
@@ -186,6 +186,7 @@
     function (s) { return s.sceneName === "alderford/whitefold/the_weight_of_the_road" && s.weight_road_quest_stage !== "reckoning" && s.weight_road_quest_stage !== "resolved" && s.weight_road_quest_stage !== "failed" ? "whitefold_cut_road_collapse" : undefined; }, // the Cut Road emergency, investigation, wall reading and repair; the Fleecefold reckoning keeps the village backdrop until it has its own art
     function (s) { return s.scenery_subplace === "vane_contract_office" ? "vane_contract_office" : undefined; }, // Captain Vane's compact contract and dispatch office
     function (s) { return s.sceneName === "port_valen/varren_quests/varren_errand" && s.scenery_subplace === "varren_armory_shed" ? "varren_armory_shed" : undefined; }, // Varren's armory and its offer/report pages (port_valen/port_valen's own visits are covered by its passthrough rule below)
+    function (s) { return s.sceneName === "port_valen/varren_quests/varren_errand" && s.scenery_subplace === "middle_ward_tavern" ? "generic_town_inn" : undefined; }, // Oswin's questions at the Wagoner's Rest should keep the inn backdrop
     function (s) { return s.sceneName === "port_valen/radiant/hall_perform" && s.rj_perf_venue === 1 ? "generic_town_inn" : undefined; }, // Wagoner's Rest common room
     function (s) { return s.sceneName === "port_valen/radiant/hall_perform" && s.rj_perf_venue === 2 ? "generic_tavern_inn" : undefined; }, // Cleaved Keel taproom
     function (s) { return s.sceneName === "port_valen/radiant/hall_perform" && s.rj_perf_venue === 3 ? "port_valen_private_supper" : undefined; }, // Middle Ward private supper
@@ -245,6 +246,8 @@
     function (s) { return s.sceneName === "Langston/broadmead/crooked_halter" && s.scenery_subplace === "broadmead_crooked_halter_yard" ? "village_stable_yard" : undefined; }, // the Crooked Halter's open stable yard (the common room keeps its own picture)
     function (s) { return s.sceneName === "Langston/barolo/red_stave" && s.scenery_subplace === "barolo_red_stave_court" ? "village_stable_yard" : undefined; }, // the Red Stave's open stable court (the hall keeps its own picture; the rented room is the village inn room above)
     function (s) { return s.sceneName === "port_valen/brinewick/reedhouse" && s.scenery_subplace === "reedhouse_stable_yard" ? "village_stable_yard" : undefined; }, // the Reedhouse's raised stable yard (the hall keeps its own picture)
+    function (s) { return s.sceneName === "timbermouth/split_pine_inn" && s.scenery_subplace === "tm_inn_yard" ? "generic_town_stable" : undefined; }, // the Split Pine's larger wagon-and-stall yard uses the shared town stable view
+    function (s) { return s.sceneName === "alderford/drowned_oar" && s.scenery_subplace === "af_oar_stable_yard" ? "generic_town_stable" : undefined; }, // the Drowned Oar's raised stable court above the lower wharf
     function (s) { return s.sceneName === "port_valen/port_valen" && s.scenery_subplace ? s.scenery_subplace : undefined; }, // trusts any subplace this scene sets directly as a picture key; add new interior/exterior beats there with no scenery.js change
     function (s) { return s.sceneName === "alderford/redvein/red_lantern" && s.scenery_subplace === "village_stable_yard" ? "village_stable_yard" : undefined; },
     function (s) { return s.sceneName === "alderford/whitefold/white_ram" && s.scenery_subplace === "village_stable_yard" ? "village_stable_yard" : undefined; },
