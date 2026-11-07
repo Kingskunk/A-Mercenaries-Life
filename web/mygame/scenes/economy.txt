@@ -116,6 +116,49 @@
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment REUSABLE ENGINE PRIMITIVE: BLACK LANTERN BANKROLL
+*comment Inputs: wager_ante_copper, wager_win_copper, check_success (already rolled by the caller before this is
+*comment gosubbed -- unlike resolve_wager above, this does NOT roll: port_valen_dredge_end.txt's three tables each
+*comment need a different roll (a flat straight DC for honest play, Sleight of Hand or Deception for an actual
+*comment cheat), so the caller rolls first and this primitive only ever handles the money and the one shared
+*comment house till behind it, same shape as resolve_wager's own ante/payout/bankroll math, just reused across
+*comment six betting paths (three tables x honest/cheat) instead of being rebuilt in each one.
+*comment One pool (black_lantern_bankroll), not one per table -- it's all House's money, and a player who
+*comment drains the dice ring dry has drained the whole den for the day, not just that table. Re-rolled once a
+*comment day to a random point between 20 and 100 Silver Marks (the user's chosen range for a real den, well
+*comment above the honest taverns' 6-40 copper), locked by black_lantern_bankroll_rolled_day/campaign_day same as
+*comment resolve_wager's own tavern lock. A caught cheat (handled entirely by the caller, not here: ejection, HP,
+*comment or the back room's debt marker) still antes through this same call -- the house keeps what it's dealt
+*comment either way.
+*comment Outputs: wager_bankroll_busted (prints its own neutral closing line, same reasoning as resolve_wager's)
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label resolve_lantern_stakes
+*if (not(black_lantern_bankroll_rolled_day = campaign_day))
+  *set black_lantern_bankroll_rolled_day campaign_day
+  *rand black_lantern_bankroll 200 black_lantern_bankroll_max
+*if (not(wager_ante_locked)) or (not(locked_wager_ante_page_id = page_id))
+  *set currency_add_amount 0 - wager_ante_copper
+  *gosub currency_add
+  *set black_lantern_bankroll + wager_ante_copper
+  *set wager_ante_locked true
+  *set locked_wager_ante_page_id page_id
+*set wager_bankroll_busted (black_lantern_bankroll <= 0)
+*if (check_success)
+  *if (not(wager_win_locked)) or (not(locked_wager_win_page_id = page_id))
+    *temp wager_payout wager_win_copper
+    *if (wager_payout > black_lantern_bankroll)
+      *set wager_payout black_lantern_bankroll
+    *set currency_add_amount wager_payout
+    *gosub currency_add
+    *set black_lantern_bankroll - wager_payout
+    *set wager_win_locked true
+    *set locked_wager_win_page_id page_id
+  *set wager_bankroll_busted (black_lantern_bankroll <= 0)
+*if (wager_bankroll_busted)
+  House closes his book without a word and nods once to the big man by the stair. Whatever's left in the house's hand tonight, nobody's getting a look at it.
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment REUSABLE ENGINE PRIMITIVE: TAVERN PURCHASE
 *comment Inputs: tavern_item_cost_copper, tavern_item_hp_heal, tavern_item_temp_hp, tavern_item_type,
 *comment         tavern_item_buff_bonus, tavern_item_buff_name/desc/stat/minutes

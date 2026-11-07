@@ -263,6 +263,8 @@
     function (s) { return s.sceneName === "port_valen/port_valen_dredge_end" && s.scenery_subplace === "dredge_upper_gangways" ? "dredge_upper_gangways" : undefined; }, // elevated tenant walkways
     function (s) { return s.sceneName === "port_valen/port_valen_dredge_end" && s.scenery_subplace === "dredge_boat_sheds" ? "dredge_boat_sheds" : undefined; }, // boatwrights' work-bank and scrap yard
     function (s) { return s.sceneName === "port_valen/port_valen_dredge_end" && s.scenery_subplace === "dredge_lamp_stair" ? "dredge_lamp_stair" : undefined; }, // seawall terrace and its doors
+    function (s) { return s.sceneName === "port_valen/port_valen_dredge_end" && s.scenery_subplace === "black_lantern_floor" ? "black_lantern" : undefined; }, // the Black Lantern's dice ring and card table
+    function (s) { return s.sceneName === "port_valen/port_valen_dredge_end" && s.scenery_subplace === "black_lantern_back" ? "black_lantern_back" : undefined; }, // the Black Lantern's back room
     function (s) { return s.sceneName === "port_valen/port_valen_dredge_end" && s.scenery_subplace === "dredge_flooded_lower_steps" ? "dredge_flooded_lower_steps" : undefined; }, // canal stair and cellar vaults
     function (s) { return s.sceneName === "port_valen/port_valen_dredge_end" && s.scenery_subplace === "dredge_corve_parlor" ? "dredge_corve_parlor" : undefined; }, // Widow Corve's public parlor
     function (s) { return s.sceneName === "port_valen/port_valen_dredge_end" && s.scenery_subplace === "dredge_corve_private_chamber" ? "dredge_corve_private_chamber" : undefined; }, // Widow Corve's private room

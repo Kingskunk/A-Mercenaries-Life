@@ -50,6 +50,8 @@
     boat_travel:   { all: "ship_sea_river_boat_travel_anytimeofday_waves_soft_talking_softboatcreaking_rope" },
     dredge_end:    { all: "medieval_slums" },
     black_oath_upstairs_room: { all: "medieval_slums", level: 0.18, indoor: true },
+    black_lantern: { all: "ambience_background_coins_shuffling", indoor: true },
+    black_lantern_back: { all: "ambience_background_coins_shuffling", indoor: true },
     village:       { day: "generic_village", night: "generic_village_town_night" },
     village_room:  { day: "generic_village", night: "generic_village_town_night", level: 0.18, indoor: true },
     woodland:      { day: "woodland_village", night: "generic_village_town_night" },
@@ -201,7 +203,11 @@
     black_sinks_gilded_scales_toll_fort: [{ all: "wind_against_stone_creeking_timber_distantsound_needstobelayerd", level: 0.18 }],
     stonewatch: [{ all: "wind_against_stone_creeking_timber_distantsound_needstobelayerd", level: 0.24 }],
     langston_true_sun_temple_rotunda: [{ all: "wind_against_stone_creeking_timber_distantsound_needstobelayerd", level: 0.12 }],
-    port_valen_patrician_gala_salon: [{ all: "noble_gala_party_talking_glassclinking_softlaughter_nomusic", level: 0.30 }]
+    port_valen_patrician_gala_salon: [{ all: "noble_gala_party_talking_glassclinking_softlaughter_nomusic", level: 0.30 }],
+    // the coins-shuffling bed above is the primary layer; whispering and chatter ride alongside it at the same
+    // indoor level (1), so all three read as one combined room tone rather than one bed plus two quiet overlays
+    black_lantern: [{ all: "ambience_background_whispering", level: 1 }, { all: "ambience_background_chatter", level: 1 }],
+    black_lantern_back: [{ all: "ambience_background_whispering", level: 1 }, { all: "ambience_background_chatter", level: 1 }]
   };
   var OVERWORLD_OPEN = { road: 1, woodroad: 1, hills: 1, forest: 1 };   // ground a rider travels over (not a town, a village or a fort)
 

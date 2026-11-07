@@ -1769,9 +1769,9 @@ A thickset foreman in a stiff oxhide coat stands on an upturned nail-keg, whittl
     *set guidance_hold true
     *gosub_scene calendar advance_time
     *comment cut_labor_day is stamped AFTER advance_time, not before (2026-09-30) -- a 6-hour shift is far more
-    *comment likely to cross midnight than most time-costing actions, and the same refresh-duplication shape as
-    *comment cut_dice_day's own fix applies: stamping with the pre-advance day lets a replay (whose snapshot
-    *comment already reflects the post-advance day) stamp a different day than the original run did.
+    *comment likely to cross midnight than most time-costing actions: stamping with the pre-advance day lets a
+    *comment replay (whose snapshot already reflects the post-advance day) stamp a different day than the
+    *comment original run did.
     *set cut_labor_day campaign_day
     *if ((weather_cold) or (weather_wet))
       *set disadvantage true
@@ -1893,7 +1893,7 @@ A thickset foreman in a stiff oxhide coat stands on an upturned nail-keg, whittl
 *comment player arriving at night had no way to place her on the street. Described by its permanent
 *comment marks (the frame, the bare trestle, the scorched ring) because the canvas, the trestle load
 *comment and the brazier itself are all packed away after dark -- see cut_doctor_closed.
-A narrow stone terrace runs between the sheer granite blocks of the seawall and the canal below, fenced along the drop by a black iron rail. The paving flags are worn into shallow troughs by generations of heavy boots. The facades are cut straight into those foundation blocks, and every door on the lane wears a red-shaded lamp under a wrought-iron hood: the heavy blue door of Widow Corve's under a pair of them; a weathered green door whose stone steps drop into a vaulted cellar; an oxblood timber door bound with iron studs; and a narrow blue-painted shopfront with a small open hand picked out in pale gold above its door. Against the granite, a canvas lean-to shelters a bare trestle over a scorched ring in the flags. The air tastes of salt off the stone, old lamp oil and spilled ale up from the cellar grates, and vinegar and crushed herbs off the seawall wall.
+A narrow stone terrace runs between the sheer granite blocks of the seawall and the canal below, fenced along the drop by a black iron rail. The paving flags are worn into shallow troughs by generations of heavy boots. The facades are cut straight into those foundation blocks, and every door on the lane wears a red-shaded lamp under a wrought-iron hood, save one: the heavy blue door of Widow Corve's under a pair of them; a weathered green door whose lamp has been smoked black instead, its stone steps dropping into a vaulted cellar; an oxblood timber door bound with iron studs; and a narrow blue-painted shopfront with a small open hand picked out in pale gold above its door. Against the granite, a canvas lean-to shelters a bare trestle over a scorched ring in the flags. The air tastes of salt off the stone, old lamp oil and spilled ale up from the cellar grates, and vinegar and crushed herbs off the seawall wall.
 
 *comment ── LAYER 2: SKY & ATMOSPHERIC LIGHT (Weather & Light Only, No People) ──
 *if (weather = "Rain")
@@ -1972,11 +1972,11 @@ A narrow stone terrace runs between the sheer granite blocks of the seawall and 
     # Try [b]The Open Hand[/b], locked until morning.
       *goto cut_pawn_closed
   *if ((lamp_evening) or (lamp_night))
-    # Go down the steps of the green door to the [b]Dice Cellar[/b].
+    # Go down the steps under the black lamp to [b]The Black Lantern[/b].
       *page_break Down the cellar steps…
       *goto cut_dice
   *if ((lamp_day) or (lamp_predawn))
-    # Try the green door to the [b]Dice Cellar[/b], bolted until the lamps are lit.
+    # Try the green door of [b]The Black Lantern[/b], bolted until the lamps are lit.
       *goto cut_dice_closed
   *if ((lamp_evening) or (lamp_night))
     # Push into the all-night [b]Drinking House[/b] at the end of the street.
@@ -2043,12 +2043,12 @@ The blue door of the Open Hand is shut fast, a brass latch dropped across it fro
 *goto cut_lamp_page
 
 *label cut_dice_closed
-[b]◈ THE DICE CELLAR[/b]
+[b]◈ THE BLACK LANTERN[/b]
 *line_break
 *if (time_period = "Pre-Dawn")
-  The green door is bolted from inside, and the steps below it are dark. The game has broken up for the night. A man sleeps sitting upright on the top step with his back against the door and his cap pulled down over his face, and nothing rattles in the cellar behind him.
+  The black lamp over the green door has been snuffed, and the steps below it are dark. The big man who stands the door through the small hours sits on the top step instead, cap down over his face, not quite asleep. Nothing rattles behind him.
 *else
-  The green door at the top of the cellar steps is bolted, and the steps below it have been swept and sanded for the day. Through the grate at the foot of the door there is a smell of old lamp oil and spilled ale, and nothing moves. Whatever is played down there is played after the lamps are lit.
+  The green door at the top of the cellar steps is bolted, and the black lamp above it unlit. Through the grate at the foot of the door there is a smell of old smoke and spilled coin, and nothing moves. Whatever House runs down there, he runs it after the other lamps are lit.
 *choice
   # Back to the street.
     *goto cut_lamp_page
@@ -2632,60 +2632,278 @@ Angel works down the counter with two fingers, turning each piece once under the
 *goto cut_pawn_hub
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment ····· sub-location: the dice cellar
+*comment ····· sub-location: the black lantern (rebuilt 2026-11-07 from the old one-table "dice cellar": a
+*comment proper den now, run by a houseman (House) and his muscle, with two front tables (dice ring,
+*comment cards) and a back room gated behind black_lantern_proven. Every table offers honest play (a flat,
+*comment unmodified roll at a DC stacked against the player -- the house's games are secretly rigged) or a
+*comment real cheat (an actual Sleight of Hand / Deception check, proficiency and Expertise genuinely apply):
+*comment unlike the honest tavern dice games elsewhere (economy.txt resolve_wager, fixed 2026-11-07), cheating
+*comment IS the point here, so a caught cheat has a real cost -- ejection for the rest of the day always, a
+*comment couple of HP at the front tables, a debt marker instead in the back room (black_lantern_debt, purely a
+*comment narrative hook for now; the user said a gang faction may claim this place as a front later, not built).
+*comment Each table uses the shared replay locks from resolve_wager's own pattern (wager_ante_locked /
+*comment wager_win_locked and their page-id partners) rather than a new lock per table, since only one round is
+*comment ever in flight on one page.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label cut_dice
-[b]◈ THE DICE CELLAR[/b]
-*line_break
-Steps go down from the green door into a low brick cellar lit by two lamps. A dozen men crowd around a barrel-head, and a woman with a drawn face keeps the count in a jar of coppers at her elbow. The bones rattle in a wooden cup and come down on the wood with a small hard sound.
+*if (black_lantern_ejected_day = campaign_day)
+  [b]◈ THE BLACK LANTERN[/b]
+  *line_break
+  The big man at the foot of the stair doesn't move off the wall, but his eyes find you before you're three steps down. "Not tonight," he says, not loudly. He doesn't need to be. You're back on the street before you've decided whether to argue about it.
+  *choice
+    # Back to the street.
+      *goto cut_lamp_page
+    *if (vane_independent_operative)
+      # ↦ Walk to the district picked on the sidebar. [port_valen:read]
+        *goto_scene port_valen/port_valen port_valen_walk_picked
+*else
+  *set scenery_subplace "black_lantern_floor"
+  [b]◈ THE BLACK LANTERN[/b]
+  *line_break
+  *if (not(black_lantern_seen))
+    *set black_lantern_seen true
+    The steps drop hard and fast, brick gone dark and slick underfoot, down into a cellar lit by nothing but a few lamps turned low enough that faces are more guess than certainty. The air is thick with tallow smoke, old sweat, and the flat mineral smell of a great deal of coin changing hands in a small space.
 
-*label cut_dice_hub
+    At the near table a dice ring is already going, three men bent over a chalk circle with coin stacked loose on bare wood. Further back, under the one lamp in the cellar allowed to burn bright, a card table seats four with a fifth leaning over a shoulder to watch. A heavy curtain of sailcloth and knotted rope walls off the rear of the room, and nobody so much as glances at it twice.
+
+    A narrow, soft-voiced man moves between the tables without ever seeming to hurry, a scuffed book tucked under one arm and a stub of chalk behind his ear. Someone across the room calls out to him — House — and it's the only name anyone else offers you. By the foot of the stair, a big man with knuckles like a bag of river gravel leans against the wall doing nothing at all, which is the whole of his job.
+  *else
+    The cellar is as it was: the dice ring going at the near table, the card table under its one bright lamp further back, the sailcloth curtain hanging undisturbed at the rear. House finds you with a glance before you've reached the bottom step, and goes back to his count.
+
+  *label cut_dice_hub
+  *set scenery_subplace "black_lantern_floor"
+  *choice
+    # Take a seat at the dice ring.
+      *page_break At the chalk circle…
+      *goto cut_dice_ring
+    # Sit in at the card table.
+      *page_break At the card table…
+      *goto cut_dice_cards
+    *if (black_lantern_proven)
+      # Slip past the curtain to the back room.
+        *page_break Through the curtain…
+        *goto cut_dice_back
+    # Go back up the steps.
+      *goto cut_lamp_page
+    *if (vane_independent_operative)
+      # ↦ Walk to the district picked on the sidebar. [port_valen:read]
+        *goto_scene port_valen/port_valen port_valen_walk_picked
+
+*comment ····· THE DICE RING (front table, Sleight of Hand to cheat)
+*label cut_dice_ring
+Three dockers and a ship's carpenter have the chalk circle going, a scarred bone cup passed hand to hand. Nobody at this table pretends the house doesn't have an edge; the only question worth asking is whether you can take a bigger one back without anyone's hand closing round your wrist.
+
+*label cut_dice_ring_hub
 *choice
-  *if ((cut_dice_day < campaign_day) and ((((gold * 100) + (silver * 10)) + copper) >= 4))
-    # Put down four copper bits and read the throw.@{show_stat_hints  [4 Copper Bits, WIS DC 12]|}
-      You have watched enough hands to think you can read the bones.
-      *gosub_scene dice_engine roll_skill_check 12 "perception" "" "" "" "" ""
+  *if (((((gold * 100) + (silver * 10)) + copper) >= 20) and (black_lantern_bankroll > 0))
+    # Play it straight: 2 Silver Marks down to win 4.@{show_stat_hints  [DC 15]|}
+      *set wager_ante_copper 20
+      *set wager_win_copper 40
+      *set check_stat "none"
+      *set check_skill "the house dice"
+      *set check_dc 15
+      *set check_add_prof_bonus false
+      *set check_no_guidance true
+      *gosub_scene dice_engine roll_d20_check
+      *gosub_scene economy resolve_lantern_stakes
       *if (check_success)
-        You watch three throws before you put your coppers down and notice that the bone that comes up high always leaves the cup on a slow turn. You wait for the slow one and take your stake back and as much again off the barrel-head, without raising your voice.
-        *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-          *set currency_add_amount 4
-          *gosub_scene economy currency_add
-          *set currency_txn_locked true
-          *set locked_currency_txn_page_id page_id
-
-        [b][🎲 Won the Throw: +4 Copper Bits][/b]
+        *set black_lantern_proven true
+        Against every reasonable expectation of a cellar like this one, the bones come up clean. The carpenter spits and pushes the pot across without a word.
+        [b][🎲 Won the Throw: +4 Silver Marks][/b]
       *else
-        You put your four coppers down on a throw you were sure of, and the bones come up wrong. The woman with the drawn face slides your coppers into the jar without looking at them.
-        *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-          *set currency_add_amount 0 - 4
-          *gosub_scene economy currency_add
-          *set currency_txn_locked true
-          *set locked_currency_txn_page_id page_id
-
-        [b][🎲 Lost the Throw: -4 Copper Bits][/b]
+        The cup comes down, and the bones favor the house the way they always seem to in a room like this. Your stake joins the rest on the wood.
+        [b][🎲 Lost the Throw: -2 Silver Marks][/b]
       *set hours_to_pass 0
       *set minutes_to_pass 20
-      *set time_advance_call_id "cut_dice_1"
+      *set time_advance_call_id "cut_dice_ring_1"
       *gosub_scene calendar advance_time
-      *comment cut_dice_day is stamped AFTER advance_time, not before (2026-09-30, real bug caught live via
-      *comment refresh_fuzz_test.js + a targeted scripted_play.js repro): stamping it with the PRE-advance
-      *comment campaign_day and then crossing midnight during this same call means a refresh replaying from this
-      *comment exact point re-reads campaign_day from a snapshot where the day has ALREADY rolled over, stamping a
-      *comment different (later) day than the original run did. Stamping after advance_time reads the same,
-      *comment already-settled value on both the original run and any replay.
-      *set cut_dice_day campaign_day
       *gosub_scene calendar recalc_hp_from_neglect
       *if (hp_current <= 0)
         *set death_cause "starvation"
         *if (neglect_damage_fatigue > neglect_damage_hunger)
           *set death_cause "exhaustion"
         *goto_scene death death_screen
-      *goto cut_dice_hub
-  # Watch a round without playing.
-    A round goes by. Two of the men win small and lose them again, one loses big and laughs about it, and the woman with the jar never looks at the bones at all, only at the hands.
+      *goto cut_dice_ring_hub
+    # Work your own die into the cup. [Sleight of Hand DC 17]
+      *set wager_ante_copper 20
+      *set wager_win_copper 40
+      *gosub_scene dice_engine roll_skill_check 17 "sleight_of_hand" "" "" "" "" ""
+      *gosub_scene economy resolve_lantern_stakes
+      *if (check_success)
+        *set black_lantern_proven true
+        Your own die is in your palm and back out of it before the cup even stops turning, swapped for the house's in the half-second nobody is looking at your hands instead of the wood. It comes down clean. The carpenter never sees anything but bad luck.
+        [b][🎲 Won the Throw: +4 Silver Marks][/b]
+        *set hours_to_pass 0
+        *set minutes_to_pass 20
+        *set time_advance_call_id "cut_dice_ring_2"
+        *gosub_scene calendar advance_time
+        *gosub_scene calendar recalc_hp_from_neglect
+        *if (hp_current <= 0)
+          *set death_cause "starvation"
+          *if (neglect_damage_fatigue > neglect_damage_hunger)
+            *set death_cause "exhaustion"
+          *goto_scene death death_screen
+        *goto cut_dice_ring_hub
+      *else
+        The swap goes wrong — a knuckle catches the rim, the wrong die skitters loose onto the boards, and for one bad second the whole table is looking at your hands instead of the cup. Someone's hand closes hard over your wrist before you can even open your mouth.
+
+        "Out," the big man says from behind you, and that's the entire conversation. He walks you up the steps himself, not gently, and plants you on the flags outside.
+        *set black_lantern_ejected_day campaign_day
+        *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+          *set hp_current - 2
+          *set stat_bump_locked true
+          *set locked_stat_bump_page_id page_id
+        [b][🎲 Caught Cheating: Thrown Out, -2 HP, Barred for the Day][/b]
+        *if (hp_current <= 0)
+          *set death_cause "combat"
+          *goto_scene death death_screen
+        *page_break Out onto the flags…
+        *goto cut_lamp_page
+  # Step back from the ring.
     *goto cut_dice_hub
-  # Go back up the steps.
-    *goto cut_lamp_page
+
+*comment ····· THE CARD TABLE (front table, Deception to cheat)
+*label cut_dice_cards
+Four players sit close around the one bright lamp, cards held tight to the chest, coin stacked in neat columns instead of the dice ring's loose scatter. The game is slower here, and the losses run deeper.
+
+*label cut_dice_cards_hub
+*choice
+  *if (((((gold * 100) + (silver * 10)) + copper) >= 30) and (black_lantern_bankroll > 0))
+    # Play it straight: 3 Silver Marks down to win 6.@{show_stat_hints  [DC 15]|}
+      *set wager_ante_copper 30
+      *set wager_win_copper 60
+      *set check_stat "none"
+      *set check_skill "the deal"
+      *set check_dc 15
+      *set check_add_prof_bonus false
+      *set check_no_guidance true
+      *gosub_scene dice_engine roll_d20_check
+      *gosub_scene economy resolve_lantern_stakes
+      *if (check_success)
+        *set black_lantern_proven true
+        The hand turns over clean, and for once the table's own arithmetic runs in your favor. Coin slides across to you with the particular silence of men who hate losing out loud.
+        [b][🎲 Won the Hand: +6 Silver Marks][/b]
+      *else
+        The hand turns over, and it isn't the one you needed. Nobody says anything. Nobody has to.
+        [b][🎲 Lost the Hand: -3 Silver Marks][/b]
+      *set hours_to_pass 0
+      *set minutes_to_pass 25
+      *set time_advance_call_id "cut_dice_cards_1"
+      *gosub_scene calendar advance_time
+      *gosub_scene calendar recalc_hp_from_neglect
+      *if (hp_current <= 0)
+        *set death_cause "starvation"
+        *if (neglect_damage_fatigue > neglect_damage_hunger)
+          *set death_cause "exhaustion"
+        *goto_scene death death_screen
+      *goto cut_dice_cards_hub
+    # Deal yourself a better hand than you drew. [Deception DC 17]
+      *set wager_ante_copper 30
+      *set wager_win_copper 60
+      *gosub_scene dice_engine roll_skill_check 17 "deception" "" "" "" "" ""
+      *gosub_scene economy resolve_lantern_stakes
+      *if (check_success)
+        *set black_lantern_proven true
+        Your face doesn't change when the second deal slides your real hand out of your sleeve and into your fingers in place of the one you were dealt. You lay it down without a flicker, and the table believes every card of it.
+        [b][🎲 Won the Hand: +6 Silver Marks][/b]
+        *set hours_to_pass 0
+        *set minutes_to_pass 25
+        *set time_advance_call_id "cut_dice_cards_2"
+        *gosub_scene calendar advance_time
+        *gosub_scene calendar recalc_hp_from_neglect
+        *if (hp_current <= 0)
+          *set death_cause "starvation"
+          *if (neglect_damage_fatigue > neglect_damage_hunger)
+            *set death_cause "exhaustion"
+          *goto_scene death death_screen
+        *goto cut_dice_cards_hub
+      *else
+        Your face is steady enough, but your sleeve isn't, and the man across from you has spent twenty years watching hands instead of cards. He doesn't shout. He just turns his head toward the stair.
+
+        "Out," the big man says, already moving. He doesn't wait for you to stand on your own.
+        *set black_lantern_ejected_day campaign_day
+        *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+          *set hp_current - 2
+          *set stat_bump_locked true
+          *set locked_stat_bump_page_id page_id
+        [b][🎲 Caught Cheating: Thrown Out, -2 HP, Barred for the Day][/b]
+        *if (hp_current <= 0)
+          *set death_cause "combat"
+          *goto_scene death death_screen
+        *page_break Out onto the flags…
+        *goto cut_lamp_page
+  # Step back from the table.
+    *goto cut_dice_hub
+
+*comment ····· THE BACK ROOM (gated behind black_lantern_proven; a caught cheat here is a debt marker, not a beating)
+*label cut_dice_back
+*set scenery_subplace "black_lantern_back"
+The curtain falls shut behind you on a smaller room, close and quiet, where the only game is cards and the only light comes from a single shaded lamp low over the table. House himself deals here. He doesn't look up when you sit, which is its own kind of welcome.
+
+*label cut_dice_back_hub
+*set scenery_subplace "black_lantern_back"
+*choice
+  *if (((((gold * 100) + (silver * 10)) + copper) >= 100) and (black_lantern_bankroll > 0))
+    # Play it straight: 10 Silver Marks down to win 20.@{show_stat_hints  [DC 17]|}
+      *set wager_ante_copper 100
+      *set wager_win_copper 200
+      *set check_stat "none"
+      *set check_skill "the back room"
+      *set check_dc 17
+      *set check_add_prof_bonus false
+      *set check_no_guidance true
+      *gosub_scene dice_engine roll_d20_check
+      *gosub_scene economy resolve_lantern_stakes
+      *if (check_success)
+        House's face doesn't move as he counts out your winnings, coin by coin, into a neat stack at your elbow. He makes a short mark in his book and says nothing at all.
+        [b][🎲 Won the Hand: +20 Silver Marks][/b]
+      *else
+        House turns the hand over, sees what you don't have, and sweeps your stake into the drawer at his knee without a word.
+        [b][🎲 Lost the Hand: -10 Silver Marks][/b]
+      *set hours_to_pass 0
+      *set minutes_to_pass 30
+      *set time_advance_call_id "cut_dice_back_1"
+      *gosub_scene calendar advance_time
+      *gosub_scene calendar recalc_hp_from_neglect
+      *if (hp_current <= 0)
+        *set death_cause "starvation"
+        *if (neglect_damage_fatigue > neglect_damage_hunger)
+          *set death_cause "exhaustion"
+        *goto_scene death death_screen
+      *goto cut_dice_back_hub
+    # Try House's own sleight back on him. [Deception DC 20]
+      *set wager_ante_copper 100
+      *set wager_win_copper 200
+      *gosub_scene dice_engine roll_skill_check 20 "deception" "" "" "" "" ""
+      *gosub_scene economy resolve_lantern_stakes
+      *if (check_success)
+        You hold his eye the entire time your real hand replaces the one he dealt you, and he still doesn't see it happen. He counts out your winnings at the same unhurried pace as always, and you'll never know if that's because he believed you or because he's already decided what to do about it later.
+        [b][🎲 Won the Hand: +20 Silver Marks][/b]
+        *set hours_to_pass 0
+        *set minutes_to_pass 30
+        *set time_advance_call_id "cut_dice_back_2"
+        *gosub_scene calendar advance_time
+        *gosub_scene calendar recalc_hp_from_neglect
+        *if (hp_current <= 0)
+          *set death_cause "starvation"
+          *if (neglect_damage_fatigue > neglect_damage_hunger)
+            *set death_cause "exhaustion"
+          *goto_scene death death_screen
+        *goto cut_dice_back_hub
+      *else
+        For the first time since you sat down, House looks up. He has watched a great many hands in his life, and yours was not good enough to be the exception. He doesn't call for the big man. He opens his book instead, and writes something down.
+
+        "You're short," he says, mild as ever, closing the ledger over the fresh line. "I'll remember it. Come back when the lamps are lit again — not before."
+        *set black_lantern_ejected_day campaign_day
+        *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+          *set black_lantern_debt + 100
+          *set stat_bump_locked true
+          *set locked_stat_bump_page_id page_id
+        [b][🎲 Caught Cheating: Marked in House's Book for 10 Silver Marks, Barred for the Day][/b]
+        *page_break Back through the curtain…
+        *goto cut_lamp_page
+  # Leave the back room.
+    *goto cut_dice_hub
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment ····· sub-location: the all-night drinking house
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -3978,7 +4196,7 @@ A broad, steep flight of granite steps is cut directly into the sheer face of th
       *set guidance_hold true
       *gosub_scene calendar advance_time
       *comment Stamped AFTER advance_time, not before (2026-09-30) -- same refresh-duplication shape as
-      *comment cut_dice_day/cut_labor_day's own fix: a 5-hour wade can cross midnight, and stamping with the
+      *comment cut_labor_day's own fix: a 5-hour wade can cross midnight, and stamping with the
       *comment pre-advance day lets a replay (whose snapshot already reflects the post-advance day) stamp later.
       *set cut_scrap_wade_day campaign_day
       *gosub_scene dice_engine roll_skill_check 11 "survival" "" "" "" "" ""
