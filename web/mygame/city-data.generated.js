@@ -337,23 +337,6 @@ window.CITY_TRAVEL = {
     ]
    },
    {
-    "id": "drinking_house",
-    "name": "The Drinking House",
-    "district": "dredge_end",
-    "kind": "food",
-    "seen": "cut_seen_lamp_stair",
-    "gate": "",
-    "extra": 15,
-    "stepMin": [
-     15,
-     0
-    ],
-    "steps": [
-     "port_valen_dredge_end:cut_lamp",
-     "cut_lamp_hub:cut_drink"
-    ]
-   },
-   {
     "id": "widow_corve",
     "name": "Widow Corve's",
     "district": "dredge_end",

@@ -243,6 +243,11 @@
 *if ((character_class = "ranger") and (ranger_spell_slots < ranger_spell_slots_max))
   *set sr_piece "spell slots"
   *gosub short_rest_add_piece
+*comment FATIGUE RELIEF (2026-11-07, the user's call): the one give-back every class gets, since a class with every pool full otherwise had no reason to ever press this button outside a dungeon. minutes_since_rest ticks
+*comment fatigue debt up (calendar.txt advance_time); this turns it back by one tick's worth (240 min) instead, same unit the debt accrues in. short_rest_apply below does the actual turning-back; this only reports whether there is any to give.
+*if (minutes_since_rest > 0)
+  *set sr_piece "some energy"
+  *gosub short_rest_add_piece
 *return
 
 *comment Joins what a short rest gives back into one phrase: "Second Wind", then "Second Wind and Action Surge", then "... and spell slots". Reads sr_piece, set by short_rest_preview just before.
@@ -321,6 +326,23 @@
     *set sr_ar sr_missing
   *set wizard_spell_slots + sr_ar
   *set wizard_arcane_recovery_used true
+*comment FATIGUE RELIEF: turns minutes_since_rest back by one debt-tick (240 min), floored at 0, then rebuilds neglect_damage_fatigue
+*comment and fatigue_stage from that new total exactly as advance_time derives them (calendar.txt), so a replay or a later sleep sees a
+*comment consistent value rather than a one-off adjustment.
+*if (minutes_since_rest > 0)
+  *set minutes_since_rest - 240
+  *if (minutes_since_rest < 0)
+    *set minutes_since_rest 0
+  *if (minutes_since_rest > 2400)
+    *temp sr_fatigue_over (minutes_since_rest - 2400)
+    *set neglect_damage_fatigue ((sr_fatigue_over - (sr_fatigue_over modulo 240)) / 240)
+    *set fatigue_stage "Collapsing"
+  *elseif (minutes_since_rest > 1200)
+    *set neglect_damage_fatigue 0
+    *set fatigue_stage "Exhausted"
+  *else
+    *set neglect_damage_fatigue 0
+    *set fatigue_stage "Rested"
 *return
 
 *comment The one-line banner a resting place prints after do_short_rest. It reads the pools, so a replay prints the same line, and a

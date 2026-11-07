@@ -59,7 +59,6 @@ const PLACES = {
     // Lamp Stair, where the Hedge-Doctor works: his own option is the treatment (it pays and heals at once), so the list takes the player to the street and leaves the choice to them
     place("hedge_doctor", "Lamp Stair: the Hedge-Doctor", "dredge_end", "healing", "cut_seen_lamp_stair", [[HUB.dredge_end, "cut_lamp"]]),
     place("pawnbroker", "The Open Hand", "dredge_end", "shops", "cut_seen_lamp_stair", [[HUB.dredge_end, "cut_lamp"], ["cut_lamp_hub", "cut_pawn"]]),
-    place("drinking_house", "The Drinking House", "dredge_end", "food", "cut_seen_lamp_stair", [[HUB.dredge_end, "cut_lamp"], ["cut_lamp_hub", "cut_drink"]]),
     place("widow_corve", "Widow Corve's", "dredge_end", "services", "cut_seen_lamp_stair", [[HUB.dredge_end, "cut_lamp"], ["cut_lamp_hub", "cut_corve"]]),
     // The Middle Ward
     place("vael_and_son", "Vael & Son", "middle_ward", "shops", "mw_vael_seen", [[HUB.middle_ward, "mw_locksmiths_close"], ["mw_locksmiths_close", "mw_vael_shop"]]),

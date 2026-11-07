@@ -696,7 +696,7 @@
           out.push("<b>The dredge landing.</b> At low water, workers haul black spoil from the canal into drying mounds. The made ground beneath the district is laid down a basket at a time.");
         }
         if (truthy(s.cut_seen_lamp_stair)) {
-          out.push("<b>Lamp Stair.</b> Above the flood line beneath the seawall, a short stair reaches a row of red-shaded lamps, the Open Hand pawnshop and a hedge-doctor by day, and a dice cellar and drinking house after dusk.");
+          out.push("<b>Lamp Stair.</b> Above the flood line beneath the seawall, a short stair reaches a row of red-shaded lamps, the Open Hand pawnshop and a hedge-doctor by day, and a dice cellar after dusk.");
         }
         if (truthy(s.cut_seen_lower_steps)) {
           out.push("<b>The lower steps.</b> A seawall stair falls toward the canal and its tide-flooded cellars, some used as flophouses when the water is low.");
@@ -836,23 +836,13 @@
     {
       id: "lamp_stair", category: "places", title: "Lamp Stair",
       sub: "The red-lamp street under the seawall",
-      tags: ["Dredge-End", "Black Oath"], aliases: ["red lamps", "red-lamp street", "blue door", "dice cellar", "pawnbroker", "open hand", "hedge-doctor", "drinking house"],
+      tags: ["Dredge-End", "Black Oath"], aliases: ["red lamps", "red-lamp street", "blue door", "dice cellar", "pawnbroker", "open hand", "hedge-doctor"],
       link: ["Lamp Stair"],
       unlock: "cut_seen_lamp_stair",
       index: false,
-      body: function (s) {
-        var drink = Number(s.cut_rumors_drink) || 0;
-        var out = [
-          "A flagged street along the foot of the seawall, above the flood line, reached by a short flight of stone steps from the canal. The flags are worn into shallow bowls by a great many feet, and the doors along it are painted blue, green and a red gone brown, each with a red-shaded lamp over it. What is open depends on the hour: the Open Hand pawnshop and a hedge-doctor's stall by day, and from dusk a dice cellar, an all-night drinking house and the house with the blue door."
-        ];
-        if (drink >= 1) {
-          out.push("A ferryman in the drinking house says the Oath never has to raise a hand. You just wake up owing something you do not remember borrowing.");
-        }
-        if (drink >= 2) {
-          out.push("Two dredgers argued over whether it is worse to owe the Oath or the Scales. The Scales send a clerk, said one. The Oath sends someone you grew up with.");
-        }
-        return out;
-      },
+      body: [
+        "A flagged street along the foot of the seawall, above the flood line, reached by a short flight of stone steps from the canal. The flags are worn into shallow bowls by a great many feet, and the doors along it are painted blue and green, each with a red-shaded lamp over it. What is open depends on the hour: the Open Hand pawnshop and a hedge-doctor's stall by day, and from dusk a dice cellar and the house with the blue door."
+      ],
       see: ["dredge_end", "black_oath", "upper_gangways", "corve", "open_hand"]
     },
     {
