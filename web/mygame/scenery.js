@@ -192,6 +192,7 @@
     function (s) { return s.sceneName === "port_valen/radiant/hall_perform" && s.rj_perf_venue === 3 ? "port_valen_private_supper" : undefined; }, // Middle Ward private supper
     function (s) { return s.sceneName === "port_valen/radiant/hall_perform" && s.rj_perf_venue === 4 ? "port_valen_wedding_hall" : undefined; }, // hired wedding hall
     function (s) { return s.sceneName === "port_valen/radiant/hall_perform" && s.rj_perf_venue === 5 ? "port_valen_patrician_gala_salon" : undefined; }, // Patrician Quarter gala salon
+    function (s) { if (s.sceneName !== "port_valen/radiant/radiant_hub") return undefined; if (s.rh_from === "avenue") return "patrician_avenue"; if (s.rh_from === "harbor") return "city_harbour"; return "generic_city_street"; }, // the posting hub is read standing exactly where the player already was (the Trunk Road, the Avenue or the Quayside), never a place of its own
     function (s) { return s.sceneName === "port_valen/radiant/hall_haul" ? "port_valen_middle_ward_house_move" : undefined; }, // the Middle Ward house, stairs, lane and waiting handcart
     function (s) { return s.sceneName === "port_valen/radiant/hall_watch" ? "port_valen_cargo_warehouse_watch" : undefined; }, // the Cargo Quay warehouse through all three night-watch stretches
     function (s) { return s.sceneName === "port_valen/radiant/hall_pests" && s.rj_pest_in_cellar ? "generic_domestic_cellar" : undefined; }, // after the player commits to entering the infested cellar or back room

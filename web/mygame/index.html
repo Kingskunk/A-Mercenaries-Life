@@ -332,6 +332,14 @@ var rootDir = "../";
   box-shadow: 0 6px 24px rgba(0,0,0,0.4); opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s;
 }
 #spellCastToast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+#horseToast {
+  position: fixed; left: 50%; bottom: 4.5rem; transform: translateX(-50%) translateY(20px);
+  z-index: 60; max-width: min(520px, calc(100vw / var(--z, 1) - 2rem)); padding: 0.6rem 1rem;
+  background: var(--ch-head); color: var(--ch-head-text); border-left: 4px solid var(--ch-brass); border-radius: 6px;
+  font-family: Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.4;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.4); opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s;
+}
+#horseToast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 #statSidebar .spellCast {
   display: block; width: 100%; margin-top: 0.5em; padding: 0.35em 0.5em;
   font: inherit; font-size: 0.95em; font-weight: 600; cursor: pointer;
@@ -1445,6 +1453,7 @@ button#statSidebar .turnRow,
     var el = document.getElementById("statSidebar");
     if (!el) return;
     showSpellToast();
+    showHorseToast();
     var s = window.stats;
     if (!s || !s.intake_completed || s.intake_completed === "false") {
       el.style.display = "none";
@@ -2642,6 +2651,26 @@ button#statSidebar .turnRow,
     if (!el) {
       el = document.createElement("div");
       el.id = "spellCastToast";
+      el.setAttribute("role", "status");
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.className = "show";
+    clearTimeout(el._t);
+    el._t = setTimeout(function () { el.className = ""; }, 5000);
+  }
+  // The stable's repossession notice: calendar.txt horse_upkeep sets stats.horse_toast the instant the third unpaid day
+  // keeps the horse. Its own variable and element (not spell_cast_toast/#spellCastToast) because that day-tick can land
+  // inside a Wait or Rest call that is about to overwrite spell_cast_toast with its own result right after this returns.
+  function showHorseToast() {
+    var s = window.stats || {};
+    var msg = String(s.horse_toast || "");
+    if (!msg) return;
+    s.horse_toast = "";
+    var el = document.getElementById("horseToast");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "horseToast";
       el.setAttribute("role", "status");
       document.body.appendChild(el);
     }

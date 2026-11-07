@@ -1217,7 +1217,9 @@
 *comment THE STABLE'S BILL. Called once for each night the player's horse spends stabled (days_to_pass of them): 2 copper a day in a town or city, 1 in a village (the kind of the tile ow_pos names, which is
 *comment the settlement the player is in), added to horse_owed and paid in full whenever the purse covers it. A purse that cannot cover it adds those days to horse_unpaid_days (the hub header shows them),
 *comment and the third unpaid day the stable keeps the horse for its board: has_horse goes false and horse_kept_name and horse_kept_day let the header say so for a day. Inside advance_time's own replay guard.
-*comment replay-ok: called only from advance_time's day tick, inside its replay guard (see the header above).
+*comment replay-ok: called only from advance_time's day tick, inside its replay guard (see the header above). On repossession horse_toast gets the one-line notice (index.html showHorseToast): a
+*comment separate variable from spell_cast_toast on purpose, since this tick can land inside a Wait or Rest call that is about to set its OWN spell_cast_toast right after advance_time returns, which
+*comment would overwrite a shared one before the player ever saw it.
 *label horse_upkeep
 *script var n = window.Overworld.nodes[stats.ow_pos]; stats.horse_rate = (n && n.kind === "village") ? 1 : 2;
 *set horse_owed (horse_owed + (horse_rate * days_to_pass))
@@ -1235,6 +1237,7 @@
     *set has_horse false
     *set horse_owed 0
     *set horse_unpaid_days 0
+    *set horse_toast "The stable has kept ${horse_kept_name} for its unpaid board."
 *return
 
 *comment One mile of a journey in ONE scene call: the weather and light of the moment, the pace they allow, the exposure and the clock. Every *gosub_scene is a trip through the page's
