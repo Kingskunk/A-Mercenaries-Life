@@ -117,6 +117,7 @@
 *set shield_armed false
 *set shield_active false
 *set rebuke_armed false
+*set absorb_elements_armed false
 *set booming_armed false
 *set booming_side false
 *set true_strike_on false
@@ -659,6 +660,7 @@
 *set shield_armed false
 *set shield_active false
 *set rebuke_armed false
+*set absorb_elements_armed false
 *set booming_armed false
 *set booming_side false
 *set true_strike_on false
@@ -2513,6 +2515,14 @@
 *if (shield_armed)
   *if ((wizard_spell_slots <= 0) or (player_oa_used))
     *set shield_armed false
+*if (absorb_elements_armed)
+  *temp cae_still_ok false
+  *if ((character_class = "wizard") and (wizard_spell_slots > 0))
+    *set cae_still_ok true
+  *if ((character_class = "ranger") and (ranger_spell_slots > 0))
+    *set cae_still_ok true
+  *if ((not(cae_still_ok)) or (player_oa_used))
+    *set absorb_elements_armed false
 *comment Re-syncs the HUD-picked target here too, not just at turn start or after a kill (fight_check_enemy_hp) --
 *comment a non-damaging first action (Brace, Second Wind, an item) never calls fight_check_enemy_hp, so a HUD
 *comment click made between it and a second action would otherwise sit unread until the next full turn.
@@ -2576,6 +2586,9 @@
 *if (shield_armed)
   *line_break
   [b][✨ Shield Ready — fires only when +5 AC can deflect a hit, then protects you until your next turn][/b]
+*if (absorb_elements_armed)
+  *line_break
+  [b][🌀 Absorb Elements Ready — fires on acid, cold, fire, lightning or thunder, then empowers your next melee hit][/b]
 *if (combat_player_hidden)
   *line_break
   [b][👤 Hidden: your next attack has advantage][/b]
@@ -2770,6 +2783,16 @@
 *temp combat_can_shield false
 *if ((((((character_class = "wizard") and (known_shield)) and (wizard_spell_slots > 0)) and (not(shield_armed))) and (not(shield_active))) and (not(player_oa_used)))
   *set combat_can_shield true
+*comment Absorb Elements (2026-11-08): a reaction like Shield, held for free until an incoming hit of one of its
+*comment five types can actually spend it. Wizard and Ranger share the spell, each off their own slot pool.
+*temp combat_can_absorb_elements false
+*temp cae_slot_ok false
+*if ((character_class = "wizard") and (wizard_spell_slots > 0))
+  *set cae_slot_ok true
+*if ((character_class = "ranger") and (ranger_spell_slots > 0))
+  *set cae_slot_ok true
+*if ((((known_absorb_elements) and (cae_slot_ok)) and (not(absorb_elements_armed))) and (not(player_oa_used)))
+  *set combat_can_absorb_elements true
 *comment Hunter's Mark (2026-10-02): a bonus action. Offered when the mark is orphaned (moving it is free), or when a free cast is left and the
 *comment active target is not already the live quarry. combat_hm_orphaned/combat_hm_live come from combat_hm_state, called where the hub banner prints.
 *comment Dual Shot: the style, a ranged weapon, an attack to spend, and a legal pair of targets on the field.
@@ -4294,6 +4317,16 @@
       You bite down on a retort and hold it there, hot behind your teeth, ready to spit back at whoever next draws your blood.
       *comment No banner here -- the hub's own "Hellish Rebuke Armed" status line says the same thing the instant it reopens. Arming is free, like Shield: the slot and the reaction are spent
       *comment only if it fires (resolve_enemy_attack, combat_dice.txt).
+      *line_break
+      *goto fight_round_hub
+
+  *if ((combat_can_absorb_elements) and (not(spells_blocked)))
+    # [b][Absorb Elements][/b] Hold a ward ready, to turn an element's own force back into your next blow.
+      *set absorb_elements_armed true
+      You hold the counter-working coiled at your fingertips, waiting for the air itself to turn hostile.
+      *comment No banner here -- the hub's own "Absorb Elements Ready" status line says the same thing the instant
+      *comment it reopens. Arming is free, like Shield and Hellish Rebuke: the slot and the reaction are spent only
+      *comment if it fires (resolve_enemy_attack, combat_dice.txt).
       *line_break
       *goto fight_round_hub
 

@@ -98,6 +98,11 @@
   *set combat_extra_resist true
 *if ((aidp_type = "cold") and (cold_resist_minutes_left > 0))
   *set combat_extra_resist true
+*comment Absorb Elements (2026-11-08): resistance to the one type it actually matched this attack
+*comment (absorb_elements_dmg_type, set by resolve_enemy_attack when it fires) -- checked against aidp_type so
+*comment only that one packet is reduced, never a same-attack rider of a different type.
+*if ((combat_absorb_triggered) and (aidp_type = absorb_elements_dmg_type))
+  *set combat_extra_resist true
 *comment The Lesser Amulet of the Beast (the mayor's gift, 2026-10-31): resistance to every natural attack of a creature of the Beast type (the enemy's creature_type; its blows are natural and so are the riders on them), not to a weapon or spell.
 *if ((equipped_neck_id = "lesser_amulet_of_the_beast") and (combat_enemy_creature_type = "beast"))
   *set combat_extra_resist true
@@ -350,7 +355,10 @@ ${combat_player_dmg_roll_banner}
     *gosub adjust_outgoing_damage_packet cwh_ff_die "force"
     *set combat_player_dmg_dealt + combat_packet_damage
     *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} [b][+ ${cwh_ff_die} force (Hunter's Mark) = ${combat_packet_damage}${combat_packet_suffix}][/b]"
-  *if (combat_player_extra_dmg_dice_sides > 0)
+  *comment The only current source of this rider, Absorb Elements, is melee-only, RAW -- not(weapon_type = "ranged")
+  *comment keeps a ranged weapon hit from spending it, so it survives to wait for an actual melee swing. One-shot:
+  *comment sides resets to 0 the instant it fires, so it never carries past the single hit it was meant for.
+  *if ((combat_player_extra_dmg_dice_sides > 0) and (not(weapon_type = "ranged")))
     *temp cwh_packet_roll 0
     *comment Quicktest walks this body even when the rider is off (sides 0); *rand needs max above min, so the range is clamped to at least 2. A real rider is always 4 or more.
     *temp cwh_xs combat_player_extra_dmg_dice_sides
@@ -366,6 +374,7 @@ ${combat_player_dmg_roll_banner}
     *gosub adjust_outgoing_damage_packet cwh_packet_raw combat_player_extra_dmg_type
     *set combat_player_dmg_dealt + combat_packet_damage
     *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} [b][+ ${cwh_packet_roll} ${cwh_packet_bonus_str} ${combat_player_extra_dmg_type} = ${combat_packet_damage}${combat_packet_suffix}][/b]"
+    *set combat_player_extra_dmg_dice_sides 0
   *comment TRUE STRIKE: from level 5 the hit adds Radiant dice whichever damage type was chosen: 1d6 at level 5, 2d6 at 11, 3d6 at 17 (5e). Rolled inside the hit lock, through the same resistance check as any rider.
   *if (true_strike_on)
     *temp cwh_ts_n 0
@@ -644,6 +653,7 @@ ${combat_player_dmg_roll_banner}
   *set combat_agathys_triggered false
   *set combat_agathys_shattered false
   *set combat_rebuke_triggered false
+  *set combat_absorb_triggered false
   *set combat_condition_inflicted false
   *if ((combat_enemy_hit_success) and (combat_enemy_inflicts_condition))
     *set disadvantage true
@@ -672,6 +682,37 @@ ${combat_player_dmg_roll_banner}
     *set {(cea_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${cea_dmg} ${cea_bonus_str} = ${cea_dmg_total}][/b]"
     *set cea_dmg (cea_dmg + combat_enemy_dmg_bonus)
     *set combat_enemy_dmg_dealt cea_dmg
+    *comment ABSORB ELEMENTS (Wizard/Ranger, 2026-11-08): armed earlier like Shield and Hellish Rebuke, free to
+    *comment hold. Checks the primary type first, falling back to the elemental rider (combat_enemy_extra_dmg_type)
+    *comment only when the primary isn't one of the five -- an attack almost never matches on both, but if it did,
+    *comment the primary packet is the one actually resolved first, below, so it is the more useful one to protect.
+    *comment Whichever type matches is what adjust_incoming_damage_packet (below, this file) checks against when it
+    *comment grants resistance, so only the matching packet (primary or rider) is actually reduced.
+    *temp cae_absorb_type ""
+    *if ((((((combat_enemy_dmg_type = "acid") or (combat_enemy_dmg_type = "cold")) or (combat_enemy_dmg_type = "fire")) or (combat_enemy_dmg_type = "lightning")) or (combat_enemy_dmg_type = "thunder")))
+      *set cae_absorb_type combat_enemy_dmg_type
+    *elseif ((((((combat_enemy_extra_dmg_type = "acid") or (combat_enemy_extra_dmg_type = "cold")) or (combat_enemy_extra_dmg_type = "fire")) or (combat_enemy_extra_dmg_type = "lightning")) or (combat_enemy_extra_dmg_type = "thunder")))
+      *set cae_absorb_type combat_enemy_extra_dmg_type
+    *gosub combat_can_react "player" 0
+    *temp cae_slot_ok false
+    *if ((character_class = "wizard") and (wizard_spell_slots > 0))
+      *set cae_slot_ok true
+    *if ((character_class = "ranger") and (ranger_spell_slots > 0))
+      *set cae_slot_ok true
+    *if ((((absorb_elements_armed) and (not(cae_absorb_type = ""))) and (combat_can_react_ok)) and (cae_slot_ok))
+      *set combat_absorb_triggered true
+      *set absorb_elements_armed false
+      *set absorb_elements_dmg_type cae_absorb_type
+      *if (character_class = "wizard")
+        *set wizard_spell_slots - 1
+      *else
+        *set ranger_spell_slots - 1
+      *set player_oa_used true
+      *comment Arms the melee rider for the player's own next hit (resolve_player_weapon_hit, this file) -- a
+      *comment weapon attack only, RAW, and one-shot: that label clears the sides back to 0 once it fires.
+      *set combat_player_extra_dmg_dice_sides 6
+      *set combat_player_extra_dmg_bonus 0
+      *set combat_player_extra_dmg_type cae_absorb_type
     *comment Barbarian Rage's physical-damage resistance is folded into this
     *comment same check now -- see apply_incoming_damage_resist_vuln's header.
     *gosub apply_incoming_damage_resist_vuln

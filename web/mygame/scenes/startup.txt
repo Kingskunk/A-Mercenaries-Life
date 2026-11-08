@@ -104,6 +104,7 @@
 *create prepare_target_id "none"
 *create prepare_target_on false
 *create copy_target_id "none"
+*create prepared_absorb_elements false
 *create prepared_alarm false
 *create prepared_arms_of_hadar false
 *create prepared_hellish_rebuke false
@@ -131,6 +132,7 @@
 *create prepared_speak_with_animals false
 *create prepared_thunderwave false
 *create prepared_unseen_servant false
+*create held_absorb_elements false
 *create held_alarm false
 *create held_arms_of_hadar false
 *create held_hellish_rebuke false
@@ -159,6 +161,7 @@
 *create held_thunderwave false
 *create held_unseen_servant false
 *comment known_<id> for every spell on SOME class's list -- cantrips are not here (they are hand-written: CANTRIP_SLOTS has no tools/spell_book.json entry). Set true by refresh_known_spells, never by hand.
+*create known_absorb_elements false
 *create known_alarm false
 *create known_arms_of_hadar false
 *create known_hellish_rebuke false
@@ -671,7 +674,7 @@
 *create settlement_wedding_done_0 false
 *create_array settlement_wedding_done 512 false
 *create helping_your_elders_done false
-*comment Daily weather, weighted by season.
+*comment weather is the LIVE condition every district/scenery file reads, weighted by season; weather_now (calendar.txt) keeps it in sync with weather_day and the hour. Districts never set it.
 *create weather "Clear"
 *create minutes_to_pass 0
 *create hours_to_pass 0
@@ -697,6 +700,13 @@
 *create rain_streak 0
 *create dry_streak 0
 *create ground_state "dry"
+*comment weather_day (calendar.txt wx_day_step/wx_fresh_roll) is today's actual rolled condition -- what "weather" used to mean before it became the live value above. rain_streak/dry_streak/ground_state and weather_day_wet are keyed off it, not off the live weather, so a passing shower still counts as a wet day once it clears.
+*create weather_day "Clear"
+*create weather_day_wet false
+*comment wx_window_start/wx_window_len/wx_window_filler (calendar.txt wx_window_roll) are the hour-of-day window weather_day actually shows through as the live weather, and what it reverts to outside that window.
+*create wx_window_start 0
+*create wx_window_len 24
+*create wx_window_filler "Clear"
 *comment Weather zones (overworld-data.js WEATHER_ZONES): wx_zone is the zone the weather above belongs to, wx_slots (JSON) parks the weather of the zones the player has left, and wx_force_zone puts the
 *comment player in a zone by hand (a portal, a plane) until it is set back to "". Overworld.weatherSync (called from calendar.txt update_hub_condition and each overworld leg) does the swapping.
 *create wx_zone "reach"
@@ -5219,6 +5229,15 @@
 *create shield_armed false
 *create shield_active false
 *create combat_shield_triggered false
+*comment ABSORB ELEMENTS (Wizard/Ranger, 2026-11-08): armed the same free way as Shield. It fires on the enemy
+*comment attack that actually deals one of its five types (acid, cold, fire, lightning, thunder), spending a spell
+*comment slot and the reaction. Firing grants resistance to that one triggering packet (apply_incoming_damage_
+*comment resist_vuln, combat_dice.txt) and stores the type in absorb_elements_dmg_type, which arms the existing
+*comment (until now unused) combat_player_extra_dmg_dice_sides rider for the player's next MELEE hit only
+*comment (resolve_player_weapon_hit) -- it is cleared, unused or not, at the start of the player's next turn.
+*create absorb_elements_armed false
+*create absorb_elements_dmg_type ""
+*create combat_absorb_triggered false
 *comment MAGIC MISSILE TARGETING (2026-09-28): sidebar-driven multi-target dart allocation, the first spell
 *comment built this way and meant as a reusable shape for future multi-target spells -- see fight_target_magic_
 *comment missile (combat.txt). combat_mm_targeting_active gates the sidebar's click handler (web/mygame/
@@ -7795,6 +7814,8 @@
 *create aly_checkpoint "none"
 *create aly_gear_prepared false
 *create aly_trailcraft false
+*create aly_flirt false
+*create aly_spotted_outlaws false
 *comment TAVERN GAMBLING: each tavern below runs its own dice table (a dedicated label, inline in that tavern's own scene file, same shape as the Keel's pv_poi_tavern_dice) and spends its own house pot through economy.txt's shared resolve_wager. Every bankroll here refills to its max once a day (calendar.txt, the days_to_pass>0 block); resolve_wager itself then re-rolls that day's bankroll down to a random point between 6 and its max, once, the first time anyone plays that table that day (the "_rolled_day" pair below is resolve_wager's lock, keyed to campaign_day) -- how much the house is willing to lose before it calls the game for the day, so a grinding player cannot count on draining the same fixed amount every time.
 *comment Alderford's taphouse (prologue/alderford.txt).
 *create taphouse_dice_bankroll 30

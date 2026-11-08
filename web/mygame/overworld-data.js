@@ -72,7 +72,8 @@
   };
 
   // WEATHER ZONES (2026-10-30, the user's call: separate weather for the Western Vale, built to take more regions and other planes later). A zone is a place that has its own weather: today's, tomorrow's
-  // forecast and the rain and dry streaks (the globals weather, weather_tomorrow, forecast_missed, rain_streak, dry_streak). The zone the player is in lives in those globals, which is why the 78 scenes that read
+  // forecast and the rain and dry streaks (the globals weather, weather_day, weather_tomorrow, forecast_missed, rain_streak, dry_streak, plus the live window in wx_window_start/wx_window_len/wx_window_filler --
+  // see calendar.txt weather_now). The zone the player is in lives in those globals, which is why the 78 scenes that read
   // the weather never change; every other zone the player has been to is parked in stats.wx_slots (JSON) and swapped in by weatherSync. A territory names its zone (weather:), a tile may override it (weather:
   // on the tile, for a high pass or a haunted hollow), and a place that is not a tile (a town the player is walking about in) gets one from DISTRICT_ZONE below. profile names the rules that roll the zone's
   // days: "temperate" is the season tables in calendar.txt roll_weather. A new profile (a wetter Vale, a plane that never rolls, a plane with weather names of its own) needs a branch there, an entry in
@@ -88,8 +89,9 @@
   var DEFAULT_WEATHER_ZONE = "reach";
   // A district (stats.current_district) the player is in while NOT on the overworld, where it is not the default zone. Langston is a town, not a tile; a Vale dungeon or farm would be listed here too.
   var DISTRICT_ZONE = { langston: "vale", barolo: "vale", broadmead: "vale", fallowmere: "vale" };
-  // The fields a zone owns: its key in a parked slot -> the stat it is swapped with.
-  var WEATHER_FIELDS = { weather: "weather", tomorrow: "weather_tomorrow", missed: "forecast_missed", rain: "rain_streak", dry: "dry_streak" };
+  // The fields a zone owns: its key in a parked slot -> the stat it is swapped with. day/dayWet is the zone's actual rolled condition for today (calendar.txt weather_day/weather_day_wet); weather itself
+  // is the live value calendar.txt's weather_now derives from day/winStart/winLen/winFiller and the clock, re-derived right after a swap, so parking it here is only a belt-and-braces copy.
+  var WEATHER_FIELDS = { weather: "weather", day: "weather_day", dayWet: "weather_day_wet", tomorrow: "weather_tomorrow", missed: "forecast_missed", rain: "rain_streak", dry: "dry_streak", winStart: "wx_window_start", winLen: "wx_window_len", winFiller: "wx_window_filler" };
 
   // "track" (2026-10-30, the user's sketch of Roi's Grove): a seldom-used dirt road, walked at road pace but drawn dotted on the map, so it reads as a lesser way than the wagon road.
   // How each terrain walks, as a percent of a road mile's time. "blocked" has no pace: it is never walked. name is what the map card calls the ground.

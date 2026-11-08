@@ -210,7 +210,8 @@
   // GEN:BEGIN spell_book_js_copy
   // Which classes may learn each spell, from tools/spell_book.json. The pick menus and the copying rule read the same lists.
   var SPELL_LISTS = {
-      "alarm": ["wizard","ranger"],
+      "absorb_elements": ["wizard","ranger"],
+    "alarm": ["wizard","ranger"],
     "arms_of_hadar": ["warlock"],
     "hellish_rebuke": ["warlock"],
     "cause_fear": ["wizard","warlock"],
@@ -239,7 +240,8 @@
     "unseen_servant": ["warlock"]
     };
   var SPELL_LEVELS = {
-      "alarm": 1,
+      "absorb_elements": 1,
+    "alarm": 1,
     "arms_of_hadar": 1,
     "hellish_rebuke": 1,
     "cause_fear": 1,

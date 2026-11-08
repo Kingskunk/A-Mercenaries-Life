@@ -786,12 +786,17 @@
 *comment A zone the player has just entered for the first time has no weather of its own yet (Overworld.weatherSync set wx_fresh): roll it before the flags are derived from it.
 *if (wx_fresh)
   *gosub wx_fresh_roll
+*gosub weather_now
 *gosub weather_flags_basic
 *goto wx_street_life
 
-*comment The flags a weather NAME means: severity, visibility, wet and cold. Split out so a zone the
-*comment player is not in can be read the same way as the one they are (wx_day_step counts its
-*comment rain and dry streaks from weather_wet). A new weather name gets its line here.
+*comment The flags a weather NAME means: severity, visibility, wet and cold, read from the LIVE
+*comment weather (weather_now derives it from weather_day and today's window every time this runs,
+*comment so these flicker with the hour -- cooler and emptier streets only while it is actually
+*comment falling, not for the whole day). A zone the player is not in can be read the same way as
+*comment the one they are. The day-level memory (rain_streak, ground_state) deliberately does NOT use
+*comment these: it reads weather_day_wet instead, which wx_day_step sets once per day, so a passing
+*comment shower still counts as a wet day after it clears. A new weather name gets its line here.
 *label weather_flags_basic
 *set weather_severity 0
 *set weather_visibility "clear"
@@ -912,11 +917,13 @@
   *set temperature_band "hot"
 
 *comment Ground state, from the weather's memory. rain_streak counts COMPLETED wet days, so
-*comment the third wet day (two behind, one today) is already sodden.
+*comment the third wet day (two behind, one today) is already sodden. Reads weather_day_wet, not
+*comment the live weather_wet above: the ground stays wet from this morning's rain even in the dry
+*comment hours after it clears, since it does not dry out the moment the shower passes.
 *set ground_state "dry"
-*if ((rain_streak >= 1) or (weather_wet))
+*if ((rain_streak >= 1) or (weather_day_wet))
   *set ground_state "wet"
-*if ((rain_streak >= 3) or ((rain_streak >= 2) and (weather_wet)))
+*if ((rain_streak >= 3) or ((rain_streak >= 2) and (weather_day_wet)))
   *set ground_state "sodden"
 *return
 
@@ -937,9 +944,8 @@
 *temp weather_input ""
 *temp weather_rolled ""
 *temp forecast_roll 0
-*gosub weather_flags_basic
-*set weather_input weather
-*if (weather_wet)
+*set weather_input weather_day
+*if (weather_day_wet)
   *set rain_streak + 1
   *set dry_streak 0
 *else
@@ -953,10 +959,64 @@
 *else
   *set forecast_missed true
   *gosub roll_weather
-*set weather weather_rolled
-*set weather_input weather
+*set weather_day weather_rolled
+*set weather_day_wet (((weather_day = "Rain") or (weather_day = "Sleet")) or (weather_day = "Storm"))
+*gosub wx_window_roll
+*gosub weather_now
+*set weather_input weather_day
 *gosub roll_weather
 *set weather_tomorrow weather_rolled
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment REUSABLE PRIMITIVE: TODAY'S WEATHER WINDOW
+*comment Rain, Snow, Fog, Sleet and Storm don't realistically sit over the whole day, so this gives each a
+*comment start hour, a length (wx_window_start, wx_window_len) and what the sky shows outside that window
+*comment (wx_window_filler) -- weather_now below uses all three to drive the live weather global. Overcast,
+*comment Clear and Blizzard keep the default start 0 / len 24 (running the whole day): Overcast and Clear
+*comment have no "falling" condition to window, and a blizzard plausibly does blanket a whole day in this
+*comment region. weather_day (the day's actual rolled condition, set just above in wx_day_step/wx_fresh_roll)
+*comment is untouched by any of this, so it stays available at the END of the day for the next day's roll,
+*comment whatever the live weather happened to be showing at that moment.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label wx_window_roll
+*set wx_window_start 0
+*set wx_window_len 24
+*set wx_window_filler weather_day
+*temp wx_win_roll_len 0
+*temp wx_win_max_start 0
+*if (weather_day = "Fog")
+  *rand wx_win_roll_len 2 5
+  *set wx_window_filler "Clear"
+*elseif ((weather_day = "Rain") or (weather_day = "Snow"))
+  *rand wx_win_roll_len 2 5
+  *set wx_window_filler "Overcast"
+*elseif (weather_day = "Sleet")
+  *rand wx_win_roll_len 2 4
+  *set wx_window_filler "Overcast"
+*elseif (weather_day = "Storm")
+  *rand wx_win_roll_len 1 3
+  *set wx_window_filler "Overcast"
+*if (wx_win_roll_len > 0)
+  *set wx_window_len wx_win_roll_len
+  *set wx_win_max_start (24 - wx_win_roll_len)
+  *rand wx_window_start 0 wx_win_max_start
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment REUSABLE PRIMITIVE: THE LIVE WEATHER, RIGHT NOW
+*comment Sets weather itself: weather_day inside today's window (wx_window_roll), wx_window_filler outside
+*comment it. This is the ONLY place weather is set outside a day-roll, and every one of the ~80 district/
+*comment scenery files that reads weather, weather_wet, weather_severity etc. keeps working unchanged --
+*comment they just see it change through the day instead of staying fixed. Called from update_weather_flags
+*comment (so every clock advance and every hub entry refreshes it) and once more from wx_day_step/
+*comment wx_fresh_roll right after a new day's window is rolled, so weather is never stale mid-call.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label weather_now
+*if ((clock_hour >= wx_window_start) and (clock_hour < (wx_window_start + wx_window_len)))
+  *set weather weather_day
+*else
+  *set weather wx_window_filler
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -970,8 +1030,11 @@
 *temp weather_rolled ""
 *set wx_fresh false
 *gosub roll_weather
-*set weather weather_rolled
-*set weather_input weather
+*set weather_day weather_rolled
+*set weather_day_wet (((weather_day = "Rain") or (weather_day = "Sleet")) or (weather_day = "Storm"))
+*gosub wx_window_roll
+*gosub weather_now
+*set weather_input weather_day
 *gosub roll_weather
 *set weather_tomorrow weather_rolled
 *set forecast_missed false
@@ -1077,7 +1140,31 @@
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment REUSABLE PRIMITIVE: EXPOSURE (outdoor time costs hunger and fatigue)
+*comment REUSABLE PRIMITIVE: ENSURE NAVIGABLE WEATHER (Story / Quest Clamping)
+*comment Downgrades disruptive weather (Storm, Blizzard, or Sleet, always severity 2+) to navigable
+*comment seasonal conditions (Overcast or Clear) so an outdoor quest or expedition is not derailed by
+*comment random extreme weather, for the rest of the day.
+*comment Checks weather_day (today's rolled condition), not the live weather_severity: a storm whose
+*comment window (wx_window_roll) hasn't started yet reads as calm right now, so a severity check taken
+*comment at the moment of the call would miss it and the storm would still arrive later in the same
+*comment quest. weather_day is fixed for the whole day regardless of the hour, so it is the one thing
+*comment safe to gate on no matter when in the day this runs.
+*comment Clamps weather_day, not the live weather: weather_now (wired into update_weather_flags)
+*comment re-derives weather from weather_day every time it runs, so setting live weather here and
+*comment then calling update_weather_flags would just have it overwritten right back. wx_window_roll
+*comment resets the window to the clamped day's default (the whole day, since Overcast/Clear never
+*comment get one), so nothing can later flip it back to the storm that was just cleared.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label ensure_navigable_weather
+*if (((weather_day = "Storm") or (weather_day = "Blizzard")) or (weather_day = "Sleet"))
+  *if (current_season = "Winter")
+    *set weather_day "Overcast"
+  *else
+    *set weather_day "Clear"
+  *set weather_day_wet false
+  *gosub wx_window_roll
+  *gosub update_weather_flags
+*return
 *comment Caller sets exposure_base_mins to the outdoor minutes it is about to spend, then
 *comment *gosub_scene calendar calc_exposure, then advance_time. Only outdoor time should call
 *comment this: travel legs, camps, marches, fishing, farming, caravans. Indoor time never does.
