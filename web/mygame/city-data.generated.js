@@ -860,7 +860,7 @@ window.CITY_SETTLEMENTS = {
     "seen": "",
     "lock": "",
     "lockReason": "",
-    "done": "You take the Langston road out of Fallowmere.",
+    "done": "You take the road out of Fallowmere.",
     "steps": [
      "fm_menu:ow_here"
     ],

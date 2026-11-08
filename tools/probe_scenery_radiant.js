@@ -64,6 +64,35 @@ async function main() {
     console.log("radiant_hub rh_hub, from the Harbor Quayside ->", await land("port_valen/radiant/radiant_hub", "rh_hub", { rh_from: "harbor", current_district: "harbor" }));
     console.log("ashrun_house ah_inn_stables ->", await land("timbermouth/ashrun_holt/ashrun_house", "ah_inn_stables", { current_district: "ashrun_holt", has_horse: false }));
     console.log("hall_perform rj_perf_arrive, rj_perf_venue AS A STRING '1' ->", await land("port_valen/radiant/hall_perform", "rj_perf_arrive", { rj_perf_walked_in: false, rj_perf_venue: "1" }));
+    console.log("ashrun_holt baseline (caller, no settlement event) ->", await land("timbermouth/ashrun_holt/ashrun_holt", "ashrun_holt", { current_district: "ashrun_holt" }));
+    console.log("caught_in_wedding wedding_run, nested under ashrun_holt ->", await land("settlement_events/caught_in_wedding", "wedding_run", {
+      current_district: "ashrun_holt", se_settlement_id: 6, se_settlement_kind: "forest_village", se_wedding_style: "woodland",
+      choice_subscene_stack: [{ name: "timbermouth/ashrun_holt/ashrun_holt" }, { name: "settlement_events" }]
+    }));
+    console.log("helping_your_elders elders_run, nested under ashrun_holt ->", await land("settlement_events/helping_your_elders", "elders_run", {
+      current_district: "ashrun_holt", se_settlement_id: 6, se_settlement_kind: "forest_village",
+      choice_subscene_stack: [{ name: "timbermouth/ashrun_holt/ashrun_holt" }, { name: "settlement_events" }]
+    }));
+    console.log("mw_inn_yard (Wagoner's Rest stable yard) ->", await land("port_valen/port_valen_middle_ward", "mw_inn_yard", { choice_subscene_stack: [] }));
+    console.log("mw_smiths_forge, browsing (shop_open unset) ->", await land("port_valen/port_valen_middle_ward", "mw_smiths_forge", { choice_subscene_stack: [], mw_forge_seen: true }));
+    console.log("mw_smiths_forge, trade panel open (shop_open=halda) ->", await land("port_valen/port_valen_middle_ward", "mw_smiths_forge", { choice_subscene_stack: [], mw_forge_seen: true, shop_open: "halda" }));
+    console.log("slasher_rumor_baths (hot-room rumor, should keep the baths) ->", await land("port_valen/varren_quests/varren_errand", "slasher_rumor_baths", { choice_subscene_stack: [], slasher_quest_stage: "active" }));
+    console.log("slasher_rumor_keel (Cleaved Keel rumor, should keep the tavern) ->", await land("port_valen/varren_quests/varren_errand", "slasher_rumor_keel", { choice_subscene_stack: [], slasher_quest_stage: "active" }));
+    console.log("slasher_gate_warrant (Patrician inner gate) ->", await land("port_valen/varren_quests/varren_errand", "slasher_gate_warrant", { choice_subscene_stack: [] }));
+    console.log("slasher_manor (Avenue of Estates approach) ->", await land("port_valen/varren_quests/varren_errand", "slasher_manor", { choice_subscene_stack: [] }));
+    console.log("slasher_kenny (chapel cot, open) ->", await land("port_valen/varren_quests/varren_errand", "slasher_kenny", { choice_subscene_stack: [] }));
+    console.log("slasher_kenny_closed (chapel cot, curtained at night) ->", await land("port_valen/varren_quests/varren_errand", "slasher_kenny_closed", { choice_subscene_stack: [] }));
+    console.log("slasher_courier, mid-walk to upper_wharves ->", await land("port_valen/varren_quests/varren_errand", "slasher_courier", { choice_subscene_stack: [], pv_re_origin: "middle_ward", pv_re_dest: "upper_wharves", slasher_quest_stage: "resolved", slasher_resolution: "arrested", slasher_manor_done: true }));
+    console.log("slasher_courier, mid-walk to harbor ->", await land("port_valen/varren_quests/varren_errand", "slasher_courier", { choice_subscene_stack: [], pv_re_origin: "middle_ward", pv_re_dest: "harbor", slasher_quest_stage: "resolved", slasher_resolution: "arrested", slasher_manor_done: true }));
+    console.log("slasher_courier, mid-walk middle_ward<->dredge_end ->", await land("port_valen/varren_quests/varren_errand", "slasher_courier", { choice_subscene_stack: [], pv_re_origin: "middle_ward", pv_re_dest: "dredge_end", slasher_quest_stage: "resolved", slasher_resolution: "arrested", slasher_manor_done: true }));
+    console.log("slasher_post (militia post office) ->", await land("port_valen/varren_quests/varren_errand", "slasher_post", { choice_subscene_stack: [] }));
+    console.log("slasher_post_closed (barred door at night) ->", await land("port_valen/varren_quests/varren_errand", "slasher_post_closed", { choice_subscene_stack: [] }));
+    console.log("slasher_manor_wall (manor grounds) ->", await land("port_valen/varren_quests/varren_errand", "slasher_manor_wall", { choice_subscene_stack: [] }));
+    console.log("slasher_manor_study (manor study) ->", await land("port_valen/varren_quests/varren_errand", "slasher_manor_study", { choice_subscene_stack: [] }));
+    console.log("slasher_ulrich (fireside parlor) ->", await land("port_valen/varren_quests/varren_errand", "slasher_ulrich", { choice_subscene_stack: [] }));
+    console.log("slasher_chase_1 (post ablaze) ->", await land("port_valen/varren_quests/varren_errand", "slasher_chase_1", { choice_subscene_stack: [] }));
+    console.log("slasher_chase_2 (market lane chaos) ->", await land("port_valen/varren_quests/varren_errand", "slasher_chase_2", { choice_subscene_stack: [] }));
+    console.log("slasher_chase_3 (drainage cut) ->", await land("port_valen/varren_quests/varren_errand", "slasher_chase_3", { choice_subscene_stack: [] }));
   } finally {
     if (ws) try { ws.close(); } catch (e) {}
     try { chrome.kill(); } catch (e) {}

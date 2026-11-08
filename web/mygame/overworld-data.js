@@ -516,7 +516,7 @@
       climate: -1,
       walk: "The road leaves Langston's fields and runs north-west over rough grassland, a narrow carters' way kept up by House Gault's levy and little used beyond the town.",
       camp: "A flat shoulder of grass beside a field wall gives room for a small camp, with the road empty in both directions.",
-      info: "A road leaving Langston to the north-west, over open grassland. Few travellers use it, and little is known of where it leads.",
+      info: "A road leaving Langston to the north-west, over open grassland.",
       here: "The road runs over open grassland between low stone walls, with Langston behind and nothing ahead but the long line of the grass.",
       hereNight: "The road is a pale line between dark walls, and Langston's lamps have sunk out of sight behind the rise.",
       hereStorm: "Rain sweeps over the open grassland and the road runs with water between its walls. There is no shelter in sight."
@@ -527,7 +527,7 @@
       danger: 1,
       climate: -1,
       walk: "The track climbs north out of Langston's fields onto a low pale hill, where hedged lanes run between orchards and the first rows of vines.",
-      info: "A vineyard village north of Langston, on one of the Vale's few real slopes. Its wine is sold in small casks in Langston's market.",
+      info: "A vineyard village north of Langston, on one of the Vale's few real slopes.",
       here: "Rows of vines run down a sunny pale hillside around the village roofs, with orchards, hedges and beehives between them. The open Vale spreads away below, dotted with the roofs of country manors.",
       hereNight: "A few window lamps show among the dark rows of vines, and the air smells of crushed grapes and cool earth.",
       hereStorm: "Rain drives across the slope and runs off the village roofs. The vine rows stream with water, the lanes between the hedges are small brooks, and every door is shut."
@@ -539,7 +539,7 @@
       danger: 1,
       climate: -1,
       walk: "The road climbs north-west over rough grazing, then a pasture lane turns off between stone walls and drops toward a broad, damp meadow.",
-      info: "A village of shepherds and horse-keepers on a broad river meadow, far out on Langston's north-western road. Its wool and cheese reach Langston's market, and some of the Countess's horses are said to be raised there.",
+      info: "A village of shepherds and horse-keepers on a broad river meadow, far out on Langston's north-western road. Its wool and cheese reach Langston's market.",
       here: "A stream winds through a broad damp meadow below a long bare down. Thatched and slate roofs line a rutted lane beside the water, and fences of every age divide the grass.",
       hereNight: "A few window lamps show along the lane, and the long down is a black line against the stars. Somewhere in the dark the stream murmurs over stones.",
       hereStorm: "Rain sweeps off the down and the lane runs brown with water. The sheep have crowded against the lee of the walls, and every door is shut."
@@ -550,7 +550,7 @@
       danger: 1,
       climate: -1,
       walk: "The road runs west across level farmland, between hedged strips of wheat, barley and beans, toward a cluster of roofs round a village pond.",
-      info: "A farming village on the western edge of Langston's farmland. Its wheat, barley, beans and vegetables go to Langston's market, and its carts are on the road most mornings.",
+      info: "A farming village on the western edge of Langston's farmland. Its wheat, barley, beans and vegetables.",
       here: "Hedged strips of wheat, barley and beans run out from a cluster of thatched roofs round a village pond, where geese pick along the bank. Haystacks and kitchen gardens stand among the houses, and a cart or two waits in the lane.",
       hereNight: "A few lit windows show round the dark pond, and a dog barks from a farmyard. The fields lie quiet, and the air smells of hay and cold water.",
       hereStorm: "Rain beats on the strips and fills the ruts in the lane. The pond is dimpled and brown, the geese have gone, and every shutter is closed."
@@ -747,13 +747,13 @@
   // A row is the picker's whole knowledge of an event: a new event is one row here and one label in the scene. What a failed roll costs is the event's own business (a sunk wheel loses goods, bandits at the
   // highest danger can come to blows): not every roll is a fight.
   var HALT_EVENTS = [
-    { code: 1, id: "mud_wheel",   kinds: ["road"],                    weight: [4, 4, 4, 4] },
-    { code: 2, id: "balky_ox",    kinds: ["road", "hills"],           weight: [4, 4, 4, 4] },
-    { code: 5, id: "fallen_tree", kinds: ["forest", "hills"],         weight: [4, 4, 4, 4] },
-    { code: 6, id: "bandits",     kinds: ["road", "forest", "hills"], weight: [0, 2, 4, 6] },
+    { code: 1, id: "mud_wheel", kinds: ["road"], weight: [4, 4, 4, 4] },
+    { code: 2, id: "balky_ox", kinds: ["road", "hills"], weight: [4, 4, 4, 4] },
+    { code: 5, id: "fallen_tree", kinds: ["forest", "hills"], weight: [4, 4, 4, 4] },
+    { code: 6, id: "bandits", kinds: ["road", "forest", "hills"], weight: [0, 2, 4, 6] },
     { code: 7, id: "stranded_traveller", kinds: ["road", "forest", "hills"], weight: [2, 3, 3, 3] },
-    { code: 8, id: "cracked_axle",       kinds: ["road", "forest", "hills"], weight: [3, 3, 3, 3] },
-    { code: 9, id: "warden_check",       kinds: ["road"],                    weight: [4, 3, 2, 0] }
+    { code: 8, id: "cracked_axle", kinds: ["road", "forest", "hills"], weight: [3, 3, 3, 3] },
+    { code: 9, id: "warden_check", kinds: ["road"], weight: [4, 3, 2, 0] }
   ];
   function hash100(seed, salt) {
     var h = (Math.floor(seed) * 2654435761 + Math.floor(salt) * 40503 + 12345) >>> 0;
@@ -901,8 +901,10 @@
       }
     }
     var first = legs[startLeg], last = legs[i - 1];
-    return { endLeg: i, miles: miles, minutes: mins, walk: walk.join(" "), stop: stop, haltEv: haltEv, act2: act2, phase: nowMin < 660 ? "morning" : "afternoon",
-             fromName: first ? NODES[first.from].name : "", toName: last ? NODES[last.to].name : "" };
+    return {
+      endLeg: i, miles: miles, minutes: mins, walk: walk.join(" "), stop: stop, haltEv: haltEv, act2: act2, phase: nowMin < 660 ? "morning" : "afternoon",
+      fromName: first ? NODES[first.from].name : "", toName: last ? NODES[last.to].name : ""
+    };
   }
   // ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
   // THE COURIER BOARD (radiant/hall_courier.txt). A courier carries a letter, a sealed contract or a small parcel to a named person at another place and walks it there on the free map: nothing here moves the
@@ -980,9 +982,11 @@
       var kat = hash100(base, 200 + i) / 10000 * ksum, kk = 0;
       while (kk < COURIER_KINDS.length - 1 && kat >= COURIER_KINDS[kk].weight) { kat -= COURIER_KINDS[kk].weight; kk++; }
       var K = COURIER_KINDS[kk], tile = courierTile(d.id);
-      out.push({ n: i + 1, to: d.id, toName: NODES[d.id].name, miles: d.miles, kind: K.id, item: K.item, grade: 1,
+      out.push({
+        n: i + 1, to: d.id, toName: NODES[d.id].name, miles: d.miles, kind: K.id, item: K.item, grade: 1,
         fee: Math.max(K.min, Math.round(d.miles * K.rate / 10)), term: Math.ceil(d.miles / 20) + 2,
-        seed: base * 10 + i + 1, place: tile.place, setting: tile.setting, region: tile.region, no: 7000 + (Math.floor(Number(day) || 0) * 3 + i) });
+        seed: base * 10 + i + 1, place: tile.place, setting: tile.setting, region: tile.region, no: 7000 + (Math.floor(Number(day) || 0) * 3 + i)
+      });
     }
     return out;
   }
@@ -1018,53 +1022,71 @@
     pv: { place: "yard", seed: 5000, setting: "middle_ward" },
     tm: { place: "lot", seed: 6000, setting: "town" },
     af: { place: "alot", seed: 7000, setting: "town" },
-    lg: { place: "glot", seed: 8000, setting: "town", walkMinutes: 5,
+    lg: {
+      place: "glot", seed: 8000, setting: "town", walkMinutes: 5,
       heading: "THE WAGON LOT", endName: "gate end", roadWord: "chalk road", horizon: "the pale line of the fields", leaveText: "Walk back to the square. [~5 min]",
       placeLong: "Just outside Langston's gate, a long lot of trodden chalk has been fenced off with rails and opened onto the wagon road. Wagons stand in it nose to tail, with ox yokes and spare wheels hung from the rails and a picket line of beasts running down one end. Hemp bales and bundles of wool wait along the fence under tarps, and the ground is churned to a pale slurry wherever the carts turn. The air smells of dung, wet wool, hemp and hot iron.",
       idle: "The hand sets the bucket down and wipes his hands on his apron. \"Nothing making up today,\" he says. \"The carriers go when they have goods. The Contract Board at the Hall carries the posting when one is open, and the wagon master pays only the ones who walk with the column.\"",
-      missed: "The lot is nearly empty. A few hands rake straw under the lean-to, and a long double rut leads out past the last rail and away along the chalk road. A hand tells you the caravan pulled out this morning without you, and that the wagon master pays only the ones who walk with the column." }
+      missed: "The lot is nearly empty. A few hands rake straw under the lean-to, and a long double rut leads out past the last rail and away along the chalk road. A hand tells you the caravan pulled out this morning without you, and that the wagon master pays only the ones who walk with the column."
+    }
   };
   var CARAVAN_LINES = [
-    { from: "pv", to: "tm", dow: "Forgeday", postingNo: "0381",
+    {
+      from: "pv", to: "tm", dow: "Forgeday", postingNo: "0381",
       notice: "Sealed: a coal and iron carrier and the City. Work: wagon escort to Timbermouth. Pay: the fee named at the yard. Term: two days out. Apply: the wagon yard.",
       opens: "the gate opens",
       placeText: "the wagon yard outside the River Gate",
-      roadTalk: "tips a hand toward the north-west. \"River road to the fork, then up the west bank. The first night is the Ashrun's mouth, with water and flat ground. After that the road climbs, and the forest comes down to the edge. Carriers lose what they lose on the second day, when the wagons are tired and the road is narrow.\"" },
-    { from: "pv", to: "af", dow: "Marketday", postingNo: "0340",
+      roadTalk: "tips a hand toward the north-west. \"River road to the fork, then up the west bank. The first night is the Ashrun's mouth, with water and flat ground. After that the road climbs, and the forest comes down to the edge. Carriers lose what they lose on the second day, when the wagons are tired and the road is narrow.\""
+    },
+    {
+      from: "pv", to: "af", dow: "Marketday", postingNo: "0340",
       notice: "Sealed: a carters' company and the City. Work: wagon escort to Alderford. Pay: the fee named at the yard. Term: two days out. Apply: the wagon yard.",
       opens: "the gate opens",
       placeText: "the wagon yard outside the River Gate",
-      roadTalk: "tips a hand toward the east. \"Round under the wall to the Charter Gate and up the old paving. The first night is on the High Grey Road, on the verge past the trough, with the wind and no cover. The second day is the climb to the weir, and Alderford is at the top of it. Mind the drop on the Rise.\"" },
-    { from: "tm", to: "pv", dow: "Tideday",
+      roadTalk: "tips a hand toward the east. \"Round under the wall to the Charter Gate and up the old paving. The first night is on the High Grey Road, on the verge past the trough, with the wind and no cover. The second day is the climb to the weir, and Alderford is at the top of it. Mind the drop on the Rise.\""
+    },
+    {
+      from: "tm", to: "pv", dow: "Tideday",
       notice: "Sealed: a carriers' company and the City. Work: wagon escort to Port Valen. Pay: the fee named at the lot. Term: two days out. Apply: the wagon lot, beside the Market.",
       opens: "the Market opens",
       placeText: "the wagon lot beside the Market in Timbermouth",
-      roadTalk: "tips a hand toward the south-east. \"Down off the hills by the west bank, then the river road to the fork and the cuttings to the city. The first night is the Ashrun's mouth, with water and flat ground. The second day is the easy one, if the first went well.\"" },
-    { from: "tm", to: "af", dow: "Hearthday",
+      roadTalk: "tips a hand toward the south-east. \"Down off the hills by the west bank, then the river road to the fork and the cuttings to the city. The first night is the Ashrun's mouth, with water and flat ground. The second day is the easy one, if the first went well.\""
+    },
+    {
+      from: "tm", to: "af", dow: "Hearthday",
       notice: "Sealed: a carriers' company and the City. Work: wagon escort to Alderford. Pay: the fee named at the lot. Term: two days out. Apply: the wagon lot, beside the Market.",
       opens: "the Market opens",
       placeText: "the wagon lot beside the Market in Timbermouth",
-      roadTalk: "tips a hand toward the north-east. \"Out by the farm road to Barleycross, then the Crossfield Road east over the uplands. The first night is on the verge by the old field wall, with water in the ditch and no wood. The second day is the long pull down to the weir, and Alderford sits above it. Carriers lose what they lose on the upland, where the ruts are deep and the wind has nothing to stop it.\"" },
-    { from: "tm", to: "lg", dow: "Ironday",
+      roadTalk: "tips a hand toward the north-east. \"Out by the farm road to Barleycross, then the Crossfield Road east over the uplands. The first night is on the verge by the old field wall, with water in the ditch and no wood. The second day is the long pull down to the weir, and Alderford sits above it. Carriers lose what they lose on the upland, where the ruts are deep and the wind has nothing to stop it.\""
+    },
+    {
+      from: "tm", to: "lg", dow: "Ironday",
       notice: "Sealed: a carriers' company and the City. Work: wagon escort to Langston. Pay: the fee named at the lot. Term: two days out. Apply: the wagon lot, beside the Market.",
       opens: "the Market opens",
       placeText: "the wagon lot beside the Market in Timbermouth",
-      roadTalk: "tips a hand toward the north. \"Out by the narrow road through the ash and thorn, then up along the Ashrun under the foot of the mountain. The first night is at Fellgate, under the fort's wall, with a trough in the yard and a gate that shuts. The second day is the straight chalk road across the Vale, with hedges and tilled fields on both hands, and Langston sits at the end of it behind its low wall. Carriers lose what they lose on the first day, in the thin air under the mountain, where the road climbs and the wind comes down off the scree.\"" },
-    { from: "af", to: "pv", dow: "Ironday",
+      roadTalk: "tips a hand toward the north. \"Out by the narrow road through the ash and thorn, then up along the Ashrun under the foot of the mountain. The first night is at Fellgate, under the fort's wall, with a trough in the yard and a gate that shuts. The second day is the straight chalk road across the Vale, with hedges and tilled fields on both hands, and Langston sits at the end of it behind its low wall. Carriers lose what they lose on the first day, in the thin air under the mountain, where the road climbs and the wind comes down off the scree.\""
+    },
+    {
+      from: "af", to: "pv", dow: "Ironday",
       notice: "Sealed: a carriers' company and the City. Work: wagon escort to Port Valen. Pay: the fee named at the lot. Term: two days out. Apply: the carters' lot, beside the Lower Wharf Market.",
       opens: "the Market opens",
       placeText: "the carters' lot beside the Lower Wharf Market in Alderford",
-      roadTalk: "tips a hand toward the south. \"Up out of the weir by the palisade gate and down the High Grey Road, over the Rise, with the Grey on your right hand. The first night is on the verge past the trough, with the wind and no cover. The second day is all downhill, if the first went well.\"" },
-    { from: "af", to: "tm", dow: "Greyday",
+      roadTalk: "tips a hand toward the south. \"Up out of the weir by the palisade gate and down the High Grey Road, over the Rise, with the Grey on your right hand. The first night is on the verge past the trough, with the wind and no cover. The second day is all downhill, if the first went well.\""
+    },
+    {
+      from: "af", to: "tm", dow: "Greyday",
       notice: "Sealed: a carriers' company and the City. Work: wagon escort to Timbermouth. Pay: the fee named at the lot. Term: two days out. Apply: the carters' lot, beside the Lower Wharf Market.",
       opens: "the Market opens",
       placeText: "the carters' lot beside the Lower Wharf Market in Alderford",
-      roadTalk: "tips a hand toward the north-west. \"Out by the palisade gate and west over the upland on the Crossfield Road, with the ruts deep under a loaded wagon. The first night is at Barleycross, on a farmer's headland by the road, with a trough at the gate and the village dogs for company. The second day is the short way in, down the farm road to Timbermouth, and the saw frame will be the first thing you hear.\"" },
-    { from: "lg", to: "tm", dow: "Marketday",
+      roadTalk: "tips a hand toward the north-west. \"Out by the palisade gate and west over the upland on the Crossfield Road, with the ruts deep under a loaded wagon. The first night is at Barleycross, on a farmer's headland by the road, with a trough at the gate and the village dogs for company. The second day is the short way in, down the farm road to Timbermouth, and the saw frame will be the first thing you hear.\""
+    },
+    {
+      from: "lg", to: "tm", dow: "Marketday",
       notice: "Sealed: a carriers' company and Langston Hall. Work: wagon escort to Timbermouth. Pay: the fee named at the lot. Term: two days out. Apply: the wagon lot, outside the gate.",
       opens: "the gate opens",
       placeText: "the wagon lot outside Langston's gate",
-      roadTalk: "tips a hand toward the east. \"East along the chalk road, straight across the Vale, to Fellgate and the foot of the mountain. The first night is under the fort's wall, with a trough in the yard and a gate that shuts. The second day is the timber road down through the Longshade, with the Ashrun running beside it, and Timbermouth is the clearing at the end. Carriers lose what they lose on the second day, when the wagons are tired and the forest comes down to the edge of the road.\"" }
+      roadTalk: "tips a hand toward the east. \"East along the chalk road, straight across the Vale, to Fellgate and the foot of the mountain. The first night is under the fort's wall, with a trough in the yard and a gate that shuts. The second day is the timber road down through the Longshade, with the Ashrun running beside it, and Timbermouth is the clearing at the end. Carriers lose what they lose on the second day, when the wagons are tired and the forest comes down to the edge of the road.\""
+    }
   ];
   function caravanYard(id) { return CARAVAN_YARDS[id] || CARAVAN_YARDS.pv; }
   // The line a yard runs on this day of the week, or its first when it runs none, with the facts hall_escort.txt es_set_line copies into the es_ctx_* stats.
@@ -1079,8 +1101,10 @@
     var line = mine.filter(function (l) { return l.dow === dow; })[0] || mine[0];
     if (!line) return null;
     var r = route(line.from, line.to);
-    return { from: line.from, to: line.to, place: caravanYard(from).place, destName: NODES[line.to].name, opens: line.opens, dow: line.dow, placeText: line.placeText, roadTalk: line.roadTalk, notice: line.notice, postingNo: line.postingNo || "",
-             miles: r.miles, feeText: coinText(convoyFee(r.miles, 0, 0)) };
+    return {
+      from: line.from, to: line.to, place: caravanYard(from).place, destName: NODES[line.to].name, opens: line.opens, dow: line.dow, placeText: line.placeText, roadTalk: line.roadTalk, notice: line.notice, postingNo: line.postingNo || "",
+      miles: r.miles, feeText: coinText(convoyFee(r.miles, 0, 0))
+    };
   }
 
   // The government whose Insignia page a job taken at this tile credits (inventory-data.js Insignia ids): the id its territory names. Anything unknown credits the Gilded Scales, as every job did before the Vale.

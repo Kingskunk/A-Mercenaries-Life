@@ -94,7 +94,7 @@ const SCENERY_DIR = path.join(ROOT, "scenery");
 const MANIFEST = path.join(ROOT, "web", "mygame", "scenery-data.js");
 const WALL = path.join(ROOT, "Wallpaper");
 // These are intentionally always-night standalone scenes, not the missing half of a day/night pair.
-const SCENE_SINGLE_OVERRIDES = { "prologue_camp_night.png": "prologue_camp_night" };
+const SCENE_SINGLE_OVERRIDES = { "prologue_camp_night.png": "prologue_camp_night", "generic_watch_post_night.png": "generic_watch_post_night" };
 // A picture with no _Day / _Night partner (an interior, which looks the same at every hour) is a SINGLE: one file, scenery/<name>.webp, darkened at night by the page.
 // The list scenery-data.js holds is {key: "pair" | "single"}.
 const SCENE_KINDS = {};

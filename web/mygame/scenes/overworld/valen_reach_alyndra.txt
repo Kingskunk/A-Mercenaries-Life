@@ -1,16 +1,32 @@
---- START OF FILE valen_reach_alyndra.txt ---
-
 *comment ====================================================================================
-*comment VALEN REACH -- SIDE QUEST: THE INNOCENT SMILE (SCENE 1: THE TAVERN)
-*comment Features:
-*comment   - Linear flowing conversation.
-*comment   - Paper doll visual assessment (${feet_prose}, ${armor_prose}, ${weapon_prose}, ${cloak_prose}).
-*comment   - Skill checks quietly set named clue flags (aly_knife_work, aly_monologue, aly_hands), surfaced on the quest card once found.
+*comment VALEN REACH -- SIDE QUEST: THE INNOCENT SMILE
+*comment 
+*comment INTEGRATION HOOKS (To be added to village tavern files upon quest completion):
+*comment 
+*comment 1. BRINEWICK -- web/mygame/scenes/port_valen/brinewick/reedhouse.txt (bw_reedhouse_main):
+*comment    *if (aly_quest_stage = "unstarted")
+*comment      # Approach the elven traveler peeling an apple in the corner.
+*comment        *set aly_start_loc "brinewick"
+*comment        *goto_scene overworld/valen_reach_alyndra aly_start
+*comment 
+*comment 2. MARLCROSS -- web/mygame/scenes/port_valen/marlcross/wayfarers_rest.txt (mc_wayfarers_rest_main):
+*comment    *if (aly_quest_stage = "unstarted")
+*comment      # Approach the elven traveler sitting near the window with a cup of cider.
+*comment        *set aly_start_loc "marlcross"
+*comment        *goto_scene overworld/valen_reach_alyndra aly_start
+*comment 
+*comment 3. BARLEYCROSS -- web/mygame/scenes/timbermouth/barleycross/green.txt (bc_hall):
+*comment    *if (aly_quest_stage = "unstarted")
+*comment      # Talk to the elven scout resting on the hall bench with an apple knife.
+*comment        *set aly_start_loc "barleycross"
+*comment        *goto_scene overworld/valen_reach_alyndra aly_start
 *comment ====================================================================================
 
 *label aly_start
+*if (aly_start_loc = "")
+  *set aly_start_loc "brinewick"
 *if (not(aly_quest_started))
-*goto aly_resume
+  *goto aly_resume
 
 *label aly_resume
 *if (aly_checkpoint = "the_deal")
@@ -18,18 +34,28 @@
 *goto aly_tavern_entry
 
 *label aly_tavern_entry
-*set scenery_subplace "generic_tavern_inn"
+*if (aly_start_loc = "brinewick")
+  *set scenery_subplace "village_inn_hall"
+  A low peat fire burns in the stone hearth of the Reedhouse, sending a steady plume of grey smoke against the sod-weighted reed ceiling. Outside, the estuary wind rattles the heavy timber shutters. Around the scrubbed trestles, a handful of salt-pan boilers with grey brine crusted on their smocks huddle over bowls of warm fish broth, while a pair of Gilded Scales road guards nurse sour small ales in guarded conversation.
 
-A handful of people with grime under their nails, a peddler counting lead tokens, and a pair of turnpike guards—huddle over their trenchers in low, guarded conversation.
+  Across the room, sitting at a corner table near the rear arch that opens onto the muddy stable yard, is an elf woman. She wears travel-stained leathers and a moss-green tunic, her pale golden hair braided with plain leather cord. She is idly peeling an apple with a small folding knife.
+*elseif (aly_start_loc = "marlcross")
+  *set scenery_subplace "village_inn_hall"
+  The taproom of the Wayfarer's Rest is thick with the warmth of the bake-oven and the dry scent of fresh rye loaves and roasting mutton fat. Whitewashed limestone walls reflect the glow of the hearth, and chalky marl dust clings to the oak floorboards. Mill hands from the Grain Green with white flour dusting their forearms share a trencher with a teamster checking wheel linchpins, while a Gilded Scales customs clerk methodically tallies turnpike receipts.
 
-Across the room, sitting at a corner table with a clear line of sight to the entrance, is an elf woman. She wears travel-stained leathers and a moss-green tunic, her pale golden hair braided with plain leather cord. She is idly peeling an apple with a small folding knife.
+  Across the room, sitting at a corner bench away from the draft of the carters' yard door, is an elf woman. She wears travel-stained leathers and a moss-green tunic, her pale golden hair braided with plain leather cord. She is idly peeling an apple with a small folding knife.
+*else
+  *set scenery_subplace "generic_tavern_inn"
+  Inside the timber Gathering Hall, the heavy squared oak beams smell of sweet clover hay, woodsmoke, and rain-damp wool. A crackling fire warms the hearthstones at the far end of the hall, where a few halfling plowmen rest their clay-caked clogs and a farmhand scrapes dark loam from a wooden spade. The open door looks out across the common, where geese pick through the grass by the well-head.
+
+  At the end of a long trestle table near the hearth, leaning against an oak post with her travel pack at her feet, is an elf woman. She wears travel-stained leathers and a moss-green tunic, her pale golden hair braided with plain leather cord. She is idly peeling an apple with a small folding knife.
 
 *comment ── PAPER DOLL VISUAL ASSESSMENT ──
-As you step across the threshold, her hazel eyes flick up from the fruit. Her gaze sweeps over you with an assessor's speed. She notes the mud of the road clinging to your ${feet_prose}, the fit and weight of your ${armor_prose}, and the telltale presence of your ${weapon_prose}.
+As you step across the threshold, her hazel eyes flick up from the fruit. Her gaze sweeps over you with an assessor's speed. She notes the road dust clinging to your ${feet_prose}, the fit and weight of your ${armor_prose}, and the telltale presence of your ${weapon_prose}.
 
 Her gaze lingers for a brief second on the travel-wear of your ${cloak_prose} before her face blooms into a radiant, innocent smile.
 
-She tips her cup of cider toward you in a polite, wordless tavern greeting, waiting to see what you do next.
+She tips her cup of cider toward you in a polite, wordless greeting, waiting to see what you do next.
 
 *choice
   # Approach boldly and take a seat at her table.
@@ -39,7 +65,13 @@ She tips her cup of cider toward you in a polite, wordless tavern greeting, wait
 
     Alyndra doesn’t flinch. Instead, her smile tilts into something conspiratorial and amused as she sets her knife down.
 
-    "Bold of you, ${name}," she says, leaning forward on her elbows and resting her chin in her palms. Her eyes trace your ${weapon_prose} with playful curiosity. "And perhaps I did. A woman spends three days sharing a room with carters who smell of wet mule, and in walks someone with salt on their boots and a sense of purpose."
+    "Bold of you, ${name}," she says, leaning forward on her elbows and resting her chin in her palms. Her eyes trace your ${weapon_prose} with playful curiosity. "And perhaps I did. 
+    *if (aly_start_loc = "brinewick")
+      A woman spends three days sharing a bench with salt-boilers who smell of peat sludge, and in walks someone with brine on their boots and a sense of purpose."
+    *elseif (aly_start_loc = "marlcross")
+      A woman spends three days sharing a bench with carters who smell of wet mule, and in walks someone with marl dust on their boots and a sense of purpose."
+    *else
+      A woman spends three days sitting on a trestle bench listening to cattle complain, and in walks someone with road dust on their boots and a sense of purpose."
     *goto aly_seated
 
   # Walk over with your guard up and address her directly.
@@ -49,14 +81,17 @@ She tips her cup of cider toward you in a polite, wordless tavern greeting, wait
 
     Alyndra blinks, looking slightly sheepish, though her warm smile never wavers. She sets her knife down on the platter and gestures to the empty bench across from her.
 
-    "Guilty," she laughs softly, her voice light and melodic. "No offense intended, ${name}. Out on the Reach, a woman traveling alone learns to watch the door closely. Won't you sit? I'd welcome company with better manners than the bailiffs."
+    "Guilty," she laughs softly, her voice light and melodic. "No offense intended, ${name}. Out on the Reach, a woman traveling alone learns to watch the door closely. Won't you sit? I'd welcome company with better manners than the Scales bailiffs."
     *goto aly_seated
 
-  # Watch her from the bar first before approaching.@{show_stat_hints  [Perception/Insight DC 15]|}
+  # Watch her from a distance first before approaching.@{show_stat_hints  [Perception/Insight DC 15]|}
     *gosub_scene dice_engine roll_skill_check 15 "perception" "" "insight" "" "" ""
     *if (check_success)
       *set aly_knife_work true
-      From the counter, you watch her over the rim of an ale mug. Her innocent demeanor never wavers, but her knife work is remarkably clean—rapid, balanced strokes with zero wasted motion. 
+      *if (aly_start_loc = "barleycross")
+        From beside the cider cask, you watch her over the rim of a mug. Her innocent demeanor never wavers, but her knife work is remarkably clean—rapid, balanced strokes with zero wasted motion.
+      *else
+        From the counter, you watch her over the rim of an ale mug. Her innocent demeanor never wavers, but her knife work is remarkably clean—rapid, balanced strokes with zero wasted motion.
 
       Leaning behind her bench, half-concealed beneath her travel pack, sits a slender scabbard wrapped in fine velvet. Not the rough machete of a frontier outrider, but an urban duelist's rapier.
 
@@ -64,7 +99,10 @@ She tips her cup of cider toward you in a polite, wordless tavern greeting, wait
     *else
       She appears to be exactly what she presents: an elven outrider or wandering trader resting away from the louder locals. When she catches your eye, she offers an encouraging, friendly smile.
 
-    You leave the bar and cross the room, taking a seat at her bench.
+    *if (aly_start_loc = "barleycross")
+      You leave the cask and cross the hall boards, taking a seat at her bench.
+    *else
+      You leave the bar and cross the room, taking a seat at her bench.
 
     "I'm ${name}," you say, nodding to her.
 
@@ -78,7 +116,7 @@ She tips her cup of cider toward you in a polite, wordless tavern greeting, wait
 
 Alyndra slides a clean slice of apple across the wooden platter toward you.
 
-"You have the cut of someone who knows the rough road, ${name}," she says, resting her elbows on the pine table. "What brings someone with a ${weapon_prose} out into the Reach? Looking for coin, or just trying to get across the gap without paying Baron Karr's bailiffs?"
+"You have the cut of someone who knows the rough road, ${name}," she says, resting her elbows on the pine table. "What brings someone with a ${weapon_prose} out into the Reach? Looking for coin, or just trying to get down the road without paying the Gilded Scales' turnpike bailiffs?"
 
 *choice
   # "Looking for coin and work. The Reach roads usually have both."
@@ -86,7 +124,7 @@ Alyndra slides a clean slice of apple across the wooden platter toward you.
     *goto aly_her_story
 
   # "Knowledge and old ground. The Reach has plenty of history buried in it."
-    "More than most people realize," she agrees, leaning in slightly. "Old Imperial forts, collapsed watchposts, ruins that the turnpike carters just walk right past because they never look up from the mud."
+    "More than most people realize," she agrees, leaning in slightly. "Old Meridian forts, collapsed watchposts, ruins that the turnpike carters just walk right past because they never look up from the mud."
     *goto aly_her_story
 
   # "My business is my own. What's yours, Alyndra?"
@@ -94,7 +132,7 @@ Alyndra slides a clean slice of apple across the wooden platter toward you.
     *goto aly_her_story
 
 *label aly_her_story
-"As for me," Alyndra continues, her voice softening into a wistful, reflective cadence. "Misfortune turned into wanderlust, I suppose. My parents were wood elves, modest merchants. Sickness took them when I was young, and the local lord burned our steading fearing plague. A kind tavernkeep took me in and hid my heritage behind an apron."
+"As for me," Alyndra continues, her voice softening into a wistful, reflective cadence. "Misfortune turned into wanderlust, I suppose. My parents were wood elves, modest merchants from the Western Vale. Sickness took them when I was young, and a border lord burned our steading fearing plague. A kind tavernkeep took me in and hid my heritage behind an apron."
 
 She gives a light, self-deprecating shrug of one shoulder.
 
@@ -128,11 +166,11 @@ She gives a light, self-deprecating shrug of one shoulder.
 *label aly_topic_pitch
 Alyndra leans across the table, her hazel eyes gleaming with suppressed excitement.
 
-"Three weeks ago, following a wash-out along the coastal bluffs, I found a collapsed archway beneath the roots of a tree. Worked stone—Imperial granite, smooth as glass. Inside is a sealed vault door with interlocking bronze rings and arcane glyphs."
+"Three weeks ago, following a spring wash-out along the river bluffs in the Grey River gorge, I found a collapsed archway beneath the roots of an old scrub oak. Worked stone—Meridian limestone, smooth as glass. Inside is a sealed vault door with interlocking bronze rings and arcane glyphs."
 
 She watches your face carefully.
 
-"I didn't dare crack it alone. The coastal bluffs have wolves and tide hazards, and warding seals are beyond me. But with someone of your talents? We take the smuggler's cut through the bluffs—halves the travel time to the coast. We reach the vault, bypass the seals, and split whatever Imperial relics are inside straight down the middle. Equal shares."
+"I didn't dare crack it alone. The river bluffs have timber wolves and treacherous scree, and warding seals are beyond me. But with someone of your talents? We take an old quarry track through the limestone fins—bypasses the turnpike checkpoints and cuts straight into the gorge. We reach the vault, bypass the seals, and split whatever Meridian relics are inside straight down the middle. Equal shares."
 
 *label aly_deal_menu
 *set aly_checkpoint "the_deal"
@@ -181,9 +219,14 @@ You take her hand. Her grip is surprisingly firm and sure.
 
 She pulls her hand back with an eager bounce and rises from the bench.
 
-"First light, then! Get whatever rest you can tonight, ${name}. The climb through the limestone fins is steep, and tomorrow we find out what the Empire left behind."
+"First light, then! Get whatever rest you can tonight, ${name}. The climb through the limestone fins is steep, and tomorrow we find out what the Meridian Empire left behind."
 
-She slips gracefully through the common room toward the guest loft, leaving you with an empty trencher and the low hum of the tavern.
+*if (aly_start_loc = "brinewick")
+  She slips gracefully through the common room toward the Reedhouse guest loft, leaving you with an empty trencher and the low hum of the inn.
+*elseif (aly_start_loc = "marlcross")
+  She slips gracefully through the room toward the guest stairs of the Rest, leaving you with an empty trencher and the low hum of the taproom.
+*else
+  She finishes her cider, packs her knife, and slips out through the hall door toward her hayloft bed along the Lane, leaving you with the low murmur of the hall.
 
 *comment Loopback stub for dev testing until Scene 2 is added.
 [i]( End of Scene 1. Alyndra's story continues at dawn—for now, the loop returns to the tavern door. )[/i]
@@ -212,8 +255,11 @@ Alyndra's smile wavers for a brief, cold second before she recovers her playful 
     *set aly_quest_stage "declined"
     You step away from the smiling elf and return to your own business in the Reach.
     *page_break Back to your journey…
-    *comment returning to the dev menu, reminder to change this to return to whatever place the 
-    *comment the player came from when we actually plug this into the main game.
+    *comment Integration Note: When plugged into the live game, return to:
+    *comment   - Brinewick: *goto_scene port_valen/brinewick/reedhouse bw_reedhouse_main
+    *comment   - Marlcross: *goto_scene port_valen/marlcross/wayfarers_rest mc_wayfarers_rest_main
+    *comment   - Barleycross: *goto_scene timbermouth/barleycross/green bc_hall
+    *comment For now, while isolated in dev testing, return to dev menu:
     *set aly_quest_started false
     *set aly_quest_stage "unstarted"
     *set aly_asked_story false
@@ -224,33 +270,36 @@ Alyndra's smile wavers for a brief, cold second before she recovers her playful 
     *set aly_hands false
     *goto_scene dev_hub dev_menu_quests
 
-    
 *comment ====================================================================================
 *comment VALEN REACH -- SIDE QUEST: THE INNOCENT SMILE (SCENE 2: THE HIGH TRAILS)
 *comment Features:
-*comment   - Morning departure from the tavern (weather-neutral).
+*comment   - Morning departure from the village (settlement-adaptive).
 *comment   - Establishing Alyndra's pathfinding competence through the limestone fins.
 *comment ====================================================================================
 
 *label aly_morning_meet
-*set scenery_subplace "generic_tavern_inn"
+*if (aly_start_loc = "brinewick")
+  *set scenery_subplace "village_inn_hall"
+  At first light, the Reedhouse is cold and quiet. Grey sea-mist drifts against the thick bottle-glass windows, and the innkeeper is raking yesterday's peat ash from the wide hearth. In the yard outside, a carter is throwing feed to a pair of shaggy mules.
+*elseif (aly_start_loc = "marlcross")
+  *set scenery_subplace "village_inn_hall"
+  At first light, the taproom of the Wayfarer's Rest is stirring with the smell of fresh-baked rye loaves. A stablehand sweeps chalk dust and pine shavings across the threshold, while outside on the High Grey Road the first teamsters are greasing wagon axles.
+*else
+  *set scenery_subplace "generic_tavern_inn"
+  At first light, the village is already waking. Roosters crow across the hedgerows along the Lane, and milk pails rattle by the common well. Inside the Gathering Hall, the hearth embers glow faintly while a sleepy farmhand sits on the threshold bench.
 
-At first light, the common room is nearly empty. The tavernkeeper is raking yesterday's grey ash from the hearth, and a solitary stablehand sweeps pine shavings across the floorboards.
-
-Alyndra is already waiting by the door. She sits on a bench, tightening the leather buckle on her left boot, her travel pack already strapped and resting against her knee. When she hears your footsteps on the stairs, she looks up, her face instantly brightening into her familiar, energetic smile.
+Alyndra is already waiting by the door. She sits on a bench, tightening the leather buckle on her left boot, her travel pack already strapped and resting against her knee. When she hears your footsteps, she looks up, her face instantly brightening into her familiar, energetic smile.
 
 "Punctual," she says, standing and swinging her pack over one shoulder with effortless ease. "I like that."
 
-She glances toward the entrance, adjusting the moss-green tunic at her collar.
-
- Ready to move out?"
+She glances toward the doorway, adjusting the moss-green tunic at her collar. "Ready to move out?"
 
 *choice
   # "Lead the way. The sooner we reach this vault, the better."
     *goto aly_trail_start
 
-  # Ask how long the trek through the bluffs will take.
-    "A full day of hard climbing," she answers, tapping her chin thoughtfully. "If we push through without stopping, we'll hit the coast by nightfall and camp near the river. That puts us at the vault entrance by tomorrow morning."
+  # Ask how long the trek through the limestone bluffs will take.
+    "A full day of hard climbing," she answers, tapping her chin thoughtfully. "If we push through the limestone cut without stopping, we'll reach the gorge by nightfall and camp near the river. That puts us at the vault entrance by tomorrow morning."
     *goto aly_trail_start
 
   # Check her over one last time before departing.@{show_stat_hints  [Perception/Insight DC 14]|}
@@ -261,3 +310,9 @@ She glances toward the entrance, adjusting the moss-green tunic at her collar.
     *else
       She looks eager and ready, her pack squared away and her eyes bright with anticipation for the trail ahead.
     *goto aly_trail_start
+
+*label aly_trail_start
+*comment Stub for Scene 2 wilderness trek
+[i]( The trail continues into the limestone scrub... To be continued in Scene 2. )[/i]
+*page_break Return to dev hub...
+*goto_scene dev_hub dev_menu_quests

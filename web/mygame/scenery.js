@@ -125,7 +125,12 @@
     // standing in "dungeon" itself) only closes the entry-setup gap (dg_run_begin sets dg_in_run partway through
     // its OWN body, so the moment it's entered dg_in_run briefly still reads false) without changing anything
     // a real run already shows.
-    dungeon: 1
+    dungeon: 1,
+    // settlement_events (the se_roll router) and its two incidents are rolled from inside ordinary settlement
+    // movement -- the wedding/elders scene has no place of its own, it should just keep showing wherever the
+    // player was already standing when the event fired. Without these, sceneName briefly becomes one of these
+    // paths, no RULES entry matches it, and scenery.js blanks the backdrop entirely (found 2026-11-08).
+    settlement_events: 1, "settlement_events/caught_in_wedding": 1, "settlement_events/helping_your_elders": 1
   };
 
   function slug(v) { return String(v || "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, ""); }
@@ -187,6 +192,20 @@
     function (s) { return s.scenery_subplace === "vane_contract_office" ? "vane_contract_office" : undefined; }, // Captain Vane's compact contract and dispatch office
     function (s) { return s.sceneName === "port_valen/varren_quests/varren_errand" && s.scenery_subplace === "varren_armory_shed" ? "varren_armory_shed" : undefined; }, // Varren's armory and its offer/report pages (port_valen/port_valen's own visits are covered by its passthrough rule below)
     function (s) { return s.sceneName === "port_valen/varren_quests/varren_errand" && s.scenery_subplace === "middle_ward_tavern" ? "generic_town_inn" : undefined; }, // Oswin's questions at the Wagoner's Rest should keep the inn backdrop
+    function (s) { return s.sceneName === "port_valen/varren_quests/varren_errand" && s.scenery_subplace === "middle_ward_bathhouse" ? "middle_ward_bathhouse" : undefined; }, // the hot-room gossip's slasher rumor (slasher_rumor_baths) should keep the baths backdrop
+    function (s) { return s.sceneName === "port_valen/varren_quests/varren_errand" && s.scenery_subplace === "generic_tavern_inn" ? "generic_tavern_inn" : undefined; }, // the Cleaved Keel's rumor ladder (slasher_rumor_keel) should keep the tavern backdrop
+    function (s) { return s.sceneName === "port_valen/varren_quests/varren_errand" && s.scenery_subplace === "patrician_inner_gate" ? "patrician_inner_gate" : undefined; }, // showing Trent's warrant at the gate (slasher_gate_warrant)
+    function (s) { return s.sceneName === "port_valen/varren_quests/varren_errand" && s.scenery_subplace === "patrician_avenue" ? "patrician_avenue" : undefined; }, // the approach to Avir Manor (slasher_manor, slasher_manor_menu, slasher_manor_leave)
+    function (s) { return s.sceneName === "port_valen/varren_quests/varren_errand" && s.scenery_subplace === "civic_saint_althea_chapel" ? "civic_saint_althea_chapel" : undefined; }, // Kenny's cot in the chapel (slasher_kenny, slasher_kenny_closed)
+    function (s) { if (s.sceneName !== "port_valen/varren_quests/varren_errand" || s.scenery_subplace !== "on_the_road") return undefined; if ((s.pv_re_origin === "upper_wharves") || (s.pv_re_dest === "upper_wharves")) return "patrician_avenue"; if ((s.pv_re_origin === "harbor") || (s.pv_re_dest === "harbor")) return "city_harbour"; return "generic_city_street"; }, // Ulrich's courier (slasher_courier) catches the player mid-walk between districts; reuses whichever generic street picture that leg would already show
+    function (s) { return s.sceneName === "port_valen/varren_quests/varren_errand" && s.scenery_subplace === "varren_watch_office" ? "generic_watch_captain_office" : undefined; }, // Trent's back office at the militia post (slasher_post*, slasher_post_return/notyet, slasher_confront, slasher_crack) -- new art needed
+    function (s) { return s.sceneName === "port_valen/varren_quests/varren_errand" && s.scenery_subplace === "varren_watch_post_night" ? "generic_watch_post_night" : undefined; }, // the barred street door at night (slasher_post_closed) -- new art needed
+    function (s) { return s.sceneName === "port_valen/varren_quests/varren_errand" && s.scenery_subplace === "varren_fire_ablaze" ? "generic_building_ablaze" : undefined; }, // the post catching fire as Trent flees (slasher_chase_1*) -- new art needed
+    function (s) { return s.sceneName === "port_valen/varren_quests/varren_errand" && s.scenery_subplace === "varren_chase_market_lane" ? "generic_market_lane_chaos" : undefined; }, // Lantern Lane mid-chase (slasher_chase_2*) -- new art needed
+    function (s) { return s.sceneName === "port_valen/varren_quests/varren_errand" && s.scenery_subplace === "varren_drainage_cut" ? "generic_drainage_cut" : undefined; }, // the sluice gate at the canal edge (slasher_chase_3*, slasher_fight, slasher_won, slasher_watch, slasher_escaped*) -- new art needed
+    function (s) { return s.sceneName === "port_valen/varren_quests/varren_errand" && s.scenery_subplace === "varren_manor_grounds" ? "generic_manor_grounds" : undefined; }, // Avir Manor's walled garden and kitchen yard (slasher_manor_wall/_cellar/_door/_balcony/_caught, slasher_reward) -- new art needed
+    function (s) { return s.sceneName === "port_valen/varren_quests/varren_errand" && s.scenery_subplace === "varren_manor_study" ? "generic_manor_study" : undefined; }, // Avir Manor's study (slasher_manor_study, slasher_reward_study) -- new art needed
+    function (s) { return s.sceneName === "port_valen/varren_quests/varren_errand" && s.scenery_subplace === "varren_fireside_parlor" ? "generic_fireside_parlor" : undefined; }, // Ulrich's fireside parlor (slasher_ulrich*, slasher_reward_parlor) -- new art needed
     // Number(...): rj_perf_venue is set by a plain *set (a ChoiceScript number), but ChoiceScript's own *if coerces
     // string/number mismatches silently, while JS === does not -- a save/restore round trip (or the dossier's stat
     // screen) can hand it back as the STRING "1", which a bare === 1 here would never match, falling through to the
@@ -265,6 +284,7 @@
     function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_bathhouse" ? "middle_ward_bathhouse" : undefined; }, // Conduit Baths' tub room
     function (s) { return s.sceneName === "alderford/chapel" ? "saint_althea_chapel" : undefined; }, // Saint Althea's working parish chapel above the weir
     function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_city_street" ? "generic_city_street" : undefined; }, // Trunk Road and Lantern Lane; Conduit Square remains the district view
+    function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "mw_inn_stable_yard" ? "generic_town_stable" : undefined; }, // the Wagoner's Rest stable yard, shared with the Split Pine and Drowned Oar
     function (s) { return s.sceneName === "port_valen/black_oath/black_oath_night_list" ? BLACK_OATH_PLACES[s.scenery_subplace] : undefined; }, // the handler's upstairs room and the Night List's three existing Dredge-End stops
     function (s) { return s.sceneName === "port_valen/port_valen_dredge_end" && s.scenery_subplace === "dredge_duckboard_market" ? "dredge_duckboard_market" : undefined; }, // market lane and stalls
     function (s) { return s.sceneName === "port_valen/port_valen_dredge_end" && s.scenery_subplace === "dredge_upper_gangways" ? "dredge_upper_gangways" : undefined; }, // elevated tenant walkways

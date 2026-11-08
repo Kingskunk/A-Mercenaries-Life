@@ -9,8 +9,8 @@
 *comment tm_inn_rate_copper (one copper under the city's, a smaller house), paid for 24 hours: the key is the player's until the same hour tomorrow, to sleep in as often as they like and to carry out
 *comment and back (tm_inn_room_until is the minute it runs out, campaign_day * 1440 + the clock; tm_inn_room_active is refreshed from it whenever the player walks into the hall or the room). It heals like
 *comment any private room but is NOT a permanent home, so the routine tracker still counts the nights. The basin resets hygiene with no boon.
-*comment THE KITCHEN: Ressa sells two hot meals at the counter, always (the pot never goes off the fire): the tavern pattern (economy.txt buy_tavern_item): a stew (2 copper, +2 temp HP, +1 CON for 4h)
-*comment and a plate (1 copper, +1 temp HP, +1 STR for 4h). Both clear hunger like every tavern meal.
+*comment THE KITCHEN: Ressa sells hot stew and cellar ale at the counter, always (the pot never goes off the fire): the tavern pattern (economy.txt buy_tavern_item): a stew (2 copper, +2 temp HP, +1 CON for 4h)
+*comment and an ale (1 copper, +1 WIS for 4h). Both clear hunger or quench thirst like every tavern offering.
 *comment STABLE: the yard (tm_inn_yard) is scenery, while calendar.txt horse_upkeep automatically stables an owned horse overnight and applies the settlement's daily bill. Do not add a manual stall button unless
 *comment it creates a new gameplay choice beyond that shared system. Wagon storage and messages to Oswin can use the same place later.
 *comment Layers: place is constant; the hall has a small sky layer (weather at the windows and the ground's memory); street is who is about by time of day, in a pool of three. The yard is open air.
@@ -72,9 +72,9 @@ A long two-storey house of dark timber stands at the road end of the square, wit
 *if (inn_first)
   A broad-shouldered woman stands behind the plank counter with a ring of keys at her belt. Her braid is grey-shot, her face is weathered, and the old scars of rope burns show pale along both forearms. She looks you over once, then looks past you at the door. "Ressa Hale. Bed, food, or a place for an animal?" Her eyes stay on the yard. "Tell me about the animal first. It causes more trouble than you do."
   *if (tm_hale_ring_discount)
-    She turns back to you. "A bed is two copper bits for a day and a night. A bowl of stew is two, and a plate is one. The pot is on from first light until the last wagon is in."
+    She turns back to you. "A bed is two copper bits for a day and a night. A bowl of stew is two, and an ale is one. The pot is on from first light until the last wagon is in."
   *else
-    She turns back to you. "A bed is ${tm_inn_rate_copper} copper bits for a day and a night, a bowl of stew is two, and a plate is one. The pot is on from first light until the last wagon is in."
+    She turns back to you. "A bed is ${tm_inn_rate_copper} copper bits for a day and a night, a bowl of stew is two, and an ale is one. The pot is on from first light until the last wagon is in."
 *else
   Ressa Hale stands behind the plank counter with her keys at her belt, watching the door.
 *if ((tm_hale_ring_discount) and (not(inn_first)))
@@ -140,30 +140,30 @@ A long two-storey house of dark timber stands at the road end of the square, wit
       [b][🍲 Hot Stew Eaten: +2 Temporary HP | Hearty Stew (+1 CON for 4 Hours) | HP: ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}][/b]
       *goto tm_inn_after_meal
   *if ((((gold * 100) + (silver * 10)) + copper) >= 1)
-    # [1 Copper Bit] Buy a plate of bread, cheese and pickled onion. [~10 min]@{show_stat_hints  [+1 Temp HP, +1 STR for 4h]|}
+    # [1 Copper Bit] Buy a mug of cellar pine ale. [~10 min]@{show_stat_hints  [+1 WIS for 4h]|}
       *set tavern_item_cost_copper 1
       *set tavern_item_hp_heal 0
-      *set tavern_item_temp_hp 1
-      *set tavern_item_type "food"
-      *set tavern_item_buff_name "Ploughman's Plate"
-      *set tavern_item_buff_desc "+1 STR"
-      *set tavern_item_buff_stat "str"
+      *set tavern_item_temp_hp 0
+      *set tavern_item_type "drink"
+      *set tavern_item_buff_name "Pine Ale"
+      *set tavern_item_buff_desc "+1 WIS"
+      *set tavern_item_buff_stat "wis"
       *set tavern_item_buff_bonus 1
       *set tavern_item_buff_minutes 240
       *gosub_scene economy buy_tavern_item
       *set hours_to_pass 0
       *set minutes_to_pass 10
-      *set time_advance_call_id "tm_inn_plate"
+      *set time_advance_call_id "tm_inn_ale"
       *gosub_scene calendar advance_time
       *gosub_scene calendar recalc_hp_from_neglect
       *if (hp_current <= 0)
         *set death_cause "exhaustion"
         *goto_scene death death_screen
-      You put a copper on the plank. Ressa slides a board across to you with a thick slab of rye bread, a wedge of hard yellow cheese, and three pickled onions in a twist of paper.
+      You set a copper on the plank. Ressa fills a heavy earthenware mug from the small cask under the counter and slides it across to you with a steady hand.
 
-      You eat standing at the end of the counter. The cheese is sharp and crumbly, the onions bite back, and the bread is dense enough to feel in your arms.
+      The ale is dark amber, cold from the cellar floor, with a clean bitter resin tang that washes the road dust from your throat.
 
-      [b][🧀 Plate Eaten: +1 Temporary HP | Ploughman's Plate (+1 STR for 4 Hours) | HP: ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}][/b]
+      [b][🍺 Pine Ale Drunk: +1 WIS for 4 Hours | HP: ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}][/b]
       *goto tm_inn_after_meal
   *if (tm_inn_room_active)
     # Go up to your room.
