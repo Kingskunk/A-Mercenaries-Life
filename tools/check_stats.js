@@ -55,11 +55,7 @@ var TRACKED = [
   { key: "hp_current", label: "HP (current)" },
   { key: "hp_max", label: "HP (max)" },
   { key: "ruthless", label: "Ruthless (0-100)" },
-  { key: "lyra_bond", label: "Lyra Bond", onlyIf: function(s) { return s.squad === "vanguard"; } },
-  { key: "kestrel_respect", label: "Kestrel Respect", onlyIf: function(s) { return s.squad === "scouts"; } },
-  { key: "ysolde_respect", label: "Ysolde Respect", onlyIf: function(s) { return s.squad === "cadre"; } },
-  { key: "varren_respect", label: "Varren Respect" },
-  { key: "odessa_respect", label: "Odessa Respect", onlyIf: function(s) { return !!s.met_odessa; } }
+  { key: "lyra_bond", label: "Lyra Bond", onlyIf: function(s) { return s.squad === "vanguard"; } }
 ];
 
 var samples = {};

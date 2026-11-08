@@ -41,31 +41,53 @@ The ring can be found in the lair of the gnolls
 in a refuse pile. 
 ----------------------------------------
 
-# Alyndra Valcyne of the Innocent Smile
+# Alyndra Valcyne of the Innocent Smile (The Double-Agent Sting)
 
 ---
 
-An energetic and bright-eyed young elven woman who is seldom seen twice in one place, Alyndra has been spotted engaging in merriment in local taverns and serving as a smiling companion to many adventuring parties. With encouraging words and saccharine smiles, she promises her would-be companions grand adventures leading to vast riches and unlimited power.
+### Overview & The Tavern Hook
+An energetic, bright-eyed young wood-elf woman who is seldom seen twice in the same village taproom. With a disarming, innocent smile and an unassuming manner.
 
-After days—and sometimes months—of travel, she becomes the heart of every party she joins. Finally, she leads her companions on their final adventure: into a dark cavern where slavers wait to overpower them. These broken souls are shipped across the great waters to other lands and sold. Alyndra takes her cut before returning to civilization with a smile on her lips and a spring in her step, seeking once again to deceive another group of hopeful adventurers.
+She spins a carefully rehearsed tale: an ancient, unlooted **Meridian Empire vault** recently exposed by a spring wash-out in the limestone river bluffs along the Grey River gorge. She claims she needs a heavy fighter to bypass the warding seals and split the Imperial relics straight down the middle.
 
 ---
 
-## Background
+### The True Identity: Operative of the "Fourth Column"
+Alyndra is neither a naive former barmaid nor a simple highway robber. She is a field operative for **The Fourth Column**—a secretive, contracted mercenary network that serves as the covert intelligence arm of the Gilded Scales.
 
-Alyndra Valcyne started life as a commoner in a small village. Her parents were wood elves who had settled into a quiet life among humans, working as modest merchants transporting goods between farms and markets. In her youth, her parents fell ill to a sudden disease that took their lives after a single week of suffering. Fearing a plague in his province, the local lord ordered the remaining Valcyne family put to the sword and Alyndra’s home burned to the ground. Taking pity on the girl, the local tavernkeep hid her from the lord’s men and claimed her as his own blood. Alyndra spent her youth working as a barmaid, keeping her elven ears hidden from sight.
+* **The Lore of the Fourth Column:** In the counting houses of Civic Heights, cartel ledgers rule three columns: *Debits*, *Credits*, and *Balance*. The unofficial, deniable fourth column is *Write-Offs & Enforcement*—the off-the-books ledger where debts settled in blood, vanished cargo, and black contracts are booked. When problems cannot be solved with customs bailiffs, municipal courts, or open war charters, the senior Factors call upon the Fourth Column.
+* **Her Role:** Alyndra is a formally trained urban duelist and talent-evaluator—a master of the rapier who conceals her weapon in velvet beneath her pack and hides years of deadly training beneath a wide-eyed smile and travel-stained leathers.
 
-One morning, a small group of handsome young men entered the tavern. Dressed in the finest leathers and silks, they spun lofty tales of travel that captivated her heart. Seeing a chance to leave her simple life behind, she pleaded to join them. Intrigued by her innocent wonder and youthful beauty, the men accepted. The next day, she set out on the trail with them, riding the spry young horse left behind by her parents.
+---
 
-Before long, she began to miss the quiet life she had abandoned, spending nights thinking of the kind tavernkeep who had saved her. By day, however, those thoughts faded beneath the adoration of her companions. They hunted for her, brought her wildflowers for her hair, and treated her like a princess protected by dashing knights. 
+### The Mission: The Double-Agent Sting & Recruitment Test
+Alyndra’s assignment in the Reach has two simultaneous objectives:
 
-After three weeks of travel, the group stopped at a dark cavern. They told her to wait outside, but afraid to be left alone in the dark, she convinced them to let her enter. It was there that slavers ambushed them.
+1. **The Outlaw Gang Sting:** A brutal ring of highway cutthroats, deserters, and extortionists has entrenched itself in the limestone breaks of the Grey River gorge. They have been ambushing Gilded Scales grain barges, hijacking freight wagons, and murdering border customs agents. Alyndra went undercover to infiltrate their periphery, posing as an alluring tavern scout who feeds them lone marks to rob at their gorge choke point.
+2. **The Fourth Column Recruitment Assessment:** The Fourth Column needs elite, discreet independent operatives for dangerous off-the-books operations that the regular Port Watch or chartered companies like the Iron Carrion cannot touch. Alyndra uses the "vault" pitch to **field-test promising candidates**:
+   - Assessing their gear and martial readiness (*Paper Doll assessment*).
+   - Testing their observation and discernment (*Insight/Perception checks* on her duelist calluses, rapier, and rehearsed monologue).
+   - Testing their nerve, combat lethality, and tactical poise when things get violent and messy.
 
-Alyndra was immediately sent to sea aboard a ship captained by Nolan Clarke, a handsome and devious man whose years of success had given him a taste for luxury. Intrigued by her fierce defiance and elven grace, Captain Clarke soon released her from chains and moved her into the captain’s cabin. She was introduced to a life of decadence: artisanal breads, exotic meats, and sweet foreign wines. Late into the night, Clarke would play foreign melodies on his sand lute and teach her strange games of chance—occasionally letting her win. The first time she beat him, he gifted her a peculiar token she keeps at all times: an *Ever-Spinning Coin*.
+---
 
-Whether out of affection or raw greed, Captain Clarke offered Alyndra her freedom on one condition: she had to join his operation. He reasoned that if she could win his heart, she could easily win the trust of naive adventurers. 
+### The Complication: The Gang Mutiny
+The trap gets messy when they reach the gorge:
+- While Alyndra was away scouting the villages, the bandit gang grew paranoid. The outlaw leader suspects Alyndra is holding out on them or planning to sell them out to the Scales.
+- When Alyndra leads the player into the gorge, the ambush springs prematurely—and crosshairs are trained on **her** as well as the player. The bandits intend to slaughter both of them, loot the player's gear, and dump their corpses into the river current.
+- **Player Agency & Becoming an Ally:**
+  - A perceptive player can spot the signs on the trail (tampered signals, nervous pacing) or notice the crossbowmen aiming at Alyndra's back before she does, calling out a warning.
+  - Instead of a one-sided slaughter or simple betrayal, the player and Alyndra fight **back-to-back** against the outlaws, turning a botched ambush into a coordinated counter-assault.
 
-During their voyage east, Nolan and his crew trained her to fight, lie, and covet coin above all else. When they divided the proceeds from their first batch of captives, she clutched the platinum tightly in her hand for a week, never looking back. At their next landfall, under Nolan’s watchful eye, she stepped ashore to find her next mark.
+---
+
+### The Aftermath & Narrative Trajectory
+Once the dust settles and the outlaws are defeated, the facade drops entirely:
+- Alyndra catches her breath, wipes her bloodied rapier with casual elegance, and displays a silver medallion—a Gilded Scales seal scored with four vertical tally grooves: the mark of **The Fourth Column**.
+- She confesses the truth: the vault was a ruse to lure the gang into an engagement and test whether the player was as lethal and level-headed as their gear suggested.
+- **Future Springboard & Ongoing Role:**
+  - Alyndra does not vanish. She relocates to a recognized hub (Port Valen's Civic Heights / Middle Ward or Alderford).
+  - The dynamic between the player and Alyndra evolves from wary suspicion into mutual respect between two dangerous, calculating professionals.
 
 ---
 

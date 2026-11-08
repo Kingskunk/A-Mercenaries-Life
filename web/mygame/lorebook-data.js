@@ -110,7 +110,6 @@
         role: "Iron Carrion — Vanguard Drillmaster & Frontline Veteran",
         tags: ["Iron Carrion"], aliases: ["Varren", "drillmaster"],
         unlock: "met_varren",
-        meter: { stat: "varren_respect", label: "Sergeant Varren's Regard" },
         body: function (s) {
           var out = [
             "The Iron Carrion's Vanguard drillmaster and a frontline sergeant. He keeps the practice post, checks a recruit's gear, and expects the line to hold together.",
@@ -139,7 +138,6 @@
         role: "Iron Carrion — Scout Company Commander",
         tags: ["Iron Carrion"], aliases: ["scouts", "Scout Company"],
         unlock: "met_kestrel",
-        meter: { stat: "kestrel_respect", label: "Kestrel's Regard" },
         body: function (s) {
           var out = [
             "Commander of the Iron Carrion's scout company. She goes by Kestrel, wears her dark hair cropped short beneath a leather coif, and carries a plain skinning knife.",
@@ -165,7 +163,6 @@
         role: "Iron Carrion — Cadre Handler",
         tags: ["Iron Carrion"], aliases: ["Ysolde", "Ostrand", "Cadre", "handler"],
         unlock: "met_ysolde",
-        meter: { stat: "ysolde_respect", label: "Ysolde's Regard" },
         body: function (s) {
           var out = [
             "The Cadre's handler. An older tiefling woman with small obsidian horns, iron-grey braids and a satchel of scrolls and glass vials, she is responsible for the company's gifted recruits.",
@@ -253,7 +250,6 @@
         role: "Iron Carrion — Company Surgeon & Field Medic, Logistics & Baggage Train",
         tags: ["Iron Carrion"], aliases: ["Odessa", "surgeon", "medic", "healer"],
         unlock: "met_odessa",
-        meter: { stat: "odessa_respect", label: "Surgeon Odessa's Regard" },
         body: function (s) {
           var out = [
             "The Iron Carrion's field surgeon. She works from a triage wagon on the march and from whatever clear ground the line leaves behind, with boiled linen, bone needles and waxed thread.",
@@ -276,7 +272,6 @@
         role: "Iron Carrion — Munitions Armorer & Sapper Veteran, Munitions Train",
         tags: ["Iron Carrion"], aliases: ["Rorik", "armorer", "smith", "sapper"],
         unlock: "met_rorik",
-        meter: { stat: "rorik_regard", label: "Comradeship with Rorik" },
         body: [
           "A grizzled Highland smith and munitions armorer who keeps the company's steel honed at the baggage wagons.",
           "<i>\"A grizzled, broad-shouldered Highland smith with burn-scarred forearms, a notched ear, and a cloud of bitter pipeweed smoke trailing his steps. Having swung sledge for Master Torvald back in the Highland Crags, and helped him frame his mill at Alderford, before taking the mercenary shilling, he methodically hones company blades and shares hard-earned forgecraft with recruits who respect the steel.\"</i>"
@@ -739,7 +734,6 @@
         sub: "Merchant cartel and paymasters",
         tags: ["Port Valen", "Valen Reach", "Trade"], aliases: ["Scales", "First Factor", "Council of Factors", "cartel", "factors", "free city", "Free City", "plutocracy"],
         unlock: "codex_gilded_scales",
-        meter: { stat: "gilded_scales_rep", label: "Standing with the Gilded Scales" },
         body: [
           "A cartel of river merchants and guild-masters based in Port Valen, with its head house on Civic Heights beside the Council Hall and its merchant houses' estates in the Patrician Quarter. They hold the timber trade, the grain barges, and the river toll-gates throughout [[valen_reach|the Valen Reach]]. Through the Council, they fund Valen's war charter; their clerks book the Carrion's stores, pay, and road costs, but cannot give the company field orders.",
           "The cartel is led by a <b>First Factor</b>, who speaks for the Scales on war, treaty, and city policy. The First Factor answers to the Council of Factors, the ruling council of Port Valen, made up of the senior merchant houses. Below them, appointed officers run records, taxes, courts, and the Port Watch. Port Valen holds the old imperial title of a free city, and no crown rules it."
@@ -752,7 +746,6 @@
         sub: "The city guard",
         tags: ["Port Valen", "Law"], aliases: ["Port Watch", "Watch", "city guard", "watchmen"],
         unlock: "codex_port_watch",
-        meter: { stat: "port_watch_rep", label: "Standing with the Port Watch" },
         body: function (s) {
           var out = [
             "The city guard, charged with keeping the peace, patrolling the harbor quays, and manning the stone water-gates. They wear boiled leather jerkins stamped with the city's three-masted seal, carry swords, spears, and crossbows, and walk the beat between foreign crews, dockside brawlers, and Dredge-End cutpurses.",
@@ -772,7 +765,6 @@
         sub: "Dredge-End's sworn brotherhood",
         tags: ["Port Valen", "Underworld"], aliases: ["Oath", "Dredge-End", "brotherhood", "oath-breakers", "smugglers"],
         unlock: "codex_black_oath",
-        meter: { stat: "black_oath_rep", label: "Standing with the Black Oath" },
         body: function (s) {
           var out = [
             "An oath-bound group Hask works for in Dredge-End. He called them the Black Oath, but did not explain how they are organized or who gives their orders.",
@@ -924,7 +916,6 @@
         sub: "The frontier's river weir town & barge port",
         tags: ["Alderford", "Valen Reach", "Grey River", "Trade"], aliases: ["Alderford", "weir", "waystation", "salt lofts", "brine", "river town", "logging slips"],
         unlock: "codex_alderford",
-        meter: { stat: "alderford_rep", label: "Standing in Alderford" },
         body: [
           "A river town built around an old imperial limestone weir, where the highland road down from the Crags reaches the head of the Grey and the river drops away toward the gorge. Sawmills crowd the bank above the falls. Below them stand warehouses, curing lofts, and muddy wharves where the barges tie up to load for the downriver run. The brine trade is the town's spine: carts bring salt up the High Grey Road from Valen, and the river catch is split, cured, dried, and packed into firkins for the run downriver.",
           "North of town, the Coldspine runs east and west across the whole of the north as a broken mountain barrier, with few passes fit for wagons or an army and a fort in each. Its southern foothills supply stone, wool and ore. In the east its last low spur comes down toward the Black Sinks, and the only practical freight way east uses the narrow ground between that spur and the marsh, which is why the old gatehouse there matters to every loaded wagon."

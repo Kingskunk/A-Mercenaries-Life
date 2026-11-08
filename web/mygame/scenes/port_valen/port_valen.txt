@@ -1814,7 +1814,6 @@ A wall of black boards is ruled in columns behind the gallery, each headed with 
 *if (not(pv_quays_seen))
   *set pv_quays_seen true
   *set codex_port_watch true
-  *set port_watch_rep +1
   The cargo quay runs from the taverns by the fish market toward the customs tower and the gate where the road down from the terraces comes in, and at this hour it is one long argument conducted in stamped parchment. Guild clerks in the river-serpent colors of the Gilded Scales move crate to crate with wax tablets, while Port Watch officers walk the line with swords at their hips and spears on their shoulders.
 
   Above it all, standing atop an upturned cargo crate with a brass seal pinned to his salt-crusted oilskin coat, a hawk-nosed man with ink-stained thumbs calls hull numbers down to a runner.
@@ -2560,7 +2559,6 @@ He looks you over again, more carefully this time.
 
 *if (not(pv_drydock_seen))
   *set pv_drydock_seen true
-  *set gilded_scales_rep +1
   Beyond the customs tower the seawall turns to shipyard wall, and the Iron Wharves announce themselves before you even clear the gateway: coal smoke, showers of forge-sparks, and the rhythmic ring of caulking mauls drifting across the basin. Behind the fortified seawall, the shipyard ways climb out of the tide like the ribbed skeletons of great beasts: river barges and ocean-going hulls stripped down to the frames, steamed planks going down seam by seam beneath the Gilded Scales' river-serpent standard.
 *else
   The Iron Wharves again: the sharp tang of boiled pine pitch, coal smoke, and the relentless chime of irons along the building cradles.
@@ -4202,8 +4200,7 @@ Two watchmen in greased sheepskins reach the head of the breakwater, a lantern s
       *set bell_resolved true
       *set bell_quest_stage "resolved"
       *set bell_resolution "reported"
-      *set port_watch_rep +1
-    [b][⚖ Harbor Standing: Port Watch Rep +1][/b]
+    [b][⚖ Reported to the Watch][/b]
     *choice
       # Back along the causeway.
         *goto pv_poi_pier_menu
@@ -4647,7 +4644,6 @@ The warden fishes a small purse off his belt and counts three silver marks into 
   *set fish_quest_stage "resolved"
   *set fish_resolution "lawful"
   *set fish_resolved_day campaign_day
-  *set port_watch_rep +1
   *comment quests_finished staleness (2026-09-30) -- same gap as port_valen's own beat_4_branch_c header comment
   *comment explains in full: this page's own advance_time already recomputed it once, before fish_quest_stage became
   *comment "resolved" just above. Re-run it now that the dependency changed.
@@ -4659,8 +4655,6 @@ The warden fishes a small purse off his belt and counts three silver marks into 
   *set currency_txn_locked true
   *set locked_currency_txn_page_id page_id
 
-[b][⚖ Harbor Standing: Port Watch Rep +1][/b]
-*line_break
 [b][💰 Informant's Share: +3 Silver Marks][/b]
 
 *choice
@@ -4692,15 +4686,12 @@ He does, in front of you, and the chalk leaves a small hard mark. Down at the bl
   *set fish_quest_stage "failed"
   *set fish_resolution "failed"
   *set fish_resolved_day campaign_day
-  *set port_watch_rep -1
   *set fish_slip_shunned true
   *comment quests_finished staleness (2026-09-30) -- same gap as port_valen's own beat_4_branch_c header comment
   *comment explains in full: this page's own advance_time already recomputed it once, before fish_quest_stage became
   *comment "failed" just above. Re-run it now that the dependency changed.
   *gosub_scene calendar update_hub_condition
 
-[b][⚖ Harbor Standing: Port Watch Rep -1][/b]
-*line_break
 [b][🐟 The Slip Remembers: Stall Prices +1 Copper][/b]
 
 *choice
@@ -5472,7 +5463,7 @@ The squad drill has ended, the practice racks are chained, and the gate brazier 
 *comment The Rotten Rib (Iron Wharves) starts and ends here. Vane tells every player to see her about the held-up timber orders
 *comment (vane_timber_hint, set in port_valen_vane_summons); "Tell her Vane sent you" (rotten_rib_quest_stage unstarted,
 *comment ysolde_timber_briefed) sends the player to Slipway Two; once the quest is resolved, "Lay the stamped waybill on her table"
-*comment (has_diverted_timber_waybill, ysolde_timber_turned_in) takes the paper back: ysolde_respect +5 on either ending, 5 silver only
+*comment (has_diverted_timber_waybill, ysolde_timber_turned_in) takes the paper back: counts as one of Ysolde's trust moments on either ending, 5 silver only
 *comment on "blackmail" (she pays the day the orders move, and they move only if the oak goes back to Brant).
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -5517,11 +5508,25 @@ A Cadre recruit waits by the door with a slate under one arm, and doesn't move u
 The pointer goes back to the chart, and the scribe's nib keeps scratching.
 
 *label pv_workroom_menu
+*temp ysolde_earned_trust ((((((ysolde_impressed_cadre_trial) or (ysolde_impressed_river_boom)) or (turned_in_customs_vellum)) or (ysolde_impressed_bivouac_cadre)) or (spared_gate_squatter)) or (ysolde_timber_turned_in))
+*temp ysolde_trust_count 0
+*if (ysolde_impressed_cadre_trial)
+  *set ysolde_trust_count + 1
+*if (ysolde_impressed_river_boom)
+  *set ysolde_trust_count + 1
+*if (turned_in_customs_vellum)
+  *set ysolde_trust_count + 1
+*if (ysolde_impressed_bivouac_cadre)
+  *set ysolde_trust_count + 1
+*if (spared_gate_squatter)
+  *set ysolde_trust_count + 1
+*if (ysolde_timber_turned_in)
+  *set ysolde_trust_count + 1
 *choice
   *if ((found_customs_vellum) and (not(turned_in_customs_vellum)))
     # Lay the Grey Waterway Toll Register beside her customs ledgers.
       *goto pv_workroom_toll_register
-  *if ((not(ysolde_waterways_told)) and ((ysolde_respect >= 10) or (not(ysolde_charts_asked))))
+  *if ((not(ysolde_waterways_told)) and ((ysolde_earned_trust) or (not(ysolde_charts_asked))))
     # Ask about the charts on the walls.
       *goto pv_workroom_charts
   *if ((vane_timber_hint) and ((rotten_rib_quest_stage = "unstarted") and (not(ysolde_timber_briefed))))
@@ -5530,7 +5535,7 @@ The pointer goes back to the chart, and the scribe's nib keeps scratching.
   *if ((rotten_rib_quest_stage = "resolved") and ((has_diverted_timber_waybill) and (not(ysolde_timber_turned_in))))
     # Lay the stamped waybill on her table.
       *goto pv_workroom_timber_turnin
-  *if ((ysolde_waterways_told) and ((ysolde_respect >= 25) and (not(ysolde_ostrand_told))))
+  *if ((ysolde_waterways_told) and ((ysolde_trust_count >= 2) and (not(ysolde_ostrand_told))))
     # Ask about the brass signet by the inkstand.
       *goto pv_workroom_signet
   # Head back across the compound.
@@ -5549,17 +5554,13 @@ You take the water-stained register from your satchel and lay it beside Ysolde's
 She sets two silver marks on the table and passes the register to the scribe. "Salvage rate. Copy every entry that still names a standing wharf, then send the original to the Scales' archive."
 
 *set turned_in_customs_vellum true
-*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
-  *set ysolde_respect +2
-  *set stat_bump_locked true
-  *set locked_stat_bump_page_id page_id
 *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
   *set currency_add_amount 20
   *gosub_scene economy currency_add
   *set currency_txn_locked true
   *set locked_currency_txn_page_id page_id
 
-[b][📜 Ysolde's Regard +2][/b]
+[b][📜 Ysolde's Regard Grows][/b]
 *line_break
 [b][💰 Paid by Ysolde: +2 Silver Marks][/b]
 
@@ -5573,7 +5574,7 @@ She sets two silver marks on the table and passes the register to the scribe. "S
 *label pv_workroom_charts
 [b]◈ THE WORKROOM[/b]
 *line_break
-*if (ysolde_respect < 10)
+*if (not(ysolde_earned_trust))
   *set ysolde_charts_asked true
   Ysolde doesn't look up from her pointer. "River charts. Weir to bay, every shallow and sandbar I could find, and a few places where a loaded barge sits down and doesn't get up." She marks something. "If you've seen a shallow I haven't, bring me a number. 'About' I can get from any bargeman."
 *else
@@ -5652,11 +5653,6 @@ Ysolde doesn't touch it. She tilts her head and reads it where it lies, then lif
   *set ysolde_timber_turned_in true
   *set has_diverted_timber_waybill false
 
-*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
-  *set ysolde_respect +5
-  *set stat_bump_locked true
-  *set locked_stat_bump_page_id page_id
-
 *if (rotten_rib_resolution = "blackmail")
   *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
     *set currency_add_amount 50
@@ -5664,7 +5660,7 @@ Ysolde doesn't touch it. She tilts her head and reads it where it lies, then lif
     *set currency_txn_locked true
     *set locked_currency_txn_page_id page_id
 
-[b][📜 Ysolde's Regard +5][/b]
+[b][📜 Ysolde's Regard Grows][/b]
 *if (rotten_rib_resolution = "blackmail")
   *line_break
   [b][💰 Paid by Ysolde: +5 Silver Marks][/b]
@@ -5689,9 +5685,9 @@ The door at the top of the outside stair is shut, and the shutters are closed ov
 *comment gated paragraph in his lorebook entry ("varren"), the same shape as the workroom:
 *comment   varren_advice_told     what he would tell a recruit who wants to live; reads back on visited_varren (the camp-night talk) or not.
 *comment   varren_alderford_told  his view of the player's Alderford work, built from what the player actually did (up to three of the deeds below).
-*comment   varren_redfort_told    varren_respect >= 10: the winter siege at Redfort. Canon from battle_black_sinks.txt: he drilled the file that went in,
-*comment                          and never speaks the names. The forty and the eleven are new.
-*comment Nothing here changes varren_respect or pays anything: the talk is the point.
+*comment   varren_redfort_told    unlocked once any varren_impressed_* flag is true (or the Slasher quest closed as "arrested"): the winter siege at Redfort.
+*comment                          Canon from battle_black_sinks.txt: he drilled the file that went in, and never speaks the names. The forty and the eleven are new.
+*comment Nothing here changes anything or pays anything: the talk is the point.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *comment Reached from the hub while the squad leaders are on the drill square (leaders_at_drill). Costs no time and sets nothing.
@@ -5727,7 +5723,7 @@ Sergeant Varren sits at the bench with the shield rim across his knees, working 
 *comment The greeting plays on the first visit only; later visits go straight to the bench.
 *if (not(varren_armory_greeted))
   *set varren_armory_greeted true
-  *if (varren_respect < 6)
+  *if (((((((not(varren_impressed_vanguard_trial)) and (not(varren_impressed_camp_talk))) and (not(varren_impressed_whetstone))) and (not(varren_impressed_dice_tent))) and (not(varren_impressed_bivouac_watch))) and (not(varren_impressed_campaign_lore))) and (not(slasher_resolution = "arrested")))
     "Well?" he says, to the rivet.
   *elseif (squad = "vanguard")
     "Shut the door behind you," he says. "You're letting my heat out."
@@ -5742,6 +5738,7 @@ Sergeant Varren sits at the bench with the shield rim across his knees, working 
 The strap goes back through the rivet, and the grindstone behind the partition starts up again.
 
 *label pv_armory_menu
+*temp varren_has_shown_trust (((((((varren_impressed_vanguard_trial) or (varren_impressed_camp_talk)) or (varren_impressed_whetstone)) or (varren_impressed_dice_tent)) or (varren_impressed_bivouac_watch)) or (varren_impressed_campaign_lore)) or (slasher_resolution = "arrested"))
 *choice
   *if (not(varren_advice_told))
     # Ask what he'd tell a recruit who wants to live.
@@ -5749,7 +5746,7 @@ The strap goes back through the rivet, and the grindstone behind the partition s
   *if (not(varren_alderford_told))
     # Ask what he made of the work you did in Alderford.
       *goto pv_armory_alderford
-  *if ((varren_respect >= 10) and (not(varren_redfort_told)))
+  *if ((varren_has_shown_trust) and (not(varren_redfort_told)))
     # Ask about Redfort.
       *goto pv_armory_redfort
   *if (((slasher_quest_stage = "resolved") or (slasher_quest_stage = "failed")) and (not(slasher_reported)))
@@ -5928,7 +5925,7 @@ The armory shed is open, and the apprentice armorer is working the grindstone be
 *comment Each topic is one flag and one gated paragraph in her lorebook entry ("kestrel"):
 *comment   kestrel_advice_told  what she sees from the shutter; reads back on visited_bivouac_kestrel (the skiff talk) or not.
 *comment   kestrel_sinks_told   her view of the Sinks and Alderford, from what the player did (up to three deeds).
-*comment   kestrel_origin_told  kestrel_respect >= 6: born in a fen town, guide to the legion at Gryke, the name the legion gave her.
+*comment   kestrel_origin_told  unlocked once any of her trust moments is true: born in a fen town, guide to the legion at Gryke, the name the legion gave her.
 *comment Her life story (2026-10-06): half-elf, past sixty winters; fen-born mother, elf father who left; guided the legion at fifteen; the Empire's collapse,
 *comment then years among fen quarrels; guided Vane's company through the Sedge in its second year and signed her own terms, no rank. No family left.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -5966,6 +5963,7 @@ Kestrel sits in the shutter that faces the inland road, one boot up on the sill,
 The wind rubs a little more of the charcoal off the crate, and the scout by the trapdoor goes back to watching the ladder.
 
 *label pv_tower_menu
+*temp kestrel_earned_trust ((((kestrel_impressed_scout_trial) or ((kestrel_skiff = "light_feet") or ((kestrel_skiff = "good_questions") or (kestrel_skiff = "delivered")))) or (spared_gate_squatter)) or (kestrel_slip_turned_in))
 *choice
   *if ((silt_gate_quest_stage = "unstarted") and (not(kestrel_silt_briefed)))
     # Tell her Vane said she has a use for you.
@@ -5979,7 +5977,7 @@ The wind rubs a little more of the charcoal off the crate, and the scout by the 
   *if (not(kestrel_sinks_told))
     # Ask what she made of the Sinks and the road to Alderford.
       *goto pv_tower_sinks
-  *if ((kestrel_respect >= 6) and (not(kestrel_origin_told)))
+  *if ((kestrel_earned_trust) and (not(kestrel_origin_told)))
     # Ask where she's from.
       *goto pv_tower_origin
   # Climb back down.
@@ -5990,17 +5988,15 @@ The wind rubs a little more of the charcoal off the crate, and the scout by the 
 *line_break
 *set kestrel_advice_told true
 *if (squad = "scouts")
-  *temp kt_base kestrel_respect
-  *if (kestrel_slip_turned_in)
-    *set kt_base (kestrel_respect - 5)
-  *if (kt_base >= 12)
-    "${name}," Kestrel says, not turning. "I gave your name to the Captain, since you've climbed to the top of my list of new recruits I actually like. He wants secret agents."
-  *elseif (kt_base >= 6)
-    "${name}," Kestrel says, not turning. "You've kept your feet quiet, which is more than most manage. The Captain wants secret operatives. I'm one of the people that gave him your name."
-  *elseif (kt_base >= 0)
-    "${name}," Kestrel says, not turning. "You haven't let me down, and you haven't impressed me either. We'll see if that changes."
-  *else
+  *temp kestrel_skiff_impressed ((kestrel_skiff = "light_feet") or ((kestrel_skiff = "good_questions") or (kestrel_skiff = "delivered")))
+  *if (kestrel_disappointed_mercy)
     "${name}," Kestrel says, flat, not turning. "You killed that woman on the gate wall. I said messy, and I haven't changed my mind." She lets a moment pass. "You're one of mine regardless. The Captain asked who I'd send, and everyone else in my unit I actually like."
+  *elseif ((kestrel_impressed_scout_trial) and (kestrel_skiff_impressed))
+    "${name}," Kestrel says, not turning. "I gave your name to the Captain, since you've climbed to the top of my list of new recruits I actually like. He wants secret agents."
+  *elseif (((kestrel_impressed_scout_trial) or (kestrel_skiff_impressed)) or (spared_gate_squatter))
+    "${name}," Kestrel says, not turning. "You've kept your feet quiet, which is more than most manage. The Captain wants secret operatives. I'm one of the people that gave him your name."
+  *else
+    "${name}," Kestrel says, not turning. "You haven't let me down, and you haven't impressed me either. We'll see if that changes."
 *elseif (kestrel_skiff = "light_feet")
   "${name}." Kestrel says it as if testing the weight of it, not turning. "Light feet, at the skiff. In that fog I thought I'd be sending someone to fish you out of the reeds. You impressed me. The Captain wants hands with a sharp mind and initiative, so I said your name."
 *elseif (kestrel_skiff = "good_questions")
@@ -6159,18 +6155,13 @@ She folds the vellum into her coat and counts five silver marks onto the bench. 
   *set silt_gate_bounty_claimed true
   *set silt_gate_turned_in_day campaign_day
 
-*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
-  *set kestrel_respect +5
-  *set stat_bump_locked true
-  *set locked_stat_bump_page_id page_id
-
 *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
   *set currency_add_amount 50
   *gosub_scene economy currency_add
   *set currency_txn_locked true
   *set locked_currency_txn_page_id page_id
 
-[b][📜 Kestrel's Regard +5][/b]
+[b][📜 Kestrel's Regard Grows][/b]
 *line_break
 [b][💰 Paid by Kestrel: +5 Silver Marks][/b]
 
@@ -6422,13 +6413,11 @@ Vane pulls the next dispatch toward him before you've fully turned for the door.
 *comment the shipwrights' ways, the long pier) with the rest of the city.
 *set pv_pois_open true
 *comment The bi-weekly check-in scene at port_valen_next_report_day is a
-*comment hook for future content, not built yet. It should read back
-*comment port_watch_rep/gilded_scales_rep/black_oath_rep (all created in
-*comment startup.txt). All three are written by content now: the harbor and pier
-*comment beats and the Silt-Gate branches set port_watch_rep and black_oath_rep,
-*comment and the cargo-quay and Alderford beats set gilded_scales_rep. Wiring
-*comment them into open-world Port Valen content is a separate task from this
-*comment handoff scene.
+*comment hook for future content, not built yet. port_watch_rep, gilded_scales_rep
+*comment and black_oath_rep were all removed 2026-11-08 (NPC/faction regard
+*comment refactor): none of them ever gated anything. Any future hook here
+*comment should read specific quest/rank flags (a_key_resolution, bell_resolution,
+*comment fish_resolution, hall_jobs_scales, etc.), not a reputation counter.
 *choice
   # Step out into the yard, off every roster but your own.
     *goto port_valen_hub

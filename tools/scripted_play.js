@@ -350,7 +350,7 @@ function play(scn) {
     printed.length = 0;
   }
   Object.keys(scn.stats || {}).forEach(function (k) { stats[k] = scn.stats[k]; });
-  var purseBefore = purse(), repBefore = stats.port_watch_rep, hpBefore = stats.hp_current;
+  var purseBefore = purse(), hpBefore = stats.hp_current;
   resetRun();
   D.mode = "drive"; D.steps = scn.steps || []; D.rand = parseRand(scn.rand0 !== undefined ? scn.rand0 : (scn.rand !== undefined ? scn.rand : "mid"));
   D.refreshAll = !!scn.refresh; D.refreshText = !!scn.refreshText; D.sabotage = scn.sabotage || []; D.replaySet = scn.replaySet || {};
@@ -366,7 +366,7 @@ function play(scn) {
   (scn.watch || []).forEach(function (k) { watch[k] = stats[k]; });
   return {
     status: status, text: plainTranscript(D.events), events: D.events.slice(), log: D.log.slice(), exits: D.exits.slice(),
-    errors: D.errors.slice(), stopped: D.stopped, purseDelta: purse() - purseBefore, repDelta: stats.port_watch_rep - repBefore,
+    errors: D.errors.slice(), stopped: D.stopped, purseDelta: purse() - purseBefore,
     hpBefore: hpBefore, hp: stats.hp_current, s: stats, watch: watch,
     refreshDiffs: D.refreshDiffs.slice(), refreshChecks: D.refreshChecks, refreshSkipped: D.refreshSkipped, deadSpace: D.deadSpace.slice()
   };

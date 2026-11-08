@@ -83,7 +83,10 @@
     temple_hall:   { all: "indoor_underground_silence_needstobeplayedverysoftly", level: 0.32, indoor: true },
     temple_crypt:  { all: "indoor_underground_silence_needstobeplayedverysoftly", level: 0.26, indoor: true },
     temple_grounds: { day: "generic_village", night: "nature_outdoors_night", level: 0.4 },
-    siege:         { all: "siege_battle" }
+    siege:         { all: "siege_battle" },
+    // A street or lane mid-panic (a chase, a shout, a shock) replaces the normal city day/night bed outright rather than
+    // layering over it, so the fear reads as the room tone itself and not as a quiet background detail.
+    panicked_crowd: { all: "ambience_panicked_crowd" }
   };
   // a place name (from Scenery.placeNames) that plays another kind of place's sound
   var ALIAS = {
@@ -184,7 +187,19 @@
     civic_council_gallery: "civic_indoor",
     port_valen_private_supper: "private_supper",
     port_valen_wedding_hall: "wedding_hall",
-    port_valen_patrician_gala_salon: "patrician_gala"
+    port_valen_patrician_gala_salon: "patrician_gala",
+    // Varren's errand (slasher quest): the militia post's office is a plain civic room; the barred night entrance and the
+    // manor's walled garden are outdoors and keep the district's ordinary city bed; the manor's study and fireside parlor
+    // are a wealthy household's interior, the same room tone as the gala's private rooms; the drainage cut runs down
+    // toward Dredge-End and keeps that bed; the market lane mid-chase uses panicked_crowd (see OVERLAY for the fire).
+    generic_watch_captain_office: "civic_indoor",
+    generic_watch_post_night: "city",
+    generic_building_ablaze: "city",
+    generic_manor_grounds: "city",
+    generic_manor_study: "private_supper",
+    generic_fireside_parlor: "private_supper",
+    generic_market_lane_chaos: "panicked_crowd",
+    generic_drainage_cut: "dredge_end"
   };
   // Quiet location-specific layers over a normal place bed. They give a river town its weir,
   // a battle approach its marsh, and exposed forts their wind without replacing the useful base
@@ -207,7 +222,10 @@
     // the coins-shuffling bed above is the primary layer; whispering and chatter ride alongside it at the same
     // indoor level (1), so all three read as one combined room tone rather than one bed plus two quiet overlays
     black_lantern: [{ all: "ambience_background_whispering", level: 1 }, { all: "ambience_background_chatter", level: 1 }],
-    black_lantern_back: [{ all: "ambience_background_whispering", level: 1 }, { all: "ambience_background_chatter", level: 1 }]
+    black_lantern_back: [{ all: "ambience_background_whispering", level: 1 }, { all: "ambience_background_chatter", level: 1 }],
+    // The militia post catching fire (Varren's errand): just the fire, laid over whichever city day/night bed
+    // already fits the hour, not a kind of its own.
+    generic_building_ablaze: [{ all: "building_on_fire_ambience_layer", level: 0.9 }]
   };
   var OVERWORLD_OPEN = { road: 1, woodroad: 1, hills: 1, forest: 1 };   // ground a rider travels over (not a town, a village or a fort)
 
