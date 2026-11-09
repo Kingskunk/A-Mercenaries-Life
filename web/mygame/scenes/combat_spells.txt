@@ -24,6 +24,27 @@
 *comment ══════════════════════════════════════════════════════════════
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SPEND A SPELL SLOT AT A GIVEN LEVEL (2026-11-08)
+*comment One shared place for "which pool does this cast spend from", instead of the same *if (level >= 2) ...
+*comment *else ... copy-pasted into every upcastable spell's own cast body (Magic Missile and Ray of Sickness
+*comment both had their own copy until this). The level-1 pool is still the unsuffixed <class>_spell_slots
+*comment (never renamed -- see [[project_spell_upcasting]] memory for why), so level 1 is the one irregular case;
+*comment every level above it is "_<N>" appended, which {(...)}-indirection builds and spends directly. Only
+*comment wizard/bard/warlock have ANY _2 pool today and nothing yet reaches _3+, but a future level is exactly
+*comment one more populated pool plus a spell that calls this with that number -- this label needs no change.
+*comment Does NOT reset combat_cast_at_level -- callers that read it again after spending (a dice-count formula
+*comment keyed off it, Ray of Sickness's own shape) would break if this cleared it first; each caller resets it
+*comment itself, once everything that needs it this cast has already read it.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label spend_spell_slot
+*params ssl_class ssl_level
+*temp ssl_suffix ""
+*if (ssl_level > 1)
+  *set ssl_suffix ("_" & ssl_level)
+*set {((ssl_class & "_spell_slots") & ssl_suffix)} - 1
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment SPELL: MAGIC MISSILE (3 darts, each 1d4 + 1 -- a flat bonus, NOT the caster's spellcasting modifier --
 *comment split across up to 3 targets via the sidebar, see fight_target_magic_missile in combat.txt)
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -78,7 +99,12 @@ ${fsh}
 *line_break
 *if (not(combat_magic_missile_locked)) or (not(locked_combat_magic_missile_page_id = page_id))
   *if (combat_scroll_id = "")
-    *set wizard_spell_slots - 1
+    *comment UPCASTING (2026-11-08): combat_cast_at_level is set by whichever option armed targeting mode
+    *comment (combat.txt) -- spend_spell_slot (above) picks the pool. Reset right after, so a stale "2" can never
+    *comment leak into a later spell that forgets to set its own level (every caster of resolve_magic_missile
+    *comment sets it explicitly).
+    *gosub spend_spell_slot "wizard" combat_cast_at_level
+    *set combat_cast_at_level 1
   *else
     *gosub_scene equipment spend_consumable combat_scroll_id
   *comment Always Force damage, RAW -- no per-caster variation.
@@ -325,24 +351,75 @@ ${combat_player_dmg_roll_banner}
 *line_break
 *return
 
+*comment UPCASTING (2026-11-08): at 2nd level, RAW adds one additional target, chosen by the caster -- the same
+*comment per-target sidebar allocation Magic Missile's darts use (fight_target_cause_fear, combat.txt), but a
+*comment "dart" here only ever means 0 or "targeted", never a stacked count: each targeted enemy gets exactly
+*comment one ordinary Cause Fear save, nothing scales with how many darts land on one slot (there's no such
+*comment thing -- the sidebar still enforces one dart per target). The 1st-level path keeps the single
+*comment auto-picked target it always had; only the >= 2 branch touches the new multi-target loop.
 *label resolve_cast_cause_fear
 *if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
-  *if (character_class = "wizard")
-    *set wizard_spell_slots - 1
+  *gosub spend_spell_slot character_class combat_cast_at_level
+  *comment The outer print check below reads combat_fear_banner's emptiness, not combat_cast_at_level --
+  *comment that gets reset to 1 at the end of this very block, which would already have happened by the time a
+  *comment REPLAY of this page re-reaches the outer check, silently flipping a replayed 2nd-level cast's print
+  *comment branch back to the 1st-level one. Clearing whichever branch's own output isn't used keeps the two
+  *comment banner stores from ever both being non-empty from a stale earlier cast.
+  *set combat_fear_banner ""
+  *if (combat_cast_at_level <= 1)
+    *temp rcf_p (("combat_enemy" & combat_active_target) & "_")
+    *gosub_scene combat_dice resolve_enemy_save rcf_p "wisdom" "Wisdom" combat_active_target
+    *comment check_success is inverted here (resolve_enemy_save: true = the enemy FAILED the save).
+    *if (check_success)
+      *set {(rcf_p & "frightened")} 10
+      *set combat_fear_banner "[b][😨 ${combat_enemy_name} is Frightened: its attacks have disadvantage and it will not come closer][/b]"
+    *else
+      *set combat_fear_banner "[b][💨 ${combat_enemy_name} fights off the dread][/b]"
   *else
-    *set warlock_spell_slots - 1
-  *temp rcf_p (("combat_enemy" & combat_active_target) & "_")
-  *gosub_scene combat_dice resolve_enemy_save rcf_p "wisdom" "Wisdom" combat_active_target
-  *comment check_success is inverted here (resolve_enemy_save: true = the enemy FAILED the save).
-  *if (check_success)
-    *set {(rcf_p & "frightened")} 10
-    *set combat_fear_banner "[b][😨 ${combat_enemy_name} is Frightened: its attacks have disadvantage and it will not come closer][/b]"
-  *else
-    *set combat_fear_banner "[b][💨 ${combat_enemy_name} fights off the dread][/b]"
+    *set combat_mm_banner_1 ""
+    *set combat_mm_banner_2 ""
+    *set combat_mm_banner_3 ""
+    *set combat_mm_banner_4 ""
+    *set combat_mm_banner_5 ""
+    *set combat_mm_banner_6 ""
+    *temp rcf_i 1
+    *label resolve_cast_cause_fear_loop
+    *if (rcf_i <= combat_enemy_slot_cap)
+      *temp rcf_n {(("combat_mm_darts_" & rcf_i))}
+      *if (rcf_n > 0)
+        *set combat_active_target rcf_i
+        *gosub_scene combat fight_sync_target_in
+        *temp rcf_p2 (("combat_enemy" & rcf_i) & "_")
+        *temp rcf_hp {(rcf_p2 & "hp")}
+        *temp rcf_now {(rcf_p2 & "frightened")}
+        *if ((rcf_hp > 0) and (rcf_now <= 0))
+          *gosub_scene combat_dice resolve_enemy_save rcf_p2 "wisdom" "Wisdom" rcf_i
+          *if (check_success)
+            *set {(rcf_p2 & "frightened")} 10
+            *set {(("combat_mm_banner_" & rcf_i))} "[b][😨 ${combat_enemy_name} is Frightened: its attacks have disadvantage and it will not come closer][/b]"
+          *else
+            *set {(("combat_mm_banner_" & rcf_i))} "[b][💨 ${combat_enemy_name} fights off the dread][/b]"
+        *else
+          *set {(("combat_mm_banner_" & rcf_i))} "[b][— ${combat_enemy_name} is no longer a valid target][/b]"
+      *set rcf_i + 1
+      *goto resolve_cast_cause_fear_loop
+  *comment One-shot, cleared now -- everything above has already read it.
+  *set combat_cast_at_level 1
   *set combat_cast_locked true
   *set locked_combat_cast_page_id page_id
-${combat_fear_banner}
-*line_break
+*if (not(combat_fear_banner = ""))
+  ${combat_fear_banner}
+  *line_break
+*else
+  *temp rcf_pi 1
+  *label resolve_cast_cause_fear_print_loop
+  *if (rcf_pi <= combat_enemy_slot_cap)
+    *temp rcf_pval {(("combat_mm_banner_" & rcf_pi))}
+    *if (not(rcf_pval = ""))
+      ${rcf_pval}
+      *line_break
+    *set rcf_pi + 1
+    *goto resolve_cast_cause_fear_print_loop
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -427,15 +504,28 @@ ${combat_fear_banner}
   *set false_life_why "You already have temporary hit points, and they do not stack."
   *return
 *if (false_life_cost = "slot")
+  *comment UPCASTING (2026-11-08): reads combat_cast_at_level to check the right pool -- the out-of-combat
+  *comment quick-cast (choicescript_stats.txt codex_cast_now_false_life) always forces this to 1 first, so it
+  *comment can never see or spend a 2nd-level slot; only the in-combat "False Life: 2nd level" option sets it to
+  *comment 2. Ranger never reaches the >= 2 branch with anything in it -- it has no 2nd-level pool
+  *comment (startup_parts/07_class_path.txt), so a ranger simply can never pass this check at level 2.
   *temp flc_slots 0
-  *if (character_class = "wizard")
-    *set flc_slots wizard_spell_slots
-  *if (character_class = "bard")
-    *set flc_slots bard_spell_slots
-  *if (character_class = "warlock")
-    *set flc_slots warlock_spell_slots
-  *if (character_class = "ranger")
-    *set flc_slots ranger_spell_slots
+  *if (combat_cast_at_level >= 2)
+    *if (character_class = "wizard")
+      *set flc_slots wizard_spell_slots_2
+    *if (character_class = "bard")
+      *set flc_slots bard_spell_slots_2
+    *if (character_class = "warlock")
+      *set flc_slots warlock_spell_slots_2
+  *else
+    *if (character_class = "wizard")
+      *set flc_slots wizard_spell_slots
+    *if (character_class = "bard")
+      *set flc_slots bard_spell_slots
+    *if (character_class = "warlock")
+      *set flc_slots warlock_spell_slots
+    *if (character_class = "ranger")
+      *set flc_slots ranger_spell_slots
   *if (flc_slots <= 0)
     *set false_life_why "You have no spell slot left to spend on it."
     *return
@@ -447,24 +537,25 @@ ${combat_fear_banner}
 *if (false_life_can_cast)
   *if (not(false_life_cast_locked)) or (not(locked_false_life_cast_page_id = page_id))
     *if (false_life_cost = "slot")
-      *if (character_class = "wizard")
-        *set wizard_spell_slots - 1
-      *if (character_class = "bard")
-        *set bard_spell_slots - 1
-      *if (character_class = "warlock")
-        *set warlock_spell_slots - 1
-      *if (character_class = "ranger")
-        *set ranger_spell_slots - 1
+      *gosub spend_spell_slot character_class combat_cast_at_level
     *if (false_life_cost = "scroll")
       *gosub_scene equipment spend_consumable combat_scroll_id
     *temp fl_roll 0
     *rand fl_roll 1 4
     *set combat_cast_result (fl_roll + 4)
+    *comment UPCASTING (2026-11-08, RAW): +5 temporary hit points per slot level above 1st. Harmless to apply
+    *comment unconditionally rather than only inside the "slot" branch above -- combat_cast_at_level is only ever
+    *comment 2 when that branch actually ran (every other entry point, free/scroll/out-of-combat, forces it to 1
+    *comment first), so this is 0 for all of them.
+    *set combat_cast_result + ((combat_cast_at_level - 1) * 5)
     *comment Temporary hit points never stack (5e): False Life gives its roll unless more are already held.
     *if (combat_cast_result > temp_hp)
       *set temp_hp combat_cast_result
     *set false_life_hp combat_cast_result
     *set false_life_minutes_left 720
+    *comment One-shot, cleared now that everything above has already read it -- same idiom spend_spell_slot's
+    *comment own header describes.
+    *set combat_cast_at_level 1
     *set false_life_cast_locked true
     *set locked_false_life_cast_page_id page_id
 *return
@@ -554,25 +645,38 @@ ${combat_player_dmg_roll_banner}
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment SPELL: RAY OF SICKNESS (Wizard, 1st level, 2026-11-08): the attack roll is already resolved by the
-*comment choice body (combat.txt), which only calls this label after check_success -- there is no miss branch
-*comment here, a miss never reaches this label. 2d8 Poison needs two real dice, which resolve_player_hit cannot
-*comment roll (it only ever rolls ONE die plus a flat bonus, combat_dice.txt), so this rolls its own total and
-*comment applies it directly, the same shape resolve_dissonant_whispers (above) uses for its 3d6. Still calls
-*comment apply_poison_rider (Poisoner's Robes) and apply_outgoing_damage_resist_vuln, same order resolve_player_hit
-*comment itself uses, so a poison-resistant or Poisoner's Robes-wearing caster works exactly as it would through
-*comment the normal path. No upcasting (PHB'24: +1d8 per spell slot level above 1st) -- the engine has no
-*comment per-level spell slots yet to cast one from, so this is always a flat 2d8.
+*comment SPELL: RAY OF SICKNESS (Wizard, 1st level, 2026-11-08; upcast added 2026-11-08): the attack roll is
+*comment already resolved by fight_cast_ray_of_sickness (combat.txt), which only calls this label after
+*comment check_success -- there is no miss branch here, a miss never reaches this label. The dice count reads
+*comment combat_cast_at_level (set by whichever option armed the cast: 1 or 2 so far) -- RAW's own upcast rule
+*comment is +1d8 per slot level above 1st, which is just "one more die than the slot level" (2d8 at 1st, 3d8 at
+*comment 2nd), so dice count = combat_cast_at_level + 1. A loop instead of fixed ros_d1/ros_d2 temps, since the
+*comment die count is no longer always two. resolve_player_hit still can't be reused here -- it only ever rolls
+*comment ONE die plus a flat bonus (combat_dice.txt) -- so this rolls and sums its own total directly, the same
+*comment shape resolve_dissonant_whispers (above) uses for its fixed 3d6. Still calls apply_poison_rider
+*comment (Poisoner's Robes) and apply_outgoing_damage_resist_vuln, same order resolve_player_hit itself uses, so
+*comment a poison-resistant or Poisoner's Robes-wearing caster works exactly as it would through the normal path.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_cast_ray_of_sickness
 *if (not(combat_ray_of_sickness_locked)) or (not(locked_combat_ray_of_sickness_page_id = page_id))
   *set combat_player_dmg_type "poison"
-  *temp ros_d1 0
-  *temp ros_d2 0
-  *rand ros_d1 1 8
-  *rand ros_d2 1 8
-  *set combat_player_dmg_dealt (ros_d1 + ros_d2)
-  *set combat_player_dmg_roll_banner "[b][🎲 Ray of Sickness: ${ros_d1}+${ros_d2} = ${combat_player_dmg_dealt}][/b]"
+  *temp ros_dice_count (combat_cast_at_level + 1)
+  *temp ros_total 0
+  *temp ros_dice_str ""
+  *temp ros_i 1
+  *label resolve_cast_ray_of_sickness_loop
+  *if (ros_i <= ros_dice_count)
+    *temp ros_die 0
+    *rand ros_die 1 8
+    *set ros_total + ros_die
+    *if (ros_i = 1)
+      *set ros_dice_str "${ros_die}"
+    *else
+      *set ros_dice_str "${ros_dice_str}+${ros_die}"
+    *set ros_i + 1
+    *goto resolve_cast_ray_of_sickness_loop
+  *set combat_player_dmg_dealt ros_total
+  *set combat_player_dmg_roll_banner "[b][🎲 Ray of Sickness: ${ros_dice_str} = ${combat_player_dmg_dealt}][/b]"
   *gosub_scene combat_dice apply_outgoing_damage_resist_vuln
   *gosub_scene combat_dice apply_poison_rider
   *set combat_enemy_hp - combat_player_dmg_dealt
@@ -643,12 +747,17 @@ ${combat_player_dmg_roll_banner}
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment SPELL: THUNDERWAVE (Wizard and Bard, 1st level, 2026-11-04): 2d8 thunder to every living enemy Engaged with the caster, Constitution save for half. RAW the wave fills a fifteen-foot cube
-*comment from the caster; this engine places combatants in bands rather than on a grid, so Engaged (range 0) is the honest reading, the same one Arms of Hadar uses above.
-*comment ONE 2d8 roll is shared by every target, RAW, and carries NO casting modifier -- the burst spells here are flat (Arms of Hadar's 2d6) while the single-target save spells add it (Dissonant
+*comment SPELL: THUNDERWAVE (Wizard and Bard, 1st level, 2026-11-04; upcast added 2026-11-08): 2d8 thunder (3d8 at
+*comment 2nd level, RAW +1d8 per slot level above 1st, same dice-count = combat_cast_at_level + 1 shape Ray of
+*comment Sickness uses) to every living enemy Engaged with the caster, Constitution save for half. RAW the wave
+*comment fills a fifteen-foot cube from the caster; this engine places combatants in bands rather than on a grid,
+*comment so Engaged (range 0) is the honest reading, the same one Arms of Hadar uses above.
+*comment ONE roll total is shared by every target, RAW, and carries NO casting modifier -- the burst spells here are flat (Arms of Hadar's 2d6) while the single-target save spells add it (Dissonant
 *comment Whispers). A target that FAILS is also driven back one range step: forced movement, no opportunity attack, Large or smaller only, and nothing moves at the back of the lane. That is the same
 *comment step Repelling Blast and Shove use (combat_movement combat_shift_target_range), so nothing new moves anybody.
-*comment Costs a slot of the caster's own pool, or the scroll when read instead (combat_scroll_id -- see fight_read_thunderwave, combat.txt; anyone can read it, so the slot branch below still asks
+*comment Costs a slot of the caster's own pool (spend_spell_slot picks the level from combat_cast_at_level), or
+*comment the scroll when read instead (combat_scroll_id -- see fight_read_thunderwave, combat.txt, which forces
+*comment combat_cast_at_level back to 1 first; anyone can read it, so the slot branch below still asks
 *comment character_class rather than assuming a wizard). Replay-locked (combat_cast_locked); the per-target lines are kept in combat_mm_banner_1..6, Magic Missile's per-slot banner fields, and
 *comment printed after the lock. combat_active_target is deliberately left on the last enemy the wave reached, exactly as Arms of Hadar leaves it, because fight_check_enemy_hp reads it on the way out.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -656,17 +765,27 @@ ${combat_player_dmg_roll_banner}
 *if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
   *if (not(combat_scroll_id = ""))
     *gosub_scene equipment spend_consumable combat_scroll_id
-  *elseif (character_class = "bard")
-    *set bard_spell_slots - 1
   *else
-    *set wizard_spell_slots - 1
-  *temp tw_d1 0
-  *temp tw_d2 0
-  *rand tw_d1 1 8
-  *rand tw_d2 1 8
-  *temp tw_total (tw_d1 + tw_d2)
-  *set combat_player_dmg_roll_banner "[b][🎲 Thunderwave: ${tw_d1}+${tw_d2} = ${tw_total} thunder][/b]"
+    *gosub spend_spell_slot character_class combat_cast_at_level
+  *temp tw_dice_count (combat_cast_at_level + 1)
+  *temp tw_total 0
+  *temp tw_dice_str ""
+  *temp tw_di 1
+  *label resolve_cast_thunderwave_dice_loop
+  *if (tw_di <= tw_dice_count)
+    *temp tw_die 0
+    *rand tw_die 1 8
+    *set tw_total + tw_die
+    *if (tw_di = 1)
+      *set tw_dice_str "${tw_die}"
+    *else
+      *set tw_dice_str "${tw_dice_str}+${tw_die}"
+    *set tw_di + 1
+    *goto resolve_cast_thunderwave_dice_loop
+  *set combat_player_dmg_roll_banner "[b][🎲 Thunderwave: ${tw_dice_str} = ${tw_total} thunder][/b]"
   *set combat_player_dmg_type "thunder"
+  *comment One-shot, cleared now -- everything in this cast that needed the level has already read it.
+  *set combat_cast_at_level 1
   *set combat_mm_banner_1 ""
   *set combat_mm_banner_2 ""
   *set combat_mm_banner_3 ""

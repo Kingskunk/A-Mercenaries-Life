@@ -667,6 +667,7 @@ button#statSidebar .turnRow,
 #statSidebar .orbs { display: inline-flex; gap: 5px; align-items: center; }
 #statSidebar .orb { width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #8fd0ff, #2b6aa8 60%, #123556); border: 1px solid #0b2036; }
 #statSidebar .orb.pact { background: radial-gradient(circle at 35% 30%, #e6b8ff, #8a3fb8 60%, #3b1458); border-color: #25093a; }
+#statSidebar .orb.lvl2 { background: radial-gradient(circle at 35% 30%, #9ff5e0, #1f9e86 60%, #0a3b32); border-color: #06241e; }
 #statSidebar .orb.heroic { background: radial-gradient(circle at 35% 30%, #fff1b8, #d8a521 60%, #6b4a08); border-color: #3e2a03; }
 #statSidebar .orb.used { background: #1a1a1a; border-color: var(--ch-line); }
 
@@ -1515,10 +1516,23 @@ button#statSidebar .turnRow,
     var resourceHtml = "";
     if (s.character_class === "wizard") {
       resourceHtml = slotRow("Spell Slots", s.wizard_spell_slots, s.wizard_spell_slots_max, "");
+      if (Number(s.wizard_spell_slots_max_2) > 0) {
+        resourceHtml += slotRow("2nd-Level Slots", s.wizard_spell_slots_2, s.wizard_spell_slots_max_2, " lvl2");
+      }
     } else if (s.character_class === "warlock") {
-      resourceHtml = slotRow("Pact Slots", s.warlock_spell_slots, s.warlock_spell_slots_max, " pact");
+      // Pact Magic (2026-11-08): not a second pool alongside the first -- at level 3 the existing slots convert
+      // wholesale to 2nd level (character_progression.txt's level-up grant zeroes the 1st-level max), so this
+      // shows whichever pool actually holds the slots rather than ever showing two pact rows at once.
+      if (Number(s.warlock_spell_slots_max_2) > 0) {
+        resourceHtml = slotRow("Pact Slots (2nd)", s.warlock_spell_slots_2, s.warlock_spell_slots_max_2, " pact");
+      } else {
+        resourceHtml = slotRow("Pact Slots", s.warlock_spell_slots, s.warlock_spell_slots_max, " pact");
+      }
     } else if (s.character_class === "bard") {
       resourceHtml = slotRow("Spell Slots", s.bard_spell_slots, s.bard_spell_slots_max, "");
+      if (Number(s.bard_spell_slots_max_2) > 0) {
+        resourceHtml += slotRow("2nd-Level Slots", s.bard_spell_slots_2, s.bard_spell_slots_max_2, " lvl2");
+      }
       if (Number(s.bard_inspiration_max) > 0 && true) {
         resourceHtml += "<div class=\"statRow\"><span>Inspiration</span><span>" + fmt(s.bard_inspiration_uses) + " / " + fmt(s.bard_inspiration_max) + "</span></div>";
       }
@@ -1715,9 +1729,9 @@ button#statSidebar .turnRow,
     // Turn Order, then the spellbook (unchanged inside), then quests and effects. Every class and data attribute the click, hover and spellbook code reads is kept.
     var sbClass = SB_CLASSES[s.character_class] ? s.character_class : "";
     var statsOrbs = "";
-    if (s.character_class === "wizard") statsOrbs = miniOrbs(s.wizard_spell_slots, s.wizard_spell_slots_max, "");
-    else if (s.character_class === "bard") statsOrbs = miniOrbs(s.bard_spell_slots, s.bard_spell_slots_max, "");
-    else if (s.character_class === "warlock") statsOrbs = miniOrbs(s.warlock_spell_slots, s.warlock_spell_slots_max, " pact");
+    if (s.character_class === "wizard") statsOrbs = miniOrbs(s.wizard_spell_slots, s.wizard_spell_slots_max, "") + miniOrbs(s.wizard_spell_slots_2, s.wizard_spell_slots_max_2, " lvl2");
+    else if (s.character_class === "bard") statsOrbs = miniOrbs(s.bard_spell_slots, s.bard_spell_slots_max, "") + miniOrbs(s.bard_spell_slots_2, s.bard_spell_slots_max_2, " lvl2");
+    else if (s.character_class === "warlock") statsOrbs = Number(s.warlock_spell_slots_max_2) > 0 ? miniOrbs(s.warlock_spell_slots_2, s.warlock_spell_slots_max_2, " pact") : miniOrbs(s.warlock_spell_slots, s.warlock_spell_slots_max, " pact");
     else if (s.character_class === "ranger") statsOrbs = miniOrbs(s.ranger_spell_slots, s.ranger_spell_slots_max, "");
     var SB_CASTERS = { wizard: 1, bard: 1, warlock: 1, ranger: 1 };
     var nonprofHtml = (isTruthy(s.armor_nonprof) || isTruthy(s.shield_nonprof)) ? "<div class=\"timePeriod\" title=\"Your class is not trained in this gear: disadvantage on STR and DEX rolls" + (SB_CASTERS[s.character_class] ? ", and no spellcasting while it is worn" : "") + "\" style=\"color:var(--ch-warn);font-style:normal;\">&#9888; " + (isTruthy(s.armor_nonprof) && isTruthy(s.shield_nonprof) ? "Armor &amp; shield" : (isTruthy(s.shield_nonprof) ? "Shield" : "Armor")) + ": not proficient</div>" : "";

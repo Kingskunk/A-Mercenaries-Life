@@ -599,7 +599,7 @@ ${combat_player_dmg_roll_banner}
   *comment Arming reserves neither resource. If the wizard spent their last slot on another spell or used their
   *comment reaction on an opportunity attack after arming, the held Shield is no longer executable.
   *if (shield_armed)
-    *if ((wizard_spell_slots <= 0) or (player_oa_used))
+    *if (((wizard_spell_slots <= 0) and (wizard_spell_slots_2 <= 0)) or (player_oa_used))
       *set shield_armed false
   *comment Shield is a reaction "when you are hit", but it should only spend its slot when the +5 can actually
   *comment change that hit to a miss. A hit that still meets the Shielded AC (or a natural 20) leaves Shield
@@ -615,10 +615,16 @@ ${combat_player_dmg_roll_banner}
       *else
         *set cea_shield_can_block true
   *gosub combat_can_react "player" 0
-  *if (((((cea_shield_can_block) and (shield_armed)) and (not(shield_active))) and (combat_can_react_ok)) and (wizard_spell_slots > 0))
+  *if (((((cea_shield_can_block) and (shield_armed)) and (not(shield_active))) and (combat_can_react_ok)) and ((wizard_spell_slots > 0) or (wizard_spell_slots_2 > 0)))
     *set shield_armed false
     *set shield_active true
-    *set wizard_spell_slots - 1
+    *comment UPCASTING (2026-11-08, the user's call): no mechanical difference at 2nd level -- Shield's only
+    *comment reason to spend a higher slot is not wasting the cast when the 1st-level pool is already empty, so
+    *comment this prefers it and only falls back to the 2nd-level pool when it has nothing left.
+    *temp cea_shield_level 1
+    *if (wizard_spell_slots <= 0)
+      *set cea_shield_level 2
+    *gosub_scene combat_spells spend_spell_slot "wizard" cea_shield_level
     *set player_oa_used true
     *set combat_shield_triggered true
     *set cea_dc (cea_dc + 5)

@@ -361,6 +361,11 @@ Cast, read your abilities, or change interface settings. Rest and Wait are in th
 *if (combat_engaged)
   *set spell_cast_toast "You cannot work a spell like this in the middle of a fight."
   *finish
+*comment UPCASTING (2026-11-08): this quick-cast path never offers a level choice -- forced to 1st level always,
+*comment regardless of what a stale combat_cast_at_level might otherwise hold. The in-combat "False Life: 2nd
+*comment level" option is the only way to spend a better slot on it; see [[project_spell_upcasting]] memory for
+*comment why this one was deliberately left out of scope.
+*set combat_cast_at_level 1
 *gosub_scene combat_spells false_life_cast_check
 *if (false_life_can_cast)
   *gosub_scene combat_spells cast_false_life
@@ -818,13 +823,16 @@ You change into it and settle the fit.
   [b]◈ 1ST-LEVEL SPELLS & SLOT TRACKER[/b]
   *if (not(wizard_spell = "none"))
     *line_break
-    • [b]Wizard Spell Slots: ${wizard_spell_slots}/${wizard_spell_slots_max}[/b] — a Short Rest restores half the pool, rounded up; a Long Rest restores all. Arcane Recovery may restore additional slots once per Long Rest.
+    • [b]Wizard Spell Slots: ${wizard_spell_slots}/${wizard_spell_slots_max}@{(wizard_spell_slots_max_2 > 0)  · · 2nd: ${wizard_spell_slots_2}/${wizard_spell_slots_max_2}|}[/b] — a Short Rest restores half each pool, rounded up; a Long Rest restores all. Arcane Recovery may restore additional slots once per Long Rest.
   *if (not(warlock_spell = "none"))
     *line_break
-    • [b]Warlock Pact Magic Slots: ${warlock_spell_slots}/${warlock_spell_slots_max}[/b] — a Short or Long Rest restores all.
+    *if (warlock_spell_slots_max_2 > 0)
+      • [b]Warlock Pact Magic Slots: ${warlock_spell_slots_2}/${warlock_spell_slots_max_2} (2nd level)[/b] — a Short or Long Rest restores all.
+    *else
+      • [b]Warlock Pact Magic Slots: ${warlock_spell_slots}/${warlock_spell_slots_max}[/b] — a Short or Long Rest restores all.
   *if (((not(bard_spell = "none")) or (not(bard_spell_2 = "none"))) or (not(bard_spell_3 = "none")))
     *line_break
-    • [b]Bard Spell Slots: ${bard_spell_slots}/${bard_spell_slots_max}[/b] — a Short Rest restores half the pool, rounded up; a Long Rest restores all.
+    • [b]Bard Spell Slots: ${bard_spell_slots}/${bard_spell_slots_max}@{(bard_spell_slots_max_2 > 0)  · · 2nd: ${bard_spell_slots_2}/${bard_spell_slots_max_2}|}[/b] — a Short Rest restores half each pool, rounded up; a Long Rest restores all.
   *if (not(ranger_spell = "none"))
     *line_break
     • [b]Ranger Spell Slots: ${ranger_spell_slots}/${ranger_spell_slots_max}[/b] — a Short Rest restores half the pool, rounded up; a Long Rest restores all.
@@ -881,7 +889,7 @@ You change into it and settle the fit.
   A thin, pale ray of unnatural cold that saps warmth and slows whatever it strikes.
 *if (ability_id = "ray_of_sickness")
   *line_break
-  • [b]Ray of Sickness — Combat: Action · Medium Reach · Spell Attack · 2d8 Poison.[/b] On a hit, the target also has disadvantage on its next attack.
+  • [b]Ray of Sickness — Combat: Action · Medium Reach · Spell Attack · 2d8 Poison.[/b] On a hit, the target also has disadvantage on its next attack. Cast with a 2nd-level slot for 3d8 instead.
   A sickly green ray of raw Necromancy that leaves whatever it strikes nauseated and reeling long after it fades.
 *if (ability_id = "booming_blade")
   *line_break
@@ -969,7 +977,7 @@ You change into it and settle the fit.
   A shell of unseen magical force laid over your skin each morning, standing in for the armor a wizard's training never included.
 *if (ability_id = "shield")
   *line_break
-  • [b]Shield — Combat reaction.[/b] Arm it for free. When an incoming hit can be turned into a miss by +5 AC, it automatically spends one Wizard slot and your reaction; the +5 AC then lasts until your next turn. It does not waste the slot on an attack that already misses or is too high to stop.
+  • [b]Shield — Combat reaction.[/b] Arm it for free. When an incoming hit can be turned into a miss by +5 AC, it automatically spends one Wizard slot and your reaction; the +5 AC then lasts until your next turn. It does not waste the slot on an attack that already misses or is too high to stop. Spends a 2nd-level slot instead when your 1st-level pool is already empty — no stronger effect, just a fallback so the reaction isn't lost.
   An instinctive, reflexive barrier of invisible arcane force that flares to life in a split second.
 *if (ability_id = "absorb_elements")
   *line_break
@@ -977,11 +985,11 @@ You change into it and settle the fit.
   A reflex ward held coiled and ready, turning an element's own energy aside and carrying a share of it into your next blow.
 *if (ability_id = "magic_missile")
   *line_break
-  • [b]Magic Missile — Combat: Action · Long Reach.[/b] Allocate three darts among up to three enemies in the sidebar. Each dart automatically hits for 1d4+1 Force damage; no attack roll is made.
+  • [b]Magic Missile — Combat: Action · Long Reach.[/b] Allocate three darts among up to three enemies in the sidebar. Each dart automatically hits for 1d4+1 Force damage; no attack roll is made. Cast with a 2nd-level slot instead for a fourth dart.
   Three luminous darts of unerring magical force that strike with absolute certainty, bypassing armor, cover, and evasive dodges.
 *if (ability_id = "false_life")
   *line_break
-  • [b]False Life — Action · Self · 12 hours.[/b] Gain 1d4+4 temporary HP. Temporary HP does not stack, so it cannot be cast while any remains. Cast in combat or from the sidebar; Fiendish Vigor removes the slot cost.
+  • [b]False Life — Action · Self · 12 hours.[/b] Gain 1d4+4 temporary HP, +5 more for each slot level above 1st in combat. Temporary HP does not stack, so it cannot be cast while any remains. Cast in combat or from the sidebar (sidebar cast is always 1st level); Fiendish Vigor removes the slot cost.
   A grim, necromantic rite that bolsters your body with a necromantic facsimile of life.
 *if (ability_id = "hex")
   *line_break
@@ -1017,7 +1025,7 @@ You change into it and settle the fit.
   A whispered dissonance planted directly in one mind, discordant enough that the target flinches and recoils before it understands why.
 *if (ability_id = "thunderwave")
   *line_break
-  • [b]Thunderwave — Combat: Action · every living enemy Engaged with you · Constitution Save (DC ${spell_save_dc}).[/b] Deals 2d8 Thunder damage on a failed save, half on a success, from one shared roll. Each enemy that fails is also driven back one range step, forced movement with no opportunity attack, if it is Large or smaller and has anywhere to go.
+  • [b]Thunderwave — Combat: Action · every living enemy Engaged with you · Constitution Save (DC ${spell_save_dc}).[/b] Deals 2d8 Thunder damage on a failed save, half on a success, from one shared roll. Each enemy that fails is also driven back one range step, forced movement with no opportunity attack, if it is Large or smaller and has anywhere to go. Cast with a 2nd-level slot for 3d8 instead.
   A wave of thunderous force that rolls out from you in every direction, hard enough to lift what it catches off its feet.
 *if (ability_id = "bane")
   *line_break
@@ -1045,7 +1053,7 @@ You change into it and settle the fit.
   One creature becomes the point the whole fight turns on, and you do not lose it.
 *if (ability_id = "cause_fear")
   *line_break
-  • [b]Cause Fear — Combat: Action · Medium Reach · Wisdom Save (DC ${spell_save_dc}) · up to 10 rounds.[/b] On failure the target's attacks have disadvantage and it will not move closer. It repeats the save after each turn and ends the effect on success.
+  • [b]Cause Fear — Combat: Action · Medium Reach · Wisdom Save (DC ${spell_save_dc}) · up to 10 rounds.[/b] On failure the target's attacks have disadvantage and it will not move closer. It repeats the save after each turn and ends the effect on success. Cast with a 2nd-level slot to choose a second target in the sidebar.
   A whispered dread, planted straight into one mind.
 *if (ability_id = "hellish_rebuke")
   *line_break

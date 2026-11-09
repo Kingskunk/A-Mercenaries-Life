@@ -2513,7 +2513,7 @@
 *comment be spent after arming (for example, Magic Missile or an opportunity attack), so retire the stale arm before
 *comment the hub advertises +5 AC or decides which free options remain available.
 *if (shield_armed)
-  *if ((wizard_spell_slots <= 0) or (player_oa_used))
+  *if (((wizard_spell_slots <= 0) and (wizard_spell_slots_2 <= 0)) or (player_oa_used))
     *set shield_armed false
 *if (absorb_elements_armed)
   *temp cae_still_ok false
@@ -2701,9 +2701,22 @@
 *comment mage_armor_cast_check holds every rule (armor worn, already up, no slot) and reports through the mage_armor_* globals; this only asks whether the action is there and the check says yes.
 *temp combat_can_false_life false
 *if (combat_player_actions_left > 0)
+  *set combat_cast_at_level 1
   *gosub_scene combat_spells false_life_cast_check
   *if (false_life_can_cast)
     *set combat_can_false_life true
+*comment UPCASTING (2026-11-08): a SEPARATE gate, not combat_can_false_life reused -- false_life_cast_check
+*comment reports whichever ONE cost type applies (free beats slot beats scroll, see its own header), so this
+*comment must force combat_cast_at_level to 2 and ask again to find out whether a 2nd-level slot specifically
+*comment is what's available; a Fiendish Vigor warlock (always "free") never sees this option, matching RAW --
+*comment an at-will innate cast is never upcast.
+*temp combat_can_false_life_2 false
+*if (combat_player_actions_left > 0)
+  *set combat_cast_at_level 2
+  *gosub_scene combat_spells false_life_cast_check
+  *if ((false_life_can_cast) and (false_life_cost = "slot"))
+    *set combat_can_false_life_2 true
+  *set combat_cast_at_level 1
 *temp combat_can_mage_armor false
 *if (combat_player_actions_left > 0)
   *gosub_scene equipment mage_armor_cast_check
@@ -2781,7 +2794,7 @@
 *comment the wizard still knows it and has both a spell slot and their reaction. shield_active is excluded because
 *comment the existing cast already lasts until the start of the wizard's next turn.
 *temp combat_can_shield false
-*if ((((((character_class = "wizard") and (known_shield)) and (wizard_spell_slots > 0)) and (not(shield_armed))) and (not(shield_active))) and (not(player_oa_used)))
+*if ((((((character_class = "wizard") and (known_shield)) and ((wizard_spell_slots > 0) or (wizard_spell_slots_2 > 0))) and (not(shield_armed))) and (not(shield_active))) and (not(player_oa_used)))
   *set combat_can_shield true
 *comment Absorb Elements (2026-11-08): a reaction like Shield, held for free until an incoming hit of one of its
 *comment five types can actually spend it. Wizard and Ranger share the spell, each off their own slot pool.
@@ -2830,6 +2843,21 @@
   *temp ccf_now {(("combat_enemy" & combat_active_target) & "_frightened")}
   *if ((ccf_slots > 0) and (ccf_now <= 0))
     *set combat_can_fear true
+*comment UPCASTING (2026-11-08, the user's call): the 2nd-level cast lets the player target a second creature,
+*comment RAW ("one additional creature for each slot level above 1st") -- the same per-target allocation sidebar
+*comment Magic Missile's darts use (fight_target_cause_fear, combat_mm_darts_1..6), not an automatic every-enemy
+*comment burst like Bane/Thunderwave, since the caster explicitly chooses who. Doesn't gate on a SPECIFIC
+*comment target's frightened state the way the 1st-level option does -- resolve_cast_cause_fear skips an
+*comment ineligible one per-slot when it actually resolves, matching how Magic Missile validates at cast time.
+*temp combat_can_fear_2 false
+*if ((combat_player_actions_left > 0) and (known_cause_fear))
+  *temp ccf_slots_2 0
+  *if (character_class = "wizard")
+    *set ccf_slots_2 wizard_spell_slots_2
+  *if (character_class = "warlock")
+    *set ccf_slots_2 warlock_spell_slots_2
+  *if (ccf_slots_2 > 0)
+    *set combat_can_fear_2 true
 *comment Grease (Wizard, 2026-11-04): a wizard slot, an unspent action, the spell carried, and a living target whose footing is not already slick. The slick spreads under everything standing in the
 *comment target's own range band, so the gate only has to ask about the target itself -- resolve_cast_grease finds the rest.
 *temp combat_can_grease false
@@ -2851,6 +2879,20 @@
     *gosub combat_hadar_check
     *if (combat_hadar_ok)
       *set combat_can_thunderwave true
+*comment UPCASTING (2026-11-08): same shape as Ray of Sickness's own two gates -- a separate check against each
+*comment class's _2 pool, not combat_can_thunderwave reused, since that one only ever asks about the 1st-level
+*comment pool.
+*temp combat_can_thunderwave_2 false
+*if ((combat_player_actions_left > 0) and (known_thunderwave))
+  *temp ctw_slots_2 0
+  *if (character_class = "wizard")
+    *set ctw_slots_2 wizard_spell_slots_2
+  *if (character_class = "bard")
+    *set ctw_slots_2 bard_spell_slots_2
+  *if (ctw_slots_2 > 0)
+    *gosub combat_hadar_check
+    *if (combat_hadar_ok)
+      *set combat_can_thunderwave_2 true
 *temp combat_can_dual_shot false
 *if (((combat_can_attack) and (fighting_style = "dual_shot")) and (weapon_type = "ranged"))
   *gosub combat_dual_shot_check
@@ -3767,58 +3809,17 @@
       *goto fight_check_enemy_hp
 
   *if ((((((combat_player_actions_left > 0) and (character_class = "wizard")) and (known_ray_of_sickness)) and (wizard_spell_slots > 0)) and (spell_reach_ok_ray_of_sickness)) and (not(spells_blocked)))
-    # [b][ACTION][/b] [b][Ray of Sickness][/b] Loose a sickly green ray of poison at ${combat_med_epithet}.
-      *comment Not a cantrip -- costs a wizard slot, RAW -- so it gets its own two-layer lock shape (startup_parts/
-      *comment 31_combat_engine_state.txt has the full reasoning), the same one Dissonant Whispers uses, rather than
-      *comment sharing combat_cantrip_choice_locked with Fire Bolt/Ray of Frost/friends.
-      *if (not(combat_ros_choice_locked)) or (not(locked_combat_ros_choice_page_id = page_id))
-        *gosub_scene combat_movement fight_pick_target
-        *gosub_scene combat_movement fight_retarget_by_class "medium"
-        *set combat_current_spell_id "ray_of_sickness"
-        *gosub_scene combat_prose pick_spell_flavor
-        *comment Slot spent on cast, RAW, win or miss -- same as Grease/Dissonant Whispers (combat_spells.txt).
-        *set wizard_spell_slots - 1
-        *set check_stat "int"
-        *set check_dc combat_enemy_ac
-        *set check_skill "Ray of Sickness"
-        *set check_add_prof_bonus true
-        *gosub spell_range_of
-        *gosub combat_apply_player_ranged_terrain
-        *if (spell_penalty_result)
-          *set disadvantage true
-          *set combat_reach_pinned true
-        *gosub combat_hidden_attack_roll
-        *gosub_scene dice_engine roll_d20_check
-        *if (check_success)
-          *comment 2d8 Poison needs two real dice, which resolve_player_hit cannot roll (one die plus a flat bonus
-          *comment only) -- resolve_cast_ray_of_sickness (combat_spells.txt) rolls its own total instead, the same
-          *comment shape resolve_dissonant_whispers uses for its 3d6.
-          *gosub_scene combat_spells resolve_cast_ray_of_sickness
-          *comment Poisoned (RAW: disadvantage on attack rolls AND ability checks, until the end of the caster's
-          *comment next turn) -- only the attack-roll half is modeled, reusing the same per-slot disadvantage flag
-          *comment Vicious Mockery sets above, which is already consumed and cleared on this enemy's own very next
-          *comment attack roll (resolve_enemy_attack, combat_dice.txt) -- exactly the "until your next turn" window,
-          *comment since the enemy only gets the one turn in between.
-          *set {(("combat_enemy" & combat_active_target) & "_disadvantage")} true
-          *if (combat_enemy_hp <= 0)
-            *gosub_scene combat_prose pick_spell_death_flavor
-        *set combat_ros_choice_locked true
-        *set locked_combat_ros_choice_page_id page_id
-      *if (check_success)
-        *if (combat_enemy_hp <= 0)
-          ${fdh}
-          *line_break
-          [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Poison damage${combat_outgoing_dmg_suffix}][/b]
-        *else
-          ${fsh}
-          *line_break
-          [b][☣️ Ray of Sickness: Hit | ${combat_player_dmg_dealt} Poison damage${combat_outgoing_dmg_suffix} | ⚠️ Poisoned — disadvantage on ${combat_enemy_epithet}'s next attack][/b]
-      *else
-        ${fsm}
-        *line_break
-        [b][💨 Miss][/b]
-      *line_break
-      *goto fight_check_enemy_hp
+    # [b][ACTION][/b] [b][Ray of Sickness: 1st level][/b] Loose a sickly green ray of poison at ${combat_med_epithet}.
+      *set combat_cast_at_level 1
+      *goto fight_cast_ray_of_sickness
+
+  *if ((((((combat_player_actions_left > 0) and (character_class = "wizard")) and (known_ray_of_sickness)) and (wizard_spell_slots_2 > 0)) and (spell_reach_ok_ray_of_sickness)) and (not(spells_blocked)))
+    # [b][ACTION][/b] [b][Ray of Sickness: 2nd level][/b] An empowered ray of poison: 3d8 instead of 2d8.
+      *comment UPCASTING (2026-11-08): unlike Magic Missile's extra dart, Ray of Sickness's upcast changes the
+      *comment damage FORMULA itself (RAW: +1d8 per slot level above 1st) -- resolve_cast_ray_of_sickness
+      *comment (combat_spells.txt) reads combat_cast_at_level to decide how many d8 to roll.
+      *set combat_cast_at_level 2
+      *goto fight_cast_ray_of_sickness
 
   *if (((((combat_player_actions_left > 0) and (combat_melee_reach)) and (known_shocking_grasp))) and (not(spells_blocked)))
     *comment TOUCH reach (tools/spell_catalog.json: "shocking_grasp" is range "touch"), so it is only usable against
@@ -4085,13 +4086,34 @@
       *goto fight_check_enemy_hp
 
   *if ((((combat_player_actions_left > 0) and (((character_class = "wizard") and (known_magic_missile)) and (wizard_spell_slots > 0)))) and (not(spells_blocked)))
-    # [b][ACTION][/b] [b][Magic Missile][/b] Loose three darts of force at targets you choose in the sidebar.
+    # [b][ACTION][/b] [b][Magic Missile: 1st level][/b] Loose three darts of force at targets you choose in the sidebar.
       *comment Arms targeting mode instead of casting immediately (2026-09-28) -- RAW lets the three darts be
       *comment split across up to three targets, not forced onto whichever single enemy fight_pick_target's
       *comment kill-priority happens to favor. See fight_target_magic_missile's own header for the full shape;
       *comment this option's only job is to enter it with a clean slate.
       *set combat_mm_targeting_active true
       *set combat_mm_darts_max 3
+      *set combat_cast_at_level 1
+      *set combat_mm_darts_1 0
+      *set combat_mm_darts_2 0
+      *set combat_mm_darts_3 0
+      *set combat_mm_darts_4 0
+      *set combat_mm_darts_5 0
+      *set combat_mm_darts_6 0
+      *goto fight_target_magic_missile
+
+  *if ((((combat_player_actions_left > 0) and (((character_class = "wizard") and (known_magic_missile)) and (wizard_spell_slots_2 > 0)))) and (not(spells_blocked)))
+    # [b][ACTION][/b] [b][Magic Missile: 2nd level][/b] Loose four darts of force, spending a 2nd-level slot.
+      *comment UPCASTING PILOT (2026-11-08): Magic Missile's whole upcast, RAW, is "+1 dart per slot level above
+      *comment 1st" -- no change to the per-dart damage math (still 1d4+1 each, resolve_magic_missile,
+      *comment combat_spells.txt), so proving the slot-pool model end to end needed only a second entry point that
+      *comment arms one more dart and sets combat_cast_at_level, which resolve_magic_missile reads to decide which
+      *comment pool it spends from. A second menu option rather than a level picker, since the BG3-style toggle
+      *comment that will replace this is explicitly a later piece (see the model-scoping discussion) -- this just
+      *comment needs to be castable and correct in the meantime, not the final UI.
+      *set combat_mm_targeting_active true
+      *set combat_mm_darts_max 4
+      *set combat_cast_at_level 2
       *set combat_mm_darts_1 0
       *set combat_mm_darts_2 0
       *set combat_mm_darts_3 0
@@ -4132,9 +4154,22 @@
       *goto fight_action_spent
 
   *if ((combat_can_false_life) and (not(spells_blocked)))
-    # [b][ACTION][/b] [b][False Life][/b] Weave a necromantic shroud over your flesh: 1d4 + 4 temporary hit points for 12 hours.
+    # [b][ACTION][/b] [b][False Life: 1st level][/b] Weave a necromantic shroud over your flesh: 1d4 + 4 temporary hit points for 12 hours.
+      *set combat_cast_at_level 1
       *gosub_scene combat_spells resolve_cast_false_life
       You murmur a dark necromantic rite. A numb, leathery vitality spreads beneath your skin, insulating your muscles against immediate harm.
+      *line_break
+      [b][✨ False Life: +${combat_cast_result} Temporary Hit Points for 12 hours][/b]
+      *line_break
+      *goto fight_action_spent
+
+  *if ((combat_can_false_life_2) and (not(spells_blocked)))
+    # [b][ACTION][/b] [b][False Life: 2nd level][/b] An empowered shroud: 1d4 + 9 temporary hit points for 12 hours.
+      *comment UPCASTING (2026-11-08, RAW): +5 temp HP per slot level above 1st -- cast_false_life
+      *comment (combat_spells.txt) reads combat_cast_at_level for the actual math, this just arms it.
+      *set combat_cast_at_level 2
+      *gosub_scene combat_spells resolve_cast_false_life
+      You murmur a dark necromantic rite, holding the working open a beat longer to draw in more than it would give up freely. A numb, leathery vitality spreads beneath your skin, insulating your muscles against immediate harm.
       *line_break
       [b][✨ False Life: +${combat_cast_result} Temporary Hit Points for 12 hours][/b]
       *line_break
@@ -4178,13 +4213,30 @@
       *goto fight_check_enemy_hp
 
   *if ((((combat_can_fear) and (spell_reach_ok_cause_fear))) and (not(spells_blocked)))
-    # [b][ACTION][/b] [b][Cause Fear][/b] Plant a whispered dread in ${combat_med_epithet}.@{show_stat_hints  [Wisdom Save]|}
+    # [b][ACTION][/b] [b][Cause Fear: 1st level][/b] Plant a whispered dread in ${combat_med_epithet}.@{show_stat_hints  [Wisdom Save]|}
+      *set combat_cast_at_level 1
       *gosub_scene combat_movement fight_pick_target
       *gosub_scene combat_movement fight_retarget_by_class "medium"
       *gosub_scene combat_prose flavor_cause_fear
       *line_break
       *gosub_scene combat_spells resolve_cast_cause_fear
       *goto fight_action_spent
+
+  *if ((combat_can_fear_2) and (not(spells_blocked)))
+    # [b][ACTION][/b] [b][Cause Fear: 2nd level][/b] Plant a whispered dread in up to two creatures you choose in the sidebar.
+      *comment UPCASTING (2026-11-08): arms the same per-target allocation sidebar Magic Missile's darts use --
+      *comment one "dart" per target here just means "frighten this one", not stacked damage, so
+      *comment resolve_cast_cause_fear (combat_spells.txt) only checks whether a slot has >0, never how many.
+      *set combat_mm_targeting_active true
+      *set combat_mm_darts_max 2
+      *set combat_cast_at_level 2
+      *set combat_mm_darts_1 0
+      *set combat_mm_darts_2 0
+      *set combat_mm_darts_3 0
+      *set combat_mm_darts_4 0
+      *set combat_mm_darts_5 0
+      *set combat_mm_darts_6 0
+      *goto fight_target_cause_fear
 
   *if (((combat_can_grease) and (spell_reach_ok_grease)) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Grease][/b] Slick the ground under ${combat_med_epithet} and whatever is standing with it.@{show_stat_hints  [Dexterity Save, Prone]|}
@@ -4196,7 +4248,18 @@
       *goto fight_action_spent
 
   *if ((combat_can_thunderwave) and (not(spells_blocked)))
-    # [b][ACTION][/b] [b][Thunderwave][/b] A wave of thunder rolls out from you and throws back whatever stands too close.@{show_stat_hints  [Constitution Save, 2d8 Thunder, Push]|}
+    # [b][ACTION][/b] [b][Thunderwave: 1st level][/b] A wave of thunder rolls out from you and throws back whatever stands too close.@{show_stat_hints  [Constitution Save, 2d8 Thunder, Push]|}
+      *set combat_cast_at_level 1
+      *gosub_scene combat_prose flavor_thunderwave
+      *line_break
+      *gosub_scene combat_spells resolve_cast_thunderwave
+      *goto fight_check_enemy_hp
+
+  *if ((combat_can_thunderwave_2) and (not(spells_blocked)))
+    # [b][ACTION][/b] [b][Thunderwave: 2nd level][/b] An empowered wave of thunder: 3d8 instead of 2d8.@{show_stat_hints  [Constitution Save, 3d8 Thunder, Push]|}
+      *comment UPCASTING (2026-11-08, RAW): +1d8 per slot level above 1st -- resolve_cast_thunderwave
+      *comment (combat_spells.txt) reads combat_cast_at_level for the dice count, same shape Ray of Sickness uses.
+      *set combat_cast_at_level 2
       *gosub_scene combat_prose flavor_thunderwave
       *line_break
       *gosub_scene combat_spells resolve_cast_thunderwave
@@ -5070,6 +5133,8 @@ ${use_text}
 *label fight_read_can_false_life
 *set combat_read_ok false
 *set combat_scroll_id "scroll_false_life"
+*comment A scroll is always written at its base level, same as every other scroll in this game.
+*set combat_cast_at_level 1
 *gosub_scene combat_spells false_life_cast_check
 *set combat_scroll_id ""
 *if (false_life_can_cast)
@@ -5080,6 +5145,8 @@ ${use_text}
 *label fight_read_magic_missile
 *set combat_mm_targeting_active true
 *set combat_mm_darts_max 3
+*comment A scroll is always written at its base level -- RAW, you can't upcast from a scroll unless it says so, and none here do.
+*set combat_cast_at_level 1
 *set combat_mm_darts_1 0
 *set combat_mm_darts_2 0
 *set combat_mm_darts_3 0
@@ -5122,6 +5189,7 @@ You unfold the greasy slip and read the smeared line aloud, and the ground under
 
 *comment Thunderwave read from a scroll: no individual target, exactly like Bane above -- resolve_cast_thunderwave picks every Engaged enemy itself.
 *label fight_read_thunderwave
+*set combat_cast_at_level 1
 You unroll the humming strip and read the line aloud, and the sound does not stop at sound: it rolls out of you as a wall of hard air.
 *line_break
 *gosub_scene combat_spells resolve_cast_thunderwave
@@ -5136,6 +5204,7 @@ You untie the cord and read the columns aloud. A pressure settles over your skin
 *goto fight_action_spent
 
 *label fight_read_false_life
+*set combat_cast_at_level 1
 *gosub_scene combat_spells resolve_cast_false_life
 You unroll the pale sheet and read it aloud. A numb, leathery vitality spreads beneath your skin, insulating your muscles against immediate harm.
 *line_break
@@ -5179,6 +5248,65 @@ You unroll the pale sheet and read it aloud. A numb, leathery vitality spreads b
     *line_break
     *goto fight_round_hub
 
+*comment Reached only via *goto, from either Ray of Sickness option above -- combat_cast_at_level is already set
+*comment (1 or 2) by whichever one armed this. Same two-layer lock shape Dissonant Whispers uses: this label's
+*comment own combat_ros_choice_locked guards fight_pick_target/the attack roll/the slot spend; resolve_cast_
+*comment ray_of_sickness's own combat_ray_of_sickness_locked (combat_spells.txt) guards only its damage math.
+*label fight_cast_ray_of_sickness
+*if (not(combat_ros_choice_locked)) or (not(locked_combat_ros_choice_page_id = page_id))
+  *gosub_scene combat_movement fight_pick_target
+  *gosub_scene combat_movement fight_retarget_by_class "medium"
+  *set combat_current_spell_id "ray_of_sickness"
+  *gosub_scene combat_prose pick_spell_flavor
+  *comment Slot spent on cast, RAW, win or miss -- same as Grease/Dissonant Whispers (combat_spells.txt).
+  *comment spend_spell_slot (combat_spells.txt) picks the pool from combat_cast_at_level.
+  *gosub_scene combat_spells spend_spell_slot "wizard" combat_cast_at_level
+  *set check_stat "int"
+  *set check_dc combat_enemy_ac
+  *set check_skill "Ray of Sickness"
+  *set check_add_prof_bonus true
+  *gosub spell_range_of
+  *gosub combat_apply_player_ranged_terrain
+  *if (spell_penalty_result)
+    *set disadvantage true
+    *set combat_reach_pinned true
+  *gosub combat_hidden_attack_roll
+  *gosub_scene dice_engine roll_d20_check
+  *if (check_success)
+    *comment 2d8 Poison (3d8 at 2nd level) needs real dice, which resolve_player_hit cannot roll (one die plus a
+    *comment flat bonus only) -- resolve_cast_ray_of_sickness (combat_spells.txt) rolls its own total instead,
+    *comment reading combat_cast_at_level for the dice count, same shape resolve_dissonant_whispers uses for 3d6.
+    *gosub_scene combat_spells resolve_cast_ray_of_sickness
+    *comment Poisoned (RAW: disadvantage on attack rolls AND ability checks, until the end of the caster's
+    *comment next turn) -- only the attack-roll half is modeled, reusing the same per-slot disadvantage flag
+    *comment Vicious Mockery sets above, which is already consumed and cleared on this enemy's own very next
+    *comment attack roll (resolve_enemy_attack, combat_dice.txt) -- exactly the "until your next turn" window,
+    *comment since the enemy only gets the one turn in between.
+    *set {(("combat_enemy" & combat_active_target) & "_disadvantage")} true
+    *if (combat_enemy_hp <= 0)
+      *gosub_scene combat_prose pick_spell_death_flavor
+  *comment Reset last -- resolve_cast_ray_of_sickness has already read it by now if this was a hit; a miss never
+  *comment needed it past the slot-spend above. One-shot, cleared either way, same idiom combat_player_extra_
+  *comment dmg_dice_sides uses (combat_dice.txt).
+  *set combat_cast_at_level 1
+  *set combat_ros_choice_locked true
+  *set locked_combat_ros_choice_page_id page_id
+*if (check_success)
+  *if (combat_enemy_hp <= 0)
+    ${fdh}
+    *line_break
+    [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Poison damage${combat_outgoing_dmg_suffix}][/b]
+  *else
+    ${fsh}
+    *line_break
+    [b][☣️ Ray of Sickness: Hit | ${combat_player_dmg_dealt} Poison damage${combat_outgoing_dmg_suffix} | ⚠️ Poisoned — disadvantage on ${combat_enemy_epithet}'s next attack][/b]
+*else
+  ${fsm}
+  *line_break
+  [b][💨 Miss][/b]
+*line_break
+*goto fight_check_enemy_hp
+
 *label fight_target_magic_missile
 *choice
   # Cast Magic Missile.
@@ -5206,6 +5334,41 @@ You unroll the pale sheet and read it aloud. A numb, leathery vitality spreads b
   # Cancel targeting.
     *comment Free -- arming and allocating cost nothing; only an actual cast does (fight_pick_target above
     *comment hasn't run yet, wizard_spell_slots hasn't been spent, no action or bonus action was touched).
+    *set combat_mm_targeting_active false
+    *set combat_mm_darts_1 0
+    *set combat_mm_darts_2 0
+    *set combat_mm_darts_3 0
+    *set combat_mm_darts_4 0
+    *set combat_mm_darts_5 0
+    *set combat_mm_darts_6 0
+    You let the working dissolve, unspent.
+    *line_break
+    *goto fight_round_hub
+
+*comment UPCASTING (2026-11-08): Cause Fear's 2nd-level targeting menu, reached only via *goto from the
+*comment "Cause Fear: 2nd level" option above. Same shape as fight_target_magic_missile, reusing its dart
+*comment sidebar and combat_mm_recount_darts, but a "dart" here just marks "frighten this one" -- there is no
+*comment damage to sum, so resolve_cast_cause_fear only checks each slot for >0, never how many. Ends at
+*comment fight_action_spent, not fight_check_enemy_hp, matching the 1st-level option -- nobody's HP ever changes.
+*label fight_target_cause_fear
+*choice
+  # Cast Cause Fear.
+    *gosub combat_mm_recount_darts
+    *if (combat_mm_darts_total <= 0)
+      No targets are chosen yet. Click an enemy in the sidebar to mark it, then cast.
+      *line_break
+      *goto fight_target_cause_fear
+    *set combat_mm_targeting_active false
+    *gosub_scene combat_spells resolve_cast_cause_fear
+    *set combat_mm_darts_1 0
+    *set combat_mm_darts_2 0
+    *set combat_mm_darts_3 0
+    *set combat_mm_darts_4 0
+    *set combat_mm_darts_5 0
+    *set combat_mm_darts_6 0
+    *goto fight_action_spent
+  # Cancel targeting.
+    *comment Free -- arming and marking targets cost nothing; only an actual cast does.
     *set combat_mm_targeting_active false
     *set combat_mm_darts_1 0
     *set combat_mm_darts_2 0

@@ -113,6 +113,13 @@
     *set warlock_spell_slots_max 3
   *if (character_level >= 17)
     *set warlock_spell_slots_max 4
+  *comment Pact Magic (2026-11-08): NOT a second pool on top of the first -- all of a warlock's slots share one
+  *comment level, which rises with caster level. At level 3 the 2 slots above become 2nd level instead of staying
+  *comment 1st, so the 1st-level max is zeroed here rather than left standing alongside the new one.
+  *set warlock_spell_slots_max_2 0
+  *if (character_level >= 3)
+    *set warlock_spell_slots_max 0
+    *set warlock_spell_slots_max_2 2
 *if (character_class = "rogue")
   *comment Sneak Attack, RAW: 1d6 at levels 1-2, 2d6 at 3-4, and one more d6 every two levels (half the level, rounded up).
   *set rogue_sneak_dice ((character_level + (character_level modulo 2)) / 2)
@@ -123,6 +130,9 @@
     *set wizard_spell_slots_max 3
   *if (character_level >= 3)
     *set wizard_spell_slots_max 4
+    *comment 2nd-level slots (2026-11-08), full-caster table: 2 at level 3, alongside the 1st-level pool above
+    *comment (not a replacement -- see Warlock's own comment above for the one class where it is).
+    *set wizard_spell_slots_max_2 2
 *if (character_class = "bard")
   *comment Bardic Inspiration: Charisma-modifier uses (at least 1); the die grows with level. See startup.txt's *create comment.
   *set bard_inspiration_max cha_mod
@@ -145,6 +155,8 @@
     *set bard_spell_slots_max 3
   *if (character_level >= 3)
     *set bard_spell_slots_max 4
+    *comment 2nd-level slots (2026-11-08), full-caster table: 2 at level 3, alongside the 1st-level pool above.
+    *set bard_spell_slots_max_2 2
 *if (character_class = "ranger")
   *comment Hunter's Mark free casts (the 2024 Favored Enemy -- see its *create comment, startup.txt): uses equal to
   *comment proficiency bonus, RAW, so this reads the existing prof_bonus rather than a level-threshold ladder
@@ -180,11 +192,14 @@
   *set barbarian_rage_uses barbarian_rage_max
 *if (character_class = "warlock")
   *set warlock_spell_slots warlock_spell_slots_max
+  *set warlock_spell_slots_2 warlock_spell_slots_max_2
 *if (character_class = "wizard")
   *set wizard_spell_slots wizard_spell_slots_max
+  *set wizard_spell_slots_2 wizard_spell_slots_max_2
   *set wizard_arcane_recovery_used false
 *if (character_class = "bard")
   *set bard_spell_slots bard_spell_slots_max
+  *set bard_spell_slots_2 bard_spell_slots_max_2
   *set bard_inspiration_uses bard_inspiration_max
 *if (character_class = "ranger")
   *set favored_foe_uses favored_foe_max
@@ -228,16 +243,16 @@
   *if (fighter_action_surge_uses < fighter_action_surge_max)
     *set sr_piece "Action Surge"
     *gosub short_rest_add_piece
-*if ((character_class = "warlock") and (warlock_spell_slots < warlock_spell_slots_max))
+*if ((character_class = "warlock") and ((warlock_spell_slots < warlock_spell_slots_max) or (warlock_spell_slots_2 < warlock_spell_slots_max_2)))
   *set sr_piece "Pact Magic slots"
   *gosub short_rest_add_piece
 *if ((character_class = "bard") and (bard_inspiration_uses < bard_inspiration_max))
   *set sr_piece "Bardic Inspiration"
   *gosub short_rest_add_piece
-*if ((character_class = "bard") and (bard_spell_slots < bard_spell_slots_max))
+*if ((character_class = "bard") and ((bard_spell_slots < bard_spell_slots_max) or (bard_spell_slots_2 < bard_spell_slots_max_2)))
   *set sr_piece "spell slots"
   *gosub short_rest_add_piece
-*if ((character_class = "wizard") and (wizard_spell_slots < wizard_spell_slots_max))
+*if ((character_class = "wizard") and ((wizard_spell_slots < wizard_spell_slots_max) or (wizard_spell_slots_2 < wizard_spell_slots_max_2)))
   *set sr_piece "spell slots"
   *gosub short_rest_add_piece
 *if ((character_class = "ranger") and (ranger_spell_slots < ranger_spell_slots_max))
@@ -298,6 +313,7 @@
   *set fighter_action_surge_uses fighter_action_surge_max
 *if (character_class = "warlock")
   *set warlock_spell_slots warlock_spell_slots_max
+  *set warlock_spell_slots_2 warlock_spell_slots_max_2
 *if (character_class = "bard")
   *set bard_inspiration_uses bard_inspiration_max
 *comment Half of the spell slots, rounded up (all slots are first level here, so that many slots), capped at what is missing. Each pool is written out by name: the quicktest walks every branch,
@@ -308,11 +324,21 @@
   *if (sr_half > (wizard_spell_slots_max - wizard_spell_slots))
     *set sr_half (wizard_spell_slots_max - wizard_spell_slots)
   *set wizard_spell_slots + sr_half
+  *comment 2nd-level pool (2026-11-08): the same half-back rule applied to its own max, independently of the 1st-level pool above.
+  *set sr_half ((wizard_spell_slots_max_2 + (wizard_spell_slots_max_2 modulo 2)) / 2)
+  *if (sr_half > (wizard_spell_slots_max_2 - wizard_spell_slots_2))
+    *set sr_half (wizard_spell_slots_max_2 - wizard_spell_slots_2)
+  *set wizard_spell_slots_2 + sr_half
 *if (character_class = "bard")
   *set sr_half ((bard_spell_slots_max + (bard_spell_slots_max modulo 2)) / 2)
   *if (sr_half > (bard_spell_slots_max - bard_spell_slots))
     *set sr_half (bard_spell_slots_max - bard_spell_slots)
   *set bard_spell_slots + sr_half
+  *comment 2nd-level pool (2026-11-08): same rule, own max, independent of the 1st-level pool above.
+  *set sr_half ((bard_spell_slots_max_2 + (bard_spell_slots_max_2 modulo 2)) / 2)
+  *if (sr_half > (bard_spell_slots_max_2 - bard_spell_slots_2))
+    *set sr_half (bard_spell_slots_max_2 - bard_spell_slots_2)
+  *set bard_spell_slots_2 + sr_half
 *if (character_class = "ranger")
   *set sr_half ((ranger_spell_slots_max + (ranger_spell_slots_max modulo 2)) / 2)
   *if (sr_half > (ranger_spell_slots_max - ranger_spell_slots))
@@ -360,13 +386,16 @@
   [b][🕐 Short Rest | Second Wind ${fighter_second_wind_uses} / ${fighter_second_wind_max}@{(fighter_action_surge_max > 0)  · Action Surge ${fighter_action_surge_uses} / ${fighter_action_surge_max}|}][/b]
 *if (character_class = "warlock")
   *line_break
-  [b][🕐 Short Rest | Pact Magic slots ${warlock_spell_slots} / ${warlock_spell_slots_max}][/b]
+  *if (warlock_spell_slots_max_2 > 0)
+    [b][🕐 Short Rest | Pact Magic slots (2nd) ${warlock_spell_slots_2} / ${warlock_spell_slots_max_2}][/b]
+  *else
+    [b][🕐 Short Rest | Pact Magic slots ${warlock_spell_slots} / ${warlock_spell_slots_max}][/b]
 *if (character_class = "bard")
   *line_break
-  [b][🕐 Short Rest | Bardic Inspiration ${bard_inspiration_uses} / ${bard_inspiration_max} | Spell slots ${bard_spell_slots} / ${bard_spell_slots_max}][/b]
+  [b][🕐 Short Rest | Bardic Inspiration ${bard_inspiration_uses} / ${bard_inspiration_max} | Spell slots ${bard_spell_slots} / ${bard_spell_slots_max}@{(bard_spell_slots_max_2 > 0)  · + 2nd ${bard_spell_slots_2} / ${bard_spell_slots_max_2}|}][/b]
 *if (character_class = "wizard")
   *line_break
-  [b][🕐 Short Rest | Spell slots ${wizard_spell_slots} / ${wizard_spell_slots_max}][/b]
+  [b][🕐 Short Rest | Spell slots ${wizard_spell_slots} / ${wizard_spell_slots_max}@{(wizard_spell_slots_max_2 > 0)  · + 2nd ${wizard_spell_slots_2} / ${wizard_spell_slots_max_2}|}][/b]
 *if ((character_class = "ranger") and (ranger_spell_slots_max > 0))
   *line_break
   [b][🕐 Short Rest | Spell slots ${ranger_spell_slots} / ${ranger_spell_slots_max}][/b]
@@ -527,17 +556,28 @@ You make space beside the bed, bar the door, and give the room over to a few uni
 *temp old_as fighter_action_surge_max
 *temp old_rage barbarian_rage_max
 *temp old_pact warlock_spell_slots_max
+*temp old_pact_2 warlock_spell_slots_max_2
 *temp old_wiz wizard_spell_slots_max
+*temp old_wiz_2 wizard_spell_slots_max_2
 *temp old_bard bard_spell_slots_max
+*temp old_bard_2 bard_spell_slots_max_2
 *temp old_ranger ranger_spell_slots_max
 *set character_level (level_up_from + 1)
 *gosub_scene character_stats update_dnd_stats
 *set fighter_second_wind_uses (fighter_second_wind_uses + (fighter_second_wind_max - old_sw))
 *set fighter_action_surge_uses (fighter_action_surge_uses + (fighter_action_surge_max - old_as))
 *set barbarian_rage_uses (barbarian_rage_uses + (barbarian_rage_max - old_rage))
+*comment Pact Magic's 1st-level pool can SHRINK on this level-up (level 3 zeroes it in favor of the 2nd-level
+*comment pool, character_progression.txt's slot-grant block above) -- clamped at 0 so a negative delta cannot
+*comment carry the current count negative; the 2nd-level pool's own delta (always growing so far) picks it up.
 *set warlock_spell_slots (warlock_spell_slots + (warlock_spell_slots_max - old_pact))
+*if (warlock_spell_slots < 0)
+  *set warlock_spell_slots 0
+*set warlock_spell_slots_2 (warlock_spell_slots_2 + (warlock_spell_slots_max_2 - old_pact_2))
 *set wizard_spell_slots (wizard_spell_slots + (wizard_spell_slots_max - old_wiz))
+*set wizard_spell_slots_2 (wizard_spell_slots_2 + (wizard_spell_slots_max_2 - old_wiz_2))
 *set bard_spell_slots (bard_spell_slots + (bard_spell_slots_max - old_bard))
+*set bard_spell_slots_2 (bard_spell_slots_2 + (bard_spell_slots_max_2 - old_bard_2))
 *set ranger_spell_slots (ranger_spell_slots + (ranger_spell_slots_max - old_ranger))
 *gosub refresh_level_up_progress
 *return
@@ -2305,13 +2345,16 @@ And a second.
   [b][Rage ${barbarian_rage_uses} / ${barbarian_rage_max}][/b]
 *if (character_class = "warlock")
   *line_break
-  [b][Pact Magic slots ${warlock_spell_slots} / ${warlock_spell_slots_max}][/b]
+  *if (warlock_spell_slots_max_2 > 0)
+    [b][Pact Magic slots (2nd) ${warlock_spell_slots_2} / ${warlock_spell_slots_max_2}][/b]
+  *else
+    [b][Pact Magic slots ${warlock_spell_slots} / ${warlock_spell_slots_max}][/b]
 *if (character_class = "wizard")
   *line_break
-  [b][Spell slots ${wizard_spell_slots} / ${wizard_spell_slots_max}][/b]
+  [b][Spell slots ${wizard_spell_slots} / ${wizard_spell_slots_max}@{(wizard_spell_slots_max_2 > 0)  · + 2nd ${wizard_spell_slots_2} / ${wizard_spell_slots_max_2}|}][/b]
 *if (character_class = "bard")
   *line_break
-  [b][Spell slots ${bard_spell_slots} / ${bard_spell_slots_max}][/b]
+  [b][Spell slots ${bard_spell_slots} / ${bard_spell_slots_max}@{(bard_spell_slots_max_2 > 0)  · + 2nd ${bard_spell_slots_2} / ${bard_spell_slots_max_2}|}][/b]
 *if ((character_class = "ranger") and (ranger_spell_slots_max > 0))
   *line_break
   [b][Spell slots ${ranger_spell_slots} / ${ranger_spell_slots_max}][/b]
