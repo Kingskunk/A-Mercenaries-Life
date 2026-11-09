@@ -36,7 +36,7 @@ graph TD
     end
 
     subgraph Chapter 2: Alderford
-        Q3["Bailiff Rennick's Curing Extortion"]
+        Q3["Tollreeve Rennick's Curing Extortion"]
         Q4["The Drowned Oar Taphouse Rumors"]
         Q5["Granary Cellar Rat Extermination"]
         Q6["Sluice Gate Mill-Works Repair"]
@@ -116,7 +116,7 @@ graph TD
 
 ### 1. The Fish-Curing Lofts Extortion
 * **Scene File:** `alderford.txt` (`alderford_fish_curing`)
-* **Briefing:** River workers cornered by Bailiff Rennick and two iron-cudgel thugs shaking down the drying lofts for illegal toll-tribute.
+* **Briefing:** River workers cornered by Tollreeve Rennick and two iron-cudgel thugs shaking down the drying lofts for illegal toll-tribute.
 * **Resolution Paths:**
   1. **Provincial Charter Leverage:** Slam the *Grey Waterway Toll Register* onto the salting bench (`found_customs_vellum`), citing Section 12 to expose Rennick's debt as unsanctioned extortion (Automatic Success).
   2. **Thaumaturgy / Arcane Intimidation:** Booming command with violet flaring lantern light (`CHA DC 10` / Tiefling / Spellcaster).

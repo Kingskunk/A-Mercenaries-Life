@@ -55,7 +55,7 @@ She spins a carefully rehearsed tale: an ancient, unlooted **Meridian Empire vau
 ### The True Identity: Operative of the "Fourth Column"
 Alyndra is neither a naive former barmaid nor a simple highway robber. She is a field operative for **The Fourth Column**—a secretive, contracted mercenary network that serves as the covert intelligence arm of the Gilded Scales.
 
-* **The Lore of the Fourth Column:** In the counting houses of Civic Heights, cartel ledgers rule three columns: *Debits*, *Credits*, and *Balance*. The unofficial, deniable fourth column is *Write-Offs & Enforcement*—the off-the-books ledger where debts settled in blood, vanished cargo, and black contracts are booked. When problems cannot be solved with customs bailiffs, municipal courts, or open war charters, the senior Factors call upon the Fourth Column.
+* **The Lore of the Fourth Column:** In the counting houses of Civic Heights, cartel ledgers rule three columns: *Debits*, *Credits*, and *Balance*. The unofficial, deniable fourth column is *Write-Offs & Enforcement*—the off-the-books ledger where debts settled in blood, vanished cargo, and black contracts are booked. When problems cannot be solved with customs inspectors, municipal courts, or open war charters, the senior Factors call upon the Fourth Column.
 * **Her Role:** Alyndra is a formally trained urban duelist and talent-evaluator—a master of the rapier who conceals her weapon in velvet beneath her pack and hides years of deadly training beneath a wide-eyed smile and travel-stained leathers.
 
 ---

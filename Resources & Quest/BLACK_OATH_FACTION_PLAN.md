@@ -65,13 +65,74 @@ After the first list, this becomes a **radiant contract** rather than a one-off 
 
 ### 2. Second named work: *The Short Purse*
 
-**Suggested giver:** the ward keeper, after the player has completed *The Night List*. Hask may recommend the player, but he does not own the assignment.
+**Giver:** Mara Vey (the woman upstairs above the Duckboard Market rope-and-oil house).
+**Prerequisites:**
+- `black_oath_status = "associate"`
+- `black_oath_night_list_count >= 3` (at least three successful runs completed)
+- Time: Dusk, Night, or Pre-Dawn (the rope-and-oil house operates its backroom only during dark hours)
 
-A common burial purse is short before a drowned boatman's funeral. The ward keeper needs the shortage handled quietly, because involving the Watch would hurt the family and expose the ward's informal relief system. She specifically needs someone who is not tied to one of her regular crews: the player can ask questions without every crew knowing who sent them.
+**The Premise & Community Stakes:**
+Joram Kell, an unsworn barge-hand and Dredge-End resident, drowned two nights ago when an overloaded mud-scow tipped in the sluice flume. By custom, the canal workers and boat-shed hands pool copper into a lead mutual-aid tin kept in the back of the net-maker's shed to pay for dead boatmen's shrouds, lime, and burial at Saint Althea’s pauper ground, with whatever remains going to the widow (Tessa Kell) and her infant child.
 
-This is a good first test because it makes the Black Oath more than a criminal employer: it is also entangled with the neighborhood's real survival. The player might recover the money, learn it was diverted to cover another loss, expose a skimming crew, protect a desperate runner, replace the purse, or make a damaging bargain. The result should introduce the ward keeper as a person with authority and values, not merely a new shopkeeper with a quest marker.
+When Mara opens the tin to settle accounts with the gravedigger, it is **24 copper bits short**. The burial is scheduled for tomorrow at dawn. If the shortage is not settled, the church sexton will turn the corpse away to the river mud, and the neighborhood will begin pointing fingers. 
 
-**Possible result:** a provisional promotion to Ward Hand and access to a small pool of ward-level named work. The keeper, not Hask, becomes the player’s main contact at this tier.
+Mara cannot simply top it off from Black Oath coffers without inviting every crew in Dredge-End to expect handouts, nor can she involve the Port Watch—who don't solve missing coppers, but would happily send a squad of boot-irons to shake down the sheds and arrest the collectors for unlawful assembly. She needs an outside associate hand who is known to be capable (from the Night List) to quietly track down the missing coin before morning.
+
+**The Outlaw Origin Interrogation Beat (`origin = "outlaw"`):**
+*This beat triggers exclusively for characters with the Port Valen Outlaw background before the main briefing begins.*
+
+When the player enters, Mara bars the door and sits across the slate table, measuring them in the candlelight. She brings up the description that reached Dredge-End months ago: a rogue fleeing an alley behind the canal brothel, two hundred pounds of an Oath collector with gold teeth left dead in the gutter, and six hundred silver marks missing from an upriver strongbox.
+
+The player faces an immediate test:
+- **Lie to Mara ("You've got the wrong runner. That wasn't me."):**
+  - Requires a **Deception check [CHA DC 15]**.
+  - *Success (`short_purse_outlaw_lied_passed`):* Mara studies your face, pauses, and lets out a dry breath. She accepts the denial—or decides not to press—and explains why she asked: she needed to know who was sitting in her room. She reveals that the blood bounty was quietly pulled down weeks ago anyway. The dead collector was despised across the water-streets, skimmed off his own crews, and was destined for a knife in the dark regardless; the Oath only posted the bounty because an organization that doesn't put a price on dead collectors looks weak to the other wards.
+  - *Failure (`short_purse_outlaw_lied_failed`):* Mara spots the tell immediately (the involuntary twitch toward your belt, the defensive posture). She calls out the bluff coldly: *"Don't play me for a fool in my own room. The bounty's dead, and nobody shed a tear for that gold-toothed pig—he was skimming from everyone and due for the mud anyway. But if you lie to my face again, you won't walk back down those stairs."*
+- **Tell the Truth ("He cornered me with a cleaver. I was faster."):**
+  - *Resolution (`short_purse_outlaw_confessed`):* Mara leans back, respecting the blunt honesty. She confirms the same truth: the collector was widely hated, cheated the brotherhood's own boatmen, and had it coming. The bounty was an institutional formality to save face, quietly allowed to lapse once the noise died down. She appreciates knowing she is dealing with someone dangerous who doesn't waste her time with games.
+
+After resolving this beat, the dialogue rejoins the main briefing (`short_purse_premise`), which non-outlaws enter directly.
+
+**Opening Narrative Reactions (Reading Current State):**
+- **Silt-Gate Fallout (`silt_gate_face_seen`):** Mara notes that Watch patrols have been snooping around the sluice gates: *"The porters saw your boots down at the flumes. Keep your head down while you ask your questions. The Watch is jumpy."*
+- **Night List Performance (`black_oath_night_list_resolution`):**
+  - If completed cleanly via skill check: *"You move through the dark without knocking things over. That's why you're here."*
+  - If fought through (`night_list_fight_won`): *"You can take a knock and keep hold of the purse. Tonight requires softer hands, but the spine helps."*
+- **Lyra Connection (`lyra_repaid` / `lyra_bond`):** If Lyra has already mentioned heading into Dredge-End, a subtle option allows the player to ask about older records or names, which Mara immediately shuts down: *"Finish the work in front of you first, runner."*
+
+**Investigation Beats (Branch-and-Bottleneck):**
+
+1. **Beat 1: The Net-Maker’s Shed (The Crime Scene):**
+   - The player visits Old Corin at the boat-sheds where the tin was kept.
+   - *Investigation/Insight check (DC 11) or carried tool:* The lock was not forced with iron; it was opened with an oiled wire, or someone knew where the hidden peg was. Corin reveals that young Derry—a sixteen-year-old wharf-runner who ran errands for the dead man—was the last one left alone with the gear before the watch-change.
+
+2. **Beat 2: Tracking Derry (The Confrontation at Lamp Stair):**
+   - The player traces Derry to the narrow alleys behind Lamp Stair. Derry panics and tries to scramble up an exterior cargo ladder or dart into a wet flume.
+   - *Tactical Rule of Three (Tactical challenge, non-structural):*
+     - **Athletics (STR DC 12):** Sprint down the lane and tackle him before he reaches the upper boardwalk.
+     - **Acrobatics (DEX DC 12):** Vault a stack of wet barrel staves to cut off his escape route down the drain passage.
+     - **Intimidation / Streetwise (CHA DC 11):** Bark the Oath's night-warning into the dark; Derry freezes, knowing running from the Oath never ends well.
+     - *(Fail-Forward):* If the roll fails, the player corners him after a noisy scramble through greasy gutters that costs 15 minutes, causes minor fatigue/bruises (-2 HP), and draws nervous stares from nearby shuttered windows.
+
+3. **Beat 3: The Revelation & Dilemma:**
+   - Derry is terrified, but he doesn't have the coin anymore.
+   - *The Truth:* Derry didn't steal the money for dice or drink. Joram Kell owed an extortionate, off-the-books wharf toll to an aggressive Gilded Scales wharf tollreeve named Master Orren, who threatened to seize Joram's dinghy and throw Tessa and the child into the street before the body was even cold. Derry took the burial coppers to pay Orren a deposit to hold off the seizure until after the funeral.
+   - *The Decision Core (Three Meaningful Solutions):*
+     - **Option A: The Cold Reclaim (Enforce the Code):** March Derry straight to Tollreeve Orren's toll-booth, intimidate or strong-arm Orren into coughing up the 24 coppers (STR/Intimidation DC 12 or Black Oath pressure). *Outcome:* The burial tin is fully restored. Orren backs off but harbors deep grudge. Tessa's dinghy remains vulnerable later. Sets `short_purse_resolution = "recovered_enforced"`.
+     - **Option B: The Mercenary Pocket (Personal Subsidy):** The player covers the 24 copper bits out of their own coin pouch (paying 24 coppers, guarded by `currency_txn_locked`). Derry keeps Orren quiet, Tessa keeps her boat, and the burial tin is delivered full to Mara. *Outcome:* Solves the problem cleanly with no street friction. Mara notices the fresh minting of the coins with a keen eye, respecting the player's discretion while warning against soft hearts. Sets `short_purse_resolution = "covered_pocket"`, `short_purse_derry_protected = true`.
+     - **Option C: The Leveraged Compromise (Street Fixer):** Use Investigation/Persuasion (DC 12) to audit Orren's toll-records or bring Mara's name as leverage, proving Orren skimmed unauthorized fees on a church burial day. Orren waives the debt and returns 12 copper; the player convinces Corin and the net-makers to chip in the remaining 12 as a crew solidarity gesture. *Outcome:* No coin lost by the player, debt wiped, crew solidarity strengthened. Sets `short_purse_resolution = "brokered_compromise"`.
+
+**Resolution & Aftermath:**
+- Return to the upper room before dawn. Mara receives the 24 copper bits.
+- **The Name Reveal:** Impressed by the player's ability to settle a neighborhood dispute without triggering a riot, a Watch raid, or a crew strike, Mara puts her chalk down and introduces herself properly:
+  *"I am Mara Vey. People around Duckboard bring me their books when the numbers won't lie flat. When there is trouble in this ward that needs quiet iron or cool heads, I decide whose boots walk."*
+- **Promotion to Ward Hand:**
+  - `black_oath_status = "ward_hand"`
+  - `black_oath_mara_named = true`
+  - Unlocks Mara as a direct contact in the upper room without needing Hask's vetting.
+  - Adds +1 to `quests_finished` pool in `count_finished_dredge_end`.
+- **Hask's Reaction:** When the player next visits the scrap yard, Hask grunts over his scales:
+  *"Heard you settled the Kell business with Mara. Good. You're her Ward Hand now. Just remember who put your boots on her stairs."*
 
 ### 3. Further ward-level named work
 
@@ -132,7 +193,7 @@ A useful long-term split is:
 
 ## Before Implementing the Next Tier
 
-1. Define the ward keeper's personality, practical authority, and conflict with Hask's approach.
-2. Decide the emotional outcome and branching resolutions of *The Short Purse*.
-3. Decide which current choices its opening should read: Silt-Gate result, Black Oath reputation/heat, outlaw origin, and Lyra's existing state.
-4. Add a named-job progression counter only when there are enough named jobs to support it.
+1. **[RESOLVED in §2]** Define the ward keeper's personality, practical authority, and conflict with Hask's approach: Mara Vey values quiet neighborhood balance, clean tallies, and community stability, contrasting with Hask's purely transactional scrap-and-courier pragmatism.
+2. **[RESOLVED in §2]** Decide the emotional outcome and branching resolutions of *The Short Purse*: Three meaningful branch resolutions (Cold Enforcement, Mercenary Pocket, and Leveraged Compromise), each tracking concrete consequence flags without relying on deleted numerical reputation counters.
+3. **[RESOLVED in §2]** Decide which current choices its opening should read: Silt-Gate result (`silt_gate_face_seen`), Night List execution (`black_oath_night_list_resolution`), outlaw origin (`origin = "outlaw"`), and Lyra's status (`lyra_repaid`, `lyra_bond`).
+4. Add a named-job progression counter only when there are enough named jobs to support it: *The Short Purse* provides the milestone jump from Associate to Ward Hand (`black_oath_status = "ward_hand"`), and registers as a completed quest in `count_finished_dredge_end`.

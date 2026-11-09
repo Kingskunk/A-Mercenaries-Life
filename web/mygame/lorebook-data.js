@@ -256,7 +256,7 @@
             "She is gaunt and sharp-featured, with scars across her hands, dark hair pinned back, and a leather apron marked by her work."
           ];
           if (truthy(s.codex_odessa)) {
-            out.push("What she told you at the Black Sinks, knotting thread with her teeth: ten years under Captain Vane. Before that she kept an apothecary in the high city until a tax-bailiff burned it for unpaid levies. Vane offered forty silver marks a season and one promise — no lord, factor, or council clerk would tell her who she could or could not treat.");
+            out.push("What she told you at the Black Sinks, knotting thread with her teeth: ten years under Captain Vane. Before that she kept an apothecary in the high city until a tax-collector burned it for unpaid levies. Vane offered forty silver marks a season and one promise — no lord, factor, or council clerk would tell her who she could or could not treat.");
           }
           if (truthy(s.prep_odessa_salve)) {
             out.push("The tin she pressed into your hands at the triage cart: camphor fat, rubbed into the joints to seal out the damp and boot-chafe on a long march, and to ward off marsh sickness. Dirty water, she told you, kills more soldiers than steel.");
@@ -362,7 +362,7 @@
             out.push("Veteran Rorik, who swung sledge for him back in the Highland Crags, tells how the two of them framed the timber mill over the Alderford weir. Torvald swore he would drown before wading into freezing muck every time driftwood jammed the wheel, so he hid a bypass under the intake casing. Trip the catch and a counterweight backs the gear teeth off, and the river flushes the jam itself. He calls it 'preventative drainage' so the guild inspectors cannot fine him. His rule in the old shops was two taps to set the angle and one blow to draw the metal, kept to an exact three-count, or you caught hot tongs across your shins.");
           }
           if (truthy(s.discussed_smiths_past)) {
-            out.push("He left the Highland Crags after the bailiffs came with the baron's writs and thirty mounted men-at-arms, taxing three marks on every hundredweight of refined steel. The highland shops could no longer buy coal, feed their hammer-men, or pay the ore carters. He took his tools down to the river, by his own account, where the water runs free and no baron owns the current. Rorik had no coin to buy a weir of his own and took the Carrion's silver shilling instead. These days the two old highlanders close out most evenings side by side at the Drowned Oar's hearth over river ale and bone dice.");
+            out.push("He left the Highland Crags after the tax-collectors came with the baron's writs and thirty mounted men-at-arms, taxing three marks on every hundredweight of refined steel. The highland shops could no longer buy coal, feed their hammer-men, or pay the ore carters. He took his tools down to the river, by his own account, where the water runs free and no baron owns the current. Rorik had no coin to buy a weir of his own and took the Carrion's silver shilling instead. These days the two old highlanders close out most evenings side by side at the Drowned Oar's hearth over river ale and bone dice.");
           }
           return out;
         },
@@ -387,7 +387,7 @@
             out.push("Her read on Alderford comes like a briefing. 'It's loud, damp, and smells of green cedar timber and pickled herring. If your back is broad and your knuckles aren't afraid of blisters, you eat. If you go soft, the river swallows you.' A hard town, she calls it, but an honest one if you stay clear of the Factor's Hall.");
           }
           if (truthy(s.visited_maura_cellar)) {
-            out.push("The Drowned Oar sits on the old stonework of a Meridian flood drain. When three feet of imperial brick collapsed inward under the autumn damp, the wall opened into the flooded drain beneath the town, and something lives in the dark water: a wet, clicking rasp and two yellow eyes behind a collapsed gate. Maura will not bring the Gilded Scales' bailiffs into her vault. They would call the drain a taxable cartel waterway and seize half her barrels. Vane will not spare swords to kill a cellar rat. So she pays bounty silver from her own till and keeps the business hers. The crane winch over the vault hatch is there for barrels, but it has hauled a bounty-taker out of the silt too, and her verdict on the deal is that taking a bounty is one thing and throwing your life away is another.");
+            out.push("The Drowned Oar sits on the old stonework of a Meridian flood drain. When three feet of imperial brick collapsed inward under the autumn damp, the wall opened into the flooded drain beneath the town, and something lives in the dark water: a wet, clicking rasp and two yellow eyes behind a collapsed gate. Maura will not bring the Gilded Scales' inspectors into her vault. They would call the drain a taxable cartel waterway and seize half her barrels. Vane will not spare swords to kill a cellar rat. So she pays bounty silver from her own till and keeps the business hers. The crane winch over the vault hatch is there for barrels, but it has hauled a bounty-taker out of the silt too, and her verdict on the deal is that taking a bounty is one thing and throwing your life away is another.");
             out.push(truthy(s.maura_cellar_cleared)
               ? "The thing that nested down there is dead. The cellar is quiet for the first time in weeks, and word is already spreading among the carters."
               : "Whatever it is still scratches at the mortar below. Her advice to the half-hearted has not changed: come back when you mean it.");
@@ -398,14 +398,14 @@
       },
       {
         id: "rennick", category: "people", title: "Rennick",
-        sub: "Gilded Scales wharf bailiff",
-        role: "Toll bailiff of the Gilded Scales, Alderford wharf district",
+        sub: "Gilded Scales wharf tollreeve",
+        role: "Tollreeve of the Gilded Scales, Alderford wharf district",
         link: ["Rennick", "Master Rennick"],
-        tags: ["Alderford"], aliases: ["Master Rennick", "bailiff", "toll bailiff", "dock-guards"],
+        tags: ["Alderford"], aliases: ["Master Rennick", "tollreeve", "toll-collector", "dock-guards"],
         unlock: "met_rennick",
         body: function (s) {
           var out = [
-            "The Gilded Scales' toll bailiff on the Alderford wharf. He wears a pewter cartel badge and a water-stained fur mantle, keeps a ledger close, and arrives with two dock-guards.",
+            "The Gilded Scales' tollreeve on the Alderford wharf. He wears a pewter cartel badge and a water-stained fur mantle, keeps a ledger close, and arrives with two dock-guards.",
             "He collects tolls from the curing sheds and weighing slips, reading arrears aloud where the workers can hear."
           ];
           if (truthy(s.rennick_reported)) {
@@ -433,7 +433,7 @@
             "His office is at the back of Alderford's Factor's Hall on the customs slip. Chief Clerk Orlov runs the public counter."
           ];
           if (truthy(s.rennick_reported)) {
-            out.push("Report Rennick's skimming and the Factor answers: 'So you're the one. Word reached me a Carrion recruit walked into my own toll district's dispute and settled it without breaking a crate, and had the nerve to invoke my name doing it. A little bird already told me my bailiff's scales run light. Good instinct, chasing that up. I'll be having a word with Rennick myself.'");
+            out.push("Report Rennick's skimming and the Factor answers: 'So you're the one. Word reached me a Carrion recruit walked into my own toll district's dispute and settled it without breaking a crate, and had the nerve to invoke my name doing it. A little bird already told me my tollreeve's scales run light. Good instinct, chasing that up. I'll be having a word with Rennick myself.'");
           }
           if (truthy(s.knows_granary_problem)) {
             out.push("His audit reaches the grain too. Uncertified sacks are written off as dock spoilage, and a request for two spearmen against the granary rats would cost two silver marks in stamp fees. See [[bran|Overseer Bran]].");
@@ -470,7 +470,7 @@
             "Everything on the wharf that is weighed, sealed, taxed, or owed passes through his quill: the district parish register, the bounty board by the door, the vault floor with its rows of lead weights. The Factor signs behind the side door, but Orlov writes the wharf's business."
           ];
           if (truthy(s.asked_ch_commutation)) {
-            out.push("Asked about the chapel's taxes, he reads from the parish register: 'Saint Althea's parish labor commutation. Quarterly assessment for twenty registered refugee spinners. Four Silver Marks assessed against their wool sales, paid in full to the guild treasury.' As long as the deacon's wool silver reaches the Factor's Hall, the Scales' bailiffs leave the chapel cloister alone." + (truthy(s.found_customs_vellum) ? " The Sinks toll register says the commutation was never owed. See [[sanctuary_charter|the chapel's sanctuary]]." : ""));
+            out.push("Asked about the chapel's taxes, he reads from the parish register: 'Saint Althea's parish labor commutation. Quarterly assessment for twenty registered refugee spinners. Four Silver Marks assessed against their wool sales, paid in full to the guild treasury.' As long as the deacon's wool silver reaches the Factor's Hall, the Scales' enforcers leave the chapel cloister alone." + (truthy(s.found_customs_vellum) ? " The Sinks toll register says the commutation was never owed. See [[sanctuary_charter|the chapel's sanctuary]]." : ""));
           }
           if (truthy(s.turned_in_customs_vellum)) {
             out.push("He gave the Grey Waterway Toll Register a closer look than anything else that crosses his desk. A junior clerk brought a jeweler's loupe and a black touchstone, the three-headed hawk was held to the lamplight, and the wax seal's edge was tested against the stone before Orlov rapped twice on the side door: 'Factor! The Black Sinks contract, the customs vellum's come in!' The Scales had wanted that register out of the flooded ruin for three seasons. 'Efficient work,' the Factor said, and the silver was counted onto the counter without further comment.");
@@ -501,7 +501,7 @@
             out.push("He teaches his flock to pray to Saint Althea, while the bishops in Port Valen's grand cathedral sing of her father, the Sun-Father. See [[saint_althea|Saint Althea]]. In a marches town where no one can buy a master surgeon, he says her grace is all that stands between a gangrenous wound and a shallow grave.");
           }
           if (truthy(s.discussed_chapel_sanctuary)) {
-            out.push("Displaced folk who shelter here register for parish labor: spinning wool, mending sacks, keeping up the weir road. The Scales hold the river trade, the sawmills, and the toll posts, and to them refugees from the border estates look like cheap labor for the brine sumps and barge slips. Corbel pays the commutation to keep bailiffs like Rennick from dragging indebted families into the debt-dredges. An uneasy compromise, he calls it, but it keeps the peace. See [[sanctuary_charter|the chapel's sanctuary]].");
+            out.push("Displaced folk who shelter here register for parish labor: spinning wool, mending sacks, keeping up the weir road. The Scales hold the river trade, the sawmills, and the toll posts, and to them refugees from the border estates look like cheap labor for the brine sumps and barge slips. Corbel pays the commutation to keep collectors like Rennick from dragging indebted families into the debt-dredges. An uneasy compromise, he calls it, but it keeps the peace. See [[sanctuary_charter|the chapel's sanctuary]].");
           }
           if (truthy(s.corbel_charter_argument)) {
             out.push("A clause from a flooded ruin then came up the ridge steps: consecrated ground owes no tolls, so the commutation was never owed. Corbel tested it slowly, with his eyes closed, and made the only practical choice an old deacon with sixty mouths to feed can make. The chapel keeps paying. The clause is copied fair into the parish charter roll and kept where the Factor's Hall cannot hear of it, a wall against the day the Scales reach for more than the commutation.");
@@ -1204,13 +1204,13 @@
       {
         id: "sanctuary_charter", category: "history", title: "The Chapel's Sanctuary",
         link: ["Parish Commutation"],
-        sub: "Church ground the bailiffs cannot enter",
+        sub: "Church ground the collectors cannot enter",
         tags: ["Law", "Faith"], aliases: ["sanctuary", "commutation", "parish", "charter", "chapel", "ecclesiastical"],
         unlock: "codex_sanctuary_charter",
         body: function (s) {
           var out = [
-            "An old rule from the Meridian provincial charter. Church ground is sanctuary: bailiffs, merchant factors, and debt-collectors may not cross the chapel lintel to seize the people sheltering behind it.",
-            "In practice, frontier parishes keep the peace with a payment called <i>Parish Commutation</i>. Sheltered refugees spin wool, weave cloth, and mend sacks on the church looms, and the deacon pays a quarterly fee from the wool sales to the town Factor's Hall. The deacon calls it an uneasy compromise: it satisfies the Factor's clerks and keeps the bailiffs from dragging families into the debt-dredges."
+            "An old rule from the Meridian provincial charter. Church ground is sanctuary: toll-collectors, merchant factors, and debt-enforcers may not cross the chapel lintel to seize the people sheltering behind it.",
+            "In practice, frontier parishes keep the peace with a payment called <i>Parish Commutation</i>. Sheltered refugees spin wool, weave cloth, and mend sacks on the church looms, and the deacon pays a quarterly fee from the wool sales to the town Factor's Hall. The deacon calls it an uneasy compromise: it satisfies the Factor's clerks and keeps the cartel enforcers from dragging families into the debt-dredges."
           ];
           if (truthy(s.found_customs_vellum)) {
             out.push("The Sinks toll register holds a second clause of the same charter: consecrated ground owes no tolls at all. The commutation is not in the charter and never was. It is a levy the Scales added themselves.");
