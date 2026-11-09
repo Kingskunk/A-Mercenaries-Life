@@ -45,6 +45,24 @@
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment ARCANE WARD ON ABJURATION CAST (Abjurer, 2026-11-09, PHB'24 p172): called separately from each wizard
+*comment Abjuration spell's OWN slot-spend site (Shield and Absorb Elements in combat_dice.txt, Mage Armor in
+*comment equipment.txt) right after the slot is spent -- never folded into spend_spell_slot above, which every
+*comment school shares (Magic Missile, Grease and the rest must not regain ward HP). A no-op for any wizard who
+*comment is not an Abjurer, so every call site can fire it unconditionally rather than re-checking the subclass.
+*comment RAW lets you "create" the ward the first time you cast with a slot and "regain" HP every time after;
+*comment both read as the same trigger here since there is no cost or reason to ever decline creating it.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label arcane_ward_on_abjuration_cast
+*params awoac_level
+*if (wizard_subclass = "abjurer")
+  *set arcane_ward_created true
+  *set arcane_ward_hp (arcane_ward_hp + (2 * awoac_level))
+  *if (arcane_ward_hp > arcane_ward_max)
+    *set arcane_ward_hp arcane_ward_max
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment SPELL: MAGIC MISSILE (3 darts, each 1d4 + 1 -- a flat bonus, NOT the caster's spellcasting modifier --
 *comment split across up to 3 targets via the sidebar, see fight_target_magic_missile in combat.txt)
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

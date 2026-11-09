@@ -133,6 +133,11 @@
     *comment 2nd-level slots (2026-11-08), full-caster table: 2 at level 3, alongside the 1st-level pool above
     *comment (not a replacement -- see Warlock's own comment above for the one class where it is).
     *set wizard_spell_slots_max_2 2
+  *comment Arcane Ward (Abjurer, 2026-11-09): 2x wizard level + INT mod, RAW. Zero for every other wizard, so
+  *comment nothing reads arcane_ward_max without also checking wizard_subclass elsewhere.
+  *set arcane_ward_max 0
+  *if (wizard_subclass = "abjurer")
+    *set arcane_ward_max ((2 * character_level) + int_mod)
 *if (character_class = "bard")
   *comment Bardic Inspiration: Charisma-modifier uses (at least 1); the die grows with level. See startup.txt's *create comment.
   *set bard_inspiration_max cha_mod
@@ -197,6 +202,9 @@
   *set wizard_spell_slots wizard_spell_slots_max
   *set wizard_spell_slots_2 wizard_spell_slots_max_2
   *set wizard_arcane_recovery_used false
+  *comment Arcane Ward (Abjurer): the ward itself, and the leftover HP it had, both lapse at a long rest -- it can be created again on the next Abjuration cast.
+  *set arcane_ward_hp 0
+  *set arcane_ward_created false
 *if (character_class = "bard")
   *set bard_spell_slots bard_spell_slots_max
   *set bard_spell_slots_2 bard_spell_slots_max_2
@@ -563,6 +571,14 @@ You make space beside the bed, bar the door, and give the room over to a few uni
 *temp old_bard_2 bard_spell_slots_max_2
 *temp old_ranger ranger_spell_slots_max
 *set character_level (level_up_from + 1)
+*comment Arcane Tradition (2026-11-09): set BEFORE update_dnd_stats, not after like the other per-level hooks below --
+*comment refresh_class_resource_maxs (called by update_dnd_stats) reads wizard_subclass to size arcane_ward_max, so the
+*comment ward's maximum is right immediately on the level that grants it, not only after the next recompute elsewhere.
+*comment Auto-assigned rather than offered as a choice: Abjurer is the only wizard tradition built so far.
+*if (((character_class = "wizard") and (character_level = 3)) and (wizard_subclass = "none"))
+  *set wizard_subclass "abjurer"
+  *set wizard_subclass_title "School of Abjuration"
+  *set wizard_subclass_desc "You have formally committed to the magic of wards and protection: an Arcane Ward now shields you, rebuilt by every Abjuration spell you cast."
 *gosub_scene character_stats update_dnd_stats
 *set fighter_second_wind_uses (fighter_second_wind_uses + (fighter_second_wind_max - old_sw))
 *set fighter_action_surge_uses (fighter_action_surge_uses + (fighter_action_surge_max - old_as))
@@ -1839,6 +1855,9 @@ And the second.
 *if ((character_class = "rogue") and (character_level = 2))
   *line_break
   [b][⭐ New: Cunning Action][/b] Dash, Disengage and Hide are now bonus actions, so you can slip away or vanish and still strike in the same turn.
+*if ((character_class = "wizard") and (character_level = 3))
+  *line_break
+  [b][⭐ New: ${wizard_subclass_title} — Arcane Ward][/b] ${wizard_subclass_desc} It can absorb up to ${arcane_ward_max} HP, created the first time you cast an Abjuration spell with a slot since your last long rest.
 *gosub refresh_known_spells
 *return
 
