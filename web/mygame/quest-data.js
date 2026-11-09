@@ -329,8 +329,17 @@
     {
       id: "black_oath_short_purse", title: "The Short Purse",
       giver: function (s) { return truthy(s.black_oath_mara_named) ? "Mara Vey" : "The Woman Upstairs"; },
-      place: function (s) { return truthy(s.short_purse_clue_derry) ? "Dredge-End · Lamp Stair" : "Dredge-End · Boat-Sheds"; },
+      place: function (s) {
+        if (s.short_purse_stage === "completed") return "Completed";
+        if (s.short_purse_resolution && s.short_purse_resolution !== "none") return "Dredge-End · Duckboard Market";
+        if (truthy(s.short_purse_clue_orren)) return "Dredge-End · High Wharf Ramp";
+        if (truthy(s.short_purse_clue_derry)) return "Dredge-End · Lamp Stair";
+        return "Dredge-End · Boat-Sheds";
+      },
       goal: function (s) {
+        if (s.short_purse_stage === "completed") return "The slip fund has been settled and Tessa Kell's buyout secured.";
+        if (s.short_purse_resolution && s.short_purse_resolution !== "none") return "Return the twenty-four coppers to the woman upstairs above Duckboard Market.";
+        if (truthy(s.short_purse_clue_orren)) return "Confront Orren at his toll-post and recover the twenty-four coppers.";
         if (truthy(s.short_purse_clue_derry)) return "Track down young Derry at Lamp Stair and find what he did with the coppers.";
         return "Find where the twenty-four coppers from the boat-shed slip fund went.";
       },
@@ -338,8 +347,12 @@
         var c = [];
         if (truthy(s.short_purse_clue_wire)) c.push("The tin's lock was slipped open with an oiled copper wire, not smashed.");
         else if (truthy(s.short_purse_clue_lock)) c.push("The tin's lock was not forced; whoever took the coin had a tool or a key, and knew where the box was kept.");
-        if (truthy(s.short_purse_clue_derry)) c.push("Young Derry, Joram's apprentice, took the coppers and bolted toward Lamp Stair clutching his coat.");
-        if (truthy(s.short_purse_clue_orren)) c.push("Orren threatened Derry with chains and debtor hulks over the boat earlier today.");
+        if (truthy(s.short_purse_clue_derry)) c.push("Young Derry, Joram's sixteen-year-old partner, took the coppers and bolted toward Lamp Stair clutching his coat.");
+        if (truthy(s.short_purse_clue_orren)) c.push("Orren extorted the twenty-four coppers from Derry as an illegal arrears payment, then threatened to chain the skiff anyway.");
+        if (s.short_purse_resolution === "recovered_enforced") c.push("You backed down Orren with iron authority, forcing him to return the twenty-four coppers in full.");
+        else if (s.short_purse_resolution === "covered_pocket") c.push("You covered the twenty-four coppers from your own pouch, shielding Derry from exposure.");
+        else if (s.short_purse_resolution === "brokered_compromise") c.push("You trapped Orren in an illegal shakedown, reclaiming twelve coppers while the boat crew rallied to pool the rest.");
+        else if (s.short_purse_resolution === "failed_muscle") c.push("Orren resisted your demands with armed guards; Mara sent heavy enforcers to break his door, docking your cut for the lack of finesse.");
         return c;
       },
       active: function (s) { return s.short_purse_stage === "active"; }

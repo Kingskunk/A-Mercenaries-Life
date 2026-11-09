@@ -1047,7 +1047,6 @@ stats = {
  "lyra_bond": "0",
  "janna_bond": "0",
  "talia_bond": "0",
- "vane_standing": "0",
  "rennick_disposition": "unmet",
  "black_oath_status": "outsider",
  "silt_gate_quest_stage": "unstarted",

@@ -87,7 +87,6 @@
         sub: "Founding Captain of the Iron Carrion",
         role: "Iron Carrion — Company Commander",
         tags: ["Iron Carrion"], aliases: ["Vane", "Joshua Vane", "captain", "commander", "founding captain"],
-        meter: function (s) { return truthy(s.met_vane) ? { stat: "vane_standing", label: "Captain Vane's Regard" } : null; },
         body: function (s) {
           if (!truthy(s.met_vane)) {
             return ["The Iron Carrion's commander. You have only seen his black raven pavilion from afar."];
@@ -763,7 +762,7 @@
         id: "black_oath", category: "factions", title: "The Black Oath",
         link: ["Black Oath"],
         sub: "Dredge-End's sworn brotherhood",
-        tags: ["Port Valen", "Underworld"], aliases: ["Oath", "Dredge-End", "brotherhood", "oath-breakers", "smugglers"],
+        tags: ["Port Valen", "Underworld", "Dredge-End"], aliases: ["Oath", "Dredge-End", "brotherhood", "oath-breakers", "smugglers", "Hask"],
         unlock: "codex_black_oath",
         body: function (s) {
           var out = [
@@ -787,7 +786,7 @@
           }
           return out;
         },
-        see: ["port_valen", "dredge_end", "gilded_scales", "port_watch"]
+        see: ["port_valen", "dredge_end", "gilded_scales", "port_watch", "hask"]
       },
       {
         id: "iron_bailiffs", category: "factions", title: "Baron Karr's Forces",

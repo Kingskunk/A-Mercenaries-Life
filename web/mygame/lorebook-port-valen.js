@@ -740,7 +740,7 @@
         }
         return out;
       },
-      see: ["black_oath", "silt_gates", "corve", "alley_shrine", "port_valen"]
+      see: ["black_oath", "silt_gates", "corve", "alley_shrine", "port_valen", "hask"]
     },
 
     /* ----------------------------------------------- DREDGE-END: THE SEVEN AREAS */
@@ -774,7 +774,7 @@
         }
         return out;
       },
-      see: ["dredge_end", "upper_gangways", "black_oath"]
+      see: ["dredge_end", "upper_gangways", "black_oath", "hask"]
     },
     {
       id: "upper_gangways", category: "places", title: "Upper Gangways",
@@ -821,13 +821,24 @@
     },
     {
       id: "hask", category: "people", title: "Hask",
-      sub: "Scrap dealer, the Boat-Sheds Scrap Yard",
-      role: "Scrap dealer, Boat-Sheds Scrap Yard (Dredge-End)",
-      link: ["Hask"],
-      tags: ["Dredge-End"], aliases: ["scrap dealer", "the dealer"],
-      // Same rule as Dell (crane three): his name stays hidden behind the same variable
-      // that unlocks it in the scrap-yard hub text.
-      unlock: "met_hask",
+      sub: function (s) {
+        return (truthy(s.hask_associate_joined) || s.black_oath_status === "associate" || truthy(s.hask_associate_offer_seen))
+          ? "Scrap dealer and Black Oath sponsor, Dredge-End"
+          : "Scrap dealer, the Boat-Sheds Scrap Yard";
+      },
+      role: function (s) {
+        return (truthy(s.hask_associate_joined) || s.black_oath_status === "associate" || truthy(s.hask_associate_offer_seen))
+          ? "Scrap dealer & Black Oath sponsor (Dredge-End)"
+          : "Scrap dealer, Boat-Sheds Scrap Yard (Dredge-End)";
+      },
+      link: ["Hask of the Black Oaths", "Hask of the Black Oath", "Hask"],
+      tags: ["Dredge-End", "Black Oath"],
+      aliases: ["Hask", "Hask of the Black Oath", "Hask of the Black Oaths", "scrap dealer", "the dealer", "Black Oath", "Black Oaths", "sponsor", "recruiter", "boat-sheds"],
+      unlock: function (s) {
+        return truthy(s.met_hask) || truthy(s.hask_courier_unlocked) || truthy(s.hask_associate_offer_seen) ||
+          truthy(s.hask_associate_joined) || s.black_oath_status === "associate" ||
+          (Number(s.black_oath_night_list_count) > 0) || (s.short_purse_stage && s.short_purse_stage !== "unstarted");
+      },
       body: function (s) {
         var out = [
           "A wide, slow man in a greased canvas apron who runs the scrap pen at the boat-sheds, weighing salvaged iron by the pound and watching a seller's hands and boots before he ever looks at a face. Some weeks the chain that comes in has the harbor-master's mark rasped off it, and he pays for it the same as anything else."
@@ -838,12 +849,18 @@
         if (truthy(s.hask_associate_offer_seen)) {
           out.push("After six clean rounds he finally named the employer: the Black Oath. He said he would put word of a capable runner upstairs.");
         }
-        if (truthy(s.hask_associate_joined)) {
+        if (truthy(s.hask_associate_joined) || s.black_oath_status === "associate") {
           out.push("He has put his own name behind yours. That makes you an associate who may be trusted with named paid work, not a sworn member of the brotherhood.");
+        }
+        if (Number(s.black_oath_night_list_count) > 0 || truthy(s.black_oath_night_list_resolution === "completed")) {
+          out.push("On his referral, you were admitted to the room above the Duckboard Market rope-and-oil house, where the woman upstairs directs the brotherhood's night lists and debt collections.");
+        }
+        if (s.short_purse_stage && s.short_purse_stage !== "unstarted") {
+          out.push("When twenty-four copper bits vanished from the boat-shed slip fund behind his driftwood fence, his standing as the quarter's gatekeeper brought the theft straight to the brotherhood's attention.");
         }
         return out;
       },
-      see: ["dredge_end", "black_oath"]
+      see: ["dredge_end", "black_oath", "boat_sheds", "duckboard_market"]
     },
     {
       id: "dredge_landing", category: "places", title: "Dredge Landing",

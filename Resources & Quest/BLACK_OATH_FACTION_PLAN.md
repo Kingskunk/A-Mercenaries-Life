@@ -74,7 +74,7 @@ After the first list, this becomes a **radiant contract** rather than a one-off 
 **The Premise & Community Stakes:**
 Joram Kell, an unsworn barge-hand and Dredge-End resident, drowned two nights ago when an overloaded cargo barge tipped near the canal water-gates. Joram held a half-share in a two-man cargo boat moored at the Boat-Sheds slipway. By waterfront custom, the Black Oath oversees the boat-shed slip fund, a pooled subscription paid by local boatmen to maintain berths, grease rollers, and buy out dead or injured crew shares so a vessel can keep working without missing a tide.
 
-The fund was supposed to pay out **24 copper bits** to buy out Joram's share for his widow (Tessa Kell), allowing his surviving partner to assume full ownership and keep the vessel working. When Mara opens the lead subscription tin kept behind the net-maker's shed to settle the payout, it is **24 copper bits short**. 
+The fund was supposed to pay out **24 copper bits** to buy out Joram's share for his widow (Tessa Kell), allowing his surviving sixteen-year-old partner, Derry, to assume full ownership under Black Oath convention and keep the vessel working. When Mara opens the lead subscription tin kept behind the net-maker's shed to settle the payout, it is **24 copper bits short**. 
 
 Worse, Orren, a corrupt Gilded Scales collector who impounds boats for missing fees, has posted notice that if the dead man's share and mooring dues aren't cleared with stamped coin, he is seizing the boat as "unregistered abandoned tonnage" to auction at the high wharves.
 
@@ -98,8 +98,8 @@ After resolving this beat, the dialogue rejoins the main briefing (`short_purse_
 **Investigation Beats (Branch-and-Bottleneck):**
 
 1. **Beat 1: The Net-Maker’s Shed (The Crime Scene):**
-   - The player visits Old Corin at the boat-sheds where the tin was kept.
-   - *Investigation/Insight check (DC 11) or carried tool:* The lock was not forced with iron; it was opened with an oiled wire, or someone knew where the hidden peg was. Corin reveals that young Derry, a sixteen-year-old wharf-runner who ran errands for the dead man, was the last one left alone with the gear before the watch-change.
+   - The player visits Old Vond at the boat-sheds where the tin was kept.
+   - *Investigation/Insight check (DC 11) or carried tool:* The lock was not forced with iron; it was opened with an oiled wire, or someone knew where the hidden peg was. Vond reveals that young Derry, Joram's sixteen-year-old partner and co-owner of the skiff, panicked after Orren threatened him with debtor hulks, stole the 24 coppers to pay off the Scales, and bolted toward Lamp Stair.
 
 2. **Beat 2: Tracking Derry (The Confrontation at Lamp Stair):**
    - The player traces Derry to the narrow alleys behind Lamp Stair. Derry panics and tries to scramble up an exterior cargo ladder or dart into a drainage chute.
@@ -115,19 +115,19 @@ After resolving this beat, the dialogue rejoins the main briefing (`short_purse_
    - *The Decision Core (Three Meaningful Solutions):*
      - **Option A: The Cold Reclaim (Enforce the Code):** March Derry straight to Orren's toll-post, intimidate or strong-arm Orren into coughing up the stolen 24 coppers (STR/Intimidation DC 12 or Black Oath muscle). *Outcome:* The slip tin is fully restored. Orren backs down under Oath pressure but harbors a bitter grudge. Joram's surviving partner gets the boat, but Derry is publicly exposed as a thief. Sets `short_purse_resolution = "recovered_enforced"`.
      - **Option B: The Mercenary Pocket (Personal Subsidy):** The player covers the 24 copper bits out of their own coin pouch (paying 24 coppers, guarded by `currency_txn_locked`). Derry's theft stays hidden, the slip fund is restored for the widow, and Mara receives the full tin. *Outcome:* Solves the problem with zero street friction. Mara notices the clean minting of the coins with a keen eye, respecting the player's discretion while warning that soft hearts don't buy firewood. Sets `short_purse_resolution = "covered_pocket"`, `short_purse_derry_protected = true`.
-     - **Option C: The Leveraged Compromise (Street Fixer):** Use Investigation/Persuasion (DC 12) to catch Orren in an illegal off-the-books extortion of a Black Oath slip. Orren folds, returning 12 coppers and dropping the seizure notice; the player gets Old Corin and the net-makers to cover the remaining 12 as a crew solidarity pool. *Outcome:* No coin lost by the player, the skiff is protected, and the crew solidarity is restored. Sets `short_purse_resolution = "brokered_compromise"`.
+     - **Option C: The Leveraged Compromise (Street Fixer):** Use Investigation/Persuasion (DC 12) to catch Orren in an illegal off-the-books extortion of a Black Oath slip. Orren folds, returning 12 coppers and dropping the seizure notice; the player gets Old Vond and the net-makers to cover the remaining 12 as a crew solidarity pool. *Outcome:* No coin lost by the player, the skiff is protected, and the crew solidarity is restored. Sets `short_purse_resolution = "brokered_compromise"`.
 
 **Resolution & Aftermath:**
 - Return to the upper room. Mara receives the 24 copper bits.
 - **The Name Reveal:** Impressed by the player's ability to settle a neighborhood dispute without triggering a riot, a Watch raid, or a crew strike, Mara puts her chalk down and introduces herself properly:
   *"I am Mara Vey. People around Duckboard bring me their books when the numbers won't lie flat. When there is trouble in this ward that needs quiet iron or cool heads, I decide whose boots walk."*
-- **Promotion to Ward Hand:**
-  - `black_oath_status = "ward_hand"`
+- **Direct Associate Access & Mara Vey Reveal:**
+  - `black_oath_status = "associate"` (remains a trusted associate; full sworn mob membership/Ward Hand promotion requires 1-2 more contracts)
   - `black_oath_mara_named = true`
   - Unlocks Mara as a direct contact in the upper room without needing Hask's vetting.
   - Adds +1 to `quests_finished` pool in `count_finished_dredge_end`.
 - **Hask's Reaction:** When the player next visits the scrap yard, Hask grunts over his scales:
-  *"Heard you settled the Kell business with Mara. Good. You're her Ward Hand now. Just remember who put your boots on her stairs."*
+  *"Heard you settled the Kell business with Mara. Good. You're her runner now. Just remember who put your boots on her stairs."*
 
 ### 3. Further ward-level named work
 
@@ -191,4 +191,4 @@ A useful long-term split is:
 1. **[RESOLVED in §2]** Define the ward keeper's personality, practical authority, and conflict with Hask's approach: Mara Vey values quiet neighborhood balance, clean tallies, and community stability, contrasting with Hask's purely transactional scrap-and-courier pragmatism.
 2. **[RESOLVED in §2]** Decide the emotional outcome and branching resolutions of *The Short Purse*: Three meaningful branch resolutions (Cold Enforcement, Mercenary Pocket, and Leveraged Compromise), each tracking concrete consequence flags without relying on deleted numerical reputation counters.
 3. **[RESOLVED in §2]** Opening state reads: Strictly the Outlaw origin (`origin = "outlaw"`) via a dedicated interrogation beat. Avoid gamey callbacks to Silt-Gate or past Night List tallies, Mara gets straight to the immediate ward crisis without conversational bloat.
-4. Add a named-job progression counter only when there are enough named jobs to support it: *The Short Purse* provides the milestone jump from Associate to Ward Hand (`black_oath_status = "ward_hand"`), and registers as a completed quest in `count_finished_dredge_end`.
+4. Add a named-job progression counter only when there are enough named jobs to support it: *The Short Purse* provides direct access to Mara Vey as a vetted associate (`black_oath_mara_named = true`), and registers as a completed quest in `count_finished_dredge_end`. Full promotion to Ward Hand will require 1-2 further ward contracts as the player gets to know more of the syndicate.

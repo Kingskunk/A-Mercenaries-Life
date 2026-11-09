@@ -16,7 +16,7 @@ All quests use standardized ChoiceScript lifecycle variables declared in `startu
 3. **Intel & Evidence Flags:**
    - Tracks discovered clues, stolen manifests, or extracted names (`[quest_name]_full_intel`, `found_customs_vellum`, etc.).
 4. **Reward & Claim Flags:**
-   - One-time payout protection (`[quest_name]_bounty_claimed`), reputation boosts (`vane_standing`), and unique items (`has_silt_gate_payout_slip`).
+   - One-time payout protection (`[quest_name]_bounty_claimed`), one-time regard flags (`vane_impressed_boom_report`), and unique items (`has_silt_gate_payout_slip`).
 
 ---
 
@@ -413,7 +413,7 @@ graph TD
 *create silt_gate_voss_told false             *comment Voss's remark about the polite sergeants, shown once
 *create kestrel_watch_leverage false          *comment Kestrel holds the names; RESERVED for future Watch quests
 *create black_oath_status "outsider"          *comment "outsider", "contact", "associate"
-*create vane_standing 0                       *comment mercenary company captain regard
+*create vane_impressed_boom_report false      *comment Alderford boom report taken to Vane, not Varren (replaces the old vane_standing counter)
 
 *comment --- Crane Three day-labor (see full label list above) ---
 *create crane_quest_stage "unstarted"         *comment "unstarted", "active", "resolved"
