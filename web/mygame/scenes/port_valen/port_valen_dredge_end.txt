@@ -1391,11 +1391,11 @@ The canal bank here is lined with open-fronted timber sheds built out over the s
         *set cut_scrap_sold_count + 1
 
       [b][💰 Scrap Sold: +${scrap_paid} Copper Bits][/b]
-      *if ((cut_scrap_sold_count >= 6) and (not(scrap_vetting_offer_seen)))
+      *if ((cut_scrap_sold_count >= 3) and (not(scrap_vetting_offer_seen)))
         *goto scrap_vetting_approach
       *goto cut_sheds_hub
 
-  *if ((hask_courier_count >= 6) and (not(hask_associate_joined)))
+  *if ((hask_courier_count >= 3) and (not(hask_associate_joined)))
     *if (not(hask_associate_offer_seen))
       # Hask has put away his scales and is waiting for you.
         *goto hask_associate_offer
@@ -1403,8 +1403,16 @@ The canal bank here is lined with open-fronted timber sheds built out over the s
       # Ask Hask about working for the Black Oath by name.
         *goto hask_associate_offer
   *if (hask_associate_joined)
-    # Ask Hask whether the Black Oath has named work for you.
-      Hask shakes his head. "Not today. The woman upstairs knows your name. When there is work that needs an outside hand, it will come through me."
+    # Ask Hask about news from the Black Oath.
+      *if (short_purse_stage = "completed")
+        Hask looks up from a rusted capstan gear, wiping his grease-blackened hands with a rag. "Word travels fast along the mud," he grunts. "Heard what happened with Derry and Joram's skiff up at the high ramp. You backed Orren down without burning the sheds or bringing the Watch into Dredge-End. The boat crews remember that."
+      *elseif (black_oath_night_list_count >= 1)
+        *if (black_oath_night_list_resolution = "completed")
+          Hask tests a chain link with his hammer before tossing it into a sorted bin. "Mara says you made the night circuit without the Watch chasing you down the channel," he says. "Clean work. Keeps the table off my neck."
+        *else
+          Hask glances up from his scales. "Mara mentioned the skimmers jumped you by Lamp Stair. At least you came back on two feet. Watch your flanks when you take a list."
+      *else
+        Hask shakes his head, setting a lead weight on the scale arm. "Mara knows who you are now. When the table has another slate to run, word will come. Check the room above the shop after dark."
       *goto cut_sheds_hub
 
   *if (hask_courier_unlocked) and (scrap_vetting_day < campaign_day)
@@ -1461,16 +1469,18 @@ The canal bank here is lined with open-fronted timber sheds built out over the s
     # ↦ Walk to the district picked on the sidebar. [port_valen]
       *goto_scene port_valen/port_valen port_valen_walk_picked
 
-*comment ····· sub-scene: Hask's recruitment offer, fires once on the 6th sale
+*comment ····· sub-scene: Hask's recruitment offer, fires once on the 3rd sale
 *label scrap_vetting_approach
 *set met_hask true
 This time, though, his thumb stays closed over the last coin.
 
-"You're back again," he says. Not a question. "Same mud, same few coppers, week in and week out." He looks you over the way a man checks a rope before he trusts his weight to it—not your face, your hands and your ${feet_prose}. "Name's Hask. There's real money moves through this quarter. Not this." He nods at the empty balance pan. "But it's not weighed anywhere a man with clean hands gets to watch."
+"You're back again," he says. Not a question. "Same mud, same few coppers, week in and week out." He looks you over the way a man checks a rope before he trusts his weight to it, not your face, your hands and your ${feet_prose}. "Name's Hask. There's real money moves through this quarter. Not this." He nods at the empty balance pan. "But it's not weighed anywhere a man with clean hands gets to watch."
 
 He waits, watching you, and doesn't say anything more.
 *choice
-  # Ask him what he means.
+  # "I'm listening. What kind of money?"
+    *goto scrap_vetting_pitch
+  # "If there's better pay than dragging scrap, lay it out."
     *goto scrap_vetting_pitch
   # Take your coin and go. Not today.
     *set scrap_vetting_offer_seen true
@@ -1479,28 +1489,44 @@ He waits, watching you, and doesn't say anything more.
 
 *comment ····· sub-scene: the pitch, re-enterable any later visit until taken or resolved
 *label scrap_vetting_pitch
-He glances once down the row of sheds, though nobody's close enough to hear over the draw-knives. "Man I do business with always needs somebody to carry word and small parcels between people who'd rather not walk the lanes themselves. Nothing heavy, nothing that'll get you in trouble if you're stopped and asked to open one. He just needs somebody who delivers what he's given, doesn't dawdle, and doesn't ask who anything's for." He shrugs. "I don't send him just anybody. You've shown up here often enough that I'm willing to put your name to him. Doesn't mean he'll trust you either, not yet."
+He glances once down the row of sheds, though nobody is close enough to hear over the draw-knives.
 
-"It's a full afternoon of it—several stops, all over the quarter, before you're done. He'll know soon enough whether you're worth sending again."
+"I buy iron with the harbor-master's proof-stamps rasped off," he says in a low rasp. "The table I answer to moves things that don't belong on a balance pan. They need runners who can carry parcels across the quarter without asking questions, dawdling in cookshops, or drawing the Watch."
+
+He leans back against his nail-keg, wiping grease from his thumb with a scrap of sailcloth.
+
+"I don't send just anybody. You've brought salvage here three times without whining about the weight or crying over rust. It's a circuit across the ward: three drops before the light turns. Twelve coppers if you're quick and clean."
+
 *choice
-  # Ask what's actually in the parcels.
-    "Whatever he's given me to hand you," he says. "I don't open them and neither do you. That's the whole job."
-    *goto scrap_vetting_pitch
-  # Take the round.
+  # "What am I carrying in those parcels?"
+    "Nothing that bleeds, and nothing that ticks," he says. "Wrapped tight in canvas. You don't open the twine, and whoever takes it doesn't ask your mother's name. That's the whole trade."
+    *choice
+      # "Twelve coppers for three stops. Hand over the satchel."
+        *set scrap_vetting_offer_seen true
+        *if (scrap_vetting_quest_stage = "unstarted")
+          *set scrap_vetting_quest_stage "active"
+        *goto scrap_vetting_run
+      # "I'll pass for today."
+        *set scrap_vetting_offer_seen true
+        "Suit yourself," he says.
+        *goto cut_sheds_hub
+  # "Twelve coppers for three stops. Hand over the satchel."
     *set scrap_vetting_offer_seen true
     *if (scrap_vetting_quest_stage = "unstarted")
       *set scrap_vetting_quest_stage "active"
     *goto scrap_vetting_run
-  # Walk away from it.
+  # "I'll pass. I don't run blind parcels through Dredge-End."
     *set scrap_vetting_offer_seen true
-    "Your loss," he says, and doesn't ask again today.
+    "Suit yourself," he says, picking up his wire brush. "The mud is always waiting if you'd rather shovel silt."
     *goto cut_sheds_hub
 
 *comment ····· sub-scene: the delivery round itself, shared by the first attempt and every later one
 *label scrap_vetting_run
 *set scenery_subplace "dredge_upper_gangways"
 *set scrap_vetting_day campaign_day
-Hask hands over a canvas satchel, already packed: a few wrapped parcels, nothing heavy, nothing that rattles or clinks. "Market stall, the walkway rail, the foot of Lamp Stair. In that order, or don't bother going at all. Whoever's waiting will know you by the satchel, not your face."
+Hask hands over a canvas satchel, packed with three wrapped parcels: flat, bound in tarred twine, nothing that rattles.
+
+"Duckboard fish stall, the Upper Gangway rail, then the foot of Lamp Stair," he says. "In that order. Hand each one over, take the receipt nod, and keep your feet moving."
 
 *set hours_to_pass 6
 *set minutes_to_pass 0
@@ -1529,16 +1555,13 @@ Hask hands over a canvas satchel, already packed: a few wrapped parcels, nothing
     *set hint_scrap_cha " [CHA DC 11]"
 
 *choice
-  # Keep a hard, steady pace between stops and get the whole round done before the light turns.${hint_scrap_str}
+  # Push a hard, relentless pace along the canal catwalks.${hint_scrap_str}
     *gosub_scene dice_engine roll_skill_check 12 "athletics" "" "" "" "" ""
     *goto scrap_vetting_resolve
-  # Take the fastest cuts between each stop, and don't waste a step doubling back.${hint_scrap_dex}
-    *set check_stat "dex"
-    *set check_dc 12
-    *set check_skill "Know the Shortest Way"
-    *gosub_scene dice_engine roll_d20_check
+  # Cut through the narrow timber alleys and service ramps.${hint_scrap_dex}
+    *gosub_scene dice_engine roll_skill_check 12 "acrobatics" "" "" "" "" ""
     *goto scrap_vetting_resolve
-  # Keep every hand-off brief and businesslike, in and out without lingering to talk.${hint_scrap_cha}
+  # Make each exchange curt and professional without lingering.${hint_scrap_cha}
     *gosub_scene dice_engine roll_skill_check 11 "persuasion" "" "" "" "" ""
     *goto scrap_vetting_resolve
 
@@ -1553,16 +1576,18 @@ Hask hands over a canvas satchel, already packed: a few wrapped parcels, nothing
 
 *if (check_success)
   *if (not(hask_courier_unlocked))
-    All three parcels change hands without a wasted word, and you're back at the sheds before the satchel's had time to go stiff with damp.
+    All three parcels change hands without a hitch: a quiet drop beneath a fish stall at Duckboard, a quick handoff to a lookout on the high rail, and a silent trade at the foot of Lamp Stair. You return to the scrap pen with the empty canvas satchel before the tide turns.
 
-    Hask counts out the coin without much comment, same flat count as every sale before it. "Same again tomorrow, if you're still around," is all he says, and goes back to his scales.
+    Hask counts out twelve copper bits into your palm from his leather pouch.
+
+    "Three clean drops," he grunts, his thumb sliding the counterweight back along the scale arm. "You move quick, you don't stare, and you don't talk. I can use feet like that again tomorrow."
 
     [b][💰 Deliveries Made: +12 Copper Bits][/b]
     *set black_oath_status "contact"
     *set hask_courier_unlocked true
     *set scrap_vetting_quest_stage "resolved"
   *else
-    Same three stops, same satchel, and nobody so much as looks at you twice by the third hand-off.
+    The circuit goes smoothly: three drops, no questions, and the empty satchel back in Hask's hands before dusk.
 
     [b][💰 Deliveries Made: +12 Copper Bits][/b]
   *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
@@ -1571,9 +1596,11 @@ Hask hands over a canvas satchel, already packed: a few wrapped parcels, nothing
     *set currency_txn_locked true
     *set locked_currency_txn_page_id page_id
 *else
-  One hand-off runs long—a wrong turn, a slow crowd, a stop that keeps talking past when you'd rather be gone—and by the time you're back the satchel's a delivery short.
+  A delay on the gangways, a jammed timber cart, a slow recipient, and a Watch patrol lingering near the ramp, costs you precious daylight. You manage two drops, but the third recipient had already cleared out.
 
-  Hask's mouth flattens, but his hands don't stop moving over the scales. "Doesn't fill me with confidence," is all he says.
+  Hask's mouth flattens. He tosses four coppers onto the bench.
+
+  "A delivery short," he says, his voice flat. "Out here, daylight is coin. Take the four coppers. Try again tomorrow if you want the full twelve."
 
   [b][💰 Deliveries Made: +4 Copper Bits][/b]
   *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
@@ -1596,28 +1623,30 @@ Hask hands over a canvas satchel, already packed: a few wrapped parcels, nothing
       *goto_scene port_valen/port_valen port_valen_walk_picked
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment ····· sub-scene: after six successful rounds, Hask names the employer and offers associate standing
+*comment ····· sub-scene: after three successful rounds, Hask names the employer and offers associate standing
 *label hask_associate_offer
 *set hask_associate_offer_seen true
 *set met_hask true
 
 Hask has taken the balance pans off their hook and laid them beneath the bench. Without the scales between you, the scrap pen feels smaller.
 
-"Six clean rounds," he says. "You did the work. You did not pry. That's enough."
+"Three clean rounds," he says, leaning forward on his nail-keg. "You did the work. You didn't pry into the twine, and you didn't draw Watch lanterns to my yard. That's enough."
 
-"The work came from the Black Oath," Hask says. "I can keep you on the runs, if that's all you want. Or I can put your name to my boss. They decide if you get anything else."
+"The parcels come from the Black Oath," Hask says in a low murmur. "I can keep paying you day wages for courier work if that's all you want. Or I can vouch for you to Mara Vey upstairs. She runs the ward's slates. That makes you an associate."
 
-He waits a moment, then adds, "That makes you an associate. Paid when there's work, and there's always work to be done in the Black Oath."
+"Paid when there's work, and there's always work along the canal for someone who knows how to keep quiet."
 
 *choice
-  # Accept Hask's offer and become a Black Oath associate.
+  # "I'll take the associate standing. Tell Mara I'm ready."
     *if (not(hask_associate_joined))
       *set hask_associate_joined true
       *set black_oath_status "associate"
       *set codex_black_oath true
-    Hask gives a short nod and reaches for the balance pans.
+    Hask gives a short nod, a faint grimace passing for a smile.
 
-    "I'll tell the woman upstairs I have a runner who can do a job and keep quiet. If she wants you, word will come. Until then, you work for me. You're my associate, not Oathsworn."
+    "Second floor above the rope-and-oil shop at Duckboard Market," he says. "Go after dark. Tell the heavy by the bottom step that Hask sent you. Mara's waiting."
+
+    "You're an outside associate, runner. Not sworn to the Oath yet, but your name is on her slate. Don't make me regret putting it there."
 
     [b][Black Oath Associate][/b]
     *choice
@@ -1626,8 +1655,8 @@ He waits a moment, then adds, "That makes you an associate. Paid when there's wo
       *if (vane_independent_operative)
         # ↦ Walk to the district picked on the sidebar. [port_valen:read]
           *goto_scene port_valen/port_valen port_valen_walk_picked
-  # Keep the courier work, but refuse the named arrangement for now.
-    "Then you keep carrying blind," Hask says. He hangs the balance pans back on their hook. "Ask again if you change your mind."
+  # "I'll stick to carrying day parcels for now."
+    "Then keep carrying blind," Hask says. He hangs the balance pans back on their hook. "The coin is the same. Ask again if you change your mind."
 
     *goto cut_sheds_hub
 

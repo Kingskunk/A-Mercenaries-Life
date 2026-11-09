@@ -323,7 +323,36 @@
       active: function (s) { return s.lyra_quest_stage === "active"; }
     },
     {
-      id: "black_oath_night_list", title: "The Night List", place: "Dredge-End",
+      id: "black_oath_night_list", title: "The Night List",
+      giver: function (s) { return truthy(s.black_oath_mara_named) ? "Mara Vey" : "The Woman Upstairs"; },
+      place: function (s) {
+        if (s.black_oath_night_list_stage === "resolved") return "Completed";
+        if (s.black_oath_night_list_stop === "boat_sheds") return "Dredge-End · The Boat-Sheds";
+        if (s.black_oath_night_list_stop === "alley_shrine") return "Dredge-End · Flooded Lower Steps";
+        if (s.black_oath_night_list_stop === "lamp_stair") return "Dredge-End · Lamp Stair";
+        if (s.black_oath_night_list_stop === "return" || s.black_oath_night_list_stop === "ambush") return "Dredge-End · Duckboard Market";
+        return "Dredge-End";
+      },
+      goal: function (s) {
+        if (s.black_oath_night_list_stage === "resolved") {
+          if (s.black_oath_night_list_resolution === "completed") return "The night delivery circuit has been settled and your cut paid.";
+          return "The run went sour in the lane; a purse was lost to alley skimmers.";
+        }
+        if (s.black_oath_night_list_stop === "boat_sheds") return "Collect two tied leather purses from the back sill of the third boat-shed.";
+        if (s.black_oath_night_list_stop === "alley_shrine") return "Trade the first purse for an oilcloth packet at the flooded shrine steps.";
+        if (s.black_oath_night_list_stop === "lamp_stair") return "Deliver the packet behind the Lamp Stair cookshop and collect the return purse.";
+        if (s.black_oath_night_list_stop === "return" || s.black_oath_night_list_stop === "ambush") return "Carry the collected coin and parcel safely back to the room above Duckboard Market.";
+        return "Complete the night delivery circuit for the woman above Duckboard Market.";
+      },
+      clues: function (s) {
+        var c = [];
+        if (truthy(s.black_oath_night_list_clue_sheds)) c.push("The boat-shed drop pays regular syndicate dues directly into the Oath's clearinghouse.");
+        if (truthy(s.black_oath_night_list_clue_shrine)) c.push("The flooded steps under the alley shrine are a blind drop for waterborne contraband.");
+        if (truthy(s.black_oath_night_list_clue_skimmers)) c.push("Alley skimmers and desperate dock-hands stake out late couriers in the drain cuts around Lamp Stair.");
+        if (s.black_oath_night_list_resolution === "completed") c.push("You delivered the run without incident and proved yourself a reliable courier to the Black Oath.");
+        else if (s.black_oath_night_list_resolution === "failed") c.push("You were jumped in the narrow lane and lost one of the purses before reaching the safehouse.");
+        return c;
+      },
       active: function (s) { return s.black_oath_night_list_stage === "active"; }
     },
     {

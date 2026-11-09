@@ -2,20 +2,32 @@
 *comment BLACK OATH: THE NIGHT LIST
 *comment
 *comment First named Black Oath contract, then repeatable night work. Entered only from the Duckboard Market
-*comment rope-and-oil house after dark. Hask puts the player forward; the woman in the room above gives the job.
-*comment This scene returns to the Dredge-End market hub and is intentionally outside the main district file so
+*comment rope-and-oil house after dark. Hask puts the player forward; Mara Vey gives the job.
+*comment This scene returns to the Dredge-End market hub and lives in its own scene file so
 *comment later Black Oath contracts can live alongside it.
 *comment
-*comment THE THREE-OPTION BLOCK AT THE END IS AN ESCALATION LADDER, not three parallel checks. All three
-*comment approach rolls land on night_list_check; a pass walks straight through, and a failure sets
-*comment combat_enemy_advantage and hands the player a fight (night_list_fight). Winning that fight pays
-*comment exactly what a clean pass pays. Losing it -- or fleeing, or being "rescued" at 1 HP -- lands on
-*comment night_list_failed, whose prose was always written as a fight that went badly. A failed roll is
-*comment therefore never a dead end: it is a second route to the same errand, priced in blood.
+*comment THE AMBUSH BLOCK AT THE END OFFERS 4 APPROACHES (Persuasion/Intimidation, Athletics, Acrobatics, Perception).
+*comment All approach rolls land on night_list_check; a pass walks straight through, and a failure sets
+*comment combat_enemy_advantage and hands the player a non-lethal fight (night_list_fight). Winning that fight pays
+*comment exactly what a clean pass pays. Losing it (or fleeing, or being floored at 1 HP) lands on
+*comment night_list_failed, where an alley skimmer wrenches a purse away and Mara docks pay.
+*comment A failed roll is therefore never a dead end: it is a second route to the same errand, priced in blood.
 *comment ====================================================================================================
 
-*comment night_list_repeat (a later run of the list, after the first was resolved) and night_list_repeat_trouble (the roll that decides whether a repeat run meets trouble) are stats created in startup.txt, not scene temps: the district enters this scene AT A LABEL
-*comment (night_list_briefing), so a *temp declared up here never ran and the route crashed on "Non-existent variable night_list_repeat" the first time it reached the repeat check.
+*label dev_reset_night_list
+*set black_oath_night_list_stage "unstarted"
+*set black_oath_night_list_resolution "none"
+*set black_oath_night_list_paid false
+*set black_oath_night_list_count 0
+*set black_oath_night_list_day 0
+*set black_oath_night_list_stop "none"
+*set black_oath_night_list_clue_sheds false
+*set black_oath_night_list_clue_shrine false
+*set black_oath_night_list_clue_skimmers false
+*set black_oath_keeper_met false
+*set night_list_repeat false
+*set night_list_repeat_trouble 0
+*return
 
 *label night_list_briefing
 *set met_hask true
@@ -29,22 +41,25 @@
 *if ((not(black_oath_keeper_met)) and (black_oath_night_list_count = 0))
   *set black_oath_keeper_met true
 
-  Someone below waves you up in silence. The steps end at a low room above the shop, warmer than the street and close with the smell of lamp oil, wet hemp, and old wax. Coils of rope sit against the far wall. A slate table holds a small leather wallet and a short strip of paper marked with neat columns.
+  Someone below waves you up in silence. The steps end at a low room above the shop, warmer than the street and close with the smell of lamp oil, wet hemp, and old wax. Coils of heavy mooring rope sit against the far wall. A stone-topped table holds a small leather wallet and a narrow strip of paper marked with neat chalk columns.
 
-  A woman in a plain dark coat sits at the table, counting its contents before she knots it shut. She looks up only after finishing.
+  A woman in a plain dark coat sits behind the table, tallying coins on a piece of slate before sweeping them into a drawer. She looks up only after the wood slides shut, her dark-grey eyes taking your measure in the candlelight.
 
-  "Hask's runner. Sit, or don't."
+  "Hask said he had someone with good boots and a shut mouth," she says, her voice flat and low. "Sit if you want. Don't touch the paper."
 
   *choice
-    # Tell her Hask said you would run the list, stay quiet, and bring the payment home.
-      "Hask said there was work," you say. "He said I could carry a list and not ask questions."
+    # "Hask sent me for the night run. Let's see the route."
+      "Hask sent me," you say, taking a seat across the table. "He said you had a route that needed running. If the coin's good, I can move through Dredge-End without drawing the Watch."
+
+      She gives a single, sharp nod, resting her hands flat against the timber.
       *goto night_list_offer
-    # Ask who she is.
-      "Who are you?"
-      "I handle the work here. That is enough for tonight."
-      *goto night_list_briefing
-    # Leave the room.
-      She gives a small nod and resumes her count. The person below is waiting when you come down.
+    # "If I'm carrying your coin, I ought to know who's writing the list."
+      "If I'm carrying your coin through the dark," you say, "I ought to know who's writing the list."
+
+      "You know the door, and you know the coin," she says without blinking. "That's all an outside hand needs before dawn. Ask Hask if you want a family history." She taps the paper strip with one square-cut fingernail. "Either take the work, or walk back down the steps."
+      *goto night_list_offer
+    # Turn around and leave the room.
+      She gives a small nod and pulls her papers closer. The person below is waiting when you come down.
       *goto_scene port_valen/port_valen_dredge_end cut_market_page
 *else
   The person below recognizes you and steps aside. On the upper floor, the woman has another marked strip on the table and a fresh pair of purses next to it.
@@ -57,71 +72,185 @@
     *choice
       # Hear what needs an outside hand.
         *goto_scene port_valen/black_oath/black_oath_short_purse short_purse_entry
-      # "I'm only here for a night run."
+      # "I'm only here for a regular night run."
         *goto night_list_offer
       # Leave the room.
         She gives a small nod and pulls her papers closer.
         *goto_scene port_valen/port_valen_dredge_end cut_market_page
   *else
-    "You want a list?" she asks.
+    "Ready for another run?" she asks, not looking up from her ledger.
     *goto night_list_offer
 
 *label night_list_offer
 
-She pulls the marked strip closer and puts a finger over each line as she speaks.
+She pulls the marked strip closer and sets a finger against the first chalk mark.
 
-"First, the boat-sheds. Leave this shop by the waterside. Go past the scrap yard's driftwood fence and find the net-maker's shed just beyond it. Knock twice on the back plank. Two tied leather purses will be waiting."
+"Three drops before the tide turns," she says, her voice quiet and even. "First, the boat-sheds behind the scrap yard's driftwood fence. Third shed down, where the tar kettles sit cold. Knock twice on the back sill. You'll get two tied leather purses."
 
-Her finger moves to the next mark. "Then head toward the alley shrine, but do not go through its arch. Follow the waterside and go down the steps below it. Someone will be waiting. Give them the first; they will give you a wrapped parcel."
+Her finger moves down the paper. "Take the first purse down to the flooded steps below the alley shrine. Stay off the shrine paving; stick to the wet stones at the waterline. Someone will be waiting in the shadow under the jetty. Give them the purse; they will hand you an oilcloth packet."
 
-"Last, Lamp Stair. Go up by the shrine and follow the seawall with it to your left until the red lamps start. Use the service passage behind the cookshop. Parcel for the other. Bring it all here."
+"Last, carry that packet up to Lamp Stair. Use the narrow service cut behind the cookshop where the red lanterns hang. Trade the packet at the back door for a third purse. Bring both purses and the parcel straight back to this table."
 
 *choice
-  # Accept the list and make the run.
+  # Take the marked strip and head into the dark.
     *set night_list_repeat false
     *if (black_oath_night_list_stage = "resolved")
       *set night_list_repeat true
     *set black_oath_night_list_stage "active"
     *set black_oath_night_list_resolution "none"
     *set black_oath_night_list_paid false
+    *set black_oath_night_list_stop "boat_sheds"
     *goto night_list_route
-  # Ask what is in the packet.
-    "What is in the packet?"
-    "Not your concern. If you can carry it without knowing, carry it. If not, leave it on the table."
-    *goto night_list_offer
+  # "What am I carrying in that oilcloth packet?"
+    "What's in the oilcloth?" you ask.
+
+    "Something that costs more than your life if you drop it in the canal, and less than a copper if the Port Watch catches you holding it," she says, her dark-grey eyes cold and level. "That's why I pay eighteen coppers for someone who doesn't untie the cord. If you want a cargo manifest, go haul grain for the carters. If you want Oath coin, keep your mouth shut and your feet moving."
+
+    *choice
+      # "Fair enough. Give me the list."
+        *set night_list_repeat false
+        *if (black_oath_night_list_stage = "resolved")
+          *set night_list_repeat true
+        *set black_oath_night_list_stage "active"
+        *set black_oath_night_list_resolution "none"
+        *set black_oath_night_list_paid false
+        *set black_oath_night_list_stop "boat_sheds"
+        *goto night_list_route
+      # "I'll make the run. Just have eighteen coppers ready on this table."
+        "I'll make the run," you say, taking the marked paper. "Just have eighteen coppers ready when I get back."
+        "They will be," she says flatly. "Move."
+        *set night_list_repeat false
+        *if (black_oath_night_list_stage = "resolved")
+          *set night_list_repeat true
+        *set black_oath_night_list_stage "active"
+        *set black_oath_night_list_resolution "none"
+        *set black_oath_night_list_paid false
+        *set black_oath_night_list_stop "boat_sheds"
+        *goto night_list_route
+      # "Not on those terms. I'm stepping out."
+        "Not on those terms," you say.
+        "Then don't waste the candle," she says, her pen already moving. "Walk."
+        *goto_scene port_valen/port_valen_dredge_end cut_market_page
   # Decline the work tonight.
     "Not tonight," you say.
-    "That's fine. I'll get someone else."
+    "Then don't waste the candle," she says, her chalk already moving. "Walk."
     *goto_scene port_valen/port_valen_dredge_end cut_market_page
 
 *label night_list_route
 *set scenery_subplace "dredge_boat_sheds"
+*set black_oath_night_list_stop "boat_sheds"
 
 *temp night_list_str ""
 *temp night_list_dex ""
 *temp night_list_cha ""
+*temp night_list_wis ""
 *if (show_stat_hints)
   *set night_list_str " [STR DC 12]"
   *set night_list_dex " [DEX DC 12]"
   *set night_list_cha " [CHA DC 11]"
+  *set night_list_wis " [WIS DC 11]"
 
-You leave the rope-and-oil house by the waterside. The noise from Duckboard fades, and the boat-sheds stand closed beyond the scrap yard's driftwood fence. At the back plank she described, you knock twice. Someone reaches through a gap and sets two tied purses on the sill before withdrawing.
+*if (night_list_repeat)
+  *goto night_list_repeat_circuit
 
-*page_break Continue to the alley shrine…
-*goto night_list_shrine_stop
+You leave the rope-and-oil house by the waterside door. Duckboard Market fades into the river fog, replaced by the smell of low tide, wet salt, and cold pitch.
+
+Past the driftwood fence of the scrap yard, you reach the third shed. A dim lantern flickers behind the weathered timbers. You hear the dull clink of ballast iron and the heavy creak of a skiff riding the low swell.
+
+*choice
+  # Rap twice on the sill and give your business.
+    You rap twice with your knuckles on the water-bleached timber.
+
+    "From the table above Duckboard," you say in a low murmur.
+
+    A rough, scarred hand thrusts through the gap in the planks, sliding two tied leather purses onto the wet sill.
+
+    "Take them and clear out," a gruff voice mutters. "Watch skiffs are rowing near the bridge."
+
+    *set black_oath_night_list_clue_sheds true
+    *page_break Head along the waterline toward the alley shrine...
+    *goto night_list_shrine_stop
+  # Tap twice and wait in the shadow without speaking.
+    You tap the sill twice, then step into the shadow of an overturned dory, watching the muddy lane.
+
+    A timber slat shifts. Two tied leather purses slide onto the damp sill, clinking softly with heavy coin. You scoop them up and secure them in your satchel before the slat slides shut.
+
+    *set black_oath_night_list_clue_sheds true
+    *page_break Head along the waterline toward the alley shrine...
+    *goto night_list_shrine_stop
+  # Weigh the purses in your hand before moving on.
+    You knock twice and take the purses as they're thrust through. Under the dim moonlight, you weigh them in your palm: one is thick and heavy with coin, sealed with a dab of dark tar; the other is lighter, tied with double-knotted hemp.
+
+    The boatmen are paying their slip dues into the Oath's clearinghouse.
+
+    *set black_oath_night_list_clue_sheds true
+    *page_break Head along the waterline toward the alley shrine...
+    *goto night_list_shrine_stop
 
 *label night_list_shrine_stop
 *set scenery_subplace "dredge_flooded_lower_steps"
+*set black_oath_night_list_stop "alley_shrine"
 
-You follow the waterside until the alley shrine comes into view. Rather than pass under its arch, you use the slick steps below it. A hooded figure waits by the water. They accept the first and put the oilcloth packet in your palm. Neither of you speaks.
+You follow the muddy waterline beneath the high stone arches. Up above, the alley shrine flickers with tallow tapers and quiet murmurs of harbor prayers. You bypass the arch, descending the slime-slick stone stairs down to where the canal water laps against the rotting jetty pilings.
 
-*page_break Go up toward Lamp Stair…
-*goto night_list_lamp_stop
+A hooded figure waits knee-deep in the shadow under the dock.
+
+*choice
+  # Step down the slick stairs and make the handoff.
+    You step carefully onto the slime-coated stones and extend the tar-sealed purse. The figure reaches out with a glove dark with canal scum, takes the leather, and presses an oilcloth packet into your palm.
+
+    The packet is cold, stiff with wax, and tied with black cord. It smells faintly of bitter resin and dried riverweed. Neither of you speaks.
+
+    *set black_oath_night_list_clue_shrine true
+    *page_break Climb the stairs toward Lamp Stair...
+    *goto night_list_lamp_stop
+  # "From the table above Duckboard. Let's see the goods."
+    "From the table," you say quietly, holding the heavy purse out.
+
+    The figure produces the packet from inside their oilskin coat, exchanging it in a single fluid motion. They give a slow nod, melting back into the black water beneath the jetty.
+
+    *set black_oath_night_list_clue_shrine true
+    *page_break Climb the stairs toward Lamp Stair...
+    *goto night_list_lamp_stop
+  # Scan the canal before stepping onto the lower landing.
+    You pause on the upper step, eyes sweeping the dark expanse of the canal. The water is black and quiet; only a single lantern glides far out on the main channel, a slow timber barge, not a Watch cutter. Satisfied, you step down and make the exchange cleanly.
+
+    *set black_oath_night_list_clue_shrine true
+    *page_break Climb the stairs toward Lamp Stair...
+    *goto night_list_lamp_stop
 
 *label night_list_lamp_stop
 *set scenery_subplace "dredge_lamp_stair"
+*set black_oath_night_list_stop "lamp_stair"
 
-You climb by the shrine and follow the seawall until the red lamps begin. The service passage behind the cookshop is narrow and smells of old grease. A shape stands in the dark at the back door. You pass over the packet; a purse is pressed into your palm.
+You climb away from the water, taking the steep, slippery steps up toward Lamp Stair. The air shifts from river mud to woodsmoke, cheap lard, and roasting pork. Through the fog, rows of crimson paper lanterns glow under the eaves of cookshops and gin dens.
+
+You slip into the narrow service passage behind the cookshop, where grease-coated runoff trickles between the cobblestones. Near the scullery door, a stout figure in a stained apron stands in the steam.
+
+*choice
+  # "Packet from the water. Give me the purse."
+    "Delivery from the water," you murmur.
+
+    The scullion doesn't look at your face. He snatches the oilcloth packet, shoves it into a flour sack, and presses a bulging leather purse into your palm.
+
+    *set black_oath_night_list_clue_skimmers true
+    *goto night_list_time_advance
+  # Trade the packet while keeping an eye on the alley entrance.
+    You pass over the packet with one hand, taking the purse with the other. Your eyes stay pinned to the mouth of the alley, noting how the shadows pool beneath the dripping eaves.
+
+    *set black_oath_night_list_clue_skimmers true
+    *goto night_list_time_advance
+  # Test the tie of the return purse before leaving.
+    You make the exchange in silence, checking the knot on the purse. The leather is thick and heavy with coin. The cook's boy slips back inside, the latch clicking shut behind him.
+
+    *set black_oath_night_list_clue_skimmers true
+    *goto night_list_time_advance
+
+*label night_list_repeat_circuit
+
+You move through the rain-soaked circuit without delay: two knocks at the boat-sheds, the silent exchange beneath the shrine's flooded steps, and the greasy handoff in the steam behind Lamp Stair. The routine is familiar now, and the weight of the two purses settles easily into your satchel.
+
+*label night_list_time_advance
 
 *set hours_to_pass 3
 *set minutes_to_pass 0
@@ -141,22 +270,39 @@ You climb by the shrine and follow the seawall until the red lamps begin. The se
 *if (night_list_repeat)
   *rand night_list_repeat_trouble 1 8
   *if (not(night_list_repeat_trouble = 1))
+    *set black_oath_night_list_stop "return"
     *goto night_list_quiet_return
 
-When you turn toward the rope-and-oil house, the lane has thinned to rainwater, locked doors, and water moving under the planks. The weight pulls at your palm.
+*set black_oath_night_list_stop "ambush"
 
-Two figures step out from the dark ahead. Neither carries a lantern. The taller of them looks at you, then at what you carry.
+When you turn down the lane toward Duckboard Market, the street has emptied. Rain drips from the eaves onto the wooden duckboards. Under the planks, the canal water sucks and gurgles against the pilings.
+
+Two figures step out from the mouth of a narrow passage ahead, cutting off the lane. The taller one holds a weighted club loosely against his thigh; the other has his hands tucked into an oversized oilskin coat. Neither carries a lantern.
+
+"Late for an errand, runner," the taller one says, his voice a gravelly rasp. "You're carrying heavy. Hand over the leather, and you get to walk home on both shins."
 
 *choice
-  # Keep walking and shoulder through the narrow gap between them.${night_list_str}
+  # "Step aside, or you'll find out what happens when you touch Mara's coin."${night_list_cha}
+    "This coin belongs to the table above Duckboard," you say, your voice dropping to a hard, level rasp. "You take one step closer, and Mara will have your ears nailed to the fish wharf before dawn."
+
+    The taller man blinks. He glances at his partner, then back at you, weighing your stillness against the dark lane.
+
+    *gosub_scene dice_engine roll_skill_check 11 "persuasion" "" "" "" "" ""
+    *goto night_list_check
+  # Drop your shoulder and drive through the gap between them.${night_list_str}
+    You don't waste breath arguing. You drop your center of gravity, accelerating into the narrow gap and slamming your shoulder like an iron wedge into the nearest man's chest.
+
     *gosub_scene dice_engine roll_skill_check 12 "athletics" "" "" "" "" ""
     *goto night_list_check
-  # Slip back through the side lane before they can close it off.${night_list_dex}
+  # Vault off a rain barrel into the side passage before they close it.${night_list_dex}
+    You fake a step forward, then kick off a sodden rain barrel, vaulting cleanly over a low fish-drying rack and slipping down the narrow side drain before their hands can close around your collar.
+
     *gosub_scene dice_engine roll_skill_check 12 "acrobatics" "" "" "" "" ""
     *goto night_list_check
-  # Tell them the load came from above and see whether they move aside.${night_list_cha}
-    "That came from above," you say. "Get out of the way."
-    *gosub_scene dice_engine roll_skill_check 11 "persuasion" "" "" "" "" ""
+  # Notice their footing on the slick duckboards and slip past them.${night_list_wis}
+    You read their balance: the taller one is favoring his back heel on the slime-covered timber, while the other is bunched up too tight. You feint wide toward the rail, baiting their pivot, then cut inside before their boots can find traction on the wet grease.
+
+    *gosub_scene dice_engine roll_skill_check 11 "perception" "" "" "" "" ""
     *goto night_list_check
 
 *label night_list_quiet_return
@@ -197,26 +343,34 @@ When you turn toward the rope-and-oil house, the lane has thinned to rainwater, 
 
 *label night_list_success
 
-The pair give way before the moment turns into a fight. You do not look over your shoulder until the yellow light of the shop is ahead.
+The pair give way, cursed murmurs swallowed by the canal fog. You don't look back until the yellow tallow lanterns of Duckboard Market reflect in the puddles ahead.
 
+*set black_oath_night_list_stop "return"
 *goto night_list_payout
 
 *comment -------------------------------------------------------------------------------
 
 *label night_list_fight_won
 
-The nearer one gets a fistful of your sleeve and loses his leverage when you turn him into the rail. The taller one weighs it a moment, decides the purse is not worth a knife on a wet lane, and stands off into the dark to let you walk past.
+The nearer one lunges for your shoulder, but loses his footing on the slick planks when you turn him hard into the timber rail. The taller one backs away, his jaw clenched, deciding the purse is not worth an open brawl against someone who hits back. He melts into the fog, dragging his partner with him.
 
+*set black_oath_night_list_stop "return"
 *goto night_list_payout
 
 *comment -------------------------------------------------------------------------------
 
 *label night_list_payout
 *set scenery_subplace "black_oath_upstairs_room"
+*set black_oath_night_list_stop "completed"
 
-The person below lets you through the half-door and locks it behind you. In the room above, she checks both money bags and the parcel against her marked strip, then separates their contents into piles.
+The guard below lets you through the half-door and bolts it behind you. In the room above, the woman checks both leather purses and the small parcel, setting them onto the slate table.
 
-"All there. Good job."
+She cuts the twine with a small horn-handled blade, shakes the coppers out, and tallies them against her chalk columns with dry, rhythmic clicks.
+
+*if (combat_outcome = "victory")
+  "You brought both purses back," she says, her dark-grey eyes taking in your bruised knuckles and the canal mud on your sleeves. "Eighteen coppers. You held your ground, runner. But remember: on the waterfront, noise costs more than silence. Next time, see the ambush before you walk into it."
+*else
+  "Both purses, and the seal on the oilcloth isn't cracked," she says, sliding eighteen copper bits across the slate with a sweep of her palm. "No Watch whistling at the bridge, no blood on the duckboards. Hask said you were neat. That's eighteen coppers for clean work. Come back tomorrow night if you want another list."
 
 *if (not(black_oath_night_list_paid))
   *set black_oath_night_list_paid true
@@ -234,18 +388,27 @@ The person below lets you through the half-door and locks it behind you. In the 
 *else
   [b][Night List Complete: ${black_oath_night_list_count} Successful Runs | 18 Copper Bits][/b]
 
-"That is one night's work. Do another when I send for you."
-
-*goto_scene port_valen/port_valen_dredge_end cut_market_page
+*choice
+  # Pocket the eighteen coppers and head back downstairs.
+    *goto_scene port_valen/port_valen_dredge_end cut_market_page
+  # "The docks were quiet tonight. I'll see you tomorrow."
+    *goto_scene port_valen/port_valen_dredge_end cut_market_page
+  # Ask if there is other work for an associate.
+    "Any other business for an associate?" you ask.
+    "Run the night lists first," she says, her fingers already back on her chalk. "When you've proven you can move coin in the dark, we'll talk about bigger business."
+    *goto_scene port_valen/port_valen_dredge_end cut_market_page
 
 *label night_list_failed
 *set scenery_subplace "black_oath_upstairs_room"
+*set black_oath_night_list_stop "completed"
 
-They move faster than you expect. The nearer figure catches your arm while the other wrenches a purse free. By the time you wrench loose, both are gone into the lanes with the night's takings.
+They move faster than you expect on the wet boards. The nearer thug drives you into a timber post while the other wrenches a purse free from your grip. By the time you wrench loose, both have vanished into the maze of drainage cuts with half your load.
 
-She listens without interrupting when you return. Then she crosses a line from her paper and folds the remaining parcel away.
+The guard below looks at your bruised face and steps aside, letting you up the stair. Upstairs, she listens without interrupting as you lay down the single remaining purse and the parcel.
 
-"One bag short. No payment."
+She dips her sleeve in vinegar, wiping a column from the slate with a single hard stroke.
+
+"One bag short," she says, her voice flat and cold as well water. She sweeps the remaining coin into her drawer. "The alley skimmers caught you flat-footed. No pay for an empty hand. Take the bruise, wash the canal muck off your tunic, and learn how to watch your back on wet timber. If you want to clear your name with the table, come back tomorrow and run it right."
 
 *if (not(black_oath_night_list_paid))
   *set black_oath_night_list_paid true
@@ -254,4 +417,14 @@ She listens without interrupting when you return. Then she crosses a line from h
 
 [b][The Night List Failed][/b]
 
-*goto_scene port_valen/port_valen_dredge_end cut_market_page
+*choice
+  # "The skimmers got lucky. I won't lose the next one."
+    She gives a short nod, already pulling her accounts closer. "We will see tomorrow night."
+    *goto_scene port_valen/port_valen_dredge_end cut_market_page
+  # Take the loss in silence and head downstairs.
+    You turn toward the stair in silence, letting the wooden door swing shut behind you.
+    *goto_scene port_valen/port_valen_dredge_end cut_market_page
+  # Ask about the skimmers who stalk the lane.
+    "Who works that drain cut?" you ask.
+    "Desperate men who don't know who owns the water yet," she says. "Don't bring me their names. Bring me the coin."
+    *goto_scene port_valen/port_valen_dredge_end cut_market_page
