@@ -759,15 +759,27 @@ ${combat_player_dmg_roll_banner}
       *set combat_enemy_hp - combat_player_dmg_dealt
       *if (combat_enemy_hp < 0)
         *set combat_enemy_hp 0
-    *if (temp_hp > 0)
-      *if (temp_hp >= combat_enemy_dmg_dealt)
-        *set temp_hp - combat_enemy_dmg_dealt
+    *comment ARCANE WARD (Abjurer, 2026-11-09): absorbs ahead of temp_hp, per the user's call -- it is the
+    *comment character's own passive defense, where temp_hp (Agathys, False Life) reads as the extra layer on
+    *comment top. combat_enemy_dmg_dealt itself is left untouched below: Hellish Rebuke's own gate further down
+    *comment this label reads it as "did the attack deal damage" regardless of which pool actually absorbed it.
+    *temp cea_post_ward combat_enemy_dmg_dealt
+    *if (arcane_ward_hp > 0)
+      *if (arcane_ward_hp >= cea_post_ward)
+        *set arcane_ward_hp - cea_post_ward
+        *set cea_post_ward 0
       *else
-        *temp cea_overflow (combat_enemy_dmg_dealt - temp_hp)
+        *set cea_post_ward (cea_post_ward - arcane_ward_hp)
+        *set arcane_ward_hp 0
+    *if (temp_hp > 0)
+      *if (temp_hp >= cea_post_ward)
+        *set temp_hp - cea_post_ward
+      *else
+        *temp cea_overflow (cea_post_ward - temp_hp)
         *set temp_hp 0
         *set hp_current - cea_overflow
     *else
-      *set hp_current - combat_enemy_dmg_dealt
+      *set hp_current - cea_post_ward
     *comment Taking damage gives away a hidden player (combat_player_hidden, startup.txt).
     *set combat_player_hidden false
     *if ((temp_hp <= 0) and (agathys_active))

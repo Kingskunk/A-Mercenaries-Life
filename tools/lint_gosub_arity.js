@@ -217,7 +217,7 @@ for (const basename of scanFiles) {
   if (!(basename in fileLines)) continue;
   const lines = fileLines[basename];
   lines.forEach((raw, idx) => {
-    const m = /^\s*\*gosub_scene\s+startup\s+roll_skill_check\s*(.*)$/.exec(raw);
+    const m = /^\s*\*gosub_scene\s+(?:startup|dice_engine)\s+roll_skill_check\s*(.*)$/.exec(raw);
     if (!m) return;
     const args = splitArgs(m[1]);
     if (args.length !== 7) return; // arity is this tool's other job; don't double-report

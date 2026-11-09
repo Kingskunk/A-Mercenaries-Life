@@ -2752,6 +2752,7 @@
 *temp combat_read_bane false
 *temp combat_read_false_life false
 *temp combat_read_grease false
+*temp combat_read_burning_hands false
 *temp combat_read_thunderwave false
 *if ((has_scroll_magic_missile) and (combat_player_actions_left > 0))
   *gosub fight_read_can_magic_missile
@@ -2777,6 +2778,10 @@
   *gosub fight_read_can_grease
   *if (combat_read_ok)
     *set combat_read_grease true
+*if ((has_scroll_burning_hands) and (combat_player_actions_left > 0))
+  *gosub fight_read_can_burning_hands
+  *if (combat_read_ok)
+    *set combat_read_burning_hands true
 *if ((has_scroll_thunderwave) and (combat_player_actions_left > 0))
   *gosub fight_read_can_thunderwave
   *if (combat_read_ok)
@@ -2866,6 +2871,22 @@
   *temp cgr_hp {(("combat_enemy" & combat_active_target) & "_hp")}
   *if ((cgr_now <= 0) and (cgr_hp > 0))
     *set combat_can_grease true
+*comment Burning Hands (Wizard, 2026-11-09): a wizard slot, an unspent action, and a living enemy Engaged with
+*comment the caster -- same emanation Thunderwave and Arms of Hadar need, so it asks combat_hadar_check too.
+*temp combat_can_burning_hands false
+*if ((combat_player_actions_left > 0) and (known_burning_hands))
+  *if (wizard_spell_slots > 0)
+    *gosub combat_hadar_check
+    *if (combat_hadar_ok)
+      *set combat_can_burning_hands true
+*comment UPCASTING (2026-11-09): same shape as Thunderwave's own two gates -- a separate check against the
+*comment _2 pool, not combat_can_burning_hands reused, since that one only ever asks about the 1st-level pool.
+*temp combat_can_burning_hands_2 false
+*if ((combat_player_actions_left > 0) and (known_burning_hands))
+  *if (wizard_spell_slots_2 > 0)
+    *gosub combat_hadar_check
+    *if (combat_hadar_ok)
+      *set combat_can_burning_hands_2 true
 *comment Thunderwave (Wizard or Bard, 2026-11-04): a slot of the caster's own pool, an unspent action, and a living enemy Engaged with the caster -- the same emanation Arms of Hadar needs, so it asks
 *comment combat_hadar_check rather than walking the slots a second time.
 *temp combat_can_thunderwave false
@@ -2942,6 +2963,16 @@
 *temp combat_cunning false
 *if (((character_class = "rogue") and (character_level >= 2)) and (combat_player_bonus_left > 0))
   *set combat_cunning true
+*comment Arcane Ward bonus-action recharge (Abjurer, 2026-11-09, PHB'24 p172): expend a slot as a bonus action
+*comment instead of through a cast, whenever the ward is not already full. Two gates, like every other
+*comment upcastable bonus action here -- spending the higher slot is a genuinely better trade (more HP), not
+*comment merely a fallback the way Shield's upcast is, so both levels stay separately offered.
+*temp combat_can_arcane_ward false
+*if (((wizard_subclass = "abjurer") and (arcane_ward_hp < arcane_ward_max)) and (wizard_spell_slots > 0))
+  *set combat_can_arcane_ward true
+*temp combat_can_arcane_ward_2 false
+*if (((wizard_subclass = "abjurer") and (arcane_ward_hp < arcane_ward_max)) and (wizard_spell_slots_2 > 0))
+  *set combat_can_arcane_ward_2 true
 *temp combat_bonus_available false
 *comment Blade Ward MUST be in this or-chain. It is what separates "bonus action still unspent" from
 *comment "nothing left to spend at all" for the auto-end check below -- leave it out and that check
@@ -2957,6 +2988,8 @@
 *if (combat_can_inspiration)
   *set combat_bonus_available true
 *if (combat_cunning)
+  *set combat_bonus_available true
+*if ((combat_can_arcane_ward) or (combat_can_arcane_ward_2))
   *set combat_bonus_available true
 *comment Movement option availability (2026-09-28): whether Push Forward/Fall Back should even show, checked
 *comment against EVERY living enemy, not just whichever one fight_pick_target (kill-priority, above) happened to
@@ -4223,6 +4256,24 @@
       *gosub_scene combat_spells resolve_cast_grease
       *goto fight_action_spent
 
+  *if ((combat_can_burning_hands) and (not(spells_blocked)))
+    # [b][ACTION][/b] [b][Burning Hands: 1st level][/b] A thin sheet of flame washes over whatever stands too close.@{show_stat_hints  [Dexterity Save, 3d6 Fire]|}
+      *set combat_cast_at_level 1
+      *gosub_scene combat_prose flavor_burning_hands
+      *line_break
+      *gosub_scene combat_spells resolve_cast_burning_hands
+      *goto fight_check_enemy_hp
+
+  *if ((combat_can_burning_hands_2) and (not(spells_blocked)))
+    # [b][ACTION][/b] [b][Burning Hands: 2nd level][/b] An empowered sheet of flame: 4d6 instead of 3d6.@{show_stat_hints  [Dexterity Save, 4d6 Fire]|}
+      *comment UPCASTING (2026-11-09, RAW): +1d6 per slot level above 1st -- resolve_cast_burning_hands
+      *comment (combat_spells.txt) reads combat_cast_at_level for the dice count, same shape Thunderwave uses.
+      *set combat_cast_at_level 2
+      *gosub_scene combat_prose flavor_burning_hands
+      *line_break
+      *gosub_scene combat_spells resolve_cast_burning_hands
+      *goto fight_check_enemy_hp
+
   *if ((combat_can_thunderwave) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Thunderwave: 1st level][/b] A wave of thunder rolls out from you and throws back whatever stands too close.@{show_stat_hints  [Constitution Save, 2d8 Thunder, Push]|}
       *set combat_cast_at_level 1
@@ -4322,6 +4373,10 @@
     # [b][ACTION][/b] [b][Read: Grease Scroll][/b] A word, a turn of the wrist, and thick grease wells up out of nothing across the ground where your foe is standing.@{show_stat_hints  [Dexterity save or fall; the slick spreads to everything beside them]|}
       *set combat_scroll_id "scroll_grease"
       *goto fight_read_grease
+  *if (combat_read_burning_hands)
+    # [b][ACTION][/b] [b][Read: Burning Hands Scroll][/b] You spread your fingers and a thin sheet of flame leaps from them, washing over everything close enough to touch.@{show_stat_hints  [3d6 Fire, Dexterity save for half]|}
+      *set combat_scroll_id "scroll_burning_hands"
+      *goto fight_read_burning_hands
   *if (combat_read_thunderwave)
     # [b][ACTION][/b] [b][Read: Thunderwave Scroll][/b] You clap your hands together and the sound does not stop at sound: it rolls out of you as a wall of hard air.@{show_stat_hints  [2d8 Thunder, Constitution save for half, pushed back a step on a failure]|}
       *set combat_scroll_id "scroll_thunderwave"
@@ -4481,6 +4536,26 @@
       You extend your hand and trace a sigil of warding in the air, and the blows that follow find the sigil instead of you.
       *comment No banner here: the hub's own "Blade Warded" status line reopens with this same page
       *comment and says the same thing, exactly as Shield does (see its option above).
+      *line_break
+      *goto fight_bonus_spent
+
+  *if ((combat_can_arcane_ward) and (combat_player_bonus_left > 0))
+    # [b][BONUS ACTION][/b] [b][Arcane Ward: 1st level][/b] Expend a 1st-level slot to mend the ward.
+      *gosub_scene combat_spells spend_spell_slot "wizard" 1
+      *gosub_scene combat_spells arcane_ward_on_abjuration_cast 1
+      A strand of warding magic knits back into the ward around you.
+      *line_break
+      [b][🛡️ Arcane Ward: ${arcane_ward_hp} / ${arcane_ward_max} HP][/b]
+      *line_break
+      *goto fight_bonus_spent
+
+  *if ((combat_can_arcane_ward_2) and (combat_player_bonus_left > 0))
+    # [b][BONUS ACTION][/b] [b][Arcane Ward: 2nd level][/b] Expend a 2nd-level slot to mend the ward further.
+      *gosub_scene combat_spells spend_spell_slot "wizard" 2
+      *gosub_scene combat_spells arcane_ward_on_abjuration_cast 2
+      A strand of warding magic knits back into the ward around you, stronger for the deeper well it was drawn from.
+      *line_break
+      [b][🛡️ Arcane Ward: ${arcane_ward_hp} / ${arcane_ward_max} HP][/b]
       *line_break
       *goto fight_bonus_spent
 
@@ -5161,6 +5236,18 @@ You unroll the dark paper and read it low and fast, and ill fortune threads itse
 You unfold the greasy slip and read the smeared line aloud, and the ground under ${combat_enemy_epithet} goes dark and wet and slick.
 *line_break
 *gosub_scene combat_spells resolve_cast_grease
+*goto fight_action_spent
+
+*label fight_read_can_burning_hands
+*set combat_read_ok true
+*return
+
+*comment Burning Hands read from a scroll: no individual target, exactly like Thunderwave below -- resolve_cast_burning_hands picks every Engaged enemy itself.
+*label fight_read_burning_hands
+*set combat_cast_at_level 1
+You unroll the warm strip and read the line aloud, and a thin sheet of flame leaps out, washing over everything close enough to touch.
+*line_break
+*gosub_scene combat_spells resolve_cast_burning_hands
 *goto fight_action_spent
 
 *comment Thunderwave read from a scroll: no individual target, exactly like Bane above -- resolve_cast_thunderwave picks every Engaged enemy itself.

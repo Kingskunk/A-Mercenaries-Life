@@ -777,6 +777,98 @@ ${combat_player_dmg_roll_banner}
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SPELL: BURNING HANDS (Wizard, 1st level, 2026-11-09): 3d6 fire (4d6 at 2nd level, RAW +1d6 per slot
+*comment level above 1st, same dice-count = combat_cast_at_level + 2 shape Thunderwave's own +1d8 uses, just
+*comment with a higher base) to every living enemy Engaged with the caster, Dexterity save for half. RAW the
+*comment sheet of flame fills a 15-foot cone from the caster; same honest reading as Thunderwave's cube and Arms
+*comment of Hadar's reach -- this engine places combatants in bands, not on a grid, so Engaged (range 0) is as
+*comment close as any of them get to "shape" without one. ONE roll total is shared by every target, RAW, and
+*comment carries NO casting modifier, same as Thunderwave/Arms of Hadar. No forced movement -- Burning Hands has
+*comment none, unlike Thunderwave's push. RAW also sets unattended flammable objects in the cone alight; this
+*comment engine's only "burning" state (combat_enemyN_burning) is Alchemist's Fire/kindling catching, a thing
+*comment that happens to OBJECTS, never a condition a creature carries, so nothing here grants it to a target.
+*comment Costs a slot of the caster's own pool (spend_spell_slot picks the level from combat_cast_at_level).
+*comment Replay-locked (combat_cast_locked); the per-target lines are kept in combat_mm_banner_1..6, same as
+*comment Thunderwave/Grease/Magic Missile's split targeting, and printed after the lock.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label resolve_cast_burning_hands
+*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
+  *if (not(combat_scroll_id = ""))
+    *gosub_scene equipment spend_consumable combat_scroll_id
+  *else
+    *gosub spend_spell_slot "wizard" combat_cast_at_level
+  *temp bh_dice_count (combat_cast_at_level + 2)
+  *temp bh_total 0
+  *temp bh_dice_str ""
+  *temp bh_di 1
+  *label resolve_cast_burning_hands_dice_loop
+  *if (bh_di <= bh_dice_count)
+    *temp bh_die 0
+    *rand bh_die 1 6
+    *set bh_total + bh_die
+    *if (bh_di = 1)
+      *set bh_dice_str "${bh_die}"
+    *else
+      *set bh_dice_str "${bh_dice_str}+${bh_die}"
+    *set bh_di + 1
+    *goto resolve_cast_burning_hands_dice_loop
+  *set combat_player_dmg_roll_banner "[b][🎲 Burning Hands: ${bh_dice_str} = ${bh_total} fire][/b]"
+  *set combat_player_dmg_type "fire"
+  *comment One-shot, cleared now -- everything in this cast that needed the level has already read it.
+  *set combat_cast_at_level 1
+  *set combat_mm_banner_1 ""
+  *set combat_mm_banner_2 ""
+  *set combat_mm_banner_3 ""
+  *set combat_mm_banner_4 ""
+  *set combat_mm_banner_5 ""
+  *set combat_mm_banner_6 ""
+  *temp bh_i 1
+  *label resolve_cast_burning_hands_loop
+  *if (bh_i <= combat_enemy_count)
+    *temp bh_p (("combat_enemy" & bh_i) & "_")
+    *temp bh_hp {(bh_p & "hp")}
+    *temp bh_range {(bh_p & "range")}
+    *if ((bh_hp > 0) and (bh_range <= 0))
+      *gosub_scene combat_dice resolve_enemy_save bh_p "dexterity" "Dexterity" bh_i
+      *comment check_success is inverted here (resolve_enemy_save: true = the enemy FAILED the save).
+      *temp bh_failed check_success
+      *if (bh_failed)
+        *set combat_player_dmg_dealt bh_total
+      *else
+        *set combat_player_dmg_dealt ((bh_total - (bh_total modulo 2)) / 2)
+      *set combat_active_target bh_i
+      *gosub_scene combat fight_sync_target_in
+      *gosub_scene combat_dice apply_outgoing_damage_resist_vuln
+      *set combat_enemy_hp - combat_player_dmg_dealt
+      *if (combat_enemy_hp < 0)
+        *set combat_enemy_hp 0
+      *gosub_scene combat fight_sync_target_out
+      *temp bh_line ""
+      *if (bh_failed)
+        *set bh_line "${combat_enemy_name}: ${combat_player_dmg_dealt} fire damage${combat_outgoing_dmg_suffix}"
+      *else
+        *set bh_line "${combat_enemy_name}: ${combat_player_dmg_dealt} fire damage${combat_outgoing_dmg_suffix} (braced, half)"
+      *if (combat_enemy_hp <= 0)
+        *set bh_line "${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} fire damage${combat_outgoing_dmg_suffix}"
+      *set {(("combat_mm_banner_" & bh_i))} "[b][🔥 ${bh_line}][/b]"
+    *set bh_i + 1
+    *goto resolve_cast_burning_hands_loop
+  *set combat_cast_locked true
+  *set locked_combat_cast_page_id page_id
+${combat_player_dmg_roll_banner}
+*line_break
+*temp bh_pi 1
+*label resolve_cast_burning_hands_print_loop
+*if (bh_pi <= combat_enemy_slot_cap)
+  *temp bh_pval {(("combat_mm_banner_" & bh_pi))}
+  *if (not(bh_pval = ""))
+    ${bh_pval}
+    *line_break
+  *set bh_pi + 1
+  *goto resolve_cast_burning_hands_print_loop
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment SPELL: THUNDERWAVE (Wizard and Bard, 1st level, 2026-11-04; upcast added 2026-11-08): 2d8 thunder (3d8 at
 *comment 2nd level, RAW +1d8 per slot level above 1st, same dice-count = combat_cast_at_level + 1 shape Ray of
 *comment Sickness uses) to every living enemy Engaged with the caster, Constitution save for half. RAW the wave

@@ -657,6 +657,7 @@ You make space beside the bed, bar the door, and give the room over to a few uni
 *set held_magic_missile false
 *set held_shield false
 *set held_speak_with_animals false
+*set held_burning_hands false
 *set held_thunderwave false
 *set held_unseen_servant false
 *gosub book_scan "wizard_spell" 12
@@ -691,6 +692,7 @@ You make space beside the bed, bar the door, and give the room over to a few uni
 *set known_magic_missile (((((held_magic_missile) or (race_cantrip = "magic_missile")) or (race_cantrip_2 = "magic_missile")) and ((not(class_prepares)) or (prepared_magic_missile))) and (not(spells_blocked)))
 *set known_shield (((((held_shield) or (race_cantrip = "shield")) or (race_cantrip_2 = "shield")) and ((not(class_prepares)) or (prepared_shield))) and (not(spells_blocked)))
 *set known_speak_with_animals (((((held_speak_with_animals) or (race_cantrip = "speak_with_animals")) or (race_cantrip_2 = "speak_with_animals")) and ((not(class_prepares)) or (prepared_speak_with_animals))) and (not(spells_blocked)))
+*set known_burning_hands (((((held_burning_hands) or (race_cantrip = "burning_hands")) or (race_cantrip_2 = "burning_hands")) and ((not(class_prepares)) or (prepared_burning_hands))) and (not(spells_blocked)))
 *set known_thunderwave (((((held_thunderwave) or (race_cantrip = "thunderwave")) or (race_cantrip_2 = "thunderwave")) and ((not(class_prepares)) or (prepared_thunderwave))) and (not(spells_blocked)))
 *set known_unseen_servant (((((held_unseen_servant) or (race_cantrip = "unseen_servant")) or (race_cantrip_2 = "unseen_servant")) and ((not(class_prepares)) or (prepared_unseen_servant))) and (not(spells_blocked)))
 *comment GEN:END spell_book_refresh
@@ -783,6 +785,8 @@ You make space beside the bed, bar the door, and give the room over to a few uni
   *set held_shield true
 *if (hm_id = "speak_with_animals")
   *set held_speak_with_animals true
+*if (hm_id = "burning_hands")
+  *set held_burning_hands true
 *if (hm_id = "thunderwave")
   *set held_thunderwave true
 *if (hm_id = "unseen_servant")
@@ -869,6 +873,7 @@ You make space beside the bed, bar the door, and give the room over to a few uni
 *set prepared_magic_missile false
 *set prepared_shield false
 *set prepared_speak_with_animals false
+*set prepared_burning_hands false
 *set prepared_thunderwave false
 *set prepared_unseen_servant false
 *set prepared_count 0
@@ -1015,6 +1020,11 @@ You make space beside the bed, bar the door, and give the room over to a few uni
     *set prepared_count + 1
   *else
     *set prepared_speak_with_animals false
+*if (prepared_burning_hands)
+  *if (held_burning_hands)
+    *set prepared_count + 1
+  *else
+    *set prepared_burning_hands false
 *if (prepared_thunderwave)
   *if (held_thunderwave)
     *set prepared_count + 1
@@ -1332,6 +1342,17 @@ You make space beside the bed, bar the door, and give the room over to a few uni
       *else
         *set prepared_speak_with_animals false
         *set prepare_result "cleared"
+  *if (ps_id = "burning_hands")
+    *if (held_burning_hands)
+      *if (ps_on)
+        *if ((prepared_burning_hands) or (prepared_count < prepared_max))
+          *set prepared_burning_hands true
+          *set prepare_result "set"
+        *else
+          *set prepare_result "full"
+      *else
+        *set prepared_burning_hands false
+        *set prepare_result "cleared"
   *if (ps_id = "thunderwave")
     *if (held_thunderwave)
       *if (ps_on)
@@ -1451,6 +1472,9 @@ You make space beside the bed, bar the door, and give the room over to a few uni
   *if (((not(prepared_speak_with_animals)) and (held_speak_with_animals)) and (prepared_count < prepared_max))
     *set prepared_speak_with_animals true
     *set prepared_count + 1
+  *if (((not(prepared_burning_hands)) and (held_burning_hands)) and (prepared_count < prepared_max))
+    *set prepared_burning_hands true
+    *set prepared_count + 1
   *if (((not(prepared_thunderwave)) and (held_thunderwave)) and (prepared_count < prepared_max))
     *set prepared_thunderwave true
     *set prepared_count + 1
@@ -1522,6 +1546,8 @@ You make space beside the bed, bar the door, and give the room over to a few uni
   *set spell_desc_text "Magic Missile—three luminous darts of unerring magical force that strike with absolute certainty, bypassing armor, cover, and evasive dodges without fail."
 *if (sd_id = "shield")
   *set spell_desc_text "Shield—an instinctive, reflexive barrier of invisible arcane force that flares to life in a split second, deflecting incoming arrows and lethal strikes."
+*if (sd_id = "burning_hands")
+  *set spell_desc_text "Burning Hands—a thin sheet of flame that leaps from your spread fingers and washes over everything close enough to touch. What fails to flinch away in time carries the burn with it; what braces takes the heat and little more."
 *if (sd_id = "thunderwave")
   *set spell_desc_text "Thunderwave—a wave of thunderous force that rolls out from you in every direction, hard enough to lift what it catches off its feet. Those that fail to brace take the full weight of it and are thrown back a step; those that brace take the noise and keep their ground."
 *return
@@ -1543,7 +1569,7 @@ You make space beside the bed, bar the door, and give the room over to a few uni
 *if (character_class = "wizard")
   *gosub book_free_count "wizard_spell" 12
   *set copy_result "not_on_list"
-  *if ((cc_id = "absorb_elements") or ((cc_id = "ray_of_sickness") or ((cc_id = "alarm") or ((cc_id = "cause_fear") or ((cc_id = "comprehend_languages") or ((cc_id = "detect_magic") or ((cc_id = "false_life") or ((cc_id = "feather_fall") or ((cc_id = "grease") or ((cc_id = "identify") or ((cc_id = "jump") or ((cc_id = "mage_armor") or ((cc_id = "magic_missile") or ((cc_id = "shield") or (cc_id = "thunderwave")))))))))))))))
+  *if ((cc_id = "absorb_elements") or ((cc_id = "ray_of_sickness") or ((cc_id = "alarm") or ((cc_id = "cause_fear") or ((cc_id = "comprehend_languages") or ((cc_id = "detect_magic") or ((cc_id = "false_life") or ((cc_id = "feather_fall") or ((cc_id = "grease") or ((cc_id = "identify") or ((cc_id = "jump") or ((cc_id = "mage_armor") or ((cc_id = "magic_missile") or ((cc_id = "shield") or ((cc_id = "burning_hands") or (cc_id = "thunderwave"))))))))))))))))
     *set copy_cost 10
     *set copy_result "ok"
 *if (copy_result = "ok")
@@ -1588,6 +1614,9 @@ You make space beside the bed, bar the door, and give the room over to a few uni
       *set copy_result "already_known"
   *if (cc_id = "shield")
     *if (held_shield)
+      *set copy_result "already_known"
+  *if (cc_id = "burning_hands")
+    *if (held_burning_hands)
       *set copy_result "already_known"
   *if (cc_id = "thunderwave")
     *if (held_thunderwave)

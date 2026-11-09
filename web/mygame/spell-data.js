@@ -107,6 +107,9 @@
     { id: "bane", name: "Bane", level: 1, schools: "Enchantment",
       time: "Action", components: "V, S", duration: "Concentration, a minute",
       text: "A thread of ill luck you can loop around up to three throats at once, souring every blow and every plea they try to make afterward. Each one that fails to shake it off strikes and saves worse while you hold the thread." },
+    { id: "burning_hands", name: "Burning Hands", level: 1, schools: "Evocation",
+      time: "Action", components: "V, S", duration: "Instantaneous",
+      text: "A thin sheet of flame that leaps from your spread fingers and washes over everything close enough to touch. What fails to flinch away in time carries the burn with it; what braces takes the heat and little more." },
     { id: "cause_fear", name: "Cause Fear", level: 1, schools: "Necromancy",
       time: "Action", components: "V", duration: "Concentration, a minute",
       text: "A whispered dread planted straight into one mind. The target is frightened for as long as the fear holds: its blows come with disadvantage, and it will not willingly come closer. The mindless shrug it off entirely." },
@@ -243,6 +246,7 @@
     "magic_missile": ["wizard"],
     "shield": ["wizard"],
     "speak_with_animals": ["bard","ranger"],
+    "burning_hands": ["wizard"],
     "thunderwave": ["wizard","bard"],
     "unseen_servant": ["warlock"]
     };
@@ -274,6 +278,7 @@
     "magic_missile": 1,
     "shield": 1,
     "speak_with_animals": 1,
+    "burning_hands": 1,
     "thunderwave": 1,
     "unseen_servant": 1
     };
@@ -281,6 +286,7 @@
   // simply never appears among the loose leaves.
   var SPELL_SCROLLS = {
       "bane": "scroll_bane",
+    "burning_hands": "scroll_burning_hands",
     "charm_person": "scroll_charm_person",
     "detect_magic": "scroll_detect_magic",
     "false_life": "scroll_false_life",

@@ -2151,6 +2151,31 @@ window.TRADE_DATA = {
     "countVar": ""
    }
   },
+  "scroll_burning_hands": {
+   "name": "burning hands scroll",
+   "title": "Burning Hands Scroll",
+   "kind": "consumable",
+   "group": "",
+   "tier": "",
+   "retail": 60,
+   "weight": 0.05,
+   "minutes": 5,
+   "hint": "Read in a fight: 3d6 fire to every foe beside you, Dexterity save for half",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 0,
+    "countVar": ""
+   }
+  },
   "gem_agate": {
    "name": "agate",
    "title": "Agate",
@@ -4059,7 +4084,8 @@ window.TRADE_DATA = {
     "scroll_charm_person",
     "scroll_remove_curse",
     "scroll_grease",
-    "scroll_thunderwave"
+    "scroll_thunderwave",
+    "scroll_burning_hands"
    ],
    "sell": [
     "scroll_magic_missile",
@@ -4073,7 +4099,8 @@ window.TRADE_DATA = {
     "scroll_charm_person",
     "scroll_remove_curse",
     "scroll_grease",
-    "scroll_thunderwave"
+    "scroll_thunderwave",
+    "scroll_burning_hands"
    ]
   },
   "jeweler": {

@@ -570,6 +570,13 @@
       badge: "Read in a fight: a slick under a foe and everything beside it, Dexterity save or fall"
     },
     {
+      id: "scroll_burning_hands", category: "consumables", owned: "has_scroll_burning_hands",
+      weight: 0.05, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_scroll_burning_hands) || 0); return "Burning Hands Scroll" + (n > 1 ? " ×" + n : ""); },
+      description: "Scorched-edged strip of paper, warm to the touch.",
+      badge: "Read in a fight: 3d6 fire to every foe beside you, Dexterity save for half"
+    },
+    {
       id: "scroll_thunderwave", category: "consumables", owned: "has_scroll_thunderwave",
       weight: 0.05, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_scroll_thunderwave) || 0); return "Thunderwave Scroll" + (n > 1 ? " ×" + n : ""); },
