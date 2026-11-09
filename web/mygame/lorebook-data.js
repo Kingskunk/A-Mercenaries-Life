@@ -879,7 +879,7 @@
           "The river territory governed from Port Valen, extending from the coast along the Grey River and the Ashrun into the settlements of the interior. Its roads, toll posts and river trade bind its towns and villages to the free city.",
           "The Gilded Scales administer the Reach through factors, customs houses, toll collectors, courts and local officials recognized by the Council of Factors. Port Valen retains the old imperial title of a free city, but its authority reaches far beyond its walls. The Reach has no king or hereditary ruler; charters, contracts and merchant power hold it together. Formal documents style the polity <i>the Free City of Port Valen and the Valen Reach</i>."
         ],
-        see: ["grey_marches", "port_valen", "gilded_scales", "port_watch", "alderford", "timbermouth", "barleycross", "ashrun_holt", "marlcross", "brinewick", "whitefold", "redvein", "grey_river"]
+        see: ["grey_marches", "port_valen", "gilded_scales", "port_watch", "alderford", "timbermouth", "barleycross", "ashrun_holt", "marlcross", "brinewick", "whitefold", "redvein", "grey_river", "alyndra"]
       },
       {
         id: "port_valen", category: "places", title: "Port Valen",
@@ -1018,7 +1018,7 @@
         body: [
           "A wide navigable river running between limestone bluffs from Alderford to Port Valen. Above the weir there is road but no barge water. The current carries loaded boats south; crews work far harder to bring them back. Cold spray, river damp and old imperial works make the gorge a waterman's road."
         ],
-        see: ["valen_reach", "alderford", "port_valen", "imperial_booms", "grey_marches"]
+        see: ["valen_reach", "alderford", "port_valen", "imperial_booms", "grey_marches", "alyndra"]
       },
       {
         id: "black_sinks", category: "places", title: "The Black Sinks Causeway",

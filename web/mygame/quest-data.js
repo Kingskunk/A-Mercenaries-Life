@@ -327,6 +327,24 @@
       active: function (s) { return s.black_oath_night_list_stage === "active"; }
     },
     {
+      id: "black_oath_short_purse", title: "The Short Purse",
+      giver: function (s) { return truthy(s.black_oath_mara_named) ? "Mara Vey" : "The Woman Upstairs"; },
+      place: function (s) { return truthy(s.short_purse_clue_derry) ? "Dredge-End · Lamp Stair" : "Dredge-End · Boat-Sheds"; },
+      goal: function (s) {
+        if (truthy(s.short_purse_clue_derry)) return "Track down young Derry at Lamp Stair and find what he did with the coppers.";
+        return "Find where the twenty-four coppers from the boat-shed slip fund went.";
+      },
+      clues: function (s) {
+        var c = [];
+        if (truthy(s.short_purse_clue_wire)) c.push("The tin's lock was slipped open with an oiled copper wire, not smashed.");
+        else if (truthy(s.short_purse_clue_lock)) c.push("The tin's lock was not forced; whoever took the coin had a tool or a key, and knew where the box was kept.");
+        if (truthy(s.short_purse_clue_derry)) c.push("Young Derry, Joram's apprentice, took the coppers and bolted toward Lamp Stair clutching his coat.");
+        if (truthy(s.short_purse_clue_orren)) c.push("Orren threatened Derry with chains and debtor hulks over the boat earlier today.");
+        return c;
+      },
+      active: function (s) { return s.short_purse_stage === "active"; }
+    },
+    {
       id: "innocent_smile", title: "The Innocent Smile", place: "Valen Reach",
       giver: "Alyndra, the Wanderer",
       goal: function (s) { return "Meet Alyndra at first light and travel the coastal bluffs to the Imperial vault." },

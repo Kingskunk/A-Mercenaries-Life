@@ -352,6 +352,8 @@ function compile(){
   verifyFileName("port_valen/varren_quests/varren_errand.txt");
   // The Black Oath's Night List: the Dredge-End rope-and-oil house hands the player to it by *goto_scene after dark, once Hask has put their name up, so it is never in *scene_list.
   verifyFileName("port_valen/black_oath/black_oath_night_list.txt");
+  // The Black Oath's Second Named Work: The Short Purse (investigating the boat-shed slip fund deficit).
+  verifyFileName("port_valen/black_oath/black_oath_short_purse.txt");
   // Radiant Hiring Hall jobs: *goto_scene/*gosub_scene-only files, reached from the wall in port_valen_civic_heights.txt.
   verifyFileName("port_valen/radiant/hall_pests.txt");
   verifyFileName("port_valen/radiant/hall_haul.txt");

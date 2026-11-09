@@ -161,7 +161,7 @@
         }
         return out;
       },
-      see: ["valen_reach", "wenna_hart", "timbermouth"]
+      see: ["valen_reach", "wenna_hart", "timbermouth", "alyndra"]
     },
 
     {

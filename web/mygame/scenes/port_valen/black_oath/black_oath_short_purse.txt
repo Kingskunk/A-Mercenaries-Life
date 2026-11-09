@@ -1,0 +1,304 @@
+*comment ====================================================================================================
+*comment BLACK OATH: THE SHORT PURSE
+*comment
+*comment Second named Black Oath contract. Entered from the Duckboard Market rope-and-oil house after dark
+*comment once the player has achieved at least three successful Night List runs and received the summons.
+*comment
+*comment STRUCTURE:
+*comment   - short_purse_summons_intercept: Dredge-End arrival summons delivery
+*comment   - short_purse_entry: Atmosphere & routing
+*comment   - short_purse_outlaw_beat: Exclusive interrogation for the Port Valen Outlaw origin
+*comment   - short_purse_briefing: The 24-copper deficit in the Boat-Shed slip fund
+*comment   - short_purse_beat1: Visiting Old Corin at the Boat-Sheds, inspecting the lead tin, tracing Derry
+*comment   - short_purse_beat1_complete: End of Beat 1 checkpoint
+*comment ====================================================================================================
+
+*comment ----------------------------------------------------------------------------------------------------
+*comment SUMMONS INTERCEPT: Fired upon entering Dredge-End when eligible for The Short Purse
+*comment ----------------------------------------------------------------------------------------------------
+*label short_purse_summons_intercept
+*set short_purse_summoned true
+*set current_district "dredge_end"
+*set scenery_subplace "dredge_end_hub"
+
+As your ${feet_prose} touch the wet timbers where the stone street yields to the canal district, a thin figure in an oversized seaman's coat steps out from behind a salt-stained barrel.
+
+"You're Hask's runner?" they ask in a sharp whisper, eyes darting along the wet lane. "The woman upstairs has work that needs doing. Go to the rope-and-oil house at Duckboard Market."
+
+Before you can answer, the messenger ducks down a narrow cut between two leaning tenements and vanishes into the mist.
+
+*page_break Continue into Dredge-End...
+*goto_scene port_valen/port_valen_dredge_end port_valen_dredge_end_arrive
+
+*label short_purse_entry
+*set scenery_subplace "black_oath_upstairs_room"
+
+*if ((origin = "outlaw") and (not(short_purse_outlaw_interrogated)))
+  *goto short_purse_outlaw_beat
+
+*goto short_purse_briefing
+
+*comment ----------------------------------------------------------------------------------------------------
+*comment OUTLAW ORIGIN INTERROGATION BEAT
+*comment ----------------------------------------------------------------------------------------------------
+*label short_purse_outlaw_beat
+*set short_purse_outlaw_interrogated true
+
+The heavyset man at the foot of the stair stays behind you until you reach the landing. At the threshold, the woman in the dark woolen coat waits with one hand resting flat against the heavy oak door. She shuts it behind you, throws the iron bar into its staple, and walks past you to the slate table.
+
+Without the usual list laid out before her, the room feels strangely hollow. A single tallow lamp flickers in the draft from the warped floorboards, throwing the hard angles of her jaw into yellow relief.
+
+"Sit," she says.
+
+You don't sit. Her eyes lift, settling on your face with an unhurried, clinical appraisal.
+
+"Four months ago," she says, her voice low enough to stay beneath the rattle of the wind outside, "a runner left a two-hundred-pound collector face-down in the mud behind the canal brothel. Two punctures under the ribs. Shiv work. And six hundred silver marks vanished from an upriver strongbox before dawn."
+
+She leans forward, resting both forearms on the slate.
+
+"The description that came down the cut was lean, quick with a blade, and carrying the kind of nerve that makes a person run straight into an army rather than take the gallows. It took Hask four weeks to find you, and three nights of clean running to bring you to this room."
+
+Her gaze doesn't blink. "I need to know whose boots are standing on my floor."
+
+*temp outlaw_dec ""
+*if (show_stat_hints)
+  *set outlaw_dec " [CHA DC 15]"
+
+*choice
+  # Deny it flatly. You aren't the runner from the brothel alley.${outlaw_dec}
+    *gosub_scene dice_engine roll_skill_check 15 "deception" "" "" "" "" ""
+    *if (check_success)
+      *goto outlaw_lie_passed
+    *else
+      *goto outlaw_lie_failed
+
+  # Tell the truth. He cornered you with a cleaver, and you were faster.
+    *goto outlaw_truth
+
+*label outlaw_lie_passed
+*set short_purse_outlaw_lied_passed true
+
+"You've got the wrong runner," you say evenly, keeping your hands still at your sides. "I came down the causeway with the Carrion Company. If I had six hundred silver marks to my name, I wouldn't be hauling oilcloth packets through Lamp Stair for eighteen coppers."
+
+The woman holds your eyes for three long seconds. The silence stretches until the wick snaps in the tallow.
+
+She lets out a slow, measured breath through her nose.
+
+"Maybe," she says. "Or maybe you know how to bury coin where nobody can dig it up." She taps her knuckles once against the slate. "It doesn't matter. The bounty was pulled weeks ago anyway. That gold-toothed brute was despised from here to the lock-gates, skimming from every boat crew on the cut and bound for an open canal sooner or later. But when one of our collectors ends up in the gutter, the Oath has to put a price out or every wharf-rat starts carrying a blade. We let the talk die, and we let the bounty lapse."
+
+She pulls a lead tin from the drawer beneath the table. "I only needed to see if you'd flinch."
+
+*goto short_purse_briefing
+
+*label outlaw_lie_failed
+*set short_purse_outlaw_lied_failed true
+
+"You have the wrong person," you say. "I came from the north with the company. I don't know anything about a collector."
+
+She doesn't raise her voice, but the faint curl at the corner of her mouth is cold as river ice.
+
+"Your left hand dropped toward your hip the second I said 'shiv,'" she says flatly. "And you answered before I finished describing the alley."
+
+She leans back in her chair, folding her fingers together.
+
+"Don't play me for a fool in my own room. If I wanted you dead for that gold-toothed pig, you wouldn't have reached the top step. Nobody in this quarter shed a tear when he choked on his own blood, he was a thief who skimmed from our own crews and had a knife coming to him for two years. The blood bounty was an institutional chore to save face, and we let it die as soon as the noise settled."
+
+Her grey eyes harden. "The bounty is gone. But if you lie to my face across this table again, you will not walk back down those stairs. Understood?"
+
+*choice
+  # "Understood."
+    *goto short_purse_briefing
+
+*label outlaw_truth
+*set short_purse_outlaw_confessed true
+
+"He had two hundred pounds and a butcher's cleaver," you say, meeting her gaze square. "He backed me against an iron pale. I was faster. And the six hundred silver is long gone."
+
+A beat of absolute silence settles over the room. Then, she lets out a short, dry huff that might almost be an amused cough.
+
+"At least you don't waste my breath with a lie," she says. She rests one hand flat on the slate. "Nobody wept for him. He had gold in his teeth because he pinched coin from every dredger and boat-hand between here and the sluices. He was heading for a weighted sack in the channel either way. But when a collector is killed on the cobbles, the Oath puts a price on the killer's head or every cutpurse in the province thinks the canals are open season. Once the dust cleared and we knew you were under Vane's banner, we let the paper rot."
+
+She reaches into the shallow drawer beneath the bench and brings out a rectangular lead tin.
+
+"The bounty is dead," she says. "And a runner who can put down a brute with his own cleaver and keep quiet about it is more useful to me alive."
+
+*goto short_purse_briefing
+
+*comment ----------------------------------------------------------------------------------------------------
+*comment THE BRIEFING: THE 24-COPPER DEFICIT
+*comment ----------------------------------------------------------------------------------------------------
+*label short_purse_briefing
+
+The woman sets the lead tin on the slate between you. It is roughly the length of a man's forearm, dull grey, its edges bound with soldered iron straps. The sliding latch on top sits loose, unfastened.
+
+"Twenty-four copper bits missing from the boat-shed slip box," she says without preamble. "And Orren is already circling the slipway."
+
+She taps the metal lid with the edge of her fingernail.
+
+"Two nights ago, an unsworn barge-hand named Joram Kell drowned when a cargo barge tipped near the canal water-gates. Joram held a half-share in a two-man cargo boat moored at the Boat-Sheds slip. By custom, the boatmen pay their weekly coppers into that box. When a man drowns or breaks a limb, the fund buys out his share for his widow so the boat doesn't sit idle, and his partner takes full ownership to keep working the river."
+
+Her eyes narrow slightly. "The buyout is twenty-four coppers, meant for Tessa Kell and her infant. When Old Corin unlocked the shed to fetch the tin tonight, the box was empty."
+
+"Worse," she continues, "A man named Orren smells blood. He collects dock tolls for the Gilded Scales, impounding boats whenever he finds an excuse. He has already posted a notice on the slipway. If the dead man's share and mooring arrears aren't cleared with stamped coin, Orren chains the hull and tows it to the high wharves as 'unregistered abandoned tonnage.'"
+
+*goto short_purse_menu
+
+*label short_purse_menu
+
+*choice
+  *if (not(short_purse_asked_subsidize))
+    # "Why not replace the twenty-four coppers from the Black Oath's strongbox?"
+      *set short_purse_asked_subsidize true
+      "Because the Black Oath doesn't subsidize dead men's hulls," she replies sharply. "That tin belongs to the boat-shed crews. If the house starts filling holes every time someone steals from a collection box, every crew on the canal will stop paying their subscription and expect free timber. We hold the order, we don't pay their debts."
+      *goto short_purse_menu
+
+  *if (not(short_purse_asked_watch))
+    # "Why not report the theft to the Port Watch?"
+      *set short_purse_asked_watch true
+      She gives you a look that suggests you should know better. "The Port Watch doesn't solve missing coppers in Dredge-End. If we call them, they'll bring two squads of iron boots down the lanes, kick in half the boat-sheds, and seize the collection box as an illegal untaxed fund. The Watch creates riots; they don't find coin."
+      *goto short_purse_menu
+
+  *if (not(short_purse_asked_access))
+    # "Who had access to the tin?"
+      *set short_purse_asked_access true
+      "Old Corin keeps the key behind the net-mending racks in the third shed," she says. "He swears the catch was pinned when he left for his evening broth. When he came back to settle Joram's share, the tin was twenty-four bits light."
+      *goto short_purse_menu
+
+  *if (not(short_purse_asked_orren))
+    # "What happens if Orren takes the boat?"
+      *set short_purse_asked_orren true
+      "If the Gilded Scales seize a hull in this ward, they establish a precedent," she says, her knuckles whitening against the slate. "Next week they'll demand mooring charters on the second pier, then customs manifests on every fish crate. The Black Oath holds the canals, not the Scales. Orren does not touch that boat."
+      *goto short_purse_menu
+
+  # "I'll go to the boat-sheds and find where the coin went."
+    *set short_purse_stage "active"
+    *set short_purse_day campaign_day
+    She nods once, a curt and decisive jerk of her chin.
+    
+    "Start with Old Corin at the net-sheds. Find out who touched that tin, find where the twenty-four coppers went, and bring them back to this table. Keep your iron sheathed if you can, but do not come back empty-handed."
+    *page_break Leave...
+    *goto short_purse_beat1
+
+  # "This is neighborhood business. Find another hand."
+    She pulls the lead box back toward her side of the table.
+    
+    "The door is behind you. If you change your mind you know where to find me."
+    *goto_scene port_valen/port_valen_dredge_end cut_market_page
+
+*comment ----------------------------------------------------------------------------------------------------
+*comment BEAT 1: THE BOAT-SHEDS & OLD CORIN
+*comment ----------------------------------------------------------------------------------------------------
+*label short_purse_beat1
+*set scenery_subplace "dredge_boat_sheds"
+*gosub_scene calendar ensure_navigable_weather
+*set hours_to_pass 0
+*set minutes_to_pass 15
+*set time_advance_call_id "short_purse_beat1_walk"
+*gosub_scene calendar advance_time
+
+The night air off the canal cut is raw and heavy with the reek of stagnant low-tide mud, rotting weed, and cold coal smoke. You leave Duckboard Market behind, stepping along the slick wooden gangways toward the boat-sheds.
+
+Beyond Hask's driftwood scrap fence, the long row of open-sided timber sheds stands dark against the grey water. Racks of drying hemp nets hang like rotting shrouds from the crossbeams. Down on the mud-slip below, Joram Kell's cargo skiff sits wedged on greased pine rollers, a faded Gilded Scales impound writ nailed through its sternpost with an iron spike.
+
+A yellow lantern glows faintly inside the third shed. 
+
+Old Corin sits hunched on an upturned tar barrel, an oiled whetstone in one hand and a net-mending shuttle in the other. His knuckles are swollen with the cold, his thin white hair plastered to his forehead by mist. When his tired, watery eyes catch your boots, he flinches, dropping the shuttle onto the sawdust.
+
+"She sent you?" he croaks, his voice trembling like a worn sail. "The woman from the shop, tell me she sent you. Orren's men are already drinking at the dock-gate tap, waiting to chain the slip. If that boat goes to the high wharves, Tessa and the little girl won't have bread for the winter."
+
+*choice
+  # "Show me where the tin was kept. I need to see the lock."
+    *goto short_purse_inspect_tin
+
+  # "Calm down, Corin. Who was in this shed before you found it empty?"
+    *goto short_purse_ask_corin
+
+*label short_purse_inspect_tin
+
+Corin scrambles to his feet, leading you behind a heavy stack of dried wooden oars. Tucked into a recess between two damp foundation posts is a small wooden cubby. Inside sits the scratched imprint where the lead tin had rested.
+
+"Here," Corin whispers, fumbling the lead box from beneath a folded sailcloth. "I brought it back here after I went up to the shop. Look at it yourself."
+
+*temp inspect_hint ""
+*if (show_stat_hints)
+  *set inspect_hint " [INT or DEX DC 11]"
+
+You turn the lead box in your hands under the lantern light. The iron strap across the front is intact. The small brass tumbler has no fresh gouges or chisel marks.
+
+*choice
+  # Examine the tumbler mechanism and the catch for signs of tampering.${inspect_hint}
+    *gosub_scene dice_engine roll_skill_check 11 "investigation" "sleight_of_hand" "" "" "" ""
+    *if (check_success)
+      *goto tin_inspect_success
+    *else
+      *goto tin_inspect_fail
+
+*label tin_inspect_success
+*set short_purse_clue_lock true
+*set short_purse_clue_wire true
+
+You lean close to the brass mouth. In the soft wick-light, you spot a smear of fresh tallow and the faint, unmistakable scratch of a thin copper wire along the brass pins.
+
+"This wasn't forced," you say, looking up at Corin. "No pry-marks, no chipped solder. Someone slipped an oiled wire into the catch. Someone who knew the tumbler was loose on the right side."
+
+Corin's face goes slack, the color draining from his weathered cheeks. His hands shake so violently he has to clutch his coat lapels.
+
+"An oiled wire..." he whispers. "Oh, by the Mother of the Shroud... no. Not him."
+
+*goto short_purse_derry_reveal
+
+*label tin_inspect_fail
+*set short_purse_clue_lock true
+
+You peer into the lock and run your thumb over the cold iron banding. While you can't tell the exact tool used, one thing is certain: the lock wasn't smashed with a hammer or split with a cold chisel. Whoever opened it took their time and didn't leave a dent on the lead casing.
+
+"It wasn't smashed open," you say, setting the box down. "Whoever took the coin had a tool or a key, and they knew where you kept it."
+
+Corin closes his eyes, a pained groan catching in his throat.
+
+"They knew where the cubby was," he mutters. "Only two people besides me ever saw me tuck it behind the oars."
+
+*goto short_purse_derry_reveal
+
+*label short_purse_ask_corin
+
+"Nobody comes back here except the boat crews," Corin says, his fingers knotting in his frayed woolen scarf. "The boatmen paid their bits two days ago when Joram was pulled from the canal. I counted every copper myself. Twenty-four bits. I locked the cubby, put the peg behind the rack, and walked up to the cookshop for broth."
+
+"And who stayed behind?" you ask.
+
+Corin looks away toward the dark water, unable to hold your gaze.
+
+*goto short_purse_derry_reveal
+
+*label short_purse_derry_reveal
+*set short_purse_clue_derry true
+*set short_purse_clue_orren true
+
+"Young Derry," Corin says, his voice breaking into a harsh whisper. "He's sixteen. Ran lines and rowed oars for Joram since he was twelve years old. Joram treated the lad like his own flesh and blood after Derry's mother took the fever."
+
+Corin reaches out, clutching your sleeve with desperate strength.
+
+"I saw him when I was walking back from the cookshop. It was just after dusk. He came tearing out from the boat-shed alley like a dog with a scalded tail, coat bundled tight around his chest. He wouldn't look at me. I called his name, and he bolted straight toward Lamp Stair!"
+
+He looks up at you with wet, pleading eyes.
+
+"Listen to me, runner, Derry isn't a thief. He isn't! If he took that coin, he didn't take it for dice or drink. He's terrified. Orren was down here shouting about chains and debtor hulks right in front of the lad. If you catch him, don't put iron into him! Find out what he did with the coppers first!"
+
+*goto short_purse_beat1_complete
+
+*comment ----------------------------------------------------------------------------------------------------
+*comment BEAT 1 PROTOTYPE CHECKPOINT / RETURN
+*comment ----------------------------------------------------------------------------------------------------
+*label short_purse_beat1_complete
+
+You stand at the edge of the boat-shed, looking up the dark incline of Dredge-End toward the red oil lanterns flickering along the high seawall of Lamp Stair. The trail leads into the narrow alleys behind the cookshops.
+
+*line_break
+[b][End of Beat 1 Prototype: Beat 2 (Chasing Derry through Lamp Stair) and Beat 3 (Confronting Orren) are in development.][/b]
+
+*choice
+  # Return to Developer Testing Hub.
+    *goto_scene dev_hub dev_menu_quests
+  # Return to Dredge-End District Hub.
+    *goto_scene port_valen/port_valen_dredge_end port_valen_dredge_end
+

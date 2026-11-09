@@ -491,6 +491,43 @@
       see: ["brinewick", "nessa_cale"]
     },
 
+    /* ------------------------------------------------------- PEOPLE: VALEN REACH */
+
+    {
+      id: "alyndra", category: "people", title: "Alyndra",
+      sub: "Elven scout and wayfarer of the Valen Reach",
+      role: function (s) {
+        return truthy(s.aly_quest_stage === "resolved") ? "Alyndra Valcyne, scout and duelist" : "Wayfarer and ruin-scout, the Valen Reach";
+      },
+      link: ["Alyndra Valcyne", "Alyndra"],
+      tags: ["Valen Reach", "Wanderer"], aliases: ["Alyndra", "Valcyne", "Alyndra Valcyne", "elven traveler", "scout", "wanderer"],
+      unlock: "met_alyndra",
+      body: function (s) {
+        var out = [
+          "An elven traveler and scout. She wears travel-stained leathers and a moss-green tunic, with pale golden hair braided in leather cord, and introduces herself as an outrider seeking old roads and forgotten ruins.",
+          "She speaks of growing up in a Western Vale tavern before riding out with a horse and hunting knife. When she sits with travelers"
+        ];
+        if (truthy(s.aly_knife_work)) {
+          out.push("Behind her innocent manner, her knife work with the fruit blade was remarkably clean and balanced. A slender duelist's rapier wrapped in velvet was tucked beneath her travel pack.");
+        }
+        if (truthy(s.aly_hands)) {
+          out.push("Her hands carry the hard, defined calluses of someone trained to hold a weapon rather than wash dishes.");
+        }
+        if (truthy(s.aly_monologue)) {
+          out.push("Her account of misfortune in the Western Vale had the smooth, practiced rhythm of a story recited many times before.");
+        }
+        if (s.aly_quest_stage === "resolved") {
+          out.push("The venture into the Grey River gorge proved to be an ambush staged by an outlaw band under a cutthroat named Kark, who used a false map of a sealed Imperial vault to trap travelers. When the brigands struck, Alyndra drew her rapier and fought with practiced precision. She acknowledged her name as Alyndra Valcyne, split the recovered silver evenly, and took an old imperial parchment roll before departing south into the ridges.");
+        } else if (truthy(s.aly_checkpoint === "ambush_sprung")) {
+          out.push("The reported Imperial vault in the Grey River gorge was a trap set by an outlaw leader named Kark, who recognized her as Valcyne. Facing their crossbows, she cast aside her naive persona, drew a concealed rapier, and fought with deadly composure.");
+        } else if (truthy(s.aly_quest_started)) {
+          out.push("She struck a partnership to explore an exposed Meridian archway in the Grey River gorge, agreeing to divide whatever was found inside equally.");
+        }
+        return out;
+      },
+      see: ["valen_reach", "grey_river", "brinewick", "marlcross", "barleycross"]
+    },
+
     /* ----------------------------------------------------- PLACES: EASTERN GRAINLANDS */
 
     {
@@ -503,7 +540,7 @@
         "A village where the High Grey Road meets three farm tracks on the eastern high ground. Its surrounding fields are known for rye: sacks come to the Grain Green to be weighed, then go on to the drying floors, windmill, or raised storehouses.",
         "The old stone cross and the Cross Hall stand at the meeting of the roads. Its annual Milling Fair turns the Grain Green into a day of pies, prizes, and a very public contest."
       ],
-      see: ["valen_reach", "sella_morren", "tamsin_pike"]
+      see: ["valen_reach", "sella_morren", "tamsin_pike", "alyndra"]
     },
 
     /* -------------------------------------------------------- PLACES: TIDAL FLATS */
@@ -518,7 +555,7 @@
         "A village built inside an earthen bank where the road meets the tidal flats. Brinewick makes salt by letting brine stand in shallow beds, then boiling it in peat-fired pan sheds.",
         "The raised Tide House is its refuge and council room; salt, fish and road goods trade at the narrow loading slip. The Reedhouse and its stable yard sit on the highest ground by the road gate."
       ],
-      see: ["valen_reach", "hesta_rill", "nessa_cale"]
+      see: ["valen_reach", "hesta_rill", "nessa_cale", "alyndra"]
     },
 
     /* ------------------------------------------------------------- PLACES: THE CITY */

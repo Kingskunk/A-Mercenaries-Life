@@ -23,6 +23,9 @@
 *comment rolled at most once per night. dredge_ambush_active outlives the roll, so a page
 *comment replay still lands on the ambush instead of quietly skipping it.
 *label port_valen_dredge_end_arrive
+*if (((black_oath_night_list_count >= 3) and (short_purse_stage = "unstarted")) and (not(short_purse_summoned)))
+  *goto_scene port_valen/black_oath/black_oath_short_purse short_purse_summons_intercept
+
 *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
   *if (not(street_life = "empty"))
     *temp de_night_id campaign_day
@@ -1044,6 +1047,10 @@ The Silt-Gate run is not broken, only interrupted. What you hold is worth the mo
 *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
   *set cut_market_night true
 
+*temp cut_oath_stair_open false
+*if (((time_period = "Night") or (time_period = "Pre-Dawn")) or (time_period = "Dusk"))
+  *set cut_oath_stair_open true
+
 [b]◈ DUCKBOARD MARKET[/b]
 *line_break
 *comment LAYER 1: PLACE (Constant geography and smell)
@@ -1128,26 +1135,6 @@ The market runs along the lane on broken stone and packed cinder, with planks la
       [b][🧆 Carp Cake Eaten: +1 Temporary HP | Hunger Eased][/b]
       *goto cut_market_hub
 
-  *if ((not(cut_market_night)) and (not((food_buff_active) and (food_buff_stat = "int"))))
-    # Buy vinegar eel from the frying stall (3 Copper Bits)@{show_stat_hints  [+1 Temp HP, +1 INT for 4h]|}
-      *if ((((gold * 100) + (silver * 10)) + copper) < 3)
-        You check your purse and find it short of three copper bits.
-        *goto cut_market_hub
-      *set tavern_item_cost_copper 3
-      *set tavern_item_hp_heal 0
-      *set tavern_item_temp_hp 1
-      *set tavern_item_type "food"
-      *set tavern_item_buff_name "Vinegar Eel"
-      *set tavern_item_buff_desc "+1 INT"
-      *set tavern_item_buff_stat "int"
-      *set tavern_item_buff_bonus 1
-      *set tavern_item_buff_minutes 240
-      *gosub_scene economy buy_tavern_item
-      The cook lifts a skewer of eel out of black oil, shakes vinegar and coarse salt over it, and hands it across on a twist of paper. It is hot enough to hurt and sour enough to make your eyes water, and your head is clearer by the last bite.
-      *line_break
-      [b][🍢 Vinegar Eel Consumed: +1 Temporary HP | Sharp Palate (+1 INT for 4 Hours)][/b]
-      *goto cut_market_hub
-
   *if ((not(cut_market_night)) and (cut_rumors_market < 3))
     # Listen to the talk around the stalls.
       *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
@@ -1198,27 +1185,33 @@ The market runs along the lane on broken stone and packed cinder, with planks la
         *goto_scene death death_screen
       *goto cut_market_hub
 
-  *if (cut_market_night)
-    # Approach the rope-and-oil house and the man guarding the outside stair.
-      You step down the dark lane toward the shuttered rope-and-oil house. Padlocks hang heavy on the iron bar across the half-door. Above, a thin slit of yellow candlelight leaks between the warped shutters of the second floor.
+  *if (cut_oath_stair_open)
+    # Approach the shuttered house.
+      You step down the dark lane toward the shuttered house. Padlocks hang heavy on the iron bar across the half-door. Above, a thin slit of yellow candlelight leaks between the warped shutters of the second floor.
       
       At the base of the wooden stair, the heavyset man shifts his weight, the iron-banded head of his mace clicking against the stone. He tracks your ${feet_prose} in the dark, his eyes dead and unblinking.
 
-      *if (((hask_associate_joined) and (not(black_oath_night_list_stage = "active"))) and (black_oath_night_list_day < campaign_day))
-        The man gives you one look, then moves his mace clear of the stair. "Hask put your name up. She has a list. Go on."
+      *if ((short_purse_summoned) and (short_purse_stage = "unstarted"))
+        The man looks you over, then moves his mace clear of the stair. "She's waiting for you. Go on up."
+        *goto_scene port_valen/black_oath/black_oath_night_list night_list_briefing
+      *elseif (short_purse_stage = "active")
+        The man looks you over, his grip tight on his mace. "You have your orders, runner. Go find that coin."
+        *goto cut_market_hub
+      *elseif (((hask_associate_joined) and (not(black_oath_night_list_stage = "active"))) and (black_oath_night_list_day < campaign_day))
+        The man gives you one look, then moves his mace clear of the stair. " Go on."
         *goto_scene port_valen/black_oath/black_oath_night_list night_list_briefing
       *elseif (hask_associate_joined)
-        The man looks you over, then gives a single nod. "You have had your run. Nothing else tonight."
+        The man looks you over, then gives a single nod. "Nothing else tonight."
       *else
-        "Stores," he says, his voice flat and hard. "Rope and oil. Nobody up there wants to see you. Walk."
+        "Stores," he says, his voice flat and hard. "Rope and oil. Walk."
       *goto cut_market_hub
 
-  *if (not(cut_market_night))
-    # Look over the rope-and-oil house and the stair beside it.
+  *if (not(cut_oath_stair_open))
+    # Look over the shuttered house and the stair beside it.
       You take a turn through the rope-and-oil house: coils of hemp, tallow candles by the crate, lamp oil in stoneware jars, hooks, sail patches, and paper by the ream on a shelf behind the counter. Outside, the man on the bottom step of the stair looks at your ${feet_prose}, then up the stair.
 
       *if (hask_associate_joined)
-        The man recognizes you and gives you the smallest nod. "Hask's runner. Come back after dark if she sends for you."
+        The man recognizes you and gives you the smallest nod. "Hask's runner. Come back after dark."
       *else
         "Stores," he says, before you ask. "Rope and oil. Not for rent."
       *goto cut_market_hub

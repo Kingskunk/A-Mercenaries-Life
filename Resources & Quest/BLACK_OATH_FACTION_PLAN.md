@@ -72,13 +72,13 @@ After the first list, this becomes a **radiant contract** rather than a one-off 
 - Time: Dusk, Night, or Pre-Dawn (the rope-and-oil house operates its backroom only during dark hours)
 
 **The Premise & Community Stakes:**
-Joram Kell, an unsworn barge-hand and Dredge-End resident, drowned two nights ago when an overloaded mud-scow tipped in the sluice flume. Joram held a half-share in a two-man cargo skiff moored at the Boat-Sheds slipway. By waterfront custom, the Black Oath oversees the boat-shed slip fund—a pooled subscription paid by local boatmen to maintain berths, grease rollers, and buy out dead or injured crew shares so a vessel can keep working without missing a tide.
+Joram Kell, an unsworn barge-hand and Dredge-End resident, drowned two nights ago when an overloaded cargo barge tipped near the canal water-gates. Joram held a half-share in a two-man cargo boat moored at the Boat-Sheds slipway. By waterfront custom, the Black Oath oversees the boat-shed slip fund, a pooled subscription paid by local boatmen to maintain berths, grease rollers, and buy out dead or injured crew shares so a vessel can keep working without missing a tide.
 
-The fund was supposed to pay out **24 copper bits** to buy out Joram's share for his widow (Tessa Kell), allowing his surviving partner to assume full ownership and work the morning tide. When Mara opens the lead subscription tin kept behind the net-maker's shed to settle the payout, it is **24 copper bits short**. 
+The fund was supposed to pay out **24 copper bits** to buy out Joram's share for his widow (Tessa Kell), allowing his surviving partner to assume full ownership and keep the vessel working. When Mara opens the lead subscription tin kept behind the net-maker's shed to settle the payout, it is **24 copper bits short**. 
 
-Worse, Master Orren—a corrupt Gilded Scales wharf-bailiff—has posted notice that if the dead man's share and mooring dues aren't cleared with stamped coin before dawn, he is seizing the skiff as "unregistered abandoned tonnage" to auction at the high wharves.
+Worse, Orren, a corrupt Gilded Scales collector who impounds boats for missing fees, has posted notice that if the dead man's share and mooring dues aren't cleared with stamped coin, he is seizing the boat as "unregistered abandoned tonnage" to auction at the high wharves.
 
-Mara cannot simply top it off from Black Oath coffers without inviting every crew in Dredge-End to stop paying their subscription and expect free timber, nor can she allow a Gilded Scales bailiff to seize a hull and establish a legal foothold in *her* ward. She needs an outside associate hand who is known to be capable (from the Night List) to quietly track down the missing coin before morning.
+Mara cannot simply top it off from Black Oath coffers without inviting every crew in Dredge-End to stop paying their subscription and expect free timber, nor can she allow the Gilded Scales to seize a hull and establish a legal foothold in *her* ward. She needs an outside associate hand who is known to be capable (from the Night List) to quietly track down the missing coin.
 
 **The Outlaw Origin Interrogation Beat (`origin = "outlaw"`):**
 *This beat triggers exclusively for characters with the Port Valen Outlaw background before the main briefing begins.*
@@ -88,27 +88,21 @@ When the player enters, Mara bars the door and sits across the slate table, meas
 The player faces an immediate test:
 - **Lie to Mara ("You've got the wrong runner. That wasn't me."):**
   - Requires a **Deception check [CHA DC 15]**.
-  - *Success (`short_purse_outlaw_lied_passed`):* Mara studies your face, pauses, and lets out a dry breath. She accepts the denial—or decides not to press—and explains why she asked: she needed to know who was sitting in her room. She reveals that the blood bounty was quietly pulled down weeks ago anyway. The dead collector was despised across the water-streets, skimmed off his own crews, and was destined for a knife in the dark regardless; the Oath only posted the bounty because an organization that doesn't put a price on dead collectors looks weak to the other wards.
-  - *Failure (`short_purse_outlaw_lied_failed`):* Mara spots the tell immediately (the involuntary twitch toward your belt, the defensive posture). She calls out the bluff coldly: *"Don't play me for a fool in my own room. The bounty's dead, and nobody shed a tear for that gold-toothed pig—he was skimming from everyone and due for the mud anyway. But if you lie to my face again, you won't walk back down those stairs."*
+  - *Success (`short_purse_outlaw_lied_passed`):* Mara studies your face, pauses, and lets out a dry breath. She accepts the denial (or decides not to press) and explains why she asked: she needed to know who was sitting in her room. She reveals that the blood bounty was quietly pulled down weeks ago anyway. The dead collector was despised across the water-streets, skimmed off his own crews, and was destined for a knife in the dark regardless; the Oath only posted the bounty because an organization that doesn't put a price on dead collectors looks weak to the other wards.
+  - *Failure (`short_purse_outlaw_lied_failed`):* Mara spots the tell immediately (the involuntary twitch toward your belt, the defensive posture). She calls out the bluff coldly: *"Don't play me for a fool in my own room. The bounty's dead, and nobody shed a tear for that gold-toothed pig, he was skimming from everyone and due for the mud anyway. But if you lie to my face again, you won't walk back down those stairs."*
 - **Tell the Truth ("He cornered me with a cleaver. I was faster."):**
   - *Resolution (`short_purse_outlaw_confessed`):* Mara leans back, respecting the blunt honesty. She confirms the same truth: the collector was widely hated, cheated the brotherhood's own boatmen, and had it coming. The bounty was an institutional formality to save face, quietly allowed to lapse once the noise died down. She appreciates knowing she is dealing with someone dangerous who doesn't waste her time with games.
 
-After resolving this beat, the dialogue rejoins the main briefing (`short_purse_premise`), which non-outlaws enter directly.
-
-**Opening Narrative Reactions (Reading Current State):**
-- **Silt-Gate Fallout (`silt_gate_face_seen`):** Mara notes that Watch patrols have been snooping around the sluice gates: *"The porters saw your boots down at the flumes. Keep your head down while you ask your questions. The Watch is jumpy."*
-- **Night List Performance (`black_oath_night_list_resolution`):**
-  - If completed cleanly via skill check: *"You move through the dark without knocking things over. That's why you're here."*
-  - If fought through (`night_list_fight_won`): *"You can take a knock and keep hold of the purse. Tonight requires softer hands, but the spine helps."*
+After resolving this beat, the dialogue rejoins the main briefing (`short_purse_premise`), which non-outlaws enter directly. Mara gets straight to the problem at hand without wasting words on small talk: twenty-four coppers missing from the boat-shed slip box, and Orren is already circling the slipway.
 
 **Investigation Beats (Branch-and-Bottleneck):**
 
 1. **Beat 1: The Net-Maker’s Shed (The Crime Scene):**
    - The player visits Old Corin at the boat-sheds where the tin was kept.
-   - *Investigation/Insight check (DC 11) or carried tool:* The lock was not forced with iron; it was opened with an oiled wire, or someone knew where the hidden peg was. Corin reveals that young Derry—a sixteen-year-old wharf-runner who ran errands for the dead man—was the last one left alone with the gear before the watch-change.
+   - *Investigation/Insight check (DC 11) or carried tool:* The lock was not forced with iron; it was opened with an oiled wire, or someone knew where the hidden peg was. Corin reveals that young Derry, a sixteen-year-old wharf-runner who ran errands for the dead man, was the last one left alone with the gear before the watch-change.
 
 2. **Beat 2: Tracking Derry (The Confrontation at Lamp Stair):**
-   - The player traces Derry to the narrow alleys behind Lamp Stair. Derry panics and tries to scramble up an exterior cargo ladder or dart into a wet flume.
+   - The player traces Derry to the narrow alleys behind Lamp Stair. Derry panics and tries to scramble up an exterior cargo ladder or dart into a drainage chute.
    - *Tactical Rule of Three (Tactical challenge, non-structural):*
      - **Athletics (STR DC 12):** Sprint down the lane and tackle him before he reaches the upper boardwalk.
      - **Acrobatics (DEX DC 12):** Vault a stack of wet barrel staves to cut off his escape route down the drain passage.
@@ -117,14 +111,14 @@ After resolving this beat, the dialogue rejoins the main briefing (`short_purse_
 
 3. **Beat 3: The Revelation & Dilemma:**
    - Derry is terrified, but he doesn't have the coin anymore.
-   - *The Truth:* Derry didn't steal the money for dice or drink. When Joram drowned, Gilded Scales wharf-bailiff Master Orren demanded an immediate 24-copper "unregistered tonnage fee" and threatened to chain the skiff and tow it to the upper wharves before dawn. Panicked that Joram's family would lose their only surviving income, Derry stole the 24 coppers from the slip-fund tin and handed it to Orren as a deposit—only for Orren to pocket the coin and insist on seizing the skiff anyway unless another fee was paid.
+   - *The Truth:* Derry didn't steal the money for dice or drink. When Joram drowned, Orren, a collector for the Gilded Scales, demanded an immediate 24-copper "unregistered tonnage fee" and threatened to chain the skiff and tow it to the upper wharves. Panicked that Joram's family would lose their only surviving income, Derry stole the 24 coppers from the slip-fund tin and handed it to Orren as a deposit, only for Orren to pocket the coin and insist on seizing the skiff anyway unless another fee was paid.
    - *The Decision Core (Three Meaningful Solutions):*
-     - **Option A: The Cold Reclaim (Enforce the Code):** March Derry straight to Bailiff Orren's toll-post, intimidate or strong-arm Orren into coughing up the stolen 24 coppers (STR/Intimidation DC 12 or Black Oath muscle). *Outcome:* The slip tin is fully restored. Orren backs down under Oath pressure but harbors a bitter grudge. Joram's surviving partner gets the boat, but Derry is publicly exposed as a thief. Sets `short_purse_resolution = "recovered_enforced"`.
+     - **Option A: The Cold Reclaim (Enforce the Code):** March Derry straight to Orren's toll-post, intimidate or strong-arm Orren into coughing up the stolen 24 coppers (STR/Intimidation DC 12 or Black Oath muscle). *Outcome:* The slip tin is fully restored. Orren backs down under Oath pressure but harbors a bitter grudge. Joram's surviving partner gets the boat, but Derry is publicly exposed as a thief. Sets `short_purse_resolution = "recovered_enforced"`.
      - **Option B: The Mercenary Pocket (Personal Subsidy):** The player covers the 24 copper bits out of their own coin pouch (paying 24 coppers, guarded by `currency_txn_locked`). Derry's theft stays hidden, the slip fund is restored for the widow, and Mara receives the full tin. *Outcome:* Solves the problem with zero street friction. Mara notices the clean minting of the coins with a keen eye, respecting the player's discretion while warning that soft hearts don't buy firewood. Sets `short_purse_resolution = "covered_pocket"`, `short_purse_derry_protected = true`.
      - **Option C: The Leveraged Compromise (Street Fixer):** Use Investigation/Persuasion (DC 12) to catch Orren in an illegal off-the-books extortion of a Black Oath slip. Orren folds, returning 12 coppers and dropping the seizure notice; the player gets Old Corin and the net-makers to cover the remaining 12 as a crew solidarity pool. *Outcome:* No coin lost by the player, the skiff is protected, and the crew solidarity is restored. Sets `short_purse_resolution = "brokered_compromise"`.
 
 **Resolution & Aftermath:**
-- Return to the upper room before dawn. Mara receives the 24 copper bits.
+- Return to the upper room. Mara receives the 24 copper bits.
 - **The Name Reveal:** Impressed by the player's ability to settle a neighborhood dispute without triggering a riot, a Watch raid, or a crew strike, Mara puts her chalk down and introduces herself properly:
   *"I am Mara Vey. People around Duckboard bring me their books when the numbers won't lie flat. When there is trouble in this ward that needs quiet iron or cool heads, I decide whose boots walk."*
 - **Promotion to Ward Hand:**
@@ -196,5 +190,5 @@ A useful long-term split is:
 
 1. **[RESOLVED in §2]** Define the ward keeper's personality, practical authority, and conflict with Hask's approach: Mara Vey values quiet neighborhood balance, clean tallies, and community stability, contrasting with Hask's purely transactional scrap-and-courier pragmatism.
 2. **[RESOLVED in §2]** Decide the emotional outcome and branching resolutions of *The Short Purse*: Three meaningful branch resolutions (Cold Enforcement, Mercenary Pocket, and Leveraged Compromise), each tracking concrete consequence flags without relying on deleted numerical reputation counters.
-3. **[RESOLVED in §2]** Decide which current choices its opening should read: Silt-Gate result (`silt_gate_face_seen`), Night List execution (`black_oath_night_list_resolution`), outlaw origin (`origin = "outlaw"`), and Lyra's status (`lyra_repaid`, `lyra_bond`).
+3. **[RESOLVED in §2]** Opening state reads: Strictly the Outlaw origin (`origin = "outlaw"`) via a dedicated interrogation beat. Avoid gamey callbacks to Silt-Gate or past Night List tallies, Mara gets straight to the immediate ward crisis without conversational bloat.
 4. Add a named-job progression counter only when there are enough named jobs to support it: *The Short Purse* provides the milestone jump from Associate to Ward Hand (`black_oath_status = "ward_hand"`), and registers as a completed quest in `count_finished_dredge_end`.
