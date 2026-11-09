@@ -163,7 +163,7 @@ graph TD
    * `[Cantrip: Guidance]` - Divination focus buff (`+1d4` to next check).
    * `[Cantrip: Prestidigitation]` - Snuff the platform's fish-oil lamp from afar (`silt_gate_lamp_snuffed = true`, advantage on the squeeze).
    * `[Cantrip: Minor Illusion]` - Project false patrol footsteps down the north cut (`silt_gate_illusion_active = true`, advantage on the squeeze).
-3. **The one ending (`pv_silt_gate_squeeze`):** pin the broker for the names on his payroll. `[CHA DC 12]` intimidate, `[STR DC 12]` search his coat, `[WIS DC 11]` offer him a way out, `[Cantrip: Thaumaturgy]` (`CHA DC 10`), `[Spell: Dissonant Whispers]` (1 Bard Slot, automatic). Advantage if the winch is jammed, the lamp snuffed or the illusion running. **The player always gets the slip with both names** (a one-name result was removed 2026-10-06 as pointless). A failed check costs something else: `silt_gate_face_seen` is set, the porters see the player's face, the player loses an hour hiding in a cellar drain, and `black_oath_heat` rises by one more (silent). Either way `silt_gate_resolution = "leverage"`, `has_silt_gate_payout_slip = true`, `black_oath_heat +1`. The crates stay on the platform.
+3. **The one ending (`pv_silt_gate_squeeze`):** pin the broker for the names on his payroll. `[CHA DC 12]` intimidate, `[STR DC 12]` search his coat, `[WIS DC 11]` offer him a way out, `[Cantrip: Thaumaturgy]` (`CHA DC 10`), `[Spell: Dissonant Whispers]` (1 Bard Slot, automatic). Advantage if the winch is jammed, the lamp snuffed or the illusion running. **The player always gets the slip with both names** (a one-name result was removed 2026-10-06 as pointless). A failed check costs something else: `silt_gate_face_seen` is set, the porters see the player's face, and the player loses an hour hiding in a cellar drain. Either way `silt_gate_resolution = "leverage"` and `has_silt_gate_payout_slip = true`. The crates stay on the platform.
 4. **Turn-in (`pv_tower_silt_turnin`):** "Lay the broker's payout slip on the bench." Counts as one of Kestrel's trust moments and 5 silver, always; she adds a line about keeping clear of Dredge-End if `silt_gate_face_seen`. Sets `kestrel_slip_turned_in`, `kestrel_watch_leverage`, `silt_gate_bounty_claimed` and `silt_gate_turned_in_day`.
 
 * **Removed 2026-10-06:** the ambush-for-the-Watch branch (12 silver from Voss), the parley-and-bribe branch (25-30 silver hush money), the "failed" ending that only they could reach, Voss's report and the slip choices at his desk (give it to him, or lie and keep it), and the Captain Vane turn-in (`port_valen_vane_slip_turnin`, `vane_watch_leverage`, now `kestrel_watch_leverage`). The stats sheet and the Silt-Gates lorebook entry carry the one ending.
@@ -352,10 +352,10 @@ graph TD
 * **Economics:** 12 copper on a successful round (partial 4 on failure), once per `campaign_day` (`scrap_vetting_day`) — a real day job (6 hours) rather than an errand, sized so the courier round and wading together eat most of the 14-hour working day if both are run the same day.
 * **The repeatable loop:** once the first round resolves, `hask_courier_unlocked` opens a standing "Ask Hask if there's a round to run" option at `cut_sheds_hub` — same mechanics as the first round.
 * **Associate reveal:** after six successful rounds, Hask names the employer as the Black Oath and offers to put his name behind the player. Accepting sets `black_oath_status = "associate"`. This is named paid work, not a sworn oath; Hask puts the player forward for a night contract upstairs. Refusal is reversible and leaves the ordinary courier loop open.
-* **Outlaw origin:** begins at `black_oath_heat = 3`, matching the existing six-hundred-mark theft and blood bounty. Hask's sponsorship may create a ward-level opening for paid work, but it does not erase the debt or make the rest of the organization forget the dead collector.
+* **Outlaw origin:** carries the existing six-hundred-mark theft and blood bounty (`origin_desc`). Hask's sponsorship may create a ward-level opening for paid work, but it does not erase the debt or make the rest of the organization forget the dead collector. (`black_oath_heat` was removed 2026-11-09 — it never gated anything; the bounty is tracked by the origin text alone.)
 * **The rope-and-oil house:** by day it sells cordage, hooks, lamp oil, tallow and sail patches. After dark, its upper room is a Black Oath contact point for local work. The player is not told whether it is a headquarters or how it fits into the wider organization.
 * **Lore and log:** Hask has a gated people entry in `lorebook-port-valen.js`; the repeatable day-job remains out of `quest-data.js`, matching Crane Three's treatment.
-* **Variables:** `cut_scrap_sold_count`, `scrap_vetting_offer_seen`, `scrap_vetting_quest_stage`, `scrap_vetting_day`, `hask_courier_unlocked`, `hask_courier_count`, `hask_associate_offer_seen`, `hask_associate_joined`, `black_oath_status`, and `black_oath_heat`.
+* **Variables:** `cut_scrap_sold_count`, `scrap_vetting_offer_seen`, `scrap_vetting_quest_stage`, `scrap_vetting_day`, `hask_courier_unlocked`, `hask_courier_count`, `hask_associate_offer_seen`, `hask_associate_joined`, and `black_oath_status`.
 
 ### The Night List
 * **Scene File:** `port_valen/black_oath/black_oath_night_list.txt` (`night_list_briefing` through `night_list_failed`).
@@ -364,7 +364,7 @@ graph TD
 * **Briefing:** the player meets the unnamed woman upstairs during a real job briefing, not a social audience. Three stops exchange two purses and an oilcloth packet; the player may ask what is in the packet before accepting.
 * **Route:** after the three hand-offs, three approaches resolve a street interception: STR (`Athletics DC 12`), DEX (`Acrobatics DC 12`), or CHA (`Persuasion DC 11`).
 * **Radiant cadence:** after the introductory run, the woman upstairs can offer one fresh list each campaign day. The first always ends with the lane confrontation; later runs make a hidden 1-in-8 roll for it. `black_oath_night_list_count` records successful runs; the first success grants level-progress credit, while later successes pay 18 copper.
-* **Failure:** `black_oath_night_list_resolution = "failed"`; no pay, `black_oath_heat +1`, and no level-progress credit.
+* **Failure:** `black_oath_night_list_resolution = "failed"`; no pay and no level-progress credit.
 * **Variables:** `black_oath_keeper_met`, `black_oath_night_list_stage`, `black_oath_night_list_resolution`, `black_oath_night_list_paid`, `black_oath_night_list_count`, and `black_oath_night_list_day`.
 
 ---
@@ -404,7 +404,7 @@ graph TD
 *create silt_gate_recon_done false            *comment tracks daytime scout completion
 *create silt_gate_lamp_snuffed false          *comment prestidigitation stakeout buff
 *create silt_gate_illusion_active false       *comment minor illusion stakeout buff
-*create silt_gate_face_seen false            *comment a failed squeeze check: the porters saw your face (an hour lost, +1 silent heat)
+*create silt_gate_face_seen false            *comment a failed squeeze check: the porters saw your face (an hour lost)
 *create silt_gate_bounty_claimed false        *comment one-time 20 silver watch payout guard
 *create has_silt_gate_payout_slip false       *comment the broker's list of paid Watch sergeants (the one ending); turned in to Kestrel
 *create kestrel_silt_briefed false            *comment Kestrel briefed the player; unlocks Voss's briefing
@@ -412,7 +412,6 @@ graph TD
 *create silt_gate_turned_in_day 0             *comment campaign_day of the turn-in; Voss notices three days later
 *create silt_gate_voss_told false             *comment Voss's remark about the polite sergeants, shown once
 *create kestrel_watch_leverage false          *comment Kestrel holds the names; RESERVED for future Watch quests
-*create black_oath_heat 0                    *comment attention/danger, separate from respect
 *create black_oath_status "outsider"          *comment "outsider", "contact", "associate"
 *create vane_standing 0                       *comment mercenary company captain regard
 

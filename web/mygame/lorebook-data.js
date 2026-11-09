@@ -785,11 +785,6 @@
           if (truthy(s.black_oath_keeper_met)) {
             out.push("Above the Duckboard Market rope-and-oil house, you met a woman who handles work in that room. She gave you no name and no explanation beyond the job in front of you.");
           }
-          // black_oath_heat is deliberately NOT rendered here. It accumulates silently (startup.txt records
-          // the decision) as the "who notices the player" hook from BLACK_OATH_FACTION_PLAN.md, reserved for
-          // content that does not exist yet. A readout before there is anything to spend it on told the player
-          // they were being tracked without ever saying who was doing the tracking. Do not add one back
-          // without building the content that reads it.
           return out;
         },
         see: ["port_valen", "dredge_end", "gilded_scales", "port_watch"]

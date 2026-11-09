@@ -18,8 +18,8 @@ The upper room of the Duckboard Market rope-and-oil house is a place for local a
 - Hask's recruitment ladder is deliberately slow: six successful five-hour scavenges produce six separate scrap sales, then six successful six-hour courier rounds earn his sponsorship.
 - After enough successful rounds, Hask identifies the Black Oath by name and can sponsor the player as an **associate**, not a sworn member.
 - *The Night List* is repeatable night work after association: one run per campaign day, 18 copper per successful route, and a lifetime-success counter. The first run always has the lane confrontation; later runs roll a hidden 1-in-8 chance for it. Its first success grants standing; later runs do not farm it.
-- `black_oath_rep`, `black_oath_heat`, and `black_oath_status` provide a small foundation for how the network receives the player.
-- The Silt-Gate outcome can improve or damage that reception, while an outlaw origin begins with both poor standing and active heat.
+- `black_oath_status` ("outsider"/"contact"/"associate") tracks how the network receives the player. `black_oath_rep` and `black_oath_heat` existed as a small reputation/attention foundation but were removed 2026-11-09 (NPC/faction regard refactor): neither ever gated anything. Future standing or attention effects should be specific quest/event flags, not a reputation or heat counter.
+- The Silt-Gate outcome and an outlaw origin both still affect the Oath's reception of the player, but through flags (e.g. `silt_gate_resolution`, `silt_gate_face_seen`) rather than a counter.
 - Lyra's current aftermath points toward unfinished Black Oath business rather than treating the Five Silver plot as a full resolution.
 
 These are foundations, not a promise that the proposed titles or counters below must be added exactly as written.
@@ -79,7 +79,7 @@ This is a good first test because it makes the Black Oath more than a criminal e
 
 Rather than advancing after raw courier repetitions, this tier should use a small number of completed named jobs. The jobs can vary in tone—debt, missing cargo, neighborhood protection, internal discipline, or a problem created by the player's earlier Silt-Gate choice—but should show competing Black Oath priorities.
 
-At this point, `black_oath_rep` can affect trust and payment, while `black_oath_heat` can alter who notices the player, how much cover they receive, or which solutions remain safe. Neither variable should independently force the player's moral identity.
+At this point, specific job-outcome flags should affect trust, payment, and who notices the player, how much cover they receive, or which solutions remain safe — not a reputation or heat counter (both were removed 2026-11-09; see Current Foundation above). No single flag should independently force the player's moral identity.
 
 ### 4. Higher-risk work: *A Boat Without a Bell* (working title)
 

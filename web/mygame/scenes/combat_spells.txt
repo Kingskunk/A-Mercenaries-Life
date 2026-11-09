@@ -596,7 +596,8 @@ ${combat_player_dmg_roll_banner}
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment SPELL: DISSONANT WHISPERS (3d6 psychic + the caster's spellcasting ability modifier, save for half)
+*comment SPELL: DISSONANT WHISPERS (3d6 psychic + the caster's spellcasting ability modifier, save for half;
+*comment upcast added 2026-11-09)
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment The modifier was missing entirely until 2026-09-28 -- this was a flat 3d6 that did not scale with the
 *comment Bard's Charisma at all, while Magic Missile in the same file had a hardcoded +3. RAW "3d6" on a save-based
@@ -604,36 +605,47 @@ ${combat_player_dmg_roll_banner}
 *comment a successful save halves dice and modifier together, rounded down. check_success is already inverted
 *comment relative to its name (resolve_enemy_save: true = the enemy FAILED the save), so the full-damage branch
 *comment below is the one guarded by it, unchanged from before.
+*comment UPCASTING (2026-11-09, RAW): +1d6 per slot level above 1st, so dice count = combat_cast_at_level + 2
+*comment (3d6 at 1st, 4d6 at 2nd) -- same rolling-loop shape resolve_cast_ray_of_sickness/resolve_cast_thunderwave
+*comment use, replacing the old fixed dw_d1/dw_d2/dw_d3 temps. The slot spend itself now lives in combat.txt's
+*comment fight_cast_dissonant_whispers (the *goto target both options share), matching Ray of Sickness's own
+*comment spend_spell_slot call site -- this label only ever does the damage math, same as before.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_dissonant_whispers
 *if (not(combat_dissonant_whispers_locked)) or (not(locked_combat_dissonant_whispers_page_id = page_id))
-  *set bard_spell_slots - 1
   *comment Always Psychic damage, RAW -- no per-caster variation, so it's set
   *comment here rather than at combat.txt's call site.
   *set combat_player_dmg_type "psychic"
-  *temp dw_d1 0
-  *temp dw_d2 0
-  *temp dw_d3 0
-  *rand dw_d1 1 6
-  *rand dw_d2 1 6
-  *rand dw_d3 1 6
+  *temp dw_dice_count (combat_cast_at_level + 2)
+  *temp dw_total 0
+  *temp dw_dice_str ""
+  *temp dw_di 1
+  *label resolve_dissonant_whispers_loop
+  *if (dw_di <= dw_dice_count)
+    *temp dw_die 0
+    *rand dw_die 1 6
+    *set dw_total + dw_die
+    *if (dw_di = 1)
+      *set dw_dice_str "${dw_die}"
+    *else
+      *set dw_dice_str "${dw_dice_str}+${dw_die}"
+    *set dw_di + 1
+    *goto resolve_dissonant_whispers_loop
   *temp dw_mod_str ""
   *if (spell_damage_mod >= 0)
     *set dw_mod_str "+${spell_damage_mod}"
   *else
     *set dw_mod_str "${spell_damage_mod}"
-  *temp dw_total 0
-  *set dw_total ((dw_d1 + dw_d2) + dw_d3)
   *comment Modifier applied AFTER the dice and BEFORE the halving below, so a successful save halves dice
-  *comment and modifier together rather than halving 3d6 and handing back a full modifier (randomtest caught the
-  *comment first draft of this, which *set dw_total on a never-declared var instead of *temp-ing it).
+  *comment and modifier together rather than halving the dice and handing back a full modifier (randomtest caught
+  *comment the first draft of this, which *set dw_total on a never-declared var instead of *temp-ing it).
   *set dw_total + spell_damage_mod
   *if (check_success)
     *set combat_player_dmg_dealt dw_total
-    *set combat_player_dmg_roll_banner "[b][🎲 Dissonant Whispers: ${dw_d1}+${dw_d2}+${dw_d3} ${dw_mod_str} = ${dw_total}][/b]"
+    *set combat_player_dmg_roll_banner "[b][🎲 Dissonant Whispers: ${dw_dice_str} ${dw_mod_str} = ${dw_total}][/b]"
   *else
     *set combat_player_dmg_dealt ((dw_total - (dw_total modulo 2)) / 2)
-    *set combat_player_dmg_roll_banner "[b][🎲 Dissonant Whispers: ${dw_d1}+${dw_d2}+${dw_d3} ${dw_mod_str} = ${dw_total} — Halved (Saved): ${combat_player_dmg_dealt}][/b]"
+    *set combat_player_dmg_roll_banner "[b][🎲 Dissonant Whispers: ${dw_dice_str} ${dw_mod_str} = ${dw_total} — Halved (Saved): ${combat_player_dmg_dealt}][/b]"
   *gosub_scene combat_dice apply_outgoing_damage_resist_vuln
   *set combat_enemy_hp - combat_player_dmg_dealt
   *if (combat_enemy_hp < 0)
@@ -653,7 +665,7 @@ ${combat_player_dmg_roll_banner}
 *comment 2nd), so dice count = combat_cast_at_level + 1. A loop instead of fixed ros_d1/ros_d2 temps, since the
 *comment die count is no longer always two. resolve_player_hit still can't be reused here -- it only ever rolls
 *comment ONE die plus a flat bonus (combat_dice.txt) -- so this rolls and sums its own total directly, the same
-*comment shape resolve_dissonant_whispers (above) uses for its fixed 3d6. Still calls apply_poison_rider
+*comment rolling-loop shape resolve_dissonant_whispers (above) uses. Still calls apply_poison_rider
 *comment (Poisoner's Robes) and apply_outgoing_damage_resist_vuln, same order resolve_player_hit itself uses, so
 *comment a poison-resistant or Poisoner's Robes-wearing caster works exactly as it would through the normal path.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -1049,7 +1049,6 @@ stats = {
  "talia_bond": "0",
  "vane_standing": "0",
  "rennick_disposition": "unmet",
- "black_oath_heat": "0",
  "black_oath_status": "outsider",
  "silt_gate_quest_stage": "unstarted",
  "silt_gate_resolution": "none",

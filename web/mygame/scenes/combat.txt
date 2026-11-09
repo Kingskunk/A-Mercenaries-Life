@@ -4176,41 +4176,17 @@
       *goto fight_action_spent
 
   *if (((((combat_player_actions_left > 0) and ((known_dissonant_whispers) and (bard_spell_slots > 0)))) and (spell_reach_ok_dissonant_whispers)) and (not(spells_blocked)))
-    # [b][ACTION][/b] [b][Dissonant Whispers][/b] A discordant psychic phrase wracks ${combat_med_epithet}.
-      *comment Whole-body replay lock (2026-09-30, same bug/shape as resolve_weapon_attack_choice's own header
-      *comment comment above): fight_pick_target's kill-priority re-scan and pick_spell_flavor's *rand pick were
-      *comment unguarded here too, so a same-page replay that killed this spell's own target could re-derive a
-      *comment DIFFERENT living target and reprint fsh/fsm for the wrong enemy, even though resolve_enemy_save/
-      *comment resolve_dissonant_whispers already lock their own roll/damage math. Not its own *label (this whole
-      *comment option is inline, never *gosub'd), so the lock lives here directly instead of being named for a
-      *comment callable subroutine.
-      *if (not(combat_dw_choice_locked)) or (not(locked_combat_dw_choice_page_id = page_id))
-        *gosub_scene combat_movement fight_pick_target
-        *gosub_scene combat_movement fight_retarget_by_class "medium"
-        *set combat_current_spell_id "dissonant_whispers"
-        *gosub_scene combat_prose pick_spell_flavor
-        *comment Enemy saving throw against the player's own spell_save_dc -- Dissonant Whispers is a Wisdom save,
-        *comment RAW. The target rolls here (resolve_enemy_save, combat_dice.txt), not the player.
-        *gosub_scene combat_dice resolve_enemy_save "combat_enemy_" "wisdom" "Wisdom" 0
-        *gosub_scene combat_spells resolve_dissonant_whispers
-        *if (combat_enemy_hp <= 0)
-          *gosub_scene combat_prose pick_spell_death_flavor
-        *set combat_dw_choice_locked true
-        *set locked_combat_dw_choice_page_id page_id
-      *if (combat_enemy_hp <= 0)
-        ${fdh}
-        *line_break
-        [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Psychic Damage${combat_outgoing_dmg_suffix}][/b]
-      *elseif (check_success)
-        ${fsh}
-        *line_break
-        [b][🧠 Dissonant Whispers: Failed Save | ${combat_player_dmg_dealt} Psychic Damage${combat_outgoing_dmg_suffix}][/b]
-      *else
-        ${fsm}
-        *line_break
-        [b][🧠 Dissonant Whispers: Saved | Half Damage: ${combat_player_dmg_dealt} Psychic Damage${combat_outgoing_dmg_suffix}][/b]
-      *line_break
-      *goto fight_check_enemy_hp
+    # [b][ACTION][/b] [b][Dissonant Whispers: 1st level][/b] A discordant psychic phrase wracks ${combat_med_epithet}.
+      *set combat_cast_at_level 1
+      *goto fight_cast_dissonant_whispers
+
+  *if (((((combat_player_actions_left > 0) and ((known_dissonant_whispers) and (bard_spell_slots_2 > 0)))) and (spell_reach_ok_dissonant_whispers)) and (not(spells_blocked)))
+    # [b][ACTION][/b] [b][Dissonant Whispers: 2nd level][/b] An empowered phrase: 4d6 instead of 3d6.
+      *comment UPCASTING (2026-11-09, RAW): +1d6 per slot level above 1st -- resolve_dissonant_whispers
+      *comment (combat_spells.txt) reads combat_cast_at_level for the dice count, same shape Ray of Sickness/
+      *comment Thunderwave use.
+      *set combat_cast_at_level 2
+      *goto fight_cast_dissonant_whispers
 
   *if ((((combat_can_fear) and (spell_reach_ok_cause_fear))) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Cause Fear: 1st level][/b] Plant a whispered dread in ${combat_med_epithet}.@{show_stat_hints  [Wisdom Save]|}
@@ -5248,6 +5224,48 @@ You unroll the pale sheet and read it aloud. A numb, leathery vitality spreads b
     *line_break
     *goto fight_round_hub
 
+*comment Reached only via *goto, from either Dissonant Whispers option above -- combat_cast_at_level is already
+*comment set (1 or 2) by whichever one armed this. Pulled out of its old inline shape (2026-11-09, same move
+*comment Ray of Sickness made below) once the 2nd-level option needed its own full body rather than a duplicate
+*comment copy-paste of fight_pick_target/prose/the save/the print block. This label's own combat_dw_choice_locked
+*comment guards fight_pick_target/the save/the slot spend; resolve_dissonant_whispers's own
+*comment combat_dissonant_whispers_locked (combat_spells.txt) guards only its damage math -- the same two-layer
+*comment lock shape Ray of Sickness uses just below.
+*label fight_cast_dissonant_whispers
+*if (not(combat_dw_choice_locked)) or (not(locked_combat_dw_choice_page_id = page_id))
+  *gosub_scene combat_movement fight_pick_target
+  *gosub_scene combat_movement fight_retarget_by_class "medium"
+  *set combat_current_spell_id "dissonant_whispers"
+  *gosub_scene combat_prose pick_spell_flavor
+  *comment Enemy saving throw against the player's own spell_save_dc -- Dissonant Whispers is a Wisdom save,
+  *comment RAW. The target rolls here (resolve_enemy_save, combat_dice.txt), not the player.
+  *gosub_scene combat_dice resolve_enemy_save "combat_enemy_" "wisdom" "Wisdom" 0
+  *comment Slot spent on cast, RAW, win or miss -- same as Ray of Sickness/Grease (combat_spells.txt).
+  *comment spend_spell_slot (combat_spells.txt) picks the pool from combat_cast_at_level.
+  *gosub_scene combat_spells spend_spell_slot "bard" combat_cast_at_level
+  *gosub_scene combat_spells resolve_dissonant_whispers
+  *if (combat_enemy_hp <= 0)
+    *gosub_scene combat_prose pick_spell_death_flavor
+  *comment Reset last -- resolve_dissonant_whispers has already read it by now. One-shot, cleared either way,
+  *comment same idiom fight_cast_ray_of_sickness uses just below.
+  *set combat_cast_at_level 1
+  *set combat_dw_choice_locked true
+  *set locked_combat_dw_choice_page_id page_id
+*if (combat_enemy_hp <= 0)
+  ${fdh}
+  *line_break
+  [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Psychic Damage${combat_outgoing_dmg_suffix}][/b]
+*elseif (check_success)
+  ${fsh}
+  *line_break
+  [b][🧠 Dissonant Whispers: Failed Save | ${combat_player_dmg_dealt} Psychic Damage${combat_outgoing_dmg_suffix}][/b]
+*else
+  ${fsm}
+  *line_break
+  [b][🧠 Dissonant Whispers: Saved | Half Damage: ${combat_player_dmg_dealt} Psychic Damage${combat_outgoing_dmg_suffix}][/b]
+*line_break
+*goto fight_check_enemy_hp
+
 *comment Reached only via *goto, from either Ray of Sickness option above -- combat_cast_at_level is already set
 *comment (1 or 2) by whichever one armed this. Same two-layer lock shape Dissonant Whispers uses: this label's
 *comment own combat_ros_choice_locked guards fight_pick_target/the attack roll/the slot spend; resolve_cast_
@@ -5275,7 +5293,7 @@ You unroll the pale sheet and read it aloud. A numb, leathery vitality spreads b
   *if (check_success)
     *comment 2d8 Poison (3d8 at 2nd level) needs real dice, which resolve_player_hit cannot roll (one die plus a
     *comment flat bonus only) -- resolve_cast_ray_of_sickness (combat_spells.txt) rolls its own total instead,
-    *comment reading combat_cast_at_level for the dice count, same shape resolve_dissonant_whispers uses for 3d6.
+    *comment reading combat_cast_at_level for the dice count, same shape resolve_dissonant_whispers uses.
     *gosub_scene combat_spells resolve_cast_ray_of_sickness
     *comment Poisoned (RAW: disadvantage on attack rolls AND ability checks, until the end of the caster's
     *comment next turn) -- only the attack-roll half is modeled, reusing the same per-slot disadvantage flag
