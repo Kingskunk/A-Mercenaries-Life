@@ -96,6 +96,7 @@
     overworld_forest_road: "open_road",   // a wooded road tile is road, not woodland: the Longshade tiles themselves (kind forest) keep the forest bed
     western_vale_road: "open_road",
     road: "open_road", overworld_hilly_road: "open_road",   // the kind of an overworld tile (Scenery.placeNames ends a tile's names with it)
+    the_splitjaw_ravines: "open_road", grey_gorge_rim_camp: "open_road", grey_river_gorge_arch: "open_road", grey_gorge_outlaw_camp: "open_road",
     generic_town_street: "village",
     langston: "city",
     longfold_fair_sun_pillar: "village",  // the open market ground: a village by day, a hushed one at night
@@ -206,6 +207,7 @@
   // ambience beneath them. Each level is deliberately below a full bed.
   var OVERLAY = {
     ashrun_mouth: [{ all: "river_current_stream", level: 0.3 }],
+    grey_river_gorge_arch: [{ all: "river_current_stream", level: 0.3 }],
     greybank_rise: [{ all: "river_current_stream", level: 0.3 }],
     upper_longshade: [{ all: "river_current_stream", level: 0.3 }],
     west_longshade: [{ all: "river_current_stream", level: 0.3 }],

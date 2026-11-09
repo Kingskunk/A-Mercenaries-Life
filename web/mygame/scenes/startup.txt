@@ -105,6 +105,7 @@
 *create prepare_target_on false
 *create copy_target_id "none"
 *create prepared_absorb_elements false
+*create prepared_ray_of_sickness false
 *create prepared_alarm false
 *create prepared_arms_of_hadar false
 *create prepared_hellish_rebuke false
@@ -133,6 +134,7 @@
 *create prepared_thunderwave false
 *create prepared_unseen_servant false
 *create held_absorb_elements false
+*create held_ray_of_sickness false
 *create held_alarm false
 *create held_arms_of_hadar false
 *create held_hellish_rebuke false
@@ -162,6 +164,7 @@
 *create held_unseen_servant false
 *comment known_<id> for every spell on SOME class's list -- cantrips are not here (they are hand-written: CANTRIP_SLOTS has no tools/spell_book.json entry). Set true by refresh_known_spells, never by hand.
 *create known_absorb_elements false
+*create known_ray_of_sickness false
 *create known_alarm false
 *create known_arms_of_hadar false
 *create known_hellish_rebuke false
@@ -5311,6 +5314,15 @@
 *comment same fight_pick_target-rerun bug as combat_weapon_attack_locked, see that *create's own comment.
 *create combat_dw_choice_locked false
 *create locked_combat_dw_choice_page_id 0
+*comment RAY OF SICKNESS (Wizard, 1st level, 2026-11-08): same two-layer lock shape as Dissonant Whispers just
+*comment above -- combat_ros_choice_locked guards the whole option body (combat.txt: fight_pick_target, the
+*comment slot spend, the attack roll), combat_ray_of_sickness_locked guards only resolve_cast_ray_of_sickness's
+*comment own 2d8 damage math (combat_spells.txt), since that is *gosub_scene'd from a different file and needs
+*comment its own idempotency guard the same way resolve_dissonant_whispers does.
+*create combat_ray_of_sickness_locked false
+*create locked_combat_ray_of_sickness_page_id 0
+*create combat_ros_choice_locked false
+*create locked_combat_ros_choice_page_id 0
 *comment Whole-choice-body lock (2026-09-30), shared by all six cantrip options (Fire Bolt/Ray of Frost/Shocking
 *comment Grasp/Eldritch Blast/Chill Touch/Vicious Mockery, combat.txt) -- one flag covers all of them since they
 *comment cost the same ACTION budget and so are mutually exclusive within any one page, the same reasoning
@@ -6433,6 +6445,7 @@
 *create recipe_apple_barley_porridge false
 *create recipe_acorn_truffle_pottage false
 *create recipe_brambleberry_barley_pudding false
+*create has_scroll_absorb_elements false
 *create has_scroll_alarm false
 *create has_scroll_arms_of_hadar false
 *create has_scroll_armor_of_agathys false
@@ -6447,6 +6460,7 @@
 *create has_scroll_hex false
 *create has_scroll_hunters_mark false
 *create has_scroll_identify false
+*create has_scroll_ray_of_sickness false
 *create has_scroll_shield false
 *create has_scroll_unseen_servant false
 *create stow_layout_saddlebags ""
@@ -7816,6 +7830,9 @@
 *create aly_trailcraft false
 *create aly_flirt false
 *create aly_spotted_outlaws false
+
+*comment aly_would_fight: player's camp answer to Alyndra's fight-or-walk question: "", "fight", "walk", "scout"
+*create aly_would_fight ""
 *comment TAVERN GAMBLING: each tavern below runs its own dice table (a dedicated label, inline in that tavern's own scene file, same shape as the Keel's pv_poi_tavern_dice) and spends its own house pot through economy.txt's shared resolve_wager. Every bankroll here refills to its max once a day (calendar.txt, the days_to_pass>0 block); resolve_wager itself then re-rolls that day's bankroll down to a random point between 6 and its max, once, the first time anyone plays that table that day (the "_rolled_day" pair below is resolve_wager's lock, keyed to campaign_day) -- how much the house is willing to lose before it calls the game for the day, so a grinding player cannot count on draining the same fixed amount every time.
 *comment Alderford's taphouse (prologue/alderford.txt).
 *create taphouse_dice_bankroll 30

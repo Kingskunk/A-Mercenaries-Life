@@ -4,19 +4,19 @@
 *comment INTEGRATION HOOKS (To be added to village tavern files upon quest completion):
 *comment 
 *comment 1. BRINEWICK -- web/mygame/scenes/port_valen/brinewick/reedhouse.txt (bw_reedhouse_main):
-*comment    *if ((aly_quest_stage = "unstarted") and ((time_period = "Dusk") or (time_period = "Night")))
+*comment    *if ((character_level >= 2) and (((aly_quest_stage = "unstarted") or (aly_quest_stage = "declined")) and ((time_period = "Dusk") or (time_period = "Night"))))
 *comment      # Approach the elven traveler peeling an apple in the corner.
 *comment        *set aly_start_loc "brinewick"
 *comment        *goto_scene overworld/valen_reach_alyndra aly_start
 *comment 
 *comment 2. MARLCROSS -- web/mygame/scenes/port_valen/marlcross/wayfarers_rest.txt (mc_wayfarers_rest_main):
-*comment    *if ((aly_quest_stage = "unstarted") and ((time_period = "Dusk") or (time_period = "Night")))
+*comment    *if ((character_level >= 2) and (((aly_quest_stage = "unstarted") or (aly_quest_stage = "declined")) and ((time_period = "Dusk") or (time_period = "Night"))))
 *comment      # Approach the elven traveler sitting near the window with a cup of cider.
 *comment        *set aly_start_loc "marlcross"
 *comment        *goto_scene overworld/valen_reach_alyndra aly_start
 *comment 
 *comment 3. BARLEYCROSS -- web/mygame/scenes/timbermouth/barleycross/green.txt (bc_hall):
-*comment    *if ((aly_quest_stage = "unstarted") and ((time_period = "Dusk") or (time_period = "Night")))
+*comment    *if ((character_level >= 2) and (((aly_quest_stage = "unstarted") or (aly_quest_stage = "declined")) and ((time_period = "Dusk") or (time_period = "Night"))))
 *comment      # Talk to the elven scout resting on the hall bench with an apple knife.
 *comment        *set aly_start_loc "barleycross"
 *comment        *goto_scene overworld/valen_reach_alyndra aly_start
@@ -25,12 +25,21 @@
 *label aly_start
 *if (aly_start_loc = "")
   *set aly_start_loc "brinewick"
-*if (not(aly_quest_started))
-  *goto aly_resume
+*goto aly_resume
 
 *label aly_resume
+*if (aly_quest_stage = "declined")
+  *goto aly_deal_menu
 *if (aly_checkpoint = "the_deal")
   *goto aly_deal_menu
+*if (aly_checkpoint = "departed")
+  *goto aly_morning_meet
+*if (aly_checkpoint = "gorge_descent")
+  *goto aly_scene3_start
+*if (aly_checkpoint = "vault_entrance")
+  *goto aly_scene3_beat2
+*if (aly_checkpoint = "ambush_sprung")
+  *goto aly_scene4_tactics
 *goto aly_tavern_entry
 
 *label aly_tavern_entry
@@ -166,11 +175,11 @@ She gives a light, self-deprecating shrug of one shoulder.
 *label aly_topic_pitch
 Alyndra leans across the table, her hazel eyes gleaming with suppressed excitement.
 
-"Three weeks ago, following a spring wash-out along the river bluffs in the Grey River gorge, I found a collapsed archway beneath the roots of an old scrub oak. Worked stone Meridian limestone, smooth as glass. Inside is a sealed vault door with interlocking bronze rings and arcane glyphs."
+"Three weeks ago, a drover at a crossroads shrine sold me a charcoal map and a story. A spring wash-out in the Grey River gorge tore a bluff open and exposed an old Meridian archway. I climbed to the rim to see for myself, and you can just make it out across the water: worked limestone, smooth as glass, a sealed door banded in bronze."
 
 She watches your face carefully.
 
-"I didn't dare crack it alone. The river bluffs have timber wolves and treacherous scree, and warding seals are beyond me. But with someone of your talents? We take an old quarry track through the limestone fins cuts straight across the high ridges into the gorge and saves half a day off following the winding river road. We reach the vault, bypass the seals, and split whatever Meridian relics are inside straight down the middle. Equal shares."
+"I didn't dare the descent alone. The gorge has timber wolves and treacherous scree, and a bronze-banded door is beyond me. But with someone of your talents? An old quarry track through the limestone fins cuts straight across the high ridges and saves half a day over the winding river road. We reach the arch, get that door open, and split whatever Meridian relics are inside straight down the middle. Equal shares."
 
 *label aly_deal_menu
 *set aly_checkpoint "the_deal"
@@ -182,7 +191,7 @@ She watches your face carefully.
     *goto aly_handshake
   *if (not(aly_asked_why_unlooted))
     # Ask why an ancient vault hasn't been looted already.
-      "The mudslides only exposed the arch last month," she answers without a beat of hesitation. "Before that, it was buried under forty feet of limestone scree. It's untouched."
+      "The slide only tore the bluff open last month," she answers without a beat of hesitation. "Before that, it was buried under forty feet of limestone scree, and nobody goes down into that gorge. As far as I can tell from the rim, it's untouched."
       *set aly_asked_why_unlooted true
       *goto aly_deal_menu
 
@@ -198,11 +207,13 @@ Alyndra extends her slender right hand across the pine boards to seal the contra
   # Take her hand firmly.@{show_stat_hints  [Insight/Perception DC 15]|}
     *set aly_quest_started true
     *set aly_quest_stage "active"
+    *set aly_checkpoint "departed"
     *goto aly_feel_calluses
 
   # Shake cautiously, keeping an eye on her posture.@{show_stat_hints  [Insight/Perception DC 15]|}
     *set aly_quest_started true
     *set aly_quest_stage "active"
+    *set aly_checkpoint "departed"
     *goto aly_feel_calluses
 
 *label aly_feel_calluses
@@ -287,16 +298,9 @@ Alyndra's smile wavers for a brief, cold second before she recovers her playful 
     *comment   - Brinewick: *goto_scene port_valen/brinewick/reedhouse bw_reedhouse_main
     *comment   - Marlcross: *goto_scene port_valen/marlcross/wayfarers_rest mc_wayfarers_rest_main
     *comment   - Barleycross: *goto_scene timbermouth/barleycross/green bc_hall
-    *comment For now, while isolated in dev testing, return to dev menu:
-    *set aly_quest_started false
-    *set aly_quest_stage "unstarted"
-    *set aly_asked_story false
-    *set aly_asked_watching false
-    *set aly_asked_why_unlooted false 
-    *set aly_knife_work false
-    *set aly_monologue false
-    *set aly_hands false
-    *goto_scene dev_hub dev_menu_quests
+    *comment For now, while isolated in dev testing, return to dev menu.
+    *comment The declined stage is kept so Alyndra can greet the player again on a later visit.
+    *goto aly_return_home_village
 
 *comment ====================================================================================
 *comment VALEN REACH -- SIDE QUEST: THE INNOCENT SMILE (SCENE 2: THE HIGH TRAILS)
@@ -319,7 +323,7 @@ Alyndra's smile wavers for a brief, cold second before she recovers her playful 
   *set scenery_subplace "generic_village_gathering_hall"
   At first light, the village is already waking. Roosters crow across the hedgerows along the Lane, and milk pails rattle by the common well. Inside the Gathering Hall, the hearth embers glow faintly while a sleepy farmhand sits on the threshold bench.
 
-Alyndra is already waiting by the door. She sits on a bench, tightening the leather buckle on her left boot, her travel pack already strapped and resting against her knee. When she hears your footsteps, she looks up, her face instantly brightening into her familiar, energetic smile.
+Alyndra is already waiting by the door. She sits on a bench, tightening the leather buckle on her left boot, her travel pack already strapped and resting against her knee, a grey wool cloak folded over the top. When she hears your footsteps, she looks up, her face instantly brightening into her familiar, energetic smile.
 
 "Punctual," she says, standing and swinging her pack over one shoulder with effortless ease. "I like that."
 
@@ -330,7 +334,7 @@ She glances toward the doorway, adjusting the moss-green tunic at her collar. "R
     *goto aly_trail_start
 
   # Ask how long the trek through the limestone bluffs will take.
-    "A full day of hard climbing," she answers, tapping her chin thoughtfully. "If we push through the limestone cut without stopping, we'll reach the gorge by nightfall and camp near the river. That puts us at the vault entrance by tomorrow morning."
+    "A full day of hard climbing," she answers, tapping her chin thoughtfully. "If we push through the limestone cut without stopping, we'll reach the gorge rim by nightfall and camp there. Then it's down to the river and across to the arch by tomorrow morning."
     *goto aly_trail_start
 
   # Check her over one last time before departing.@{show_stat_hints  [Perception/Insight DC 14]|}
@@ -367,7 +371,11 @@ She glances toward the doorway, adjusting the moss-green tunic at her collar. "R
 *else
   You follow Alyndra south past the last farmsteads along the Lane, where heifers watch you through the hedgerows. Leaving the common pasture behind, she skirts the edge of an old barley rick and strikes out along a disused drover's trail cutting straight into the rocky limestone uplands.
 
-"The main road is built for slow oxen and heavy freight carts," Alyndra explains over her shoulder, picking her way around a clump of thorny briars. "It winds around every creek and low terrace. This cut climbs straight across the limestone fins steeper, but it cuts hours off the trek."
+"The main road is built for slow oxen and heavy freight carts," Alyndra explains over her shoulder, picking her way around a clump of thorny briars. "It winds around every creek and low terrace. This cut climbs straight across the limestone fins—steeper, but it cuts hours off the trek."
+
+Where a side gully opens off the track, she steps wide of its mouth and keeps you below the skyline until it is well behind you.
+
+"Old deserters' camp used to sit up that way," she adds with a shrug, when she notices you noticing. "Probably long empty. Still, no sense advertising ourselves."
 
 *comment ── BEAT 1: THE TRAILCRAFT CHECK ──
 *set hours_to_pass 5
@@ -395,7 +403,7 @@ As you crest a high limestone spine overlooking a sea of dry scrub and distant r
 "Halfway through the ridges," she says brightly, offering the skin toward you. "Not bad going, ${name}. A lot of sellswords would have complained about their knees by now."
 
 *choice
-  # "You handle steep scree like someone who's spent years in the backcountry, Alyndra."
+  # "You handle steep scree like a seasoned backcountry guide, Alyndra."
     She blinks, then lets out a cheerful, self-deprecating laugh.
 
     "When you spend three seasons chasing stray goats off mountain crags so the tavernkeeper doesn't dock your wages, you learn where to put your feet," she replies smoothly, tapping the toe of her boot against the rock. "Either that, or you end up at the bottom of a gully with two broken ankles."
@@ -455,7 +463,7 @@ A mischievous, dimpled grin plays across her mouth as she looks back across the 
 "Mind your heels through here, ${name}," she calls over the whistle of the canyon wind. "I promised you equal shares of whatever Meridian relics we pry out of that vault—I didn't promise to scrape you off the thornbushes if you take a dive."
 
 *choice
-  # "If I go over the edge, I'm taking you with me. That's how partnerships work, right?"
+  # "If I go over the edge, I'm taking you with me."
     *set aly_flirt true
     Alyndra lets out a warm, startled laugh that echoes off the cliff face, color rising faintly in her cheeks. Stepping right to the brink of the shelf, she extends a slender, sure hand across the pinch.
 
@@ -466,20 +474,20 @@ A mischievous, dimpled grin plays across her mouth as she looks back across the 
     "Not bad," she murmurs. "I'm rather fond of keeping company who doesn't panic on a drop."
     *goto aly_beat2_tracks
 
-  # "Don't flatter yourself. Just make sure you can keep up once the trail levels out."
+  # "Don't flatter yourself. Just make sure you can keep up."
     *set aly_flirt true
     Alyndra folds her arms across her chest, her eyebrows arching with theatrical offense, though the twitch at the corner of her lips betrays her.
 
     "Cocky," she replies, looking you up and down with open, lingering amusement. "I've always had a terrible weakness for confidence. Let's see if those legs can cash the draft your mouth is writing once we hit the river boulders."
     *goto aly_beat2_tracks
 
-  # "For a former tavern maid, you move across sheer drops like a mountain goat. Sure there wasn't a circus in your past?"
+  # "You move across sheer drops like a mountain goat, Alyndra."
     She giggles softly, pressing a hand to her collar in feigned modesty.
 
     "You'd be amazed what balancing three heavy pewter pitchers across a grease-slicked taproom floor teaches you about center of gravity," she shoots back with a breezy wink. "Though if you keep showering me with compliments about my grace, I might start charging a guide's fee."
     *goto aly_beat2_tracks
 
-  # "Watch the trail, Alyndra. Save the chatter until we're on flat ground."
+  # "Watch the trail, Alyndra. Save the chatter for flat ground."
     She catches your measured tone and dips her chin in quiet, respectful acknowledgment.
 
     "Prudent," she nods, turning back toward the descent without offense. "A cautious tongue and steady footing keep a traveler breathing out here. Point taken."
@@ -496,28 +504,33 @@ Alyndra slows to an immediate halt. Her playful expression vanishes in a heartbe
 
 "Two days cold. Maybe three," she murmurs quietly, her tone stripped of its usual bubbly lilt. "Whoever was hauling this through wasn't taking the cart road. Shod mules and heavy crates through a blind ravine."
 
+Her fingers move over the evidence with an unhurried economy. She counts the hoof prints under her breath, then thumbs a smear of red stencilling on a splintered crate slat, committing the shape of it to memory.
+
+"Four animals. Two freshly shod," she murmurs, then notices you watching and shrugs lightly. "Habit. Counting hooves keeps a traveler alive."
+
 She looks up at you, her hazel eyes assessing your reaction with quiet intensity.
 
 *choice
-  # "Carters don't drag heavy crates down goat tracks on foot. Those are outlaws."
+  # "Carters don't drag heavy crates down goat tracks. Those are outlaws."
     *set aly_spotted_outlaws true
     Alyndra rises smoothly from her crouch, dusting chalk from her knees. A subtle, approving gleam settles in her eyes.
 
     "Sharp eyes," she murmurs. "The Gilded Scales keep patrols along the High Grey Road and the river barges, but these fissures are a blind spot. Smugglers, river cutthroats, or worse. We aren't the only ones who know the back cuts."
     *goto aly_beat2_rim_camp
 
-  # "They swept the ashes with cedar boughs to hide the fire. Whoever they were, they didn't want to be tracked."
+  # "They swept the ashes with cedar boughs to hide their tracks."
     *set aly_spotted_outlaws true
     "And did a hasty job of it," Alyndra agrees with a faint, wry smile. Her voice carries a crisp, professional certainty that feels far removed from a runaway barmaid. "You don't miss much, ${name}. That's a rare quality in a travel companion."
     *goto aly_beat2_rim_camp
 
-  # "As long as they're two days ahead of us, they aren't our problem. Let's keep moving."
+  # "If they're two days ahead, they aren't our problem. Let's move."
     Alyndra studies your face for a moment, weighing your pragmatism with a thoughtful nod.
 
     "Fair enough," she says, brushing the dust from her palms. "No sense chasing ghosts in the rocks when we have an untouched vault waiting for us."
     *goto aly_beat2_rim_camp
 
 *label aly_beat2_rim_camp
+*set scenery_subplace "grey_gorge_rim_camp"
 *set hours_to_pass 0
 *set minutes_to_pass 30
 *set time_advance_call_id "aly_hike_to_dusk"
@@ -579,7 +592,7 @@ Without waiting for you to rummage through your kit, she pulls two wax-paper wra
 *choice
   # "Appreciated, Alyndra. You're better prepared than most guides I've met."
     *set aly_flirt true
-    She gives a low, teasing chuckle, leaning back against the alcove wall. "Flattery will get you everywhere, ${name}. Though you haven't seen me pick an ancient Imperial lock yet. Save some of the praise for the vault."
+    She gives a low, teasing chuckle, leaning back against the alcove wall. "Flattery will get you everywhere, ${name}. Though you haven't seen me haggle with an ancient Imperial door yet. Save some of the praise for the arch."
     *goto aly_camp_sleep
 
   # "I won't say no to extra rations in the backcountry. Thank you."
@@ -591,13 +604,38 @@ Without waiting for you to rummage through your kit, she pulls two wax-paper wra
     *goto aly_camp_sleep
 
 *label aly_camp_sleep
+As the last light bleeds out of the gorge, Alyndra pulls her cloak around her shoulders and studies you across the dark alcove.
+
+"Humor me, ${name}," she says, her tone light but her eyes steady. "Say we meet whoever hauled those crates through the ravine. Do we fight, or do we walk away?"
+
+*choice
+  # "Fight. Men like that prey on every traveler after us."
+    *set aly_would_fight "fight"
+    "Principled," she says, tilting her head. "Or reckless. We'll see which tomorrow."
+    *goto aly_camp_night
+  # "Walk away. No coin is worth a dead partner."
+    *set aly_would_fight "walk"
+    "Sensible," she says with a small, unreadable smile. "A lot of people say that until the moment arrives."
+    *goto aly_camp_night
+  # "Depends on their numbers. I'd scout first, then decide."
+    *set aly_would_fight "scout"
+    "Cautious," she nods slowly. "Good. Cautious people grow old. Sometimes."
+    *goto aly_camp_night
+
+*label aly_camp_night
 *comment ── NIGHT TRANSITION: OVERLOOK CAMP TO DAWN 06:00 ──
-*set exposure_base_mins 720
+*temp aly_camp_now ((clock_hour * 60) + clock_minute)
+*temp aly_camp_mins 0
+*if (aly_camp_now < 360)
+  *set aly_camp_mins (360 - aly_camp_now)
+*else
+  *set aly_camp_mins (1800 - aly_camp_now)
+*set exposure_base_mins aly_camp_mins
 *set exposure_camping true
 *gosub_scene calendar calc_exposure
 *set exposure_camping false
-*set hours_to_pass 12
-*set minutes_to_pass 0
+*set hours_to_pass ((aly_camp_mins - (aly_camp_mins modulo 60)) / 60)
+*set minutes_to_pass (aly_camp_mins modulo 60)
 *set time_advance_call_id "aly_overnight_camp"
 *gosub_scene calendar advance_time
 *gosub_scene calendar recalc_hp_from_neglect
@@ -624,10 +662,10 @@ The night passes cold and still beneath the limestone overhang. Far below, the G
 
 *label aly_scene3_start
 *comment ====================================================================================
-*comment SCENE 3: THE GORGE DESCENT & THE MUDSLIDE VAULT
+*comment SCENE 3: THE GORGE DESCENT & THE MUDSLIDE ARCH
 *comment Beat 1: Dawn Awakening, Bluff Descent & Grey River Crossing
 *comment ====================================================================================
-*set scenery_subplace "overworld_limestone_gorge"
+*set scenery_subplace "grey_gorge_rim_camp"
 *set aly_checkpoint "gorge_descent"
 
 *if (not(sleep_gear_note = ""))
@@ -671,25 +709,26 @@ She unhooks her waterskin, takes a swig, and offers it toward you.
 You begin the long descent into the Grey River chasm. The path is little more than a weathered goat track etched into the sheer limestone bluffs—zigzagging down chalk-white benches, skirting yawning drop-offs, and cutting across fans of loose, clattering scree.
 
 *choice
-  # Match Alyndra's swift, agile pace, skipping down the rock shelves with confident balance.
+  # Match Alyndra's swift pace down the rock shelves.
     *if (dexterity >= 13)
       You match her foot for foot, leaping lightly from shelf to ledge and letting momentum carry you through the loose scree without losing your center. Alyndra glances back over her shoulder, visibly impressed by your mountain balance, her dimpled smile widening with genuine approval.
     *else
       You keep up with her nimble stride, skidding once or twice on loose gravel but quickly recovering your footing before any harm is done. Alyndra offers an encouraging wink, steadying your elbow with a quick, reassuring hand as you land on a wide limestone shelf.
     *goto aly_river_shoals
 
-  # Pick your way down with steady, deliberate caution, keeping one hand free for a weapon.
+  # Pick your way down with steady caution, weapon hand free.
     You decline to race down five hundred feet of crumbling limestone. You lower yourself methodically from terrace to terrace, testing each handhold and scanning both the river below and the canyon rims above for any sign of movement. Alyndra glances back, recognizing the discipline of someone who takes no foolish risks in hostile country.
     *goto aly_river_shoals
 
-  # Scout the route ahead, pointing out crumbling chalk ledges and advising safer switchbacks.
+  # Scout the route ahead, guiding her away from loose rock.
     *if ((wisdom >= 13) or (character_class = "ranger"))
-      Your trained eye picks out treacherous fissures and soft chalk patches long before boots touch them. You guide the route toward solid granite veins, ensuring neither of you risks a disastrous slide into the canyon. Alyndra listens carefully, adjusting her line with quiet deference to your trail sense.
+      Your trained eye picks out treacherous fissures and soft chalk patches long before boots touch them. You guide the route toward solid limestone veins, ensuring neither of you risks a disastrous slide into the canyon. Alyndra listens carefully, adjusting her line with quiet deference to your trail sense.
     *else
       You keep your eyes trained on the path ahead, calling out loose boulders and slick moss patches as you descend. Alyndra nods in appreciation of the teamwork, keeping a steady rhythm just a pace behind you.
     *goto aly_river_shoals
 
 *label aly_river_shoals
+*set scenery_subplace "grey_river_gorge_arch"
 *set hours_to_pass 0
 *set minutes_to_pass 30
 *set time_advance_call_id "aly_cross_grey_river"
@@ -715,17 +754,345 @@ You turn your gaze toward the southern ravine.
 
 A massive wall of displaced earth, sheared spruce trunks, and fractured boulders chokes the lower tributary notch—the unmistakable wreckage of a violent spring mudslide. But where tons of topsoil have been ripped clean away from the bedrock, something monumental has emerged from the earth.
 
-Carved directly into the living granite of the gorge wall is a colossal portal of ancient Meridian masonry. Massive, cyclopean ashlar blocks—smooth-faced and fitted with hair-thin precision without mortar—frame a recessed entrance twice the height of a mounted rider. Above the opening, a heavy limestone lintel bears faded imperial carvings: entwined laurel wreaths, winged geometric sundials, and deep-cut High Meridian script weathered by two millennia of mountain storms.
+Set into the foot of the gorge wall is a colossal arch of ancient Meridian masonry. Massive, cyclopean ashlar blocks—smooth-faced and fitted with hair-thin precision without mortar—frame a recessed opening twice the height of a mounted rider. Above it, a heavy limestone lintel bears faded imperial carvings: entwined laurel wreaths, winged geometric sundials, and deep-cut High Meridian script weathered by two millennia of mountain storms.
 
-Half-buried beneath dried mud and river silt, the lower half of the archway remains choked with gravel—but the entrance itself stands exposed to the morning light.
+The lower half of the archway is choked with dried mud, river silt and tumbled stone, but the arch itself stands exposed to the morning light.
 
 Alyndra stands beside you, her eyes gleaming with triumphant delight as she gazes up at the ancient stone facade.
 
-"I told you," she whispers, her voice breathless with excitement. "Two thousand years buried in the cliffs. The dying Empire that dissolved thirty years ago couldn't have cut stone like this if its life depended on it—this is ancient High Meridian work, from the golden age before the rot set in. I told you I knew what I was doing, ${name}. We actually found it."
+"I told you," she whispers, her voice breathless with excitement. "Two thousand years buried in the cliffs. The dying Empire that dissolved thirty years ago couldn't have cut stone like this if its life depended on it—this is ancient High Meridian work, from the golden age before the rot set in. I told you I knew what I was doing, ${name}. It's really here."
 
 *set aly_checkpoint "vault_entrance"
 
-*label aly_beat3_done
-[i]( End of Scene 3, Beat 1. You have descended into the canyon, crossed the Grey River, and reached the ancient Meridian vault facade. )[/i]
-*page_break Return to dev hub...
-*goto_scene dev_hub dev_menu_quests
+*page_break Scramble up to the arch...
+
+*label aly_scene3_beat2
+*set scenery_subplace "grey_river_gorge_arch"
+*comment ====================================================================================
+*comment SCENE 3, BEAT 2: THE STAGED ARCH & THE OUTLAW AMBUSH
+*comment ====================================================================================
+
+You scramble up the steep gravel embankment toward the arch, your boots sinking into damp red clay and dislodged shale.
+
+Up close, the cyclopean scale of the ancient stonework is staggering. Weathered imperial reliefs of entwined vines and geometric sun-wheels still trace the borders of the arch. But where Alyndra's story promised a sealed door banded in bronze, there is only a solid plug of fallen masonry, packed clay and rubble filling the opening from side to side. There is no door. Whatever the Meridian engineers built here, nothing about it is hollow.
+
+And your eyes catch details that have nothing to do with two thousand years of buried history.
+
+The clay and gravel before the arch haven't been cleared by spring rainwater. They have been shoveled aside and swept back with cedar boughs into rough berms. The rubble plug bears shallow, ragged gouges where iron crowbars and cold chisels have scratched at the stone, but none go deeper than a hand's width. Fresh dark grease is smeared on the stones in neat patches, as though someone wanted to suggest hinges where none exist.
+
+And stamped clearly into the drying silt are fresh, unmistakable tracks: heavy hobnailed bootprints, the notched iron calks of shod mules, and narrow drag ruts that run from the arch not into the stone, but up a hidden switchback toward the limestone shelves above.
+
+*temp aly_clues_found 0
+*if (aly_spotted_outlaws)
+  *set aly_clues_found + 1
+*if (aly_hands)
+  *set aly_clues_found + 1
+*if (aly_knife_work)
+  *set aly_clues_found + 1
+*if (aly_trailcraft)
+  *set aly_clues_found + 1
+*if (aly_gear_prepared)
+  *set aly_clues_found + 1
+*if (aly_monologue)
+  *set aly_clues_found + 1
+
+*if ((aly_spotted_outlaws) and (aly_clues_found >= 2))
+  *gosub_scene dice_engine heroic_award "aly_portal_deduction"
+  Your mind connects the pieces in an instant: the cold campfire in the tributary wash, the swept boughs, the shod mule tracks, and now these shallow crowbar scratches on solid rubble and grease smeared where no hinge exists. Nobody is digging here. The dig is staged, and the tracks lead up to the shelves overlooking the whole mudslide bowl. This isn't a tomb. It's a lure, and you're standing in the middle of it!
+
+Alyndra reaches the foot of the arch a pace behind you, raising a hand to touch the carved reliefs. But the moment her gaze drops to the shoveled mud, the rubble plug and the fresh hobnail prints, she stops dead in her tracks.
+
+The radiant, cheerful expression slips from her face like water off oiled leather. Her mouth tightens into a hard, rigid line, and her hazel eyes narrow in sudden, furious alarm.
+
+"Wait... no," she breathes, dropping swiftly to one knee. She presses two fingers into the edge of a hobnail print, testing the dampness of the clay, then looks up at the solid plug of stone. "There's no door. The drover said... no, no, no. This isn't right."
+
+She rises, her gaze snapping to the shelves above, and the faint draft sliding down the cliff brings the tang of pine smoke, cheap pipeweed, and horse sweat.
+
+"These tracks were made this morning," she whispers, her voice tight with tension. "Someone is watching us."
+
+*choice
+  *if (aly_spotted_outlaws)
+    # [Trackers Sense] "Those tracks match yesterday's fire. This isn't a dig. It's bait."
+      Alyndra glances up at you, her eyes wide with grim acknowledgment. "Damn it... Kark's lot. Deserters and cutthroats working the upper bluffs. That's no dig. That's a trap, and I walked you straight into it."
+      *goto aly_beat2_confront
+
+  # "Whoever dug these tracks is close. Draw your steel."
+    Alyndra nods sharply, all trace of bubbly clumsiness vanished. "Right. No panic. We keep low, check the approach, and..."
+    *goto aly_beat2_confront
+
+  # "Did your map forget to mention the company?"
+    Alyndra shoots you a grim, exasperated look, shaking her head. "I swear to you, when I looked down on this wash from the rim three weeks ago, the mud was clean. Not a single bootprint. I only had the drover's word for the rest."
+    *goto aly_beat2_confront
+
+*label aly_beat2_confront
+*if ((aly_hands) or ((aly_knife_work) or (aly_trailcraft)))
+  You watch her closely as she rises to her feet. There is no trembling, no panicked fluttering like a frightened tavern girl. Her breathing slows into a measured, deliberate rhythm, her weight settling perfectly over the balls of her boots. Her left hand slips behind her rucksack frame with practiced, fluid economy, resting on the velvet-wrapped grip of the slender duelist's rapier concealed beneath her pack. Whatever else she may be, in the face of imminent danger she is deadly, quiet, and completely composed.
+*else
+  She rises smoothly from the mud, resting one hand against the hilt of her hunting blade, her eyes scanning the rock shelves above with sharp, nervous vigilance.
+
+Then, the gorge goes unnervingly quiet.
+
+The whistling wind through the ravines abruptly drops to a dead calm. The distant hiss of the Grey River seems to fade into a hollow murmur, and even the ravens circling the southern bluff have disappeared.
+
+Above your heads, forty feet up on the steep limestone ledges overlooking the mudslide cut, small chalk pebbles clatter down the cliff face.
+
+"Took you long enough, girlie!" a harsh, gravelly voice jeers from the rocks above. "We were starting to think you took our advice and drowned in the river!"
+
+You and Alyndra spin around, backing toward the plugged arch as boots scrape on limestone.
+
+High on the upper terraces, four figures emerge from the stunted juniper scrub. On the rocky flanks, two outlaws lean against the limestone shelf with heavy iron-lever crossbows, their iron-tipped quarrels notched and trained down into the mudslide bowl. Beside them stalks a burly cutthroat gripping a heavy, notched woodman's axe, his forearms bound in stiff boiled leather. And between them stands Kark—a thickset, scarred brigand in a wolfskin mantle, resting a notched broadsword casually across his shoulder.
+
+The outlaw leader spits a dark glob of tobacco down the scree, grinning with yellowed teeth.
+
+"And look what you brought us. A plump little pigeon with shiny steel. Just like our drover said you would, Valcyne. Gave him your full name and everything, didn't you? Pleased with that map?"
+
+At the name Valcyne, Alyndra's shoulders go rigid. Shame, or something sharper, flickers across her face and is gone in an instant.
+
+He gestures at the plugged arch with his sword.
+
+"No vault, girlie. Never was. The Empire filled that gate with rubble before your grandmother was born. But a story about buried Meridian gold brings us a fresh purse every spring, and the gorge makes a fine killing pen."
+
+Alyndra's voice turns colder than river ice, all pretense of naive innocence shattered:
+
+"Kark. That drover was yours. You lying, murdering dog."
+
+"Kill 'em both!" Kark barks, leveling his sword down at the wash. "Dump 'em in the current and strip the gear!"
+
+*set aly_checkpoint "ambush_sprung"
+
+*label aly_scene4_tactics
+*set scenery_subplace "grey_river_gorge_arch"
+The crossbow strings hum as the snipers lock their sights onto the threshold. Kark and the axeman kick loose a spray of limestone scree as they scramble down the switchback shelf, charging straight for the mudslide bowl.
+
+There is nowhere to run. The river roars at your backs, the only ford is in plain view, and Kark's men hold every height. You have only a split second before the quarrels bite into the gravel.
+
+*fake_choice
+  *if (aly_spotted_outlaws)
+    # [Tracker] Dive behind the fallen ashlar block before the first quarrel flies.
+      You already noted the firing angles and vantage points when inspecting the tracks. Throwing your weight sideways, you slide behind a toppled cyclopean block at the foot of the arch just as an iron bolt splinters against the stone where your chest was a heartbeat before.
+      *set combat_terrain1_type "cover"
+      *set combat_terrain1_position 3
+      *goto aly_start_combat
+
+  *if ((aly_hands) or (aly_knife_work))
+    # [Tactical Read] Coordinate with Alyndra to flank their melee line.
+      You read her combat footing instantly. You shout a low warning, matching her stride as she draws her concealed rapier with a whisper of oiled steel. Moving in deadly harmony, you and Alyndra split their charge, denying the bandits their opening advantage.
+      *gosub_scene dice_engine heroic_award "aly_combat_coordination"
+      *goto aly_start_combat
+
+  # Roar a battle cry and charge the nearest brigand head-on!
+    You bare your steel with a furious roar and surge forward across the mud, lunging directly into Kark's path before the outlaws can settle their lines. A crossbow quarrel grazes your shoulder in the rush, drawing a hot sting of blood, but you force the fight into close quarters immediately.
+    *set hp_current - 2
+    *if (hp_current < 1)
+      *set hp_current 1
+    *set combat_enemy_range 0
+    *goto aly_start_combat
+
+  # Scramble for your weapon as the outlaws loose their volley!
+    Caught flat-footed on the slippery mud, you scramble desperately for your weapon as Kark's men loose a coordinated volley from above. The outlaws hold every advantage of high ground and surprise as they close the distance.
+    *set combat_enemy_advantage true
+    *goto aly_start_combat
+
+*label aly_start_combat
+*set combat_is_nonlethal false
+*set combat_player_can_die true
+*comment No retreat: the river is behind you and the outlaws hold the high ground, so Break off is never offered.
+*set combat_no_flee true
+
+*if (not(combat_enemy_range = 0))
+  *set combat_enemy_range 1
+
+*set combat_lib_1 "swordsman"
+*set combat_enemy_name_override "Kark"
+*set combat_enemy_epithet_override "Kark"
+*set combat_enemy_hp_override 18
+*set combat_enemy_ac_override 13
+*set combat_enemy_atk_override 4
+*set combat_enemy_dmg_sides_override 8
+
+*set combat_lib_2 "axeman"
+*set combat_enemy2_name_override "Outlaw Axeman"
+*set combat_enemy2_epithet_override "the outlaw axeman"
+*set combat_enemy2_hp_override 12
+*set combat_enemy2_ac_override 11
+*set combat_enemy2_range 1
+
+*set combat_lib_3 "archer"
+*set combat_enemy3_name_override "Crossbow Sniper"
+*set combat_enemy3_epithet_override "the crossbow sniper"
+*set combat_enemy3_hp_override 8
+*set combat_enemy3_ac_override 11
+*set combat_enemy3_range 3
+
+*set combat_lib_4 "archer"
+*set combat_enemy4_name_override "Crossbow Skirmisher"
+*set combat_enemy4_epithet_override "the crossbow skirmisher"
+*set combat_enemy4_hp_override 8
+*set combat_enemy4_ac_override 10
+*set combat_enemy4_range 2
+
+*set combat_ally_lib_1 "guard"
+*set combat_ally1_name_override "Alyndra"
+*set combat_ally1_epithet_override "Alyndra"
+*set combat_ally1_range 0
+
+*gosub_scene combat fight_library
+
+*if (combat_outcome = "player_died")
+  *set death_cause "combat"
+  *set death_location_name "The Grey River Gorge"
+  *goto_scene death death_screen
+
+*goto aly_combat_victory
+
+*label aly_combat_victory
+The echoes of clashing steel and crossbow snaps finally die away, swallowed by the roar of the Grey River below.
+
+Kark lies sprawled motionless across the scree, his wolfskin mantle soaked in dark crimson. Beside him, the outlaw axeman and the two snipers lie silent among the shattered limestone shale.
+
+Alyndra stands beside the fallen brigands, her chest heaving as she catches her breath. Her slender duelist's rapier gleams clean in the morning light—she has already flicked the blood from the blade with a single sharp snap of her wrist. She slides the weapon back into its concealed sheath along the frame of her rucksack and lets out a long, ragged exhale.
+
+She turns toward you, shaking her head in bitter disbelief.
+
+"Kark was always border scum," she says, her voice steadying as the adrenaline subsides, "but a hired drover, a staged dig, a map drawn to bait fools? That's patient work for a man like him. And I bought every word of it."
+
+She looks at you with genuine, hard-earned respect.
+
+"I wouldn't have walked away from that alone. You kept your head when the steel came out, ${name}. That's rare out here."
+
+*if (aly_would_fight = "fight")
+  "You said you'd fight them," she adds, "and you did. I like it when someone's answers hold up."
+*elseif (aly_would_fight = "scout")
+  "You said you'd scout first," she adds, "and you read the ground before you moved. Just as promised."
+*elseif (aly_would_fight = "walk")
+  "You said you'd walk away," she adds, a faint, odd smile touching her mouth. "I'm glad you changed your mind."
+
+For half a heartbeat, something that looks like quiet satisfaction crosses her face, the look of someone ticking a line in a ledger. Then it is gone behind her usual warm smile.
+
+*choice
+  # "He used your name. What did you tell that drover?"
+    "Everything I should have kept to myself," she admits, grimacing. "Alyndra Valcyne, scout for hire, always chasing old stones. I handed Kark a fat, trusting pigeon with a name tag on it."
+    *goto aly_victory_search
+  # "No vault, no relics. At least their plunder is real."
+    A dry laugh escapes her, and some of the tension drains from her shoulders. "Fair. Let's see what the dead men were hoarding."
+    *goto aly_victory_search
+  # "Enough talk. Let's search their camp before more of them show up."
+    "Agreed," she says, already scanning the shelves above. "Kark never traveled light."
+    *goto aly_victory_search
+
+*label aly_victory_search
+*set hours_to_pass 0
+*set minutes_to_pass 30
+*set time_advance_call_id "aly_search_camp"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*page_break Climb to the outlaw camp…
+
+*label aly_vault_loot
+*set scenery_subplace "grey_gorge_outlaw_camp"
+You follow the hidden switchback up to the limestone shelves. Behind a screen of stunted juniper, a shallow rock shelter served as Kark's camp: soot-blackened stones, a litter of bedrolls, and the banded wooden crates from the ravine, most of them split open and empty. Crates dragged down the goat track, you realize, only to lend the tracks weight.
+
+Under a wolfskin blanket sits Kark's ironwood lockbox.
+
+Alyndra drops to one knee beside it. The hasp is a crude iron thing, and she knocks it loose with the pommel of her hunting knife in two blows. She throws the lid back.
+
+Inside glints a hoard of coin stripped from border caravans, along with a plain silver ring bearing a worn guild mark and a sealed ceramic phial of clear red liquid.
+
+Alyndra divides the coins into two equal stacks upon the lid.
+
+"A deal is a deal," she says smoothly. "Twenty-five silver marks each. And you take the healing draught and the ring. You took the brunt of their steel today, and you earned it."
+
+She reaches into the bottom of the chest and lifts out a rolled parchment bound with cracked old beeswax seals. Her eyes go straight to the seals, and her lips move silently as she counts them before she looks up at you. Then she brushes the dust from the roll with her thumb.
+
+"Imperial seals. Collectors in the border vales pay well for this sort of paper," she says lightly. "I'll take this and my share of the silver."
+
+*set currency_add_amount 250
+*gosub_scene economy currency_add
+*gosub_scene equipment grant_gear "jewelry_silver_ring" 1
+*gosub_scene equipment grant_gear "healing_potion" 1
+
+*line_break
+[b][💰 Rewards Received: 25 Silver Marks, Silver Ring, Healing Potion][/b]
+*line_break
+
+*choice
+  # "Take it. Old paper isn't worth arguing over."
+    "Generous," she smiles, slipping it into her pack. "I'll remember that."
+    *goto aly_scroll_done
+  # "Equal shares. I want my half of what it's worth."
+    Alyndra laughs, then counts five silver marks into your palm. "Fair enough. That's what the last collector offered me for a similar roll."
+    *set currency_add_amount 50
+    *gosub_scene economy currency_add
+    *line_break
+    [b][💰 Received: 5 Silver Marks][/b]
+    *line_break
+    *goto aly_scroll_done
+  # "Strange thing for a runaway barmaid to care about."
+    "Barmaids hear which paper collectors pay for," she says with a cheerful shrug. "Every drunk scholar in the Reach talks about it."
+    *goto aly_scroll_done
+
+*label aly_scroll_done
+*fake_choice
+  # "You fought like a seasoned veteran back there, Alyndra."
+    Alyndra gives a soft laugh, shouldering her rucksack with a modest shrug. "The tavern I worked in sat on the border sinks. Out there you learn to handle steel or you end up in a shallow ditch. Call it a knack for survival."
+
+  # "Glad we watched each other's backs. Good work today."
+    Alyndra offers a warm, genuine smile. "Likewise, ${name}. Not many people in Valen Reach would have stood their ground against Kark's lot without flinching. I won't forget that."
+
+  # "Let's take our cut and clear out of this gorge."
+    Alyndra nods briskly, tightening the leather straps of her gear. "Smart thinking. Blood on the rocks brings scavengers, four-legged and two-legged alike."
+
+*page_break Prepare to depart…
+
+*label aly_farewell
+The morning mist begins to burn away as the sun climbs over the eastern crags, illuminating the rushing rapids of the Grey River in dazzling silver.
+
+Alyndra adjusts her grey wool cloak and steps onto the switchback trail leading south toward the high ridges.
+
+"I'm heading south toward the border vales," she says, looking back with a casual wave. "I have a few contacts to see and business that won't wait. But something tells me this isn't the last time our paths cross, ${name}. I have a feeling we'll be seeing each other soon."
+
+*if (aly_flirt)
+  Her gaze holds yours a heartbeat longer than it needs to, a dimple flickering at the corner of her smile, before she turns away.
+
+She ascends the steep canyon path with easy, athletic strides, her grey cloak blending into the limestone rock face until she disappears into the high juniper scrub.
+
+*set aly_quest_stage "resolved"
+*set aly_checkpoint "completed"
+*set ow_on false
+
+*page_break The long way back…
+*goto aly_return_home
+
+*label aly_return_home
+*set ow_on false
+*set scenery_subplace "overworld_hilly_road"
+You climb out of the Grey River gorge alone, retracing the switchbacks to the rim and the old quarry track across the limestone fins. It is the same shortcut Alyndra showed you, and without her chatter it feels longer.
+*set hours_to_pass 11
+*set minutes_to_pass 0
+*set time_advance_call_id "aly_return_trek"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*page_break Back at the village…
+
+*label aly_return_home_village
+*if (aly_start_loc = "brinewick")
+  *goto_scene port_valen/brinewick/reedhouse bw_reedhouse_main
+*elseif (aly_start_loc = "marlcross")
+  *goto_scene port_valen/marlcross/wayfarers_rest mc_wayfarers_rest_main
+*else
+  *goto_scene timbermouth/barleycross/green bc_hall
+
+*comment Level-up quest pool: surviving Kark's ambush and finishing The Innocent Smile counts once.
+*comment replay-ok: refresh_quests_finished (character_progression.txt) sets quests_finished to 0 and then calls this label, so the count is rebuilt from flags on every call and a replay cannot double it.
+*label count_finished_alyndra
+*if (aly_quest_stage = "resolved")
+  *set quests_finished + 1
+*return

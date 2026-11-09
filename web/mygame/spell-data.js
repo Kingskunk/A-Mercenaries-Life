@@ -92,6 +92,9 @@
       time: "Action", components: "V, S", duration: "Instantaneous",
       text: "A puff of noxious gas flung from the palm at a nearby foe. The target makes a Constitution save or takes 1d12 poison damage, and nothing at all happens on a success: a heavy die with an all-or-nothing throw behind it." },
     // ── 1st-level spells ──
+    { id: "absorb_elements", name: "Absorb Elements", level: 1, schools: "Abjuration",
+      time: "Reaction, when struck by acid, cold, fire, lightning or thunder", range: "Self", components: "S", duration: "One round",
+      text: "A reflex ward held coiled, ready the instant acid, cold, fire, lightning or thunder reaches you. It turns half the blow's force aside and leaves the rest clinging to your hand, ready to ride along on your very next blow." },
     { id: "alarm", name: "Alarm", level: 1, schools: "Abjuration",
       time: "A minute (ritual)", range: "Near", components: "V, S", duration: "Eight hours",
       text: "A quiet ward laid over a doorway or a stretch of ground, silent to everyone but you the instant it is crossed. It does not stop what comes through—it only means you are not asleep when it does." },
@@ -161,6 +164,9 @@
     { id: "magic_missile", name: "Magic Missile", level: 1, schools: "Evocation",
       time: "Action", components: "V, S", duration: "Instantaneous",
       text: "Three darts of pure force that leave your hand and simply arrive. They never miss and never roll to hit, which makes this the working for finishing something nearly down, or for reaching what you could not otherwise strike." },
+    { id: "ray_of_sickness", name: "Ray of Sickness", level: 1, schools: "Necromancy",
+      time: "Action", components: "V, S", duration: "Instantaneous",
+      text: "A sickly green ray of raw poison that leaves whatever it strikes nauseated and reeling long after the light fades, too slow and sick to answer the blow that follows." },
     { id: "shield", name: "Shield", level: 1, schools: "Abjuration",
       time: "Reaction, when struck", range: "Self", components: "V, S", duration: "One round",
       text: "An invisible barrier snapped into place between you and a blow already on its way. Your Armor Class jumps until your next turn, often enough to turn the hit that caused you to cast it." },
@@ -211,6 +217,7 @@
   // Which classes may learn each spell, from tools/spell_book.json. The pick menus and the copying rule read the same lists.
   var SPELL_LISTS = {
       "absorb_elements": ["wizard","ranger"],
+    "ray_of_sickness": ["wizard"],
     "alarm": ["wizard","ranger"],
     "arms_of_hadar": ["warlock"],
     "hellish_rebuke": ["warlock"],
@@ -241,6 +248,7 @@
     };
   var SPELL_LEVELS = {
       "absorb_elements": 1,
+    "ray_of_sickness": 1,
     "alarm": 1,
     "arms_of_hadar": 1,
     "hellish_rebuke": 1,

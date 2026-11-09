@@ -554,6 +554,37 @@ ${combat_player_dmg_roll_banner}
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SPELL: RAY OF SICKNESS (Wizard, 1st level, 2026-11-08): the attack roll is already resolved by the
+*comment choice body (combat.txt), which only calls this label after check_success -- there is no miss branch
+*comment here, a miss never reaches this label. 2d8 Poison needs two real dice, which resolve_player_hit cannot
+*comment roll (it only ever rolls ONE die plus a flat bonus, combat_dice.txt), so this rolls its own total and
+*comment applies it directly, the same shape resolve_dissonant_whispers (above) uses for its 3d6. Still calls
+*comment apply_poison_rider (Poisoner's Robes) and apply_outgoing_damage_resist_vuln, same order resolve_player_hit
+*comment itself uses, so a poison-resistant or Poisoner's Robes-wearing caster works exactly as it would through
+*comment the normal path. No upcasting (PHB'24: +1d8 per spell slot level above 1st) -- the engine has no
+*comment per-level spell slots yet to cast one from, so this is always a flat 2d8.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label resolve_cast_ray_of_sickness
+*if (not(combat_ray_of_sickness_locked)) or (not(locked_combat_ray_of_sickness_page_id = page_id))
+  *set combat_player_dmg_type "poison"
+  *temp ros_d1 0
+  *temp ros_d2 0
+  *rand ros_d1 1 8
+  *rand ros_d2 1 8
+  *set combat_player_dmg_dealt (ros_d1 + ros_d2)
+  *set combat_player_dmg_roll_banner "[b][🎲 Ray of Sickness: ${ros_d1}+${ros_d2} = ${combat_player_dmg_dealt}][/b]"
+  *gosub_scene combat_dice apply_outgoing_damage_resist_vuln
+  *gosub_scene combat_dice apply_poison_rider
+  *set combat_enemy_hp - combat_player_dmg_dealt
+  *if (combat_enemy_hp < 0)
+    *set combat_enemy_hp 0
+  *set combat_ray_of_sickness_locked true
+  *set locked_combat_ray_of_sickness_page_id page_id
+${combat_player_dmg_roll_banner}
+*line_break
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment SPELL: GREASE (Wizard, 1st level, 2026-11-04): a slick conjured under the active target and everything standing in the SAME RANGE BAND with it -- this engine places combatants in bands
 *comment rather than on a grid, so a band is the honest reading of the RAW ten-foot square. Every living enemy in that band has the slick under it for three move attempts or six rounds, stored in
 *comment the grease flask's own per-slot fields (combat_enemyN_greased / _grease_until) and read by combat_grease_gate in combat.txt, so nothing new tracks this. Each also makes a Dexterity save
