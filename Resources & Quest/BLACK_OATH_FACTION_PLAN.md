@@ -72,11 +72,13 @@ After the first list, this becomes a **radiant contract** rather than a one-off 
 - Time: Dusk, Night, or Pre-Dawn (the rope-and-oil house operates its backroom only during dark hours)
 
 **The Premise & Community Stakes:**
-Joram Kell, an unsworn barge-hand and Dredge-End resident, drowned two nights ago when an overloaded mud-scow tipped in the sluice flume. By custom, the canal workers and boat-shed hands pool copper into a lead mutual-aid tin kept in the back of the net-maker's shed to pay for dead boatmen's shrouds, lime, and burial at Saint Althea’s pauper ground, with whatever remains going to the widow (Tessa Kell) and her infant child.
+Joram Kell, an unsworn barge-hand and Dredge-End resident, drowned two nights ago when an overloaded mud-scow tipped in the sluice flume. Joram held a half-share in a two-man cargo skiff moored at the Boat-Sheds slipway. By waterfront custom, the Black Oath oversees the boat-shed slip fund—a pooled subscription paid by local boatmen to maintain berths, grease rollers, and buy out dead or injured crew shares so a vessel can keep working without missing a tide.
 
-When Mara opens the tin to settle accounts with the gravedigger, it is **24 copper bits short**. The burial is scheduled for tomorrow at dawn. If the shortage is not settled, the church sexton will turn the corpse away to the river mud, and the neighborhood will begin pointing fingers. 
+The fund was supposed to pay out **24 copper bits** to buy out Joram's share for his widow (Tessa Kell), allowing his surviving partner to assume full ownership and work the morning tide. When Mara opens the lead subscription tin kept behind the net-maker's shed to settle the payout, it is **24 copper bits short**. 
 
-Mara cannot simply top it off from Black Oath coffers without inviting every crew in Dredge-End to expect handouts, nor can she involve the Port Watch—who don't solve missing coppers, but would happily send a squad of boot-irons to shake down the sheds and arrest the collectors for unlawful assembly. She needs an outside associate hand who is known to be capable (from the Night List) to quietly track down the missing coin before morning.
+Worse, Master Orren—a corrupt Gilded Scales wharf-bailiff—has posted notice that if the dead man's share and mooring dues aren't cleared with stamped coin before dawn, he is seizing the skiff as "unregistered abandoned tonnage" to auction at the high wharves.
+
+Mara cannot simply top it off from Black Oath coffers without inviting every crew in Dredge-End to stop paying their subscription and expect free timber, nor can she allow a Gilded Scales bailiff to seize a hull and establish a legal foothold in *her* ward. She needs an outside associate hand who is known to be capable (from the Night List) to quietly track down the missing coin before morning.
 
 **The Outlaw Origin Interrogation Beat (`origin = "outlaw"`):**
 *This beat triggers exclusively for characters with the Port Valen Outlaw background before the main briefing begins.*
@@ -98,7 +100,6 @@ After resolving this beat, the dialogue rejoins the main briefing (`short_purse_
 - **Night List Performance (`black_oath_night_list_resolution`):**
   - If completed cleanly via skill check: *"You move through the dark without knocking things over. That's why you're here."*
   - If fought through (`night_list_fight_won`): *"You can take a knock and keep hold of the purse. Tonight requires softer hands, but the spine helps."*
-- **Lyra Connection (`lyra_repaid` / `lyra_bond`):** If Lyra has already mentioned heading into Dredge-End, a subtle option allows the player to ask about older records or names, which Mara immediately shuts down: *"Finish the work in front of you first, runner."*
 
 **Investigation Beats (Branch-and-Bottleneck):**
 
@@ -116,11 +117,11 @@ After resolving this beat, the dialogue rejoins the main briefing (`short_purse_
 
 3. **Beat 3: The Revelation & Dilemma:**
    - Derry is terrified, but he doesn't have the coin anymore.
-   - *The Truth:* Derry didn't steal the money for dice or drink. Joram Kell owed an extortionate, off-the-books wharf toll to an aggressive Gilded Scales wharf tollreeve named Master Orren, who threatened to seize Joram's dinghy and throw Tessa and the child into the street before the body was even cold. Derry took the burial coppers to pay Orren a deposit to hold off the seizure until after the funeral.
+   - *The Truth:* Derry didn't steal the money for dice or drink. When Joram drowned, Gilded Scales wharf-bailiff Master Orren demanded an immediate 24-copper "unregistered tonnage fee" and threatened to chain the skiff and tow it to the upper wharves before dawn. Panicked that Joram's family would lose their only surviving income, Derry stole the 24 coppers from the slip-fund tin and handed it to Orren as a deposit—only for Orren to pocket the coin and insist on seizing the skiff anyway unless another fee was paid.
    - *The Decision Core (Three Meaningful Solutions):*
-     - **Option A: The Cold Reclaim (Enforce the Code):** March Derry straight to Tollreeve Orren's toll-booth, intimidate or strong-arm Orren into coughing up the 24 coppers (STR/Intimidation DC 12 or Black Oath pressure). *Outcome:* The burial tin is fully restored. Orren backs off but harbors deep grudge. Tessa's dinghy remains vulnerable later. Sets `short_purse_resolution = "recovered_enforced"`.
-     - **Option B: The Mercenary Pocket (Personal Subsidy):** The player covers the 24 copper bits out of their own coin pouch (paying 24 coppers, guarded by `currency_txn_locked`). Derry keeps Orren quiet, Tessa keeps her boat, and the burial tin is delivered full to Mara. *Outcome:* Solves the problem cleanly with no street friction. Mara notices the fresh minting of the coins with a keen eye, respecting the player's discretion while warning against soft hearts. Sets `short_purse_resolution = "covered_pocket"`, `short_purse_derry_protected = true`.
-     - **Option C: The Leveraged Compromise (Street Fixer):** Use Investigation/Persuasion (DC 12) to audit Orren's toll-records or bring Mara's name as leverage, proving Orren skimmed unauthorized fees on a church burial day. Orren waives the debt and returns 12 copper; the player convinces Corin and the net-makers to chip in the remaining 12 as a crew solidarity gesture. *Outcome:* No coin lost by the player, debt wiped, crew solidarity strengthened. Sets `short_purse_resolution = "brokered_compromise"`.
+     - **Option A: The Cold Reclaim (Enforce the Code):** March Derry straight to Bailiff Orren's toll-post, intimidate or strong-arm Orren into coughing up the stolen 24 coppers (STR/Intimidation DC 12 or Black Oath muscle). *Outcome:* The slip tin is fully restored. Orren backs down under Oath pressure but harbors a bitter grudge. Joram's surviving partner gets the boat, but Derry is publicly exposed as a thief. Sets `short_purse_resolution = "recovered_enforced"`.
+     - **Option B: The Mercenary Pocket (Personal Subsidy):** The player covers the 24 copper bits out of their own coin pouch (paying 24 coppers, guarded by `currency_txn_locked`). Derry's theft stays hidden, the slip fund is restored for the widow, and Mara receives the full tin. *Outcome:* Solves the problem with zero street friction. Mara notices the clean minting of the coins with a keen eye, respecting the player's discretion while warning that soft hearts don't buy firewood. Sets `short_purse_resolution = "covered_pocket"`, `short_purse_derry_protected = true`.
+     - **Option C: The Leveraged Compromise (Street Fixer):** Use Investigation/Persuasion (DC 12) to catch Orren in an illegal off-the-books extortion of a Black Oath slip. Orren folds, returning 12 coppers and dropping the seizure notice; the player gets Old Corin and the net-makers to cover the remaining 12 as a crew solidarity pool. *Outcome:* No coin lost by the player, the skiff is protected, and the crew solidarity is restored. Sets `short_purse_resolution = "brokered_compromise"`.
 
 **Resolution & Aftermath:**
 - Return to the upper room before dawn. Mara receives the 24 copper bits.
