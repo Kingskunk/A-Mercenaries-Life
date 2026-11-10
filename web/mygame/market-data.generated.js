@@ -14,7 +14,7 @@ window.MARKET_DEFS = {
   },
   "goods": {
    "brigandine": {
-    "base": 70,
+    "base": 90,
     "target": 5,
     "stock0": 5,
     "buyPct": 0.5,
@@ -34,9 +34,9 @@ window.MARKET_DEFS = {
     }
    },
    "chain_jack": {
-    "base": 70,
-    "target": 5,
-    "stock0": 5,
+    "base": 260,
+    "target": 3,
+    "stock0": 3,
     "buyPct": 0.5,
     "mult": 1,
     "world": {
@@ -50,9 +50,9 @@ window.MARKET_DEFS = {
     }
    },
    "plate_harness": {
-    "base": 150,
-    "target": 5,
-    "stock0": 5,
+    "base": 950,
+    "target": 3,
+    "stock0": 3,
     "buyPct": 0.5,
     "mult": 1,
     "world": {
@@ -131,7 +131,7 @@ window.MARKET_DEFS = {
     }
    },
    "iron_crowbar": {
-    "base": 12,
+    "base": 18,
     "target": 14,
     "stock0": 14,
     "buyPct": 0.5,
@@ -596,7 +596,7 @@ window.MARKET_DEFS = {
     }
    },
    "storm_cape": {
-    "base": 70,
+    "base": 45,
     "target": 4,
     "stock0": 4,
     "buyPct": 0.4,
@@ -744,7 +744,7 @@ window.MARKET_DEFS = {
     }
    },
    "silk_neckcloth": {
-    "base": 400,
+    "base": 750,
     "target": 1,
     "stock0": 1,
     "buyPct": 0.4,
@@ -752,7 +752,7 @@ window.MARKET_DEFS = {
     "fixed": true
    },
    "scholar_gloves": {
-    "base": 400,
+    "base": 750,
     "target": 1,
     "stock0": 1,
     "buyPct": 0.4,
@@ -760,7 +760,7 @@ window.MARKET_DEFS = {
     "fixed": true
    },
    "dancing_slippers": {
-    "base": 400,
+    "base": 750,
     "target": 1,
     "stock0": 1,
     "buyPct": 0.4,
@@ -768,7 +768,7 @@ window.MARKET_DEFS = {
     "fixed": true
    },
    "masters_gloves": {
-    "base": 1500,
+    "base": 2500,
     "target": 1,
     "stock0": 1,
     "buyPct": 0.4,
@@ -776,7 +776,7 @@ window.MARKET_DEFS = {
     "fixed": true
    },
    "court_coat": {
-    "base": 1200,
+    "base": 2900,
     "target": 1,
     "stock0": 1,
     "buyPct": 0.4,
@@ -869,6 +869,27 @@ window.MARKET_DEFS = {
    },
    "scroll_remove_curse": {
     "base": 120,
+    "target": 8,
+    "stock0": 8,
+    "buyPct": 0.5,
+    "mult": 1
+   },
+   "scroll_grease": {
+    "base": 50,
+    "target": 8,
+    "stock0": 8,
+    "buyPct": 0.5,
+    "mult": 1
+   },
+   "scroll_thunderwave": {
+    "base": 60,
+    "target": 8,
+    "stock0": 8,
+    "buyPct": 0.5,
+    "mult": 1
+   },
+   "scroll_burning_hands": {
+    "base": 60,
     "target": 8,
     "stock0": 8,
     "buyPct": 0.5,
@@ -1039,26 +1060,26 @@ window.MARKET_DEFS = {
   },
   "goods": {
    "brigandine": {
-    "base": 70,
+    "base": 90,
     "target": 5,
     "stock0": 5,
-    "buyPct": 0.343,
+    "buyPct": 0.344,
     "mult": 1,
     "sells": false
    },
    "chain_jack": {
-    "base": 70,
-    "target": 5,
-    "stock0": 5,
-    "buyPct": 0.343,
+    "base": 260,
+    "target": 3,
+    "stock0": 3,
+    "buyPct": 0.35,
     "mult": 1,
     "sells": false
    },
    "plate_harness": {
-    "base": 150,
-    "target": 5,
-    "stock0": 5,
-    "buyPct": 0.347,
+    "base": 950,
+    "target": 3,
+    "stock0": 3,
+    "buyPct": 0.349,
     "mult": 1,
     "sells": false
    },
@@ -1095,7 +1116,7 @@ window.MARKET_DEFS = {
     "sells": false
    },
    "iron_crowbar": {
-    "base": 12,
+    "base": 18,
     "target": 14,
     "stock0": 14,
     "buyPct": 0.333,
@@ -1716,7 +1737,7 @@ window.MARKET_DEFS = {
     }
    },
    "iron_crowbar": {
-    "base": 12,
+    "base": 18,
     "target": 11,
     "stock0": 11,
     "buyPct": 0.5,
@@ -1773,7 +1794,7 @@ window.MARKET_DEFS = {
     }
    },
    "brigandine": {
-    "base": 70,
+    "base": 90,
     "target": 4,
     "stock0": 4,
     "buyPct": 0.5,
@@ -1794,9 +1815,9 @@ window.MARKET_DEFS = {
     }
    },
    "chain_jack": {
-    "base": 70,
-    "target": 4,
-    "stock0": 4,
+    "base": 260,
+    "target": 3,
+    "stock0": 3,
     "buyPct": 0.5,
     "mult": 1,
     "sells": false,
@@ -1811,9 +1832,9 @@ window.MARKET_DEFS = {
     }
    },
    "plate_harness": {
-    "base": 150,
-    "target": 4,
-    "stock0": 4,
+    "base": 950,
+    "target": 3,
+    "stock0": 3,
     "buyPct": 0.5,
     "mult": 1,
     "sells": false,

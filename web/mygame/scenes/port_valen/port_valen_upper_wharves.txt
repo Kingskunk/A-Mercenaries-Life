@@ -859,288 +859,30 @@ A bell over the door gives one dry note as you enter. The shop is narrow and dee
       *goto_scene port_valen/port_valen port_valen_walk_picked
 
 *comment ────────────────────────────────────────────────
-*comment THE INK & LAMP: THE SCROLL CABINET (the user, 2026-10-19). Aldren sells five first-level spell scrolls (Magic Missile, Healing Word, Mage Armor, Bane, False Life), always in stock, and buys them back at half (the general counter). Anyone can read a scroll; see
-*comment equipment.txt use_consumable and combat.txt's Read options. Same pieces as Hollis's store: menus generated from the catalog (tools/gear_catalog.json: inklamp_buy, inklamp_sell), one purchase label and one sale label with the currency lock,
-*comment and the trade panel on top (open_panel, cart_pass, settle). Stock limits and rotation are deliberately not built (the user: that code will be replaced later).
+*comment THE INK & LAMP: THE SCROLL CABINET (the user, 2026-10-19). Aldren sells several spell scrolls and buys them back at half (the general counter). Anyone can read a scroll; see
+*comment equipment.txt use_consumable and combat.txt's Read options. Finite stock and purse since 2026-11-10 (a market pilot, web/mygame/market.js): the cabinet's rows and tags come from the trade panel (open_panel, cart_pass, settle), not a plain menu.
 *label pq_ink_lamp_stock
 *gosub pq_ink_lamp_open_panel
-*comment GEN:BEGIN inklamp_buy_labels
-*temp ik_scroll_magic_missile ""
-*temp ik_scroll_healing_word ""
-*temp ik_scroll_mage_armor ""
-*temp ik_scroll_bane ""
-*temp ik_scroll_false_life ""
-*temp ik_scroll_detect_magic ""
-*temp ik_scroll_jump ""
-*temp ik_scroll_speak_with_animals ""
-*temp ik_scroll_charm_person ""
-*temp ik_scroll_remove_curse ""
-*temp ik_scroll_grease ""
-*temp ik_scroll_thunderwave ""
-*temp ik_scroll_burning_hands ""
-*gosub_scene equipment gear_buy_label "scroll_magic_missile"
-*set ik_scroll_magic_missile gear_label
-*gosub_scene equipment gear_buy_label "scroll_healing_word"
-*set ik_scroll_healing_word gear_label
-*gosub_scene equipment gear_buy_label "scroll_mage_armor"
-*set ik_scroll_mage_armor gear_label
-*gosub_scene equipment gear_buy_label "scroll_bane"
-*set ik_scroll_bane gear_label
-*gosub_scene equipment gear_buy_label "scroll_false_life"
-*set ik_scroll_false_life gear_label
-*gosub_scene equipment gear_buy_label "scroll_detect_magic"
-*set ik_scroll_detect_magic gear_label
-*gosub_scene equipment gear_buy_label "scroll_jump"
-*set ik_scroll_jump gear_label
-*gosub_scene equipment gear_buy_label "scroll_speak_with_animals"
-*set ik_scroll_speak_with_animals gear_label
-*gosub_scene equipment gear_buy_label "scroll_charm_person"
-*set ik_scroll_charm_person gear_label
-*gosub_scene equipment gear_buy_label "scroll_remove_curse"
-*set ik_scroll_remove_curse gear_label
-*gosub_scene equipment gear_buy_label "scroll_grease"
-*set ik_scroll_grease gear_label
-*gosub_scene equipment gear_buy_label "scroll_thunderwave"
-*set ik_scroll_thunderwave gear_label
-*gosub_scene equipment gear_buy_label "scroll_burning_hands"
-*set ik_scroll_burning_hands gear_label
-*comment GEN:END inklamp_buy_labels
 Aldren turns three keys in three locks, one after another, and swings the cabinet door open on its hinges. Rolled scrolls lie inside in slots lined with green baize, each one tied with a ribbon and tagged in his square hand. "Don't handle them," he says. "Point, and I'll lift it out."
 
 *choice
-  *comment GEN:BEGIN inklamp_buy_options
-  # ${ik_scroll_magic_missile}
-    *set buy_item_id "scroll_magic_missile"
-    *goto pq_ink_lamp_buy_do
-  # ${ik_scroll_healing_word}
-    *set buy_item_id "scroll_healing_word"
-    *goto pq_ink_lamp_buy_do
-  # ${ik_scroll_mage_armor}
-    *set buy_item_id "scroll_mage_armor"
-    *goto pq_ink_lamp_buy_do
-  # ${ik_scroll_bane}
-    *set buy_item_id "scroll_bane"
-    *goto pq_ink_lamp_buy_do
-  # ${ik_scroll_false_life}
-    *set buy_item_id "scroll_false_life"
-    *goto pq_ink_lamp_buy_do
-  # ${ik_scroll_detect_magic}
-    *set buy_item_id "scroll_detect_magic"
-    *goto pq_ink_lamp_buy_do
-  # ${ik_scroll_jump}
-    *set buy_item_id "scroll_jump"
-    *goto pq_ink_lamp_buy_do
-  # ${ik_scroll_speak_with_animals}
-    *set buy_item_id "scroll_speak_with_animals"
-    *goto pq_ink_lamp_buy_do
-  # ${ik_scroll_charm_person}
-    *set buy_item_id "scroll_charm_person"
-    *goto pq_ink_lamp_buy_do
-  # ${ik_scroll_remove_curse}
-    *set buy_item_id "scroll_remove_curse"
-    *goto pq_ink_lamp_buy_do
-  # ${ik_scroll_grease}
-    *set buy_item_id "scroll_grease"
-    *goto pq_ink_lamp_buy_do
-  # ${ik_scroll_thunderwave}
-    *set buy_item_id "scroll_thunderwave"
-    *goto pq_ink_lamp_buy_do
-  # ${ik_scroll_burning_hands}
-    *set buy_item_id "scroll_burning_hands"
-    *goto pq_ink_lamp_buy_do
-  *comment GEN:END inklamp_buy_options
   # Step back from the cabinet.
     *goto pq_ink_lamp
   # ⚖ Settle up the trade panel.
     *goto pq_ink_lamp_settle
 
-*comment The purchase itself, shared by every scroll: price and prose come from the catalog. One currency change and one advance_time per page.
-*label pq_ink_lamp_buy_do
-*set gear_shop "inklamp"
-*gosub_scene equipment gear_info buy_item_id
-*temp il_price gear_retail
-*if ((((gold * 100) + (silver * 10)) + copper) < il_price)
-  You count your coin against the figure on the tag and come up short. Aldren lays the ${gear_name} back in its slot and turns the key. "When you have it," he says.
-  *page_break Back to the cabinet…
-  *goto pq_ink_lamp_stock
-*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-  *set currency_add_amount (0 - il_price)
-  *gosub_scene economy currency_add
-  *gosub_scene equipment grant_gear buy_item_id 1
-  *set currency_txn_locked true
-  *set locked_currency_txn_page_id page_id
-Aldren lifts the ${gear_name} from its slot with two fingers, reads the figure off its tag, and sets it on the counter. ${gear_blurb}
-*if (not(gear_quote = ""))
-  *line_break
-  ${gear_quote}
-*gosub_scene equipment format_copper il_price
-*line_break
-[b][💰 Paid: ${gear_sale_desc}][/b]
-*set hours_to_pass 0
-*set minutes_to_pass gear_minutes
-*set time_advance_call_id "ink_lamp_buy"
-*gosub_scene calendar advance_time
-*gosub_scene calendar recalc_hp_from_neglect
-*if (hp_current <= 0)
-  *set death_cause "starvation"
-  *if (neglect_damage_fatigue > neglect_damage_hunger)
-    *set death_cause "exhaustion"
-  *goto_scene death death_screen
-*choice
-  # Back to the counter.
-    *goto pq_ink_lamp
-  *if (vane_independent_operative)
-    # ↦ Walk to the district picked on the sidebar. [port_valen:read]
-      *goto_scene port_valen/port_valen port_valen_walk_picked
-
 *label pq_ink_lamp_sell
 Aldren draws the brass lens across the table and clears a space on the counter. "Put it down. I pay half of what I sell it for, and only for what is still tight and whole."
-*comment GEN:BEGIN inklamp_sell_labels
-*temp is_scroll_magic_missile ""
-*temp is_scroll_healing_word ""
-*temp is_scroll_mage_armor ""
-*temp is_scroll_bane ""
-*temp is_scroll_false_life ""
-*temp is_scroll_detect_magic ""
-*temp is_scroll_jump ""
-*temp is_scroll_speak_with_animals ""
-*temp is_scroll_charm_person ""
-*temp is_scroll_remove_curse ""
-*temp is_scroll_grease ""
-*temp is_scroll_thunderwave ""
-*temp is_scroll_burning_hands ""
-*if (has_scroll_magic_missile)
-  *gosub_scene equipment gear_sell_label "scroll_magic_missile" "general"
-  *set is_scroll_magic_missile gear_label
-*if (has_scroll_healing_word)
-  *gosub_scene equipment gear_sell_label "scroll_healing_word" "general"
-  *set is_scroll_healing_word gear_label
-*if (has_scroll_mage_armor)
-  *gosub_scene equipment gear_sell_label "scroll_mage_armor" "general"
-  *set is_scroll_mage_armor gear_label
-*if (has_scroll_bane)
-  *gosub_scene equipment gear_sell_label "scroll_bane" "general"
-  *set is_scroll_bane gear_label
-*if (has_scroll_false_life)
-  *gosub_scene equipment gear_sell_label "scroll_false_life" "general"
-  *set is_scroll_false_life gear_label
-*if (has_scroll_detect_magic)
-  *gosub_scene equipment gear_sell_label "scroll_detect_magic" "general"
-  *set is_scroll_detect_magic gear_label
-*if (has_scroll_jump)
-  *gosub_scene equipment gear_sell_label "scroll_jump" "general"
-  *set is_scroll_jump gear_label
-*if (has_scroll_speak_with_animals)
-  *gosub_scene equipment gear_sell_label "scroll_speak_with_animals" "general"
-  *set is_scroll_speak_with_animals gear_label
-*if (has_scroll_charm_person)
-  *gosub_scene equipment gear_sell_label "scroll_charm_person" "general"
-  *set is_scroll_charm_person gear_label
-*if (has_scroll_remove_curse)
-  *gosub_scene equipment gear_sell_label "scroll_remove_curse" "general"
-  *set is_scroll_remove_curse gear_label
-*if (has_scroll_grease)
-  *gosub_scene equipment gear_sell_label "scroll_grease" "general"
-  *set is_scroll_grease gear_label
-*if (has_scroll_thunderwave)
-  *gosub_scene equipment gear_sell_label "scroll_thunderwave" "general"
-  *set is_scroll_thunderwave gear_label
-*if (has_scroll_burning_hands)
-  *gosub_scene equipment gear_sell_label "scroll_burning_hands" "general"
-  *set is_scroll_burning_hands gear_label
-*comment GEN:END inklamp_sell_labels
+*gosub pq_ink_lamp_open_panel
 *choice
-  *comment GEN:BEGIN inklamp_sell_options
-  *if (has_scroll_magic_missile)
-    # ${is_scroll_magic_missile}
-      *set sell_item_id "scroll_magic_missile"
-      *goto pq_ink_lamp_sell_do
-  *if (has_scroll_healing_word)
-    # ${is_scroll_healing_word}
-      *set sell_item_id "scroll_healing_word"
-      *goto pq_ink_lamp_sell_do
-  *if (has_scroll_mage_armor)
-    # ${is_scroll_mage_armor}
-      *set sell_item_id "scroll_mage_armor"
-      *goto pq_ink_lamp_sell_do
-  *if (has_scroll_bane)
-    # ${is_scroll_bane}
-      *set sell_item_id "scroll_bane"
-      *goto pq_ink_lamp_sell_do
-  *if (has_scroll_false_life)
-    # ${is_scroll_false_life}
-      *set sell_item_id "scroll_false_life"
-      *goto pq_ink_lamp_sell_do
-  *if (has_scroll_detect_magic)
-    # ${is_scroll_detect_magic}
-      *set sell_item_id "scroll_detect_magic"
-      *goto pq_ink_lamp_sell_do
-  *if (has_scroll_jump)
-    # ${is_scroll_jump}
-      *set sell_item_id "scroll_jump"
-      *goto pq_ink_lamp_sell_do
-  *if (has_scroll_speak_with_animals)
-    # ${is_scroll_speak_with_animals}
-      *set sell_item_id "scroll_speak_with_animals"
-      *goto pq_ink_lamp_sell_do
-  *if (has_scroll_charm_person)
-    # ${is_scroll_charm_person}
-      *set sell_item_id "scroll_charm_person"
-      *goto pq_ink_lamp_sell_do
-  *if (has_scroll_remove_curse)
-    # ${is_scroll_remove_curse}
-      *set sell_item_id "scroll_remove_curse"
-      *goto pq_ink_lamp_sell_do
-  *if (has_scroll_grease)
-    # ${is_scroll_grease}
-      *set sell_item_id "scroll_grease"
-      *goto pq_ink_lamp_sell_do
-  *if (has_scroll_thunderwave)
-    # ${is_scroll_thunderwave}
-      *set sell_item_id "scroll_thunderwave"
-      *goto pq_ink_lamp_sell_do
-  *if (has_scroll_burning_hands)
-    # ${is_scroll_burning_hands}
-      *set sell_item_id "scroll_burning_hands"
-      *goto pq_ink_lamp_sell_do
-  *comment GEN:END inklamp_sell_options
   # Take it all back off the counter.
     *goto pq_ink_lamp
+  # ⚖ Settle up the trade panel.
+    *goto pq_ink_lamp_settle
 
-*comment The sale itself. The price is worked out inside the currency lock and kept in gear_sale_* so a replayed page prints the same banner. One currency change and one advance_time per page.
-*label pq_ink_lamp_sell_do
-*set gear_shop "inklamp_sell"
-*gosub_scene equipment gear_info sell_item_id
-*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-  *gosub_scene equipment gear_sale_value sell_item_id "general"
-  *gosub_scene equipment sell_gear sell_item_id
-  *set currency_add_amount gear_sale_copper
-  *gosub_scene economy currency_add
-  *set currency_txn_locked true
-  *set locked_currency_txn_page_id page_id
-Aldren unrolls the ${gear_sale_name} a hand's width under the lens, follows the ink with the tip of his stylus, and counts the coin out of a locked drawer.
-*if (not(gear_quote = ""))
-  *line_break
-  ${gear_quote}
-*line_break
-[b][💰 Sold: ${gear_sale_name} for ${gear_sale_desc}][/b]
-*set hours_to_pass 0
-*set minutes_to_pass 5
-*set time_advance_call_id "ink_lamp_sell"
-*gosub_scene calendar advance_time
-*gosub_scene calendar recalc_hp_from_neglect
-*if (hp_current <= 0)
-  *set death_cause "starvation"
-  *if (neglect_damage_fatigue > neglect_damage_hunger)
-    *set death_cause "exhaustion"
-  *goto_scene death death_screen
-*choice
-  # Back to the counter.
-    *goto pq_ink_lamp
-  *if (vane_independent_operative)
-    # ↦ Walk to the district picked on the sidebar. [port_valen:read]
-      *goto_scene port_valen/port_valen port_valen_walk_picked
-
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment THE INK & LAMP'S TRADE PANEL (its only counter since 2026-11-10: a market pilot, web/mygame/market.js; the plain buy and sell menus that stood beside it priced at retail past the market, and the "always in stock" stopgap, are gone)
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label pq_ink_lamp_open_panel
 *set shop_open "inklamp"
 *set shop_rows ""
@@ -1422,158 +1164,22 @@ She taps the inner edge with one clean fingernail. "Ressa Hale's. Keeper of the 
 *gosub pq_bright_open_panel
 Silver and gold rings sit in a neat row beside crescent earrings and chainwork thin enough to knot around a fingertip. Pearl necklaces hang from dark velvet stands, while sapphire and diamond rings catch hard points of lamplight beneath the glass. Nothing is piled. Each piece has its own small card, set square to the felt, and the repair work is kept apart from the goods for sale.
 
-*comment GEN:BEGIN jeweler_jewelry_buy_labels -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
-*temp jj_jewelry_silver_ring ""
-*temp jj_jewelry_gold_ring ""
-*temp jj_jewelry_crescent_earrings ""
-*temp jj_jewelry_drop_pendant ""
-*temp jj_jewelry_gold_necklace ""
-*temp jj_jewelry_emerald_pearl_necklace ""
-*temp jj_jewelry_ruby_pearl_necklace ""
-*temp jj_jewelry_sapphire_gold_ring ""
-*temp jj_jewelry_ruby_gold_ring ""
-*temp jj_jewelry_diamond_gold_ring ""
-*if (not(has_jewelry_silver_ring))
-  *gosub_scene equipment gear_buy_label "jewelry_silver_ring"
-  *set jj_jewelry_silver_ring gear_label
-*if (not(has_jewelry_gold_ring))
-  *gosub_scene equipment gear_buy_label "jewelry_gold_ring"
-  *set jj_jewelry_gold_ring gear_label
-*gosub_scene equipment gear_buy_label "jewelry_crescent_earrings"
-*set jj_jewelry_crescent_earrings gear_label
-*gosub_scene equipment gear_buy_label "jewelry_drop_pendant"
-*set jj_jewelry_drop_pendant gear_label
-*gosub_scene equipment gear_buy_label "jewelry_gold_necklace"
-*set jj_jewelry_gold_necklace gear_label
-*gosub_scene equipment gear_buy_label "jewelry_emerald_pearl_necklace"
-*set jj_jewelry_emerald_pearl_necklace gear_label
-*gosub_scene equipment gear_buy_label "jewelry_ruby_pearl_necklace"
-*set jj_jewelry_ruby_pearl_necklace gear_label
-*if (not(has_jewelry_sapphire_gold_ring))
-  *gosub_scene equipment gear_buy_label "jewelry_sapphire_gold_ring"
-  *set jj_jewelry_sapphire_gold_ring gear_label
-*if (not(has_jewelry_ruby_gold_ring))
-  *gosub_scene equipment gear_buy_label "jewelry_ruby_gold_ring"
-  *set jj_jewelry_ruby_gold_ring gear_label
-*if (not(has_jewelry_diamond_gold_ring))
-  *gosub_scene equipment gear_buy_label "jewelry_diamond_gold_ring"
-  *set jj_jewelry_diamond_gold_ring gear_label
-*comment GEN:END jeweler_jewelry_buy_labels
 *choice
-  *comment GEN:BEGIN jeweler_jewelry_buy_options -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
-  *if (not(has_jewelry_silver_ring))
-    # ${jj_jewelry_silver_ring}
-      *set buy_item_id "jewelry_silver_ring"
-      *goto pq_bright_buy_do
-  *if (not(has_jewelry_gold_ring))
-    # ${jj_jewelry_gold_ring}
-      *set buy_item_id "jewelry_gold_ring"
-      *goto pq_bright_buy_do
-  # ${jj_jewelry_crescent_earrings}
-    *set buy_item_id "jewelry_crescent_earrings"
-    *goto pq_bright_buy_do
-  # ${jj_jewelry_drop_pendant}
-    *set buy_item_id "jewelry_drop_pendant"
-    *goto pq_bright_buy_do
-  # ${jj_jewelry_gold_necklace}
-    *set buy_item_id "jewelry_gold_necklace"
-    *goto pq_bright_buy_do
-  # ${jj_jewelry_emerald_pearl_necklace}
-    *set buy_item_id "jewelry_emerald_pearl_necklace"
-    *goto pq_bright_buy_do
-  # ${jj_jewelry_ruby_pearl_necklace}
-    *set buy_item_id "jewelry_ruby_pearl_necklace"
-    *goto pq_bright_buy_do
-  *if (not(has_jewelry_sapphire_gold_ring))
-    # ${jj_jewelry_sapphire_gold_ring}
-      *set buy_item_id "jewelry_sapphire_gold_ring"
-      *goto pq_bright_buy_do
-  *if (not(has_jewelry_ruby_gold_ring))
-    # ${jj_jewelry_ruby_gold_ring}
-      *set buy_item_id "jewelry_ruby_gold_ring"
-      *goto pq_bright_buy_do
-  *if (not(has_jewelry_diamond_gold_ring))
-    # ${jj_jewelry_diamond_gold_ring}
-      *set buy_item_id "jewelry_diamond_gold_ring"
-      *goto pq_bright_buy_do
-  *comment GEN:END jeweler_jewelry_buy_options
   # Look over the loose stones instead.
     *goto pq_bright_gems
   # Step back from the counter.
     *goto pq_bright_setting
+  # ⚖ Settle up the trade panel.
+    *goto pq_bright_settle
 
 *comment THE BRIGHT SETTING: LOOSE STONES
 *comment Cassia trades in small, jewelry-grade stones. Her trained eye and ready customers let her pay 75% of a listed
-*price; the pawnbroker remains the lower, 40% emergency option. The catalog owns stock, prices and cart plumbing.
+*comment price; the pawnbroker remains the lower, 40% emergency option. The catalog owns stock, prices and cart plumbing.
 *label pq_bright_gems
 *gosub pq_bright_open_panel
-The loose stones lie in narrow felt channels beneath the finer cases, each in its own folded-paper tray. Cassia has arranged them from banded agate to the cold, clear diamond at the far end, with a small card beside each.
+The loose stones lie in narrow felt channels beneath the finer cases, each in its own folded-paper tray. Cassia has arranged them from banded agate to the cold, clear diamond at the far end, with a small card beside each, rewritten as the trays fill and empty.
 
-*comment GEN:BEGIN jeweler_gems_buy_labels -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
-*temp jg_gem_agate ""
-*temp jg_gem_citrine ""
-*temp jg_gem_quartz ""
-*temp jg_gem_aquamarine ""
-*temp jg_gem_opal ""
-*temp jg_gem_pearl ""
-*temp jg_gem_sapphire ""
-*temp jg_gem_ruby ""
-*temp jg_gem_emerald ""
-*temp jg_gem_diamond ""
-*gosub_scene equipment gear_buy_label "gem_agate"
-*set jg_gem_agate gear_label
-*gosub_scene equipment gear_buy_label "gem_citrine"
-*set jg_gem_citrine gear_label
-*gosub_scene equipment gear_buy_label "gem_quartz"
-*set jg_gem_quartz gear_label
-*gosub_scene equipment gear_buy_label "gem_aquamarine"
-*set jg_gem_aquamarine gear_label
-*gosub_scene equipment gear_buy_label "gem_opal"
-*set jg_gem_opal gear_label
-*gosub_scene equipment gear_buy_label "gem_pearl"
-*set jg_gem_pearl gear_label
-*gosub_scene equipment gear_buy_label "gem_sapphire"
-*set jg_gem_sapphire gear_label
-*gosub_scene equipment gear_buy_label "gem_ruby"
-*set jg_gem_ruby gear_label
-*gosub_scene equipment gear_buy_label "gem_emerald"
-*set jg_gem_emerald gear_label
-*gosub_scene equipment gear_buy_label "gem_diamond"
-*set jg_gem_diamond gear_label
-*comment GEN:END jeweler_gems_buy_labels
 *choice
-  *comment GEN:BEGIN jeweler_gems_buy_options -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
-  # ${jg_gem_agate}
-    *set buy_item_id "gem_agate"
-    *goto pq_bright_buy_do
-  # ${jg_gem_citrine}
-    *set buy_item_id "gem_citrine"
-    *goto pq_bright_buy_do
-  # ${jg_gem_quartz}
-    *set buy_item_id "gem_quartz"
-    *goto pq_bright_buy_do
-  # ${jg_gem_aquamarine}
-    *set buy_item_id "gem_aquamarine"
-    *goto pq_bright_buy_do
-  # ${jg_gem_opal}
-    *set buy_item_id "gem_opal"
-    *goto pq_bright_buy_do
-  # ${jg_gem_pearl}
-    *set buy_item_id "gem_pearl"
-    *goto pq_bright_buy_do
-  # ${jg_gem_sapphire}
-    *set buy_item_id "gem_sapphire"
-    *goto pq_bright_buy_do
-  # ${jg_gem_ruby}
-    *set buy_item_id "gem_ruby"
-    *goto pq_bright_buy_do
-  # ${jg_gem_emerald}
-    *set buy_item_id "gem_emerald"
-    *goto pq_bright_buy_do
-  # ${jg_gem_diamond}
-    *set buy_item_id "gem_diamond"
-    *goto pq_bright_buy_do
-  *comment GEN:END jeweler_gems_buy_options
   # Browse the finished jewelry instead.
     *goto pq_bright_jewelry
   # Step back to the counter.
@@ -1581,255 +1187,20 @@ The loose stones lie in narrow felt channels beneath the finer cases, each in it
   # ⚖ Settle up the trade panel.
     *goto pq_bright_settle
 
-*label pq_bright_buy_do
-*set gear_shop "jeweler"
-*gosub_scene equipment gear_info buy_item_id
-*temp pb_price gear_retail
-*if ((((gold * 100) + (silver * 10)) + copper) < pb_price)
-  You count your coin against the card and come up short. Cassia folds the paper tray closed and slides it back under the glass. "It will still be here when the purse catches up," she says.
-  *page_break Back to the cases...
-  *if (gear_group = "jewelry")
-    *goto pq_bright_jewelry
-  *goto pq_bright_gems
-*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-  *set currency_add_amount (0 - pb_price)
-  *gosub_scene economy currency_add
-  *gosub_scene equipment grant_gear buy_item_id 1
-  *set currency_txn_locked true
-  *set locked_currency_txn_page_id page_id
-Cassia sets the ${gear_name} in a folded-paper packet, seals it with a dab of wax, and passes it across the felt. ${gear_blurb}
-*if (not(gear_quote = ""))
-  *line_break
-  ${gear_quote}
-*gosub_scene equipment format_copper pb_price
-*line_break
-[b][💰 Paid: ${gear_sale_desc}][/b]
-*set hours_to_pass 0
-*set minutes_to_pass gear_minutes
-*set time_advance_call_id "pq_bright_buy"
-*gosub_scene calendar advance_time
-*gosub_scene calendar recalc_hp_from_neglect
-*if (hp_current <= 0)
-  *set death_cause "starvation"
-  *if (neglect_damage_fatigue > neglect_damage_hunger)
-    *set death_cause "exhaustion"
-  *goto_scene death death_screen
-*choice
-  # Back to the counter...
-    *goto pq_bright_setting
-  *if (vane_independent_operative)
-    # ↦ Walk to the district picked on the sidebar. [port_valen:read]
-      *goto_scene port_valen/port_valen port_valen_walk_picked
-
 *label pq_bright_sell
 *gosub pq_bright_open_panel
 Cassia lays a square of black velvet beside the balance. "For a sound loose stone, I pay three quarters of my card price," she says. "Finished work loses more at resale. I pay for the metal, the materials, and what I know I can place again—not every hour another jeweler put into it."
 
-*comment GEN:BEGIN jeweler_sell_labels -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
-*temp js_gem_agate ""
-*temp js_gem_citrine ""
-*temp js_gem_quartz ""
-*temp js_gem_aquamarine ""
-*temp js_gem_opal ""
-*temp js_gem_pearl ""
-*temp js_gem_sapphire ""
-*temp js_gem_ruby ""
-*temp js_gem_emerald ""
-*temp js_gem_diamond ""
-*temp js_jewelry_silver_ring ""
-*temp js_jewelry_gold_ring ""
-*temp js_jewelry_crescent_earrings ""
-*temp js_jewelry_drop_pendant ""
-*temp js_jewelry_gold_necklace ""
-*temp js_jewelry_emerald_pearl_necklace ""
-*temp js_jewelry_ruby_pearl_necklace ""
-*temp js_jewelry_sapphire_gold_ring ""
-*temp js_jewelry_ruby_gold_ring ""
-*temp js_jewelry_diamond_gold_ring ""
-*if (has_gem_agate)
-  *gosub_scene equipment gear_sell_label "gem_agate" "jeweler"
-  *set js_gem_agate gear_label
-*if (has_gem_citrine)
-  *gosub_scene equipment gear_sell_label "gem_citrine" "jeweler"
-  *set js_gem_citrine gear_label
-*if (has_gem_quartz)
-  *gosub_scene equipment gear_sell_label "gem_quartz" "jeweler"
-  *set js_gem_quartz gear_label
-*if (has_gem_aquamarine)
-  *gosub_scene equipment gear_sell_label "gem_aquamarine" "jeweler"
-  *set js_gem_aquamarine gear_label
-*if (has_gem_opal)
-  *gosub_scene equipment gear_sell_label "gem_opal" "jeweler"
-  *set js_gem_opal gear_label
-*if (has_gem_pearl)
-  *gosub_scene equipment gear_sell_label "gem_pearl" "jeweler"
-  *set js_gem_pearl gear_label
-*if (has_gem_sapphire)
-  *gosub_scene equipment gear_sell_label "gem_sapphire" "jeweler"
-  *set js_gem_sapphire gear_label
-*if (has_gem_ruby)
-  *gosub_scene equipment gear_sell_label "gem_ruby" "jeweler"
-  *set js_gem_ruby gear_label
-*if (has_gem_emerald)
-  *gosub_scene equipment gear_sell_label "gem_emerald" "jeweler"
-  *set js_gem_emerald gear_label
-*if (has_gem_diamond)
-  *gosub_scene equipment gear_sell_label "gem_diamond" "jeweler"
-  *set js_gem_diamond gear_label
-*if (has_jewelry_silver_ring)
-  *gosub_scene equipment gear_sell_label "jewelry_silver_ring" "jeweler"
-  *set js_jewelry_silver_ring gear_label
-*if (has_jewelry_gold_ring)
-  *gosub_scene equipment gear_sell_label "jewelry_gold_ring" "jeweler"
-  *set js_jewelry_gold_ring gear_label
-*if (has_jewelry_crescent_earrings)
-  *gosub_scene equipment gear_sell_label "jewelry_crescent_earrings" "jeweler"
-  *set js_jewelry_crescent_earrings gear_label
-*if (has_jewelry_drop_pendant)
-  *gosub_scene equipment gear_sell_label "jewelry_drop_pendant" "jeweler"
-  *set js_jewelry_drop_pendant gear_label
-*if (has_jewelry_gold_necklace)
-  *gosub_scene equipment gear_sell_label "jewelry_gold_necklace" "jeweler"
-  *set js_jewelry_gold_necklace gear_label
-*if (has_jewelry_emerald_pearl_necklace)
-  *gosub_scene equipment gear_sell_label "jewelry_emerald_pearl_necklace" "jeweler"
-  *set js_jewelry_emerald_pearl_necklace gear_label
-*if (has_jewelry_ruby_pearl_necklace)
-  *gosub_scene equipment gear_sell_label "jewelry_ruby_pearl_necklace" "jeweler"
-  *set js_jewelry_ruby_pearl_necklace gear_label
-*if (has_jewelry_sapphire_gold_ring)
-  *gosub_scene equipment gear_sell_label "jewelry_sapphire_gold_ring" "jeweler"
-  *set js_jewelry_sapphire_gold_ring gear_label
-*if (has_jewelry_ruby_gold_ring)
-  *gosub_scene equipment gear_sell_label "jewelry_ruby_gold_ring" "jeweler"
-  *set js_jewelry_ruby_gold_ring gear_label
-*if (has_jewelry_diamond_gold_ring)
-  *gosub_scene equipment gear_sell_label "jewelry_diamond_gold_ring" "jeweler"
-  *set js_jewelry_diamond_gold_ring gear_label
-*comment GEN:END jeweler_sell_labels
 *choice
-  *comment GEN:BEGIN jeweler_sell_options -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
-  *if (has_gem_agate)
-    # ${js_gem_agate}
-      *set sell_item_id "gem_agate"
-      *goto pq_bright_sell_do
-  *if (has_gem_citrine)
-    # ${js_gem_citrine}
-      *set sell_item_id "gem_citrine"
-      *goto pq_bright_sell_do
-  *if (has_gem_quartz)
-    # ${js_gem_quartz}
-      *set sell_item_id "gem_quartz"
-      *goto pq_bright_sell_do
-  *if (has_gem_aquamarine)
-    # ${js_gem_aquamarine}
-      *set sell_item_id "gem_aquamarine"
-      *goto pq_bright_sell_do
-  *if (has_gem_opal)
-    # ${js_gem_opal}
-      *set sell_item_id "gem_opal"
-      *goto pq_bright_sell_do
-  *if (has_gem_pearl)
-    # ${js_gem_pearl}
-      *set sell_item_id "gem_pearl"
-      *goto pq_bright_sell_do
-  *if (has_gem_sapphire)
-    # ${js_gem_sapphire}
-      *set sell_item_id "gem_sapphire"
-      *goto pq_bright_sell_do
-  *if (has_gem_ruby)
-    # ${js_gem_ruby}
-      *set sell_item_id "gem_ruby"
-      *goto pq_bright_sell_do
-  *if (has_gem_emerald)
-    # ${js_gem_emerald}
-      *set sell_item_id "gem_emerald"
-      *goto pq_bright_sell_do
-  *if (has_gem_diamond)
-    # ${js_gem_diamond}
-      *set sell_item_id "gem_diamond"
-      *goto pq_bright_sell_do
-  *if (has_jewelry_silver_ring)
-    # ${js_jewelry_silver_ring}
-      *set sell_item_id "jewelry_silver_ring"
-      *goto pq_bright_sell_do
-  *if (has_jewelry_gold_ring)
-    # ${js_jewelry_gold_ring}
-      *set sell_item_id "jewelry_gold_ring"
-      *goto pq_bright_sell_do
-  *if (has_jewelry_crescent_earrings)
-    # ${js_jewelry_crescent_earrings}
-      *set sell_item_id "jewelry_crescent_earrings"
-      *goto pq_bright_sell_do
-  *if (has_jewelry_drop_pendant)
-    # ${js_jewelry_drop_pendant}
-      *set sell_item_id "jewelry_drop_pendant"
-      *goto pq_bright_sell_do
-  *if (has_jewelry_gold_necklace)
-    # ${js_jewelry_gold_necklace}
-      *set sell_item_id "jewelry_gold_necklace"
-      *goto pq_bright_sell_do
-  *if (has_jewelry_emerald_pearl_necklace)
-    # ${js_jewelry_emerald_pearl_necklace}
-      *set sell_item_id "jewelry_emerald_pearl_necklace"
-      *goto pq_bright_sell_do
-  *if (has_jewelry_ruby_pearl_necklace)
-    # ${js_jewelry_ruby_pearl_necklace}
-      *set sell_item_id "jewelry_ruby_pearl_necklace"
-      *goto pq_bright_sell_do
-  *if (has_jewelry_sapphire_gold_ring)
-    # ${js_jewelry_sapphire_gold_ring}
-      *set sell_item_id "jewelry_sapphire_gold_ring"
-      *goto pq_bright_sell_do
-  *if (has_jewelry_ruby_gold_ring)
-    # ${js_jewelry_ruby_gold_ring}
-      *set sell_item_id "jewelry_ruby_gold_ring"
-      *goto pq_bright_sell_do
-  *if (has_jewelry_diamond_gold_ring)
-    # ${js_jewelry_diamond_gold_ring}
-      *set sell_item_id "jewelry_diamond_gold_ring"
-      *goto pq_bright_sell_do
-  *comment GEN:END jeweler_sell_options
   # Take the stones back.
     *goto pq_bright_setting
   # ⚖ Settle up the trade panel.
     *goto pq_bright_settle
 
-*label pq_bright_sell_do
-*set gear_shop "jeweler_sell"
-*gosub_scene equipment gear_info sell_item_id
-*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-  *gosub_scene equipment gear_sale_value sell_item_id "jeweler"
-  *gosub_scene equipment sell_gear sell_item_id
-  *set currency_add_amount gear_sale_copper
-  *gosub_scene economy currency_add
-  *set currency_txn_locked true
-  *set locked_currency_txn_page_id page_id
-Cassia studies the ${gear_sale_name} under her loupe, sets it on the balance, then writes a figure on the edge of the paper before counting out the coin.
-*if (not(gear_quote = ""))
-  *line_break
-  ${gear_quote}
-*line_break
-[b][💰 Sold: ${gear_sale_name} for ${gear_sale_desc}][/b]
-*set hours_to_pass 0
-*set minutes_to_pass 5
-*set time_advance_call_id "pq_bright_sell"
-*gosub_scene calendar advance_time
-*gosub_scene calendar recalc_hp_from_neglect
-*if (hp_current <= 0)
-  *set death_cause "starvation"
-  *if (neglect_damage_fatigue > neglect_damage_hunger)
-    *set death_cause "exhaustion"
-  *goto_scene death death_screen
-*choice
-  # Back to the counter...
-    *goto pq_bright_setting
-  *if (vane_independent_operative)
-    # ↦ Walk to the district picked on the sidebar. [port_valen:read]
-      *goto_scene port_valen/port_valen port_valen_walk_picked
-
-*comment The trade panel is optional UI over the paper menus above. ChoiceScript remains the authority on stock,
-*comment prices and the final transfer, so the shop still works without the panel.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment THE BRIGHT SETTING'S TRADE PANEL (Cassia's only counter since 2026-11-10: a market pilot, web/mygame/market.js;
+*comment the plain buy and sell menus that stood beside it priced at retail past the market are gone)
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label pq_bright_open_panel
 *set shop_open "jeweler"
 *set shop_rows ""
@@ -2094,37 +1465,9 @@ Finished pieces hang along the wall by kind. Cloaks and capes are on the long ra
 *label pq_tailor_cloaks
 *gosub pq_tailor_open_panel
 *set pq_tailor_back "cloaks"
-*comment GEN:BEGIN tailor_cloaks_labels -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
-*temp tc_broadcloth_cloak ""
-*temp tc_storm_cape ""
-*temp tc_winter_cloak ""
-*temp tc_summer_duster ""
-*gosub_scene equipment gear_buy_label "broadcloth_cloak"
-*set tc_broadcloth_cloak gear_label
-*gosub_scene equipment gear_buy_label "storm_cape"
-*set tc_storm_cape gear_label
-*gosub_scene equipment gear_buy_label "winter_cloak"
-*set tc_winter_cloak gear_label
-*gosub_scene equipment gear_buy_label "summer_duster"
-*set tc_summer_duster gear_label
-*comment GEN:END tailor_cloaks_labels
-Four cloaks hang on the rail, each with a slip of paper pinned to the collar. A broad grey broadcloth, a short waxed cape that smells of beeswax, a heavy winter cloak with fur at the lining, and a long linen coat so light it moves when the door opens. Fenwick names each price without looking at the slips.
+Four cloaks hang on the rail, each with a slip of paper pinned to the collar. A broad grey broadcloth, a short waxed cape that smells of beeswax, a heavy winter cloak with fur at the lining, and a long linen coat so light it moves when the door opens. Fenwick names each price without looking at the slips, and the slips themselves are repinned as the rail fills and empties.
 
 *choice
-  *comment GEN:BEGIN tailor_cloaks_options -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
-  # ${tc_broadcloth_cloak}
-    *set buy_item_id "broadcloth_cloak"
-    *goto pq_tailor_buy_do
-  # ${tc_storm_cape}
-    *set buy_item_id "storm_cape"
-    *goto pq_tailor_buy_do
-  # ${tc_winter_cloak}
-    *set buy_item_id "winter_cloak"
-    *goto pq_tailor_buy_do
-  # ${tc_summer_duster}
-    *set buy_item_id "summer_duster"
-    *goto pq_tailor_buy_do
-  *comment GEN:END tailor_cloaks_options
   # Step back to the racks.
     *goto pq_tailor_stock
   # ⚖ Settle up the trade panel.
@@ -2133,49 +1476,9 @@ Four cloaks hang on the rail, each with a slip of paper pinned to the collar. A 
 *label pq_tailor_wear
 *gosub pq_tailor_open_panel
 *set pq_tailor_back "wear"
-*comment GEN:BEGIN tailor_wear_labels -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
-*temp tw_felt_hat ""
-*temp tw_fur_cap ""
-*temp tw_lined_gloves ""
-*temp tw_waxed_boots ""
-*temp tw_winter_boots ""
-*temp tw_wool_muffler ""
-*gosub_scene equipment gear_buy_label "felt_hat"
-*set tw_felt_hat gear_label
-*gosub_scene equipment gear_buy_label "fur_cap"
-*set tw_fur_cap gear_label
-*gosub_scene equipment gear_buy_label "lined_gloves"
-*set tw_lined_gloves gear_label
-*gosub_scene equipment gear_buy_label "waxed_boots"
-*set tw_waxed_boots gear_label
-*gosub_scene equipment gear_buy_label "winter_boots"
-*set tw_winter_boots gear_label
-*gosub_scene equipment gear_buy_label "wool_muffler"
-*set tw_wool_muffler gear_label
-*comment GEN:END tailor_wear_labels
-The glass cases hold the small pieces in rows: hats on wooden blocks, gloves laid palm-up in pairs, boots stood heel to heel on the lower shelf, and mufflers rolled like loaves at the end. A card in each case gives the price in Fenwick's small square hand.
+The glass cases hold the small pieces in rows: hats on wooden blocks, gloves laid palm-up in pairs, boots stood heel to heel on the lower shelf, and mufflers rolled like loaves at the end. A card in each case gives the price in Fenwick's small square hand, and the cards are rewritten as the cases fill and empty.
 
 *choice
-  *comment GEN:BEGIN tailor_wear_options -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
-  # ${tw_felt_hat}
-    *set buy_item_id "felt_hat"
-    *goto pq_tailor_buy_do
-  # ${tw_fur_cap}
-    *set buy_item_id "fur_cap"
-    *goto pq_tailor_buy_do
-  # ${tw_lined_gloves}
-    *set buy_item_id "lined_gloves"
-    *goto pq_tailor_buy_do
-  # ${tw_waxed_boots}
-    *set buy_item_id "waxed_boots"
-    *goto pq_tailor_buy_do
-  # ${tw_winter_boots}
-    *set buy_item_id "winter_boots"
-    *goto pq_tailor_buy_do
-  # ${tw_wool_muffler}
-    *set buy_item_id "wool_muffler"
-    *goto pq_tailor_buy_do
-  *comment GEN:END tailor_wear_options
   # Step back to the racks.
     *goto pq_tailor_stock
   # ⚖ Settle up the trade panel.
@@ -2184,67 +1487,13 @@ The glass cases hold the small pieces in rows: hats on wooden blocks, gloves lai
 *label pq_tailor_dress
 *gosub pq_tailor_open_panel
 *set pq_tailor_back "dress"
-*comment GEN:BEGIN tailor_dress_labels -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
-*temp td_silk_neckcloth ""
-*temp td_scholar_gloves ""
-*temp td_dancing_slippers ""
-*temp td_masters_gloves ""
-*temp td_court_coat ""
-*if (not(has_silk_neckcloth))
-  *gosub_scene equipment gear_buy_label "silk_neckcloth"
-  *set td_silk_neckcloth gear_label
-*if (not(has_scholar_gloves))
-  *gosub_scene equipment gear_buy_label "scholar_gloves"
-  *set td_scholar_gloves gear_label
-*if (not(has_dancing_slippers))
-  *gosub_scene equipment gear_buy_label "dancing_slippers"
-  *set td_dancing_slippers gear_label
-*if (not(has_masters_gloves))
-  *gosub_scene equipment gear_buy_label "masters_gloves"
-  *set td_masters_gloves gear_label
-*if (not(has_court_coat))
-  *gosub_scene equipment gear_buy_label "court_coat"
-  *set td_court_coat gear_label
-*comment GEN:END tailor_dress_labels
 The fine work is kept apart, in the corner under the skylight, behind a curtain of grey wool. The seams of every piece carry a second line of stitching in thread so pale that it shows only when you tilt your head, and the air at the shelf is faintly warm, like a hearth that has just gone out. Dark kid gloves lie on a velvet pad, a pair of black shoes sit side by side on a stool, a grey silk neckcloth is folded on a stand, and the charcoal coat hangs from the dress form. Fenwick does not offer prices for these. They are written on a card beside each piece, and the card is not large.
 
 *choice
-  *comment GEN:BEGIN tailor_dress_options -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
-  *if (not(has_silk_neckcloth))
-    # ${td_silk_neckcloth}
-      *set buy_item_id "silk_neckcloth"
-      *goto pq_tailor_buy_do
-  *if (not(has_scholar_gloves))
-    # ${td_scholar_gloves}
-      *set buy_item_id "scholar_gloves"
-      *goto pq_tailor_buy_do
-  *if (not(has_dancing_slippers))
-    # ${td_dancing_slippers}
-      *set buy_item_id "dancing_slippers"
-      *goto pq_tailor_buy_do
-  *if (not(has_masters_gloves))
-    # ${td_masters_gloves}
-      *set buy_item_id "masters_gloves"
-      *goto pq_tailor_buy_do
-  *if (not(has_court_coat))
-    # ${td_court_coat}
-      *set buy_item_id "court_coat"
-      *goto pq_tailor_buy_do
-  *comment GEN:END tailor_dress_options
   # Step back to the racks.
     *goto pq_tailor_stock
   # ⚖ Settle up the trade panel.
     *goto pq_tailor_settle
-
-*comment Which rack the shopper stood at, so a trade puts them back there. Falls back to the racks' front page.
-*label pq_tailor_return
-*if (pq_tailor_back = "cloaks")
-  *goto pq_tailor_cloaks
-*if (pq_tailor_back = "wear")
-  *goto pq_tailor_wear
-*if (pq_tailor_back = "dress")
-  *goto pq_tailor_dress
-*goto pq_tailor_stock
 
 *comment Shops trade Morning through Afternoon, like Lantern Lane: closed at Dusk, Night, Pre-Dawn, Hallowday and in a Blizzard.
 *label pq_tailor_open_check
@@ -2263,237 +1512,21 @@ The fine work is kept apart, in the corner under the skylight, behind a curtain 
 *set shop_open ""
 *goto pq_avenue
 
-*comment The purchase itself, shared by everything Fenwick sells. One currency change and one advance_time per page; the
-*comment price, name, blurb and quote come from equipment.txt gear_info, so a new piece needs no code here.
-*label pq_tailor_buy_do
-*set gear_shop "tailor"
-*gosub_scene equipment gear_info buy_item_id
-*temp pt_price gear_retail
-*if ((((gold * 100) + (silver * 10)) + copper) < pt_price)
-  You count your coin against the card and come up short. Fenwick lays the ${gear_name} back on its stand and squares it with two fingers. "It will keep," he says.
-  *page_break Back to the racks…
-  *goto pq_tailor_return
-*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-  *set currency_add_amount (0 - pt_price)
-  *gosub_scene economy currency_add
-  *gosub_scene equipment grant_gear buy_item_id 1
-  *set currency_txn_locked true
-  *set locked_currency_txn_page_id page_id
-Fenwick lifts the ${gear_name} down, holds the piece against you, and makes one small adjustment with a pin. ${gear_blurb}
-*if (gear_kind = "armor")
-  *line_break
-  He helps you into it and has you stand while he checks the fall of the shoulders.
-*if (not(gear_quote = ""))
-  *line_break
-  ${gear_quote}
-*gosub_scene equipment format_copper pt_price
-*line_break
-[b][💰 Paid: ${gear_sale_desc}][/b]
-*if (gear_kind = "armor")
-  *line_break
-  [b][🛡️ Armor Class: ${armor_class}][/b]
-*else
-  *line_break
-  [i]It is yours to wear from your dossier, under Equipment and Apparel.[/i]
-*set hours_to_pass 0
-*set minutes_to_pass gear_minutes
-*set time_advance_call_id "pq_tailor_buy"
-*gosub_scene calendar advance_time
-*gosub_scene calendar recalc_hp_from_neglect
-*if (hp_current <= 0)
-  *set death_cause "starvation"
-  *if (neglect_damage_fatigue > neglect_damage_hunger)
-    *set death_cause "exhaustion"
-  *goto_scene death death_screen
-*choice
-  # Back to the counter.
-    *goto pq_tailor_after
-  *if (vane_independent_operative)
-    # ↦ Walk to the district picked on the sidebar. [port_valen:read]
-      *goto_scene port_valen/port_valen port_valen_walk_picked
-
 *label pq_tailor_sell
 Fenwick clears a corner of the cutting table and lays a square of brown paper on it. "Set it down," he says. "I will look it over and tell you what it is worth to me. Forty in the hundred of what I asked, and the seams are checked."
-*comment GEN:BEGIN tailor_sell_labels -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
-*temp ts_broadcloth_cloak ""
-*temp ts_storm_cape ""
-*temp ts_winter_cloak ""
-*temp ts_summer_duster ""
-*temp ts_felt_hat ""
-*temp ts_fur_cap ""
-*temp ts_lined_gloves ""
-*temp ts_waxed_boots ""
-*temp ts_winter_boots ""
-*temp ts_wool_muffler ""
-*temp ts_silk_neckcloth ""
-*temp ts_scholar_gloves ""
-*temp ts_dancing_slippers ""
-*temp ts_masters_gloves ""
-*temp ts_court_coat ""
-*temp ts_poisoners_robes ""
-*if (has_broadcloth_cloak)
-  *gosub_scene equipment gear_sell_label "broadcloth_cloak" "tailor"
-  *set ts_broadcloth_cloak gear_label
-*if (has_storm_cape)
-  *gosub_scene equipment gear_sell_label "storm_cape" "tailor"
-  *set ts_storm_cape gear_label
-*if (has_winter_cloak)
-  *gosub_scene equipment gear_sell_label "winter_cloak" "tailor"
-  *set ts_winter_cloak gear_label
-*if (has_summer_duster)
-  *gosub_scene equipment gear_sell_label "summer_duster" "tailor"
-  *set ts_summer_duster gear_label
-*if (has_felt_hat)
-  *gosub_scene equipment gear_sell_label "felt_hat" "tailor"
-  *set ts_felt_hat gear_label
-*if (has_fur_cap)
-  *gosub_scene equipment gear_sell_label "fur_cap" "tailor"
-  *set ts_fur_cap gear_label
-*if (has_lined_gloves)
-  *gosub_scene equipment gear_sell_label "lined_gloves" "tailor"
-  *set ts_lined_gloves gear_label
-*if (has_waxed_boots)
-  *gosub_scene equipment gear_sell_label "waxed_boots" "tailor"
-  *set ts_waxed_boots gear_label
-*if (has_winter_boots)
-  *gosub_scene equipment gear_sell_label "winter_boots" "tailor"
-  *set ts_winter_boots gear_label
-*if (has_wool_muffler)
-  *gosub_scene equipment gear_sell_label "wool_muffler" "tailor"
-  *set ts_wool_muffler gear_label
-*if (has_silk_neckcloth)
-  *gosub_scene equipment gear_sell_label "silk_neckcloth" "tailor"
-  *set ts_silk_neckcloth gear_label
-*if (has_scholar_gloves)
-  *gosub_scene equipment gear_sell_label "scholar_gloves" "tailor"
-  *set ts_scholar_gloves gear_label
-*if (has_dancing_slippers)
-  *gosub_scene equipment gear_sell_label "dancing_slippers" "tailor"
-  *set ts_dancing_slippers gear_label
-*if (has_masters_gloves)
-  *gosub_scene equipment gear_sell_label "masters_gloves" "tailor"
-  *set ts_masters_gloves gear_label
-*if (has_court_coat)
-  *gosub_scene equipment gear_sell_label "court_coat" "tailor"
-  *set ts_court_coat gear_label
-*if (has_poisoners_robes)
-  *gosub_scene equipment gear_sell_label "poisoners_robes" "tailor"
-  *set ts_poisoners_robes gear_label
-*comment GEN:END tailor_sell_labels
-
+*gosub pq_tailor_open_panel
 *choice
-  *comment GEN:BEGIN tailor_sell_options -- generated by tools/gen_gear.js from tools/gear_catalog.json; edit the catalog, not this block
-  *if (has_broadcloth_cloak)
-    # ${ts_broadcloth_cloak}
-      *set sell_item_id "broadcloth_cloak"
-      *goto pq_tailor_sell_do
-  *if (has_storm_cape)
-    # ${ts_storm_cape}
-      *set sell_item_id "storm_cape"
-      *goto pq_tailor_sell_do
-  *if (has_winter_cloak)
-    # ${ts_winter_cloak}
-      *set sell_item_id "winter_cloak"
-      *goto pq_tailor_sell_do
-  *if (has_summer_duster)
-    # ${ts_summer_duster}
-      *set sell_item_id "summer_duster"
-      *goto pq_tailor_sell_do
-  *if (has_felt_hat)
-    # ${ts_felt_hat}
-      *set sell_item_id "felt_hat"
-      *goto pq_tailor_sell_do
-  *if (has_fur_cap)
-    # ${ts_fur_cap}
-      *set sell_item_id "fur_cap"
-      *goto pq_tailor_sell_do
-  *if (has_lined_gloves)
-    # ${ts_lined_gloves}
-      *set sell_item_id "lined_gloves"
-      *goto pq_tailor_sell_do
-  *if (has_waxed_boots)
-    # ${ts_waxed_boots}
-      *set sell_item_id "waxed_boots"
-      *goto pq_tailor_sell_do
-  *if (has_winter_boots)
-    # ${ts_winter_boots}
-      *set sell_item_id "winter_boots"
-      *goto pq_tailor_sell_do
-  *if (has_wool_muffler)
-    # ${ts_wool_muffler}
-      *set sell_item_id "wool_muffler"
-      *goto pq_tailor_sell_do
-  *if (has_silk_neckcloth)
-    # ${ts_silk_neckcloth}
-      *set sell_item_id "silk_neckcloth"
-      *goto pq_tailor_sell_do
-  *if (has_scholar_gloves)
-    # ${ts_scholar_gloves}
-      *set sell_item_id "scholar_gloves"
-      *goto pq_tailor_sell_do
-  *if (has_dancing_slippers)
-    # ${ts_dancing_slippers}
-      *set sell_item_id "dancing_slippers"
-      *goto pq_tailor_sell_do
-  *if (has_masters_gloves)
-    # ${ts_masters_gloves}
-      *set sell_item_id "masters_gloves"
-      *goto pq_tailor_sell_do
-  *if (has_court_coat)
-    # ${ts_court_coat}
-      *set sell_item_id "court_coat"
-      *goto pq_tailor_sell_do
-  *if (has_poisoners_robes)
-    # ${ts_poisoners_robes}
-      *set sell_item_id "poisoners_robes"
-      *goto pq_tailor_sell_do
-  *comment GEN:END tailor_sell_options
   # Take it all back off the table.
     *goto pq_tailor
-
-*comment The sale itself. The price is worked out inside the currency lock and kept in gear_sale_* so a replayed page
-*comment prints the same banner. One currency change and one advance_time per page.
-*label pq_tailor_sell_do
-*set gear_shop "tailor_sell"
-*gosub_scene equipment gear_info sell_item_id
-*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-  *gosub_scene equipment gear_sale_value sell_item_id "tailor"
-  *gosub_scene equipment sell_gear sell_item_id
-  *set currency_add_amount gear_sale_copper
-  *gosub_scene economy currency_add
-  *set currency_txn_locked true
-  *set locked_currency_txn_page_id page_id
-Fenwick turns the ${gear_sale_name} inside out, reads the seams, and folds the piece flat on the brown paper. He writes a figure in pencil and counts the coin out of a drawer.
-*if (not(gear_quote = ""))
-  *line_break
-  ${gear_quote}
-*if (not(gear_sold_note = ""))
-  *line_break
-  ${gear_sold_note}
-*line_break
-[b][💰 Sold: ${gear_sale_name} for ${gear_sale_desc}][/b]
-*set hours_to_pass 0
-*set minutes_to_pass 5
-*set time_advance_call_id "pq_tailor_sell"
-*gosub_scene calendar advance_time
-*gosub_scene calendar recalc_hp_from_neglect
-*if (hp_current <= 0)
-  *set death_cause "starvation"
-  *if (neglect_damage_fatigue > neglect_damage_hunger)
-    *set death_cause "exhaustion"
-  *goto_scene death death_screen
-*page_break Back to the cutting table…
-*gosub pq_tailor_open_check
-*if (pq_tailor_open)
-  *goto pq_tailor
-*set shop_open ""
-*goto pq_avenue
+  # ⚖ Settle up the trade panel.
+    *goto pq_tailor_settle
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment THE TRADE PANEL (a quality-of-life layer over the menus above, which stay as the fallback)
-*comment The shop hub and every rack call pq_tailor_open_panel, which tells web/mygame/trade.js this page offers a trade
-*comment and lists the live rows. The panel sets carts, then clicks the hidden "Settle up" option, which lands on
-*comment pq_tailor_settle. Every price, count and coin is re-checked there in equipment.txt (shop_*).
+*comment THE TRADE PANEL (Fenwick's only counter since 2026-11-10: a market pilot, web/mygame/market.js; the plain buy and sell
+*comment menus that stood beside it priced at retail past the market are gone). The shop hub and every rack call
+*comment pq_tailor_open_panel, which tells web/mygame/trade.js this page offers a trade and lists the live rows. The panel
+*comment sets carts, then clicks the hidden "Settle up" option, which lands on pq_tailor_settle. Every price, count and coin
+*comment is re-checked there in equipment.txt (shop_*).
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label pq_tailor_open_panel
 *set shop_open "tailor"

@@ -62,7 +62,7 @@
       She gives a small nod and pulls her papers closer. The person below is waiting when you come down.
       *goto_scene port_valen/port_valen_dredge_end cut_market_page
 *else
-  The person below recognizes you and steps aside. On the upper floor, the woman has another marked strip on the table and a fresh pair of purses next to it.
+  The person below recognizes you and steps aside. On the upper floor, @{(black_oath_mara_named) Mara Vey|the woman in the dark coat} has another marked strip on the table and a fresh pair of purses next to it.
 
   *if ((black_oath_night_list_count >= 3) and (short_purse_stage = "unstarted"))
     She pushes the marked paper aside before you reach the table, her dark-grey eyes measuring you in the candlelight.
@@ -78,11 +78,39 @@
         She gives a small nod and pulls her papers closer.
         *goto_scene port_valen/port_valen_dredge_end cut_market_page
   *else
-    "Ready for another run?" she asks, not looking up from her ledger.
+    "Ready for tonight's run?" she asks, not looking up from her ledger.
     *goto night_list_offer
 
 *label night_list_offer
 
+*if (black_oath_night_list_count > 0)
+  @{(black_oath_mara_named) Mara|She} slides a freshly marked paper strip across the slate without looking up from her chalk columns.
+
+  "Three drops," she says. "Same tide, same stops. Bring both purses and the sealed packet back before the Watch skiffs row."
+
+  *choice
+    # Take the marked strip and head into the dark.
+      *set night_list_repeat true
+      *set black_oath_night_list_stage "active"
+      *set black_oath_night_list_resolution "none"
+      *set black_oath_night_list_paid false
+      *set black_oath_night_list_stop "boat_sheds"
+      *goto night_list_route
+    # "I'm on it. Have the eighteen coppers ready on the table."
+      "I'm on it," you say, pocketing the slip. "Have the coin ready."
+      "It will be," she says flatly. "Move."
+      *set night_list_repeat true
+      *set black_oath_night_list_stage "active"
+      *set black_oath_night_list_resolution "none"
+      *set black_oath_night_list_paid false
+      *set black_oath_night_list_stop "boat_sheds"
+      *goto night_list_route
+    # Decline the work tonight.
+      "Not tonight," you say.
+      "Then don't waste the candle," she says, her chalk already moving. "Walk."
+      *goto_scene port_valen/port_valen_dredge_end cut_market_page
+
+*comment First-run full briefing
 She pulls the marked strip closer and sets a finger against the first chalk mark.
 
 "Three drops before the tide turns," she says, her voice quiet and even. "First, the boat-sheds behind the scrap yard's driftwood fence. Third shed down, where the tar kettles sit cold. Knock twice on the back sill. You'll get two tied leather purses."
@@ -94,8 +122,6 @@ Her finger moves down the paper. "Take the first purse down to the flooded steps
 *choice
   # Take the marked strip and head into the dark.
     *set night_list_repeat false
-    *if (black_oath_night_list_stage = "resolved")
-      *set night_list_repeat true
     *set black_oath_night_list_stage "active"
     *set black_oath_night_list_resolution "none"
     *set black_oath_night_list_paid false
@@ -109,8 +135,6 @@ Her finger moves down the paper. "Take the first purse down to the flooded steps
     *choice
       # "Fair enough. Give me the list."
         *set night_list_repeat false
-        *if (black_oath_night_list_stage = "resolved")
-          *set night_list_repeat true
         *set black_oath_night_list_stage "active"
         *set black_oath_night_list_resolution "none"
         *set black_oath_night_list_paid false
@@ -120,8 +144,6 @@ Her finger moves down the paper. "Take the first purse down to the flooded steps
         "I'll make the run," you say, taking the marked paper. "Just have eighteen coppers ready when I get back."
         "They will be," she says flatly. "Move."
         *set night_list_repeat false
-        *if (black_oath_night_list_stage = "resolved")
-          *set night_list_repeat true
         *set black_oath_night_list_stage "active"
         *set black_oath_night_list_resolution "none"
         *set black_oath_night_list_paid false
@@ -139,16 +161,6 @@ Her finger moves down the paper. "Take the first purse down to the flooded steps
 *label night_list_route
 *set scenery_subplace "dredge_boat_sheds"
 *set black_oath_night_list_stop "boat_sheds"
-
-*temp night_list_str ""
-*temp night_list_dex ""
-*temp night_list_cha ""
-*temp night_list_wis ""
-*if (show_stat_hints)
-  *set night_list_str " [STR DC 12]"
-  *set night_list_dex " [DEX DC 12]"
-  *set night_list_cha " [CHA DC 11]"
-  *set night_list_wis " [WIS DC 11]"
 
 *if (night_list_repeat)
   *goto night_list_repeat_circuit
@@ -251,7 +263,7 @@ You slip into the narrow service passage behind the cookshop, where grease-coate
 You move through the rain-soaked circuit without delay: two knocks at the boat-sheds, the silent exchange beneath the shrine's flooded steps, and the greasy handoff in the steam behind Lamp Stair. The routine is familiar now, and the weight of the two purses settles easily into your satchel.
 
 *label night_list_time_advance
-
+*gosub_scene calendar ensure_navigable_weather
 *set hours_to_pass 3
 *set minutes_to_pass 0
 *set exposure_base_mins 180
@@ -268,11 +280,55 @@ You move through the rain-soaked circuit without delay: two knocks at the boat-s
   *goto_scene death death_screen
 
 *if (night_list_repeat)
-  *rand night_list_repeat_trouble 1 8
-  *if (not(night_list_repeat_trouble = 1))
+  *rand night_list_repeat_trouble 1 6
+  *if (night_list_repeat_trouble = 1)
+    *goto night_list_ambush
+  *elseif (night_list_repeat_trouble = 2)
+    *goto night_list_patrol_check
+  *else
     *set black_oath_night_list_stop "return"
     *goto night_list_quiet_return
 
+*label night_list_patrol_check
+Near the foot of the alley shrine, the rhythmic splash of muffled oars echoes across the black water. A Port Watch harbor skiff glides out of the fog, its hooded lantern casting long golden ripples against the granite seawall.
+
+With two heavy purses and an illicit parcel in your satchel, you cannot afford to have a Watch lantern turned on you.
+
+*choice
+  # [Stealth] Melt into the deep shadow under the timber jetty.@{show_stat_hints  [DEX DC 12]|}
+    *gosub_scene dice_engine roll_skill_check 12 "stealth" "" "" "" "" ""
+    *if (check_success)
+      You press your back flat against the tarred pilings, tucking your chin and holding your breath as cold river spray dampens your shoulders. The cutter glides past within arm's reach, its rowers none the wiser, before vanishing into the canal mist.
+      *set black_oath_night_list_stop "return"
+      *goto night_list_quiet_return
+    *else
+      A loose splinter snaps beneath your hand. The watchman on the bow swings his lantern around! You duck into a foul drainage culvert, losing precious time and scraping your shins in the dark before doubling back to Duckboard Market.
+      *set black_oath_night_list_stop "return"
+      *goto night_list_quiet_return
+
+  # [Perception] Clock their blind spots and slip past between oar strokes.@{show_stat_hints  [WIS DC 11]|}
+    *gosub_scene dice_engine roll_skill_check 11 "perception" "" "" "" "" ""
+    *if (check_success)
+      You time the sweep of their lantern beam against the rhythm of their oars. In the dark interval between strokes, you slip across the exposed landing and vanish down the alley without a sound.
+      *set black_oath_night_list_stop "return"
+      *goto night_list_quiet_return
+    *else
+      You misjudge the lantern's arc. A sudden wash of yellow glare hits the landing. You bolt down the narrow cuts, your heart pounding, shaking any pursuit through the winding lanes before making your way back.
+      *set black_oath_night_list_stop "return"
+      *goto night_list_quiet_return
+
+  # [Insight] Wait for the watchman to look toward the mid-channel barge.@{show_stat_hints  [WIS DC 11]|}
+    *gosub_scene dice_engine roll_skill_check 11 "insight" "" "" "" "" ""
+    *if (check_success)
+      You read the crew's attention: their heads turn toward a sluggish timber scow drifting downstream. While their eyes follow the moving light, you ease past the mooring posts and cross into the shadows undisturbed.
+      *set black_oath_night_list_stop "return"
+      *goto night_list_quiet_return
+    *else
+      You misread their focus; the lookout's eyes snap straight toward the shore. You scramble backward into the dark culverts, taking the long way around to shake suspicion.
+      *set black_oath_night_list_stop "return"
+      *goto night_list_quiet_return
+
+*label night_list_ambush
 *set black_oath_night_list_stop "ambush"
 
 When you turn down the lane toward Duckboard Market, the street has emptied. Rain drips from the eaves onto the wooden duckboards. Under the planks, the canal water sucks and gurgles against the pilings.
@@ -282,24 +338,24 @@ Two figures step out from the mouth of a narrow passage ahead, cutting off the l
 "Late for an errand," the taller one says, his voice a gravelly rasp. "You're carrying heavy. Hand over the leather, and you get to walk home on both shins."
 
 *choice
-  # "Step aside, or you'll find out what happens when you touch Mara's coin."${night_list_cha}
-    "This coin belongs to the table above Duckboard," you say, your voice dropping to a hard, level rasp. "You take one step closer, and Mara will have your ears nailed to the fish wharf before dawn."
+  # "Step aside, or you'll find out what happens when you touch @{(black_oath_mara_named) Mara's|syndicate} coin."@{show_stat_hints  [CHA DC 11]|}
+    "This coin belongs to the table above Duckboard," you say, your voice dropping to a hard, level rasp. "You take one step closer, and @{(black_oath_mara_named) Mara|the table} will have your ears nailed to the fish wharf before dawn."
 
     The taller man blinks. He glances at his partner, then back at you, weighing your stillness against the dark lane.
 
     *gosub_scene dice_engine roll_skill_check 11 "persuasion" "" "" "" "" ""
     *goto night_list_check
-  # Drop your shoulder and drive through the gap between them.${night_list_str}
+  # Drop your shoulder and drive through the gap between them.@{show_stat_hints  [STR DC 12]|}
     You don't waste breath arguing. You drop your center of gravity, accelerating into the narrow gap and slamming your shoulder like an iron wedge into the nearest man's chest.
 
     *gosub_scene dice_engine roll_skill_check 12 "athletics" "" "" "" "" ""
     *goto night_list_check
-  # Vault off a rain barrel into the side passage before they close it.${night_list_dex}
+  # Vault off a rain barrel into the side passage before they close it.@{show_stat_hints  [DEX DC 12]|}
     You fake a step forward, then kick off a sodden rain barrel, vaulting cleanly over a low fish-drying rack and slipping down the narrow side drain before their hands can close around your collar.
 
     *gosub_scene dice_engine roll_skill_check 12 "acrobatics" "" "" "" "" ""
     *goto night_list_check
-  # Notice their footing on the slick duckboards and slip past them.${night_list_wis}
+  # Notice their footing on the slick duckboards and slip past them.@{show_stat_hints  [WIS DC 11]|}
     You read their balance: the taller one is favoring his back heel on the slime-covered timber, while the other is bunched up too tight. You feint wide toward the rail, baiting their pivot, then cut inside before their boots can find traction on the wet grease.
 
     *gosub_scene dice_engine roll_skill_check 11 "perception" "" "" "" "" ""
@@ -363,14 +419,19 @@ The nearer one lunges for your shoulder, but loses his footing on the slick plan
 *set scenery_subplace "black_oath_upstairs_room"
 *set black_oath_night_list_stop "completed"
 
-The guard below lets you through the half-door and bolts it behind you. In the room above, the woman checks both leather purses and the small parcel, setting them onto the slate table.
+The guard below lets you through the half-door and bolts it behind you. In the room above, @{(black_oath_mara_named) Mara|the woman} checks both leather purses and the small parcel, setting them onto the slate table.
 
 She cuts the twine with a small horn-handled blade, shakes the coppers out, and tallies them against her chalk columns with dry, rhythmic clicks.
 
 *if (combat_outcome = "victory")
-  "You brought both purses back," she says, her dark-grey eyes taking in your bruised knuckles and the canal mud on your sleeves. "Eighteen coppers. You held your ground. But remember: on the waterfront, noise costs more than silence. Next time, see the ambush before you walk into it."
+  "You brought both bags back," she notes, her dark-grey eyes taking in your bruised knuckles and the canal mud on your sleeves. "Eighteen coppers. You held your ground. But remember: on the waterfront, noise costs more than silence. Next time, see the ambush before you walk into it."
 *else
-  "Both purses, and the seal on the oilcloth isn't cracked," she says, sliding eighteen copper bits across the slate with a sweep of her palm. "No Watch whistling at the bridge, no blood on the duckboards. Hask said you were neat. That's eighteen coppers for clean work. Come back tomorrow night if you want another list."
+  *if (black_oath_night_list_count = 0)
+    "Clean handoff, and the seal on the oilcloth isn't cracked," she murmurs, sliding eighteen copper bits across the slate with a sweep of her palm. "No Watch whistling at the bridge, no blood on the duckboards. Hask said you were neat. That's your pay for clean work. Come back tomorrow night if you want another list."
+  *elseif (short_purse_stage = "completed")
+    "Clean and quiet, as expected," @{(black_oath_mara_named) Mara|she} says, counting out the coin onto the timber. "No fuss, no Watch whistles. Well done."
+  *else
+    "Tally matches," she observes, pushing the eighteen bits across the timber. "Punctual work. Come back tomorrow night if you're ready for another circuit."
 
 *if (not(black_oath_night_list_paid))
   *set black_oath_night_list_paid true
@@ -395,7 +456,12 @@ She cuts the twine with a small horn-handled blade, shakes the coppers out, and 
     *goto_scene port_valen/port_valen_dredge_end cut_market_page
   # Ask if there is other work for an associate.
     "Any other business for an associate?" you ask.
-    "Run the night lists first," she says, her fingers already back on her chalk. "When you've proven you can move coin in the dark, we'll talk about bigger business."
+    *if (short_purse_stage = "completed")
+      "For heavier coin and rougher business, go up to the Gangway loft and speak to Korrigan Vale," she says. "For quiet parcel work, the night list is always here."
+    *elseif (black_oath_night_list_count >= 3)
+      "As a matter of fact, yes," she says, leaning forward over her slate. "There's a slip fund deficit in the boat-sheds that needs a discreet look. Come back when you're ready to hear it."
+    *else
+      "Run the night lists first," she says, her fingers already back on her chalk. "When you've proven you can move coin in the dark, we'll talk about bigger business."
     *goto_scene port_valen/port_valen_dredge_end cut_market_page
 
 *label night_list_failed
@@ -404,7 +470,7 @@ She cuts the twine with a small horn-handled blade, shakes the coppers out, and 
 
 They move faster than you expect on the wet boards. The nearer thug drives you into a timber post while the other wrenches a purse free from your grip. By the time you wrench loose, both have vanished into the maze of drainage cuts with half your load.
 
-The guard below looks at your bruised face and steps aside, letting you up the stair. Upstairs, she listens without interrupting as you lay down the single remaining purse and the parcel.
+The guard below looks at your bruised face and steps aside, letting you up the stair. Upstairs, @{(black_oath_mara_named) Mara|she} listens without interrupting as you lay down the single remaining purse and the parcel.
 
 She dips her sleeve in vinegar, wiping a column from the slate with a single hard stroke.
 

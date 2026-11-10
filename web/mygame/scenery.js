@@ -172,6 +172,7 @@
   // when the player walks on, so it must never choose the shop interior picture or the "shop" place.
   function counterShop(s) { var D = window.MARKET_DEFS; return !!(s.shop_open && !(D && D[s.shop_open] && D[s.shop_open].commodities)); }
   var BLACK_OATH_PLACES = {
+    black_oath_gangway_loft: "black_oath_gangway_loft",
     black_oath_upstairs_room: "black_oath_upstairs_room",
     dredge_boat_sheds: "dredge_boat_sheds",
     dredge_flooded_lower_steps: "dredge_flooded_lower_steps",

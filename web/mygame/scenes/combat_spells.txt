@@ -23,25 +23,53 @@
 *comment fsh/fsm/fwh/fwm/fdh did.
 *comment ══════════════════════════════════════════════════════════════
 
+*comment This is a *gosub_scene-only library: every label below expects *params, so quicktest's own
+*comment cold top-to-bottom walk (it tests each named scene file by executing it from line 1, same as
+*comment a real page load, before it ever tries the real *gosub_scene call sites) must not fall straight
+*comment into the first label's *params with no arguments on the stack. This guard *return gives that
+*comment cold walk somewhere harmless to land; every real caller still reaches the labels below by
+*comment *gosub_scene combat_spells <label>, which sets up *params correctly as always.
+*label combat_spells_cold_entry_guard
+*return
+
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment SPEND A SPELL SLOT AT A GIVEN LEVEL (2026-11-08)
 *comment One shared place for "which pool does this cast spend from", instead of the same *if (level >= 2) ...
 *comment *else ... copy-pasted into every upcastable spell's own cast body (Magic Missile and Ray of Sickness
 *comment both had their own copy until this). The level-1 pool is still the unsuffixed <class>_spell_slots
-*comment (never renamed -- see [[project_spell_upcasting]] memory for why), so level 1 is the one irregular case;
-*comment every level above it is "_<N>" appended, which {(...)}-indirection builds and spends directly. Only
-*comment wizard/bard/warlock have ANY _2 pool today and nothing yet reaches _3+, but a future level is exactly
-*comment one more populated pool plus a spell that calls this with that number -- this label needs no change.
+*comment (never renamed -- see [[project_spell_upcasting]] memory for why), so level 1 is the one irregular case.
+*comment Written as an explicit *if/*elseif per class (2026-11-10), not {(...)}-indirection built from ssl_class/
+*comment ssl_level: quicktest's own branch-coverage walker forces the "true" side of every *if at least once
+*comment regardless of the real data (ssl_class can be "none", character_class's *create default, with ssl_level
+*comment at its own default of 0), so indirection built from the raw values could be forced into naming a
+*comment variable that was never *create'd -- and ranger has no _2 pool at all, so even a class-only indirection
+*comment isn't safe for every class. Every branch below only ever targets a variable that genuinely exists, so
+*comment nothing here can be forced into a crash; an unrecognized ssl_class (including "none") just spends
+*comment nothing, which is correct since there is nothing to spend. A new class, or a class's first _2 pool, is
+*comment still just one more *elseif here.
 *comment Does NOT reset combat_cast_at_level -- callers that read it again after spending (a dice-count formula
 *comment keyed off it, Ray of Sickness's own shape) would break if this cleared it first; each caller resets it
 *comment itself, once everything that needs it this cast has already read it.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label spend_spell_slot
 *params ssl_class ssl_level
-*temp ssl_suffix ""
-*if (ssl_level > 1)
-  *set ssl_suffix ("_" & ssl_level)
-*set {((ssl_class & "_spell_slots") & ssl_suffix)} - 1
+*if (ssl_class = "wizard")
+  *if (ssl_level >= 2)
+    *set wizard_spell_slots_2 - 1
+  *else
+    *set wizard_spell_slots - 1
+*elseif (ssl_class = "bard")
+  *if (ssl_level >= 2)
+    *set bard_spell_slots_2 - 1
+  *else
+    *set bard_spell_slots - 1
+*elseif (ssl_class = "warlock")
+  *if (ssl_level >= 2)
+    *set warlock_spell_slots_2 - 1
+  *else
+    *set warlock_spell_slots - 1
+*elseif (ssl_class = "ranger")
+  *set ranger_spell_slots - 1
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

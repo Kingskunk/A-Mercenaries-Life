@@ -354,6 +354,8 @@ function compile(){
   verifyFileName("port_valen/black_oath/black_oath_night_list.txt");
   // The Black Oath's Second Named Work: The Short Purse (investigating the boat-shed slip fund deficit).
   verifyFileName("port_valen/black_oath/black_oath_short_purse.txt");
+  // The Black Oath's Radiant Work: Enforcer Work (Korrigan Vale's muscle jobs on the Upper Gangways).
+  verifyFileName("port_valen/black_oath/black_oath_enforcer.txt");
   // Radiant Hiring Hall jobs: *goto_scene/*gosub_scene-only files, reached from the wall in port_valen_civic_heights.txt.
   verifyFileName("port_valen/radiant/hall_pests.txt");
   verifyFileName("port_valen/radiant/hall_haul.txt");

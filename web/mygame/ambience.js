@@ -49,6 +49,7 @@
     harbor:        { all: "medieval_harbour" },
     boat_travel:   { all: "ship_sea_river_boat_travel_anytimeofday_waves_soft_talking_softboatcreaking_rope" },
     dredge_end:    { all: "medieval_slums" },
+    black_oath_gangway_loft: { all: "medieval_slums", level: 0.18, indoor: true },
     black_oath_upstairs_room: { all: "medieval_slums", level: 0.18, indoor: true },
     black_lantern: { all: "ambience_background_coins_shuffling", indoor: true },
     black_lantern_back: { all: "ambience_background_coins_shuffling", indoor: true },

@@ -1,0 +1,488 @@
+*comment ====================================================================================================
+*comment BLACK OATH: ENFORCER WORK (KORRIGAN VALE)
+*comment
+*comment Repeatable enforcer work for the Black Oath, unlocked after completing The Short Purse.
+*comment Entered from the Upper Gangways loft (cut_gangways_hub).
+*comment
+*comment Features three radiant assignments:
+*comment 1. Debt Collection (undercroft gaming cellar)
+*comment 2. Turf Enforcement (flooded steps skimmers)
+*comment 3. Contraband Escort (silt conduit barge muscle)
+*comment
+*comment Out-of-combat spells check through dg_spell_source and expend resources via dg_spell_cast.
+*comment All combat is strictly non-lethal, resolving through combat.txt with full fallback at 1 HP.
+*comment ====================================================================================================
+
+*label dev_reset_enforcer
+*set black_oath_enforcer_met false
+*set black_oath_enforcer_stage "unstarted"
+*set black_oath_enforcer_job 0
+*set black_oath_enforcer_count 0
+*set black_oath_enforcer_day 0
+*set black_oath_enforcer_paid false
+*set black_oath_enforcer_reward 0
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment ENTRY POINT: KORRIGAN'S LOFT
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label enforcer_entry
+*set scenery_subplace "black_oath_gangway_loft"
+[b]◈ THE GANGWAY LOFT[/b]
+
+The loft sits shored against the brick chimney-breast of the high tenement, twenty feet above the canal kerb. Outside, the wind scours the gangway planks, whistling through wet hemp stays and carrying the bitter tang of coal hearths and salt brine. Inside, a low brazier glows dull red in a shallow metal pan, throwing greasy amber light across stacked crates, coils of weighted cord, and a rack of heavy iron maces.
+
+A hulking enforcer leans against a battered timber workbench, his coat patched with grease-slick sailcloth. His scarred knuckles are fresh from countless waterfront brawls, and a spiked mace rests at his side. Nearby, two watchers look up from a brass balance pan, pausing in their work before the enforcer gives a slow nod.
+
+*if (not(black_oath_enforcer_met))
+  *goto enforcer_first_meeting
+*else
+  *goto enforcer_daily_check
+
+*label enforcer_first_meeting
+*set black_oath_enforcer_met true
+
+You step into the loft, the heat of the brazier stinging your face. You clear your throat and speak.
+
+"I'm here looking for work. Mara sent me. I'm ${name}," you say.
+
+Korrigan eyes you, the scarred line of his jaw tightening. "She did mention that name. I'm Korrigan Vale, the enforcer who keeps these gangways in order. I run the muscle here. If you want heavier coin, you take on enforcer work. Crack the knuckles that need cracking, keep our terrioty clean, and bring the coin back whole."
+
+*goto enforcer_menu
+
+*label enforcer_daily_check
+*if (black_oath_enforcer_day = campaign_day)
+  "The enforcer work is settled for today," Korrigan grunts, testing the balance of an iron mace against his palm. "The collectors are in and the tide is on the turn. Come back tomorrow if your knuckles are itching."
+
+  *page_break Return to the Upper Gangways.
+  *goto_scene port_valen/port_valen_dredge_end cut_gangways_page
+*else
+  Korrigan looks up from the workbench, setting down a whetstone with a dry scrape. "Ready to crack some heads, ${name}? The water's busy today."
+  *goto enforcer_menu
+
+*label enforcer_menu
+*set black_oath_enforcer_paid false
+*choice
+  # "Give me an overdue purse that needs collecting."
+    *set black_oath_enforcer_job 1
+    *set black_oath_enforcer_reward 28
+    *goto job_intro
+  # "Point me toward any rogue skimmers crowding our berths."
+    *set black_oath_enforcer_job 2
+    *set black_oath_enforcer_reward 26
+    *goto job_intro
+  # "I can ride muscle on a contraband barge through the cuts."
+    *set black_oath_enforcer_job 3
+    *set black_oath_enforcer_reward 30
+    *goto job_intro
+  # "Not today. I'm heading back out."
+    *goto_scene port_valen/port_valen_dredge_end cut_gangways_page
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment PRE-FLIGHT: WEATHER & EXPOSURE
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label job_intro
+*gosub_scene calendar ensure_navigable_weather
+*set hours_to_pass 1
+*set minutes_to_pass 30
+*set exposure_base_mins 90
+*gosub_scene calendar calc_exposure
+*set time_advance_call_id "black_oath_enforcer_job"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*if (black_oath_enforcer_job = 1)
+  *goto job1_scene
+*elseif (black_oath_enforcer_job = 2)
+  *goto job2_scene
+*else
+  *goto job3_scene
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment JOB 1: OVERDUE TALLY (DEBT COLLECTION)
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label job1_scene
+[b]◈ THE GAMING CELLAR[/b]
+
+You find the cellar down a narrow flight of stone steps off the lower lane, the air thick with the smell of brine and old tallow. Behind a scarred cedar bench, a sullen dice-sharp sits clutching an iron-banded money box, while a broad-shouldered dock laborer leans against the doorpost with an iron truncheon in hand.
+
+The debtor spits on the flagstones and shakes their head, grumbling that bad tides and spoiled silt-catch left their pockets empty, swearing the Black Oath won't see a single copper from this table today.
+
+*gosub_scene dungeon dg_spell_source "thaumaturgy" "Thaumaturgy" 0 "cantrip"
+*temp can_thaum dg_ss_can
+*gosub_scene dungeon dg_spell_source "prestidigitation" "Prestidigitation" 0 "cantrip"
+*temp can_presti dg_ss_can
+*gosub_scene dungeon dg_spell_source "mage_hand" "Mage Hand" 0 "cantrip"
+*temp can_mage_hand dg_ss_can
+
+*choice
+  # [Intimidation] Slam your hand down and demand the twenty-eight coppers.@{show_stat_hints  [CHA DC 13]|}
+    *gosub_scene dice_engine roll_skill_check 13 "intimidation" "" "" "" "" ""
+    *if (check_success)
+      You slam your palm down onto the table with a sharp crack that rattles the tin cups. Your gaze cuts straight into the debtor's eyes, cold and merciless.
+
+      The debtor blanches, terror of syndicate retribution overcoming their greed. With trembling fingers, they push twenty-eight coppers across the rough cedar planks.
+      *goto job_success
+    *else
+      You slam your hand down, but your voice falters in the cellar draft. The debtor sneers, emboldened by your hesitation, and nods to the hired tough.
+
+      "Crack their ribs," the debtor snaps. The docker lunges forward!
+      *goto job1_fight
+
+  *if (can_thaum)
+    # [Cantrip: Thaumaturgy] Magnify your voice into a supernatural roar.@{show_stat_hints  [Adv, CHA DC 13]|}
+      *gosub_scene dungeon dg_spell_cast "thaumaturgy"
+      *set advantage true
+      *gosub_scene dice_engine roll_skill_check 13 "intimidation" "" "" "" "" ""
+      *if (check_success)
+        You channel the spark in your blood. When you speak, your voice booms like thunder trapped in an iron vat. The cellar timbers groan, dust shakes loose from the rafters, and the flames in the tallow lamps flare pitch-black.
+
+        The debtor shrieks, terrified that the devil itself has come for the coin, and hurls the money box straight toward you.
+        *goto job_success
+      *else
+        You murmur the syllable, but the damp stone masonry muffles the resonance. The hired tough charges before the rumble can gather strength!
+        *goto job1_fight
+
+  *if (can_presti)
+    # [Cantrip: Prestidigitation] Plunge the room into chilling darkness.@{show_stat_hints  [Adv, CHA DC 13]|}
+      *gosub_scene dungeon dg_spell_cast "prestidigitation"
+      *set advantage true
+      *gosub_scene dice_engine roll_skill_check 13 "intimidation" "" "" "" "" ""
+      *if (check_success)
+        With a flick of your fingers, an icy draft rushes through the cellar. Every tallow wick dies simultaneously, plunging the room into pitch blackness smelling of sulfur and frost.
+
+        In the absolute dark, you whisper a cold promise from right behind the debtor's ear. Sobbing in panic, they fumble the heavy tin box into your hands.
+        *goto job_success
+      *else
+        You snuff the wicks, but the debtor strikes a spark with flint immediately. In the sudden glare, the hired tough blindsides you with a heavy swing!
+        *goto job1_fight
+
+  *if (can_mage_hand)
+    # [Cantrip: Mage Hand] Slide the strongbox off the table unnoticed.@{show_stat_hints  [Adv, DEX DC 12]|}
+      *gosub_scene dungeon dg_spell_cast "mage_hand"
+      *set advantage true
+      *gosub_scene dice_engine roll_skill_check 12 "sleight_of_hand" "" "" "" "" ""
+      *if (check_success)
+        While holding the debtor's gaze with steady, quiet words, an unseen spectral presence rises from the floorboards behind the table. Spectral fingers grip the iron handle of the strongbox and slide it silently into your waiting grasp behind your back.
+
+        You step back toward the stairs with the prize secured before either man realizes the tabletop is bare.
+        *goto job_success
+      *else
+        The unseen force lifts the box, but the rusted iron latch catches on an apron string and clatters loudly against the wood. The debtor looks down, yells, and the tough draws steel!
+        *goto job1_fight
+
+  # [Athletics] Shove the hired tough aside and wrench the coffer free.@{show_stat_hints  [STR DC 13]|}
+    *gosub_scene dice_engine roll_skill_check 13 "athletics" "" "" "" "" ""
+    *if (check_success)
+      You don't waste breath arguing. You drop your shoulder and drive straight through the docker's guard, slamming him violently against the stone doorframe. Before he recovers, you wrench the strongbox clean out of the debtor's hands.
+      *goto job_success
+    *else
+      You lunge for the box, but the docker plants his boots and catches your charge with a brutal elbow across your jaw, driving you into close quarters!
+      *goto job1_fight
+
+  # [Insight] Call his bluff: point directly to the loose floorboard.@{show_stat_hints  [WIS DC 12]|}
+    *gosub_scene dice_engine roll_skill_check 12 "insight" "" "" "" "" ""
+    *if (check_success)
+      You watch the debtor's eyes darting toward the floor under the bench. You smile coldly and point straight to the scuffed pine board beneath their stool.
+
+      "The box is empty," you say quietly. "The real coin is under the third plank. Pull it up, or I pull up the floor." Caught completely flat-footed, the debtor yields the full tally.
+      *goto job_success
+    *else
+      You point with certainty to a warped plank near the hearth. The debtor laughs in your face—it's empty. Realizing you are guessing, the tough draws his mace and steps forward!
+      *goto job1_fight
+
+  # Draw your weapon and crack some skulls. [Non-Lethal Combat]
+    *goto job1_fight
+
+*label job1_fight
+*set scenery_combat_place "dredge_boat_sheds"
+*set combat_is_nonlethal true
+*set combat_no_morale true
+*set combat_lib_1 "knifeman"
+*set combat_enemy_name_override "Debtor Dice-Sharp"
+*set combat_enemy_epithet_override "the debtor"
+*set combat_lib_2 "maceman"
+*set combat_enemy2_name_override "Hired Dock Tough"
+*set combat_enemy2_epithet_override "the dock tough"
+*gosub_scene combat fight_library
+*set scenery_combat_place ""
+*if (combat_outcome = "victory")
+  Both the debtor and the hired tough lie groaning on the damp flagstones. You calmly pry the strongbox from the debtor's fingers, count out the twenty-eight copper bits, and leave them nursing their bruised ribs.
+  *goto job_success
+*else
+  *comment floored at 1 HP fallback
+  *if (hp_current < 1)
+    *set hp_current 1
+  The hired docker lands a punishing blow that sends you crashing into the alley mud. Nursing your bruises, you gather twelve dropped coppers from the doorway steps—enough to show the Oath was there, even if the full tally slipped away.
+  *set black_oath_enforcer_reward 12
+  *goto job_return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment JOB 2: CLEARING THE BERTH (TURF ENFORCEMENT)
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label job2_scene
+[b]◈ THE MOORING STEPS[/b]
+
+Down along the district's lower mooring steps, brackish canal water laps against moss-covered stone. Two water-skimmers in salt-stained coats are hauling bundles of salvaged chain onto a flat-bottom skiff tied to the Black Oath's private bollards.
+
+As your footsteps ring on the wet masonry, the skimmers look up, gruffly warning you to move along and claiming the water belongs to whoever poles it.
+
+*gosub_scene dungeon dg_spell_source "thaumaturgy" "Thaumaturgy" 0 "cantrip"
+*temp can_thaum dg_ss_can
+*gosub_scene dungeon dg_spell_source "control_flames" "Control Flames" 0 "cantrip"
+*temp can_flames dg_ss_can
+*gosub_scene dungeon dg_spell_source "minor_illusion" "Minor Illusion" 0 "cantrip"
+*temp can_illusion dg_ss_can
+*gosub_scene dungeon dg_spell_source "jump" "Jump" 0 "spell"
+*temp can_jump dg_ss_can
+*temp word_jump dg_ss_word
+
+*choice
+  # [Intimidation] Kick their mooring spar and demand the twenty-six coppers.@{show_stat_hints  [CHA DC 13]|}
+    *gosub_scene dice_engine roll_skill_check 13 "intimidation" "" "" "" "" ""
+    *if (check_success)
+      You kick their mooring spar hard against the stone, sending a jolt through their hull. You tower over their skiff with cold, unblinking menace.
+
+      The lead skimmer curses under his breath, realizes whose colors you answer to, and flings a heavy leather purse onto the stone before poling frantically away into the mist.
+      *goto job_success
+    *else
+      You kick the spar, but the skimmer braces it with an iron hook, snarling an oath. "Get wet, gutter rat!" He swings the hook at your chest!
+      *goto job2_fight
+
+  *if (can_thaum)
+    # [Cantrip: Thaumaturgy] Boom like thunder across the canal water.@{show_stat_hints  [Adv, CHA DC 13]|}
+      *gosub_scene dungeon dg_spell_cast "thaumaturgy"
+      *set advantage true
+      *gosub_scene dice_engine roll_skill_check 13 "intimidation" "" "" "" "" ""
+      *if (check_success)
+        You unleash a supernatural shout that echoes across the dark basin like a cannonade. Waves ripple against the revetments, and the water-skimmers panic, dropping their purse onto the wet steps and shoving off in terror.
+        *goto job_success
+      *else
+        The river draft disperses the sound into a hollow rumble. Recognizing it as a parlor trick, the skimmers raise their maces and leap onto the quay!
+        *goto job2_fight
+
+  *if (can_flames)
+    # [Cantrip: Control Flames] Flare their pitch-torch into a roaring wall.@{show_stat_hints  [Adv, CHA DC 13]|}
+      *gosub_scene dungeon dg_spell_cast "control_flames"
+      *set advantage true
+      *gosub_scene dice_engine roll_skill_check 13 "intimidation" "" "" "" "" ""
+      *if (check_success)
+        You extend a hand toward the pitch flare set in their stern. With a whoosh, the flame swells into a towering crimson wall six feet high, lighting up their faces in blinding orange heat.
+
+        Terrified their cargo will catch, they hastily throw their tribute onto the quay and snuff the burning brand in water.
+        *goto job_success
+      *else
+        The brand sputters and drops into the canal, hissing out. In the darkness, the slinger loads a lead shot and fires!
+        *goto job2_fight
+
+  # [Stealth] Slip through the river mist and slice their haul harness.@{show_stat_hints  [DEX DC 12]|}
+    *gosub_scene dice_engine roll_skill_check 12 "stealth" "" "" "" "" ""
+    *if (check_success)
+      You glide through the swirling river fog without making a sound. Before they realize anyone is near, you slice clean through their towing hemp. The salvage chain slips into the deep channel with a heavy splash.
+
+      Trapped and outmaneuvered, they readily hand over the twenty-six coppers to avoid being tipped into the black water themselves.
+      *goto job_success
+    *else
+      A loose flagstone clatters beneath your foot. Alerted, the skimmers spin around with weapons raised!
+      *goto job2_fight
+
+  *if (can_illusion)
+    # [Cantrip: Minor Illusion] Conjure the sharp shrill of Watch whistles.@{show_stat_hints  [Adv, DEX DC 12]|}
+      *gosub_scene dungeon dg_spell_cast "minor_illusion"
+      *set advantage true
+      *gosub_scene dice_engine roll_skill_check 12 "stealth" "" "" "" "" ""
+      *if (check_success)
+        From the empty timber wharf above, you conjure the piercing shrill of two Port Watch whistles and the heavy tramp of iron-shod boots.
+
+        The skimmers panic, dropping their gear and tossing their purse onto the steps to clear themselves before the supposed patrol arrives.
+        *goto job_success
+      *else
+        The illusory whistle rings flat against the stone seawall. The skimmers know the Watch doesn't patrol this low, and charge with raised maces!
+        *goto job2_fight
+
+  # [Athletics] Vault onto the punt and tear their salvage net from their grip.@{show_stat_hints  [STR DC 13]|}
+    *gosub_scene dice_engine roll_skill_check 13 "athletics" "" "" "" "" ""
+    *if (check_success)
+      You vault cleanly onto the narrow skiff, your weight driving the gunwale down to the waterline. You wrench the heavy salvage net from their hands with raw brute force, dominating the boat.
+      *goto job_success
+    *else
+      The wet boat rolls violently under your weight, sending you stumbling into the thwarts while they swing their maces down!
+      *goto job2_fight
+
+  *if (can_jump)
+    # [${word_jump}: Jump] Leap across the water and slam onto their boat.@{show_stat_hints  [Adv, STR DC 13]|}
+      *gosub_scene dungeon dg_spell_cast "jump"
+      *set advantage true
+      *gosub_scene dice_engine roll_skill_check 13 "athletics" "" "" "" "" ""
+      *if (check_success)
+        Powered by supernatural spring, you launch across the water and land dead-center in the bilge with a resounding thud. The impact rocks the skiff violently, spilling both skimmers flat on their backs. Subdued and helpless, they hand over the tribute.
+        *goto job_success
+      *else
+        You overshoot the leap on the wet planks, sliding against the gunwale as they close in to strike!
+        *goto job2_fight
+
+  # Step into the mud and beat them senseless. [Non-Lethal Combat]
+    *goto job2_fight
+
+*label job2_fight
+*set scenery_combat_place "dredge_upper_gangways"
+*set combat_is_nonlethal true
+*set combat_no_morale true
+*set combat_lib_1 "maceman"
+*set combat_enemy_name_override "Canal Skimmer"
+*set combat_enemy_epithet_override "the canal skimmer"
+*set combat_lib_2 "slinger"
+*set combat_enemy2_name_override "Skiff Slinger"
+*set combat_enemy2_epithet_override "the skiff slinger"
+*set combat_enemy2_range 2
+*gosub_scene combat fight_library
+*set scenery_combat_place ""
+*if (combat_outcome = "victory")
+  Both skimmers are subdued and thrown into the bilge. You take the twenty-six coppers from their lock-pouch and cast their boat adrift into the channel.
+  *goto job_success
+*else
+  *if (hp_current < 1)
+    *set hp_current 1
+  A heavy mace blow catches your shoulder, knocking you into the canal shallows. The skimmers hastily push off into the river mist, leaving twelve coppers dropped in the mud behind them.
+  *set black_oath_enforcer_reward 12
+  *goto job_return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment JOB 3: MIDNIGHT BARGE MUSCLE (CONTRABAND ESCORT)
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label job3_scene
+[b]◈ THE CONDUIT CUTS[/b]
+
+You ride the stern of a low cargo barge as it glides under the stone arches of the district's conduit cuts. Casks and tarred parcels sit stacked on deck beneath wet canvas.
+
+As the boat enters the shadows of a bridge foundation, the sound of scraping boots carries from the overhead masonry. In the gloom, you make out two cloaked figures crouched on the bridge pier, holding iron billhooks ready to drop onto the cargo.
+
+*gosub_scene dungeon dg_spell_source "light" "Light" 0 "cantrip"
+*temp can_light dg_ss_can
+*gosub_scene dungeon dg_spell_source "thaumaturgy" "Thaumaturgy" 0 "cantrip"
+*temp can_thaum dg_ss_can
+*gosub_scene dungeon dg_spell_source "minor_illusion" "Minor Illusion" 0 "cantrip"
+*temp can_illusion dg_ss_can
+
+*choice
+  # [Perception] Spot their boots in the fog and sound a sharp warning.@{show_stat_hints  [WIS DC 13]|}
+    *gosub_scene dice_engine roll_skill_check 13 "perception" "" "" "" "" ""
+    *if (check_success)
+      You spot the scrape of their boots against the damp pier cap early. You ready yourself and bark a sharp warning down the deck. Caught off guard, the hijackers scramble back into the overhead shadows.
+      *goto job_success
+    *else
+      The heavy mist masks their drop until two figures land heavily on the cargo crates right in front of you!
+      *goto job3_fight
+
+  *if (can_light)
+    # [Cantrip: Light] Flare the bow post to pierce the canal fog.@{show_stat_hints  [Adv, WIS DC 13]|}
+      *gosub_scene dungeon dg_spell_cast "light"
+      *set advantage true
+      *gosub_scene dice_engine roll_skill_check 13 "perception" "" "" "" "" ""
+      *if (check_success)
+        You touch the iron bow post, kindling a harsh, brilliant white radiance that cuts straight through the river fog. The glare catches the two ambushers exposed on the wet stones; seeing their ambush ruined, they retreat up the embankment.
+        *goto job_success
+      *else
+        The light catches condensation droplets in the fog, creating a blinding halo of glare. The hijackers drop down while your eyes are adjusting!
+        *goto job3_fight
+
+  # [Athletics] Jam the heavy barge-pole into the pier to sweep them off balance.@{show_stat_hints  [STR DC 12]|}
+    *gosub_scene dice_engine roll_skill_check 12 "athletics" "" "" "" "" ""
+    *if (check_success)
+      You grab the long ash barge-pole, planting the iron tip against the pier cap and levering with all your weight. The jolt dislodges their foothold, sending both ambushers splashing harmlessly into the cold canal.
+      *goto job_success
+    *else
+      The iron tip skitters on wet canal moss. The pole binds in the current and yanks you off balance as the hijackers leap onto the deck!
+      *goto job3_fight
+
+  # [Intimidation] Step forward and roar a challenge up into the bridge arch.@{show_stat_hints  [CHA DC 13]|}
+    *gosub_scene dice_engine roll_skill_check 13 "intimidation" "" "" "" "" ""
+    *if (check_success)
+      You step forward and unleash a savage battle-cry that reverberates off the stone masonry like a thunderclap. The sheer ferocity of your challenge breaks their nerve, and they flee along the bridge parapet.
+      *goto job_success
+    *else
+      Your shout echoes thin in the cavernous arch. Laughing at the lone defender, the hijackers drop down swinging!
+      *goto job3_fight
+
+  *if (can_thaum)
+    # [Cantrip: Thaumaturgy] Unleash a deafening clap of thunder.@{show_stat_hints  [Adv, CHA DC 13]|}
+      *gosub_scene dungeon dg_spell_cast "thaumaturgy"
+      *set advantage true
+      *gosub_scene dice_engine roll_skill_check 13 "intimidation" "" "" "" "" ""
+      *if (check_success)
+        You clap your hands together and channel a deafening boom of unnatural thunder that shakes loose pebbles from the bridge arch. Terrified that the masonry is collapsing, the ambushers flee in blind panic.
+        *goto job_success
+      *else
+        The stone conduits dampen the reverberation, and the hijackers drop onto the deck with weapons ready!
+        *goto job3_fight
+
+  *if (can_illusion)
+    # [Cantrip: Minor Illusion] Conjure the sounds of an arriving second crew.@{show_stat_hints  [Adv, CHA DC 13]|}
+      *gosub_scene dungeon dg_spell_cast "minor_illusion"
+      *set advantage true
+      *gosub_scene dice_engine roll_skill_check 13 "intimidation" "" "" "" "" ""
+      *if (check_success)
+        Behind the barge, you conjure the rhythmic splashing of heavy oars and loud dock crew shouts. Believing armed syndicate reinforcements have arrived, the hijackers abandon their perch.
+        *goto job_success
+      *else
+        The illusion sounds out of sync with the canal current. Recognizing the trick, the ambushers drop onto the cargo deck!
+        *goto job3_fight
+
+  # Brace yourself and fight them on the open deck. [Non-Lethal Combat]
+    *goto job3_fight
+
+*label job3_fight
+*set scenery_combat_place "dredge_boat_sheds"
+*set combat_no_morale true
+*set combat_is_nonlethal true
+*set combat_lib_1 "maceman"
+*set combat_enemy_name_override "Canal Skimmer"
+*set combat_enemy_epithet_override "the canal skimmer"
+*set combat_lib_2 "slinger"
+*set combat_enemy2_name_override "Skiff Slinger"
+*set combat_enemy2_epithet_override "the skiff slinger"
+*set combat_enemy2_range 2
+*gosub_scene combat fight_library
+*set scenery_combat_place ""
+*if (combat_outcome = "victory")
+  You knock both hijackers senseless on the cargo deck and heave them onto a passing mudbank. The skipper brings the barge into the safe-water slip without losing a crate.
+  *goto job_success
+*else
+  *if (hp_current < 1)
+    *set hp_current 1
+  You take a heavy blow to the temple, collapsing across the crates. The hijackers snatch a single parcel before fleeing into the shadows. The grateful skipper pays you fourteen coppers for saving the rest of the cargo.
+  *set black_oath_enforcer_reward 14
+  *goto job_return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SUCCESS & PAYOUT
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label job_success
+The task is finished cleanly. You make your way back up the outside timber stair to the Upper Gangways loft.
+
+*label job_return
+*if (not(black_oath_enforcer_paid))
+  *set black_oath_enforcer_day campaign_day
+  *set black_oath_enforcer_count + 1
+  *set currency_add_amount black_oath_enforcer_reward
+  *gosub_scene economy currency_add
+  *set black_oath_enforcer_paid true
+
+[b][Enforcer Work Completed | ${black_oath_enforcer_reward} Copper Bits][/b]
+
+Korrigan Vale counts out ${black_oath_enforcer_reward} copper bits from his iron box, sliding them across the workbench to you.
+
+*if (black_oath_enforcer_count >= 3)
+  Korrigan leans back against the timber workbench, folding his thick arms across his chest.
+
+  "You've settled three enforcer contracts now without whining or dropping your guard," he says, a rare nod of genuine respect showing on his weathered face. "Keep your footing sure and your weapon ready. Word is coming down from the table for a real piece of work, and when the call comes, I'll be putting your name forward."
+*else
+  "Good work out there," Korrigan grunts, testing the edge of his mace. "Keep your knuckles hard and check back tomorrow when the tide turns."
+
+*page_break Step back out onto the Upper Gangways.
+*goto_scene port_valen/port_valen_dredge_end cut_gangways_page

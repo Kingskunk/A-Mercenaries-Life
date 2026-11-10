@@ -745,158 +745,26 @@ The workshop is one long room, warm from the charcoal hearth at the back. Oak be
 
 *label mw_vael_stock
 *gosub mw_vael_open_panel
-*comment GEN:BEGIN vael_buy_labels
-*temp vb_lockpick_set ""
-*temp vb_padlock ""
-*temp vb_door_bolt ""
-*temp vb_iron_manacles ""
-*gosub_scene equipment gear_buy_label "lockpick_set"
-*set vb_lockpick_set gear_label
-*gosub_scene equipment gear_buy_label "padlock"
-*set vb_padlock gear_label
-*gosub_scene equipment gear_buy_label "door_bolt"
-*set vb_door_bolt gear_label
-*gosub_scene equipment gear_buy_label "iron_manacles"
-*set vb_iron_manacles gear_label
-*comment GEN:END vael_buy_labels
-You look along the trays. Small kit is laid out in a row: a leather roll of picks, hinged cuffs, forged bolts, and brass padlocks hung on cords with their keys. Every piece has a paper tag wired to it, with the price inked on it.
+You look along the trays. Small kit is laid out in a row: a leather roll of picks, hinged cuffs, forged bolts, and brass padlocks hung on cords with their keys. Every piece has a paper tag wired to it, with the price inked on it, and the ink changes with what the trays hold.
 
 *choice
-  *comment GEN:BEGIN vael_buy_options
-  # ${vb_lockpick_set}
-    *set buy_item_id "lockpick_set"
-    *goto mw_vael_buy_do
-  # ${vb_padlock}
-    *set buy_item_id "padlock"
-    *goto mw_vael_buy_do
-  # ${vb_door_bolt}
-    *set buy_item_id "door_bolt"
-    *goto mw_vael_buy_do
-  # ${vb_iron_manacles}
-    *set buy_item_id "iron_manacles"
-    *goto mw_vael_buy_do
-  *comment GEN:END vael_buy_options
   # Step back to the counter.
     *goto mw_vael_shop
   # ⚖ Settle up the trade panel.
     *goto mw_vael_settle
 
-*comment The purchase itself, shared by everything Vael sells: price and prose come from the catalog. One currency
-*comment change and one advance_time per page.
-*label mw_vael_buy_do
-*set gear_shop "vael"
-*gosub_scene equipment gear_info buy_item_id
-*temp vl_price gear_retail
-*if ((((gold * 100) + (silver * 10)) + copper) < vl_price)
-  You count your coin against the tag and come up short. Vael names the figure again, level, and slides the ${gear_name} back into its tray. "The tag doesn't change," he says.
-  *page_break Back to the trays…
-  *goto mw_vael_stock
-*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-  *set currency_add_amount (0 - vl_price)
-  *gosub_scene economy currency_add
-  *gosub_scene equipment grant_gear buy_item_id 1
-  *set currency_txn_locked true
-  *set locked_currency_txn_page_id page_id
-Vael lifts the ${gear_name} from its tray, checks it once against the light, and sets it on the counter. ${gear_blurb}
-*if (not(gear_quote = ""))
-  *line_break
-  ${gear_quote}
-*gosub_scene equipment format_copper vl_price
-*line_break
-[b][💰 Paid: ${gear_sale_desc}][/b]
-*set hours_to_pass 0
-*set minutes_to_pass gear_minutes
-*set time_advance_call_id "vael_buy"
-*gosub_scene calendar advance_time
-*gosub_scene calendar recalc_hp_from_neglect
-*if (hp_current <= 0)
-  *set death_cause "starvation"
-  *if (neglect_damage_fatigue > neglect_damage_hunger)
-    *set death_cause "exhaustion"
-  *goto_scene death death_screen
-*page_break Back to the counter…
-*if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
-  *goto mw_vael_shop
-*set shop_open ""
-*goto mw_locksmiths_close
-
 *label mw_vael_sell
-Vael wipes his hands on his apron and clears a space on the counter. "Put it down," he says. "I'll test the catch and the springs, and tell you what it's worth to me. Half of what I sell it for."
-*comment GEN:BEGIN vael_sell_labels
-*temp vs_lockpick_set ""
-*temp vs_padlock ""
-*temp vs_door_bolt ""
-*temp vs_iron_manacles ""
-*if (has_lockpick_set)
-  *gosub_scene equipment gear_sell_label "lockpick_set" "general"
-  *set vs_lockpick_set gear_label
-*if (has_padlock)
-  *gosub_scene equipment gear_sell_label "padlock" "general"
-  *set vs_padlock gear_label
-*if (has_door_bolt)
-  *gosub_scene equipment gear_sell_label "door_bolt" "general"
-  *set vs_door_bolt gear_label
-*if (has_iron_manacles)
-  *gosub_scene equipment gear_sell_label "iron_manacles" "general"
-  *set vs_iron_manacles gear_label
-*comment GEN:END vael_sell_labels
-
+Vael wipes his hands on his apron and clears a space on the counter. "Put it down," he says. "I'll test the catch and the springs, and tell you what it's worth to me."
+*gosub mw_vael_open_panel
 *choice
-  *comment GEN:BEGIN vael_sell_options
-  *if (has_lockpick_set)
-    # ${vs_lockpick_set}
-      *set sell_item_id "lockpick_set"
-      *goto mw_vael_sell_do
-  *if (has_padlock)
-    # ${vs_padlock}
-      *set sell_item_id "padlock"
-      *goto mw_vael_sell_do
-  *if (has_door_bolt)
-    # ${vs_door_bolt}
-      *set sell_item_id "door_bolt"
-      *goto mw_vael_sell_do
-  *if (has_iron_manacles)
-    # ${vs_iron_manacles}
-      *set sell_item_id "iron_manacles"
-      *goto mw_vael_sell_do
-  *comment GEN:END vael_sell_options
   # Take it back off the counter.
     *goto mw_vael_shop
+  # ⚖ Settle up the trade panel.
+    *goto mw_vael_settle
 
-*comment The sale itself. The price is worked out inside the currency lock and kept in gear_sale_* so a replayed
-*comment page prints the same banner. One currency change and one advance_time per page.
-*label mw_vael_sell_do
-*set gear_shop "vael_sell"
-*gosub_scene equipment gear_info sell_item_id
-*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-  *gosub_scene equipment gear_sale_value sell_item_id "general"
-  *gosub_scene equipment sell_gear sell_item_id
-  *set currency_add_amount gear_sale_copper
-  *gosub_scene economy currency_add
-  *set currency_txn_locked true
-  *set locked_currency_txn_page_id page_id
-Vael turns the ${gear_sale_name} over in his fingers, works the catch twice, and names a figure. He counts the coin out of a locked drawer under the counter.
-*if (not(gear_quote = ""))
-  *line_break
-  ${gear_quote}
-*line_break
-[b][💰 Sold: ${gear_sale_name} for ${gear_sale_desc}][/b]
-*set hours_to_pass 0
-*set minutes_to_pass 5
-*set time_advance_call_id "vael_sell"
-*gosub_scene calendar advance_time
-*gosub_scene calendar recalc_hp_from_neglect
-*if (hp_current <= 0)
-  *set death_cause "starvation"
-  *if (neglect_damage_fatigue > neglect_damage_hunger)
-    *set death_cause "exhaustion"
-  *goto_scene death death_screen
-*page_break Back to the counter…
-*if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
-  *goto mw_vael_shop
-*set shop_open ""
-*goto mw_locksmiths_close
-
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment VAEL'S TRADE PANEL (his only counter since 2026-11-10: a market pilot, web/mygame/market.js; the plain buy and sell menus that stood beside it priced at retail past the market are gone)
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label mw_vael_open_panel
 *set shop_open "vael"
 *set shop_rows ""
@@ -2332,334 +2200,33 @@ Inside, the store is deeper than the bay window suggests. Shelves run to the raf
       *goto_scene port_valen/port_valen port_valen_walk_picked
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment HOLLIS'S SHELVES (the buy menu, the counter where he buys back, and the trade panel)
-*comment Same pieces as Halda's forge: menus generated from the catalog, one purchase label and one sale label, each
-*comment with the currency lock, and the panel hooks (open_panel, cart_pass, settle). Everything is stackable. Each
+*comment HOLLIS'S SHELVES (his only counter since 2026-11-10: a market pilot, web/mygame/market.js; the plain buy and sell menus that stood beside it priced at retail past the market are gone)
+*comment Same shape as Halda's forge: the stock and sell pages call open_panel, and both end in "Settle up the trade panel". Each
 *comment trade ends in the open-hours check: past Afternoon the lane's closed view takes over.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *label mw_hollis_stock
 *gosub mw_hollis_open_panel
-*comment GEN:BEGIN hollis_buy_labels
-*temp gb_hemp_rope ""
-*temp gb_pitch_torch ""
-*temp gb_lamp_oil ""
-*temp gb_hooded_lantern ""
-*temp gb_tool_kit ""
-*temp gb_shovel ""
-*temp gb_lute ""
-*temp gb_tinderbox ""
-*temp gb_cooking_pot ""
-*temp gb_chalk_sticks ""
-*temp gb_camp_kit ""
-*temp gb_waxed_oilcloth ""
-*temp gb_lye_soap ""
-*temp gb_trail_rations ""
-*temp gb_grease_flask ""
-*temp gb_water_jug ""
-*gosub_scene equipment gear_buy_label "hemp_rope"
-*set gb_hemp_rope gear_label
-*gosub_scene equipment gear_buy_label "pitch_torch"
-*set gb_pitch_torch gear_label
-*gosub_scene equipment gear_buy_label "lamp_oil"
-*set gb_lamp_oil gear_label
-*gosub_scene equipment gear_buy_label "hooded_lantern"
-*set gb_hooded_lantern gear_label
-*gosub_scene equipment gear_buy_label "tool_kit"
-*set gb_tool_kit gear_label
-*gosub_scene equipment gear_buy_label "shovel"
-*set gb_shovel gear_label
-*gosub_scene equipment gear_buy_label "lute"
-*set gb_lute gear_label
-*gosub_scene equipment gear_buy_label "tinderbox"
-*set gb_tinderbox gear_label
-*gosub_scene equipment gear_buy_label "cooking_pot"
-*set gb_cooking_pot gear_label
-*gosub_scene equipment gear_buy_label "chalk_sticks"
-*set gb_chalk_sticks gear_label
-*gosub_scene equipment gear_buy_label "camp_kit"
-*set gb_camp_kit gear_label
-*gosub_scene equipment gear_buy_label "waxed_oilcloth"
-*set gb_waxed_oilcloth gear_label
-*gosub_scene equipment gear_buy_label "lye_soap"
-*set gb_lye_soap gear_label
-*gosub_scene equipment gear_buy_label "trail_rations"
-*set gb_trail_rations gear_label
-*gosub_scene equipment gear_buy_label "grease_flask"
-*set gb_grease_flask gear_label
-*gosub_scene equipment gear_buy_label "water_jug"
-*set gb_water_jug gear_label
-*comment GEN:END hollis_buy_labels
-You walk the shelves. Rope hangs in coils by thickness, from cord thin enough for a bootlace to rope thick as your wrist. Tin pots and pans are stacked by size, and folded blankets and rolls of oilcloth fill the lower racks. Pitch-dipped torches stand in a barrel by the door, hooded lanterns and canvas tool rolls hang from hooks over the counter, a lute hangs by its neck from a rafter, a jar of chalk sticks sits beside the till, and paper twists of lye soap and tin boxes of flint and steel line the counter. Waterskins, canvas sacks, needles and thread, and iron nails by the pound fill the rest. Every shelf has a chalk price marked on its edge.
+You walk the shelves. Rope hangs in coils by thickness, from cord thin enough for a bootlace to rope thick as your wrist. Tin pots and pans are stacked by size, and folded blankets and rolls of oilcloth fill the lower racks. Pitch-dipped torches stand in a barrel by the door, hooded lanterns and canvas tool rolls hang from hooks over the counter, a lute hangs by its neck from a rafter, a jar of chalk sticks sits beside the till, and paper twists of lye soap and tin boxes of flint and steel line the counter. Waterskins, canvas sacks, needles and thread, and iron nails by the pound fill the rest. Every shelf has a chalk price marked on its edge, rubbed out and rechalked as the stock comes and goes.
 
 *choice
-  *comment GEN:BEGIN hollis_buy_options
-  # ${gb_hemp_rope}
-    *set buy_item_id "hemp_rope"
-    *goto mw_hollis_buy_do
-  # ${gb_pitch_torch}
-    *set buy_item_id "pitch_torch"
-    *goto mw_hollis_buy_do
-  # ${gb_lamp_oil}
-    *set buy_item_id "lamp_oil"
-    *goto mw_hollis_buy_do
-  # ${gb_hooded_lantern}
-    *set buy_item_id "hooded_lantern"
-    *goto mw_hollis_buy_do
-  # ${gb_tool_kit}
-    *set buy_item_id "tool_kit"
-    *goto mw_hollis_buy_do
-  # ${gb_shovel}
-    *set buy_item_id "shovel"
-    *goto mw_hollis_buy_do
-  # ${gb_lute}
-    *set buy_item_id "lute"
-    *goto mw_hollis_buy_do
-  # ${gb_tinderbox}
-    *set buy_item_id "tinderbox"
-    *goto mw_hollis_buy_do
-  # ${gb_cooking_pot}
-    *set buy_item_id "cooking_pot"
-    *goto mw_hollis_buy_do
-  # ${gb_chalk_sticks}
-    *set buy_item_id "chalk_sticks"
-    *goto mw_hollis_buy_do
-  # ${gb_camp_kit}
-    *set buy_item_id "camp_kit"
-    *goto mw_hollis_buy_do
-  # ${gb_waxed_oilcloth}
-    *set buy_item_id "waxed_oilcloth"
-    *goto mw_hollis_buy_do
-  # ${gb_lye_soap}
-    *set buy_item_id "lye_soap"
-    *goto mw_hollis_buy_do
-  # ${gb_trail_rations}
-    *set buy_item_id "trail_rations"
-    *goto mw_hollis_buy_do
-  # ${gb_grease_flask}
-    *set buy_item_id "grease_flask"
-    *goto mw_hollis_buy_do
-  # ${gb_water_jug}
-    *set buy_item_id "water_jug"
-    *goto mw_hollis_buy_do
-  *comment GEN:END hollis_buy_options
   # Step back to the counter.
     *goto mw_hollis_store
   # ⚖ Settle up the trade panel.
     *goto mw_hollis_settle
 
-*comment The purchase itself, shared by everything Hollis sells: price and prose come from the catalog. One currency
-*comment change and one advance_time per page.
-*label mw_hollis_buy_do
-*set gear_shop "hollis"
-*gosub_scene equipment gear_info buy_item_id
-*temp hl_price gear_retail
-*if ((((gold * 100) + (silver * 10)) + copper) < hl_price)
-  You count your coin against the chalk figure on the shelf edge and come up short. Hollis taps the slate with a knuckle. "Nothing on credit," he says, and slides the ${gear_name} back where it was.
-  *page_break Back to the shelves…
-  *goto mw_hollis_stock
-*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-  *set currency_add_amount (0 - hl_price)
-  *gosub_scene economy currency_add
-  *gosub_scene equipment grant_gear buy_item_id 1
-  *set currency_txn_locked true
-  *set locked_currency_txn_page_id page_id
-Hollis lifts the ${gear_name} off its shelf, chalks the figure on his slate, and hands it across the counter. ${gear_blurb}
-*if (not(gear_quote = ""))
-  *line_break
-  ${gear_quote}
-*gosub_scene equipment format_copper hl_price
-*line_break
-[b][💰 Paid: ${gear_sale_desc}][/b]
-*set hours_to_pass 0
-*set minutes_to_pass gear_minutes
-*set time_advance_call_id "hollis_buy"
-*gosub_scene calendar advance_time
-*gosub_scene calendar recalc_hp_from_neglect
-*if (hp_current <= 0)
-  *set death_cause "starvation"
-  *if (neglect_damage_fatigue > neglect_damage_hunger)
-    *set death_cause "exhaustion"
-  *goto_scene death death_screen
-*page_break Back to the counter…
-*if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
-  *goto mw_hollis_store
-*set shop_open ""
-*goto mw_lantern_lane
-
 *label mw_hollis_sell
-Hollis pulls the slate toward him and clears a space on the counter. "Put it down," he says. "I'll tell you what it's worth to me. Half of what I sell it for, and not a copper more."
-*comment GEN:BEGIN hollis_sell_labels
-*temp gs_hemp_rope ""
-*temp gs_pitch_torch ""
-*temp gs_lamp_oil ""
-*temp gs_hooded_lantern ""
-*temp gs_tool_kit ""
-*temp gs_shovel ""
-*temp gs_lute ""
-*temp gs_tinderbox ""
-*temp gs_cooking_pot ""
-*temp gs_chalk_sticks ""
-*temp gs_camp_kit ""
-*temp gs_waxed_oilcloth ""
-*temp gs_lye_soap ""
-*temp gs_trail_rations ""
-*temp gs_grease_flask ""
-*temp gs_water_jug ""
-*if (has_hemp_rope)
-  *gosub_scene equipment gear_sell_label "hemp_rope" "general"
-  *set gs_hemp_rope gear_label
-*if (has_pitch_torch)
-  *gosub_scene equipment gear_sell_label "pitch_torch" "general"
-  *set gs_pitch_torch gear_label
-*if (has_lamp_oil)
-  *gosub_scene equipment gear_sell_label "lamp_oil" "general"
-  *set gs_lamp_oil gear_label
-*if (has_hooded_lantern)
-  *gosub_scene equipment gear_sell_label "hooded_lantern" "general"
-  *set gs_hooded_lantern gear_label
-*if (has_tool_kit)
-  *gosub_scene equipment gear_sell_label "tool_kit" "general"
-  *set gs_tool_kit gear_label
-*if (has_shovel)
-  *gosub_scene equipment gear_sell_label "shovel" "general"
-  *set gs_shovel gear_label
-*if (has_lute)
-  *gosub_scene equipment gear_sell_label "lute" "general"
-  *set gs_lute gear_label
-*if (has_tinderbox)
-  *gosub_scene equipment gear_sell_label "tinderbox" "general"
-  *set gs_tinderbox gear_label
-*if (has_cooking_pot)
-  *gosub_scene equipment gear_sell_label "cooking_pot" "general"
-  *set gs_cooking_pot gear_label
-*if (has_chalk_sticks)
-  *gosub_scene equipment gear_sell_label "chalk_sticks" "general"
-  *set gs_chalk_sticks gear_label
-*if (has_camp_kit)
-  *gosub_scene equipment gear_sell_label "camp_kit" "general"
-  *set gs_camp_kit gear_label
-*if (has_waxed_oilcloth)
-  *gosub_scene equipment gear_sell_label "waxed_oilcloth" "general"
-  *set gs_waxed_oilcloth gear_label
-*if (has_lye_soap)
-  *gosub_scene equipment gear_sell_label "lye_soap" "general"
-  *set gs_lye_soap gear_label
-*if (has_trail_rations)
-  *gosub_scene equipment gear_sell_label "trail_rations" "general"
-  *set gs_trail_rations gear_label
-*if (has_grease_flask)
-  *gosub_scene equipment gear_sell_label "grease_flask" "general"
-  *set gs_grease_flask gear_label
-*if (has_water_jug)
-  *gosub_scene equipment gear_sell_label "water_jug" "general"
-  *set gs_water_jug gear_label
-*comment GEN:END hollis_sell_labels
-
+Hollis pulls the slate toward him and clears a space on the counter. "Put it down," he says. "I'll tell you what it's worth to me."
+*gosub mw_hollis_open_panel
 *choice
-  *comment GEN:BEGIN hollis_sell_options
-  *if (has_hemp_rope)
-    # ${gs_hemp_rope}
-      *set sell_item_id "hemp_rope"
-      *goto mw_hollis_sell_do
-  *if (has_pitch_torch)
-    # ${gs_pitch_torch}
-      *set sell_item_id "pitch_torch"
-      *goto mw_hollis_sell_do
-  *if (has_lamp_oil)
-    # ${gs_lamp_oil}
-      *set sell_item_id "lamp_oil"
-      *goto mw_hollis_sell_do
-  *if (has_hooded_lantern)
-    # ${gs_hooded_lantern}
-      *set sell_item_id "hooded_lantern"
-      *goto mw_hollis_sell_do
-  *if (has_tool_kit)
-    # ${gs_tool_kit}
-      *set sell_item_id "tool_kit"
-      *goto mw_hollis_sell_do
-  *if (has_shovel)
-    # ${gs_shovel}
-      *set sell_item_id "shovel"
-      *goto mw_hollis_sell_do
-  *if (has_lute)
-    # ${gs_lute}
-      *set sell_item_id "lute"
-      *goto mw_hollis_sell_do
-  *if (has_tinderbox)
-    # ${gs_tinderbox}
-      *set sell_item_id "tinderbox"
-      *goto mw_hollis_sell_do
-  *if (has_cooking_pot)
-    # ${gs_cooking_pot}
-      *set sell_item_id "cooking_pot"
-      *goto mw_hollis_sell_do
-  *if (has_chalk_sticks)
-    # ${gs_chalk_sticks}
-      *set sell_item_id "chalk_sticks"
-      *goto mw_hollis_sell_do
-  *if (has_camp_kit)
-    # ${gs_camp_kit}
-      *set sell_item_id "camp_kit"
-      *goto mw_hollis_sell_do
-  *if (has_waxed_oilcloth)
-    # ${gs_waxed_oilcloth}
-      *set sell_item_id "waxed_oilcloth"
-      *goto mw_hollis_sell_do
-  *if (has_lye_soap)
-    # ${gs_lye_soap}
-      *set sell_item_id "lye_soap"
-      *goto mw_hollis_sell_do
-  *if (has_trail_rations)
-    # ${gs_trail_rations}
-      *set sell_item_id "trail_rations"
-      *goto mw_hollis_sell_do
-  *if (has_grease_flask)
-    # ${gs_grease_flask}
-      *set sell_item_id "grease_flask"
-      *goto mw_hollis_sell_do
-  *if (has_water_jug)
-    # ${gs_water_jug}
-      *set sell_item_id "water_jug"
-      *goto mw_hollis_sell_do
-  *comment GEN:END hollis_sell_options
   # Take it all back off the counter.
     *goto mw_hollis_store
+  # ⚖ Settle up the trade panel.
+    *goto mw_hollis_settle
 
-*comment The sale itself. The price is worked out inside the currency lock and kept in gear_sale_* so a replayed
-*comment page prints the same banner. One currency change and one advance_time per page.
-*label mw_hollis_sell_do
-*set gear_shop "hollis_sell"
-*gosub_scene equipment gear_info sell_item_id
-*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-  *gosub_scene equipment gear_sale_value sell_item_id "general"
-  *gosub_scene equipment sell_gear sell_item_id
-  *set currency_add_amount gear_sale_copper
-  *gosub_scene economy currency_add
-  *set currency_txn_locked true
-  *set locked_currency_txn_page_id page_id
-Hollis turns the ${gear_sale_name} over once in the light, checks it for wear, and chalks a figure on the slate. He counts the coin out of a tin box under the counter.
-*if (not(gear_quote = ""))
-  *line_break
-  ${gear_quote}
-*line_break
-[b][💰 Sold: ${gear_sale_name} for ${gear_sale_desc}][/b]
-*set hours_to_pass 0
-*set minutes_to_pass 5
-*set time_advance_call_id "hollis_sell"
-*gosub_scene calendar advance_time
-*gosub_scene calendar recalc_hp_from_neglect
-*if (hp_current <= 0)
-  *set death_cause "starvation"
-  *if (neglect_damage_fatigue > neglect_damage_hunger)
-    *set death_cause "exhaustion"
-  *goto_scene death death_screen
-*page_break Back to the counter…
-*if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
-  *goto mw_hollis_store
-*set shop_open ""
-*goto mw_lantern_lane
-
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment HOLLIS'S TRADE PANEL (his only counter since 2026-11-10: a market pilot, web/mygame/market.js; the plain buy and sell menus that stood beside it priced at retail past the market and are gone)
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label mw_hollis_open_panel
 *set shop_open "hollis"
 *set shop_rows ""
@@ -3166,351 +2733,34 @@ Master Ambrose looks up from the stills as you finish reading, and gives you the
           *goto_scene port_valen/port_valen port_valen_walk_picked
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment AMBROSE'S SHELVES (the buy menu, its trade panel, and the shared purchase)
-*comment Same three pieces as Halda's forge: a plain menu (generated from the catalog), the panel hooks (open_panel,
-*comment cart_pass, settle), and one purchase label with the currency lock. Everything is stackable.
+*comment AMBROSE'S SHELVES (his only counter since 2026-11-10: a market pilot, web/mygame/market.js; the plain buy and sell menus that stood beside it priced at retail past the market are gone)
+*comment Same shape as Halda's forge: the stock and sell pages call open_panel, and both end in "Settle up the trade panel".
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *label mw_ambrose_stock
 *gosub mw_ambrose_open_panel
-*comment GEN:BEGIN ambrose_buy_labels
-*temp ab_warming_liniment ""
-*temp ab_clear_head_draught ""
-*temp ab_healing_potion ""
-*temp ab_fire_resistance_potion ""
-*temp ab_cold_resistance_potion ""
-*temp ab_heroism_potion ""
-*temp ab_wolfsbane_antidote ""
-*temp ab_linen_bandage ""
-*temp ab_alchemists_fire ""
-*temp ab_mortar_pestle ""
-*temp ab_empty_potion_vial ""
-*temp ab_portable_burner ""
-*gosub_scene equipment gear_buy_label "warming_liniment"
-*set ab_warming_liniment gear_label
-*gosub_scene equipment gear_buy_label "clear_head_draught"
-*set ab_clear_head_draught gear_label
-*gosub_scene equipment gear_buy_label "healing_potion"
-*set ab_healing_potion gear_label
-*gosub_scene equipment gear_buy_label "fire_resistance_potion"
-*set ab_fire_resistance_potion gear_label
-*gosub_scene equipment gear_buy_label "cold_resistance_potion"
-*set ab_cold_resistance_potion gear_label
-*gosub_scene equipment gear_buy_label "heroism_potion"
-*set ab_heroism_potion gear_label
-*gosub_scene equipment gear_buy_label "wolfsbane_antidote"
-*set ab_wolfsbane_antidote gear_label
-*gosub_scene equipment gear_buy_label "linen_bandage"
-*set ab_linen_bandage gear_label
-*gosub_scene equipment gear_buy_label "alchemists_fire"
-*set ab_alchemists_fire gear_label
-*gosub_scene equipment gear_buy_label "mortar_pestle"
-*set ab_mortar_pestle gear_label
-*gosub_scene equipment gear_buy_label "empty_potion_vial"
-*set ab_empty_potion_vial gear_label
-*gosub_scene equipment gear_buy_label "portable_burner"
-*set ab_portable_burner gear_label
-*comment GEN:END ambrose_buy_labels
-Stoneware pots and stoppered bottles stand in rows on the counter, each with a slip of chalked slate against it. Two things sell better than the rest: a grey tallow for stiff joints, and an amber tonic for a foggy head. Ambrose sells each for a silver mark. A shallow basket at the end of the counter holds rolls of boiled linen, five copper bits apiece, for anyone who needs to bind a wound. On the shelf behind him, clear vials sit corked in a wooden rack, a copper bit each, beside a squat brass burner for brewing on the road.
+Stoneware pots and stoppered bottles stand in rows on the counter, each with a slip of chalked slate against it. Two things sell better than the rest: a grey tallow for stiff joints, and an amber tonic for a foggy head. A shallow basket at the end of the counter holds rolls of boiled linen for anyone who needs to bind a wound. On the shelf behind him, clear vials sit corked in a wooden rack beside a squat brass burner for brewing on the road. Every slip is chalked with what the shelf will bear today, not a fixed price.
 
 *choice
-  *comment GEN:BEGIN ambrose_buy_options
-  # ${ab_warming_liniment}
-    *set buy_item_id "warming_liniment"
-    *goto mw_ambrose_buy_do
-  # ${ab_clear_head_draught}
-    *set buy_item_id "clear_head_draught"
-    *goto mw_ambrose_buy_do
-  # ${ab_healing_potion}
-    *set buy_item_id "healing_potion"
-    *goto mw_ambrose_buy_do
-  # ${ab_fire_resistance_potion}
-    *set buy_item_id "fire_resistance_potion"
-    *goto mw_ambrose_buy_do
-  # ${ab_cold_resistance_potion}
-    *set buy_item_id "cold_resistance_potion"
-    *goto mw_ambrose_buy_do
-  # ${ab_heroism_potion}
-    *set buy_item_id "heroism_potion"
-    *goto mw_ambrose_buy_do
-  # ${ab_wolfsbane_antidote}
-    *set buy_item_id "wolfsbane_antidote"
-    *goto mw_ambrose_buy_do
-  # ${ab_linen_bandage}
-    *set buy_item_id "linen_bandage"
-    *goto mw_ambrose_buy_do
-  # ${ab_alchemists_fire}
-    *set buy_item_id "alchemists_fire"
-    *goto mw_ambrose_buy_do
-  # ${ab_mortar_pestle}
-    *set buy_item_id "mortar_pestle"
-    *goto mw_ambrose_buy_do
-  # ${ab_empty_potion_vial}
-    *set buy_item_id "empty_potion_vial"
-    *goto mw_ambrose_buy_do
-  # ${ab_portable_burner}
-    *set buy_item_id "portable_burner"
-    *goto mw_ambrose_buy_do
-  *comment GEN:END ambrose_buy_options
   # Step back from the counter.
     *goto mw_herb_close
   # ⚖ Settle up the trade panel.
     *goto mw_ambrose_settle
 
-*comment The purchase itself, shared by everything Ambrose sells: price and prose come from the catalog.
-*label mw_ambrose_buy_do
-*set gear_shop "ambrose"
-*gosub_scene equipment gear_info buy_item_id
-*temp ab_price gear_retail
-*if ((((gold * 100) + (silver * 10)) + copper) < ab_price)
-  You count your coin against the price chalked on the shelf and come up short. "Come back when you have it," Master Ambrose says, and turns the ${gear_name} label-side out.
-  *page_break Back to the counter…
-  *goto mw_ambrose_stock
-*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-  *set currency_add_amount (0 - ab_price)
-  *gosub_scene economy currency_add
-  *gosub_scene equipment grant_gear buy_item_id 1
-  *set currency_txn_locked true
-  *set locked_currency_txn_page_id page_id
-${gear_blurb}
-*if (not(gear_quote = ""))
-  *line_break
-  ${gear_quote}
-*gosub_scene equipment format_copper ab_price
-*line_break
-[b][💰 Paid: ${gear_sale_desc}][/b]
-*set hours_to_pass 0
-*set minutes_to_pass gear_minutes
-*set time_advance_call_id "ambrose_buy"
-*gosub_scene calendar advance_time
-*gosub_scene calendar recalc_hp_from_neglect
-*if (hp_current <= 0)
-  *set death_cause "starvation"
-  *if (neglect_damage_fatigue > neglect_damage_hunger)
-    *set death_cause "exhaustion"
-  *goto_scene death death_screen
-*choice
-  # Back to the counter.
-    *goto mw_herb_close
-  *if (vane_independent_operative)
-    # ↦ Walk to the district picked on the sidebar. [port_valen:read]
-      *goto_scene port_valen/port_valen port_valen_walk_picked
-
 *comment THE BUY-BACK (2026-10-02). Ambrose buys the dungeon's ingredients (frog slime, centipede gland, viper venom, grave ichor) by the piece, a counted-salvage
 *comment sell like Halda's scrap steel; the catalog's ambrose_sell shop feeds the menu below and the trade panel's Sell tab, and he buys nothing else.
 *label mw_ambrose_sell
 Master Ambrose pushes his spectacles up his nose and clears a square of the counter. "Lay them out, each by its kind," he says. "I weigh by the piece, and I do not haggle over a clean cut."
-*comment GEN:BEGIN ambrose_sell_labels
-*temp as_frog_slime ""
-*temp as_centipede_gland ""
-*temp as_viper_venom ""
-*temp as_grave_ichor ""
-*temp as_sluice_moss ""
-*temp as_brinecap ""
-*temp as_pale_crackroot ""
-*temp as_cistern_spores ""
-*temp as_glowmold ""
-*temp as_silverleaf ""
-*temp as_oakheart_balsam ""
-*temp as_shadefern ""
-*temp as_acorn_truffle ""
-*temp as_brambleberry ""
-*temp as_sage ""
-*temp as_hornwort ""
-*temp as_wolfsbane ""
-*temp as_alchemists_fire ""
-*temp as_mortar_pestle ""
-*temp as_empty_potion_vial ""
-*temp as_portable_burner ""
-*if (frog_slime > 0)
-  *gosub_scene equipment gear_sell_label "frog_slime" "herbalist"
-  *set as_frog_slime gear_label
-*if (centipede_gland > 0)
-  *gosub_scene equipment gear_sell_label "centipede_gland" "herbalist"
-  *set as_centipede_gland gear_label
-*if (viper_venom > 0)
-  *gosub_scene equipment gear_sell_label "viper_venom" "herbalist"
-  *set as_viper_venom gear_label
-*if (grave_ichor > 0)
-  *gosub_scene equipment gear_sell_label "grave_ichor" "herbalist"
-  *set as_grave_ichor gear_label
-*if (sluice_moss > 0)
-  *gosub_scene equipment gear_sell_label "sluice_moss" "herbalist"
-  *set as_sluice_moss gear_label
-*if (brinecap > 0)
-  *gosub_scene equipment gear_sell_label "brinecap" "herbalist"
-  *set as_brinecap gear_label
-*if (pale_crackroot > 0)
-  *gosub_scene equipment gear_sell_label "pale_crackroot" "herbalist"
-  *set as_pale_crackroot gear_label
-*if (cistern_spores > 0)
-  *gosub_scene equipment gear_sell_label "cistern_spores" "herbalist"
-  *set as_cistern_spores gear_label
-*if (glowmold > 0)
-  *gosub_scene equipment gear_sell_label "glowmold" "herbalist"
-  *set as_glowmold gear_label
-*if (silverleaf > 0)
-  *gosub_scene equipment gear_sell_label "silverleaf" "herbalist"
-  *set as_silverleaf gear_label
-*if (oakheart_balsam > 0)
-  *gosub_scene equipment gear_sell_label "oakheart_balsam" "herbalist"
-  *set as_oakheart_balsam gear_label
-*if (shadefern > 0)
-  *gosub_scene equipment gear_sell_label "shadefern" "herbalist"
-  *set as_shadefern gear_label
-*if (acorn_truffle > 0)
-  *gosub_scene equipment gear_sell_label "acorn_truffle" "herbalist"
-  *set as_acorn_truffle gear_label
-*if (brambleberry > 0)
-  *gosub_scene equipment gear_sell_label "brambleberry" "herbalist"
-  *set as_brambleberry gear_label
-*if (((sage > 0) and (wol_roi_cured)))
-  *gosub_scene equipment gear_sell_label "sage" "herbalist"
-  *set as_sage gear_label
-*if (((hornwort > 0) and (wol_roi_cured)))
-  *gosub_scene equipment gear_sell_label "hornwort" "herbalist"
-  *set as_hornwort gear_label
-*if (((wolfsbane > 0) and (wol_roi_cured)))
-  *gosub_scene equipment gear_sell_label "wolfsbane" "herbalist"
-  *set as_wolfsbane gear_label
-*if (has_alchemists_fire)
-  *gosub_scene equipment gear_sell_label "alchemists_fire" "herbalist"
-  *set as_alchemists_fire gear_label
-*if (has_mortar_pestle)
-  *gosub_scene equipment gear_sell_label "mortar_pestle" "herbalist"
-  *set as_mortar_pestle gear_label
-*if (has_empty_potion_vial)
-  *gosub_scene equipment gear_sell_label "empty_potion_vial" "herbalist"
-  *set as_empty_potion_vial gear_label
-*if (has_portable_burner)
-  *gosub_scene equipment gear_sell_label "portable_burner" "herbalist"
-  *set as_portable_burner gear_label
-*comment GEN:END ambrose_sell_labels
-
+*gosub mw_ambrose_open_panel
 *choice
-  *comment GEN:BEGIN ambrose_sell_options
-  *if (frog_slime > 0)
-    # ${as_frog_slime}
-      *set sell_item_id "frog_slime"
-      *goto mw_ambrose_sell_do
-  *if (centipede_gland > 0)
-    # ${as_centipede_gland}
-      *set sell_item_id "centipede_gland"
-      *goto mw_ambrose_sell_do
-  *if (viper_venom > 0)
-    # ${as_viper_venom}
-      *set sell_item_id "viper_venom"
-      *goto mw_ambrose_sell_do
-  *if (grave_ichor > 0)
-    # ${as_grave_ichor}
-      *set sell_item_id "grave_ichor"
-      *goto mw_ambrose_sell_do
-  *if (sluice_moss > 0)
-    # ${as_sluice_moss}
-      *set sell_item_id "sluice_moss"
-      *goto mw_ambrose_sell_do
-  *if (brinecap > 0)
-    # ${as_brinecap}
-      *set sell_item_id "brinecap"
-      *goto mw_ambrose_sell_do
-  *if (pale_crackroot > 0)
-    # ${as_pale_crackroot}
-      *set sell_item_id "pale_crackroot"
-      *goto mw_ambrose_sell_do
-  *if (cistern_spores > 0)
-    # ${as_cistern_spores}
-      *set sell_item_id "cistern_spores"
-      *goto mw_ambrose_sell_do
-  *if (glowmold > 0)
-    # ${as_glowmold}
-      *set sell_item_id "glowmold"
-      *goto mw_ambrose_sell_do
-  *if (silverleaf > 0)
-    # ${as_silverleaf}
-      *set sell_item_id "silverleaf"
-      *goto mw_ambrose_sell_do
-  *if (oakheart_balsam > 0)
-    # ${as_oakheart_balsam}
-      *set sell_item_id "oakheart_balsam"
-      *goto mw_ambrose_sell_do
-  *if (shadefern > 0)
-    # ${as_shadefern}
-      *set sell_item_id "shadefern"
-      *goto mw_ambrose_sell_do
-  *if (acorn_truffle > 0)
-    # ${as_acorn_truffle}
-      *set sell_item_id "acorn_truffle"
-      *goto mw_ambrose_sell_do
-  *if (brambleberry > 0)
-    # ${as_brambleberry}
-      *set sell_item_id "brambleberry"
-      *goto mw_ambrose_sell_do
-  *if (((sage > 0) and (wol_roi_cured)))
-    # ${as_sage}
-      *set sell_item_id "sage"
-      *goto mw_ambrose_sell_do
-  *if (((hornwort > 0) and (wol_roi_cured)))
-    # ${as_hornwort}
-      *set sell_item_id "hornwort"
-      *goto mw_ambrose_sell_do
-  *if (((wolfsbane > 0) and (wol_roi_cured)))
-    # ${as_wolfsbane}
-      *set sell_item_id "wolfsbane"
-      *goto mw_ambrose_sell_do
-  *if (has_alchemists_fire)
-    # ${as_alchemists_fire}
-      *set sell_item_id "alchemists_fire"
-      *goto mw_ambrose_sell_do
-  *if (has_mortar_pestle)
-    # ${as_mortar_pestle}
-      *set sell_item_id "mortar_pestle"
-      *goto mw_ambrose_sell_do
-  *if (has_empty_potion_vial)
-    # ${as_empty_potion_vial}
-      *set sell_item_id "empty_potion_vial"
-      *goto mw_ambrose_sell_do
-  *if (has_portable_burner)
-    # ${as_portable_burner}
-      *set sell_item_id "portable_burner"
-      *goto mw_ambrose_sell_do
-  *comment GEN:END ambrose_sell_options
   # Put them back in your satchel.
     *goto mw_herb_close
+  # ⚖ Settle up the trade panel.
+    *goto mw_ambrose_settle
 
-*comment The sale itself. The price is worked out inside the currency lock and kept in gear_sale_* so a replayed page prints the same banner.
-*label mw_ambrose_sell_do
-*set gear_shop "ambrose_sell"
-*gosub_scene equipment gear_info sell_item_id
-*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
-  *gosub_scene equipment gear_sale_value sell_item_id "herbalist"
-  *gosub_scene equipment sell_gear sell_item_id
-  *set currency_add_amount gear_sale_copper
-  *gosub_scene economy currency_add
-  *set currency_txn_locked true
-  *set locked_currency_txn_page_id page_id
-Master Ambrose weighs the ${gear_sale_name} in a brass pan, nods once, and counts the coin out of a tin box under the counter.
-*if (not(gear_quote = ""))
-  *line_break
-  ${gear_quote}
-*line_break
-[b][💰 Sold: ${gear_sale_name} for ${gear_sale_desc}][/b]
-*set hours_to_pass 0
-*set minutes_to_pass 5
-*set time_advance_call_id "ambrose_sell"
-*gosub_scene calendar advance_time
-*gosub_scene calendar recalc_hp_from_neglect
-*if (hp_current <= 0)
-  *set death_cause "starvation"
-  *if (neglect_damage_fatigue > neglect_damage_hunger)
-    *set death_cause "exhaustion"
-  *goto_scene death death_screen
-*choice
-  # Back to the counter.
-    *goto mw_herb_close
-  *if (vane_independent_operative)
-    # ↦ Walk to the district picked on the sidebar. [port_valen:read]
-      *goto_scene port_valen/port_valen port_valen_walk_picked
-
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment AMBROSE'S TRADE PANEL (his only counter since 2026-11-10: a market pilot, web/mygame/market.js; the plain buy and sell menus that stood beside it priced at retail past the market and are gone)
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label mw_ambrose_open_panel
 *set shop_open "ambrose"
 *set shop_rows ""
