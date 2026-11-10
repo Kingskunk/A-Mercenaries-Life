@@ -15,7 +15,8 @@
 *comment ====================================================================================
 
 *label dry_lion_hook
-[b]THE DRY LION[/b]
+*set scenery_subplace "middle_ward_conduit_square"
+[b]◈ CONDUIT SQUARE[/b]
 *line_break
 A dry metallic rattle shudders through the central stone pillar. The steady roar of the fountain—the background pulse that fills Conduit Square from dawn to curfew—chokes off mid-surge. One bronze lion head coughs a gout of brown clay and rust-coloured grit into a waiting bucket, wheezes on trapped air, and falls dead silent. Beside it, a second stream sputters down to a brown, dripping thread.
 
@@ -32,7 +33,7 @@ A woman in a coarse, work-stained apron drops two iron-banded buckets against th
     *goto dry_lion_offer
   # Ask the city officer what he knows.
     *goto dry_lion_clerk_intro
-  # Step between the gathered crowd and the dry basin to give the fountain room.
+  # Wave the pressing crowd back from the basin.
     You plant your feet on the wet flags and wave the pressing queue back a few paces. The porters and kitchen drudges grumble, but the clatter of jostling buckets stops, giving the man with the slate room to breathe and look at the stonework instead of the boots crowding his elbows.
     *goto dry_lion_offer
   # Leave the matter to the ward.
@@ -64,6 +65,9 @@ Tomas rolls his damp plan tight against his ribs. "The rules are simple. If we c
       # "Then I will find the fault first."
         *set dry_lion_quest_stage "active"
         *goto dry_lion_investigation_hub
+      # "Who enforces that shutoff rule?"
+        Tomas taps his brass badge with a grease-smudged finger. "The Water Commissioners write it, the City Council backs it, and I carry the shutoff key. Neither Marda nor Merrin likes it, but nobody wants forty wagons sinking into a trench."
+        *goto dry_lion_offer
       # "Do what you need to do."
         *goto_scene port_valen/port_valen_middle_ward mw_conduit_square
   # "This is not my work."
@@ -81,7 +85,8 @@ Tomas rolls his damp plan tight against his ribs. "The rules are simple. If we c
 *label dry_lion_investigation_hub
 *comment Weather-agnostic trench investigation (no sky layer, several 20-min advance_time calls below): clamp any Storm/Blizzard/Sleet rolled for today before each visit, so the open-square scene is never undercut by a storm the prose never mentions.
 *gosub_scene calendar ensure_navigable_weather
-[b]THE DRY LION: THE FOUNTAIN[/b]
+*set scenery_subplace "middle_ward_conduit_square"
+[b]◈ CONDUIT SQUARE[/b]
 *line_break
 Two massive limestone inspection slabs have been levered out of the paving beside the fountain base, propped on timber chocks behind a line of frayed hemp rope. Below the flags lies a shallow service trench: packed clay washed loose around ancient brickwork, tarnished bronze sleeves, and green-crusted iron valves dripping in the lantern light.
 
@@ -89,7 +94,7 @@ Tomas patrols the rope line, waving back onlookers. The woman with the buckets s
 
 *choice
   *if (not(dry_lion_fittings_done))
-    # Inspect the exposed fittings and the cracked joint. [~20 min]@{show_stat_hints  [Investigation / Sleight of Hand DC 12; Repair Kit +1]|}
+    # Inspect the exposed pipe and cracked joint. [~20 min]@{show_stat_hints  [Invest / Sleight DC 12; Repair Kit +1]|}
       *set dry_lion_fittings_done true
       *if (dry_lion_first_approach = "")
         *set dry_lion_first_approach "fittings"
@@ -109,7 +114,7 @@ Tomas patrols the rope line, waving back onlookers. The woman with the buckets s
       *page_break Step back from the opening...
       *goto dry_lion_investigation_hub
   *if (not(dry_lion_water_trace_done))
-    # Follow the brown trickle and ask where it appears. [~20 min]@{show_stat_hints  [Perception DC 12]|}
+    # Follow the brown seepage away from the square. [~20 min]@{show_stat_hints  [Perception DC 12]|}
       *set dry_lion_water_trace_done true
       *if (dry_lion_first_approach = "")
         *set dry_lion_first_approach "water"
@@ -177,25 +182,26 @@ Tomas lunges back, his blue coat drenched in brown mud. "The trench is caving!" 
 *goto dry_lion_decision
 
 *label dry_lion_decision
-[b]THE DRY LION: A LINE DIVIDED[/b]
+*set scenery_subplace "middle_ward_conduit_square"
+[b]◈ CONDUIT SQUARE[/b]
 *line_break
 The square is in chaos. A torrent of freezing water churns through the trench, spilling over the limestone lip and washing sand from between the cobbles. Mother Marda stands braced at the rope line, shouting for timber wedges; Merrin has hurried up from the wash-house with an iron crowbar in her red-raw hands. 
 
 The split lead sleeve is vibrating violently beneath two feet of rushing muddy water, tearing wider by the second.
 
 *choice
-  # Tell Tomas to cap the unlisted branch and restore the public fountain.
+  # Tell Tomas to cap the unlisted branch.
     *goto dry_lion_city_sealed
-  # Keep both lines alive and repair the split right here in the muck.
+  # Keep both lines open and repair the split now.
     *goto dry_lion_quiet_repair
-  # Ask Tomas to register the branch temporarily instead of sealing it.
+  # Urge Tomas to register the branch temporarily.
     *if ((dry_lion_old_mark_found and dry_lion_residents_trust) and (dry_lion_marda_support or dry_lion_merrin_support))
       Tomas looks from the filed city stamp on his plan to Nadi's steady gaze, then glances at Marda and Merrin holding the crowd back. His knuckles whiten on his timber slate. "A temporary city listing. Ten days' emergency water while an inspection is scheduled. I will log it under the neighborhood relief rules, but the yard must sign the roll."
       *goto dry_lion_registered
     *else
       "I cannot put an unlisted pipe onto the city books without proof or verified support from the ward trades," Tomas yells over the roaring water. "Give me a real reason, or I cap it!"
       *choice
-        # Make the case from what you have seen on the street. [Persuasion DC 14]
+        # Make the case from what you saw in the court.@{show_stat_hints  [Persuasion DC 14]|}
           *gosub_scene dice_engine roll_skill_check 14 "persuasion" "" "" "" "" ""
           *if (check_success)
             Tomas looks at the churning crater, then at the silent tenement families gathered at the alley mouth. He blows out a sharp, ragged breath. "A temporary listing. Ten days' emergency supply while the city reviews the lease. Put your back into holding that collar while I write the entry!"
@@ -203,18 +209,35 @@ The split lead sleeve is vibrating violently beneath two feet of rushing muddy w
           *else
             Tomas shakes his head fiercely, pulling his shutoff key from his belt. "A speech will not hold forty pounds of water pressure! Choose a repair or let me drop the cap!"
             *goto dry_lion_decision
+        # "Tomas, look at the stones! If you don't authorize a repair, the street falls in!"@{show_stat_hints  [Insight DC 13]|}
+          *gosub_scene dice_engine roll_skill_check 13 "insight" "" "" "" "" ""
+          *if (check_success)
+            Tomas looks down at the quivering stones, the color draining from his face. "Merciful gods... you're right. The foundation is liquefying. Forget the paperwork—brace the junction! I'll stamp the emergency register now!"
+            *goto dry_lion_registered
+          *else
+            Tomas flinches as water lashes his boots, but shakes his head frantically. "I know the stones are shifting! That's why I need an engineering order, not panic! Choose a repair or let me drop the cap!"
+            *goto dry_lion_decision
         # Choose a different answer.
           *goto dry_lion_decision
 
 *label dry_lion_quiet_repair
+*set scenery_subplace "middle_ward_conduit_square"
+[b]◈ CONDUIT SQUARE[/b]
+*line_break
 The churning trench is rapidly undermining the fountain's foundation flags. Freezing water swirls around your knees as you drop into the pit. Marda’s apprentice slides two seasoned oak wedges into the muck beside you, while Merrin leans over the rim to block the crowd.
 
 *choice
   *if (known_mending)
-    # [Cantrip: Mending] Seal the split before the ground shifts again.
-      You plunge both hands into the freezing, roiling mud, gripping the torn lead sleeve and the fractured bronze lip beneath it. Closing your eyes against the stinging spray, you speak the low, rhythmic cadence of the mending cantrip. A sharp scent of clean ozone cuts through wet clay and old iron. Beneath your palms, a dull blue heat travels along the jagged fracture; the ragged edges of ancient lead soften, drawn together like cooling wax against the roaring surge. The seam knits shut, smooth and solid. The water pressure steadies, rises with a deep subterranean thrum, and bursts from the four lion heads above in a clear, foaming roar.
-      *goto dry_lion_hidden_repaired
-  # Set the joint with the wedges and work the fitting by hand.@{show_stat_hints  [Investigation / Sleight of Hand DC 13; Repair Kit +1]|}
+    # [Cantrip: Mending] Seal the split with magic.@{show_stat_hints  [Adv, INT DC 12]|}
+      *set advantage true
+      *gosub_scene dice_engine roll_skill_check 12 "arcana" "" "" "" "" ""
+      *if (check_success)
+        You plunge both hands into the freezing, roiling mud, gripping the torn lead sleeve and the fractured bronze lip beneath it. Closing your eyes against the stinging spray, you speak the low, rhythmic cadence of the mending cantrip. A sharp scent of clean ozone cuts through wet clay and old iron. Beneath your palms, a dull blue heat travels along the jagged fracture; the ragged edges of ancient lead soften, drawn together like cooling wax against the roaring surge. The seam knits shut, smooth and solid. The water pressure steadies, rises with a deep subterranean thrum, and bursts from the four lion heads above in a clear, foaming roar.
+        *goto dry_lion_hidden_repaired
+      *else
+        You plunge your hands into the churning mud and begin the incantation, but the freezing, roiling torrent numbs your fingers and drowns out your cadence. The magic sparks erratically in the water, searing your palms without knitting the torn lead. Before you can recover your focus, the violent surge rips the sleeve apart, sending a gout of spray into the air.
+        *goto dry_lion_failed
+  # Wedge the joint and reset the collar by hand.@{show_stat_hints  [Invest / Sleight DC 13; Repair Kit +1]|}
     *set check_task_type "repair"
     *gosub_scene dice_engine roll_skill_check 13 "investigation" "" "sleight_of_hand" "" "" ""
     *if (check_success)
@@ -223,7 +246,7 @@ The churning trench is rapidly undermining the fountain's foundation flags. Free
     *else
       You drive an oak wedge into the shifting muck, but the water-soaked gravel gives way beneath your foot. The wedge twists crookedly; under the violent water pressure, the bronze pipe kicks sideways against the stone channel, shearing the brittle lead sleeve entirely in two. Cold muddy water surges over the lip of the trench in an unstoppable flood.
       *goto dry_lion_failed
-  # Brace the pipe while Marda sets the fitting. [Athletics DC 12]
+  # Brace the pipe while Marda drives the wedges.@{show_stat_hints  [Athletics DC 12]|}
     *gosub_scene dice_engine roll_skill_check 12 "athletics" "" "" "" "" ""
     *if (check_success)
       You throw your weight across the vibrating bronze pipe, digging your ${feet_prose} into the trench gravel and pinning sixty pounds of shuddering metal against the masonry channel wall. Freezing water pounds against your chest, but you hold the junction motionless while Marda leans in, driving two heavy cedar wedges into the seat and hammering the split collar tight with her mallet. The seal takes. The spray dies, and the water surges upward into the fountain spouts.
@@ -235,6 +258,9 @@ The churning trench is rapidly undermining the fountain's foundation flags. Free
     *goto dry_lion_city_sealed
 
 *label dry_lion_city_sealed
+*set scenery_subplace "middle_ward_conduit_square"
+[b]◈ CONDUIT SQUARE[/b]
+*line_break
 Tomas drops into the churning pit with a heavy iron cap and a threaded collar. Grunting against the icy rush, he forces the cap over the tenement feed and cranks his iron key down with all his weight. The bootleg pipe goes dead. With the leak closed, the surging water redirects into the fountain: the four bronze lions heave a great breath of air, spit a last mouthful of brown silt, and begin gushing clear water into the basins.
 
 The square erupts in shouts of approval as buckets are thrust under the spouts.
@@ -255,6 +281,9 @@ At the edge of the rope, Nadi Venn pulls her child close against her skirt, star
 *goto_scene port_valen/port_valen_middle_ward mw_conduit_square
 
 *label dry_lion_hidden_repaired
+*set scenery_subplace "middle_ward_conduit_square"
+[b]◈ CONDUIT SQUARE[/b]
+*line_break
 The four bronze lions roar back to life together, their foaming mountain streams splashing hard against the stone basins. A second later, a ragged cheer rises from down the stone alleyway off Locksmiths' Close as water surges into the tenement yard. Mother Marda lets out a booming laugh, wiping grey mud from her forearms, while Merrin gives you a single, sharp nod of respect before heading back to fire her boilers.
 
 Nadi Venn steps out of the alley shadows as you climb from the muddy trench. She takes your wrist, pressing two thin, worn silver marks into your calloused palm—coins saved in chimney tins and sock linings, warmed by working hands.
@@ -275,6 +304,9 @@ Nadi Venn steps out of the alley shadows as you climb from the muddy trench. She
 *goto_scene port_valen/port_valen_middle_ward mw_conduit_square
 
 *label dry_lion_registered
+*set scenery_subplace "middle_ward_conduit_square"
+[b]◈ CONDUIT SQUARE[/b]
+*line_break
 Tomas calls Marda's apprentice down with the wedges while Merrin keeps the crowd clear. Between you, the apprentice, and Tomas, the split sleeve is braced straight and packed tight enough to take the water at a careful flow. It is an emergency repair, not a lasting one; the inspection will decide what must be dug up and replaced.
 
 Only then does Tomas sit on an overturned mortar tub and write across his board with a grease pencil. He notes the old city stamp, records the emergency repair, and stamps a small square lead tag with his city seal. Dropping into the trench, he wires the lead token securely around the braced junction with brass wire.
@@ -297,9 +329,12 @@ Mother Marda claps you on the shoulder with a hand white with flour, leaving a p
 *goto_scene port_valen/port_valen_middle_ward mw_conduit_square
 
 *label dry_lion_failed
+*set scenery_subplace "middle_ward_conduit_square"
+[b]◈ CONDUIT SQUARE[/b]
+*line_break
 Tomas curses under his breath, dropping to his knees and slamming the main shut-off valve with both hands on his iron key. The roaring flow dies with a hollow, shuddering clunk deep within the street. The torrent stops, but the damage is done: forty feet of trench is a churned crater of brown clay and collapsed gravel, and the dry fountain stands silent over a sunken street.
 
-Nadi gathers her child against her chest and turns away into the shadows of the alley without a word. Mother Marda looks at the dry spouts, then across the square toward her ovens. "Pull the hearth coals," she tells her apprentice in a quiet, tired voice. "We bake no more bread until the city digs."
+Nadi gathers her child against her chest and turns away into the shadows of the alley in silence, her face tight with grief. Mother Marda looks at the dry spouts, then across the square toward her ovens. "Pull the hearth coals," she tells her apprentice in a quiet, tired voice. "We bake no more bread until the city digs."
 
 *set dry_lion_quest_stage "resolved"
 *set dry_lion_resolution "failed"
