@@ -1858,6 +1858,386 @@ window.MARKET_DEFS = {
    }
   }
  },
+ "tomlin": {
+  "id": "tomlin",
+  "title": "Tomlin's Workroom",
+  "tier": "town shop",
+  "purseTarget": 1400,
+  "regen": {
+   "stock": 0.1,
+   "purse": 0.1
+  },
+  "goods": {
+   "philter_of_remembrance": {
+    "base": 30,
+    "target": 13,
+    "stock0": 13,
+    "buyPct": 0.5,
+    "mult": 1,
+    "buys": false
+   },
+   "sage": {
+    "base": 6,
+    "target": 33,
+    "stock0": 33,
+    "buyPct": 0.167,
+    "mult": 1
+   },
+   "hornwort": {
+    "base": 10,
+    "target": 33,
+    "stock0": 33,
+    "buyPct": 0.2,
+    "mult": 1
+   },
+   "wolfsbane": {
+    "base": 8,
+    "target": 33,
+    "stock0": 33,
+    "buyPct": 0.25,
+    "mult": 1
+   },
+   "warming_liniment": {
+    "base": 10,
+    "target": 33,
+    "stock0": 33,
+    "buyPct": 0.5,
+    "mult": 1,
+    "buys": false,
+    "world": {
+     "tile": "lg",
+     "inputs": [
+      {
+       "good": "animal_fat",
+       "share": 0.25
+      }
+     ]
+    }
+   },
+   "clear_head_draught": {
+    "base": 10,
+    "target": 22,
+    "stock0": 22,
+    "buyPct": 0.5,
+    "mult": 1,
+    "buys": false
+   },
+   "healing_potion": {
+    "base": 40,
+    "target": 13,
+    "stock0": 13,
+    "buyPct": 0.5,
+    "mult": 1,
+    "buys": false
+   },
+   "fire_resistance_potion": {
+    "base": 60,
+    "target": 9,
+    "stock0": 9,
+    "buyPct": 0.5,
+    "mult": 1,
+    "buys": false
+   },
+   "cold_resistance_potion": {
+    "base": 60,
+    "target": 9,
+    "stock0": 9,
+    "buyPct": 0.5,
+    "mult": 1,
+    "buys": false
+   },
+   "heroism_potion": {
+    "base": 80,
+    "target": 9,
+    "stock0": 9,
+    "buyPct": 0.5,
+    "mult": 1,
+    "buys": false
+   },
+   "wolfsbane_antidote": {
+    "base": 35,
+    "target": 13,
+    "stock0": 13,
+    "buyPct": 0.5,
+    "mult": 1,
+    "buys": false
+   },
+   "linen_bandage": {
+    "base": 5,
+    "target": 22,
+    "stock0": 22,
+    "buyPct": 0.5,
+    "mult": 1,
+    "buys": false
+   },
+   "alchemists_fire": {
+    "base": 25,
+    "target": 13,
+    "stock0": 13,
+    "buyPct": 0.48,
+    "mult": 1
+   },
+   "mortar_pestle": {
+    "base": 30,
+    "target": 10,
+    "stock0": 10,
+    "buyPct": 0.5,
+    "mult": 1
+   },
+   "empty_potion_vial": {
+    "base": 1,
+    "target": 26,
+    "stock0": 26,
+    "buyPct": 0.8,
+    "mult": 1
+   },
+   "portable_burner": {
+    "base": 45,
+    "target": 7,
+    "stock0": 7,
+    "buyPct": 0.489,
+    "mult": 1
+   },
+   "frog_slime": {
+    "base": 8,
+    "target": 33,
+    "stock0": 33,
+    "buyPct": 0.5,
+    "mult": 1,
+    "sells": false
+   },
+   "centipede_gland": {
+    "base": 16,
+    "target": 20,
+    "stock0": 20,
+    "buyPct": 0.5,
+    "mult": 1,
+    "sells": false
+   },
+   "viper_venom": {
+    "base": 20,
+    "target": 20,
+    "stock0": 20,
+    "buyPct": 0.5,
+    "mult": 1,
+    "sells": false
+   },
+   "grave_ichor": {
+    "base": 30,
+    "target": 20,
+    "stock0": 20,
+    "buyPct": 0.5,
+    "mult": 1,
+    "sells": false
+   },
+   "sluice_moss": {
+    "base": 2,
+    "target": 53,
+    "stock0": 53,
+    "buyPct": 0.5,
+    "mult": 1,
+    "sells": false
+   },
+   "brinecap": {
+    "base": 2,
+    "target": 53,
+    "stock0": 53,
+    "buyPct": 0.5,
+    "mult": 1,
+    "sells": false
+   },
+   "pale_crackroot": {
+    "base": 4,
+    "target": 33,
+    "stock0": 33,
+    "buyPct": 0.5,
+    "mult": 1,
+    "sells": false
+   },
+   "cistern_spores": {
+    "base": 6,
+    "target": 33,
+    "stock0": 33,
+    "buyPct": 0.5,
+    "mult": 1,
+    "sells": false
+   },
+   "glowmold": {
+    "base": 4,
+    "target": 33,
+    "stock0": 33,
+    "buyPct": 0.5,
+    "mult": 1,
+    "sells": false
+   },
+   "silverleaf": {
+    "base": 2,
+    "target": 53,
+    "stock0": 53,
+    "buyPct": 0.5,
+    "mult": 1,
+    "sells": false
+   },
+   "oakheart_balsam": {
+    "base": 2,
+    "target": 53,
+    "stock0": 53,
+    "buyPct": 0.5,
+    "mult": 1,
+    "sells": false
+   },
+   "shadefern": {
+    "base": 4,
+    "target": 33,
+    "stock0": 33,
+    "buyPct": 0.5,
+    "mult": 1,
+    "sells": false
+   },
+   "acorn_truffle": {
+    "base": 6,
+    "target": 33,
+    "stock0": 33,
+    "buyPct": 0.5,
+    "mult": 1,
+    "sells": false
+   },
+   "brambleberry": {
+    "base": 4,
+    "target": 33,
+    "stock0": 33,
+    "buyPct": 0.5,
+    "mult": 1,
+    "sells": false
+   }
+  }
+ },
+ "lgstore": {
+  "id": "lgstore",
+  "title": "The Cord & Kettle",
+  "tier": "town shop",
+  "purseTarget": 1300,
+  "regen": {
+   "stock": 0.1,
+   "purse": 0.1
+  },
+  "goods": {
+   "hemp_rope": {
+    "base": 8,
+    "target": 18,
+    "stock0": 18,
+    "buyPct": 0.5,
+    "mult": 1
+   },
+   "pitch_torch": {
+    "base": 2,
+    "target": 29,
+    "stock0": 29,
+    "buyPct": 0.5,
+    "mult": 1
+   },
+   "lamp_oil": {
+    "base": 3,
+    "target": 29,
+    "stock0": 29,
+    "buyPct": 0.333,
+    "mult": 1
+   },
+   "hooded_lantern": {
+    "base": 12,
+    "target": 11,
+    "stock0": 11,
+    "buyPct": 0.5,
+    "mult": 1
+   },
+   "tool_kit": {
+    "base": 20,
+    "target": 11,
+    "stock0": 11,
+    "buyPct": 0.5,
+    "mult": 1
+   },
+   "shovel": {
+    "base": 8,
+    "target": 18,
+    "stock0": 18,
+    "buyPct": 0.5,
+    "mult": 1
+   },
+   "lute": {
+    "base": 40,
+    "target": 11,
+    "stock0": 11,
+    "buyPct": 0.5,
+    "mult": 1
+   },
+   "tinderbox": {
+    "base": 4,
+    "target": 18,
+    "stock0": 18,
+    "buyPct": 0.5,
+    "mult": 1
+   },
+   "water_jug": {
+    "base": 5,
+    "target": 18,
+    "stock0": 18,
+    "buyPct": 0.4,
+    "mult": 1
+   },
+   "cooking_pot": {
+    "base": 6,
+    "target": 18,
+    "stock0": 18,
+    "buyPct": 0.5,
+    "mult": 1
+   },
+   "chalk_sticks": {
+    "base": 2,
+    "target": 29,
+    "stock0": 29,
+    "buyPct": 0.5,
+    "mult": 1
+   },
+   "camp_kit": {
+    "base": 30,
+    "target": 11,
+    "stock0": 11,
+    "buyPct": 0.5,
+    "mult": 1
+   },
+   "waxed_oilcloth": {
+    "base": 6,
+    "target": 18,
+    "stock0": 18,
+    "buyPct": 0.5,
+    "mult": 1
+   },
+   "lye_soap": {
+    "base": 2,
+    "target": 38,
+    "stock0": 38,
+    "buyPct": 0.5,
+    "mult": 1,
+    "world": {
+     "tile": "lg",
+     "inputs": [
+      {
+       "good": "animal_fat",
+       "share": 0.5
+      }
+     ]
+    }
+   },
+   "trail_rations": {
+    "base": 2,
+    "target": 38,
+    "stock0": 38,
+    "buyPct": 0.5,
+    "mult": 1
+   }
+  }
+ },
  "barley_farm": {
   "id": "barley_farm",
   "title": "Barleycross Lane Market",

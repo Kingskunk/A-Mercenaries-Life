@@ -73,8 +73,11 @@
    * A merchant listed in PILOT is priced by web/mygame/market.js (finite stock and purse, slippage, buy-back) instead of by the flat prices above. The market is one saved string per merchant
    * (stats.market_<key>); the panel reads it brought up to today, prices the cart against it, and writes the new state only when the trade is confirmed, together with the totals it agreed
    * (market_cost, market_credit, market_on), which equipment.txt shop_check then takes in place of its own. */
-  var PILOT = { halda: true, ambrose: true, hollis: true, inklamp: true, vael: true, works: true, tmstore: true, afstore: true, pawn: true, torvald: true, tailor: true, jeweler: true, trapper: true, hideyard: true, barley_farm: true, tm_market: true, bw_market: true, ah_market: true, mc_market: true, af_market: true, rv_market: true, wf_market: true, pv_market: true, lg_market: true, fm_market: true, bm_fair: true, ba_market: true };
+  var PILOT = { halda: true, ambrose: true, hollis: true, inklamp: true, vael: true, works: true, tmstore: true, afstore: true, pawn: true, torvald: true, tailor: true, jeweler: true, trapper: true, hideyard: true, tomlin: true, lgstore: true, barley_farm: true, tm_market: true, bw_market: true, ah_market: true, mc_market: true, af_market: true, rv_market: true, wf_market: true, pv_market: true, lg_market: true, fm_market: true, bm_fair: true, ba_market: true };
   function marketOn(trade) { return !!(trade && PILOT[trade.key] && window.Market && window.MARKET_DEFS && window.MARKET_DEFS[trade.key]); }
+  // The trade book (stats.trade_seen, "at your last stops", rumors) is about OTHER OPEN MARKETS, never a counter shop's own curated stock (tradebook.js's own words: "what the player remembers of
+  // other markets' prices"). marketOn is true for every PILOT shop, counter shops included, so it is not enough on its own: a counter-shop visit must not evict a real market from the remembered 3.
+  function isOpenMarket(trade) { return marketOn(trade) && !!window.MARKET_DEFS[trade.key].commodities; }
   function today() { return num(statsNow().campaign_day); }
   // The market's definition for today: the generated one with the season and the makers' shocks applied (web/mygame/world.js). world_seed is a saved stat (0 until the game picks one).
   function marketDef(trade) {
@@ -129,7 +132,7 @@
   function lastStops(trade, s, n, heard) {
     return TB().stops(parseSeen(s.trade_seen), !!heard, trade.key, 99).filter(function (e) { return data().trades[e.key]; }).slice(0, n).map(function (e) { return { key: e.key, title: TB().placeName(e.key), d: e.d, q: e.q, h: e.h, p: e.p }; });
   }
-  function ageText(days) { return days <= 0 ? "today" : (days === 1 ? "yesterday" : days + " days ago"); }
+  function ageText(days) { return days <= 0 ? "today" : days + "d ago"; }
   // The best price the player has seen for a good in ANOTHER market (the lowest ask for a buy row, the highest bid for a sell row), and every one they know of.
   function elsewhere(kind, id, trade, s) {
     var seen = parseSeen(s.trade_seen), all = [], best = null;
@@ -530,7 +533,7 @@
       if (!g.fixed) out += '<div class="tRow"><span>' + (kind === "buy" ? "On the shelf" : "Held here") + "</span><span><b>" + num(mk.st.stock[id]) + "</b></span></div>";
       if (sf > 1.1) out += '<div class="tRow"><span>Shelf</span><span class="' + dearC + '">thin</span></div>';
       else if (sf < 0.9) out += '<div class="tRow"><span>Shelf</span><span class="' + cheapC + '">well stocked</span></div>';
-      if (kind === "buy") { var rs = elsewhere("sell", id, trade, s).best; if (rs && first !== undefined && rs.v >= first * 1.1) out += '<div class="tRow"><span>Pays more at</span><span><b>' + esc(rs.title) + "</b> · " + fmtUnit(rs.v, "sell") + " <i>" + (rs.heard ? "heard " : "") + ageText(rs.age) + "</i></span></div>"; }
+      if (kind === "buy") { var rs = elsewhere("sell", id, trade, s).best; if (rs && first !== undefined && rs.v >= first * 1.1) out += '<div class="tRow"><span>Pays more</span><span><b>' + esc(rs.title) + "</b> · " + fmtUnit(rs.v, "sell") + " <i>" + (rs.heard ? "heard " : "") + ageText(rs.age) + "</i></span></div>"; }
       var stops = lastStops(trade, s, 3), heard = lastStops(trade, s, 3, true);
       function stopRows(list, word) {
         list.forEach(function (st) {
@@ -754,7 +757,7 @@
       mq.sell.forEach(function (l) { var b = basis[l.id]; if (!b) return; var bq = Math.min(b.q, owned(l.id, s)), m = Math.min(l.qty, bq); if (m > 0) prof += Math.round(l.total * (m / l.qty) - m * b.t / 10); b.q = Math.max(0, bq - l.qty); });
       mq.buy.forEach(function (l) { var b = basis[l.id] || { q: 0, t: 0 }, bq = Math.min(b.q, owned(l.id, s)), nq = bq + l.qty; b.t = (bq * b.t + l.total * 10) / nq; b.q = nq; basis[l.id] = b; });
       s.trade_basis = serializeBasis(basis); s.trade_profit = prof;
-      remember(trade, { def: marketDef(trade), st: window.Market.parse(s["market_" + trade.key]) });
+      if (isOpenMarket(trade)) remember(trade, { def: marketDef(trade), st: window.Market.parse(s["market_" + trade.key]) });
     }
     // Every cart starts from zero so a stale entry can never ride along; the game clears them again when it settles.
     Object.keys(s).forEach(function (k) { if (k.indexOf("cart_buy_") === 0 || k.indexOf("cart_sell_") === 0) s[k] = 0; });
@@ -816,7 +819,7 @@
     build();
     if (dlg.open) return;
     view.receipt = "";
-    var tr0 = currentTrade(); if (marketOn(tr0)) remember(tr0, { def: marketDef(tr0), st: marketState(tr0) });
+    var tr0 = currentTrade(); if (isOpenMarket(tr0)) remember(tr0, { def: marketDef(tr0), st: marketState(tr0) });
     render();
     if (!dlg.showModal) { window.alert("This browser is too old to show the Trade panel."); return; }
     dlg.showModal();

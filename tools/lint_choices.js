@@ -124,6 +124,16 @@ function hashTexts(lines, start, end) {
   return texts;
 }
 
+// Same scan as hashTexts, but keeping each option's 1-indexed source line
+// so a duplicate finding can point at both occurrences.
+function hashTextsWithLines(lines, start, end) {
+  const entries = [];
+  for (let i = start; i < end; i++) {
+    if (!isBlank(lines[i]) && /^\s*#/.test(lines[i])) entries.push({ text: lines[i].trim(), line: i + 1 });
+  }
+  return entries;
+}
+
 // This project's convention for a menu/navigation option ("[Return to
 // Dossier]", "[Close Dossier & Return]") — a deliberate single-button
 // acknowledgment menu, not a narrative choice that needs real alternatives.
@@ -269,6 +279,25 @@ function lintFile(file) {
     const totalHashes = allTexts.length;
     const hasBranches = items.some((it) => it.kind === 'branch');
 
+    // Rule D: exact duplicate option text anywhere in this *choice block.
+    // ChoiceScript's real engine throws "Invalid option; conflicts with
+    // option ... on line N" for this (scene.js's conflictingOptions,
+    // keyed by a namesEncountered map built while parsing the *choice).
+    // Quicktest can never catch it: editor/embeddable-autotester.js
+    // monkey-patches conflictingOptions into a no-op, because autotest's
+    // forced *if-branch exploration makes mutually-exclusive branches look
+    // like they "collide" even though only one could ever be true in real
+    // play. randomtest.js doesn't patch it, so it WOULD throw -- but only
+    // if a test run happens to walk into this exact *choice. This static
+    // scan catches it unconditionally, regardless of path coverage.
+    // TODO(human): walk optionEntries, track the first line each exact
+    // `text` was seen on, and for every later entry whose text repeats
+    // push a finding of the form:
+    //   { file, line: <second occurrence>, rule: 'D',
+    //     detail: `duplicate option text ${JSON.stringify(text)} (first seen on line ${firstLine})` }
+    // Push each finding into `findings` (declared above, in scope here).
+    const optionEntries = hashTextsWithLines(lines, j, blockEndIdx);
+
     // Case 1: no branches at all — the rendered count IS totalHashes, no
     // uncertainty possible. Safe to score directly, including Rule C.
     if (!hasBranches) {
@@ -389,7 +418,7 @@ for (const file of files) {
   allExempted = allExempted.concat(exempted);
 }
 
-const errors = allFindings.filter((f) => f.rule === 'A' || f.rule === 'B');
+const errors = allFindings.filter((f) => f.rule === 'A' || f.rule === 'B' || f.rule === 'D');
 const advisories = allFindings.filter((f) => f.rule === 'C');
 
 if (errors.length === 0) {

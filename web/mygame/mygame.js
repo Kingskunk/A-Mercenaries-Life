@@ -1,4 +1,4 @@
-﻿nav = new SceneNavigator([
+nav = new SceneNavigator([
  "startup",
  "prologue/company_intake",
  "prologue/camp_night",
@@ -2021,7 +2021,6 @@ stats = {
  "port_valen_hub_seen": "false",
  "port_valen_first_patrol_complete": "false",
  "vane_independent_operative": "false",
- "port_valen_next_report_day": "0",
  "minutes_since_meal": "0",
  "rations_eaten_last": "0",
  "minutes_since_rest": "0",

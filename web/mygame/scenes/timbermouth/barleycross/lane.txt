@@ -3,8 +3,8 @@
 *comment as in a real street village. (Renamed from "Farm Row" 2026-10-07 when the user asked whether a row of "larger farmsteads" and unattended gate tables were historical: they were not, so the
 *comment lane is plain, its farms are of every size, and someone minds each gate.) It stands for the whole village, not for one farm. Prose only: the sellers at the gates and their wares are SCENERY,
 *comment since 2026-10-24 (the user) the lane IS the village's market: by day the trade panel is on this page, priced by web/mygame/market.js as an aggregated village market (one purse and one shelf for every gate; it buys back what it sells, and game meat), and there is no gate to stop at. The other mechanic is a hayloft bed: a household lets a traveller
-*comment sleep in a loft for one copper. The rules treat it as a SHARED bunk (no sleep-quality buff, 1 HP a night, and the wool blanket's +1 HP works). The paid loft stays the player's (bc_loft_paid)
-*comment until they sleep in it. What the household says is DESCRIBED, not quoted: it repeats, and the user's rule is that repeating dialogue is described. Always open. Not in *scene_list.
+*comment a corner of the loft for one copper, same as a rented room (bc_loft_room_active/bc_loft_room_until, 24 hours from payment, not just one sleep) -- Train and Sleep both work there, but there is no basin to wash at (deliberate: a shared bunk, not an inn room). The rules treat
+*comment sleep there as a SHARED bunk (no sleep-quality buff, 1 HP a night, and the wool blanket's +1 HP works). What the household says is DESCRIBED, not quoted: it repeats, and the user's rule is that repeating dialogue is described. Always open. Not in *scene_list.
 *comment ====================================================================================
 
 *label bc_lane
@@ -16,6 +16,9 @@
 
 *label bc_lane_lane
 *set scenery_subplace "barleycross_lane"
+*temp bc_loft_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+*if (bc_loft_now >= bc_loft_room_until)
+  *set bc_loft_room_active false
 *temp row_roll 1
 *rand row_roll 1 4
 [b]◈ THE LANE[/b]
@@ -85,10 +88,10 @@ The lane runs south from the common, with a farmstead on either side every fifty
   *if (peddler_stage = "active")
     # Knock at the last cottage on the lane. [~10 min]
       *goto_scene timbermouth/barleycross/overdue_peddler pd_cottage
-  *if (not(bc_loft_paid))
+  *if (not(bc_loft_room_active))
     *selectable_if ((((gold * 100) + (silver * 10)) + copper) >= 1) # [1 Copper Bit] Ask at a gate for a place in a hayloft.
       *goto bc_lane_loft
-  *if (bc_loft_paid)
+  *if (bc_loft_room_active)
     # Climb to the hayloft you paid for.
       *goto bc_lane_sleep_menu
   # Walk back to the common.
@@ -184,14 +187,16 @@ The lane runs south from the common, with a farmstead on either side every fifty
     *goto bc_lane_lane
   *comment GEN:END place_steps home:barleycross
 
-*comment ── THE HAYLOFT ── One copper buys one night in a loft, kept until the player has slept in it; it works like a shared bunk (no quality buff), so a night heals 1 HP and the wool blanket adds +1.
+*comment ── THE HAYLOFT ── One copper buys 24 hours of a corner in the loft, like a rented room (bc_loft_room_until); it works like a shared bunk (no quality buff), so a night heals 1 HP and the wool blanket adds +1.
 *label bc_lane_loft
 *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
   *set currency_add_amount -1
   *gosub_scene economy currency_add
   *set currency_txn_locked true
   *set locked_currency_txn_page_id page_id
-*set bc_loft_paid true
+*temp bc_loft_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+*set bc_loft_room_active true
+*set bc_loft_room_until (bc_loft_now + 1440)
 *if (not(bc_loft_seen))
   *set bc_loft_seen true
   You stop at the third gate and nod toward the barn. "Could I have a corner of the loft for the night?"
@@ -210,7 +215,14 @@ The lane runs south from the common, with a farmstead on either side every fifty
   *comment GEN:END place_steps home:barleycross
 
 *label bc_lane_sleep_menu
+*temp bc_loft_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+*if (bc_loft_now >= bc_loft_room_until)
+  *set bc_loft_room_active false
+*if (not(bc_loft_room_active))
+  *goto bc_lane_lane
 *set scenery_subplace "barleycross_hayloft"
+*comment A paid corner of the loft is open-world free time, same as a rented room: the sidebar's Wait and Rest work on this page.
+*set wait_ok_page page_id
 [b]◈ THE HAYLOFT[/b]
 *line_break
 The ladder comes up into a long loft under the thatch, with the smell of hay and warmth of the cows rising through the floorboards. A heap of hay has been shaken flat against the gable end, and bundles of herbs hang from the ridge to dry.
@@ -219,10 +231,12 @@ The ladder comes up into a long loft under the thatch, with the smell of hay and
 *else
   Light comes in through the cracks in the boards.
 *choice
+  # Train in the loft. [~${training_hours} Hours]
+    *gosub_scene character_progression inn_room_training "barleycross_hayloft"
+    *page_break Back to the hayloft…
+    *goto bc_lane_sleep_menu
   # Burrow into the hay and sleep. [~8 Hours]
     *goto bc_lane_sleep
-  # Walk back out to Barleycross.
-    *goto_scene timbermouth/barleycross/barleycross barleycross
   # Walk back out to Barleycross.
     *goto_scene timbermouth/barleycross/barleycross barleycross
   # Climb back down to the lane.
@@ -254,7 +268,6 @@ The ladder comes up into a long loft under the thatch, with the smell of hay and
 *set sleep_tier_stat2 "none"
 *set sleep_tier_bonus2 0
 *gosub_scene calendar resolve_sleep
-*set bc_loft_paid false
 
 You burrow into the hay and pull more of it over you, and the loft is warm and dark and smells of summer. You sleep to the sound of the cows shifting below.
 
