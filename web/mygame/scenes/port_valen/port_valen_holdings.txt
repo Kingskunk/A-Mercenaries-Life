@@ -6,8 +6,10 @@
 *set current_district "middle_ward"
 *set scenery_subplace "mw_holding_floor"
 *set wait_ok_page page_id
+*gosub_scene crafting cook_site_set "no_7_lantern_lane"
 *temp mw_holding_bed_just_finished false
 *temp mw_holding_tub_just_finished false
+*temp mw_holding_hearth_just_finished false
 *if ((mw_holding_upgrade_ready_day > 0) and (campaign_day >= mw_holding_upgrade_ready_day))
   *if (mw_holding_upgrade_pending_id = "bed")
     *set mw_holding_bed_upgrade true
@@ -15,15 +17,21 @@
   *if (mw_holding_upgrade_pending_id = "tub")
     *set mw_holding_tub_upgrade true
     *set mw_holding_tub_just_finished true
+  *if (mw_holding_upgrade_pending_id = "hearth")
+    *set mw_holding_hearth_upgrade true
+    *set mw_holding_hearth_just_finished true
   *set mw_holding_upgrade_pending_id ""
   *set mw_holding_upgrade_ready_day 0
 [b]◈ NO. 7 LANTERN LANE[/b]
 *line_break
 *if (mw_holding_bed_just_finished)
-  A note is waiting from the joiner when you come in: the bed frame upstairs is finished, strung and fitted with a stuffed mattress.
+  The scent of shaved ash and clean, lanolin-rich wool greets you at the door. Upstairs, the old straw tick is gone: a stout timber bed stands pegged into the corner, its rope webbing laced taut beneath a thick wool mattress.
   *line_break
 *if (mw_holding_tub_just_finished)
-  A note is waiting from the cooper when you come in: a new wash tub has been set in place downstairs.
+  A stout white-oak wash tub sits level against the wall by the hearth, smelling of fresh wood and pine pitch. Its iron hoops are seated clean and true, with a wooden pail and a block of hard soap set neatly inside.
+  *line_break
+*if (mw_holding_hearth_just_finished)
+  The clean smell of seasoned ash-wood and cooling forged iron greets you on the threshold. Along the back wall, the hearth has been fitted with a heavy black iron grate and a swiveling crane with hanging pot-hooks, ready for cooking.
   *line_break
 *if (mw_holding_bed_upgrade)
   *temp mw_holding_bed_desc "a proper bed, strung and fitted with a stuffed mattress"
@@ -33,15 +41,42 @@
   *temp mw_holding_tub_desc ", with a new wash tub set against the side wall"
 *else
   *temp mw_holding_tub_desc ""
+*if (mw_holding_hearth_upgrade)
+  *temp mw_holding_hearth_desc "a working hearth fitted with an iron grate and pot crane"
+*else
+  *temp mw_holding_hearth_desc "a cold hearth"
 *if (not(mw_holding_seen))
   *set mw_holding_seen true
-  The key turns easily in a lock still stiff with newness. Beyond the street door, the ground floor runs the width of the building: bare stone flags underfoot, a cold hearth along the back wall, and a broad bench under the street-facing shutters, their slats filtering whatever light reaches the lane outside${mw_holding_tub_desc}. The air sits close and a little stale, the first breath drawn in the place since the sale. A narrower stair at the rear climbs to a single room above, tucked under the slope of the roof, with a shuttered window over the lane and ${mw_holding_bed_desc}.
+  The key turns easily in a lock still stiff with newness. Beyond the street door, the ground floor runs the width of the building: bare stone flags underfoot, ${mw_holding_hearth_desc} along the back wall, and a broad bench under the street-facing shutters, their slats filtering whatever light reaches the lane outside${mw_holding_tub_desc}. The air sits close and a little stale, the first breath drawn in the place since the sale. A narrower stair at the rear climbs to a single room above, tucked under the slope of the roof, with a shuttered window over the lane and ${mw_holding_bed_desc}.
 *else
-  The key turns in the lock the same as always. The room below holds its stone flags and its hearth, the shutters filtering whatever light reaches the lane outside${mw_holding_tub_desc}, and the room above waits at the top of the rear stair, with ${mw_holding_bed_desc}.
+  The key turns in the lock the same as always. The room below holds its stone flags and ${mw_holding_hearth_desc}, the shutters filtering whatever light reaches the lane outside${mw_holding_tub_desc}, and the room above waits at the top of the rear stair, with ${mw_holding_bed_desc}.
+
+*if (weather_severity >= 3)
+  Wind howls over the eaves above, rattling the street shutters in their iron pins.
+*elseif (weather = "Rain")
+  Rain runs off the slate eaves in a steady stream into the gutter outside, spattering softly against the lower slats of the shutters.
+*elseif (weather = "Fog")
+  Cold river mist presses in from the lane, dulling what little daylight finds the window slats.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Slush thrown up by cart wheels outside spatters the lower timber of the door, and a thin draft creeps across the flags.
+
+*if ((time_period = "Morning") or (time_period = "Pre-Dawn"))
+  Out on Lantern Lane, drop-counters are unhooking with dull wooden thuds, and apprentices rattle handcarts over the flags as the morning trade stirs awake.
+*elseif (time_period = "Dusk")
+  Slits of warm amber light stripe the flags as the lane-keeper works his way past, lighting the horn lanterns outside one by one while shops chain their shutters for the night.
+*elseif (time_period = "Night")
+  Lantern Lane has gone quiet outside, save for the occasional rhythmic scrape of a Watch patrol's boots over the flags and the distant toll of the cathedral bells from the Heights.
+*else
+  *comment Midday / Afternoon
+  Thin stripes of daylight lie across the floor, and the muffled bartering of carters and shoppers on the lane carries through the timber in a steady, companionable hum.
 
 *choice
-  # Unroll the mattress upstairs and sleep. [~8 Hours]
-    *goto mw_holding_sleep
+  *if (mw_holding_bed_upgrade)
+    # Go upstairs to your bed and sleep. [~8 Hours]
+      *goto mw_holding_sleep
+  *else
+    # Unroll the mattress upstairs and sleep. [~8 Hours]
+      *goto mw_holding_sleep
   *if (mw_holding_tub_upgrade)
     # Wash up in the tub. [~10 min]
       *goto mw_holding_wash
@@ -60,7 +95,7 @@
 *label mw_holding_upgrades
 [b]◈ NO. 7 LANTERN LANE[/b]
 *line_break
-*if ((mw_holding_bed_upgrade) and (mw_holding_tub_upgrade))
+*if (((mw_holding_bed_upgrade) and (mw_holding_tub_upgrade)) and (mw_holding_hearth_upgrade))
   Everything here is already fitted out.
 *else
   A few things here could still use a tradesperson's hand.
@@ -69,7 +104,7 @@
   The bed stands fitted and ready upstairs.
 *elseif (mw_holding_upgrade_pending_id = "bed")
   *line_break
-  A joiner is still at his own bench on the frame; by your reckoning it should be fitted and ready by day ${mw_holding_upgrade_ready_day}.
+  Upstairs, the floor is swept clear where the joiner took his chalk marks. The frame is being mortised and pegged down at his yard, due for delivery on day ${mw_holding_upgrade_ready_day}.
 *elseif (not(mw_holding_upgrade_pending_id = ""))
   *line_break
   A straw mattress is still rolled against the wall upstairs. The one joiner you'd want for this is already committed elsewhere until that work finishes.
@@ -81,13 +116,25 @@
   The tub stands ready downstairs.
 *elseif (mw_holding_upgrade_pending_id = "tub")
   *line_break
-  A cooper is still staving and hooping it; by your reckoning it should be set in place by day ${mw_holding_upgrade_ready_day}.
+  The flagstones beside the hearth wait bare. The cooper is staving and hooping the oak tub at his shop, due to be rolled up and set level on day ${mw_holding_upgrade_ready_day}.
 *elseif (not(mw_holding_upgrade_pending_id = ""))
   *line_break
   The wall by the hearth still stands bare downstairs. The one cooper you'd want for this is already committed elsewhere until that work finishes.
 *elseif ((time_period = "Dusk") or (time_period = "Night"))
   *line_break
   The wall by the hearth still stands bare downstairs. The lane has long since gone quiet, and finding a cooper is not an errand for the dark.
+*if (mw_holding_hearth_upgrade)
+  *line_break
+  The hearth stands fitted with its crane and iron grate, ready for cooking.
+*elseif (mw_holding_upgrade_pending_id = "hearth")
+  *line_break
+  The back hearth sits swept and waiting. The smith is hammering out the crane and grate at his forge, due to be set by day ${mw_holding_upgrade_ready_day}.
+*elseif (not(mw_holding_upgrade_pending_id = ""))
+  *line_break
+  The back hearth still sits bare and cold. The smith you'd want for this is already committed elsewhere until that work finishes.
+*elseif ((time_period = "Dusk") or (time_period = "Night"))
+  *line_break
+  The back hearth still sits bare and cold. The smithies have banked their fires for the night, and finding a smith is not an errand for the dark.
 
 *choice
   *if (((mw_holding_bed_upgrade = false) and (mw_holding_upgrade_pending_id = "")) and (not((time_period = "Dusk") or (time_period = "Night"))))
@@ -96,6 +143,9 @@
   *if (((mw_holding_tub_upgrade = false) and (mw_holding_upgrade_pending_id = "")) and (not((time_period = "Dusk") or (time_period = "Night"))))
     *selectable_if ((((gold * 100) + (silver * 10)) + copper) >= 60) # Commission a wash tub. [6 Silver Marks | ~1 Hour]
       *goto mw_holding_tub_commission
+  *if (((mw_holding_hearth_upgrade = false) and (mw_holding_upgrade_pending_id = "")) and (not((time_period = "Dusk") or (time_period = "Night"))))
+    *selectable_if ((((gold * 100) + (silver * 10)) + copper) >= 80) # Commission a cooking hearth and iron crane. [8 Silver Marks | ~1 Hour]
+      *goto mw_holding_hearth_commission
   # Head back downstairs.
     *goto mw_holding_interior
   *if (vane_independent_operative)
@@ -119,7 +169,9 @@
   *set mw_holding_upgrade_ready_day (campaign_day + 3)
   *set currency_txn_locked true
   *set locked_currency_txn_page_id page_id
-It doesn't take you long to find someone in the city for this. A joiner will fit a bed frame and stuff a mattress upstairs within a few days' work. They charge you one Gold Crown and two Silver Marks upfront.
+You head down toward the timber yards off Conduit Square, where the air smells of fresh ash shavings and linseed oil. A joiner looks up from his bench with a notched folding rule in hand, listening closely as you describe the narrow turn of No. 7's rear stair.
+
+"Tenons pegged tight so they won't groan under you, seasoned ash stringers, and a clean wool-stuffed ticking," he says, chalking the measurements onto his leather apron. He counts your coin across the sawdust on his bench—one Gold Crown and two Silver Marks—and nods. "My apprentices will carry the pieces up and lace the webbing tight by the third day."
 *page_break Head back downstairs…
 *goto mw_holding_interior
 
@@ -140,7 +192,32 @@ It doesn't take you long to find someone in the city for this. A joiner will fit
   *set mw_holding_upgrade_ready_day (campaign_day + 2)
   *set currency_txn_locked true
   *set locked_currency_txn_page_id page_id
-It doesn't take you long to find someone in the city for this. A cooper will stave and hoop a wash tub and set it in place downstairs within a couple of days' work. They charge you six Silver Marks upfront.
+The ringing clatter of mauls against iron hoops leads you into the coopers' row behind the High Bridge. The cooper wipes sweat from his brow with a corded forearm, running a hand over a stout, half-finished barrel while you give the dimensions of the stone flags beside your hearth.
+
+"White oak staves, four iron hoops, and pitched tight so it won't weep a drop over your floor," he says, testing your six Silver Marks against his palm. He chalks 'No. 7 Lantern Lane' onto his order slate. "I'll have a lad roll it up the lane, set it level against the wall, and see it holds water by the second day."
+*page_break Head back downstairs…
+*goto mw_holding_interior
+
+*label mw_holding_hearth_commission
+*set hours_to_pass 1
+*set minutes_to_pass 0
+*set time_advance_call_id "mw_holding_hearth_commission"
+*gosub_scene calendar advance_time
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount (0 - 80)
+  *gosub_scene economy currency_add
+  *set mw_holding_upgrade_pending_id "hearth"
+  *set mw_holding_upgrade_ready_day (campaign_day + 2)
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+You head toward the smiths' quarter near the canal, where charcoal smoke hangs thick and the clink of hammer-fall echoes between the stone workshops. A smith in a scorched leather apron leans on his tongs as you explain what No. 7's hearth needs.
+
+"A heavy swiveling crane bolted into the chimney stone, three stepped pot-hooks, and a raised iron grate to draw the draft," he says, wiping soot from his brow with the back of a calloused hand. He counts your eight Silver Marks and raps his anvil once with a hammer. "I'll forge the ironwork, and have a mason friend check the flue and set the brackets tight by the second day."
 *page_break Head back downstairs…
 *goto mw_holding_interior
 
