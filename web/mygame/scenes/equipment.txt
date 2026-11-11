@@ -4009,6 +4009,22 @@ You fill the empty @{(jug_fill_n = 1) jug|jugs} from ${jug_refill_source}, then 
   *set water_ok true
 *return
 
+*comment *gosub equipment water_fill_at_hand (output water_fill_ok: is fresh drinking water within reach?)
+*comment Separate from water_at_hand (which is for open water/bathing with soap). Fresh drinking water is declared
+*comment by the page/label itself using *set fresh_water_page page_id (or manual fresh_water_here), or globally on the
+*comment overworld where the tile has water (ow_on and ow_water).
+*label water_fill_at_hand
+*set water_fill_ok false
+*if (fresh_water_here)
+  *set water_fill_ok true
+*if (fresh_water_page = page_id)
+  *set water_fill_ok true
+*comment Overworld tiles with fresh water (stream, river, lake, shore)
+*if (ow_on)
+  *if (ow_water)
+    *set water_fill_ok true
+*return
+
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment CONSUMABLES: USE AT WILL
 *comment *gosub_scene equipment use_consumable <item_id>   (input use_in_combat true/false)
@@ -4087,6 +4103,11 @@ You fill the empty @{(jug_fill_n = 1) jug|jugs} from ${jug_refill_source}, then 
   *set use_result "none"
   *set use_banner ""
   *set use_text ""
+  *if (uc_item = "water_jug")
+    *gosub use_water_jug
+    *set use_locked true
+    *set locked_use_page_id page_id
+    *return
   *gosub gear_count uc_item
   *if ((gear_qty > 0) and (gear_kind = "consumable"))
     *set use_text gear_use_text
@@ -4287,6 +4308,66 @@ You fill the empty @{(jug_fill_n = 1) jug|jugs} from ${jug_refill_source}, then 
       *gosub spend_consumable uc_item
   *set use_locked true
   *set locked_use_page_id page_id
+*return
+
+*comment Out-of-combat inventory action for the water jug (fill or empty).
+*label use_water_jug
+*gosub jug_empties
+*temp total_jugs 0
+*if (has_water_jug)
+  *set total_jugs (1 + spare_water_jug)
+*if (jug_full > total_jugs)
+  *set jug_full total_jugs
+
+*comment EMPTY ACTION: safe anywhere, sheds weight immediately
+*if ((jug_action = "empty_one") or (jug_action = "empty"))
+  *if (jug_full <= 0)
+    *set use_result "limit"
+    *set use_text "Your water jugs are already empty."
+    *return
+  *set jug_full (jug_full - 1)
+  *set use_result "ok"
+  *set use_banner "💧 Water Jug: Poured out 1 jug | Shed 7 lbs"
+  *return
+
+*if (jug_action = "empty_all")
+  *if (jug_full <= 0)
+    *set use_result "limit"
+    *set use_text "Your water jugs are already empty."
+    *return
+  *temp dumped_n jug_full
+  *set jug_full 0
+  *set use_result "ok"
+  *set use_banner (("💧 Water Jugs: Emptied " & dumped_n) & (" jugs | Shed " & (dumped_n * 7)) & " lbs")
+  *return
+
+*comment FILL ACTION (default): requires a fresh water source
+*gosub water_fill_at_hand
+*if (not(water_fill_ok))
+  *set use_result "limit"
+  *set use_text "There is no fresh water within reach to fill a jug."
+  *return
+
+*if (jug_empty_n <= 0)
+  *set use_result "limit"
+  *set use_text "All your water jugs are already full."
+  *return
+
+*if (jug_action = "fill_all")
+  *set jug_fill_take jug_empty_n
+*else
+  *set jug_fill_take 1
+
+*gosub jug_fill_some
+*set hours_to_pass 0
+*set minutes_to_pass 5
+*set time_advance_call_id "water_jug_fill_inv"
+*gosub_scene calendar advance_time
+*set use_result "ok"
+*if (jug_fill_n = 1)
+  *set use_banner (("💧 Water Jug: 1 jug filled | " & jug_full) & " full")
+*else
+  *set use_banner (((("💧 Water Jugs: " & jug_fill_n) & " filled | ") & jug_full) & " full")
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

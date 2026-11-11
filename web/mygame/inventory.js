@@ -59,7 +59,7 @@
       badge: evalField(item.badge, s) || "",
       weight: Number(item.weight) || 0,
       stow: !!item.stow,
-      use: !!item.use,
+      use: !!item.use || item.id === "water_jug",
       useLabel: evalField(item.useLabel, s) || "Use",
       equip: item.equip || null,
       alchemy: item.alchemy || null
@@ -395,6 +395,7 @@
   INV.penaltyPct = penaltyPct;
   INV.coinLoad = coinLoad;
   INV.fmtLoad = fmtLoad;
+  INV.jugActionButtons = jugActionButtons;
   // The warning a shop shows beside an item that would put the character over their limit (equipment.txt gear_warning_text reads it through *script, so the shop menus and the trade panel's
   // rows carry the same words). "" when buying one still fits. One unit; a stack of them is the trade panel's own check.
   function overloadNote(s, id) {
@@ -809,7 +810,8 @@
         '<div class="inv-detail-acts">' +
         (sel.equip && sel.equip.attune ? '<button type="button" class="inv-use" data-attune="' + (truthy(s.hearthstone_attuned) ? "break" : "attune") + '">' + (truthy(s.hearthstone_attuned) ? "Break attunement" : "Attune") + "</button>"
           : (sel.equip ? '<button type="button" class="inv-use" data-equip-sel>Equip</button>' : "")) +
-        (sel.use ? '<button type="button" class="inv-use" data-use="' + esc(sel.id) + '"' + (canUse() && !view.pending ? "" : " disabled") + ">" + esc(sel.useLabel) + "</button>" : "") +
+        (sel.id === "water_jug" ? jugActionButtons(s) :
+          (sel.use ? '<button type="button" class="inv-use" data-use="' + esc(sel.id) + '"' + (canUse() && !view.pending ? "" : " disabled") + ">" + esc(sel.useLabel) + "</button>" : "")) +
         "</div>";
     } else if (view.note || view.useMsg) {
       /* the notice above is all there is to say */
@@ -1211,6 +1213,28 @@
     render();
   }
 
+  function jugActionButtons(s) {
+    if (!truthy(s.has_water_jug)) return "";
+    var total = 1 + (Number(s.spare_water_jug) || 0);
+    var full = Math.max(0, Math.min(total, Number(s.jug_full) || 0));
+    var empty = total - full;
+    var dis = canUse() && !view.pending ? "" : " disabled";
+    var out = "";
+    if (empty === 1) {
+      out += '<button type="button" class="inv-use" data-use="water_jug" data-jug-act="fill_one"' + dis + '>Fill</button>';
+    } else if (empty > 1) {
+      out += '<button type="button" class="inv-use" data-use="water_jug" data-jug-act="fill_one"' + dis + '>Fill 1</button>';
+      out += '<button type="button" class="inv-use" data-use="water_jug" data-jug-act="fill_all"' + dis + '>Fill All (' + empty + ')</button>';
+    }
+    if (full === 1) {
+      out += '<button type="button" class="inv-use inv-use-empty" data-use="water_jug" data-jug-act="empty_one"' + dis + '>Empty</button>';
+    } else if (full > 1) {
+      out += '<button type="button" class="inv-use inv-use-empty" data-use="water_jug" data-jug-act="empty_one"' + dis + '>Empty 1</button>';
+      out += '<button type="button" class="inv-use inv-use-empty" data-use="water_jug" data-jug-act="empty_all"' + dis + '>Empty All</button>';
+    }
+    return out;
+  }
+
   function render() {
     var s = statsNow();
     hideTip();
@@ -1230,7 +1254,7 @@
       (r.slot || r.badge ? '<div class="bt-kind">' + esc([r.slot, r.badge].filter(Boolean).join(" · ")) + "</div>" : "") +
       (r.traits ? '<div class="bt-meta">' + esc(r.traits) + "</div>" : "") +
       (r.description ? '<div class="bt-text">' + esc(r.description) + "</div>" : "") +
-      (r.equip ? '<div class="bt-hint">Drag to a slot, or double-click to equip</div>' : (r.use ? '<div class="bt-hint">Double-click to use</div>' : ""));
+      (r.equip ? '<div class="bt-hint">Drag to a slot, or double-click to equip</div>' : (r.id === "water_jug" ? '<div class="bt-hint">Double-click to fill or empty</div>' : (r.use ? '<div class="bt-hint">Double-click to use</div>' : "")));
   }
   function tipHtmlForSlot(bucket, ringSlot) {
     var d = slotDesc(bucket, ringSlot), s = statsNow();
@@ -1484,9 +1508,10 @@
     });
   }
 
-  function useItem(id) {
+  function useItem(id, act) {
     if (!canUse() || view.pending) return;
     statsNow().use_item_id = id;
+    if (act) statsNow().jug_action = act;
     // The panel STAYS OPEN and the page behind it is left alone (2026-10-26, the user: eating and drinking should not close the inventory or replay the page). The same one-shot as before
     // (codex_use_now, which runs equipment.txt use_consumable), run by quietRun; its one-line result shows under the item, and the page is refreshed once when the panel closes.
     view.pending = true; view.useMsg = ""; render();
@@ -1542,8 +1567,15 @@
     if (r.equip) {
       var bucket = r.equip.slot;
       equipTo(bucket, r.equip.id, bucket === "ring" ? ringTarget(r.equip.id) : undefined);
-    } else if (r.use) {
-      useItem(r.id);
+    } else if (r.use || r.id === "water_jug") {
+      var act = undefined;
+      if (r.id === "water_jug") {
+        var s = statsNow();
+        var total = 1 + (Number(s.spare_water_jug) || 0);
+        var full = Math.max(0, Math.min(total, Number(s.jug_full) || 0));
+        act = (total - full > 0) ? "fill_one" : "empty_one";
+      }
+      useItem(r.id, act);
     }
   }
 
@@ -1604,7 +1636,7 @@
       return;
     }
     if (t.hasAttribute("data-box")) { view.box[Number(t.getAttribute("data-box"))] = null; note(""); render(); return; }
-    if (t.hasAttribute("data-use")) { if (!t.disabled) useItem(t.getAttribute("data-use")); return; }
+    if (t.hasAttribute("data-use")) { if (!t.disabled) useItem(t.getAttribute("data-use"), t.getAttribute("data-jug-act") || undefined); return; }
     if (t.hasAttribute("data-cat")) { view.category = t.getAttribute("data-cat"); render(); return; }
     if (t.hasAttribute("data-item")) {
       var id = t.getAttribute("data-item");

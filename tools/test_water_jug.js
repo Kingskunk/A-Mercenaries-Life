@@ -67,4 +67,30 @@ s = fresh({ has_water_jug: true, spare_water_jug: 59, jug_full: 60, strength: 16
 ok(P.stowRoom(SB, "water_jug", s).n === 40, "40 full jugs (320 pounds) fit in 320: " + P.stowRoom(SB, "water_jug", s).n);
 s = fresh({ has_water_jug: true, spare_water_jug: 59, jug_full: 10 });   // 60 jugs, ten full: fifty empty (50) then the full ones
 ok(P.stowRoom(SB, "water_jug", s).n === 60, "fifty empty (50 pounds) and ten full (80) is 130: all sixty fit");
+
+// jugActionButtons UI tests
+s = fresh({ has_water_jug: true, jug_full: 0 }); // 1 empty
+let html = P.jugActionButtons(s);
+ok(html.includes('>Fill<') && !html.includes('Fill All') && !html.includes('Empty'), "1 empty jug shows [Fill]");
+
+s = fresh({ has_water_jug: true, jug_full: 1 }); // 1 full
+html = P.jugActionButtons(s);
+ok(html.includes('>Empty<') && !html.includes('Empty All') && !html.includes('Fill'), "1 full jug shows [Empty]");
+
+s = fresh({ has_water_jug: true, spare_water_jug: 2, jug_full: 0 }); // 3 empty
+html = P.jugActionButtons(s);
+ok(html.includes('>Fill 1<') && html.includes('>Fill All (3)<') && !html.includes('Empty'), "3 empty jugs show [Fill 1] and [Fill All (3)]");
+
+s = fresh({ has_water_jug: true, spare_water_jug: 2, jug_full: 3 }); // 3 full
+html = P.jugActionButtons(s);
+ok(html.includes('>Empty 1<') && html.includes('>Empty All<') && !html.includes('Fill'), "3 full jugs show [Empty 1] and [Empty All]");
+
+s = fresh({ has_water_jug: true, spare_water_jug: 2, jug_full: 2 }); // 2 full, 1 empty
+html = P.jugActionButtons(s);
+ok(html.includes('>Fill<') && !html.includes('Fill All') && html.includes('>Empty 1<') && html.includes('>Empty All<'), "2 full, 1 empty show [Fill], [Empty 1], and [Empty All]");
+
+s = fresh({ has_water_jug: true, spare_water_jug: 2, jug_full: 1 }); // 1 full, 2 empty
+html = P.jugActionButtons(s);
+ok(html.includes('>Fill 1<') && html.includes('>Fill All (2)<') && html.includes('>Empty<') && !html.includes('Empty All'), "1 full, 2 empty show [Fill 1], [Fill All (2)], and [Empty]");
+
 console.log("water jug: " + n + " checks passed");
