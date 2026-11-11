@@ -95,27 +95,25 @@ Object.keys(defs.merchants).forEach((mid) => {
     if (!sells) g.sells = false;
     if (fixed) g.fixed = true;
     if (m.commodities && CAT[id] && CAT[id].commodity) {
-      const mk = CAT[id].commodity.makers, bt = target, reach = CR.reachOf(CAT[id], CP);
+      // No reach cutoff: a maker's weight decays with distance (CP.supplyHalf) and never quite reaches zero, so supply (and so target/price) tapers
+      // smoothly the further a market sits from any maker, instead of snapping between a normal shelf and a flat "unstocked" shortage price at a reach boundary.
+      const mk = CAT[id].commodity.makers, bt = target;
       let supply = 0, level = CR.capLevelOf(CAT[id], CP), nearest = Infinity;
       Object.keys(mk).forEach((tile) => {
         if (!OW.nodes[tile]) problems.push(id + ": maker tile " + tile + " is not on the map");
         const d = freightDistance(tile, m.tile, CAT[id]);
-        if (d > reach) return;   // beyond the good's reach
         supply += CP.weight[mk[tile]] / (1 + d / CP.supplyHalf);
         level = Math.min(level, CP.cost[mk[tile]] + CP.perMile * d); nearest = Math.min(nearest, d);
       });
-      const supplied = supply >= CP.minSupply;
-      const t2 = Math.max(defs.minDepth, Math.round(bt * (supplied ? supply : CP.unsuppliedShare)));
+      const t2 = Math.max(defs.minDepth, Math.round(bt * Math.min(1, supply)));
       delete g.buys; delete g.sells;
-      g.mult = Math.round(level * 1000) / 1000; g.target = t2;
+      g.mult = Math.round(level * 1000) / 1000; g.target = t2; g.stock0 = t2;
       { const top = CR.topOf(CAT[id], CP, nearest); if (top !== CP.band.max) g.hi = top; }   // a far good's band widens with the miles to its nearest maker (a local or regional good keeps to the band)
-      g.stock0 = supplied ? t2 : 0; g.buyPct = Math.min(M.MAX_BUY_PCT, m.buyShare || 0.8);
-      if (!supplied) { g.restock = false; g.flow = -Math.round(t2 * CP.useRate * 100) / 100; }
+      g.buyPct = Math.min(M.MAX_BUY_PCT, m.buyShare || 0.8);
       // the world (web/mygame/world.js): the makers this market draws on [tile, reach weight, miles] and the good's season curve
       if (supply > 0) g.world = { tile: m.tile };   // what the world does to it comes from web/mygame/world-data.generated.js (tools/gen_world.js)
       g.need = CAT[id].commodity.need;
-      if (supply <= 0) { g.unstocked = true; g.sells = false; g.mult = 1; g.target = defs.minDepth; g.stock0 = 0; g.buyPct = Math.min(M.MAX_BUY_PCT, m.buyShare || 0.8); delete g.world; delete g.restock; delete g.flow; delete g.hi; }
-      commodityReport.push({ mid: mid, id: id, level: g.mult, supply: Math.round(supply * 100) / 100, target: t2, supplied: supplied });
+      commodityReport.push({ mid: mid, id: id, level: g.mult, supply: Math.round(supply * 100) / 100, target: t2 });
     }
     if (m.inputs && m.tile && !m.commodities && !fixed && it.group !== "jewelry") {
       const IN = defs.inputs, sh = Object.prototype.hasOwnProperty.call(IN.byItem, id) ? IN.byItem[id] : IN.byKind[it.kind];
@@ -153,7 +151,7 @@ if (process.argv.indexOf("--check") >= 0) {
 }
 fs.writeFileSync(OUT, body);
 { const GW = require("./gen_world.js"), wb = GW.build(); if (wb.problems.length) { console.error("gen_world: problems:\n  " + wb.problems.join("\n  ")); process.exit(1); } fs.writeFileSync(GW.OUT, GW.body(wb.data)); console.log("gen_world: wrote " + path.relative(ROOT, GW.OUT)); }
-commodityReport.forEach((r) => { if (process.argv.indexOf("--commodities") >= 0) console.log("  " + (r.mid + "/" + r.id).padEnd(34) + "level " + String(r.level).padEnd(6) + "supply " + String(r.supply).padEnd(6) + (r.supplied ? "shelf " + r.target : "none (shortage)")); });
+commodityReport.forEach((r) => { if (process.argv.indexOf("--commodities") >= 0) console.log("  " + (r.mid + "/" + r.id).padEnd(34) + "level " + String(r.level).padEnd(6) + "supply " + String(r.supply).padEnd(6) + "shelf " + r.target); });
 const goodsN = Object.keys(out).reduce((n, k) => n + Object.keys(out[k].goods).length, 0);
 console.log("gen_markets: wrote " + path.relative(ROOT, OUT) + " (" + Object.keys(out).length + " markets, " + goodsN + " goods)");
 // the cost of the model: the first unit a merchant buys pays a little under today's price (the payout is priced at the stock AFTER the unit arrives)

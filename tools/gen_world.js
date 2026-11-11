@@ -41,6 +41,10 @@ function build() {
     if (it.commodity.inputs) G.inputs = it.commodity.inputs;
     if (it.commodity.store) G.store = it.commodity.store;
     makerTiles.forEach((t) => { if (!S[t]) problems.push(id + ": maker tile " + t + " has no settlement entry"); });
+    // a good can override the world's pullExp/coverFloor (market_defs.json "world"): for one whose only nearby maker is often a minor one (fish at Timbermouth), the global
+    // settings can leave a close neighbor starved while the maker town itself, served first, sits cheap. Most goods have no override and behave exactly as before.
+    const pullExp = it.commodity.pullExp !== undefined ? it.commodity.pullExp : P.pullExp;
+    const coverFloor = it.commodity.coverFloor !== undefined ? it.commodity.coverFloor : P.coverFloor;
     // consumers
     Object.keys(S).forEach((t) => {
       const per = (defs.demand[id] || 0) * S[t].pop / 1000, ind = (defs.industry[t] && defs.industry[t][id]) || 0;
@@ -49,7 +53,8 @@ function build() {
       makerTiles.forEach((m) => { const route = Freight.route(m, t, it), mi = route.ok ? route.costDistance : Infinity; if (!isFinite(mi) || mi > CR.reachOf(it, CP)) return; d[m] = Math.round(mi * 10) / 10; days[m] = Math.round(route.travelDays * 10000) / 10000; w[m] = CP.weight[mk[m]] / (1 + mi / CP.supplyHalf); sw += w[m]; });
       if (sw <= 0) return;
       const s = {}; Object.keys(w).forEach((m) => { s[m] = r4(w[m] / sw); });
-      G.consumers.push({ tile: t, D: Math.round(D * 100) / 100, pull: data.tiles[t].pull, s: s, miles: d, days: days });
+      const pull = pullExp === P.pullExp ? data.tiles[t].pull : r4(Math.pow(S[t].pop / 1000, pullExp));
+      G.consumers.push({ tile: t, D: Math.round(D * 100) / 100, pull: pull, s: s, miles: d, days: days });
     });
     // capacities
     const Dtot = G.consumers.reduce((a, c) => a + c.D, 0);
@@ -57,7 +62,7 @@ function build() {
     makerTiles.forEach((m, i) => {
       // never less than coverFloor x what the settlements that draw on this maker want of it, so a settlement whose only maker in reach is a small one is not starved for ever
       const cover = G.consumers.reduce((a, c) => a + (c.s[m] ? c.D * c.s[m] : 0), 0);
-      G.makers.push({ tile: m, tier: mk[m], cap: Math.round(Math.max(P.margin * Dtot * cw[i] / cws, P.coverFloor * cover) * 100) / 100 });
+      G.makers.push({ tile: m, tier: mk[m], cap: Math.round(Math.max(P.margin * Dtot * cw[i] / cws, coverFloor * cover) * 100) / 100 });
     });
     data.goods[id] = G;
   });

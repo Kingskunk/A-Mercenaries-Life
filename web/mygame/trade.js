@@ -359,7 +359,6 @@
       '<div class="trd-split"><div class="trd-rail">' +
         '<div class="trd-tools"><input type="search" class="trd-search" data-act="search" placeholder="Search goods" aria-label="Search goods" autocomplete="off"><select class="trd-sort" data-act="sort" aria-label="Sort"></select><span class="trd-flags"></span></div>' +
         '<div class="trd-cats"></div>' +
-        '<div class="trd-keys">Shift-click: ten at a time<br>Ctrl-click +: the most you can afford<br>Ctrl-click −: clear the line</div>' +
       '</div><div class="trd-right"><div class="trd-body"></div><div class="trd-receipt" role="status" hidden></div><div class="trd-foot"></div></div></div>';
     document.body.appendChild(dlg);
     elTitle = dlg.querySelector(".trd-title");
@@ -510,6 +509,24 @@
     var up = pct > 0, good = goodWhenHigh ? up : !up;
     return '<span class="' + (good ? "tGood" : "tBad") + '">' + (up ? "▲ " : "▼ ") + Math.abs(pct) + "% " + (up ? "above" : "below") + "</span>";
   }
+  // The one named event (blight, bumper harvest, refugees...) driving this good's price at a tile today, if any: checked at the tile itself and the region ("*"), picked by world.js's own eventsAt.
+  function eventWhy(id, tile) {
+    if (!tile || !window.World || !window.World.eventsAt) return null;
+    var list = window.World.eventsAt(num(statsNow().world_seed) || 1, today(), tile), i, j;
+    for (i = 0; i < list.length; i++) for (j = 0; j < list[i].effects.length; j++) if (list[i].effects[j].goods.indexOf(id) >= 0) return list[i].name;
+    return null;
+  }
+  // A short, one-line reason the price is where it is: a live event beats a guess, checked at the market's own tile and the good's biggest nearby maker; otherwise whichever of distance or local
+  // demand is pulling harder away from normal. lv is the distance-only level (g.mult with the world's part of it divided back out, same trick trade.js already uses for "its usual rate here").
+  function priceWhy(id, g, wr) {
+    var maker = null, G = window.WORLD_DATA && g.world && window.WORLD_DATA.goods[id];
+    if (G) { var c = G.consumers.filter(function (x) { return x.tile === g.world.tile; })[0], best = 0; if (c) Object.keys(c.s).forEach(function (t) { if (c.s[t] > best) { best = c.s[t]; maker = t; } }); }
+    var ev = (maker && eventWhy(id, maker)) || eventWhy(id, g.world && g.world.tile);
+    if (ev) return ev;
+    var lv = g.mult / (wr || 1), distFar = Math.abs(lv - 1) >= Math.abs(wr - 1);
+    if (distFar) return lv > 1 ? "far from the source" : "near the source";
+    return wr > 1 ? "the town's own demand" : "a local glut";
+  }
   function tipHtml(trade, mk, kind, id) {
     var s = statsNow(), it = data().items[id]; if (!it) return "";
     var g = mk ? mk.def.goods[id] : null, have = owned(id, s), bs = basisFor(id, s), base = g ? num(g.base) : num(it.retail);
@@ -530,6 +547,8 @@
       var dearC = kind === "buy" ? "tBad" : "tGood", cheapC = kind === "buy" ? "tGood" : "tBad";
       if (wr > 1.1) out += '<div class="tRow"><span>Supply</span><span class="' + dearC + '">short · higher than usual</span></div>';
       else if (wr < 0.9) out += '<div class="tRow"><span>Supply</span><span class="' + cheapC + '">plentiful · lower than usual</span></div>';
+      var lv = g.mult / wr; // the Why row covers BOTH causes (distance alone can push the price a long way with no world-supply swing at all, e.g. a good that is simply far from its source)
+      if (wr > 1.1 || wr < 0.9 || lv > 1.1 || lv < 0.9) out += '<div class="tRow"><span>Why</span><span>' + esc(priceWhy(id, g, wr)) + "</span></div>";
       if (!g.fixed) out += '<div class="tRow"><span>' + (kind === "buy" ? "On the shelf" : "Held here") + "</span><span><b>" + num(mk.st.stock[id]) + "</b></span></div>";
       if (sf > 1.1) out += '<div class="tRow"><span>Shelf</span><span class="' + dearC + '">thin</span></div>';
       else if (sf < 0.9) out += '<div class="tRow"><span>Shelf</span><span class="' + cheapC + '">well stocked</span></div>';
@@ -791,9 +810,9 @@
     if (t.hasAttribute("data-step")) {
       if (t.disabled) return;
       var kind = t.getAttribute("data-kind"), id = t.getAttribute("data-id"), max = num(t.getAttribute("data-max"));
-      // Ctrl (or Cmd) on + takes the most that can be afforded (Ctrl on - empties the line); Shift moves ten
+      // Ctrl (or Cmd) on + takes the most that can be afforded (Ctrl on - empties the line); Alt moves ten
       if (ev.ctrlKey || ev.metaKey) setQty(kind, id, t.getAttribute("data-step") === "1" ? num(t.getAttribute("data-fit")) : 0, max);
-      else setQty(kind, id, (cart[kind][id] || 0) + num(t.getAttribute("data-step")) * (ev.shiftKey ? 10 : 1), max);
+      else setQty(kind, id, (cart[kind][id] || 0) + num(t.getAttribute("data-step")) * (ev.altKey ? 10 : 1), max);
       render();
       return;
     }

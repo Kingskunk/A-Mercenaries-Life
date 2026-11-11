@@ -124,16 +124,6 @@ function hashTexts(lines, start, end) {
   return texts;
 }
 
-// Same scan as hashTexts, but keeping each option's 1-indexed source line
-// so a duplicate finding can point at both occurrences.
-function hashTextsWithLines(lines, start, end) {
-  const entries = [];
-  for (let i = start; i < end; i++) {
-    if (!isBlank(lines[i]) && /^\s*#/.test(lines[i])) entries.push({ text: lines[i].trim(), line: i + 1 });
-  }
-  return entries;
-}
-
 // This project's convention for a menu/navigation option ("[Return to
 // Dossier]", "[Close Dossier & Return]") — a deliberate single-button
 // acknowledgment menu, not a narrative choice that needs real alternatives.
@@ -252,7 +242,7 @@ function lintFile(file) {
       }
       const line = lines[k];
       if (/^\s*#/.test(line)) {
-        items.push({ kind: 'hash' });
+        items.push({ kind: 'hash', text: line.trim(), line: k + 1 });
         k++;
         continue;
       }
@@ -279,24 +269,46 @@ function lintFile(file) {
     const totalHashes = allTexts.length;
     const hasBranches = items.some((it) => it.kind === 'branch');
 
-    // Rule D: exact duplicate option text anywhere in this *choice block.
+    // Rule D: exact duplicate option text among this *choice's UNCONDITIONAL
+    // (bare `#`, no enclosing *if/*elseif/*else) direct options only.
     // ChoiceScript's real engine throws "Invalid option; conflicts with
-    // option ... on line N" for this (scene.js's conflictingOptions,
-    // keyed by a namesEncountered map built while parsing the *choice).
-    // Quicktest can never catch it: editor/embeddable-autotester.js
-    // monkey-patches conflictingOptions into a no-op, because autotest's
-    // forced *if-branch exploration makes mutually-exclusive branches look
-    // like they "collide" even though only one could ever be true in real
-    // play. randomtest.js doesn't patch it, so it WOULD throw -- but only
-    // if a test run happens to walk into this exact *choice. This static
-    // scan catches it unconditionally, regardless of path coverage.
-    // TODO(human): walk optionEntries, track the first line each exact
-    // `text` was seen on, and for every later entry whose text repeats
-    // push a finding of the form:
-    //   { file, line: <second occurrence>, rule: 'D',
-    //     detail: `duplicate option text ${JSON.stringify(text)} (first seen on line ${firstLine})` }
-    // Push each finding into `findings` (declared above, in scope here).
-    const optionEntries = hashTextsWithLines(lines, j, blockEndIdx);
+    // option ... on line N" for this (scene.js's conflictingOptions, keyed
+    // by a namesEncountered map built while parsing the *choice) -- but
+    // ONLY for lines the parser actually visits. A standalone block *if
+    // whose condition is false is skipped entirely by ordinary control
+    // flow (web/scene.js's *if handling), so two *if-gated siblings that
+    // share identical text can never really collide in normal play --
+    // only one of them is ever parsed, whichever is true. They DO appear
+    // to collide under Quicktest, because editor/embeddable-autotester.js
+    // forces both branches of every *if for coverage; that's exactly why
+    // it also monkey-patches conflictingOptions into a no-op (its own
+    // comment: "autotest makes impossible situations happen"). Comparing
+    // *if-gated text here would just rebuild that same false-positive
+    // class in a static tool (confirmed against this project's own
+    // content: dozens of shipped, working *if-gated siblings share text,
+    // e.g. langston_hall.txt's four mutually-exclusive "mayor's office"
+    // closure reasons). Bare unconditional options carry none of that
+    // risk -- they are parsed every single time this *choice renders, so
+    // a duplicate among them is a guaranteed, always-reachable conflict
+    // regardless of any variable's state. randomtest.js doesn't patch
+    // conflictingOptions, so it would throw on one of these too, but only
+    // if a run happens to walk into this exact *choice; this static scan
+    // catches it unconditionally, regardless of path coverage.
+    const firstSeenOnLine = new Map();
+    for (const item of items) {
+      if (item.kind !== 'hash') continue;
+      const firstLine = firstSeenOnLine.get(item.text);
+      if (firstLine) {
+        findings.push({
+          file,
+          line: item.line,
+          rule: 'D',
+          detail: `duplicate unconditional option text ${JSON.stringify(item.text)} (first seen on line ${firstLine})`,
+        });
+      } else {
+        firstSeenOnLine.set(item.text, item.line);
+      }
+    }
 
     // Case 1: no branches at all — the rendered count IS totalHashes, no
     // uncertainty possible. Safe to score directly, including Rule C.

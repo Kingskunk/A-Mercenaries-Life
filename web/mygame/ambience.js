@@ -140,6 +140,7 @@
     black_sinks_captured_gatehouse_bivouac: "bivouac",
     black_sinks_gilded_scales_toll_fort: "warcamp",
     stonewatch: "warcamp",
+    fellgate: "warcamp",   // the Scales' border fort at the foot of the Coldspine: the same garrison bed as Stonewatch (see OVERLAY for its wind)
     port_valen_fishmongers_slip: "harbor",
     port_valen_iron_wharves: "harbor",
     port_valen_wreck_bell_pier: "harbor",
@@ -220,6 +221,7 @@
     black_sinks_captured_gatehouse_bivouac: [{ all: "wind_against_stone_creeking_timber_distantsound_needstobelayerd", level: 0.22 }],
     black_sinks_gilded_scales_toll_fort: [{ all: "wind_against_stone_creeking_timber_distantsound_needstobelayerd", level: 0.18 }],
     stonewatch: [{ all: "wind_against_stone_creeking_timber_distantsound_needstobelayerd", level: 0.24 }],
+    fellgate: [{ all: "wind_against_stone_creeking_timber_distantsound_needstobelayerd", level: 0.22 }],
     langston_true_sun_temple_rotunda: [{ all: "wind_against_stone_creeking_timber_distantsound_needstobelayerd", level: 0.12 }],
     port_valen_patrician_gala_salon: [{ all: "noble_gala_party_talking_glassclinking_softlaughter_nomusic", level: 0.30 }],
     // the coins-shuffling bed above is the primary layer; whispering and chatter ride alongside it at the same

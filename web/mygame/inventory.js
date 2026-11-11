@@ -473,7 +473,7 @@
         close();
       }
     });
-    dlg.addEventListener("mousedown", function (ev) { if (ev.target === dlg) close(); });
+    dlg.addEventListener("mousedown", function (ev) { if (ev.target === dlg) close(); if (ev.shiftKey && ev.target && ev.target.closest && ev.target.closest("button")) ev.preventDefault(); });
     // Escape closes a dialog natively, wherever the focus is (a redraw leaves it on the page): with a slot lit, the first press only puts the light away
     dlg.addEventListener("close", onDialogClose);
     // Right-click (and a touch long-press, which most browsers also report as a context menu) on a carried item asks to throw it away; the long-press timer below covers the browsers that do not.
@@ -1571,8 +1571,8 @@
       var xc2 = xferContext(statsNow());
       if (!xc2 || !xc2.sel || !xc2.dir) return;
       var cur = Math.max(1, Math.min(view.qty, xc2.max || 1));
-      if (t.hasAttribute("data-qty")) { view.qty = Math.max(1, Math.min(xc2.max, cur + Number(t.getAttribute("data-qty")))); render(); return; }
-      if (t.hasAttribute("data-qty-set")) { var v = t.getAttribute("data-qty-set"); view.qty = v === "all" ? xc2.max : Math.min(xc2.max, Number(v)); render(); return; }
+      if (t.hasAttribute("data-qty")) { var step2 = Number(t.getAttribute("data-qty")) * (ev.shiftKey ? 10 : 1); view.qty = Math.max(1, Math.min(xc2.max, cur + step2)); render(); return; }
+      if (t.hasAttribute("data-qty-set")) { var v = t.getAttribute("data-qty-set"); view.qty = v === "all" ? xc2.max : Math.min(xc2.max, cur + Number(v)); render(); return; }
       doMove(xc2.dir, xc2.sel.id, cur);
       return;
     }

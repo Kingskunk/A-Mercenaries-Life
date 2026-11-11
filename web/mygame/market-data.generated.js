@@ -2250,8 +2250,8 @@ window.MARKET_DEFS = {
   "goods": {
    "barley_loaf": {
     "base": 2,
-    "target": 184,
-    "stock0": 184,
+    "target": 96,
+    "stock0": 96,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -2261,8 +2261,8 @@ window.MARKET_DEFS = {
    },
    "grain": {
     "base": 2,
-    "target": 284,
-    "stock0": 284,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -2272,8 +2272,8 @@ window.MARKET_DEFS = {
    },
    "cheese": {
     "base": 3,
-    "target": 141,
-    "stock0": 141,
+    "target": 96,
+    "stock0": 96,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -2283,8 +2283,8 @@ window.MARKET_DEFS = {
    },
    "orchard_apple": {
     "base": 1,
-    "target": 145,
-    "stock0": 145,
+    "target": 96,
+    "stock0": 96,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -2294,8 +2294,8 @@ window.MARKET_DEFS = {
    },
    "root_vegetable_bundle": {
     "base": 2,
-    "target": 262,
-    "stock0": 262,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -2305,8 +2305,8 @@ window.MARKET_DEFS = {
    },
    "farm_eggs": {
     "base": 3,
-    "target": 185,
-    "stock0": 185,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -2316,8 +2316,8 @@ window.MARKET_DEFS = {
    },
    "dried_pork_sausage": {
     "base": 3,
-    "target": 122,
-    "stock0": 122,
+    "target": 96,
+    "stock0": 96,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -2327,8 +2327,8 @@ window.MARKET_DEFS = {
    },
    "onions": {
     "base": 2,
-    "target": 262,
-    "stock0": 262,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -2338,8 +2338,8 @@ window.MARKET_DEFS = {
    },
    "potatoes": {
     "base": 1,
-    "target": 262,
-    "stock0": 262,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -2349,8 +2349,8 @@ window.MARKET_DEFS = {
    },
    "tomatoes": {
     "base": 3,
-    "target": 161,
-    "stock0": 161,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -2360,8 +2360,8 @@ window.MARKET_DEFS = {
    },
    "dressed_chicken": {
     "base": 7,
-    "target": 115,
-    "stock0": 115,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -2371,8 +2371,8 @@ window.MARKET_DEFS = {
    },
    "cabbage": {
     "base": 2,
-    "target": 262,
-    "stock0": 262,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -2382,8 +2382,8 @@ window.MARKET_DEFS = {
    },
    "pumpkin": {
     "base": 3,
-    "target": 161,
-    "stock0": 161,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -2426,8 +2426,8 @@ window.MARKET_DEFS = {
    },
    "butter": {
     "base": 5,
-    "target": 132,
-    "stock0": 132,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -2437,8 +2437,8 @@ window.MARKET_DEFS = {
    },
    "animal_fat": {
     "base": 3,
-    "target": 191,
-    "stock0": 191,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.975,
     "world": {
@@ -2471,8 +2471,8 @@ window.MARKET_DEFS = {
    },
    "fish": {
     "base": 4,
-    "target": 19,
-    "stock0": 19,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
     "mult": 1.03,
     "world": {
@@ -2526,8 +2526,8 @@ window.MARKET_DEFS = {
    },
    "charcoal": {
     "base": 3,
-    "target": 145,
-    "stock0": 145,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.975,
     "world": {
@@ -2549,8 +2549,8 @@ window.MARKET_DEFS = {
    },
    "beeswax": {
     "base": 8,
-    "target": 105,
-    "stock0": 105,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -2572,8 +2572,8 @@ window.MARKET_DEFS = {
    },
    "leather": {
     "base": 12,
-    "target": 60,
-    "stock0": 60,
+    "target": 54,
+    "stock0": 54,
     "buyPct": 0.8,
     "mult": 0.93,
     "world": {
@@ -2583,8 +2583,8 @@ window.MARKET_DEFS = {
    },
    "wool": {
     "base": 4,
-    "target": 155,
-    "stock0": 155,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
     "mult": 1,
     "world": {
@@ -2594,12 +2594,10 @@ window.MARKET_DEFS = {
    },
    "hemp": {
     "base": 5,
-    "target": 9,
-    "stock0": 0,
+    "target": 8,
+    "stock0": 8,
     "buyPct": 0.8,
     "mult": 1.27,
-    "restock": false,
-    "flow": -0.45,
     "world": {
      "tile": "fv"
     },
@@ -2683,8 +2681,8 @@ window.MARKET_DEFS = {
    },
    "boar_meat": {
     "base": 6,
-    "target": 122,
-    "stock0": 122,
+    "target": 120,
+    "stock0": 120,
     "buyPct": 0.8,
     "mult": 0.945,
     "world": {
@@ -2694,8 +2692,8 @@ window.MARKET_DEFS = {
    },
    "venison": {
     "base": 7,
-    "target": 122,
-    "stock0": 122,
+    "target": 120,
+    "stock0": 120,
     "buyPct": 0.8,
     "mult": 0.945,
     "world": {
@@ -2705,8 +2703,8 @@ window.MARKET_DEFS = {
    },
    "barley_loaf": {
     "base": 2,
-    "target": 223,
-    "stock0": 223,
+    "target": 128,
+    "stock0": 128,
     "buyPct": 0.8,
     "mult": 0.93,
     "world": {
@@ -2716,8 +2714,8 @@ window.MARKET_DEFS = {
    },
    "grain": {
     "base": 2,
-    "target": 342,
-    "stock0": 342,
+    "target": 192,
+    "stock0": 192,
     "buyPct": 0.8,
     "mult": 0.93,
     "world": {
@@ -2727,8 +2725,8 @@ window.MARKET_DEFS = {
    },
    "cheese": {
     "base": 3,
-    "target": 168,
-    "stock0": 168,
+    "target": 128,
+    "stock0": 128,
     "buyPct": 0.8,
     "mult": 0.93,
     "world": {
@@ -2738,8 +2736,8 @@ window.MARKET_DEFS = {
    },
    "butter": {
     "base": 5,
-    "target": 158,
-    "stock0": 158,
+    "target": 120,
+    "stock0": 120,
     "buyPct": 0.8,
     "mult": 0.93,
     "world": {
@@ -2749,8 +2747,8 @@ window.MARKET_DEFS = {
    },
    "animal_fat": {
     "base": 3,
-    "target": 274,
-    "stock0": 274,
+    "target": 192,
+    "stock0": 192,
     "buyPct": 0.8,
     "mult": 0.945,
     "world": {
@@ -2760,8 +2758,8 @@ window.MARKET_DEFS = {
    },
    "orchard_apple": {
     "base": 1,
-    "target": 176,
-    "stock0": 176,
+    "target": 128,
+    "stock0": 128,
     "buyPct": 0.8,
     "mult": 0.93,
     "world": {
@@ -2794,8 +2792,8 @@ window.MARKET_DEFS = {
    },
    "root_vegetable_bundle": {
     "base": 2,
-    "target": 315,
-    "stock0": 315,
+    "target": 192,
+    "stock0": 192,
     "buyPct": 0.8,
     "mult": 0.93,
     "world": {
@@ -2805,8 +2803,8 @@ window.MARKET_DEFS = {
    },
    "farm_eggs": {
     "base": 3,
-    "target": 197,
-    "stock0": 197,
+    "target": 192,
+    "stock0": 192,
     "buyPct": 0.8,
     "mult": 0.93,
     "world": {
@@ -2816,8 +2814,8 @@ window.MARKET_DEFS = {
    },
    "dried_pork_sausage": {
     "base": 3,
-    "target": 138,
-    "stock0": 138,
+    "target": 128,
+    "stock0": 128,
     "buyPct": 0.8,
     "mult": 0.93,
     "world": {
@@ -2827,8 +2825,8 @@ window.MARKET_DEFS = {
    },
    "onions": {
     "base": 2,
-    "target": 315,
-    "stock0": 315,
+    "target": 192,
+    "stock0": 192,
     "buyPct": 0.8,
     "mult": 0.93,
     "world": {
@@ -2838,8 +2836,8 @@ window.MARKET_DEFS = {
    },
    "potatoes": {
     "base": 1,
-    "target": 315,
-    "stock0": 315,
+    "target": 192,
+    "stock0": 192,
     "buyPct": 0.8,
     "mult": 0.93,
     "world": {
@@ -2860,8 +2858,8 @@ window.MARKET_DEFS = {
    },
    "dressed_chicken": {
     "base": 7,
-    "target": 123,
-    "stock0": 123,
+    "target": 120,
+    "stock0": 120,
     "buyPct": 0.8,
     "mult": 0.93,
     "world": {
@@ -2871,8 +2869,8 @@ window.MARKET_DEFS = {
    },
    "fish": {
     "base": 4,
-    "target": 30,
-    "stock0": 30,
+    "target": 120,
+    "stock0": 120,
     "buyPct": 0.8,
     "mult": 1,
     "world": {
@@ -2882,8 +2880,8 @@ window.MARKET_DEFS = {
    },
    "cabbage": {
     "base": 2,
-    "target": 315,
-    "stock0": 315,
+    "target": 192,
+    "stock0": 192,
     "buyPct": 0.8,
     "mult": 0.93,
     "world": {
@@ -2937,8 +2935,8 @@ window.MARKET_DEFS = {
    },
    "longshade_timber": {
     "base": 6,
-    "target": 143,
-    "stock0": 143,
+    "target": 120,
+    "stock0": 120,
     "buyPct": 0.8,
     "mult": 0.909,
     "world": {
@@ -2948,8 +2946,8 @@ window.MARKET_DEFS = {
    },
    "charcoal": {
     "base": 3,
-    "target": 219,
-    "stock0": 219,
+    "target": 192,
+    "stock0": 192,
     "buyPct": 0.8,
     "mult": 0.945,
     "world": {
@@ -2971,8 +2969,8 @@ window.MARKET_DEFS = {
    },
    "beeswax": {
     "base": 8,
-    "target": 123,
-    "stock0": 123,
+    "target": 120,
+    "stock0": 120,
     "buyPct": 0.8,
     "mult": 0.93,
     "world": {
@@ -2994,8 +2992,8 @@ window.MARKET_DEFS = {
    },
    "leather": {
     "base": 12,
-    "target": 94,
-    "stock0": 94,
+    "target": 72,
+    "stock0": 72,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -3005,8 +3003,8 @@ window.MARKET_DEFS = {
    },
    "wool": {
     "base": 4,
-    "target": 193,
-    "stock0": 193,
+    "target": 120,
+    "stock0": 120,
     "buyPct": 0.8,
     "mult": 1.03,
     "world": {
@@ -3017,11 +3015,9 @@ window.MARKET_DEFS = {
    "hemp": {
     "base": 5,
     "target": 12,
-    "stock0": 0,
+    "stock0": 12,
     "buyPct": 0.8,
     "mult": 1.24,
-    "restock": false,
-    "flow": -0.6,
     "world": {
      "tile": "tm"
     },
@@ -3040,8 +3036,8 @@ window.MARKET_DEFS = {
    },
    "raw_hide": {
     "base": 8,
-    "target": 134,
-    "stock0": 134,
+    "target": 120,
+    "stock0": 120,
     "buyPct": 0.8,
     "mult": 0.945,
     "world": {
@@ -3051,8 +3047,8 @@ window.MARKET_DEFS = {
    },
    "boar_tusk": {
     "base": 10,
-    "target": 122,
-    "stock0": 122,
+    "target": 120,
+    "stock0": 120,
     "buyPct": 0.8,
     "mult": 0.945,
     "world": {
@@ -3062,8 +3058,8 @@ window.MARKET_DEFS = {
    },
    "elk_antler": {
     "base": 7,
-    "target": 122,
-    "stock0": 122,
+    "target": 120,
+    "stock0": 120,
     "buyPct": 0.8,
     "mult": 0.945,
     "world": {
@@ -3126,8 +3122,8 @@ window.MARKET_DEFS = {
    },
    "barley_loaf": {
     "base": 2,
-    "target": 122,
-    "stock0": 122,
+    "target": 96,
+    "stock0": 96,
     "buyPct": 0.8,
     "mult": 1.019,
     "world": {
@@ -3137,8 +3133,8 @@ window.MARKET_DEFS = {
    },
    "grain": {
     "base": 2,
-    "target": 167,
-    "stock0": 167,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 1.019,
     "world": {
@@ -3148,8 +3144,8 @@ window.MARKET_DEFS = {
    },
    "cheese": {
     "base": 3,
-    "target": 56,
-    "stock0": 56,
+    "target": 81,
+    "stock0": 81,
     "buyPct": 0.8,
     "mult": 1.089,
     "world": {
@@ -3159,8 +3155,8 @@ window.MARKET_DEFS = {
    },
    "butter": {
     "base": 5,
-    "target": 52,
-    "stock0": 52,
+    "target": 76,
+    "stock0": 76,
     "buyPct": 0.8,
     "mult": 1.089,
     "world": {
@@ -3170,8 +3166,8 @@ window.MARKET_DEFS = {
    },
    "animal_fat": {
     "base": 3,
-    "target": 110,
-    "stock0": 110,
+    "target": 119,
+    "stock0": 119,
     "buyPct": 0.8,
     "mult": 1.119,
     "world": {
@@ -3181,8 +3177,8 @@ window.MARKET_DEFS = {
    },
    "orchard_apple": {
     "base": 1,
-    "target": 56,
-    "stock0": 56,
+    "target": 83,
+    "stock0": 83,
     "buyPct": 0.8,
     "mult": 1.089,
     "world": {
@@ -3192,13 +3188,14 @@ window.MARKET_DEFS = {
    },
    "grapes": {
     "base": 2,
-    "target": 3,
-    "stock0": 0,
+    "target": 27,
+    "stock0": 27,
     "buyPct": 0.8,
-    "mult": 1,
-    "need": 0.4,
-    "unstocked": true,
-    "sells": false
+    "mult": 1.275,
+    "world": {
+     "tile": "bw"
+    },
+    "need": 0.4
    },
    "wine": {
     "base": 30,
@@ -3225,8 +3222,8 @@ window.MARKET_DEFS = {
    },
    "farm_eggs": {
     "base": 3,
-    "target": 84,
-    "stock0": 84,
+    "target": 117,
+    "stock0": 117,
     "buyPct": 0.8,
     "mult": 1.089,
     "world": {
@@ -3280,10 +3277,10 @@ window.MARKET_DEFS = {
    },
    "dressed_chicken": {
     "base": 7,
-    "target": 13,
-    "stock0": 13,
+    "target": 67,
+    "stock0": 67,
     "buyPct": 0.8,
-    "mult": 1.119,
+    "mult": 1.089,
     "world": {
      "tile": "bw"
     },
@@ -3291,8 +3288,8 @@ window.MARKET_DEFS = {
    },
    "fish": {
     "base": 4,
-    "target": 168,
-    "stock0": 168,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -3379,8 +3376,8 @@ window.MARKET_DEFS = {
    },
    "salt": {
     "base": 6,
-    "target": 109,
-    "stock0": 109,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -3424,8 +3421,8 @@ window.MARKET_DEFS = {
    },
    "wool": {
     "base": 4,
-    "target": 134,
-    "stock0": 134,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
     "mult": 1.039,
     "world": {
@@ -3435,12 +3432,10 @@ window.MARKET_DEFS = {
    },
    "hemp": {
     "base": 5,
-    "target": 9,
-    "stock0": 0,
+    "target": 6,
+    "stock0": 6,
     "buyPct": 0.8,
     "mult": 1.42,
-    "restock": false,
-    "flow": -0.45,
     "world": {
      "tile": "bw"
     },
@@ -3460,8 +3455,8 @@ window.MARKET_DEFS = {
    },
    "raw_hide": {
     "base": 8,
-    "target": 46,
-    "stock0": 46,
+    "target": 52,
+    "stock0": 52,
     "buyPct": 0.8,
     "mult": 1.125,
     "world": {
@@ -3524,8 +3519,8 @@ window.MARKET_DEFS = {
    },
    "boar_meat": {
     "base": 6,
-    "target": 107,
-    "stock0": 107,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -3535,8 +3530,8 @@ window.MARKET_DEFS = {
    },
    "venison": {
     "base": 7,
-    "target": 107,
-    "stock0": 107,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -3546,8 +3541,8 @@ window.MARKET_DEFS = {
    },
    "barley_loaf": {
     "base": 2,
-    "target": 130,
-    "stock0": 130,
+    "target": 96,
+    "stock0": 96,
     "buyPct": 0.8,
     "mult": 0.975,
     "world": {
@@ -3557,8 +3552,8 @@ window.MARKET_DEFS = {
    },
    "grain": {
     "base": 2,
-    "target": 217,
-    "stock0": 217,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.975,
     "world": {
@@ -3568,8 +3563,8 @@ window.MARKET_DEFS = {
    },
    "cheese": {
     "base": 3,
-    "target": 105,
-    "stock0": 105,
+    "target": 96,
+    "stock0": 96,
     "buyPct": 0.8,
     "mult": 0.975,
     "world": {
@@ -3579,8 +3574,8 @@ window.MARKET_DEFS = {
    },
    "butter": {
     "base": 5,
-    "target": 99,
-    "stock0": 99,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
     "mult": 0.975,
     "world": {
@@ -3590,8 +3585,8 @@ window.MARKET_DEFS = {
    },
    "animal_fat": {
     "base": 3,
-    "target": 221,
-    "stock0": 221,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -3601,8 +3596,8 @@ window.MARKET_DEFS = {
    },
    "orchard_apple": {
     "base": 1,
-    "target": 110,
-    "stock0": 110,
+    "target": 96,
+    "stock0": 96,
     "buyPct": 0.8,
     "mult": 0.975,
     "world": {
@@ -3612,13 +3607,14 @@ window.MARKET_DEFS = {
    },
    "grapes": {
     "base": 2,
-    "target": 3,
-    "stock0": 0,
+    "target": 37,
+    "stock0": 37,
     "buyPct": 0.8,
-    "mult": 1,
-    "need": 0.4,
-    "unstocked": true,
-    "sells": false
+    "mult": 1.14,
+    "world": {
+     "tile": "fo"
+    },
+    "need": 0.4
    },
    "wine": {
     "base": 30,
@@ -3634,8 +3630,8 @@ window.MARKET_DEFS = {
    },
    "root_vegetable_bundle": {
     "base": 2,
-    "target": 200,
-    "stock0": 200,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.975,
     "world": {
@@ -3645,8 +3641,8 @@ window.MARKET_DEFS = {
    },
    "farm_eggs": {
     "base": 3,
-    "target": 132,
-    "stock0": 132,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.975,
     "world": {
@@ -3667,8 +3663,8 @@ window.MARKET_DEFS = {
    },
    "onions": {
     "base": 2,
-    "target": 200,
-    "stock0": 200,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.975,
     "world": {
@@ -3678,8 +3674,8 @@ window.MARKET_DEFS = {
    },
    "potatoes": {
     "base": 1,
-    "target": 200,
-    "stock0": 200,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.975,
     "world": {
@@ -3700,8 +3696,8 @@ window.MARKET_DEFS = {
    },
    "dressed_chicken": {
     "base": 7,
-    "target": 83,
-    "stock0": 83,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
     "mult": 0.975,
     "world": {
@@ -3711,8 +3707,8 @@ window.MARKET_DEFS = {
    },
    "fish": {
     "base": 4,
-    "target": 17,
-    "stock0": 17,
+    "target": 87,
+    "stock0": 87,
     "buyPct": 0.8,
     "mult": 1.045,
     "world": {
@@ -3722,8 +3718,8 @@ window.MARKET_DEFS = {
    },
    "cabbage": {
     "base": 2,
-    "target": 200,
-    "stock0": 200,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.975,
     "world": {
@@ -3777,8 +3773,8 @@ window.MARKET_DEFS = {
    },
    "longshade_timber": {
     "base": 6,
-    "target": 107,
-    "stock0": 107,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -3788,8 +3784,8 @@ window.MARKET_DEFS = {
    },
    "charcoal": {
     "base": 3,
-    "target": 187,
-    "stock0": 187,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -3822,8 +3818,8 @@ window.MARKET_DEFS = {
    },
    "furs": {
     "base": 14,
-    "target": 65,
-    "stock0": 65,
+    "target": 54,
+    "stock0": 54,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -3833,8 +3829,8 @@ window.MARKET_DEFS = {
    },
    "leather": {
     "base": 12,
-    "target": 60,
-    "stock0": 60,
+    "target": 54,
+    "stock0": 54,
     "buyPct": 0.8,
     "mult": 0.945,
     "world": {
@@ -3844,8 +3840,8 @@ window.MARKET_DEFS = {
    },
    "wool": {
     "base": 4,
-    "target": 126,
-    "stock0": 126,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
     "mult": 1.075,
     "world": {
@@ -3855,12 +3851,10 @@ window.MARKET_DEFS = {
    },
    "hemp": {
     "base": 5,
-    "target": 9,
-    "stock0": 0,
+    "target": 8,
+    "stock0": 8,
     "buyPct": 0.8,
     "mult": 1.285,
-    "restock": false,
-    "flow": -0.45,
     "world": {
      "tile": "fo"
     },
@@ -3880,8 +3874,8 @@ window.MARKET_DEFS = {
    },
    "raw_hide": {
     "base": 8,
-    "target": 115,
-    "stock0": 115,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -3891,8 +3885,8 @@ window.MARKET_DEFS = {
    },
    "boar_tusk": {
     "base": 10,
-    "target": 107,
-    "stock0": 107,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -3902,8 +3896,8 @@ window.MARKET_DEFS = {
    },
    "elk_antler": {
     "base": 7,
-    "target": 107,
-    "stock0": 107,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -3944,10 +3938,10 @@ window.MARKET_DEFS = {
    },
    "boar_meat": {
     "base": 6,
-    "target": 10,
-    "stock0": 10,
+    "target": 43,
+    "stock0": 43,
     "buyPct": 0.8,
-    "mult": 1.205,
+    "mult": 1.15,
     "world": {
      "tile": "mc"
     },
@@ -3955,10 +3949,10 @@ window.MARKET_DEFS = {
    },
    "venison": {
     "base": 7,
-    "target": 10,
-    "stock0": 10,
+    "target": 43,
+    "stock0": 43,
     "buyPct": 0.8,
-    "mult": 1.205,
+    "mult": 1.15,
     "world": {
      "tile": "mc"
     },
@@ -3966,8 +3960,8 @@ window.MARKET_DEFS = {
    },
    "barley_loaf": {
     "base": 2,
-    "target": 166,
-    "stock0": 166,
+    "target": 96,
+    "stock0": 96,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -3977,8 +3971,8 @@ window.MARKET_DEFS = {
    },
    "grain": {
     "base": 2,
-    "target": 233,
-    "stock0": 233,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -3988,8 +3982,8 @@ window.MARKET_DEFS = {
    },
    "cheese": {
     "base": 3,
-    "target": 68,
-    "stock0": 68,
+    "target": 92,
+    "stock0": 92,
     "buyPct": 0.8,
     "mult": 1,
     "world": {
@@ -3999,8 +3993,8 @@ window.MARKET_DEFS = {
    },
    "butter": {
     "base": 5,
-    "target": 64,
-    "stock0": 64,
+    "target": 86,
+    "stock0": 86,
     "buyPct": 0.8,
     "mult": 1,
     "world": {
@@ -4010,8 +4004,8 @@ window.MARKET_DEFS = {
    },
    "animal_fat": {
     "base": 3,
-    "target": 122,
-    "stock0": 122,
+    "target": 131,
+    "stock0": 131,
     "buyPct": 0.8,
     "mult": 1,
     "world": {
@@ -4021,8 +4015,8 @@ window.MARKET_DEFS = {
    },
    "orchard_apple": {
     "base": 1,
-    "target": 68,
-    "stock0": 68,
+    "target": 94,
+    "stock0": 94,
     "buyPct": 0.8,
     "mult": 1,
     "world": {
@@ -4032,13 +4026,14 @@ window.MARKET_DEFS = {
    },
    "grapes": {
     "base": 2,
-    "target": 3,
-    "stock0": 0,
+    "target": 26,
+    "stock0": 26,
     "buyPct": 0.8,
-    "mult": 1,
-    "need": 0.4,
-    "unstocked": true,
-    "sells": false
+    "mult": 1.3,
+    "world": {
+     "tile": "mc"
+    },
+    "need": 0.4
    },
    "wine": {
     "base": 30,
@@ -4054,8 +4049,8 @@ window.MARKET_DEFS = {
    },
    "root_vegetable_bundle": {
     "base": 2,
-    "target": 210,
-    "stock0": 210,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -4065,8 +4060,8 @@ window.MARKET_DEFS = {
    },
    "farm_eggs": {
     "base": 3,
-    "target": 102,
-    "stock0": 102,
+    "target": 134,
+    "stock0": 134,
     "buyPct": 0.8,
     "mult": 1,
     "world": {
@@ -4087,8 +4082,8 @@ window.MARKET_DEFS = {
    },
    "onions": {
     "base": 2,
-    "target": 210,
-    "stock0": 210,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -4098,8 +4093,8 @@ window.MARKET_DEFS = {
    },
    "potatoes": {
     "base": 1,
-    "target": 210,
-    "stock0": 210,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -4120,8 +4115,8 @@ window.MARKET_DEFS = {
    },
    "dressed_chicken": {
     "base": 7,
-    "target": 64,
-    "stock0": 64,
+    "target": 78,
+    "stock0": 78,
     "buyPct": 0.8,
     "mult": 1,
     "world": {
@@ -4131,8 +4126,8 @@ window.MARKET_DEFS = {
    },
    "fish": {
     "base": 4,
-    "target": 109,
-    "stock0": 109,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
     "mult": 0.98,
     "world": {
@@ -4142,8 +4137,8 @@ window.MARKET_DEFS = {
    },
    "cabbage": {
     "base": 2,
-    "target": 210,
-    "stock0": 210,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -4265,8 +4260,8 @@ window.MARKET_DEFS = {
    },
    "wool": {
     "base": 4,
-    "target": 161,
-    "stock0": 161,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
     "mult": 0.99,
     "world": {
@@ -4276,12 +4271,10 @@ window.MARKET_DEFS = {
    },
    "hemp": {
     "base": 5,
-    "target": 9,
-    "stock0": 0,
+    "target": 6,
+    "stock0": 6,
     "buyPct": 0.8,
     "mult": 1.445,
-    "restock": false,
-    "flow": -0.45,
     "world": {
      "tile": "mc"
     },
@@ -4301,8 +4294,8 @@ window.MARKET_DEFS = {
    },
    "raw_hide": {
     "base": 8,
-    "target": 43,
-    "stock0": 43,
+    "target": 49,
+    "stock0": 49,
     "buyPct": 0.8,
     "mult": 1.15,
     "world": {
@@ -4387,8 +4380,8 @@ window.MARKET_DEFS = {
    },
    "barley_loaf": {
     "base": 2,
-    "target": 211,
-    "stock0": 211,
+    "target": 128,
+    "stock0": 128,
     "buyPct": 0.8,
     "mult": 0.985,
     "world": {
@@ -4398,8 +4391,8 @@ window.MARKET_DEFS = {
    },
    "grain": {
     "base": 2,
-    "target": 291,
-    "stock0": 291,
+    "target": 192,
+    "stock0": 192,
     "buyPct": 0.8,
     "mult": 0.985,
     "world": {
@@ -4409,8 +4402,8 @@ window.MARKET_DEFS = {
    },
    "cheese": {
     "base": 3,
-    "target": 137,
-    "stock0": 137,
+    "target": 128,
+    "stock0": 128,
     "buyPct": 0.8,
     "mult": 0.99,
     "world": {
@@ -4420,8 +4413,8 @@ window.MARKET_DEFS = {
    },
    "butter": {
     "base": 5,
-    "target": 94,
-    "stock0": 94,
+    "target": 120,
+    "stock0": 120,
     "buyPct": 0.8,
     "mult": 0.99,
     "world": {
@@ -4431,8 +4424,8 @@ window.MARKET_DEFS = {
    },
    "animal_fat": {
     "base": 3,
-    "target": 179,
-    "stock0": 179,
+    "target": 192,
+    "stock0": 192,
     "buyPct": 0.8,
     "mult": 1.065,
     "world": {
@@ -4442,8 +4435,8 @@ window.MARKET_DEFS = {
    },
    "orchard_apple": {
     "base": 1,
-    "target": 100,
-    "stock0": 100,
+    "target": 128,
+    "stock0": 128,
     "buyPct": 0.8,
     "mult": 0.99,
     "world": {
@@ -4453,13 +4446,14 @@ window.MARKET_DEFS = {
    },
    "grapes": {
     "base": 2,
-    "target": 3,
-    "stock0": 0,
+    "target": 41,
+    "stock0": 41,
     "buyPct": 0.8,
-    "mult": 1,
-    "need": 0.4,
-    "unstocked": true,
-    "sells": false
+    "mult": 1.215,
+    "world": {
+     "tile": "af"
+    },
+    "need": 0.4
    },
    "wine": {
     "base": 30,
@@ -4475,8 +4469,8 @@ window.MARKET_DEFS = {
    },
    "root_vegetable_bundle": {
     "base": 2,
-    "target": 243,
-    "stock0": 243,
+    "target": 192,
+    "stock0": 192,
     "buyPct": 0.8,
     "mult": 0.985,
     "world": {
@@ -4486,8 +4480,8 @@ window.MARKET_DEFS = {
    },
    "farm_eggs": {
     "base": 3,
-    "target": 173,
-    "stock0": 173,
+    "target": 192,
+    "stock0": 192,
     "buyPct": 0.8,
     "mult": 0.99,
     "world": {
@@ -4497,8 +4491,8 @@ window.MARKET_DEFS = {
    },
    "dried_pork_sausage": {
     "base": 3,
-    "target": 132,
-    "stock0": 132,
+    "target": 128,
+    "stock0": 128,
     "buyPct": 0.8,
     "mult": 0.99,
     "world": {
@@ -4508,8 +4502,8 @@ window.MARKET_DEFS = {
    },
    "onions": {
     "base": 2,
-    "target": 243,
-    "stock0": 243,
+    "target": 192,
+    "stock0": 192,
     "buyPct": 0.8,
     "mult": 0.985,
     "world": {
@@ -4519,8 +4513,8 @@ window.MARKET_DEFS = {
    },
    "potatoes": {
     "base": 1,
-    "target": 243,
-    "stock0": 243,
+    "target": 192,
+    "stock0": 192,
     "buyPct": 0.8,
     "mult": 0.985,
     "world": {
@@ -4541,8 +4535,8 @@ window.MARKET_DEFS = {
    },
    "dressed_chicken": {
     "base": 7,
-    "target": 108,
-    "stock0": 108,
+    "target": 117,
+    "stock0": 117,
     "buyPct": 0.8,
     "mult": 0.99,
     "world": {
@@ -4552,8 +4546,8 @@ window.MARKET_DEFS = {
    },
    "fish": {
     "base": 4,
-    "target": 165,
-    "stock0": 165,
+    "target": 120,
+    "stock0": 120,
     "buyPct": 0.8,
     "mult": 0.975,
     "world": {
@@ -4563,8 +4557,8 @@ window.MARKET_DEFS = {
    },
    "cabbage": {
     "base": 2,
-    "target": 243,
-    "stock0": 243,
+    "target": 192,
+    "stock0": 192,
     "buyPct": 0.8,
     "mult": 0.985,
     "world": {
@@ -4686,8 +4680,8 @@ window.MARKET_DEFS = {
    },
    "wool": {
     "base": 4,
-    "target": 247,
-    "stock0": 247,
+    "target": 120,
+    "stock0": 120,
     "buyPct": 0.8,
     "mult": 0.94,
     "world": {
@@ -4697,12 +4691,10 @@ window.MARKET_DEFS = {
    },
    "hemp": {
     "base": 5,
-    "target": 12,
-    "stock0": 0,
+    "target": 9,
+    "stock0": 9,
     "buyPct": 0.8,
     "mult": 1.36,
-    "restock": false,
-    "flow": -0.6,
     "world": {
      "tile": "af"
     },
@@ -4710,8 +4702,8 @@ window.MARKET_DEFS = {
    },
    "wool_cloth": {
     "base": 15,
-    "target": 94,
-    "stock0": 94,
+    "target": 72,
+    "stock0": 72,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -4721,8 +4713,8 @@ window.MARKET_DEFS = {
    },
    "raw_hide": {
     "base": 8,
-    "target": 74,
-    "stock0": 74,
+    "target": 82,
+    "stock0": 82,
     "buyPct": 0.8,
     "mult": 1.065,
     "world": {
@@ -4807,8 +4799,8 @@ window.MARKET_DEFS = {
    },
    "barley_loaf": {
     "base": 2,
-    "target": 134,
-    "stock0": 134,
+    "target": 96,
+    "stock0": 96,
     "buyPct": 0.8,
     "mult": 1.025,
     "world": {
@@ -4818,8 +4810,8 @@ window.MARKET_DEFS = {
    },
    "grain": {
     "base": 2,
-    "target": 184,
-    "stock0": 184,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 1.025,
     "world": {
@@ -4829,8 +4821,8 @@ window.MARKET_DEFS = {
    },
    "cheese": {
     "base": 3,
-    "target": 65,
-    "stock0": 65,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
     "mult": 1.03,
     "world": {
@@ -4840,8 +4832,8 @@ window.MARKET_DEFS = {
    },
    "butter": {
     "base": 5,
-    "target": 60,
-    "stock0": 60,
+    "target": 85,
+    "stock0": 85,
     "buyPct": 0.8,
     "mult": 1.03,
     "world": {
@@ -4851,8 +4843,8 @@ window.MARKET_DEFS = {
    },
    "animal_fat": {
     "base": 3,
-    "target": 117,
-    "stock0": 117,
+    "target": 127,
+    "stock0": 127,
     "buyPct": 0.8,
     "mult": 1.105,
     "world": {
@@ -4862,8 +4854,8 @@ window.MARKET_DEFS = {
    },
    "orchard_apple": {
     "base": 1,
-    "target": 65,
-    "stock0": 65,
+    "target": 93,
+    "stock0": 93,
     "buyPct": 0.8,
     "mult": 1.03,
     "world": {
@@ -4873,13 +4865,14 @@ window.MARKET_DEFS = {
    },
    "grapes": {
     "base": 2,
-    "target": 3,
-    "stock0": 0,
+    "target": 29,
+    "stock0": 29,
     "buyPct": 0.8,
-    "mult": 1,
-    "need": 0.4,
-    "unstocked": true,
-    "sells": false
+    "mult": 1.255,
+    "world": {
+     "tile": "rv"
+    },
+    "need": 0.4
    },
    "wine": {
     "base": 30,
@@ -4895,8 +4888,8 @@ window.MARKET_DEFS = {
    },
    "root_vegetable_bundle": {
     "base": 2,
-    "target": 156,
-    "stock0": 156,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 1.025,
     "world": {
@@ -4906,8 +4899,8 @@ window.MARKET_DEFS = {
    },
    "farm_eggs": {
     "base": 3,
-    "target": 97,
-    "stock0": 97,
+    "target": 131,
+    "stock0": 131,
     "buyPct": 0.8,
     "mult": 1.03,
     "world": {
@@ -4928,8 +4921,8 @@ window.MARKET_DEFS = {
    },
    "onions": {
     "base": 2,
-    "target": 156,
-    "stock0": 156,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 1.025,
     "world": {
@@ -4939,8 +4932,8 @@ window.MARKET_DEFS = {
    },
    "potatoes": {
     "base": 1,
-    "target": 156,
-    "stock0": 156,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 1.025,
     "world": {
@@ -4961,8 +4954,8 @@ window.MARKET_DEFS = {
    },
    "dressed_chicken": {
     "base": 7,
-    "target": 60,
-    "stock0": 60,
+    "target": 76,
+    "stock0": 76,
     "buyPct": 0.8,
     "mult": 1.03,
     "world": {
@@ -4972,18 +4965,19 @@ window.MARKET_DEFS = {
    },
    "fish": {
     "base": 4,
-    "target": 3,
-    "stock0": 0,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
-    "mult": 1,
-    "need": 0.8,
-    "unstocked": true,
-    "sells": false
+    "mult": 1.03,
+    "world": {
+     "tile": "rv"
+    },
+    "need": 0.8
    },
    "cabbage": {
     "base": 2,
-    "target": 156,
-    "stock0": 156,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 1.025,
     "world": {
@@ -5004,8 +4998,8 @@ window.MARKET_DEFS = {
    },
    "iron_ore": {
     "base": 3,
-    "target": 172,
-    "stock0": 172,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -5104,8 +5098,8 @@ window.MARKET_DEFS = {
    },
    "wool": {
     "base": 4,
-    "target": 208,
-    "stock0": 208,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -5115,12 +5109,10 @@ window.MARKET_DEFS = {
    },
    "hemp": {
     "base": 5,
-    "target": 9,
-    "stock0": 0,
+    "target": 6,
+    "stock0": 6,
     "buyPct": 0.8,
     "mult": 1.4,
-    "restock": false,
-    "flow": -0.45,
     "world": {
      "tile": "rv"
     },
@@ -5128,8 +5120,8 @@ window.MARKET_DEFS = {
    },
    "wool_cloth": {
     "base": 15,
-    "target": 56,
-    "stock0": 56,
+    "target": 54,
+    "stock0": 54,
     "buyPct": 0.8,
     "mult": 0.94,
     "hi": 1.52,
@@ -5140,8 +5132,8 @@ window.MARKET_DEFS = {
    },
    "raw_hide": {
     "base": 8,
-    "target": 49,
-    "stock0": 49,
+    "target": 55,
+    "stock0": 55,
     "buyPct": 0.8,
     "mult": 1.105,
     "world": {
@@ -5204,10 +5196,10 @@ window.MARKET_DEFS = {
    },
    "boar_meat": {
     "base": 6,
-    "target": 10,
-    "stock0": 10,
+    "target": 44,
+    "stock0": 44,
     "buyPct": 0.8,
-    "mult": 1.195,
+    "mult": 1.14,
     "world": {
      "tile": "wf"
     },
@@ -5215,10 +5207,10 @@ window.MARKET_DEFS = {
    },
    "venison": {
     "base": 7,
-    "target": 10,
-    "stock0": 10,
+    "target": 44,
+    "stock0": 44,
     "buyPct": 0.8,
-    "mult": 1.195,
+    "mult": 1.14,
     "world": {
      "tile": "wf"
     },
@@ -5226,8 +5218,8 @@ window.MARKET_DEFS = {
    },
    "barley_loaf": {
     "base": 2,
-    "target": 132,
-    "stock0": 132,
+    "target": 96,
+    "stock0": 96,
     "buyPct": 0.8,
     "mult": 0.99,
     "world": {
@@ -5237,8 +5229,8 @@ window.MARKET_DEFS = {
    },
    "grain": {
     "base": 2,
-    "target": 183,
-    "stock0": 183,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.99,
     "world": {
@@ -5248,8 +5240,8 @@ window.MARKET_DEFS = {
    },
    "cheese": {
     "base": 3,
-    "target": 61,
-    "stock0": 61,
+    "target": 85,
+    "stock0": 85,
     "buyPct": 0.8,
     "mult": 1.065,
     "world": {
@@ -5259,8 +5251,8 @@ window.MARKET_DEFS = {
    },
    "butter": {
     "base": 5,
-    "target": 57,
-    "stock0": 57,
+    "target": 80,
+    "stock0": 80,
     "buyPct": 0.8,
     "mult": 1.065,
     "world": {
@@ -5270,8 +5262,8 @@ window.MARKET_DEFS = {
    },
    "animal_fat": {
     "base": 3,
-    "target": 111,
-    "stock0": 111,
+    "target": 120,
+    "stock0": 120,
     "buyPct": 0.8,
     "mult": 1.09,
     "world": {
@@ -5281,8 +5273,8 @@ window.MARKET_DEFS = {
    },
    "orchard_apple": {
     "base": 1,
-    "target": 61,
-    "stock0": 61,
+    "target": 87,
+    "stock0": 87,
     "buyPct": 0.8,
     "mult": 1.065,
     "world": {
@@ -5292,13 +5284,14 @@ window.MARKET_DEFS = {
    },
    "grapes": {
     "base": 2,
-    "target": 3,
-    "stock0": 0,
+    "target": 27,
+    "stock0": 27,
     "buyPct": 0.8,
-    "mult": 1,
-    "need": 0.4,
-    "unstocked": true,
-    "sells": false
+    "mult": 1.29,
+    "world": {
+     "tile": "wf"
+    },
+    "need": 0.4
    },
    "wine": {
     "base": 30,
@@ -5314,8 +5307,8 @@ window.MARKET_DEFS = {
    },
    "root_vegetable_bundle": {
     "base": 2,
-    "target": 159,
-    "stock0": 159,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.99,
     "world": {
@@ -5325,8 +5318,8 @@ window.MARKET_DEFS = {
    },
    "farm_eggs": {
     "base": 3,
-    "target": 91,
-    "stock0": 91,
+    "target": 123,
+    "stock0": 123,
     "buyPct": 0.8,
     "mult": 1.065,
     "world": {
@@ -5347,8 +5340,8 @@ window.MARKET_DEFS = {
    },
    "onions": {
     "base": 2,
-    "target": 159,
-    "stock0": 159,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.99,
     "world": {
@@ -5358,8 +5351,8 @@ window.MARKET_DEFS = {
    },
    "potatoes": {
     "base": 1,
-    "target": 159,
-    "stock0": 159,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.99,
     "world": {
@@ -5380,8 +5373,8 @@ window.MARKET_DEFS = {
    },
    "dressed_chicken": {
     "base": 7,
-    "target": 57,
-    "stock0": 57,
+    "target": 71,
+    "stock0": 71,
     "buyPct": 0.8,
     "mult": 1.065,
     "world": {
@@ -5391,18 +5384,19 @@ window.MARKET_DEFS = {
    },
    "fish": {
     "base": 4,
-    "target": 3,
-    "stock0": 0,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
-    "mult": 1,
-    "need": 0.8,
-    "unstocked": true,
-    "sells": false
+    "mult": 1.065,
+    "world": {
+     "tile": "wf"
+    },
+    "need": 0.8
    },
    "cabbage": {
     "base": 2,
-    "target": 159,
-    "stock0": 159,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.99,
     "world": {
@@ -5423,8 +5417,8 @@ window.MARKET_DEFS = {
    },
    "iron_ore": {
     "base": 3,
-    "target": 147,
-    "stock0": 147,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.945,
     "world": {
@@ -5523,8 +5517,8 @@ window.MARKET_DEFS = {
    },
    "wool": {
     "base": 4,
-    "target": 207,
-    "stock0": 207,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -5534,12 +5528,10 @@ window.MARKET_DEFS = {
    },
    "hemp": {
     "base": 5,
-    "target": 9,
-    "stock0": 0,
+    "target": 6,
+    "stock0": 6,
     "buyPct": 0.8,
     "mult": 1.435,
-    "restock": false,
-    "flow": -0.45,
     "world": {
      "tile": "wf"
     },
@@ -5559,8 +5551,8 @@ window.MARKET_DEFS = {
    },
    "raw_hide": {
     "base": 8,
-    "target": 44,
-    "stock0": 44,
+    "target": 50,
+    "stock0": 50,
     "buyPct": 0.8,
     "mult": 1.14,
     "world": {
@@ -5645,8 +5637,8 @@ window.MARKET_DEFS = {
    },
    "barley_loaf": {
     "base": 2,
-    "target": 280,
-    "stock0": 280,
+    "target": 192,
+    "stock0": 192,
     "buyPct": 0.8,
     "mult": 0.98,
     "world": {
@@ -5656,8 +5648,8 @@ window.MARKET_DEFS = {
    },
    "grain": {
     "base": 2,
-    "target": 387,
-    "stock0": 387,
+    "target": 288,
+    "stock0": 288,
     "buyPct": 0.8,
     "mult": 0.98,
     "world": {
@@ -5667,8 +5659,8 @@ window.MARKET_DEFS = {
    },
    "cheese": {
     "base": 3,
-    "target": 127,
-    "stock0": 127,
+    "target": 177,
+    "stock0": 177,
     "buyPct": 0.8,
     "mult": 1.05,
     "world": {
@@ -5678,8 +5670,8 @@ window.MARKET_DEFS = {
    },
    "butter": {
     "base": 5,
-    "target": 119,
-    "stock0": 119,
+    "target": 166,
+    "stock0": 166,
     "buyPct": 0.8,
     "mult": 1.05,
     "world": {
@@ -5689,8 +5681,8 @@ window.MARKET_DEFS = {
    },
    "animal_fat": {
     "base": 3,
-    "target": 231,
-    "stock0": 231,
+    "target": 250,
+    "stock0": 250,
     "buyPct": 0.8,
     "mult": 1.08,
     "world": {
@@ -5700,8 +5692,8 @@ window.MARKET_DEFS = {
    },
    "orchard_apple": {
     "base": 1,
-    "target": 127,
-    "stock0": 127,
+    "target": 182,
+    "stock0": 182,
     "buyPct": 0.8,
     "mult": 1.05,
     "world": {
@@ -5711,13 +5703,14 @@ window.MARKET_DEFS = {
    },
    "grapes": {
     "base": 2,
-    "target": 3,
-    "stock0": 0,
+    "target": 55,
+    "stock0": 55,
     "buyPct": 0.8,
-    "mult": 1,
-    "need": 0.4,
-    "unstocked": true,
-    "sells": false
+    "mult": 1.275,
+    "world": {
+     "tile": "pv"
+    },
+    "need": 0.4
    },
    "wine": {
     "base": 30,
@@ -5733,8 +5726,8 @@ window.MARKET_DEFS = {
    },
    "root_vegetable_bundle": {
     "base": 2,
-    "target": 332,
-    "stock0": 332,
+    "target": 288,
+    "stock0": 288,
     "buyPct": 0.8,
     "mult": 0.98,
     "world": {
@@ -5744,8 +5737,8 @@ window.MARKET_DEFS = {
    },
    "farm_eggs": {
     "base": 3,
-    "target": 191,
-    "stock0": 191,
+    "target": 257,
+    "stock0": 257,
     "buyPct": 0.8,
     "mult": 1.05,
     "world": {
@@ -5766,8 +5759,8 @@ window.MARKET_DEFS = {
    },
    "onions": {
     "base": 2,
-    "target": 332,
-    "stock0": 332,
+    "target": 288,
+    "stock0": 288,
     "buyPct": 0.8,
     "mult": 0.98,
     "world": {
@@ -5777,8 +5770,8 @@ window.MARKET_DEFS = {
    },
    "potatoes": {
     "base": 1,
-    "target": 332,
-    "stock0": 332,
+    "target": 288,
+    "stock0": 288,
     "buyPct": 0.8,
     "mult": 0.98,
     "world": {
@@ -5799,8 +5792,8 @@ window.MARKET_DEFS = {
    },
    "dressed_chicken": {
     "base": 7,
-    "target": 119,
-    "stock0": 119,
+    "target": 149,
+    "stock0": 149,
     "buyPct": 0.8,
     "mult": 1.05,
     "world": {
@@ -5810,8 +5803,8 @@ window.MARKET_DEFS = {
    },
    "fish": {
     "base": 4,
-    "target": 335,
-    "stock0": 335,
+    "target": 180,
+    "stock0": 180,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -5821,8 +5814,8 @@ window.MARKET_DEFS = {
    },
    "cabbage": {
     "base": 2,
-    "target": 332,
-    "stock0": 332,
+    "target": 288,
+    "stock0": 288,
     "buyPct": 0.8,
     "mult": 0.98,
     "world": {
@@ -5898,8 +5891,8 @@ window.MARKET_DEFS = {
    },
    "salt": {
     "base": 6,
-    "target": 200,
-    "stock0": 200,
+    "target": 180,
+    "stock0": 180,
     "buyPct": 0.8,
     "mult": 0.924,
     "world": {
@@ -5943,8 +5936,8 @@ window.MARKET_DEFS = {
    },
    "wool": {
     "base": 4,
-    "target": 301,
-    "stock0": 301,
+    "target": 180,
+    "stock0": 180,
     "buyPct": 0.8,
     "mult": 1,
     "world": {
@@ -5954,12 +5947,10 @@ window.MARKET_DEFS = {
    },
    "hemp": {
     "base": 5,
-    "target": 18,
-    "stock0": 0,
+    "target": 12,
+    "stock0": 12,
     "buyPct": 0.8,
     "mult": 1.42,
-    "restock": false,
-    "flow": -0.9,
     "world": {
      "tile": "pv"
     },
@@ -5967,8 +5958,8 @@ window.MARKET_DEFS = {
    },
    "wool_cloth": {
     "base": 15,
-    "target": 122,
-    "stock0": 122,
+    "target": 108,
+    "stock0": 108,
     "buyPct": 0.8,
     "mult": 0.945,
     "world": {
@@ -5978,8 +5969,8 @@ window.MARKET_DEFS = {
    },
    "raw_hide": {
     "base": 8,
-    "target": 92,
-    "stock0": 92,
+    "target": 104,
+    "stock0": 104,
     "buyPct": 0.8,
     "mult": 1.125,
     "world": {
@@ -6064,8 +6055,8 @@ window.MARKET_DEFS = {
    },
    "barley_loaf": {
     "base": 2,
-    "target": 116,
-    "stock0": 116,
+    "target": 160,
+    "stock0": 160,
     "buyPct": 0.8,
     "mult": 1.08,
     "world": {
@@ -6075,8 +6066,8 @@ window.MARKET_DEFS = {
    },
    "grain": {
     "base": 2,
-    "target": 283,
-    "stock0": 283,
+    "target": 240,
+    "stock0": 240,
     "buyPct": 0.8,
     "mult": 0.98,
     "world": {
@@ -6086,17 +6077,6 @@ window.MARKET_DEFS = {
    },
    "cheese": {
     "base": 3,
-    "target": 182,
-    "stock0": 182,
-    "buyPct": 0.8,
-    "mult": 0.99,
-    "world": {
-     "tile": "lg"
-    },
-    "need": 0.6
-   },
-   "butter": {
-    "base": 5,
     "target": 160,
     "stock0": 160,
     "buyPct": 0.8,
@@ -6106,10 +6086,21 @@ window.MARKET_DEFS = {
     },
     "need": 0.6
    },
+   "butter": {
+    "base": 5,
+    "target": 150,
+    "stock0": 150,
+    "buyPct": 0.8,
+    "mult": 0.99,
+    "world": {
+     "tile": "lg"
+    },
+    "need": 0.6
+   },
    "animal_fat": {
     "base": 3,
-    "target": 194,
-    "stock0": 194,
+    "target": 212,
+    "stock0": 212,
     "buyPct": 0.8,
     "mult": 1.09,
     "world": {
@@ -6119,8 +6110,8 @@ window.MARKET_DEFS = {
    },
    "orchard_apple": {
     "base": 1,
-    "target": 200,
-    "stock0": 200,
+    "target": 160,
+    "stock0": 160,
     "buyPct": 0.8,
     "mult": 0.935,
     "world": {
@@ -6153,8 +6144,8 @@ window.MARKET_DEFS = {
    },
    "root_vegetable_bundle": {
     "base": 2,
-    "target": 262,
-    "stock0": 262,
+    "target": 240,
+    "stock0": 240,
     "buyPct": 0.8,
     "mult": 0.98,
     "world": {
@@ -6164,8 +6155,8 @@ window.MARKET_DEFS = {
    },
    "farm_eggs": {
     "base": 3,
-    "target": 183,
-    "stock0": 183,
+    "target": 225,
+    "stock0": 225,
     "buyPct": 0.8,
     "mult": 1.08,
     "world": {
@@ -6186,8 +6177,8 @@ window.MARKET_DEFS = {
    },
    "onions": {
     "base": 2,
-    "target": 262,
-    "stock0": 262,
+    "target": 240,
+    "stock0": 240,
     "buyPct": 0.8,
     "mult": 0.98,
     "world": {
@@ -6197,8 +6188,8 @@ window.MARKET_DEFS = {
    },
    "potatoes": {
     "base": 1,
-    "target": 262,
-    "stock0": 262,
+    "target": 240,
+    "stock0": 240,
     "buyPct": 0.8,
     "mult": 0.98,
     "world": {
@@ -6208,8 +6199,8 @@ window.MARKET_DEFS = {
    },
    "tomatoes": {
     "base": 3,
-    "target": 106,
-    "stock0": 106,
+    "target": 123,
+    "stock0": 123,
     "buyPct": 0.8,
     "mult": 1.09,
     "world": {
@@ -6219,8 +6210,8 @@ window.MARKET_DEFS = {
    },
    "dressed_chicken": {
     "base": 7,
-    "target": 23,
-    "stock0": 23,
+    "target": 116,
+    "stock0": 116,
     "buyPct": 0.8,
     "mult": 1.09,
     "world": {
@@ -6230,18 +6221,19 @@ window.MARKET_DEFS = {
    },
    "fish": {
     "base": 4,
-    "target": 3,
-    "stock0": 0,
+    "target": 108,
+    "stock0": 108,
     "buyPct": 0.8,
-    "mult": 1,
-    "need": 0.8,
-    "unstocked": true,
-    "sells": false
+    "mult": 1.16,
+    "world": {
+     "tile": "lg"
+    },
+    "need": 0.8
    },
    "cabbage": {
     "base": 2,
-    "target": 262,
-    "stock0": 262,
+    "target": 240,
+    "stock0": 240,
     "buyPct": 0.8,
     "mult": 0.98,
     "world": {
@@ -6251,8 +6243,8 @@ window.MARKET_DEFS = {
    },
    "pumpkin": {
     "base": 3,
-    "target": 106,
-    "stock0": 106,
+    "target": 123,
+    "stock0": 123,
     "buyPct": 0.8,
     "mult": 1.09,
     "world": {
@@ -6306,8 +6298,8 @@ window.MARKET_DEFS = {
    },
    "charcoal": {
     "base": 3,
-    "target": 130,
-    "stock0": 130,
+    "target": 150,
+    "stock0": 150,
     "buyPct": 0.8,
     "mult": 1.105,
     "world": {
@@ -6363,8 +6355,8 @@ window.MARKET_DEFS = {
    },
    "wool": {
     "base": 4,
-    "target": 214,
-    "stock0": 214,
+    "target": 150,
+    "stock0": 150,
     "buyPct": 0.8,
     "mult": 0.99,
     "world": {
@@ -6461,28 +6453,30 @@ window.MARKET_DEFS = {
    },
    "boar_meat": {
     "base": 6,
-    "target": 3,
-    "stock0": 0,
+    "target": 40,
+    "stock0": 40,
     "buyPct": 0.8,
-    "mult": 1,
-    "need": 0.5,
-    "unstocked": true,
-    "sells": false
+    "mult": 1.185,
+    "world": {
+     "tile": "fm"
+    },
+    "need": 0.5
    },
    "venison": {
     "base": 7,
-    "target": 3,
-    "stock0": 0,
+    "target": 40,
+    "stock0": 40,
     "buyPct": 0.8,
-    "mult": 1,
-    "need": 0.4,
-    "unstocked": true,
-    "sells": false
+    "mult": 1.185,
+    "world": {
+     "tile": "fm"
+    },
+    "need": 0.4
    },
    "barley_loaf": {
     "base": 2,
-    "target": 68,
-    "stock0": 68,
+    "target": 96,
+    "stock0": 96,
     "buyPct": 0.8,
     "mult": 1,
     "world": {
@@ -6492,8 +6486,8 @@ window.MARKET_DEFS = {
    },
    "grain": {
     "base": 2,
-    "target": 195,
-    "stock0": 195,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -6503,8 +6497,8 @@ window.MARKET_DEFS = {
    },
    "cheese": {
     "base": 3,
-    "target": 108,
-    "stock0": 108,
+    "target": 96,
+    "stock0": 96,
     "buyPct": 0.8,
     "mult": 0.945,
     "world": {
@@ -6514,8 +6508,8 @@ window.MARKET_DEFS = {
    },
    "butter": {
     "base": 5,
-    "target": 101,
-    "stock0": 101,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
     "mult": 0.945,
     "world": {
@@ -6525,8 +6519,8 @@ window.MARKET_DEFS = {
    },
    "animal_fat": {
     "base": 3,
-    "target": 104,
-    "stock0": 104,
+    "target": 113,
+    "stock0": 113,
     "buyPct": 0.8,
     "mult": 1.045,
     "world": {
@@ -6536,8 +6530,8 @@ window.MARKET_DEFS = {
    },
    "orchard_apple": {
     "base": 1,
-    "target": 101,
-    "stock0": 101,
+    "target": 96,
+    "stock0": 96,
     "buyPct": 0.8,
     "mult": 0.965,
     "world": {
@@ -6570,8 +6564,8 @@ window.MARKET_DEFS = {
    },
    "root_vegetable_bundle": {
     "base": 2,
-    "target": 195,
-    "stock0": 195,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -6581,8 +6575,8 @@ window.MARKET_DEFS = {
    },
    "farm_eggs": {
     "base": 3,
-    "target": 64,
-    "stock0": 64,
+    "target": 137,
+    "stock0": 137,
     "buyPct": 0.8,
     "mult": 1,
     "world": {
@@ -6603,8 +6597,8 @@ window.MARKET_DEFS = {
    },
    "onions": {
     "base": 2,
-    "target": 195,
-    "stock0": 195,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -6614,8 +6608,8 @@ window.MARKET_DEFS = {
    },
    "potatoes": {
     "base": 1,
-    "target": 195,
-    "stock0": 195,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -6625,8 +6619,8 @@ window.MARKET_DEFS = {
    },
    "tomatoes": {
     "base": 3,
-    "target": 51,
-    "stock0": 51,
+    "target": 61,
+    "stock0": 61,
     "buyPct": 0.8,
     "mult": 1.17,
     "world": {
@@ -6636,8 +6630,8 @@ window.MARKET_DEFS = {
    },
    "dressed_chicken": {
     "base": 7,
-    "target": 17,
-    "stock0": 17,
+    "target": 63,
+    "stock0": 63,
     "buyPct": 0.8,
     "mult": 1.045,
     "world": {
@@ -6647,18 +6641,19 @@ window.MARKET_DEFS = {
    },
    "fish": {
     "base": 4,
-    "target": 3,
-    "stock0": 0,
+    "target": 55,
+    "stock0": 55,
     "buyPct": 0.8,
-    "mult": 1,
-    "need": 0.8,
-    "unstocked": true,
-    "sells": false
+    "mult": 1.24,
+    "world": {
+     "tile": "fm"
+    },
+    "need": 0.8
    },
    "cabbage": {
     "base": 2,
-    "target": 195,
-    "stock0": 195,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -6668,8 +6663,8 @@ window.MARKET_DEFS = {
    },
    "pumpkin": {
     "base": 3,
-    "target": 51,
-    "stock0": 51,
+    "target": 61,
+    "stock0": 61,
     "buyPct": 0.8,
     "mult": 1.17,
     "world": {
@@ -6723,8 +6718,8 @@ window.MARKET_DEFS = {
    },
    "charcoal": {
     "base": 3,
-    "target": 64,
-    "stock0": 64,
+    "target": 73,
+    "stock0": 73,
     "buyPct": 0.8,
     "mult": 1.185,
     "world": {
@@ -6780,8 +6775,8 @@ window.MARKET_DEFS = {
    },
    "wool": {
     "base": 4,
-    "target": 131,
-    "stock0": 131,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
     "mult": 0.945,
     "world": {
@@ -6878,28 +6873,30 @@ window.MARKET_DEFS = {
    },
    "boar_meat": {
     "base": 6,
-    "target": 3,
-    "stock0": 0,
+    "target": 39,
+    "stock0": 39,
     "buyPct": 0.8,
-    "mult": 1,
-    "need": 0.5,
-    "unstocked": true,
-    "sells": false
+    "mult": 1.195,
+    "world": {
+     "tile": "bm"
+    },
+    "need": 0.5
    },
    "venison": {
     "base": 7,
-    "target": 3,
-    "stock0": 0,
+    "target": 39,
+    "stock0": 39,
     "buyPct": 0.8,
-    "mult": 1,
-    "need": 0.4,
-    "unstocked": true,
-    "sells": false
+    "mult": 1.195,
+    "world": {
+     "tile": "bm"
+    },
+    "need": 0.4
    },
    "barley_loaf": {
     "base": 2,
-    "target": 27,
-    "stock0": 27,
+    "target": 92,
+    "stock0": 92,
     "buyPct": 0.8,
     "mult": 1.045,
     "world": {
@@ -6909,8 +6906,8 @@ window.MARKET_DEFS = {
    },
    "grain": {
     "base": 2,
-    "target": 161,
-    "stock0": 161,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.945,
     "world": {
@@ -6920,8 +6917,8 @@ window.MARKET_DEFS = {
    },
    "cheese": {
     "base": 3,
-    "target": 129,
-    "stock0": 129,
+    "target": 96,
+    "stock0": 96,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -6931,8 +6928,8 @@ window.MARKET_DEFS = {
    },
    "butter": {
     "base": 5,
-    "target": 121,
-    "stock0": 121,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -6942,8 +6939,8 @@ window.MARKET_DEFS = {
    },
    "animal_fat": {
     "base": 3,
-    "target": 111,
-    "stock0": 111,
+    "target": 120,
+    "stock0": 120,
     "buyPct": 0.8,
     "mult": 1,
     "world": {
@@ -6953,8 +6950,8 @@ window.MARKET_DEFS = {
    },
    "orchard_apple": {
     "base": 1,
-    "target": 64,
-    "stock0": 64,
+    "target": 96,
+    "stock0": 96,
     "buyPct": 0.8,
     "mult": 0.975,
     "world": {
@@ -6987,8 +6984,8 @@ window.MARKET_DEFS = {
    },
    "root_vegetable_bundle": {
     "base": 2,
-    "target": 161,
-    "stock0": 161,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.945,
     "world": {
@@ -6998,8 +6995,8 @@ window.MARKET_DEFS = {
    },
    "farm_eggs": {
     "base": 3,
-    "target": 64,
-    "stock0": 64,
+    "target": 135,
+    "stock0": 135,
     "buyPct": 0.8,
     "mult": 1,
     "world": {
@@ -7020,8 +7017,8 @@ window.MARKET_DEFS = {
    },
    "onions": {
     "base": 2,
-    "target": 161,
-    "stock0": 161,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.945,
     "world": {
@@ -7031,8 +7028,8 @@ window.MARKET_DEFS = {
    },
    "potatoes": {
     "base": 1,
-    "target": 161,
-    "stock0": 161,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.945,
     "world": {
@@ -7042,18 +7039,19 @@ window.MARKET_DEFS = {
    },
    "tomatoes": {
     "base": 3,
-    "target": 3,
-    "stock0": 0,
+    "target": 59,
+    "stock0": 59,
     "buyPct": 0.8,
-    "mult": 1,
-    "need": 0.3,
-    "unstocked": true,
-    "sells": false
+    "mult": 1.18,
+    "world": {
+     "tile": "bm"
+    },
+    "need": 0.3
    },
    "dressed_chicken": {
     "base": 7,
-    "target": 23,
-    "stock0": 23,
+    "target": 67,
+    "stock0": 67,
     "buyPct": 0.8,
     "mult": 1,
     "world": {
@@ -7063,18 +7061,19 @@ window.MARKET_DEFS = {
    },
    "fish": {
     "base": 4,
-    "target": 3,
-    "stock0": 0,
+    "target": 54,
+    "stock0": 54,
     "buyPct": 0.8,
-    "mult": 1,
-    "need": 0.8,
-    "unstocked": true,
-    "sells": false
+    "mult": 1.25,
+    "world": {
+     "tile": "bm"
+    },
+    "need": 0.8
    },
    "cabbage": {
     "base": 2,
-    "target": 161,
-    "stock0": 161,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.945,
     "world": {
@@ -7084,8 +7083,8 @@ window.MARKET_DEFS = {
    },
    "pumpkin": {
     "base": 3,
-    "target": 50,
-    "stock0": 50,
+    "target": 59,
+    "stock0": 59,
     "buyPct": 0.8,
     "mult": 1.18,
     "world": {
@@ -7139,8 +7138,8 @@ window.MARKET_DEFS = {
    },
    "charcoal": {
     "base": 3,
-    "target": 62,
-    "stock0": 62,
+    "target": 72,
+    "stock0": 72,
     "buyPct": 0.8,
     "mult": 1.195,
     "world": {
@@ -7196,8 +7195,8 @@ window.MARKET_DEFS = {
    },
    "wool": {
     "base": 4,
-    "target": 150,
-    "stock0": 150,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -7294,10 +7293,10 @@ window.MARKET_DEFS = {
    },
    "boar_meat": {
     "base": 6,
-    "target": 10,
-    "stock0": 10,
+    "target": 44,
+    "stock0": 44,
     "buyPct": 0.8,
-    "mult": 1.195,
+    "mult": 1.14,
     "world": {
      "tile": "nv"
     },
@@ -7305,10 +7304,10 @@ window.MARKET_DEFS = {
    },
    "venison": {
     "base": 7,
-    "target": 10,
-    "stock0": 10,
+    "target": 44,
+    "stock0": 44,
     "buyPct": 0.8,
-    "mult": 1.195,
+    "mult": 1.14,
     "world": {
      "tile": "nv"
     },
@@ -7316,8 +7315,8 @@ window.MARKET_DEFS = {
    },
    "barley_loaf": {
     "base": 2,
-    "target": 66,
-    "stock0": 66,
+    "target": 96,
+    "stock0": 96,
     "buyPct": 0.8,
     "mult": 1.065,
     "world": {
@@ -7327,8 +7326,8 @@ window.MARKET_DEFS = {
    },
    "grain": {
     "base": 2,
-    "target": 158,
-    "stock0": 158,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.965,
     "world": {
@@ -7338,17 +7337,6 @@ window.MARKET_DEFS = {
    },
    "cheese": {
     "base": 3,
-    "target": 109,
-    "stock0": 109,
-    "buyPct": 0.8,
-    "mult": 0.975,
-    "world": {
-     "tile": "nv"
-    },
-    "need": 0.6
-   },
-   "butter": {
-    "base": 5,
     "target": 96,
     "stock0": 96,
     "buyPct": 0.8,
@@ -7358,10 +7346,21 @@ window.MARKET_DEFS = {
     },
     "need": 0.6
    },
+   "butter": {
+    "base": 5,
+    "target": 90,
+    "stock0": 90,
+    "buyPct": 0.8,
+    "mult": 0.975,
+    "world": {
+     "tile": "nv"
+    },
+    "need": 0.6
+   },
    "animal_fat": {
     "base": 3,
-    "target": 109,
-    "stock0": 109,
+    "target": 119,
+    "stock0": 119,
     "buyPct": 0.8,
     "mult": 1.075,
     "world": {
@@ -7371,8 +7370,8 @@ window.MARKET_DEFS = {
    },
    "orchard_apple": {
     "base": 1,
-    "target": 134,
-    "stock0": 134,
+    "target": 96,
+    "stock0": 96,
     "buyPct": 0.8,
     "mult": 0.9,
     "world": {
@@ -7404,8 +7403,8 @@ window.MARKET_DEFS = {
    },
    "root_vegetable_bundle": {
     "base": 2,
-    "target": 158,
-    "stock0": 158,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.965,
     "world": {
@@ -7415,8 +7414,8 @@ window.MARKET_DEFS = {
    },
    "farm_eggs": {
     "base": 3,
-    "target": 49,
-    "stock0": 49,
+    "target": 130,
+    "stock0": 130,
     "buyPct": 0.8,
     "mult": 1.065,
     "world": {
@@ -7437,8 +7436,8 @@ window.MARKET_DEFS = {
    },
    "onions": {
     "base": 2,
-    "target": 158,
-    "stock0": 158,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.965,
     "world": {
@@ -7448,8 +7447,8 @@ window.MARKET_DEFS = {
    },
    "potatoes": {
     "base": 1,
-    "target": 158,
-    "stock0": 158,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.965,
     "world": {
@@ -7459,8 +7458,8 @@ window.MARKET_DEFS = {
    },
    "tomatoes": {
     "base": 3,
-    "target": 58,
-    "stock0": 58,
+    "target": 67,
+    "stock0": 67,
     "buyPct": 0.8,
     "mult": 1.125,
     "world": {
@@ -7470,8 +7469,8 @@ window.MARKET_DEFS = {
    },
    "dressed_chicken": {
     "base": 7,
-    "target": 15,
-    "stock0": 15,
+    "target": 66,
+    "stock0": 66,
     "buyPct": 0.8,
     "mult": 1.075,
     "world": {
@@ -7481,18 +7480,19 @@ window.MARKET_DEFS = {
    },
    "fish": {
     "base": 4,
-    "target": 3,
-    "stock0": 0,
+    "target": 60,
+    "stock0": 60,
     "buyPct": 0.8,
-    "mult": 1,
-    "need": 0.8,
-    "unstocked": true,
-    "sells": false
+    "mult": 1.195,
+    "world": {
+     "tile": "nv"
+    },
+    "need": 0.8
    },
    "cabbage": {
     "base": 2,
-    "target": 158,
-    "stock0": 158,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 0.965,
     "world": {
@@ -7502,8 +7502,8 @@ window.MARKET_DEFS = {
    },
    "pumpkin": {
     "base": 3,
-    "target": 58,
-    "stock0": 58,
+    "target": 67,
+    "stock0": 67,
     "buyPct": 0.8,
     "mult": 1.125,
     "world": {
@@ -7557,8 +7557,8 @@ window.MARKET_DEFS = {
    },
    "charcoal": {
     "base": 3,
-    "target": 71,
-    "stock0": 71,
+    "target": 82,
+    "stock0": 82,
     "buyPct": 0.8,
     "mult": 1.14,
     "world": {
@@ -7614,8 +7614,8 @@ window.MARKET_DEFS = {
    },
    "wool": {
     "base": 4,
-    "target": 127,
-    "stock0": 127,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
     "mult": 0.975,
     "world": {

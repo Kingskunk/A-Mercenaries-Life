@@ -325,11 +325,11 @@ section("commodities and distance");
     commodities.forEach((it) => {
       const g = def.goods[it.id];
       if (!g) { const tr = cat.trades.find((t) => t.name === mid); ok(!!(tr && (tr.excludeCommodities || []).indexOf(it.id) >= 0), mid + " deals in " + it.id + " (or the catalog leaves it off that floor on purpose)"); return; }
-      let level = CR.capLevelOf(it, CP), inReach = 0;
-      Object.keys(it.commodity.makers).forEach((t) => { const route = Freight.route(t, tile, it), d = route.ok ? route.costDistance : Infinity; if (d > CR.reachOf(it, CP)) return; inReach++; level = Math.min(level, CP.cost[it.commodity.makers[t]] + CP.perMile * d); });
-      if (!inReach) { ok(g.unstocked === true && g.sells === false && g.buys !== false && !g.world, mid + "/" + it.id + ": no maker within " + CR.reachOf(it, CP) + " miles, so it is not stocked and the market pays no premium for it"); return; }
-      ok(g.buys !== false && g.sells !== false && Math.abs(g.mult - level) < 0.001 && g.mult >= CP.cost.major - 1e-9 && g.mult <= CR.capLevelOf(it, CP) + 1e-9, mid + "/" + it.id + ": bought here, price level " + g.mult + " is the nearest maker's cost plus freight distance (makers within reach only)");
-      if (g.restock === false) ok(g.stock0 === 0 && g.flow < 0, mid + "/" + it.id + ": a good with no supply starts empty and is used up, never restocked");
+      let level = CR.capLevelOf(it, CP);
+      Object.keys(it.commodity.makers).forEach((t) => { const route = Freight.route(t, tile, it), d = route.ok ? route.costDistance : Infinity; level = Math.min(level, CP.cost[it.commodity.makers[t]] + CP.perMile * d); });
+      ok(g.unstocked !== true, mid + "/" + it.id + ": supply only ever tapers with distance, never cuts off to a flat 'unstocked' shortage price");
+      ok(g.target >= defsJson.minDepth, mid + "/" + it.id + ": even a market far from every maker keeps at least the minimum depth on its shelf");
+      ok(g.buys !== false && g.sells !== false && Math.abs(g.mult - level) < 0.001 && g.mult >= CP.cost.major - 1e-9 && g.mult <= CR.capLevelOf(it, CP) + 1e-9, mid + "/" + it.id + ": bought here, price level " + g.mult + " is the nearest maker's cost plus freight distance");
     });
   });
   const byId = {}; commodities.forEach((it) => { byId[it.id] = it; });
