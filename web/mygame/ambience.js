@@ -64,6 +64,7 @@
     kestrel_watchtower_room: { all: "military_camp_ambience", level: 0.28, indoor: false },
     lodgings:      { all: "city_indoor", indoor: true },
     factors_hall:  { all: "city_indoor", indoor: true },
+    "7_lantern_lane": { all: "city_indoor", indoor: true },   // No. 7 Lantern Lane: an empty room off a Middle Ward street, same quiet indoor bed as a shop or lodgings
     langston_hall: { all: "city_indoor", level: 0.45, indoor: true },
     bathhouse:     { all: "bathhouse_ambience", indoor: true },
     blacksmith:    { all: "village_blacksmith_ambience", indoor: true },

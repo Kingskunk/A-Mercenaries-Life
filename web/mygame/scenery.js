@@ -290,6 +290,7 @@
     function (s) { return s.sceneName === "alderford/chapel" ? "saint_althea_chapel" : undefined; }, // Saint Althea's working parish chapel above the weir
     function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_city_street" ? "generic_city_street" : undefined; }, // Trunk Road and Lantern Lane; Conduit Square remains the district view
     function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "mw_inn_stable_yard" ? "generic_town_stable" : undefined; }, // the Wagoner's Rest stable yard, shared with the Split Pine and Drowned Oar
+    function (s) { return s.sceneName === "port_valen/port_valen_holdings" && s.scenery_subplace === "mw_holding_floor" ? "7_lantern_lane" : undefined; }, // No. 7 Lantern Lane's own interior
     function (s) { return /^port_valen\/black_oath\//.test(s.sceneName) ? BLACK_OATH_PLACES[s.scenery_subplace] : undefined; }, // the handler's upstairs room and the Black Oath Dredge-End stops
     function (s) { return s.sceneName === "port_valen/port_valen_dredge_end" && s.scenery_subplace === "dredge_duckboard_market" ? "dredge_duckboard_market" : undefined; }, // market lane and stalls
     function (s) { return s.sceneName === "port_valen/port_valen_dredge_end" && s.scenery_subplace === "dredge_upper_gangways" ? "dredge_upper_gangways" : undefined; }, // elevated tenant walkways

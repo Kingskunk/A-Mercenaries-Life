@@ -293,6 +293,9 @@ function compile(){
   verifyFileName("port_valen/port_valen_civic_heights.txt");
   verifyFileName("port_valen/port_valen_upper_wharves.txt");
   verifyFileName("port_valen/port_valen_middle_ward.txt");
+  // Owned-property interiors (the Deeds pilot): one file for every holding across every ward, reached
+  // only via *goto_scene, same shape as the lines above.
+  verifyFileName("port_valen/port_valen_holdings.txt");
   // Low-frequency, one-shot city-travel encounters. This is reached from port_valen.txt's shared
   // travel primitive and dispatches directly to the selected district, so it is not in *scene_list.
   verifyFileName("port_valen/port_valen_random_encounters.txt");

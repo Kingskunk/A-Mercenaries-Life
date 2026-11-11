@@ -584,11 +584,17 @@
 *comment                             cot indefinitely.
 *comment   sleep_tier_name         - display name for the granted buff,
 *comment                             "none" if this tier grants nothing
-*comment   sleep_tier_stat1/bonus1 - first stat bonus ("none"/0 if unused).
-*comment                             bonus1 may be negative (a squalid
-*comment                             location's debuff) -- resolve_sleep
+*comment   sleep_tier_stat1/bonus1 - first stat bonus: the short code bs_add
+*comment                             (character_buffs.txt) matches on --
+*comment                             "str"/"dex"/"con"/"int"/"wis"/"cha", same
+*comment                             as tavern_item_buff_stat -- or "none"/0 if
+*comment                             unused. resolve_sleep spells the code out
+*comment                             for sleep_buff1_desc, so the player never
+*comment                             sees the raw code. bonus1 may be negative
+*comment                             (a squalid location's debuff) -- resolve_sleep
 *comment                             handles the sign either way.
-*comment   sleep_tier_stat2/bonus2 - second stat bonus ("none"/0 if unused)
+*comment   sleep_tier_stat2/bonus2 - second stat bonus, same short-code rule
+*comment                             ("none"/0 if unused)
 *comment   sleep_is_paid_inn        - true only for a rented room at an inn;
 *comment                              grants the separate Well Rested check boon.
 *comment
@@ -680,10 +686,29 @@
 
 *comment --- Sleep-quality buff: fixed-value sets, idempotent under replay,
 *comment no lock needed (same reasoning as the fatigue-clear above). A
-*comment shared space hard-zeroes both slots regardless of the tier inputs. ---
+*comment shared space hard-zeroes both slots regardless of the tier inputs.
+*comment sleep_tier_stat1/2 take the same short code bs_add (character_buffs.txt)
+*comment matches on ("str"/"dex"/"con"/"int"/"wis"/"cha", the tavern_item_buff_stat
+*comment convention) -- the desc built below spells it out for the player, found
+*comment and fixed 2026-11-11 when No. 7 Lantern Lane's bed became this whole
+*comment tier's first real caller anywhere in the project and the bonus silently
+*comment never reached the stat (every sleeping place before it passed "none"). ---
 *temp sleep_sign1 "+"
 *if (sleep_tier_bonus1 <= 0)
   *set sleep_sign1 ""
+*temp sleep_stat1_name sleep_tier_stat1
+*if (sleep_tier_stat1 = "str")
+  *set sleep_stat1_name "Strength"
+*if (sleep_tier_stat1 = "dex")
+  *set sleep_stat1_name "Dexterity"
+*if (sleep_tier_stat1 = "con")
+  *set sleep_stat1_name "Constitution"
+*if (sleep_tier_stat1 = "int")
+  *set sleep_stat1_name "Intelligence"
+*if (sleep_tier_stat1 = "wis")
+  *set sleep_stat1_name "Wisdom"
+*if (sleep_tier_stat1 = "cha")
+  *set sleep_stat1_name "Charisma"
 *if ((sleep_is_shared) or (sleep_tier_stat1 = "none")) or (sleep_tier_bonus1 = 0)
   *set sleep_buff1_active false
   *set sleep_buff1_name "none"
@@ -694,7 +719,7 @@
 *else
   *set sleep_buff1_active true
   *set sleep_buff1_name sleep_tier_name
-  *set sleep_buff1_desc "${sleep_sign1}${sleep_tier_bonus1} ${sleep_tier_stat1}"
+  *set sleep_buff1_desc "${sleep_sign1}${sleep_tier_bonus1} ${sleep_stat1_name}"
   *set sleep_buff1_stat sleep_tier_stat1
   *set sleep_buff1_bonus sleep_tier_bonus1
   *set sleep_buff1_minutes_left 480
@@ -702,6 +727,19 @@
 *temp sleep_sign2 "+"
 *if (sleep_tier_bonus2 <= 0)
   *set sleep_sign2 ""
+*temp sleep_stat2_name sleep_tier_stat2
+*if (sleep_tier_stat2 = "str")
+  *set sleep_stat2_name "Strength"
+*if (sleep_tier_stat2 = "dex")
+  *set sleep_stat2_name "Dexterity"
+*if (sleep_tier_stat2 = "con")
+  *set sleep_stat2_name "Constitution"
+*if (sleep_tier_stat2 = "int")
+  *set sleep_stat2_name "Intelligence"
+*if (sleep_tier_stat2 = "wis")
+  *set sleep_stat2_name "Wisdom"
+*if (sleep_tier_stat2 = "cha")
+  *set sleep_stat2_name "Charisma"
 *if ((sleep_is_shared) or (sleep_tier_stat2 = "none")) or (sleep_tier_bonus2 = 0)
   *set sleep_buff2_active false
   *set sleep_buff2_name "none"
@@ -712,7 +750,7 @@
 *else
   *set sleep_buff2_active true
   *set sleep_buff2_name sleep_tier_name
-  *set sleep_buff2_desc "${sleep_sign2}${sleep_tier_bonus2} ${sleep_tier_stat2}"
+  *set sleep_buff2_desc "${sleep_sign2}${sleep_tier_bonus2} ${sleep_stat2_name}"
   *set sleep_buff2_stat sleep_tier_stat2
   *set sleep_buff2_bonus sleep_tier_bonus2
   *set sleep_buff2_minutes_left 480

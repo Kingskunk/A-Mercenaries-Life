@@ -490,6 +490,22 @@ window.CITY_TRAVEL = {
      "mw_gate_road:mw_smiths_row",
      "mw_smiths_row:mw_smiths_forge"
     ]
+   },
+   {
+    "id": "mw_holding",
+    "name": "No. 7 Lantern Lane",
+    "district": "middle_ward",
+    "kind": "food",
+    "seen": "mw_holding_seen",
+    "gate": "",
+    "extra": 0,
+    "stepMin": [
+     0
+    ],
+    "steps": [
+     "mw_conduit_square:mw_lantern_lane",
+     "mw_lantern_lane:mw_holding_interior"
+    ]
    }
   ]
  }

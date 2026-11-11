@@ -68,7 +68,8 @@ const PLACES = {
     place("bakehouse", "Mother Marda's Bakehouse", "middle_ward", "food", "mw_bakehouse_seen", [[HUB.middle_ward, "mw_bakehouse_walk"]]),
     place("hollis_store", "Hollis & Daughters", "middle_ward", "shops", "mw_store_seen", [[HUB.middle_ward, "mw_lantern_lane"], ["mw_lantern_lane", "mw_hollis_store"]]),
     place("ambrose_stillroom", "Ambrose's Still-Room", "middle_ward", "shops", "mw_herb_seen", [[HUB.middle_ward, "mw_lantern_lane"], ["mw_lantern_lane", "mw_herb_close"]]),
-    place("halda_forge", "Halda's Forge", "middle_ward", "shops", "mw_forge_seen", [[HUB.middle_ward, "mw_gate_road"], ["mw_gate_road", "mw_smiths_row"], ["mw_smiths_row", "mw_smiths_forge"]])
+    place("halda_forge", "Halda's Forge", "middle_ward", "shops", "mw_forge_seen", [[HUB.middle_ward, "mw_gate_road"], ["mw_gate_road", "mw_smiths_row"], ["mw_smiths_row", "mw_smiths_forge"]]),
+    place("mw_holding", "No. 7 Lantern Lane", "middle_ward", "food", "mw_holding_seen", [[HUB.middle_ward, "mw_lantern_lane"], ["mw_lantern_lane", "mw_holding_interior"]])
   ]
 };
 
