@@ -6,6 +6,7 @@
 *comment What the camp offers, and where each piece comes from (this file prints and sequences; it never reimplements a rule):
 *comment   Sleep: overworld.txt ow_camp_pre / ow_camp, unchanged (the visitor at the fire, the 8 hours or the sleep until dawn, shared bunk, exposure, the death check, resolve_sleep). It ends on the map, as it always did.
 *comment   Rest: the one-hour short rest (character_progression.txt short_rest_preview / do_short_rest), the same one the dossier's Rest menu takes, with the camp's fire taken into the exposure.
+*comment   Wash: wash with soap at open water or using 1 water jug (~5 min), restoring hygiene to Clean and spending 1 lye soap (and emptying 1 jug if using a jug).
 *comment   Eat: not here any more (2026-10-18, the user's call): the player eats from the pack whenever they like, and the game eats for them only to stop starvation (calendar.txt advance_time).
 *comment   Train: a training session on your own (character_progression.txt training_preview / do_training_session). It counts fully toward the level-up sessions and shares the compound's once-a-day limit
 *comment     (last_training_day), so camping never gives a second session in a day. It needs safe weather and enough light: daylight, darkvision, or a campfire. The compound keeps its teachers and its prose; this is a short self-directed track with no squad voice.
@@ -53,6 +54,15 @@
 *if (((not(cp_done)) and (training_can_train)) and ((cp_dark) and ((sees_in_dark) or (cp_fire))))
   *if (weather_severity < 3)
     *set cp_train_ok true
+*temp cp_wash_recent (minutes_since_wash < 360)
+*temp cp_wash_has_jug ((has_water_jug) and (jug_full >= 1))
+*temp cp_wash_stream_ok false
+*temp cp_wash_jug_ok false
+*if (has_lye_soap and (not(cp_wash_recent)))
+  *if (water_ok)
+    *set cp_wash_stream_ok true
+  *if (cp_wash_has_jug)
+    *set cp_wash_jug_ok true
 [b]◈ CAMP: ${ow_name}[/b]
 *line_break
 You have made camp in the best patch of ground you could find.
@@ -104,6 +114,30 @@ You have made camp in the best patch of ground you could find.
   *if (((cp_jug = 1) and (water_ok)))
     # Fill your water jugs: they are all full.
       *goto camp_fill_closed
+  *if (cp_wash_stream_ok)
+    # Wash with soap at ${ow_water_name}. [~5 min]@{show_stat_hints  [Hygiene to Clean]|}
+      *goto camp_wash_stream
+  *if (water_ok and (has_lye_soap and cp_wash_recent))
+    # Wash with soap at ${ow_water_name}: you washed not long ago.
+      *goto camp_wash_closed_recent
+  *if (water_ok and (not(has_lye_soap)))
+    # Wash with soap at ${ow_water_name}: you have no soap.
+      *goto camp_wash_closed_no_soap
+  *if (cp_wash_jug_ok)
+    # Wash using 1 water jug. [~5 min]@{show_stat_hints  [Hygiene to Clean]|}
+      *goto camp_wash_jug
+  *if ((not(water_ok)) and (cp_wash_has_jug and (has_lye_soap and cp_wash_recent)))
+    # Wash using 1 water jug: you washed not long ago.
+      *goto camp_wash_closed_recent
+  *if ((not(water_ok)) and (cp_wash_has_jug and (not(has_lye_soap))))
+    # Wash using 1 water jug: you have no soap.
+      *goto camp_wash_closed_no_soap
+  *if ((((has_lye_soap) and (not(water_ok))) and (not(cp_wash_has_jug))) and (has_water_jug))
+    # Wash with soap: there is no water near this camp and your jugs are empty.
+      *goto camp_wash_closed_no_water
+  *if ((((has_lye_soap) and (not(water_ok))) and (not(cp_wash_has_jug))) and (not(has_water_jug)))
+    # Wash with soap: there is no water near this camp.
+      *goto camp_wash_closed_no_water
   *if (cp_train_ok)
     # Train on your own. [~${training_hours} Hours]
       *goto camp_train
@@ -251,6 +285,84 @@ You spread the camp kit out on the ground and go over it a seam at a time with t
 *set hours_to_pass 0
 *set minutes_to_pass 5
 *set time_advance_call_id "camp_fill_jugs_1"
+*gosub_scene calendar advance_time
+*gosub camp_after_time
+*page_break Back to the fire…
+*goto camp_hub
+
+*comment ── Wash with soap closures ──
+*label camp_wash_closed_recent
+[b]◈ CAMP[/b]
+*line_break
+You washed not long ago, and your skin is still clean of the road's dust. Another scrub now would only waste the soap.
+*page_break Back to the fire…
+*goto camp_hub
+
+*label camp_wash_closed_no_soap
+[b]◈ CAMP[/b]
+*line_break
+You have water at hand, but no soap to cut the grease and trail grime. A cold rinse alone will not leave you clean.
+*page_break Back to the fire…
+*goto camp_hub
+
+*label camp_wash_closed_no_water
+[b]◈ CAMP[/b]
+*line_break
+*if (has_water_jug)
+  You have soap in your pack, but there is neither stream nor spring near this camp, and your water jugs are dry. You will have to wait until you find fresh water.
+*else
+  You have soap in your pack, but there is neither stream nor spring near this camp. You will have to wait until you find fresh water along the road.
+*page_break Back to the fire…
+*goto camp_hub
+
+*label camp_wash_stream
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *gosub_scene equipment spend_consumable "lye_soap"
+  *set minutes_since_wash 0
+  *set hygiene_stage "Clean"
+  *gosub_scene calendar update_hub_condition
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+[b]◈ CAMP[/b]
+*line_break
+You take your cake of lye soap down to ${ow_water_name}. Kneeling on the bank, you work the shavings into a stinging grey lather and scrub the grit and woodsmoke from your skin. The cold water bites as you rinse clean, leaving your face and arms stinging fresh.
+*line_break
+[b][🧼 Washed Up: Hygiene Restored to Clean | ${clock_time}][/b]
+*set exposure_base_mins 5
+*set exposure_camping true
+*gosub_scene calendar calc_exposure
+*set exposure_camping false
+*set hours_to_pass 0
+*set minutes_to_pass 5
+*set time_advance_call_id "camp_wash_stream_1"
+*gosub_scene calendar advance_time
+*gosub camp_after_time
+*page_break Back to the fire…
+*goto camp_hub
+
+*label camp_wash_jug
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *set jug_full (jug_full - 1)
+  *if (jug_full < 0)
+    *set jug_full 0
+  *gosub_scene equipment spend_consumable "lye_soap"
+  *set minutes_since_wash 0
+  *set hygiene_stage "Clean"
+  *gosub_scene calendar update_hub_condition
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+[b]◈ CAMP[/b]
+*line_break
+You unstopper a full clay jug by the fire. Tipping water into your cupped hand, you work the lye soap into a stinging grey lather and scrub the road dust from your skin. You pour the rest over yourself to rinse clean, leaving the empty jug aside and the suds sinking into the grass.
+*line_break
+[b][🧼 Washed Up: Hygiene Restored to Clean | Emptied 1 water jug | ${clock_time}][/b]
+*set exposure_base_mins 5
+*set exposure_camping true
+*gosub_scene calendar calc_exposure
+*set exposure_camping false
+*set hours_to_pass 0
+*set minutes_to_pass 5
+*set time_advance_call_id "camp_wash_jug_1"
 *gosub_scene calendar advance_time
 *gosub camp_after_time
 *page_break Back to the fire…
