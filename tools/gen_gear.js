@@ -153,7 +153,7 @@ function genCreates() {
   ((CRAFT.CRAFT_RECIPES || {}).cooking || []).forEach(function (r) { L.push("*create recipe_" + r.id + " false"); });
   // SPELL SOURCES (2026-10-20): dungeon.txt dg_spell_source reads has_scroll_<spell id> for ANY spell it is asked about, so the flag exists for every spell of level 1 and up even before its scroll does (the scroll items above create their own).
   spellIdsOfLevelOneUp().forEach(function (id) { if (!items.some(function (it) { return it.id === "scroll_" + id; })) L.push("*create has_scroll_" + id + " false"); });
-  (CATALOG.containers || []).forEach(function (ct) { L.push("*create stow_layout_" + ct.id + " \"\""); });   // where each thing sits in the container grid (inventory.js, like inv_layout)
+  (CATALOG.containers || []).forEach(function (ct) { L.push("*create stow_layout_" + ct.id + " \"\""); if (ct.page) L.push("*create " + ct.page + " 0"); });   // where each thing sits in the container grid (inventory.js, like inv_layout), and the page_id mark for a stationary container
   (CATALOG.containers || []).forEach(function (ct) { listed().forEach(function (it) { L.push("*create stow_" + ct.id + "_" + it.id + " 0"); if (it.holds) L.push("*create stow_" + ct.id + "_" + it.holds.var + " 0"); }); });   // what is in each container (web/mygame/inventory.js)
   items.forEach(function (it) { if (buys[it.id]) L.push("*create cart_buy_" + it.id + " 0"); });
   items.forEach(function (it) { if (sells[it.id]) L.push("*create cart_sell_" + it.id + " 0"); });
@@ -423,20 +423,24 @@ function genSidearms() {
   return L;
 }
 
-var EQUIPPED_VAR = { weapon: "equipped_weapon_id", head: "equipped_head_id", armor: "equipped_armor_id",
-  cloak: "equipped_cloak_id", hands: "equipped_hands_id", waist: "equipped_waist_id", feet: "equipped_feet_id", neck: "equipped_neck_id" };
+var EQUIPPED_VAR = {
+  weapon: "equipped_weapon_id", head: "equipped_head_id", armor: "equipped_armor_id",
+  cloak: "equipped_cloak_id", hands: "equipped_hands_id", waist: "equipped_waist_id", feet: "equipped_feet_id", neck: "equipped_neck_id"
+};
 function capFirst(x) { return x.charAt(0).toUpperCase() + x.slice(1); }
 function listed() { return items.filter(function (it) { return it.dossier && !isHand(it); }); }
 
-var INV_CATEGORY = { weapon: "weapons", armor: "apparel", head: "apparel", tool: "provisions", ingredient: "provisions", consumable: "consumables", valuable: "valuables",
-  cloak: "apparel", hands: "apparel", waist: "apparel", feet: "apparel", neck: "apparel", ring: "accessories" };
+var INV_CATEGORY = {
+  weapon: "weapons", armor: "apparel", head: "apparel", tool: "provisions", ingredient: "provisions", consumable: "consumables", valuable: "valuables",
+  cloak: "apparel", hands: "apparel", waist: "apparel", feet: "apparel", neck: "apparel", ring: "accessories"
+};
 // The load rules the pack reads (inventory.js): capacity, coin weights and the starting gear that is not catalog stock. Weights are per ONE item; a stack weighs weight x quantity.
 function genLoadConfig() {
   var cap = CATALOG.capacity, coin = CATALOG.coin_weights, sw = CATALOG.starting_weights;
   if (!cap || !coin || !sw) throw new Error("the catalog needs capacity, coin_weights and starting_weights");
   var clean = function (o) { var r = {}; Object.keys(o).forEach(function (k) { if (k.charAt(0) !== "_") r[k] = o[k]; }); return r; };
   var coins = clean(coin); delete coins.letter_of_credit;   // the letter is an item of its own in the pack (inventory-data.js letter_of_credit), so it is weighed there
-  return ["load: " + JSON.stringify({ capacityBase: cap.base, capacityPerStr: cap.per_str, capacityHorse: cap.horse, containers: (CATALOG.containers || []).map(function (ct) { return { id: ct.id, name: ct.name, capacity: ct.capacity, needs: ct.needs || "", needsReason: ct.needs_reason || "", dungeon: ct.dungeon || "", rider: !!ct.rider, note: ct.note || "" }; }), overPctPerPoint: cap.over_pct_per_point, overPctCap: cap.over_pct_cap, coin: coins, body: clean(CATALOG.body_weights || {}), starting: clean(sw) }) + ","];
+  return ["load: " + JSON.stringify({ capacityBase: cap.base, capacityPerStr: cap.per_str, capacityHorse: cap.horse, containers: (CATALOG.containers || []).map(function (ct) { return { id: ct.id, name: ct.name, capacity: ct.capacity, needs: ct.needs || "", page: ct.page || "", needsReason: ct.needs_reason || "", dungeon: ct.dungeon || "", rider: !!ct.rider, stationary: !!ct.stationary, note: ct.note || "" }; }), overPctPerPoint: cap.over_pct_per_point, overPctCap: cap.over_pct_cap, coin: coins, body: clean(CATALOG.body_weights || {}), starting: clean(sw) }) + ","];
 }
 
 function genInventory() {

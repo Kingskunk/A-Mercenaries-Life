@@ -6,10 +6,12 @@
 *set current_district "middle_ward"
 *set scenery_subplace "mw_holding_floor"
 *set wait_ok_page page_id
+*set stow_page_lantern_lane page_id
 *gosub_scene crafting cook_site_set "no_7_lantern_lane"
 *temp mw_holding_bed_just_finished false
 *temp mw_holding_tub_just_finished false
 *temp mw_holding_hearth_just_finished false
+*temp mw_holding_storage_just_finished false
 *if ((mw_holding_upgrade_ready_day > 0) and (campaign_day >= mw_holding_upgrade_ready_day))
   *if (mw_holding_upgrade_pending_id = "bed")
     *set mw_holding_bed_upgrade true
@@ -20,6 +22,9 @@
   *if (mw_holding_upgrade_pending_id = "hearth")
     *set mw_holding_hearth_upgrade true
     *set mw_holding_hearth_just_finished true
+  *if (mw_holding_upgrade_pending_id = "storage")
+    *set mw_holding_storage_upgrade true
+    *set mw_holding_storage_just_finished true
   *set mw_holding_upgrade_pending_id ""
   *set mw_holding_upgrade_ready_day 0
 [b]◈ NO. 7 LANTERN LANE[/b]
@@ -33,6 +38,9 @@
 *if (mw_holding_hearth_just_finished)
   The clean smell of seasoned ash-wood and cooling forged iron greets you on the threshold. Along the back wall, the hearth has been fitted with a heavy black iron grate and a swiveling crane with hanging pot-hooks, ready for cooking.
   *line_break
+*if (mw_holding_storage_just_finished)
+  The warm scent of planed oak and beeswax polish hangs in the air. Downstairs, fitted cupboards and dry-larder bins stand flush against the timber frame, a latched locker closes off the hollow beneath the rear stair, and an iron-banded chest rests at the foot of the space upstairs.
+  *line_break
 *if (mw_holding_bed_upgrade)
   *temp mw_holding_bed_desc "a proper bed, strung and fitted with a stuffed mattress"
 *else
@@ -45,11 +53,17 @@
   *temp mw_holding_hearth_desc "a working hearth fitted with an iron grate and pot crane"
 *else
   *temp mw_holding_hearth_desc "a cold hearth"
+*if (mw_holding_storage_upgrade)
+  *temp mw_holding_storage_desc ", fitted oak cupboards and under-stair lockers along the frame,"
+  *temp mw_holding_chest_desc " and an iron-banded chest"
+*else
+  *temp mw_holding_storage_desc ""
+  *temp mw_holding_chest_desc ""
 *if (not(mw_holding_seen))
   *set mw_holding_seen true
-  The key turns easily in a lock still stiff with newness. Beyond the street door, the ground floor runs the width of the building: bare stone flags underfoot, ${mw_holding_hearth_desc} along the back wall, and a broad bench under the street-facing shutters, their slats filtering whatever light reaches the lane outside${mw_holding_tub_desc}. The air sits close and a little stale, the first breath drawn in the place since the sale. A narrower stair at the rear climbs to a single room above, tucked under the slope of the roof, with a shuttered window over the lane and ${mw_holding_bed_desc}.
+  The key turns easily in a lock still stiff with newness. Beyond the street door, the ground floor runs the width of the building: bare stone flags underfoot, ${mw_holding_hearth_desc} along the back wall,${mw_holding_storage_desc} and a broad bench under the street-facing shutters, their slats filtering whatever light reaches the lane outside${mw_holding_tub_desc}. The air sits close and a little stale, the first breath drawn in the place since the sale. A narrower stair at the rear climbs to a single room above, tucked under the slope of the roof, with a shuttered window over the lane and ${mw_holding_bed_desc}${mw_holding_chest_desc}.
 *else
-  The key turns in the lock the same as always. The room below holds its stone flags and ${mw_holding_hearth_desc}, the shutters filtering whatever light reaches the lane outside${mw_holding_tub_desc}, and the room above waits at the top of the rear stair, with ${mw_holding_bed_desc}.
+  The key turns in the lock the same as always. The room below holds its stone flags and ${mw_holding_hearth_desc},${mw_holding_storage_desc} the shutters filtering whatever light reaches the lane outside${mw_holding_tub_desc}, and the room above waits at the top of the rear stair, with ${mw_holding_bed_desc}${mw_holding_chest_desc}.
 
 *if (weather_severity >= 3)
   Wind howls over the eaves above, rattling the street shutters in their iron pins.
@@ -93,9 +107,10 @@
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *label mw_holding_upgrades
+*set stow_page_lantern_lane page_id
 [b]◈ NO. 7 LANTERN LANE[/b]
 *line_break
-*if (((mw_holding_bed_upgrade) and (mw_holding_tub_upgrade)) and (mw_holding_hearth_upgrade))
+*if ((((mw_holding_bed_upgrade) and (mw_holding_tub_upgrade)) and (mw_holding_hearth_upgrade)) and (mw_holding_storage_upgrade))
   Everything here is already fitted out.
 *else
   A few things here could still use a tradesperson's hand.
@@ -135,6 +150,18 @@
 *elseif ((time_period = "Dusk") or (time_period = "Night"))
   *line_break
   The back hearth still sits bare and cold. The smithies have banked their fires for the night, and finding a smith is not an errand for the dark.
+*if (mw_holding_storage_upgrade)
+  *line_break
+  Cupboards, dry-larder bins, under-stair lockers, and an iron-banded chest stand fitted and ready throughout the house.
+*elseif (mw_holding_upgrade_pending_id = "storage")
+  *line_break
+  Chalk marks line the alcoves and the hollow beneath the stair. The cabinetmaker is cutting and joining the cupboards, lockers, and chest at his shop, due to be fitted on day ${mw_holding_upgrade_ready_day}.
+*elseif (not(mw_holding_upgrade_pending_id = ""))
+  *line_break
+  The alcoves and the hollow beneath the stair still stand empty. The cabinetmaker you'd want for this is already committed elsewhere until that work finishes.
+*elseif ((time_period = "Dusk") or (time_period = "Night"))
+  *line_break
+  The alcoves and the hollow beneath the stair still stand empty. The lane has long since gone quiet, and finding a cabinetmaker is not an errand for the dark.
 
 *choice
   *if (((mw_holding_bed_upgrade = false) and (mw_holding_upgrade_pending_id = "")) and (not((time_period = "Dusk") or (time_period = "Night"))))
@@ -146,6 +173,9 @@
   *if (((mw_holding_hearth_upgrade = false) and (mw_holding_upgrade_pending_id = "")) and (not((time_period = "Dusk") or (time_period = "Night"))))
     *selectable_if ((((gold * 100) + (silver * 10)) + copper) >= 80) # Commission a cooking hearth and iron crane. [8 Silver Marks | ~1 Hour]
       *goto mw_holding_hearth_commission
+  *if (((mw_holding_storage_upgrade = false) and (mw_holding_upgrade_pending_id = "")) and (not((time_period = "Dusk") or (time_period = "Night"))))
+    *selectable_if ((((gold * 100) + (silver * 10)) + copper) >= 100) # Commission fitted cupboards, chests, and storage. [10 Silver Marks | ~1 Hour]
+      *goto mw_holding_storage_commission
   # Head back downstairs.
     *goto mw_holding_interior
   *if (vane_independent_operative)
@@ -218,6 +248,29 @@ The ringing clatter of mauls against iron hoops leads you into the coopers' row 
 You head toward the smiths' quarter near the canal, where charcoal smoke hangs thick and the clink of hammer-fall echoes between the stone workshops. A smith in a scorched leather apron leans on his tongs as you explain what No. 7's hearth needs.
 
 "A heavy swiveling crane bolted into the chimney stone, three stepped pot-hooks, and a raised iron grate to draw the draft," he says, wiping soot from his brow with the back of a calloused hand. He counts your eight Silver Marks and raps his anvil once with a hammer. "I'll forge the ironwork, and have a mason friend check the flue and set the brackets tight by the second day."
+*page_break Head back downstairs…
+*goto mw_holding_interior
+
+*label mw_holding_storage_commission
+*set hours_to_pass 1
+*set minutes_to_pass 0
+*set time_advance_call_id "mw_holding_storage_commission"
+*gosub_scene calendar advance_time
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount (0 - 100)
+  *gosub_scene economy currency_add
+  *set mw_holding_upgrade_pending_id "storage"
+  *set mw_holding_upgrade_ready_day (campaign_day + 3)
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+You return to the woodworking shops off Conduit Square, where a cabinetmaker is planing tongue-and-groove oak boards beside a stack of wrought-iron hinges and chest straps. He listens as you lay out what No. 7 needs: wall cupboards, dry-larder bins, a latched locker under the stair, and a stout chest for the room above.
+
+"Dry white oak for the larder bins so the damp won't get in, deep shelves pegged to the studs, and an iron-strapped trunk upstairs with a heavy hasp," he says, sketching the alcove spans in carpenter's chalk on a scrap of pine. He counts out ten Silver Marks—one Gold Crown's worth—and taps the board. "We'll cut the panels here, haul them up Lantern Lane, and have every door hung and latched by the third day."
 *page_break Head back downstairs…
 *goto mw_holding_interior
 

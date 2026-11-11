@@ -78,4 +78,14 @@ ok(P.stowUnits("wagon", "pitch_torch", 2).moved === 2 && P.stowUnits(SB, "pitch_
 ok(s.stow_wagon_pitch_torch === 2 && s.stow_saddlebags_pitch_torch === 1 && units(s, "pitch_torch") === 3 + 2 - 2 + 0, "separate counts (units outside the wagon: carried 2 + saddlebags 1)");
 ok(P.containerOf("wagon", s).capacity === 100 && P.containerOf(SB, s).capacity === 320, "separate capacities");
 cfg.pop();
+
+// stationary container (Lantern Lane Storage): only visible and reachable when both upgraded and on the holding's page
+s = fresh({ has_horse: false, has_pitch_torch: true, spare_pitch_torch: 2, mw_holding_storage_upgrade: true, page_id: 10, stow_page_lantern_lane: 10 });
+ok(P.visibleContainers(s).some((c) => c.id === "lantern_lane"), "stationary storage is visible while at the holding");
+ok(P.stowUnits("lantern_lane", "pitch_torch", 2).moved === 2 && s.stow_lantern_lane_pitch_torch === 2, "stow into Lantern Lane Storage");
+s.page_id = 11;   // stepped outside
+ok(!P.visibleContainers(s).some((c) => c.id === "lantern_lane"), "stationary storage hides when away, even while holding items");
+ok(P.takeUnits("lantern_lane", "pitch_torch", 1).moved === 0 && /Lantern Lane/.test(P.stowRoom("lantern_lane", "pitch_torch", s).why), "cannot stow or take while away");
+s.page_id = 12; s.stow_page_lantern_lane = 12;   // returned home
+ok(P.visibleContainers(s).some((c) => c.id === "lantern_lane") && P.takeUnits("lantern_lane", "pitch_torch", 2).moved === 2, "back at the holding: visible and items return");
 console.log("containers: " + n + " checks passed");

@@ -312,11 +312,17 @@
   function haveOf(item, s) { return truthyS(s["has_" + item.id]) ? 1 + (item.stack ? (Number(s["spare_" + item.id]) || 0) : 0) : 0; }
   function stowedOf(cid, id, s) { return Number(s["stow_" + cid + "_" + id]) || 0; }
   function isWornId(id, s) { return WORN.some(function (v) { return s[v] === id; }); }
+  function containerReachable(c, s) {
+    if (!c) return false;
+    if (c.needs && !truthyS(s[c.needs])) return false;
+    if (c.page && (!Number(s.page_id) || Number(s[c.page]) !== Number(s.page_id))) return false;
+    return true;
+  }
   // Why nothing can be moved to or from this container right now, or "".
   function containerBlock(cid, s) {
     var c = containerCfg(cid);
     if (!c) return "That container does not exist.";
-    if (c.needs && !truthyS(s[c.needs])) return c.needsReason || "It is not with you.";
+    if (!containerReachable(c, s)) return c.needsReason || "It is not with you.";
     if (truthyS(s.combat_engaged)) return "Not in the middle of a fight.";
     if (c.dungeon === "waits" && truthyS(s.dg_in_run)) return c.name + " waits outside: nothing can be moved in a dungeon.";
     return "";
@@ -331,11 +337,15 @@
     });
     var cap = c.capacity || 0, note = c.note || "";
     if (c.rider) cap = Math.max(0, cap - bodyWeight(s));
-    return { id: cid, name: c.name, note: note, capacity: cap, total: total, entries: entries, present: !c.needs || truthyS(s[c.needs]), why: containerBlock(cid, s) };
+    return { id: cid, name: c.name, note: note, capacity: cap, total: total, entries: entries, present: containerReachable(c, s), why: containerBlock(cid, s) };
   }
-  // The containers the character has, or that still hold something while out of reach.
+  // The containers the character has, or that still hold something while out of reach (stationary containers show only while present).
   function visibleContainers(s) {
-    return containersCfg().map(function (c) { return containerOf(c.id, s); }).filter(function (st) { return st.present || st.entries.length > 0; });
+    return containersCfg().map(function (c) { return containerOf(c.id, s); }).filter(function (st) {
+      var c = containerCfg(st.id);
+      if (c && c.stationary && !st.present) return false;
+      return st.present || st.entries.length > 0;
+    });
   }
   // How many of this item can go into the container now (0 with the reason in .why).
   function stowRoom(cid, id, s) {
@@ -512,7 +522,7 @@
     var item = stowItem(id), q = item ? stowedOf(cid, id, s) : 0, c = containerCfg(cid);
     if (!item || q <= 0 || !c) return null;
     var r = resolve(item, s), base = splitCount(r.name).name;
-    r.name = base + (q > 1 ? " ×" + q : ""); r.badge = "In the " + c.name.toLowerCase(); r.equip = null; r.use = false; r.category = "container";
+    r.name = base + (q > 1 ? " ×" + q : ""); r.badge = c.stationary ? ("In " + c.name) : ("In the " + c.name.toLowerCase()); r.equip = null; r.use = false; r.category = "container";
     if (item.held) { var f = Math.min(q, stowedOf(cid, item.held.var, s)); r.traits = q === 1 ? (f ? item.held.full : item.held.empty).replace(/^./, function (m) { return m.toUpperCase(); }) : q + " jugs: " + f + " " + item.held.full + ", " + (q - f) + " " + item.held.empty; }
     return r;
   }
@@ -895,7 +905,7 @@
     containersCfg().forEach(function (c) {
       var q = stowedOf(c.id, id, s);
       if (q <= 0) return;
-      if (c.needs && !truthyS(s[c.needs])) return;
+      if (!containerReachable(c, s)) return;
       if (c.dungeon === "waits" && truthyS(s.dg_in_run)) return;
       n += q; places.push(c.name);
     });
