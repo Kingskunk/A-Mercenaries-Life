@@ -233,6 +233,20 @@ A long two-storey house of dark timber stands at the road end of the square, wit
   *if (tm_inn_room_active)
     # Go up to your room.
       *goto tm_inn_room
+  *if ((not(tm_inn_room_active)) and ((((gold * 100) + (silver * 10)) + copper) >= tm_room_price))
+    # [${tm_room_price} Copper Bits] Take a room for 24 hours.
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+        *set currency_add_amount (0 - tm_room_price)
+        *gosub_scene economy currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id page_id
+      *set tm_inn_room_active true
+      *set inn_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+      *set tm_inn_room_until (inn_now + 1440)
+      You count the price onto the plank. "A room, then."
+
+      Ressa takes the coppers, drops them into a tin under the counter, and unhooks an iron key from the board behind her. "Top of the stair, the door on the left," she says. "It is yours until this hour tomorrow, so go out and come back as you like. The window faces the yard, so you will hear the wagons. Bar the door."
+      *goto tm_inn_room
   # Walk through to the stable yard.
     *goto tm_inn_yard
   # Take a stool at the wagon crews' dice game.

@@ -181,6 +181,20 @@ The Red Lantern is a two-storey inn with stone walls below and dark boards above
   *if (rv_lantern_room_active)
     # Go up to your room.
       *goto rv_lantern_room
+  *if ((not(rv_lantern_room_active)) and ((((gold * 100) + (silver * 10)) + copper) >= rv_lantern_rate_copper))
+    # [${rv_lantern_rate_copper} Copper Bits] Take a room for 24 hours.
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+        *set currency_add_amount (0 - rv_lantern_rate_copper)
+        *gosub_scene economy currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id page_id
+      *set rv_lantern_room_active true
+      *set rv_lantern_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+      *set rv_lantern_room_until (rv_lantern_now + 1440)
+      You place the price on the counter. "A room, then."
+
+      Ilyra takes the coins and gives you an iron key. "Up the stair, first door on the yard side. It is yours until this hour tomorrow. The carts start early."
+      *goto rv_lantern_room
   # Walk through to the stable yard.
     *goto rv_lantern_yard
   # Take a stool at the dice game.

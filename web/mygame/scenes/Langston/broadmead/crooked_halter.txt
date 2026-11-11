@@ -219,6 +219,20 @@ Olof fills a pewter mug from the cask beneath the bar and slides it across the p
   *if (bm_ch_room_active)
     # Go up to your room.
       *goto bm_ch_room
+  *if ((not(bm_ch_room_active)) and ((((gold * 100) + (silver * 10)) + copper) >= bm_ch_rate_copper))
+    # [${bm_ch_rate_copper} Copper Bits] Take a room for 24 hours.
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+        *set currency_add_amount (0 - bm_ch_rate_copper)
+        *gosub_scene economy currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id page_id
+      *set bm_ch_room_active true
+      *set ch_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+      *set bm_ch_room_until (ch_now + 1440)
+      You count the price onto the bar. "A room, please."
+
+      Olof sweeps the coins into a drawer without counting them and pushes an iron key across the planks. "Up the back stair, second door. It's yours till this hour tomorrow."
+      *goto bm_ch_room
   # Take a stool at the dice game.
     *goto bm_ch_dice
   # Step back out into the lane.

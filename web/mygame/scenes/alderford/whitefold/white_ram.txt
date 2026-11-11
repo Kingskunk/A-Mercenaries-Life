@@ -173,6 +173,20 @@ The White Ram is a low stone inn with a broad slate roof and a carved ram's head
   *if (wf_ram_room_active)
     # Go up to your room.
       *goto wf_ram_room
+  *if ((not(wf_ram_room_active)) and ((((gold * 100) + (silver * 10)) + copper) >= wf_ram_rate_copper))
+    # [${wf_ram_rate_copper} Copper Bits] Take a room for 24 hours.
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+        *set currency_add_amount (0 - wf_ram_rate_copper)
+        *gosub_scene economy currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id page_id
+      *set wf_ram_room_active true
+      *set wf_ram_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+      *set wf_ram_room_until (wf_ram_now + 1440)
+      You place the price on the counter. "A room, then."
+
+      Perrin takes the coins and gives you a brass key. "Up the stair, first door over the yard. It is yours until this hour tomorrow."
+      *goto wf_ram_room
   # Walk through to the stable yard.
     *goto wf_ram_yard
   # Take a stool at the dice game.

@@ -216,6 +216,28 @@ The Reedhouse is a low inn with a stone lower wall and dark timber above, its ro
   *if (bw_reedhouse_room_active)
     # Go up to your room.
       *goto bw_reedhouse_room
+  *if ((not(bw_reedhouse_room_active)) and (bw_daughter_room_gift))
+    # Take the room Nessa promised you.
+      *set bw_daughter_room_gift false
+      *set bw_reedhouse_room_active true
+      *set reed_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+      *set bw_reedhouse_room_until (reed_now + 1440)
+      Nessa takes the key Iria gave you and exchanges it for one from the board behind her. "Top of the stair, first door on the yard side," she says. "It is yours until this hour tomorrow."
+      *goto bw_reedhouse_room
+  *if ((not(bw_reedhouse_room_active)) and ((((gold * 100) + (silver * 10)) + copper) >= bw_reedhouse_rate_copper))
+    # [${bw_reedhouse_rate_copper} Copper Bits] Take a room for 24 hours.
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+        *set currency_add_amount (0 - bw_reedhouse_rate_copper)
+        *gosub_scene economy currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id page_id
+      *set bw_reedhouse_room_active true
+      *set reed_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+      *set bw_reedhouse_room_until (reed_now + 1440)
+      You place the price on the counter. "A room, then."
+
+      Nessa takes the coins and gives you an iron key. "Up the stair, first door on the yard side. It is yours until this hour tomorrow. If the water is high, the slip will knock half the night."
+      *goto bw_reedhouse_room
   # Walk through to the stable yard.
     *goto bw_reedhouse_yard
   # Take a stool at the dice game.
