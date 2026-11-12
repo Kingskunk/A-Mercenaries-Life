@@ -42,7 +42,14 @@
   function escortPlace(s) {
     if (truthy(s.rj_escort_road)) return "On the road to " + s.rj_escort_dest_name;
     var yard = String(s.rj_escort_place_text); yard = yard.charAt(0).toUpperCase() + yard.slice(1);
-    return yard + " · rolls two hours after " + s.rj_escort_opens + (Number(s.campaign_day) >= Number(s.rj_escort_until) ? " this morning" : " tomorrow");
+    var isToday = Number(s.campaign_day) >= Number(s.rj_escort_until);
+    if (isToday) {
+      if (Number(s.clock_hour) >= 9) {
+        return yard + " · caravan rolled at 09:00 this morning (departed)";
+      }
+      return yard + " · rolls this morning at 09:00 (muster 07:00–09:00)";
+    }
+    return yard + " · rolls tomorrow at 09:00 (muster 07:00–09:00)";
   }
 
   // The courier's satchel (port_valen/radiant/hall_courier.txt): one entry per slot, naming who the parcel is for and where to take it, so the sidebar says where to go. Not a quest and not toward levelling.
@@ -78,7 +85,25 @@
     },
     {
       // One entry for every wagon line (Overworld CARAVAN_LINES): the title names the destination the line gave (rj_escort_dest_name, set when the work is taken), so a new town or line needs no entry here.
-      id: "hall_escort", title: function (s) { return "Wagon Escort to " + s.rj_escort_dest_name; }, place: escortPlace,
+      id: "hall_escort",
+      title: function (s) { return "Wagon Escort to " + s.rj_escort_dest_name; },
+      giver: function (s) { return s.rj_escort_master ? (s.rj_escort_master + ", Caravan Master") : "The Caravan Master"; },
+      place: escortPlace,
+      goal: function (s) {
+        if (truthy(s.rj_escort_road)) return "Protect the caravan and stay with the column until it reaches " + s.rj_escort_dest_name + ".";
+        if (Number(s.campaign_day) >= Number(s.rj_escort_until)) {
+          if (Number(s.clock_hour) >= 9) return "The caravan has already rolled out without you.";
+          return "Report to the caravan master at " + s.rj_escort_place_text + " this morning before 09:00 (muster window: 07:00–09:00).";
+        }
+        return "Report to the caravan master at " + s.rj_escort_place_text + " tomorrow morning before 09:00 (muster window: 07:00–09:00).";
+      },
+      clues: function (s) {
+        var c = [];
+        c.push("The gates and markets open at 07:00 in the morning.");
+        c.push("The caravan rolls promptly two hours later at 09:00. Arrive between 07:00 and 09:00, or the column will leave without you.");
+        if (s.rj_escort_dest_name) c.push("Destination: " + s.rj_escort_dest_name + " (two days on the road).");
+        return c;
+      },
       active: function (s) { return s.rj_escort_stage === "active" && (truthy(s.rj_escort_road) || Number(s.campaign_day) <= Number(s.rj_escort_until)); }
     },
     courierEntry(1), courierEntry(2), courierEntry(3),

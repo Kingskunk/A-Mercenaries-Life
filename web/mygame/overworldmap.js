@@ -222,6 +222,7 @@
         line: f.line || a.line || "",
         label: f.label || a.label || null,
         width: f.width || a.width || null,
+        noclick: a.noclick === true,
         decor: a.decor === true && !over[key]
       });
     });
@@ -242,18 +243,27 @@
     featureList().forEach(function (f) {
       var art = (window.OVERWORLD_ART || {})[f.art];
       if (!art) return;
-            // scenery takes no part in any of it: no data-ow-feature for the click handler to find, no tabindex to tab onto, no aria-label to read out, and the CSS takes its
-      // pointer away as well, so it cannot even swallow a hover meant for the map underneath it
-      var open = f.decor
+            // scenery, and a feature with "Click: off" in its Description, take no part in any of it: no data-ow-feature for the click handler to find, no tabindex to tab onto,
+      // no aria-label to read out, and the CSS takes its pointer away as well, so it cannot even swallow a hover meant for the map underneath it. "Click: off" still
+      // draws the name below (that is gated on f.decor alone, not on this), so a range can be seen and named without being a thing to poke at.
+      var inert = f.decor || f.noclick;
+      var open = inert
         ? "<g class=\"ow-feature ow-decor ow-f-" + esc(f.kind) + "\" aria-hidden=\"true\" transform=\"rotate(" + (90 * rot) + ") scale(" + (SCALE / art.unit) + ")\">"
         : "<g class=\"ow-feature ow-f-" + esc(f.kind) + (selectedFeature === f.id ? " ow-feature-sel" : "") + "\" data-ow-feature=\"" + esc(f.id) + "\" tabindex=\"0\" role=\"button\" aria-label=\"" + esc(f.name) + "\" transform=\"rotate(" + (90 * rot) + ") scale(" + (SCALE / art.unit) + ")\">";
-      out += open +
-        art.paths.map(function (p) {
-          // "Width: n" in the feature's Description overrides the kind's own stroke-width (overworldmap.css .ow-f-coast and so on) for its plain paths only --
-          // the wash (never stroked) and ridge lines (always thinner than the feature they sit on) keep their own fixed look regardless.
-          var sw = (f.width && !p.c) ? " style=\"stroke-width:" + f.width + "px\"" : "";
-          return "<path d=\"" + esc(p.d) + "\"" + (p.c ? " class=\"" + esc(p.c) + "\"" : "") + (p.t ? " transform=\"" + esc(p.t) + "\"" : "") + sw + "/>";
-        }).join("") + "</g>";
+      var drawPath = function (p) {
+        // "Width: n" in the feature's Description overrides the kind's own stroke-width (overworldmap.css .ow-f-coast and so on) for its plain paths only --
+        // the wash (never stroked) and ridge lines (always thinner than the feature they sit on) keep their own fixed look regardless.
+        var sw = (f.width && !p.c) ? " style=\"stroke-width:" + f.width + "px\"" : "";
+        return "<path d=\"" + esc(p.d) + "\"" + (p.c ? " class=\"" + esc(p.c) + "\"" : "") + (p.t ? " transform=\"" + esc(p.t) + "\"" : "") + sw + "/>";
+      };
+      var plain = [], special = [];
+      art.paths.forEach(function (p) { (p.c ? special : plain).push(p); });
+      out += open;
+      // Two or three plain paths of the same feature (three traced peaks, a wood drawn as separate stands) often overlap at their edges. Giving the GROUP the kind's
+      // opacity, rather than each path its own fill-opacity (overworldmap.css .ow-fillgrp), is composited once: the paths stay fully opaque against each other and
+      // only the group's outer edge fades against the parchment, instead of every overlap stacking darker the more paths cover the same ground.
+      if (plain.length) out += "<g class=\"ow-fillgrp\">" + plain.map(drawPath).join("") + "</g>";
+      out += special.map(drawPath).join("") + "</g>";
       if (f.label && !f.decor) { var lp = P({ x: f.label[0], y: f.label[1] }); out += "<text class=\"ow-feature-name\" x=\"" + lp.x + "\" y=\"" + lp.y + "\" text-anchor=\"middle\">" + esc(f.name) + "</text>"; }
     });
     // Rectangles the "10 mi" labels must keep clear of: every town circle and every name (as drawn below), then the labels already placed.

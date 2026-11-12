@@ -12,9 +12,9 @@
  * units are one map unit, Port Valen is at 0,0, east is +x and SOUTH is +y (the usual SVG way). The layer called "guide" is the towns and roads, drawn faint so you can see where things are; it is locked and
  * is rewritten by `--guide`, so anything you draw in it is lost. A path with class="ridge" is drawn as a thin lighter line (a spine or a crest); any other path is a filled mountain block. Colours and
  * opacity come from overworldmap.css (.ow-f-range), not from the SVG, so one place themes them all; width does too, UNLESS a feature's Description overrides it with a "Width: n" line.
- * The shape's name, kind and card come from the layer's own Object Properties (Ctrl+Shift+O): Label is the name, Title is the kind, and Description is the card -- with three lines read as
- * settings rather than text: "Travel: ..." is the line under the card, "Label: x,y" fixes the name's drawn position, "Width: n" fixes its line thickness. Rectangles, circles and groups with a
- * rotation must be turned into paths first (Inkscape: Path > Object to Path).
+ * The shape's name, kind and card come from the layer's own Object Properties (Ctrl+Shift+O): Label is the name, Title is the kind, and Description is the card -- with four lines read as
+ * settings rather than text: "Travel: ..." is the line under the card, "Label: x,y" fixes the name's drawn position, "Width: n" fixes its line thickness, and "Click: off" keeps the name
+ * lettered on the map while dropping the click target and hover highlight. Rectangles, circles and groups with a rotation must be turned into paths first (Inkscape: Path > Object to Path).
  *
  * STAMPS. Trees, peaks and hills are not drawn freehand: web/mygame/overworld-art/_stamps.svg is a sheet of glyphs to copy from, and it explains how to place them.
  * A file in this folder whose name begins with "_" is a working file of that sort and is skipped by this script.
@@ -236,22 +236,25 @@ function readFeatures(file) {
       kind = "area";
     }
     const desc = childText(inner, "desc");
-    // Three lines in the Description box are read as settings rather than card text: "Travel: ..." is the line under the card, "Label: x,y" fixes the name's position instead
-    // of placeLabel() guessing it, and "Width: n" fixes the line's thickness instead of the kind's own default in overworldmap.css (.ow-f-coast and so on). All three are
+    // Four lines in the Description box are read as settings rather than card text: "Travel: ..." is the line under the card, "Label: x,y" fixes the name's position instead
+    // of placeLabel() guessing it, "Width: n" fixes the line's thickness instead of the kind's own default in overworldmap.css (.ow-f-coast and so on), and "Click: off" keeps
+    // the name lettered on the map while dropping the click target, the hover highlight and the wash -- a range you want seen and named but not poked at. All four are
     // optional; leave them out and the automatic behaviour applies. Everything else in the box is the card text itself.
-    let info = "", line = "", over = null, width = undefined;
+    let info = "", line = "", over = null, width = undefined, noclick = false;
     desc.split(/\r?\n/).forEach((row) => {
       const v = row.trim();
       if (!v) return;
       let m = /^travel\s*:\s*(.+)$/i.exec(v);
       if (m) { line = m[1].trim(); return; }
+      m = /^click\s*:\s*(no|off|false)\s*$/i.exec(v);
+      if (m) { noclick = true; return; }
       m = /^label\s*:\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*$/i.exec(v);
       if (m) { over = [Number(m[1]), Number(m[2])]; return; }
       m = /^width\s*:\s*([\d.]+)\s*$/i.exec(v);
       if (m) { width = Number(m[1]); return; }
       info += (info ? " " : "") + v;
     });
-    found.push({ key, label: decor ? "" : label, file: base, bbox, paths, kind, info, line, width, decor, at: decor ? null : (over || placeLabel(bbox, label, pts)) });
+    found.push({ key, label: decor ? "" : label, file: base, bbox, paths, kind, info, line, width, noclick, decor, at: decor ? null : (over || placeLabel(bbox, label, pts)) });
   });
 
   if (!found.length) fail(base + " holds no named layer or group to draw. Name the layer in Inkscape's Objects panel; that name becomes the feature.");
@@ -311,7 +314,7 @@ files.forEach((f) => {
   readFeatures(f).forEach((ft) => {
     if (seen[ft.key]) { fail("two layers are both named \"" + (ft.label || ft.key) + "\" (" + seen[ft.key] + " and " + ft.file + "); one of them needs a different name"); return; }
     seen[ft.key] = ft.file;
-    features[ft.key] = { unit: UNIT, name: ft.label, kind: ft.kind, info: ft.info, line: ft.line, label: ft.at, width: ft.width, decor: ft.decor, bbox: ft.bbox, paths: ft.paths };
+    features[ft.key] = { unit: UNIT, name: ft.label, kind: ft.kind, info: ft.info, line: ft.line, label: ft.at, width: ft.width, noclick: ft.noclick, decor: ft.decor, bbox: ft.bbox, paths: ft.paths };
   });
 });
 

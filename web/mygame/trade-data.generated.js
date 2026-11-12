@@ -3427,8 +3427,8 @@ window.TRADE_DATA = {
    }
   },
   "longshade_timber": {
-   "name": "longshade timber",
-   "title": "Longshade Timber",
+   "name": "timber",
+   "title": "Timber",
    "kind": "ingredient",
    "group": "raw_material",
    "tier": "",

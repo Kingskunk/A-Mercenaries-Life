@@ -77,7 +77,11 @@ body.owMapOn #main form, body.owMapOn #main > button.next { display: none; }
 #overworldMap .ow-feature { cursor: pointer; outline: none; }
 /* scenery (an unnamed group, or one named with a leading _): drawn, and otherwise not there as far as the mouse is concerned */
 #overworldMap .ow-decor { pointer-events: none; cursor: default; }
-#overworldMap .ow-feature path { fill: var(--ch-line-hi); fill-opacity: 0.5; stroke: var(--ch-line-hi); stroke-width: 2; stroke-linejoin: round; stroke-opacity: 0.8; }
+/* Translucency for a filled kind lives on .ow-fillgrp now (the group round a feature's plain paths), not here -- a path left at its own default opacity of 1 is what lets two
+   overlapping ones (three peaks whose bases meet, say) composite as one opaque shape inside the group, with only the group's edge fading against the parchment. A fill-opacity
+   here would leak onto every kind's paths no matter what its own rule says, since none of them re-declare the property once it is set, only override fill, stroke and the rest. */
+#overworldMap .ow-feature path { fill: var(--ch-line-hi); stroke: var(--ch-line-hi); stroke-width: 2; stroke-linejoin: round; stroke-opacity: 0.8; }
+#overworldMap .ow-feature .ow-fillgrp { opacity: 0.5; }
 /* A WASH: the one big shape that gives a feature its outline, drawn under the stamps, with class="wash" on it (Inkscape: Ctrl+Shift+X, + , name "class", value "wash").
 
    IT IS INVISIBLE EXCEPT ON A CLICK (the user's call, 2026-11-04, and it means exactly that): not on hover, not at any zoom, not when the map is drawn far out. A tint
@@ -99,26 +103,35 @@ body.owMapOn #main form, body.owMapOn #main > button.next { display: none; }
 #overworldMap .ow-svg.ow-far .ow-feature:not(.ow-feature-sel) path.wash { fill-opacity: 0; stroke: none; }
 #overworldMap .ow-svg .ow-feature-sel path.wash { fill-opacity: 0.26; stroke: none; }
 #overworldMap .ow-feature path.ridge { fill: none; stroke: var(--ch-dim); stroke-width: 3; stroke-opacity: 0.7; pointer-events: none; }
-#overworldMap .ow-feature:hover path:not(.ridge), #overworldMap .ow-feature:focus path:not(.ridge) { fill-opacity: 0.68; stroke: var(--ch-text); }
-#overworldMap .ow-feature-sel path:not(.ridge) { fill-opacity: 0.68; stroke: var(--ch-brass); stroke-width: 3; stroke-opacity: 1; }
+#overworldMap .ow-feature:hover .ow-fillgrp, #overworldMap .ow-feature:focus .ow-fillgrp { opacity: 0.68; }
+#overworldMap .ow-feature:hover path:not(.ridge), #overworldMap .ow-feature:focus path:not(.ridge) { stroke: var(--ch-text); }
+#overworldMap .ow-feature-sel .ow-fillgrp { opacity: 0.68; }
+#overworldMap .ow-feature-sel path:not(.ridge) { stroke: var(--ch-brass); stroke-width: 3; stroke-opacity: 1; }
 #overworldMap .ow-feature-name { fill: var(--ch-dim); font: 700 17px var(--ch-font-head); letter-spacing: 0.32em; text-transform: uppercase; opacity: 0.85; pointer-events: none; paint-order: stroke; stroke: var(--ch-bg); stroke-width: 3px; }
-#overworldMap .ow-f-range-key { background: var(--ch-line-hi); }
+#overworldMap .ow-f-range-key { background: #3a332c; }
 /* A WOOD. Drawn as one wash for the shape of it with the tree glyphs stamped on top (overworld-art/_stamps.svg), so the wash carries it when the whole world is in view
    and the trees carry it close to. The trees are not outlined: at a few hundred paths an outline each is weight for something too small to see. The green is the one the
    forest tiles use, so a drawn wood and a forest tile read as the same thing. */
-#overworldMap .ow-f-forest path { fill: #4f6b46; fill-opacity: 0.5; stroke: none; }
-#overworldMap .ow-f-forest:hover path, #overworldMap .ow-f-forest:focus path { fill-opacity: 0.66; stroke: none; }
-#overworldMap .ow-feature-sel.ow-f-forest path { fill-opacity: 0.72; stroke: none; }
+#overworldMap .ow-f-forest path { fill: #4f6b46; stroke: none; }
+#overworldMap .ow-f-forest .ow-fillgrp { opacity: 0.5; }
+#overworldMap .ow-f-forest:hover .ow-fillgrp, #overworldMap .ow-f-forest:focus .ow-fillgrp { opacity: 0.66; }
+#overworldMap .ow-feature-sel.ow-f-forest .ow-fillgrp { opacity: 0.72; }
 #overworldMap .ow-f-forest-key { background: #4f6b46; }
 
 /* THE KINDS a feature may be, named in Inkscape's Title box and nowhere else. A kind that fills ground (forest, hills, marsh, area) is a wash plus its stamps; a kind that
    is a LINE (coast, border, river) is stroke-only, because a coastline has no inside -- filling it would flood half the map. "area" is what a feature with no Title gets,
    so something always draws. Adding a kind is a pair of rules here and nothing else; the drawing side already works. */
-#overworldMap .ow-f-hills path { fill: #6f5a3c; fill-opacity: 0.45; stroke: none; }
-#overworldMap .ow-f-marsh path { fill: #5c6b55; fill-opacity: 0.45; stroke: none; }
-#overworldMap .ow-f-water path { fill: #5a7383; fill-opacity: 0.42; stroke: none; }
-#overworldMap .ow-f-area path  { fill: var(--ch-line-hi); fill-opacity: 0.4; stroke: none; }
-#overworldMap .ow-f-coast path { fill: none; stroke: #4b5a63; stroke-width: 3; stroke-opacity: 0.85; stroke-linejoin: round; }
+#overworldMap .ow-f-range path { fill: #3a332c; stroke: none; }
+#overworldMap .ow-f-range .ow-fillgrp { opacity: 0.55; }
+#overworldMap .ow-f-hills path { fill: #8a6d3f; stroke: none; }
+#overworldMap .ow-f-hills .ow-fillgrp { opacity: 0.45; }
+#overworldMap .ow-f-marsh path { fill: #5c6b55; stroke: none; }
+#overworldMap .ow-f-marsh .ow-fillgrp { opacity: 0.45; }
+#overworldMap .ow-f-water path { fill: #5a7383; stroke: none; }
+#overworldMap .ow-f-water .ow-fillgrp { opacity: 0.42; }
+#overworldMap .ow-f-area path  { fill: var(--ch-line-hi); stroke: none; }
+#overworldMap .ow-f-area .ow-fillgrp { opacity: 0.4; }
+#overworldMap .ow-f-coast path { fill: none; stroke: #38434a; stroke-width: 3; stroke-opacity: 0.85; stroke-linejoin: round; }
 #overworldMap .ow-f-river path { fill: none; stroke: #4b5a63; stroke-width: 3.5; stroke-opacity: 0.85; stroke-linecap: round; }
 #overworldMap .ow-f-border path { fill: none; stroke: #6a4a3a; stroke-width: 3; stroke-opacity: 0.85; stroke-dasharray: 10 7; }
 /* a line kind has no inside to tint, so its wash stays off even when it is the selected feature */
@@ -126,12 +139,12 @@ body.owMapOn #main form, body.owMapOn #main > button.next { display: none; }
 
 /* The dot on a feature's card and in the legend. These carry .ow-key as well as the kind so they outrank the plain .ow-key further down this file, which otherwise
    paints every one of them road-grey whatever the feature is. */
-#overworldMap .ow-key.ow-f-range-key  { background: var(--ch-line-hi); }
+#overworldMap .ow-key.ow-f-range-key  { background: #3a332c; }
 #overworldMap .ow-key.ow-f-forest-key { background: #4f6b46; }
-#overworldMap .ow-key.ow-f-hills-key  { background: #6f5a3c; }
+#overworldMap .ow-key.ow-f-hills-key  { background: #8a6d3f; }
 #overworldMap .ow-key.ow-f-marsh-key  { background: #5c6b55; }
 #overworldMap .ow-key.ow-f-water-key  { background: #5a7383; }
-#overworldMap .ow-key.ow-f-coast-key  { background: #4b5a63; }
+#overworldMap .ow-key.ow-f-coast-key  { background: #38434a; }
 #overworldMap .ow-key.ow-f-river-key  { background: #4b5a63; }
 #overworldMap .ow-key.ow-f-border-key { background: #6a4a3a; }
 #overworldMap .ow-key.ow-f-area-key   { background: var(--ch-line-hi); }

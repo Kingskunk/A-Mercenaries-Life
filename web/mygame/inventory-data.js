@@ -939,7 +939,7 @@
     {
       id: "longshade_timber", category: "provisions", owned: "has_longshade_timber",
       weight: 6, stow: true, stack: true,
-      name: function (s) { var n = 1 + (Number(s.spare_longshade_timber) || 0); return "Longshade Timber" + (n > 1 ? " ×" + n : ""); },
+      name: function (s) { var n = 1 + (Number(s.spare_longshade_timber) || 0); return "Timber" + (n > 1 ? " ×" + n : ""); },
       description: "Seasoned length of Longshade ash, squared and ready for a wright's work."
     },
     {
