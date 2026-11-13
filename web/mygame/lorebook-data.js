@@ -813,7 +813,7 @@
         unlock: "codex_house_gault",
         body: function (s) {
           var out = [
-          "The noble house that holds the [[western_vale|Western Vale]] from its walled seat at Dunmow. Its arms show a golden horse on a deep-blue field. When the legions left, Gault kept its storehouses shut and its gates manned, and it has held Dunmow ever since. It fields mounted riders and archers, who are at home on the open grasslands and far less so in forest or bog. Coombe Gap, the road that takes the vale's wagons east toward the river, is Gault's.",
+          "The noble house that holds the [[western_vale|Western Vale]] from its walled seat at Dunmow, built on the shore of Azure Lake. Its arms show a golden horse on a deep-blue field. When the legions left, Gault kept its storehouses shut and its gates manned, and it has held Dunmow ever since. It fields mounted riders and archers, who are at home on the open grasslands and far less so in forest or bog. Coombe Gap, the road that takes the vale's wagons east toward the river, is Gault's.",
           "Gault keeps no harbor and no fleet, so its hemp, wool and wine reach the sea on Scales barges or not at all."
           ];
           if (truthy(s.lg_hall_seen)) {
@@ -1113,7 +1113,7 @@
           var karr = truthy(s.codex_baron_karr) ? "Baron Karr's" : "the highland lord's";
           var lord = truthy(s.codex_house_gault) ? "[[house_gault|House Gault]]" : "A noble house";
           var out = [
-            "Open grassland and mostly level, river-fed farm country west of the Grey, broken only by low chalk rises and old forest along its southern edge. " + lord + " rules it from Dunmow. Fallowfield and smaller market towns sit among mixed farms, fibre hemp and vineyards, while sheep and horses graze the broad pasture. Coombe Gap leads east to the river; Iron Gap climbs north into the Crags and " + karr + " tolls."
+            "Open grassland and mostly level, river-fed farm country west of the Grey, broken only by low chalk rises and old forest along its southern edge. " + lord + " rules it from Dunmow, a walled city on the shore of Azure Lake, with a wood of its own running along the lake's southwest side. Fallowfield and smaller market towns sit among mixed farms, fibre hemp and vineyards, while sheep and horses graze the broad pasture. Coombe Gap leads east to the river; Iron Gap climbs north into the Crags and " + karr + " tolls."
           ];
           if (truthy(s.langston_seen) || truthy(s.langston_arrival_seen)) {
             out.push("[[langston|Langston]] is one of its market towns, a walled town on the Vale's wagon road.");

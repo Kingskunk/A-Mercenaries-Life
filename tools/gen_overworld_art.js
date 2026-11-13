@@ -14,9 +14,13 @@
  * run tools/gen_overworld_places.js, not this script, to write it into overworld-data.js; see that script's own header. Neither layer is terrain, so this script skips both. A path with class="ridge"
  * is drawn as a thin lighter line (a spine or a crest); any other path is a filled mountain block. Colours and
  * opacity come from overworldmap.css (.ow-f-range), not from the SVG, so one place themes them all; width does too, UNLESS a feature's Description overrides it with a "Width: n" line.
- * The shape's name, kind and card come from the layer's own Object Properties (Ctrl+Shift+O): Label is the name, Title is the kind, and Description is the card -- with four lines read as
- * settings rather than text: "Travel: ..." is the line under the card, "Label: x,y" fixes the name's drawn position, "Width: n" fixes its line thickness, and "Click: off" keeps the name
- * lettered on the map while dropping the click target and hover highlight. Rectangles, circles and groups with a rotation must be turned into paths first (Inkscape: Path > Object to Path).
+ * The shape's name, kind and card come from the layer's own Object Properties (Ctrl+Shift+O): Label is the name, Title is the kind, and Description is the card -- with three lines read as
+ * settings rather than text: "Travel: ..." is the line under the card, "Width: n" fixes its line thickness, and "Click: off" keeps the name lettered on the map while dropping the click
+ * target and hover highlight. The name's drawn POSITION is picked automatically (the point on the shape clearest of every tile), which is usually right but not always; to fix it yourself,
+ * draw a small circle anywhere inside the feature's group/layer and name it "Label" (Ctrl+Shift+O, Label box) -- it is read as a marker for where the name goes and then thrown away, never
+ * drawn. Do not instead try to type a coordinate pair into the Description: Inkscape's own X/Y toolbar does not use this file's coordinate space (different origin, flipped axis), so numbers
+ * read off it land nowhere near where you typed them -- dragging a circle is the only way to point at a spot with no coordinate math to get wrong.
+ * Rectangles, circles (other than a "Label" marker) and groups with a rotation must be turned into paths first (Inkscape: Path > Object to Path).
  *
  * STAMPS. Trees, peaks and hills are not drawn freehand: web/mygame/overworld-art/_stamps.svg is a sheet of glyphs to copy from, and it explains how to place them.
  * A file in this folder whose name begins with "_" is a working file of that sort and is skipped by this script.
@@ -209,9 +213,21 @@ function readFeatures(file) {
     if (!label) console.log("  NOTE  " + base + ": a group (id \"" + (g.a.id || "?") + "\") has no name, so it is drawn as scenery: no card and nothing to click. Name it in Ctrl+Shift+O if it should be a feature.");
     const key = slug(label) || slug("scenery-" + (g.a.id || Math.random().toString(36).slice(2)));
     if (!key) { fail(base + ": the group named \"" + label + "\" gives an empty name once reduced to letters and digits."); return; }
-    const inner = src.slice(g.innerStart, g.innerEnd);
+    let inner = src.slice(g.innerStart, g.innerEnd);
     const groupT = g.a.transform || "";
     const where = base + " / \"" + label + "\"";
+    // A plain circle named "Label" is not art -- it is a marker for exactly where you want the name drawn, read here and then discarded. This exists because
+    // typing a raw coordinate pair into "Label: x,y" below requires reading a point in THIS FILE'S own frame, which is not what Inkscape's X/Y toolbar shows you
+    // (different origin and axis convention) -- dragging a small circle is the only way to point at a spot with no coordinate math to get wrong.
+    let labelMarker = null;
+    inner = inner.replace(/<circle\b([^>]*?)(\/>|>[\s\S]*?<\/circle>)/g, (whole, attrStr) => {
+      const ca = attrs(attrStr);
+      if (((ca["inkscape:label"] || ca.label || "").trim().toLowerCase()) !== "label") return whole;
+      const cm = parseTransform((groupT + " " + (ca.transform || "")).trim());
+      const q = apply(cm, Number(ca.cx) || 0, Number(ca.cy) || 0);
+      labelMarker = [q[0] / UNIT, q[1] / UNIT];
+      return "";
+    });
     inner.replace(/<(rect|circle|ellipse|line|polygon|polyline|text|image|use)\b/g, (m, tag) => { fail(where + " holds a <" + tag + ">; convert it to a path (Inkscape: Path > Object to Path)"); return m; });
     inner.replace(/<g\b[^>]*\btransform="[^"]*"[^>]*>/g, () => { fail(where + ": a group inside it has a transform; ungroup it or apply it (Object > Ungroup)"); return ""; });
     const paths = [], pts = []; const re = /<path\b([^>]*?)\/?>/g; let p; let minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity;
@@ -238,11 +254,11 @@ function readFeatures(file) {
       kind = "area";
     }
     const desc = childText(inner, "desc");
-    // Four lines in the Description box are read as settings rather than card text: "Travel: ..." is the line under the card, "Label: x,y" fixes the name's position instead
-    // of placeLabel() guessing it, "Width: n" fixes the line's thickness instead of the kind's own default in overworldmap.css (.ow-f-coast and so on), and "Click: off" keeps
-    // the name lettered on the map while dropping the click target, the hover highlight and the wash -- a range you want seen and named but not poked at. All four are
-    // optional; leave them out and the automatic behaviour applies. Everything else in the box is the card text itself.
-    let info = "", line = "", over = null, width = undefined, noclick = false;
+    // Three lines in the Description box are read as settings rather than card text: "Travel: ..." is the line under the card, "Width: n" fixes the line's thickness instead
+    // of the kind's own default in overworldmap.css (.ow-f-coast and so on), and "Click: off" keeps the name lettered on the map while dropping the click target, the hover
+    // highlight and the wash -- a range you want seen and named but not poked at. All three are optional; leave them out and the automatic behaviour applies. Everything
+    // else in the box is the card text itself. Where the name is DRAWN is not a Description setting at all -- see the "Label" marker circle, above.
+    let info = "", line = "", width = undefined, noclick = false;
     desc.split(/\r?\n/).forEach((row) => {
       const v = row.trim();
       if (!v) return;
@@ -250,13 +266,11 @@ function readFeatures(file) {
       if (m) { line = m[1].trim(); return; }
       m = /^click\s*:\s*(no|off|false)\s*$/i.exec(v);
       if (m) { noclick = true; return; }
-      m = /^label\s*:\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*$/i.exec(v);
-      if (m) { over = [Number(m[1]), Number(m[2])]; return; }
       m = /^width\s*:\s*([\d.]+)\s*$/i.exec(v);
       if (m) { width = Number(m[1]); return; }
       info += (info ? " " : "") + v;
     });
-    found.push({ key, label: decor ? "" : label, file: base, bbox, paths, kind, info, line, width, noclick, decor, at: decor ? null : (over || placeLabel(bbox, label, pts)) });
+    found.push({ key, label: decor ? "" : label, file: base, bbox, paths, kind, info, line, width, noclick, decor, at: decor ? null : (labelMarker || placeLabel(bbox, label, pts)) });
   });
 
   if (!found.length) fail(base + " holds no named layer or group to draw. Name the layer in Inkscape's Objects panel; that name becomes the feature.");

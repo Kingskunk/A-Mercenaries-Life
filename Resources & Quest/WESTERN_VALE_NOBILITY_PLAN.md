@@ -29,6 +29,21 @@ Dated against existing canon: the Meridian Empire's legions withdrew **thirty ye
 - **Gault's court quietly knows the promise was shorted** and doesn't own it publicly — official Gault history treats the border as settled fact, not a debt. Avelina herself privately carries some of her father's unrepaid word, which colors her preference for leverage over war: pressing Karr costs her nothing she admits to regretting, but she has never found the stomach to press it all the way.
 - **Thirty years of a frozen conflict** since: regular border skirmishes and the odd pitched battle, never resolved and never allowed to become a real war, because each side depends on what only the other has (grain, iron) and neither will buy it from the other directly — only through the Gilded Scales, who profit as the sole channel for a trade neither house will admit it needs from its rival.
 
+## The Northwest Corner: Azure Lake and Its Forest (added 2026-11-13, overworld map changes)
+
+The drawn map has grown since the last terrain pass: a lake and a forest now exist in Dunmow's own corner of the Vale, and a village and a road junction swapped places. Retconning the affected text here rather than letting it drift out of sync with `overworld-data.js`/`overworld-art.js`.
+
+- **Dunmow is a lakeside city.** Azure Lake sits right against Dunmow's own position on the map, close enough that "walled city among open grassland" is no longer the whole picture. Still the grassland-grain-and-linen capital it already is — now with a lake at its gate too, and a minor fishing trade alongside the linen looms. Carried into `lorebook-data.js`'s `house_gault` entry and `overworld-data.js`'s `dm` prose.
+- **The forest only actually touches two villages: Oatcroft and Caldby.** (Correction: a first pass read this off the drawn feature's bounding box, which overstates a forest's real footprint whenever it isn't a neat rectangle — Harwick, despite sitting near that box, isn't actually forest-adjacent.) Oatcroft and Caldby are now minor makers of timber, charcoal, raw hide and furs, the same ambient forest-edge bundle `overworld-data.js` already gives Langston — plus a minor animal-meat trade (boar meat), since a real forest edge means real game. Oatcroft, sitting closest to the lake as well as the wood, also picks up a minor fish trade. Implemented in `tools/gear_catalog.json` (`cb`/`oc` added as minor makers of `longshade_timber`, `charcoal`, `raw_hide`, `furs`, `boar_meat`; `oc` and `dm` added as minor makers of `fish`).
+- **Reedmere's reeds are the lake's own shallows.** Reedmere's existing flavor text ("a damp meadow where reeds grow thick along slow water") already sits right at Azure Lake's edge on the map — read that "slow water" as the lake's own marshy northeast inlet, not a separate, unnamed body of water. A happy accident, not a contradiction, but worth saying so rather than leaving two disconnected "there's water here" facts side by side.
+- **This doesn't touch the downs/frontier-castle corridor.** The "the Western Vale is level grassland" correction from 2026-11-12 (see Carrowmark/Dennholt below) was and remains specifically about the Carrowmark-Dennholt road east of this cluster — real mountain ground only starts right at those two castles. The lake and forest sit in a different corner of the same territory, around Dunmow, not along that road.
+
+**Oxworth and Fold Crossing swapped tiles.** The droving village and the road junction that used to share this cluster traded places on the map: Oxworth now sits where Fold Crossing used to be, and vice versa.
+
+- **Oxworth is no longer "on the road to Dunmow"** — it now sits directly beside Hartwell itself (a 6-mile road, the shortest either tile has) and the downs/Esthorpe corridor instead. Its peerage entry below is corrected to match.
+- **Fold Crossing** now occupies Oxworth's old spot, between Dunmow, Millstow, Reedmere and Verdant Way — a crossing on open grassland, named for sheepfolds rather than anything to do with the downs.
+- Oxworth's economic role (cattle/hide/fat byproducts, part of Hartwell's cluster) is unchanged; only its road neighbor is.
+
 ## The Three-Tier Ladder
 
 | Tier | Title | Holds | Answers to |
@@ -123,7 +138,7 @@ Hartwell's own castellan: **Lady Fenella Rourke** of **Rourkethwaite**, who guar
 **Hartwell's three villages:**
 
 - **Millstow** — grain and milling on the river, the plainest of the three: tenants, a mill, a grain market. No resident nobility; its friction is toll rates and whose grain gets milled first on a crowded day.
-- **Oxworth** — cattle and trade stock, a droving village on the road to Dunmow. Plain tenants; its friction is droving rights of way across other men's fields during the autumn drive.
+- **Oxworth** — cattle and trade stock, a droving village hard against Hartwell's own gate and the downs road beyond it. Plain tenants; its friction is droving rights of way across other men's fields during the autumn drive.
 - **Palmcote** — home to **House Ferrand**, who bought their way into minor nobility two generations ago on trade money, same as the Durnells are trying to do now. This is the direct answer to Cellan Durnell's argument in Barolo: "the Ferrands managed it, why not us." The Ferrands have no public jurisdiction over Palmcote (the Veyre/Thorne model again), and old blood like the Veyres privately still consider them jumped-up merchants in a manor, three generations in or not.
 
 A deliberate pattern across all three clusters: Langston has House Veyre (old blood, no money), Harwick has House Thorne (old blood, faded martial glory), Hartwell has House Ferrand (new money, bought the title) — three different answers to "what is minor nobility without land to govern," each a different flavor, none of them a repeat.
@@ -154,25 +169,33 @@ Unlike everything above, this part is **live, not just planned** — the 11 new 
 
 | Settlement | Pop | Tier | Produces |
 |---|---|---|---|
-| Dunmow (city) | 4500 | direct demesne | **Linen** (major, woven from Reedmere's flax) |
-| Harwick (town) | 2000 | Viscounty seat | — (consumer/garrison town, no maker) |
-| Hartwell (town) | 2600 | Viscounty seat | — (consumer/market town, no maker) |
+| Dunmow (city) | 4500 | direct demesne | **Linen** (major, woven from Reedmere's flax), fish (minor, Azure Lake) |
+| Harwick (town) | 2000 | Viscounty seat | **Wool Cloth** (major, woven from Caldby's wool) + **Leather** (major, tanned from the Vale's raw hide) |
+| Hartwell (town) | 2600 | Viscounty seat | **Oil** (major, pressed from Palmcote's olives) |
 | Reedmere | 450 | Dunmow's own | **Flax** (major), fish (minor) |
-| Oatcroft | 600 | Dunmow's own | Grain (major) |
-| Caldby | 500 | Harwick's | Wool (major) |
+| Oatcroft | 600 | Dunmow's own | Grain (major), timber/charcoal/raw hide/furs/boar meat (all minor, forest edge), fish (minor, Azure Lake) |
+| Caldby | 500 | Harwick's | Wool (major), timber/charcoal/raw hide/furs/boar meat (all minor, forest edge) |
 | Esthorpe | 300 | Harwick's | Farm eggs (minor) — kept deliberately thin, a border hamlet not a farming village |
 | Addercombe | 350 | Harwick's | Orchard apples (minor) — House Thorne's faded estate |
 | Millstow | 650 | Hartwell's | Grain (major), barley loaf (major) |
 | Oxworth | 550 | Hartwell's | Animal fat (minor), raw hide (minor) — cattle droving, no dedicated beef commodity exists so byproducts stand in |
-| Palmcote | 500 | Hartwell's | **Olives** (major) + **Oil** (major) — self-contained, same pattern as Barolo's grapes+wine |
+| Palmcote | 500 | Hartwell's | **Olives** (major) — picked and carted off, not pressed on the spot (see below) |
 
 ### The Four New Commodities
 
 Modeled directly on existing precedent rather than invented from scratch:
 
-- **Olives** (consumable, local range) and **Oil** (ingredient, far range) — Palmcote grows and presses both itself, exactly the Barolo grapes→wine pattern (one village, self-contained, no cross-tile industry entry needed).
+- **Olives** (consumable, local range) and **Oil** (ingredient, far range) — Palmcote grows the olives; **Hartwell presses them into oil** (`inputs: {"olives": 0.6}`). Originally self-contained at Palmcote alone (the Barolo grapes→wine pattern); moved to a cross-tile chain on 2026-11-14, below, to match the village-grows/town-refines rule.
 - **Flax** (ingredient, regional range, raw_material) and **Linen** (ingredient, far range, worked_material, `inputs: {"flax": 0.6}`) — Reedmere grows the flax, **Dunmow weaves it into linen** (the wool→wool_cloth pattern: raw material from a village, weaving at a town/city). This keeps Linen inside the Countess's own demesne rather than creating a cross-viscounty dependency; that's a choice, not a constraint — it could instead go to Harwick or Hartwell if a forced economic tie between the two rival viscounties is wanted as another political lever.
 - All four added to `market_defs.json`'s `demand` (units/1000 people/day: olives 12, oil 10, flax 3, linen 8) and `dseason` (olives/oil follow grapes/wine's autumn-harvest curve; flax/linen left flat, same as hemp/wool_cloth).
+
+### Villages Produce, Towns Refine (added 2026-11-14, closes last session's genuine economic gap)
+
+Dunmow's flax→linen chain was already this pattern; made it an explicit rule and applied it everywhere a town sits next to its own raw material, rather than letting a village do both ends:
+
+- **Oil moved from Palmcote to Hartwell.** Palmcote still grows and picks the olives (its only commodity now); Hartwell presses them, same shape as Dunmow/Reedmere's flax→linen. `tools/gear_catalog.json`: `oil`'s maker changed from `pc` to `ht`, with `inputs: {"olives": 0.6}` added so its output actually depends on Palmcote's supply. `market_defs.json`'s `industry` gained `"ht": {"olives": 15}` (a first-guess number, scaled down from Dunmow's flax-25-for-pop-4500 ratio; open to retuning).
+- **This also closes the one real gap flagged last session:** Caldby's wool and the Vale's scattered minor raw hide (Oxworth, Oatcroft, Caldby) had no weaver or tannery anywhere in Gault's own territory, so both left the realm to be finished elsewhere and came back bought. **Harwick is now a major maker of both Wool Cloth and Leather** (`tools/gear_catalog.json`: added `"hk": "major"` to each; both already had `inputs` on wool/raw_hide from the existing precedent). `market_defs.json`'s `industry` gained `"hk": {"wool": 10, "raw_hide": 10}` (also first-guess numbers). This doubles as a thematic fit: a border-garrison town finishing its own wool and hide into cloth and leather supplies its own levy's gear, which sits well with House Reyner's martial character.
+- **Harwick and Hartwell stop being pure consumer towns** and get an actual trade identity each — Harwick textiles/leather, Hartwell oil pressing — rather than just drawing on their villages without giving anything back.
 
 ### What Wasn't Deeply Verified
 

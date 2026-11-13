@@ -76,6 +76,7 @@
     // refresh -- before dg_run_begin right after it) and after dg_run_end clears it, instead of the district
     // fallback (longshade/longshade_forest, port_valen_silt_conduits: same *goto_scene-only shape, same gap).
     "longshade/longshade_forest": "longshade_forest",
+    "longshade/longshade_dryad": "longshade_fluralainns_grove_regrowth",
     "port_valen/port_valen_silt_conduits": "silt_conduits",
     "alderford/wagon_lot": "river_carters_lot",
     "timbermouth/wagon_lot": "timber_wagon_lot",
@@ -181,6 +182,7 @@
   };
   var RULES = [
     function (s) { return s.sceneName === "combat" && s.scenery_combat_place ? s.scenery_combat_place : undefined; }, // a temporary combat scene keeps the location it was entered from
+    function (s) { return s.sceneName === "longshade/longshade_dryad" && s.scenery_subplace ? s.scenery_subplace : undefined; }, // Flùràlainn's secluded bower subplace when staying the night
     function (s) { return s.dg_in_run && s.dg_table === "longshade_forest" && s.scenery_subplace ? s.scenery_subplace : undefined; }, // Longshade's landmark rooms and the Burning Grove's state variants; ordinary trails fall through to the forest pair
     function (s) { return s.sceneName === "Langston/wolves_of_langston_chapter_1" && s.scenery_subplace ? s.scenery_subplace : undefined; }, // Chapter 1 moves between the forest road, Langston streets, the Pickled Hen funeral and the mayor's office
     function (s) { return s.sceneName === "Langston/wolves_of_langston_chapter_2" && s.scenery_subplace ? s.scenery_subplace : undefined; }, // Chapter 2 moves from Langston's streets to Tomlin's cottage and workroom

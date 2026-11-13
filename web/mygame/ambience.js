@@ -94,7 +94,7 @@
   var ALIAS = {
     longshade_forest: "forest", woodroad: "open_road", forest: "forest",
     longshade_watchtower: "forest", longshade_barks_glade: "forest", longshade_root_hollow: "forest",
-    longshade_burning_grove_burning: "forest", longshade_burning_grove_charred: "forest", longshade_fluralainns_grove_regrowth: "forest",
+    longshade_burning_grove_burning: "forest", longshade_burning_grove_charred: "forest", longshade_fluralainns_grove_regrowth: "forest", longshade_fluralainns_bower: "forest",
     overworld_forest_road: "open_road",   // a wooded road tile is road, not woodland: the Longshade tiles themselves (kind forest) keep the forest bed
     western_vale_road: "open_road",
     road: "open_road", overworld_hilly_road: "open_road",   // the kind of an overworld tile (Scenery.placeNames ends a tile's names with it)
@@ -215,6 +215,7 @@
     upper_longshade: [{ all: "river_current_stream", level: 0.3 }],
     west_longshade: [{ all: "river_current_stream", level: 0.3 }],
     deep_longshade: [{ all: "river_current_stream", level: 0.3 }],
+    longshade_fluralainns_bower: [{ all: "river_current_stream", level: 0.28 }],
     alderford: [{ all: "watermill_ambience_needs_to_be_layered_on_top_water_and_mill_sound_only", level: 0.34 }],
     generic_village_inn_room: [{ day: "quiet_tavern", night: "crowded_tavern", level: 0.24 }],
     prologue_camp_night: [{ all: "marshland_night_crickets_shallowwater_ambience", level: 0.24 }],
@@ -290,8 +291,8 @@
       }
     }
     // Never attach this to a romance, a room, or a person: it is only set for an explicit,
-    // player-selected intimacy passage, and is deliberately quiet beneath the indoor bed.
-    if (s.ambience_intimacy && p && p.spec.indoor) put("female_moans", 0.18);
+    // player-selected intimacy passage, and is deliberately quiet beneath the local bed.
+    if (s.ambience_intimacy && p) put("female_moans", 0.18);
     // A performance is opt-in and short-lived. ChoiceScript picks a track per set/listen so
     // regular taverns keep their room tone instead of acquiring a permanent bard loop.
     if (s.ambience_lute_active) put(LUTE_TRACKS[Number(s.ambience_lute_track)] || LUTE_TRACKS[1], 0.34);

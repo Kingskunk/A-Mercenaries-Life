@@ -253,6 +253,10 @@ const MAP = {
   leather: "../Generic/Cured_Hides_Generated_Source.png",
   wool: "../Generic/Wool_Generated_Source.png",
   hemp: "../Generic/Hemp.png",                                 // the user's own art (2026-11-02)
+  olive_oil: "../Generic/olive_oil.png",                        // the user's own art (2026-11-14): the Hartwell oil press's flask, a painted Greek amphora
+  olives: "../Generic/Olives_Generated_Source.png",             // the user's own art (2026-11-14): Palmcote's harvest, a basket of green and black olives
+  flax: "../Generic/Flax_Generated_Source.png",                 // the user's own art (2026-11-14): Reedmere's harvest, a tied bundle with its blue flowers
+  linen: "../Generic/Linen_Generated_Source.png",                // the user's own art (2026-11-14): Dunmow's weaving, a folded bolt of pale linen
   wool_cloth: "../Generic/Wool_Cloth_Generated_Source.png",
   cheese: "FOOD_Durinbold_Cheese_Wedge_Unfaded_Icon.png",
   orchard_apple: "FOOD_Apple_Unfaded_Icon.png",

@@ -572,13 +572,13 @@
       here: "The road runs along the open down, with Broadmead's meadow below and more grass rolling away on every other side."
     },
     rn2: {
-      name: "Fold Crossing", kind: "road", x: -9.6, y: -9.5,
+      name: "Oxworth", kind: "village", x: -9.6, y: -9.5,
       territory: "gault",
       danger: 2,
       climate: -1,
-      walk: "The track runs west along the down, thin and stony, between the two roads it joins, with a shepherd's fold or two dotting the turf.",
-      info: "A crossing on the open down, between the Downs Road and the West Downs Road, named for the folds scattered along it.",
-      here: "The track runs along a bare, windy stretch of down, with no roof in sight either way but the odd sheepfold."
+      walk: "The road widens onto the open down toward a droving village, cattle pens and worn ground on every side of the lane.",
+      info: "A small droving village on the open down, cattle pens worn into the turf along its approach.",
+      here: "Cattle pens and worn, trampled turf surround a cluster of low roofs on the open down."
     },
     rn3: {
       name: "The West Downs Road", kind: "road", x: -9.3, y: -7.9,
@@ -619,9 +619,9 @@
       territory: "gault",
       danger: 0,
       climate: -1,
-      walk: "The road comes down between hedged fields to a high stone wall, with a crowd of rooftops rising behind it.",
-      info: "A walled city among open grassland, its rooftops crowded behind a high stone wall.",
-      here: "The city's wall stands across the fields, pale stone under a crowd of steep roofs and chimney smoke.",
+      walk: "The road comes down between hedged fields to a high stone wall, a grey lake glinting beyond the rooftops crowded behind it.",
+      info: "A walled city on the shore of a broad lake, its rooftops crowded behind a high stone wall.",
+      here: "The city's wall stands across the fields, pale stone under a crowd of steep roofs, the lake's grey water catching the light beyond them.",
       hereNight: "Lamps burn along the wall and its gate, and the roofs behind it are a dark mass against the stars.",
       hereStorm: "Rain streams off the steep roofs, and the wall is a dark, wet line against the grey sky."
     },
@@ -630,9 +630,9 @@
       territory: "gault",
       danger: 1,
       climate: -1,
-      walk: "The road rises toward a timber-and-stone town set close under the high ground, its walls plainer than fine.",
-      info: "A plain, solidly walled market town on rising ground.",
-      here: "The town's walls stand plain and solid against the rising ground behind them, timber and grey stone with little ornament.",
+      walk: "The road rises toward a timber-and-stone town set close under the high ground, its walls plainer than fine, bales of wool and stacked hides waiting under the gate's eaves.",
+      info: "A plain, solidly walled market town on rising ground, its yards busy with weavers and tanners working the wool and hides driven in from the hills.",
+      here: "The town's walls stand plain and solid against the rising ground behind them, timber and grey stone with little ornament, the smell of a tannery on the wind.",
       hereNight: "Torches burn along the wall-walk, and the roofs behind it are a dark huddle.",
       hereStorm: "Rain drives across the open ground and the walls run dark and wet under the weather."
     },
@@ -641,9 +641,9 @@
       territory: "gault",
       danger: 1,
       climate: -1,
-      walk: "The road comes down among well-kept fields to a busy market town, carts and wagons thick along its approach.",
-      info: "A busy market town among well-kept fields, its approach thick with carts and wagons.",
-      here: "Streets and storehouses crowd close behind a modest wall, busy with carts even at a distance.",
+      walk: "The road comes down among well-kept fields to a busy market town, carts and wagons thick along its approach and the smell of pressed olives on the air near the gate.",
+      info: "A busy market town among well-kept fields, its approach thick with carts and wagons, with an olive press running near the gate.",
+      here: "Streets and storehouses crowd close behind a modest wall, busy with carts even at a distance, the press-house's oily smell drifting from near the gate.",
       hereNight: "Lamps burn thick along the streets, busier at this hour than a town its size might suggest.",
       hereStorm: "Rain slicks the cobbles, and carts stand crowded under what shelter the eaves allow."
     },
@@ -661,18 +661,18 @@
       territory: "gault",
       danger: 1,
       climate: -1,
-      walk: "The road runs between broad fields of grain toward a cluster of thatched roofs.",
-      info: "A small farming village among broad grain fields.",
-      here: "Thatched roofs stand among broad fields of grain, the ground open and well worked on every side."
+      walk: "The road runs between broad fields of grain, a dark line of woods close along the west and the lake glinting beyond, toward a cluster of thatched roofs.",
+      info: "A small farming village among broad grain fields, old woods crowding close on one side and the lake at its back.",
+      here: "Thatched roofs stand among broad fields of grain, open ground to the east and the wood's dark eaves close along the west."
     },
     cb: {
       name: "Caldby", kind: "village", x: -12.75153, y: -9.616526153846154,
       territory: "gault",
       danger: 2,
       climate: -1,
-      walk: "The road climbs toward a huddle of low stone cottages set among bare, sheep-cropped hill pasture.",
-      info: "A small hill-farming village among bare, sheep-cropped pasture.",
-      here: "Low stone cottages stand among bare, windswept pasture, with sheep scattered across the open hillside."
+      walk: "The road climbs toward a huddle of low stone cottages set among bare, sheep-cropped hill pasture, old woods crowding the slope just beyond.",
+      info: "A small hill-farming village among bare, sheep-cropped pasture, at the edge of the old woods to the west.",
+      here: "Low stone cottages stand among bare, windswept pasture, sheep scattered across the open hillside and the wood's dark line close along one edge."
     },
     es: {
       name: "Esthorpe", kind: "village", x: -10.732386923076923, y: -9.224527692307692,
@@ -702,30 +702,30 @@
       here: "A grain mill turns slowly on the riverbank, with a cluster of roofs and storehouses gathered around it."
     },
     ox: {
-      name: "Oxworth", kind: "village", x: -10.40457923076923, y: -11.912846153846154,
+      name: "Fold Crossing", kind: "road", x: -10.40457923076923, y: -11.912846153846154,
       territory: "gault",
       danger: 1,
       climate: -1,
-      walk: "The road widens toward a droving village, cattle pens and worn ground on every side of the lane.",
-      info: "A small droving village with cattle pens along its approach.",
-      here: "Cattle pens and worn, trampled ground surround a cluster of low roofs."
+      walk: "The road crosses open grassland here, cut by a scatter of sheepfolds, with ways splitting toward Millstow, Reedmere, Dunmow's walls and on along Verdant Way.",
+      info: "A crossing on open grassland, named for the sheepfolds scattered along it, where the road splits toward Millstow, Reedmere, Dunmow and Verdant Way.",
+      here: "The road crosses open grassland dotted with sheepfolds, with no roof close by but tracks running off toward the mill, the reeds, the city wall and the green way beyond."
     },
     pc: {
       name: "Palmcote", kind: "village", x: -8.540325384615384, y: -11.212503076923076,
       territory: "gault",
       danger: 1,
       climate: -1,
-      walk: "The road climbs a sheltered, sun-facing slope past rows of silver-leaved trees toward a small manor village.",
-      info: "A small village on a sheltered, sun-facing slope planted with rows of silver-leaved trees.",
-      here: "Rows of silver-leaved trees cover the sheltered slope around the village, with a manor house set above them."
+      walk: "The road climbs a sheltered, sun-facing slope past rows of silver-leaved trees toward a small manor village, laden carts waiting to carry the crop off toward Hartwell.",
+      info: "A small village on a sheltered, sun-facing slope planted with rows of silver-leaved trees, its olives picked and carted off rather than pressed on the spot.",
+      here: "Rows of silver-leaved trees cover the sheltered slope around the village, with a manor house set above them and baskets of olives stacked for the road."
     },
   rn5: {
     name: "Verdant Way", kind: "road", x: -9.476923076923077, y: -12.176923076923076,
     territory: "gault",
     danger: 2,
     climate: -1,
-    walk: "The track runs on across open grass grown thick and green along its verges, with ways peeling off toward Reedmere, Oxworth, Millstow and Palmcote.",
-    info: "A crossroads on open grassland, named for its green, overgrown verges, where paths split toward Reedmere, Oxworth, Millstow and Palmcote.",
+    walk: "The track runs on across open grass grown thick and green along its verges, with ways peeling off toward Reedmere, Fold Crossing, Millstow and Palmcote.",
+    info: "A crossroads on open grassland, named for its green, overgrown verges, where paths split toward Reedmere, Fold Crossing, Millstow and Palmcote.",
     here: "The road forks here on open grassland, green verges thick on every side and no roof in sight."
   },
   rn7: {
@@ -742,8 +742,8 @@
     territory: "gault",
     danger: 2,
     climate: -1,
-    walk: "The road bends here beneath a stand of maples, with ways running on toward Fold Crossing, Esthorpe, Millstow, and west along Mossy Road.",
-    info: "A bend in the road beneath a stand of maples, where the way splits toward Fold Crossing, Esthorpe, Millstow and Mossy Road to the west.",
+    walk: "The road bends here beneath a stand of maples, with ways running on toward Oxworth, Esthorpe, Millstow, and west along Mossy Road.",
+    info: "A bend in the road beneath a stand of maples, where the way splits toward Oxworth, Esthorpe, Millstow and Mossy Road to the west.",
     here: "The road bends here under a stand of maples, open grass rolling away on every side."
   },
   };
