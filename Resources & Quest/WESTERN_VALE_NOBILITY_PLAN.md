@@ -10,7 +10,7 @@ This file is the structural companion to `WESTERN_VALE_VILLAGES_PLAN.md`. That f
 
 Established in `lorebook-data.js` and not to be contradicted:
 
-- **House Gault** holds the **Western Vale** from the walled city of **Dunmow**. Arms: a golden horse on a deep-blue field. Rich in food, hemp, wool, wine and horses; poor in metal and minerals. Fields mounted riders and archers; keeps no fleet. Coombe Gap is Gault's road east to the river.
+- **House Gault** holds the **Western Vale** from the walled city of **Dunmow**. Arms: a golden horse on a deep-blue field. Rich in food, hemp, wool, wine and horses; poor in ore and iron (narrowed from "metal and minerals" on 2026-11-13 — the Vale has plenty of ordinary building stone, just no ore worth mining, which is why Dennholt's limestone quarry below doesn't contradict it). Fields mounted riders and archers; keeps no fleet. Coombe Gap is Gault's road east to the river.
 - **Baron Aldous Karr** holds **Stenmark**, the valleys and furnaces of the southern Crags, from **Karr's Keep** above Brandreth. Rich in iron, steel and coal; poor in food and people. Two tolls close Stenmark: Black Pike Gate (south) and Iron Gap (west, shared with Gault).
 - **The Gilded Scales** are the merchant power at Port Valen. They move what each side cannot sell or buy itself (Gault's goods to the sea, Stenmark's iron inland), and that middleman position is new, explicit lore from this session: **it is why neither side can afford to destroy the Scales, and why the Scales profit from the tension rather than ending it.**
 
@@ -163,7 +163,7 @@ Unlike everything above, this part is **live, not just planned** — the 11 new 
 
 **Map positions, round two (2026-11-12).** The first layout was placed by extending coordinates without checking the drawn terrain, and it showed: two villages (Millstow, Oxworth) landed on the drawn shoreline, and the whole cluster read too far south on the rendered map. Corrected by checking candidate coordinates against the actual water/coast/mountain polygons in `overworld-art.js` (see [[feedback-verify-terrain-before-placing-nodes]]) and shifting the whole cluster north, clear of the coastline. Edge mileages were recomputed to match the ~6.5-mile-per-map-unit local scale the cluster borders (the nw/bm/fm edges), rather than carried over from the old, wrong positions. Still a first-guess layout in the sense that nobody sketched it — just one that's now at least geographically valid.
 
-**Gault stays deliberately resource-incomplete, per the user's own call:** no iron anywhere in these villages (reinforces the whole Gault-Karr-Scales premise), and no dedicated timber industry (the user: forest-adjacent places get ambient minor timber/fur without a dedicated industry — Langston already has exactly this, as a minor maker of `longshade_timber`, `charcoal`, `raw_hide` and `furs`).
+**Gault stays deliberately resource-incomplete, per the user's own call:** no iron anywhere in these villages (reinforces the whole Gault-Karr-Scales premise), and no dedicated timber industry (the user: forest-adjacent places get ambient minor timber/fur without a dedicated industry — Langston already has exactly this, as a minor maker of `longshade_timber`, `charcoal`, `raw_hide` and `furs`). Dennholt's limestone (added 2026-11-13, below) is the deliberate exception: ordinary building stone, not ore, so it doesn't touch the no-iron premise.
 
 ### Settlement Production
 
@@ -175,11 +175,12 @@ Unlike everything above, this part is **live, not just planned** — the 11 new 
 | Reedmere | 450 | Dunmow's own | **Flax** (major), fish (minor) |
 | Oatcroft | 600 | Dunmow's own | Grain (major), timber/charcoal/raw hide/furs/boar meat (all minor, forest edge), fish (minor, Azure Lake) |
 | Caldby | 500 | Harwick's | Wool (major), timber/charcoal/raw hide/furs/boar meat (all minor, forest edge) |
-| Esthorpe | 300 | Harwick's | Farm eggs (minor) — kept deliberately thin, a border hamlet not a farming village |
-| Addercombe | 350 | Harwick's | Orchard apples (minor) — House Thorne's faded estate |
-| Millstow | 650 | Hartwell's | Grain (major), barley loaf (major) |
-| Oxworth | 550 | Hartwell's | Animal fat (minor), raw hide (minor) — cattle droving, no dedicated beef commodity exists so byproducts stand in |
-| Palmcote | 500 | Hartwell's | **Olives** (major) — picked and carted off, not pressed on the spot (see below) |
+| Esthorpe | 300 | Harwick's | Farm eggs (minor), dressed chicken (minor) — a border hamlet, kept thin but no longer eggs-with-no-chickens |
+| Addercombe | 350 | Harwick's | Orchard apples (minor), honey (minor) — House Thorne's faded estate |
+| Millstow | 650 | Hartwell's | Grain (major), barley loaf (major), farm eggs/root veg/onions/cheese/butter (all minor) — a milling village with a proper mixed-farm tail, on par with Broadmead |
+| Oxworth | 550 | Hartwell's | Animal fat (minor), raw hide (minor), cheese/butter/farm eggs/dressed chicken (all minor) — cattle droving brings dairy and poultry with it; no dedicated beef commodity exists so byproducts still stand in for the meat |
+| Palmcote | 500 | Hartwell's | **Olives** (major), honey (minor) — picked and carted off, not pressed on the spot (see below) |
+| Dennholt (castle village) | 150 | Crown marcher, Lady Perrin Hollis | **Limestone** (minor) — a small penal quarry under the castle; Whitefold remains the Vale's main source |
 
 ### The Four New Commodities
 
@@ -196,6 +197,15 @@ Dunmow's flax→linen chain was already this pattern; made it an explicit rule a
 - **Oil moved from Palmcote to Hartwell.** Palmcote still grows and picks the olives (its only commodity now); Hartwell presses them, same shape as Dunmow/Reedmere's flax→linen. `tools/gear_catalog.json`: `oil`'s maker changed from `pc` to `ht`, with `inputs: {"olives": 0.6}` added so its output actually depends on Palmcote's supply. `market_defs.json`'s `industry` gained `"ht": {"olives": 15}` (a first-guess number, scaled down from Dunmow's flax-25-for-pop-4500 ratio; open to retuning).
 - **This also closes the one real gap flagged last session:** Caldby's wool and the Vale's scattered minor raw hide (Oxworth, Oatcroft, Caldby) had no weaver or tannery anywhere in Gault's own territory, so both left the realm to be finished elsewhere and came back bought. **Harwick is now a major maker of both Wool Cloth and Leather** (`tools/gear_catalog.json`: added `"hk": "major"` to each; both already had `inputs` on wool/raw_hide from the existing precedent). `market_defs.json`'s `industry` gained `"hk": {"wool": 10, "raw_hide": 10}` (also first-guess numbers). This doubles as a thematic fit: a border-garrison town finishing its own wool and hide into cloth and leather supplies its own levy's gear, which sits well with House Reyner's martial character.
 - **Harwick and Hartwell stop being pure consumer towns** and get an actual trade identity each — Harwick textiles/leather, Hartwell oil pressing — rather than just drawing on their villages without giving anything back.
+
+### Farmland Variety and Dennholt's Quarry (added 2026-11-13)
+
+Two more genuine gaps, both closed the same way as the rest of this file — editing `tools/gear_catalog.json` makers and `tools/market_defs.json` settlements, then `gen_world.js` → `gen_markets.js` → `compile.js`:
+
+- **Esthorpe/Addercombe/Millstow/Oxworth/Palmcote were thinner than every comparable village elsewhere in the project** (Barleycross: 18 goods, Marlcross: ~12, Fallowmere: 8, Broadmead: 7, vs. these five sitting at 1-2 each). The clearest symptom: Esthorpe made farm eggs but had no chicken. Fixed by adding obvious pairings as **minor** makers only, nothing moved to major: Esthorpe +dressed chicken; Addercombe +honey; Millstow +farm eggs/root veg/onions/cheese/butter (a milling village with a real mixed-farm tail, now on par with Broadmead); Oxworth +cheese/butter/farm eggs/dressed chicken (droving brings dairy and poultry along with the cattle); Palmcote +honey. Esthorpe and Reedmere were left thinner on purpose — a border hamlet and a reed-marsh village respectively, where "thin" is the actual character, not an oversight.
+- **Dennholt becomes a castle village**, resolving the standing problem that `fn`/`fw` (Carrowmark/Dennholt) were pure map forts with no economic participation at all. Mechanically it's nothing new — just an ordinary small `market_defs.json` settlement (`"fw": {"name": "Dennholt", "pop": 150, "anon": "a quarry fort"}`) layered onto the existing fort tile, the same way real castles historically had a garrison village at their foot. Dennholt is now a **minor** maker of `limestone` (Whitefold stays the Vale's major, established source — Dennholt is a newer, smaller supplement, not a replacement). The quarry is worked by prisoners from across the realm, overseen by whoever holds the castle — currently **Lady Perrin Hollis**, which is a nice bit of texture given her established "dove" characterization (The Peerage, above): someone who'd rather keep the peace than fight for it, personally responsible for a penal quarry, is a hook worth remembering for later, not something resolved here. `overworld-data.js`'s `fw` tile prose was extended with the quarry/cottages detail (environment only, no names, per the overworld-text rule).
+- **This also forced narrowing Gault's established "poor in metal and minerals" line to "poor in ore and iron"** (`lorebook-data.js`'s `house_gault` entry, plus the established-lore summary at the top of this file) — Dennholt's limestone is ordinary building stone, not ore, so the old blanket wording would have directly contradicted the new quarry. Nothing else about the Gault/Karr/Scales iron-trade premise changes.
+- **Not done, left as a simplification:** no `industry` entry was added for Dennholt's prisoners as extra mouths beyond its stated population — its baseline demand comes entirely from the 150-pop figure like any other small settlement. Worth revisiting if Dennholt ever gets a real scene and the prison population needs to be larger than the "village" number implies.
 
 ### What Wasn't Deeply Verified
 

@@ -605,11 +605,11 @@
       territory: "gault",
       danger: 1,
       climate: -1,
-      walk: "The branch road climbs west off the down to a smaller castle set where the grass thins into bare hillside.",
-      info: "A grey stone castle at the down's western edge, overlooking rough highland with no real route through it.",
-      here: "The castle sits where the down gives out to bare hillside, walls of grey stone over the western road, with open hill country beyond.",
-      hereNight: "A single light burns at the gate, the walls otherwise dark against the hillside.",
-      hereStorm: "Rain sweeps the bare hillside below the walls and they run wet, the gate shut against the weather."
+      walk: "The branch road climbs west off the down to a smaller castle set where the grass thins into bare hillside, a scatter of low cottages below its walls and a pale scar of cut stone further up the slope.",
+      info: "A grey stone castle at the down's western edge, with a quarry cut into the hillside above it and a small village of quarrymen and guards below the walls.",
+      here: "The castle sits where the down gives out to bare hillside, walls of grey stone over the western road, a huddle of quarrymen's cottages at its foot and the ring of picks on stone carrying down from the cut above.",
+      hereNight: "A single light burns at the gate, the cottages below it dark, and the quarry above lies silent and pale in the moonlight.",
+      hereStorm: "Rain sweeps the bare hillside below the walls and they run wet, the gate shut against the weather, the quarry cut running with grey water."
     },
     // House Gault's wider peerage (WESTERN_VALE_NOBILITY_PLAN.md, 2026-11-12): Dunmow (the city), the two viscounty towns Harwick and Hartwell, and their eight villages. Positions are a
     // first-guess layout, not sketched by the user yet -- open to adjustment once seen on the rendered map, same as the scarp network was. Map connections only, no scenes built. Text stays

@@ -2393,8 +2393,8 @@ window.MARKET_DEFS = {
    },
    "honey": {
     "base": 4,
-    "target": 47,
-    "stock0": 47,
+    "target": 60,
+    "stock0": 60,
     "buyPct": 0.8,
     "mult": 1,
     "world": {
@@ -2539,8 +2539,8 @@ window.MARKET_DEFS = {
    },
    "limestone": {
     "base": 2,
-    "target": 69,
-    "stock0": 69,
+    "target": 80,
+    "stock0": 80,
     "buyPct": 0.8,
     "mult": 1.065,
     "world": {
@@ -2716,8 +2716,8 @@ window.MARKET_DEFS = {
   "goods": {
    "honey": {
     "base": 4,
-    "target": 63,
-    "stock0": 63,
+    "target": 81,
+    "stock0": 81,
     "buyPct": 0.8,
     "mult": 1.03,
     "world": {
@@ -3005,8 +3005,8 @@ window.MARKET_DEFS = {
    },
    "limestone": {
     "base": 2,
-    "target": 83,
-    "stock0": 83,
+    "target": 99,
+    "stock0": 99,
     "buyPct": 0.8,
     "mult": 1.095,
     "world": {
@@ -3181,8 +3181,8 @@ window.MARKET_DEFS = {
   "goods": {
    "honey": {
     "base": 4,
-    "target": 26,
-    "stock0": 26,
+    "target": 36,
+    "stock0": 36,
     "buyPct": 0.8,
     "mult": 1.189,
     "world": {
@@ -3236,8 +3236,8 @@ window.MARKET_DEFS = {
    },
    "cheese": {
     "base": 3,
-    "target": 81,
-    "stock0": 81,
+    "target": 91,
+    "stock0": 91,
     "buyPct": 0.8,
     "mult": 1.089,
     "world": {
@@ -3247,8 +3247,8 @@ window.MARKET_DEFS = {
    },
    "butter": {
     "base": 5,
-    "target": 76,
-    "stock0": 76,
+    "target": 85,
+    "stock0": 85,
     "buyPct": 0.8,
     "mult": 1.089,
     "world": {
@@ -3360,8 +3360,8 @@ window.MARKET_DEFS = {
    },
    "farm_eggs": {
     "base": 3,
-    "target": 125,
-    "stock0": 125,
+    "target": 141,
+    "stock0": 141,
     "buyPct": 0.8,
     "mult": 1.089,
     "world": {
@@ -3415,8 +3415,8 @@ window.MARKET_DEFS = {
    },
    "dressed_chicken": {
     "base": 7,
-    "target": 67,
-    "stock0": 67,
+    "target": 72,
+    "stock0": 72,
     "buyPct": 0.8,
     "mult": 1.089,
     "world": {
@@ -3470,8 +3470,8 @@ window.MARKET_DEFS = {
    },
    "limestone": {
     "base": 2,
-    "target": 67,
-    "stock0": 67,
+    "target": 75,
+    "stock0": 75,
     "buyPct": 0.8,
     "mult": 1.074,
     "world": {
@@ -3646,8 +3646,8 @@ window.MARKET_DEFS = {
   "goods": {
    "honey": {
     "base": 4,
-    "target": 47,
-    "stock0": 47,
+    "target": 59,
+    "stock0": 59,
     "buyPct": 0.8,
     "mult": 1,
     "world": {
@@ -3935,8 +3935,8 @@ window.MARKET_DEFS = {
    },
    "limestone": {
     "base": 2,
-    "target": 55,
-    "stock0": 55,
+    "target": 66,
+    "stock0": 66,
     "buyPct": 0.8,
     "mult": 1.14,
     "world": {
@@ -4111,8 +4111,8 @@ window.MARKET_DEFS = {
   "goods": {
    "honey": {
     "base": 4,
-    "target": 25,
-    "stock0": 25,
+    "target": 35,
+    "stock0": 35,
     "buyPct": 0.8,
     "mult": 1.175,
     "world": {
@@ -4166,8 +4166,8 @@ window.MARKET_DEFS = {
    },
    "cheese": {
     "base": 3,
-    "target": 92,
-    "stock0": 92,
+    "target": 96,
+    "stock0": 96,
     "buyPct": 0.8,
     "mult": 1,
     "world": {
@@ -4177,8 +4177,8 @@ window.MARKET_DEFS = {
    },
    "butter": {
     "base": 5,
-    "target": 86,
-    "stock0": 86,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
     "mult": 1,
     "world": {
@@ -4290,8 +4290,8 @@ window.MARKET_DEFS = {
    },
    "farm_eggs": {
     "base": 3,
-    "target": 142,
-    "stock0": 142,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 1,
     "world": {
@@ -4345,8 +4345,8 @@ window.MARKET_DEFS = {
    },
    "dressed_chicken": {
     "base": 7,
-    "target": 78,
-    "stock0": 78,
+    "target": 83,
+    "stock0": 83,
     "buyPct": 0.8,
     "mult": 1,
     "world": {
@@ -4400,8 +4400,8 @@ window.MARKET_DEFS = {
    },
    "limestone": {
     "base": 2,
-    "target": 90,
-    "stock0": 90,
+    "target": 98,
+    "stock0": 98,
     "buyPct": 0.8,
     "mult": 0.99,
     "world": {
@@ -4577,8 +4577,8 @@ window.MARKET_DEFS = {
   "goods": {
    "honey": {
     "base": 4,
-    "target": 44,
-    "stock0": 44,
+    "target": 58,
+    "stock0": 58,
     "buyPct": 0.8,
     "mult": 1.09,
     "world": {
@@ -4811,8 +4811,8 @@ window.MARKET_DEFS = {
    },
    "dressed_chicken": {
     "base": 7,
-    "target": 117,
-    "stock0": 117,
+    "target": 120,
+    "stock0": 120,
     "buyPct": 0.8,
     "mult": 0.99,
     "world": {
@@ -4866,8 +4866,8 @@ window.MARKET_DEFS = {
    },
    "limestone": {
     "base": 2,
-    "target": 128,
-    "stock0": 128,
+    "target": 140,
+    "stock0": 140,
     "buyPct": 0.8,
     "mult": 0.975,
     "world": {
@@ -5042,8 +5042,8 @@ window.MARKET_DEFS = {
   "goods": {
    "honey": {
     "base": 4,
-    "target": 29,
-    "stock0": 29,
+    "target": 39,
+    "stock0": 39,
     "buyPct": 0.8,
     "mult": 1.13,
     "world": {
@@ -5097,8 +5097,8 @@ window.MARKET_DEFS = {
    },
    "cheese": {
     "base": 3,
-    "target": 90,
-    "stock0": 90,
+    "target": 96,
+    "stock0": 96,
     "buyPct": 0.8,
     "mult": 1.03,
     "world": {
@@ -5108,8 +5108,8 @@ window.MARKET_DEFS = {
    },
    "butter": {
     "base": 5,
-    "target": 85,
-    "stock0": 85,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
     "mult": 1.03,
     "world": {
@@ -5221,8 +5221,8 @@ window.MARKET_DEFS = {
    },
    "farm_eggs": {
     "base": 3,
-    "target": 140,
-    "stock0": 140,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 1.03,
     "world": {
@@ -5276,8 +5276,8 @@ window.MARKET_DEFS = {
    },
    "dressed_chicken": {
     "base": 7,
-    "target": 76,
-    "stock0": 76,
+    "target": 81,
+    "stock0": 81,
     "buyPct": 0.8,
     "mult": 1.03,
     "world": {
@@ -5331,8 +5331,8 @@ window.MARKET_DEFS = {
    },
    "limestone": {
     "base": 2,
-    "target": 111,
-    "stock0": 111,
+    "target": 119,
+    "stock0": 119,
     "buyPct": 0.8,
     "mult": 0.945,
     "world": {
@@ -5507,8 +5507,8 @@ window.MARKET_DEFS = {
   "goods": {
    "honey": {
     "base": 4,
-    "target": 26,
-    "stock0": 26,
+    "target": 36,
+    "stock0": 36,
     "buyPct": 0.8,
     "mult": 1.165,
     "world": {
@@ -5562,8 +5562,8 @@ window.MARKET_DEFS = {
    },
    "cheese": {
     "base": 3,
-    "target": 85,
-    "stock0": 85,
+    "target": 95,
+    "stock0": 95,
     "buyPct": 0.8,
     "mult": 1.065,
     "world": {
@@ -5573,8 +5573,8 @@ window.MARKET_DEFS = {
    },
    "butter": {
     "base": 5,
-    "target": 80,
-    "stock0": 80,
+    "target": 89,
+    "stock0": 89,
     "buyPct": 0.8,
     "mult": 1.065,
     "world": {
@@ -5686,8 +5686,8 @@ window.MARKET_DEFS = {
    },
    "farm_eggs": {
     "base": 3,
-    "target": 131,
-    "stock0": 131,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 1.065,
     "world": {
@@ -5741,8 +5741,8 @@ window.MARKET_DEFS = {
    },
    "dressed_chicken": {
     "base": 7,
-    "target": 71,
-    "stock0": 71,
+    "target": 76,
+    "stock0": 76,
     "buyPct": 0.8,
     "mult": 1.065,
     "world": {
@@ -5972,8 +5972,8 @@ window.MARKET_DEFS = {
   "goods": {
    "honey": {
     "base": 4,
-    "target": 54,
-    "stock0": 54,
+    "target": 74,
+    "stock0": 74,
     "buyPct": 0.8,
     "mult": 1.15,
     "world": {
@@ -6027,8 +6027,8 @@ window.MARKET_DEFS = {
    },
    "cheese": {
     "base": 3,
-    "target": 177,
-    "stock0": 177,
+    "target": 192,
+    "stock0": 192,
     "buyPct": 0.8,
     "mult": 1.05,
     "world": {
@@ -6038,8 +6038,8 @@ window.MARKET_DEFS = {
    },
    "butter": {
     "base": 5,
-    "target": 166,
-    "stock0": 166,
+    "target": 180,
+    "stock0": 180,
     "buyPct": 0.8,
     "mult": 1.05,
     "world": {
@@ -6151,8 +6151,8 @@ window.MARKET_DEFS = {
    },
    "farm_eggs": {
     "base": 3,
-    "target": 273,
-    "stock0": 273,
+    "target": 288,
+    "stock0": 288,
     "buyPct": 0.8,
     "mult": 1.05,
     "world": {
@@ -6206,8 +6206,8 @@ window.MARKET_DEFS = {
    },
    "dressed_chicken": {
     "base": 7,
-    "target": 149,
-    "stock0": 149,
+    "target": 159,
+    "stock0": 159,
     "buyPct": 0.8,
     "mult": 1.05,
     "world": {
@@ -6261,8 +6261,8 @@ window.MARKET_DEFS = {
    },
    "limestone": {
     "base": 2,
-    "target": 152,
-    "stock0": 152,
+    "target": 168,
+    "stock0": 168,
     "buyPct": 0.8,
     "mult": 1.035,
     "world": {
@@ -6436,8 +6436,8 @@ window.MARKET_DEFS = {
   "goods": {
    "honey": {
     "base": 4,
-    "target": 70,
-    "stock0": 70,
+    "target": 103,
+    "stock0": 103,
     "buyPct": 0.8,
     "mult": 1,
     "world": {
@@ -6670,8 +6670,8 @@ window.MARKET_DEFS = {
    },
    "dressed_chicken": {
     "base": 7,
-    "target": 116,
-    "stock0": 116,
+    "target": 133,
+    "stock0": 133,
     "buyPct": 0.8,
     "mult": 1.09,
     "world": {
@@ -6725,10 +6725,10 @@ window.MARKET_DEFS = {
    },
    "limestone": {
     "base": 2,
-    "target": 71,
-    "stock0": 71,
+    "target": 101,
+    "stock0": 101,
     "buyPct": 0.8,
-    "mult": 1.255,
+    "mult": 1.15,
     "world": {
      "tile": "lg"
     },
@@ -6901,8 +6901,8 @@ window.MARKET_DEFS = {
   "goods": {
    "honey": {
     "base": 4,
-    "target": 30,
-    "stock0": 30,
+    "target": 55,
+    "stock0": 55,
     "buyPct": 0.8,
     "mult": 1.08,
     "world": {
@@ -7135,8 +7135,8 @@ window.MARKET_DEFS = {
    },
    "dressed_chicken": {
     "base": 7,
-    "target": 63,
-    "stock0": 63,
+    "target": 76,
+    "stock0": 76,
     "buyPct": 0.8,
     "mult": 1.045,
     "world": {
@@ -7190,10 +7190,10 @@ window.MARKET_DEFS = {
    },
    "limestone": {
     "base": 2,
-    "target": 37,
-    "stock0": 37,
+    "target": 61,
+    "stock0": 61,
     "buyPct": 0.8,
-    "mult": 1.335,
+    "mult": 1.07,
     "world": {
      "tile": "fm"
     },
@@ -7367,8 +7367,8 @@ window.MARKET_DEFS = {
   "goods": {
    "honey": {
     "base": 4,
-    "target": 29,
-    "stock0": 29,
+    "target": 56,
+    "stock0": 56,
     "buyPct": 0.8,
     "mult": 1.09,
     "world": {
@@ -7601,8 +7601,8 @@ window.MARKET_DEFS = {
    },
    "dressed_chicken": {
     "base": 7,
-    "target": 67,
-    "stock0": 67,
+    "target": 81,
+    "stock0": 81,
     "buyPct": 0.8,
     "mult": 1,
     "world": {
@@ -7656,10 +7656,10 @@ window.MARKET_DEFS = {
    },
    "limestone": {
     "base": 2,
-    "target": 36,
-    "stock0": 36,
+    "target": 60,
+    "stock0": 60,
     "buyPct": 0.8,
-    "mult": 1.345,
+    "mult": 1.075,
     "world": {
      "tile": "bm"
     },
@@ -7833,8 +7833,8 @@ window.MARKET_DEFS = {
   "goods": {
    "honey": {
     "base": 4,
-    "target": 36,
-    "stock0": 36,
+    "target": 57,
+    "stock0": 57,
     "buyPct": 0.8,
     "mult": 1.035,
     "world": {
@@ -8066,8 +8066,8 @@ window.MARKET_DEFS = {
    },
    "dressed_chicken": {
     "base": 7,
-    "target": 66,
-    "stock0": 66,
+    "target": 76,
+    "stock0": 76,
     "buyPct": 0.8,
     "mult": 1.075,
     "world": {
@@ -8121,10 +8121,10 @@ window.MARKET_DEFS = {
    },
    "limestone": {
     "base": 2,
-    "target": 40,
-    "stock0": 40,
+    "target": 59,
+    "stock0": 59,
     "buyPct": 0.8,
-    "mult": 1.29,
+    "mult": 1.135,
     "world": {
      "tile": "nv"
     },
