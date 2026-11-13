@@ -372,6 +372,32 @@
       description: "Small iron-hooped barrel of red vineyard wine."
     },
     {
+      id: "olives", category: "consumables", owned: "has_olives",
+      weight: 0.5, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_olives) || 0); return "Olives" + (n > 1 ? " ×" + n : ""); },
+      description: "Small clay pot of brined green olives.",
+      badge: "Holds off about 4 hours of hunger",
+      use: true
+    },
+    {
+      id: "oil", category: "provisions", owned: "has_oil",
+      weight: 3, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_oil) || 0); return "Oil Flask" + (n > 1 ? " ×" + n : ""); },
+      description: "Squat clay flask of pressed olive oil."
+    },
+    {
+      id: "flax", category: "provisions", owned: "has_flax",
+      weight: 3, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_flax) || 0); return "Flax" + (n > 1 ? " ×" + n : ""); },
+      description: "Bale of retted flax fibre, for the loom."
+    },
+    {
+      id: "linen", category: "provisions", owned: "has_linen",
+      weight: 3, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_linen) || 0); return "Linen Cloth" + (n > 1 ? " ×" + n : ""); },
+      description: "Bolt of close-woven linen cloth, ready for a tailor."
+    },
+    {
       id: "root_vegetable_bundle", category: "provisions", owned: "has_root_vegetable_bundle",
       weight: 1, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_root_vegetable_bundle) || 0); return "Root-Vegetable Bundle" + (n > 1 ? " ×" + n : ""); },
@@ -448,8 +474,8 @@
     {
       id: "lamp_oil", category: "provisions", owned: "has_lamp_oil",
       weight: 1, stow: true, stack: true,
-      name: function (s) { var n = 1 + (Number(s.spare_lamp_oil) || 0); return "Lamp Oil" + (n > 1 ? " ×" + n : ""); },
-      description: "Stoppered tin flask of lamp oil."
+      name: function (s) { var n = 1 + (Number(s.spare_lamp_oil) || 0); return "Oil" + (n > 1 ? " ×" + n : ""); },
+      description: "Stoppered tin flask of oil."
     },
     {
       id: "hooded_lantern", category: "provisions", owned: "has_hooded_lantern",

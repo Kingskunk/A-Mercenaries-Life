@@ -516,10 +516,10 @@
       territory: "gault",
       danger: 2,
       climate: -1,
-      walk: "The road leaves Langston's fields and runs north-west over rough grassland, a narrow carters' way kept up by House Gault's levy and little used beyond the town.",
+      walk: "The road leaves Langston's fields and runs north-west over rough grassland, a narrow carters' way kept up by House Gault's levy.",
       camp: "A flat shoulder of grass beside a field wall gives room for a small camp, with the road empty in both directions.",
-      info: "A road leaving Langston to the north-west, over open grassland.",
-      here: "The road runs over open grassland between low stone walls, with Langston behind and nothing ahead but the long line of the grass.",
+      info: "A road junction north-west of Langston, over open grassland.",
+      here: "The road runs over open grassland between low stone walls, with Langston behind and the land opening into pasture ahead.",
       hereNight: "The road is a pale line between dark walls, and Langston's lamps have sunk out of sight behind the rise.",
       hereStorm: "Rain sweeps over the open grassland and the road runs with water between its walls. There is no shelter in sight."
     },
@@ -556,7 +556,196 @@
       here: "Hedged strips of wheat, barley and beans run out from a cluster of thatched roofs round a village pond, where geese pick along the bank. Haystacks and kitchen gardens stand among the houses, and a cart or two waits in the lane.",
       hereNight: "A few lit windows show round the dark pond, and a dog barks from a farmyard. The fields lie quiet, and the air smells of hay and cold water.",
       hereStorm: "Rain beats on the strips and fills the ruts in the lane. The pond is dimpled and brown, the geese have gone, and every shutter is closed."
-    }
+    },
+    // Two castles and the road web between them, drawn north of Broadmead onto the downs and the Crags beyond (the user's sketch, 2026-11-12: two red squares for the holds, three red circles
+    // for the road junctions). Named per WESTERN_VALE_NOBILITY_PLAN.md: both are Crown marcher castles, their castellans sworn straight to Countess Avelina rather than to either viscounty.
+    // Terrain corrected 2026-11-12 (the user): the Western Vale is established as mostly level grassland, and Broadmead's own entry already calls its neighboring high ground "a long bare
+    // down" (gentle, sheep-cropped downland, not a scarp or crag) — so the road network stays on open down the whole way, and real mountain terrain (scree, bare rock) only begins right at
+    // the two castles, where the downs finally give out to the Crags proper. Map connections only, no scenes built.
+    rn1: {
+      name: "The Downs Road", kind: "road", x: -8.3, y: -9.4,
+      territory: "gault",
+      danger: 2,
+      climate: -1,
+      walk: "The road climbs out of Broadmead's meadow onto the long bare down behind it, a rough carters' way worn into the turf.",
+      info: "A road junction on the open down above Broadmead, where the way forks toward Carrowmark and the western crossing.",
+      here: "The road runs along the open down, with Broadmead's meadow below and more grass rolling away on every other side."
+    },
+    rn2: {
+      name: "Fold Crossing", kind: "road", x: -9.6, y: -9.5,
+      territory: "gault",
+      danger: 2,
+      climate: -1,
+      walk: "The track runs west along the down, thin and stony, between the two roads it joins, with a shepherd's fold or two dotting the turf.",
+      info: "A crossing on the open down, between the Downs Road and the West Downs Road, named for the folds scattered along it.",
+      here: "The track runs along a bare, windy stretch of down, with no roof in sight either way but the odd sheepfold."
+    },
+    rn3: {
+      name: "The West Downs Road", kind: "road", x: -9.3, y: -7.9,
+      territory: "gault",
+      danger: 2,
+      climate: -1,
+      walk: "The road drops off the down here, with a rougher branch climbing away west toward Dennholt and a third way running south toward Fallowmere's fields.",
+      info: "A three-way junction on the western down, where the road to Dennholt meets the ways down to Broadmead and Fallowmere.",
+      here: "The road forks here, one way dropping toward Broadmead's meadow, another south toward Fallowmere's fields, and the third climbing west toward the castle."
+    },
+    fn: {
+      name: "Carrowmark", kind: "fort", x: -7.6, y: -10.5,
+      territory: "gault",
+      danger: 1,
+      climate: -1,
+      walk: "The road leaves the open down here and climbs in earnest, grass giving way to scree and bare rock on the final approach to a grey castle built across the way.",
+      info: "A grey stone castle where the downs give out to the Crags, its walls built squarely across the one way through the mountains here.",
+      here: "The castle's walls stand where the last of the downs' grass gives out to bare stone, with the real mountains climbing away behind it.",
+      hereNight: "A light or two shows at the gate, and the walls are a darker shape against the black of the high country.",
+      hereStorm: "Rain or sleet drives across the bare rock below the walls, blurred in the weather, the gate shut against it."
+    },
+    fw: {
+      name: "Dennholt", kind: "fort", x: -10.6, y: -8,
+      territory: "gault",
+      danger: 1,
+      climate: -1,
+      walk: "The branch road climbs west off the down to a smaller castle set where the grass thins into bare hillside.",
+      info: "A grey stone castle at the down's western edge, overlooking rough highland with no real route through it.",
+      here: "The castle sits where the down gives out to bare hillside, walls of grey stone over the western road, with open hill country beyond.",
+      hereNight: "A single light burns at the gate, the walls otherwise dark against the hillside.",
+      hereStorm: "Rain sweeps the bare hillside below the walls and they run wet, the gate shut against the weather."
+    },
+    // House Gault's wider peerage (WESTERN_VALE_NOBILITY_PLAN.md, 2026-11-12): Dunmow (the city), the two viscounty towns Harwick and Hartwell, and their eight villages. Positions are a
+    // first-guess layout, not sketched by the user yet -- open to adjustment once seen on the rendered map, same as the scarp network was. Map connections only, no scenes built. Text stays
+    // environment-only per the user's rule; the peerage/politics content lives in the plan file (and later the lorebook), not here.
+    dm: {
+      name: "Dunmow", kind: "city", x: -11.324597407608389, y: -12.215591528494812,
+      territory: "gault",
+      danger: 0,
+      climate: -1,
+      walk: "The road comes down between hedged fields to a high stone wall, with a crowd of rooftops rising behind it.",
+      info: "A walled city among open grassland, its rooftops crowded behind a high stone wall.",
+      here: "The city's wall stands across the fields, pale stone under a crowd of steep roofs and chimney smoke.",
+      hereNight: "Lamps burn along the wall and its gate, and the roofs behind it are a dark mass against the stars.",
+      hereStorm: "Rain streams off the steep roofs, and the wall is a dark, wet line against the grey sky."
+    },
+    hk: {
+      name: "Harwick", kind: "town", x: -11.781383076923078, y: -9.222617692307692,
+      territory: "gault",
+      danger: 1,
+      climate: -1,
+      walk: "The road rises toward a timber-and-stone town set close under the high ground, its walls plainer than fine.",
+      info: "A plain, solidly walled market town on rising ground.",
+      here: "The town's walls stand plain and solid against the rising ground behind them, timber and grey stone with little ornament.",
+      hereNight: "Torches burn along the wall-walk, and the roofs behind it are a dark huddle.",
+      hereStorm: "Rain drives across the open ground and the walls run dark and wet under the weather."
+    },
+    ht: {
+      name: "Hartwell", kind: "town", x: -9.225703076923077, y: -10.32871076923077,
+      territory: "gault",
+      danger: 1,
+      climate: -1,
+      walk: "The road comes down among well-kept fields to a busy market town, carts and wagons thick along its approach.",
+      info: "A busy market town among well-kept fields, its approach thick with carts and wagons.",
+      here: "Streets and storehouses crowd close behind a modest wall, busy with carts even at a distance.",
+      hereNight: "Lamps burn thick along the streets, busier at this hour than a town its size might suggest.",
+      hereStorm: "Rain slicks the cobbles, and carts stand crowded under what shelter the eaves allow."
+    },
+    rm: {
+      name: "Reedmere", kind: "village", x: -10.376302739793006, y: -13.00149436598995,
+      territory: "gault",
+      danger: 1,
+      climate: -1,
+      walk: "The road dips toward a damp meadow where reeds grow thick along slow water, with low roofs beyond.",
+      info: "A small village on a damp, reed-grown meadow.",
+      here: "Reed-grown water stands in the low ground around the village, with a scatter of low roofs above the damp meadow."
+    },
+    oc: {
+      name: "Oatcroft", kind: "village", x: -12.49005460927957, y: -10.848000929323415,
+      territory: "gault",
+      danger: 1,
+      climate: -1,
+      walk: "The road runs between broad fields of grain toward a cluster of thatched roofs.",
+      info: "A small farming village among broad grain fields.",
+      here: "Thatched roofs stand among broad fields of grain, the ground open and well worked on every side."
+    },
+    cb: {
+      name: "Caldby", kind: "village", x: -12.75153, y: -9.616526153846154,
+      territory: "gault",
+      danger: 2,
+      climate: -1,
+      walk: "The road climbs toward a huddle of low stone cottages set among bare, sheep-cropped hill pasture.",
+      info: "A small hill-farming village among bare, sheep-cropped pasture.",
+      here: "Low stone cottages stand among bare, windswept pasture, with sheep scattered across the open hillside."
+    },
+    es: {
+      name: "Esthorpe", kind: "village", x: -10.732386923076923, y: -9.224527692307692,
+      territory: "gault",
+      danger: 2,
+      climate: -1,
+      walk: "The road narrows toward a small border hamlet, a handful of plain roofs set close against open hill ground.",
+      info: "A small hamlet on the high ground near the border.",
+      here: "A handful of plain roofs stand close together on open, windswept ground near the high country."
+    },
+    ad: {
+      name: "Addercombe", kind: "village", x: -11.476709999999999, y: -8.48879076923077,
+      territory: "gault",
+      danger: 1,
+      climate: -1,
+      walk: "The road passes a weathered manor house and its outbuildings before reaching a small village beyond.",
+      info: "A small village beside an old, weathered manor house.",
+      here: "A handful of plain cottages stand near an old manor house, its stonework weathered and its grounds kept smaller than they once were."
+    },
+    ml: {
+      name: "Millstow", kind: "village", x: -9.832870000000002, y: -11.214888461538463,
+      territory: "gault",
+      danger: 1,
+      climate: -1,
+      walk: "The road follows the river toward a milling village, the turn of a waterwheel audible before the roofs come into view.",
+      info: "A small milling village on the river, built around its grain mill.",
+      here: "A grain mill turns slowly on the riverbank, with a cluster of roofs and storehouses gathered around it."
+    },
+    ox: {
+      name: "Oxworth", kind: "village", x: -10.40457923076923, y: -11.912846153846154,
+      territory: "gault",
+      danger: 1,
+      climate: -1,
+      walk: "The road widens toward a droving village, cattle pens and worn ground on every side of the lane.",
+      info: "A small droving village with cattle pens along its approach.",
+      here: "Cattle pens and worn, trampled ground surround a cluster of low roofs."
+    },
+    pc: {
+      name: "Palmcote", kind: "village", x: -8.540325384615384, y: -11.212503076923076,
+      territory: "gault",
+      danger: 1,
+      climate: -1,
+      walk: "The road climbs a sheltered, sun-facing slope past rows of silver-leaved trees toward a small manor village.",
+      info: "A small village on a sheltered, sun-facing slope planted with rows of silver-leaved trees.",
+      here: "Rows of silver-leaved trees cover the sheltered slope around the village, with a manor house set above them."
+    },
+  rn5: {
+    name: "Verdant Way", kind: "road", x: -9.476923076923077, y: -12.176923076923076,
+    territory: "gault",
+    danger: 2,
+    climate: -1,
+    walk: "The track runs on across open grass grown thick and green along its verges, with ways peeling off toward Reedmere, Oxworth, Millstow and Palmcote.",
+    info: "A crossroads on open grassland, named for its green, overgrown verges, where paths split toward Reedmere, Oxworth, Millstow and Palmcote.",
+    here: "The road forks here on open grassland, green verges thick on every side and no roof in sight."
+  },
+  rn7: {
+    name: "Mossy Road", kind: "road", x: -11.284615384615385, y: -9.946153846153846,
+    territory: "gault",
+    danger: 2,
+    climate: -1,
+    walk: "The track runs damp and shaded here, moss thickening the stones along its edge, forking toward Harwick, Oatcroft, and the road east to Maple Turn.",
+    info: "A junction on open ground, named for the moss greening the stones along it, where the way splits toward Harwick, Oatcroft and Maple Turn.",
+    here: "The road forks here, moss greening the stones at its edge, with open ground stretching away on every side."
+  },
+  rn8: {
+    name: "Maple Turn", kind: "road", x: -10.23442076923077, y: -10.001266153846155,
+    territory: "gault",
+    danger: 2,
+    climate: -1,
+    walk: "The road bends here beneath a stand of maples, with ways running on toward Fold Crossing, Esthorpe, Millstow, and west along Mossy Road.",
+    info: "A bend in the road beneath a stand of maples, where the way splits toward Fold Crossing, Esthorpe, Millstow and Mossy Road to the west.",
+    here: "The road bends here under a stand of maples, open grass rolling away on every side."
+  },
   };
 
   // Each way between two tiles, in miles. Every way works both directions.
@@ -623,7 +812,44 @@
     // The small forest trails drawn through Westwood (the user, 2026-11-01): from the road tile down to Westwood, and on to Roi's Grove (both hidden until their flags are set, like the tracks to them).
     ["nw", "ww", 5, "track"],
     ["ww", "rg", 6, "track"],
-    ["rg", "wv", 7, "track"]
+    ["rg", "wv", 7, "track"],
+    // House Gault's wider peerage (WESTERN_VALE_NOBILITY_PLAN.md, 2026-11-12): Dunmow, Harwick, Hartwell and their eight villages, now drawn (not hand-typed) in the "places" layer
+    // of web/mygame/overworld-art/worldmap.svg -- see tools/gen_overworld_places.js. Do not hand-edit the block below; draw the road in Inkscape and run that script instead.
+    // GEN:BEGIN places
+    ["bm", "rn1", 6],
+    ["rn1", "fn", 7],
+    ["rn1", "rn2", 7],
+    ["rn2", "rn3", 8],
+    ["bm", "rn3", 8],
+    ["rn3", "fm", 7],
+    ["fw", "rn3", 7],
+    ["es", "fw", 7],
+    ["es", "rn2", 6],
+    ["cb", "hk", 7],
+    ["hk", "es", 6],
+    ["cb", "oc", 7],
+    ["rn2", "rn8", 6],
+    ["es", "rn8", 6],
+    ["hk", "rn7", 6],
+    ["rm", "dm", 7],
+    ["rm", "rn5", 7],
+    ["rn5", "ml", 7],
+    ["ml", "ox", 6],
+    ["rn8", "ml", 7],
+    ["ht", "ml", 7],
+    ["ht", "rn2", 6],
+    ["ht", "pc", 7],
+    ["fn", "pc", 7],
+    ["oc", "rn7", 7],
+    ["ad", "fw", 7],
+    ["ox", "rm", 7],
+    ["rn7", "rn8", 6],
+    ["dm", "ox", 6],
+    ["rn1", "ht", 7],
+    ["pc", "rn5", 8],
+    ["ox", "rn5", 6],
+    ["hk", "ad", 6],
+    // GEN:END places
   ];
 
   // Is a tile on the map yet? A tile with a requires (the name of a saved flag) is hidden, and cannot be routed to or through, until that flag is true. Read from the live stats, so it opens the moment the flag is set.

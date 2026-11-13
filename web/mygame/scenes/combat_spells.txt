@@ -73,6 +73,21 @@
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SPEND A PACT MAGIC SLOT (2026-11-12): Hex, Arms of Hadar, Armor of Agathys and Hellish Rebuke all
+*comment predate the Pact Magic pool-collapse above spend_spell_slot's own comment -- every warlock slot is the
+*comment same level, and that level (and which pool, warlock_spell_slots vs _2) rises with warlock level, so
+*comment these four kept spending the bare 1st-level pool even after it permanently zeroes at level 3. There is
+*comment no ssl_level to pass (a warlock never chooses a level the way spend_spell_slot's other callers do), so
+*comment this just spends from whichever pool refresh_class_resource_maxs actually left nonzero.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label spend_pact_slot
+*if (warlock_spell_slots_max_2 > 0)
+  *set warlock_spell_slots_2 - 1
+*else
+  *set warlock_spell_slots - 1
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment ARCANE WARD ON ABJURATION CAST (Abjurer, 2026-11-09, PHB'24 p172): called separately from each wizard
 *comment Abjuration spell's OWN slot-spend site (Shield and Absorb Elements in combat_dice.txt, Mage Armor in
 *comment equipment.txt) right after the slot is spent -- never folded into spend_spell_slot above, which every
@@ -224,7 +239,7 @@ ${fsh}
     *if ((race_cantrip_2 = "hex") and (not(hexblood_hex_used)))
       *set hexblood_hex_used true
     *else
-      *set warlock_spell_slots - 1
+      *gosub spend_pact_slot
   *set hex_active true
   *set hex_target_slot combat_active_target
   *set combat_cast_locked true
@@ -283,7 +298,7 @@ ${fsh}
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_arms_of_hadar
 *if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
-  *set warlock_spell_slots - 1
+  *gosub spend_pact_slot
   *temp aoh_d1 0
   *temp aoh_d2 0
   *rand aoh_d1 1 6
@@ -514,7 +529,7 @@ ${combat_player_dmg_roll_banner}
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_cast_agathys
 *if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
-  *set warlock_spell_slots - 1
+  *gosub spend_pact_slot
   *comment Temporary hit points never stack (5e): the ward gives 5 unless more are already held.
   *if (temp_hp < 5)
     *set temp_hp 5

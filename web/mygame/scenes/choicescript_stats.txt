@@ -551,6 +551,36 @@ Cast, read your abilities, or change interface settings. Rest and Wait are in th
   *set spell_cast_toast "${spell_cast_toast} ${dg_rest_light_text}"
 *finish
 
+*comment MAGICAL CUNNING (Warlock level 2, PHB'24 p154, 2026-11-12): the sidebar resource-pool button's one-shot,
+*comment same shape as codex_wait_now/codex_rest_now -- the button itself is only shown when PageGate.waitReason()
+*comment is "" (index.html), but this mirrors that gate server-side too, the same level codex_wait_now checks at,
+*comment in case a stale dossier reopens on a page that no longer allows it.
+*label codex_magical_cunning
+*if (combat_engaged)
+  *set spell_cast_toast "You cannot settle into a rite like this in the middle of a fight."
+  *finish
+*if ((not(character_class = "warlock")) or (character_level < 2))
+  *set spell_cast_toast "You have no such rite to perform."
+  *finish
+*if (magical_cunning_used)
+  *set spell_cast_toast "You have already performed the rite since your last Long Rest."
+  *finish
+*if (not((warlock_spell_slots < warlock_spell_slots_max) or (warlock_spell_slots_2 < warlock_spell_slots_max_2)))
+  *set spell_cast_toast "Your Pact Magic is already full."
+  *finish
+*if (not(vane_independent_operative))
+  *set spell_cast_toast "There is no time to sit idle yet. That comes once you are on your own."
+  *finish
+*if (not(wait_lock_reason = ""))
+  *set spell_cast_toast wait_lock_reason
+  *finish
+*gosub_scene character_progression do_magical_cunning
+*if (warlock_spell_slots_max_2 > 0)
+  *set spell_cast_toast "Magical Cunning: Pact Magic slots (2nd) ${warlock_spell_slots_2} / ${warlock_spell_slots_max_2}."
+*else
+  *set spell_cast_toast "Magical Cunning: Pact Magic slots ${warlock_spell_slots} / ${warlock_spell_slots_max}."
+*finish
+
 *label codex_levelup
 *if (combat_engaged)
   You cannot take a level in the middle of a fight.

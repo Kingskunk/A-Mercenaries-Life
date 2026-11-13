@@ -75,6 +75,7 @@ const MAP = {
   rage: "Action/Rage_Icon.webp",
   reckless_attack: "Weapon_action/Reckless_Attack_Icon.webp",
   bardic_inspiration: "Action/Bardic_Inspiration_Icon.webp",
+  magical_cunning: "Skill/Natural_Recovery_Icon.webp",   // Warlock level 2 (PHB'24 p154): no dedicated art in the library, this reads close enough
   dual_shot: "Weapon_action/Volley_Icon.webp",            // stand-in: a volley of arrows for loosing two shots at once
 
   // The two weapon buttons at the left of the bar. Keyed by hand and attack kind, not by an action name, because the label is the weapon's own name ("Attack with your

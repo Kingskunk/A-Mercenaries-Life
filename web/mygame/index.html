@@ -1528,6 +1528,19 @@ button#statSidebar .turnRow,
       } else {
         resourceHtml = slotRow("Pact Slots", s.warlock_spell_slots, s.warlock_spell_slots_max, " pact");
       }
+      // Magical Cunning (Warlock level 2, PHB'24 p154, 2026-11-12): once per Long Rest, a 1-minute rite regains
+      // half the live pool. Shown only once there is a level to have it, a use left, and something missing to
+      // give (mirrors Heroic Inspiration's "nothing to press" rule just below). Gated the same place the sidebar's
+      // Wait button is -- a 1-minute pause, not an hour -- rather than Rest's own reason (pagegate.js).
+      if (Number(s.character_level) >= 2 && !isTruthy(s.magical_cunning_used)) {
+        var mcMax = Number(s.warlock_spell_slots_max_2) > 0 ? Number(s.warlock_spell_slots_max_2) : Number(s.warlock_spell_slots_max);
+        var mcCur = Number(s.warlock_spell_slots_max_2) > 0 ? Number(s.warlock_spell_slots_2) : Number(s.warlock_spell_slots);
+        if (mcCur < mcMax) {
+          var mcReason = (window.PageGate && window.PageGate.waitReason) ? window.PageGate.waitReason() : "";
+          resourceHtml += "<button type=\"button\" class=\"spellCast\" data-spell-cast=\"codex_magical_cunning\"" + ((canOpenDossier() && !mcReason) ? "" : " disabled") +
+            " title=\"" + esc(mcReason || "A 1-minute rite: regain half your Pact Magic, rounded up, once per Long Rest.") + "\">Magical Cunning…</button>";
+        }
+      }
     } else if (s.character_class === "bard") {
       resourceHtml = slotRow("Spell Slots", s.bard_spell_slots, s.bard_spell_slots_max, "");
       if (Number(s.bard_spell_slots_max_2) > 0) {

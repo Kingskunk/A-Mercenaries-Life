@@ -198,6 +198,7 @@
 *if (character_class = "warlock")
   *set warlock_spell_slots warlock_spell_slots_max
   *set warlock_spell_slots_2 warlock_spell_slots_max_2
+  *set magical_cunning_used false
 *if (character_class = "wizard")
   *set wizard_spell_slots wizard_spell_slots_max
   *set wizard_spell_slots_2 wizard_spell_slots_max_2
@@ -377,6 +378,33 @@
   *else
     *set neglect_damage_fatigue 0
     *set fatigue_stage "Rested"
+*return
+
+*comment MAGICAL CUNNING (Warlock level 2, PHB'24 p154, 2026-11-12): once per Long Rest, a 1-minute rite regains
+*comment half the current Pact Magic pool, rounded up, capped at what is missing -- separate from a Short Rest
+*comment (which gives the warlock everything back): no hour spent, no short_rests_left charge, just the one
+*comment magical_cunning_used flag (restore_class_resources resets it). Callers (combat.txt's bonus-action gate,
+*comment choicescript_stats.txt's codex_magical_cunning) are expected to have already checked warlock, level 2+,
+*comment not yet used and something actually missing -- same trust-the-gate convention combat_spells.txt's
+*comment resolve_cast_* labels use. Reports how many slots it gave back in magical_cunning_gave (a *create'd
+*comment global: *temp cannot cross the *gosub_scene boundary both callers reach this through).
+*label do_magical_cunning
+*set magical_cunning_used true
+*temp mc_half 0
+*temp mc_missing 0
+*if (warlock_spell_slots_max_2 > 0)
+  *set mc_half ((warlock_spell_slots_max_2 + (warlock_spell_slots_max_2 modulo 2)) / 2)
+  *set mc_missing (warlock_spell_slots_max_2 - warlock_spell_slots_2)
+  *if (mc_half > mc_missing)
+    *set mc_half mc_missing
+  *set warlock_spell_slots_2 + mc_half
+*else
+  *set mc_half ((warlock_spell_slots_max + (warlock_spell_slots_max modulo 2)) / 2)
+  *set mc_missing (warlock_spell_slots_max - warlock_spell_slots)
+  *if (mc_half > mc_missing)
+    *set mc_half mc_missing
+  *set warlock_spell_slots + mc_half
+*set magical_cunning_gave mc_half
 *return
 
 *comment The one-line banner a resting place prints after do_short_rest. It reads the pools, so a replay prints the same line, and a

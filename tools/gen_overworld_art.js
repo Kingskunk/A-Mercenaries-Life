@@ -9,8 +9,10 @@
  * HOW TO DRAW. Open a file in web/mygame/overworld-art/. EVERY top-level layer or group in it that has a name is one feature, and that NAME is what overworld-data.js points at: a layer called
  * "Longshade Forest" becomes the feature "longshade-forest". So one map file holds as many features as you like, a layer each, which is how you want to draw -- the wood, the borders and the range
  * apart from one another and separately hidden. Draw as <path> shapes and keep the file's own coordinates: 130 SVG
- * units are one map unit, Port Valen is at 0,0, east is +x and SOUTH is +y (the usual SVG way). The layer called "guide" is the towns and roads, drawn faint so you can see where things are; it is locked and
- * is rewritten by `--guide`, so anything you draw in it is lost. A path with class="ridge" is drawn as a thin lighter line (a spine or a crest); any other path is a filled mountain block. Colours and
+ * units are one map unit, Port Valen is at 0,0, east is +x and SOUTH is +y (the usual SVG way). The layer called "guide" is a faint, read-only reference showing every current tile and road; it is
+ * locked and is rewritten by `--guide`, so anything you draw in it is lost. The layer called "places" is the one for tiles and roads themselves -- draw or move a town/village/fort/road there and
+ * run tools/gen_overworld_places.js, not this script, to write it into overworld-data.js; see that script's own header. Neither layer is terrain, so this script skips both. A path with class="ridge"
+ * is drawn as a thin lighter line (a spine or a crest); any other path is a filled mountain block. Colours and
  * opacity come from overworldmap.css (.ow-f-range), not from the SVG, so one place themes them all; width does too, UNLESS a feature's Description overrides it with a "Width: n" line.
  * The shape's name, kind and card come from the layer's own Object Properties (Ctrl+Shift+O): Label is the name, Title is the kind, and Description is the card -- with four lines read as
  * settings rather than text: "Travel: ..." is the line under the card, "Label: x,y" fixes the name's drawn position, "Width: n" fixes its line thickness, and "Click: off" keeps the name
@@ -198,7 +200,7 @@ function readFeatures(file) {
 
   topGroups(src).forEach((g) => {
     const label = g.a["inkscape:label"] || g.a.label || "";
-    if (g.a.id === "guide") return;                   // the tool's own layer of towns and roads
+    if (g.a.id === "guide" || g.a.id === "places") return; // the tool's own guide layer, and gen_overworld_places.js's input layer -- neither is terrain
     // SCENERY. Not everything drawn on a map is a thing you can ask about: waves on the open sea, a few trees along a road, a scatter of rocks. A group with NO name, or
     // one whose name begins with "_", is drawn and nothing more -- no card, no hover, no name lettered across it, no place in the legend. The two routes are the accident
     // and the intention: an unnamed group is usually a stray Ctrl+G, so it says so and carries on rather than stopping the build, while a leading underscore is someone

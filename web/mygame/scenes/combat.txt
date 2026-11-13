@@ -2725,7 +2725,7 @@
 *temp combat_can_hex false
 *if (combat_hex_orphaned)
   *set combat_can_hex true
-*elseif ((((held_hex) and (warlock_spell_slots > 0)) or ((race_cantrip_2 = "hex") and (not(hexblood_hex_used)))) and (not(hex_active)))
+*elseif ((((held_hex) and ((warlock_spell_slots > 0) or (warlock_spell_slots_2 > 0))) or ((race_cantrip_2 = "hex") and (not(hexblood_hex_used)))) and (not(hex_active)))
   *set combat_can_hex true
 *gosub combat_ally_hurt_check
 *comment Cure Wounds (Bard or Ranger, 2026-11-04): a slot of the caster's own pool and somebody wounded to lay a hand on. Reach is NOT asked here -- the spell is Touch, and
@@ -2833,7 +2833,7 @@
   *set combat_can_reckless true
 *comment Arms of Hadar (Warlock): a Pact Magic slot, the spell known, and a living enemy within reach.
 *temp combat_can_hadar false
-*if ((((character_class = "warlock") and (known_arms_of_hadar)) and (warlock_spell_slots > 0)) and (combat_player_actions_left > 0))
+*if ((((character_class = "warlock") and (known_arms_of_hadar)) and ((warlock_spell_slots > 0) or (warlock_spell_slots_2 > 0))) and (combat_player_actions_left > 0))
   *gosub combat_hadar_check
   *if (combat_hadar_ok)
     *set combat_can_hadar true
@@ -2973,6 +2973,11 @@
 *temp combat_can_arcane_ward_2 false
 *if (((wizard_subclass = "abjurer") and (arcane_ward_hp < arcane_ward_max)) and (wizard_spell_slots_2 > 0))
   *set combat_can_arcane_ward_2 true
+*comment Magical Cunning (Warlock level 2, PHB'24 p154, 2026-11-12): once per Long Rest, a bonus action regains
+*comment half the current Pact Magic pool -- no slot of its own to spend, so just one gate, not an upcast pair.
+*temp combat_can_magical_cunning false
+*if ((((character_class = "warlock") and (character_level >= 2)) and (not(magical_cunning_used))) and ((warlock_spell_slots < warlock_spell_slots_max) or (warlock_spell_slots_2 < warlock_spell_slots_max_2)))
+  *set combat_can_magical_cunning true
 *temp combat_bonus_available false
 *comment Blade Ward MUST be in this or-chain. It is what separates "bonus action still unspent" from
 *comment "nothing left to spend at all" for the auto-end check below -- leave it out and that check
@@ -2990,6 +2995,8 @@
 *if (combat_cunning)
   *set combat_bonus_available true
 *if ((combat_can_arcane_ward) or (combat_can_arcane_ward_2))
+  *set combat_bonus_available true
+*if (combat_can_magical_cunning)
   *set combat_bonus_available true
 *comment Movement option availability (2026-09-28): whether Push Forward/Fall Back should even show, checked
 *comment against EVERY living enemy, not just whichever one fight_pick_target (kill-priority, above) happened to
@@ -4166,7 +4173,7 @@
       *line_break
       *goto fight_bonus_spent
 
-  *if (((combat_player_actions_left > 0) and (((known_armor_of_agathys) and (warlock_spell_slots > 0)) and (not(agathys_active)))) and (not(spells_blocked)))
+  *if (((combat_player_actions_left > 0) and (((known_armor_of_agathys) and ((warlock_spell_slots > 0) or (warlock_spell_slots_2 > 0))) and (not(agathys_active)))) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Armor of Agathys][/b] Sheathe yourself in spectral frost that punishes melee strikes.
       *gosub_scene combat_spells resolve_cast_agathys
       A brittle casing of translucent, jagged rime coats your shoulders and arms, radiating bone-chilling cold. Any foe foolish enough to strike you will feel the frost shatter back against the blow.
@@ -4460,7 +4467,7 @@
       *line_break
       *goto fight_round_hub
 
-  *if ((((((combat_player_actions_left > 0) and (character_class = "warlock")) and (known_hellish_rebuke)) and (warlock_spell_slots > 0)) and ((not(rebuke_armed)) and (not(player_oa_used)))) and (not(spells_blocked)))
+  *if ((((((combat_player_actions_left > 0) and (character_class = "warlock")) and (known_hellish_rebuke)) and ((warlock_spell_slots > 0) or (warlock_spell_slots_2 > 0))) and ((not(rebuke_armed)) and (not(player_oa_used)))) and (not(spells_blocked)))
     # [b][Hellish Rebuke][/b] Hold a vengeful retort ready, to scorch whoever next wounds you.
       *set rebuke_armed true
       You bite down on a retort and hold it there, hot behind your teeth, ready to spit back at whoever next draws your blood.
@@ -4556,6 +4563,18 @@
       A strand of warding magic knits back into the ward around you, stronger for the deeper well it was drawn from.
       *line_break
       [b][🛡️ Arcane Ward: ${arcane_ward_hp} / ${arcane_ward_max} HP][/b]
+      *line_break
+      *goto fight_bonus_spent
+
+  *if ((combat_can_magical_cunning) and (combat_player_bonus_left > 0))
+    # [b][BONUS ACTION][/b] [b][Magical Cunning][/b] Perform a brief esoteric rite to claw back some of your Pact Magic.
+      *gosub_scene character_progression do_magical_cunning
+      You murmur through the rite in a single hurried breath, and a measure of your pact's power answers, flooding back into you.
+      *line_break
+      *if (warlock_spell_slots_max_2 > 0)
+        [b][🔮 Magical Cunning | Pact Magic slots (2nd) ${warlock_spell_slots_2} / ${warlock_spell_slots_max_2}][/b]
+      *else
+        [b][🔮 Magical Cunning | Pact Magic slots ${warlock_spell_slots} / ${warlock_spell_slots_max}][/b]
       *line_break
       *goto fight_bonus_spent
 
