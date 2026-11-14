@@ -956,14 +956,10 @@
   *set dss_permanent_free true
 *if (((dss_spell = "false_life") and (inv_fiendish_vigor)) and (not(spells_blocked)))
   *set dss_permanent_free true
-*if (character_class = "wizard")
-  *set dss_slots wizard_spell_slots
-*if (character_class = "bard")
-  *set dss_slots bard_spell_slots
+*comment The shared pool is 0 for a class with no slots; Pact Magic is its own pool.
+*set dss_slots spell_slots_1
 *if (character_class = "warlock")
-  *set dss_slots warlock_spell_slots
-*if (character_class = "ranger")
-  *set dss_slots ranger_spell_slots
+  *set dss_slots pact_slots
 *if ((dss_known) or (dss_permanent_free))
   *if (dss_permanent_free)
     *set dg_ss_cost "free"
@@ -1007,14 +1003,10 @@
 *if (dg_ss_can)
   *if (not(dg_ss_locked)) or (not(locked_dg_ss_page_id = page_id))
     *if (dg_ss_cost = "slot")
-      *if (character_class = "wizard")
-        *set wizard_spell_slots - 1
-      *if (character_class = "bard")
-        *set bard_spell_slots - 1
       *if (character_class = "warlock")
-        *set warlock_spell_slots - 1
-      *if (character_class = "ranger")
-        *set ranger_spell_slots - 1
+        *gosub_scene combat_spells spend_pact_slot
+      *else
+        *set spell_slots_1 - 1
     *if (dg_ss_cost = "scroll")
       *temp dsc_item ("scroll_" & dsc_spell)
       *gosub_scene equipment spend_consumable dsc_item

@@ -62,8 +62,7 @@
 *create warlock_cantrip_2_desc "You have called on no second power yet."
 *create warlock_spell "none"
 *create warlock_spell_desc "You have bound no true spell to your pact yet."
-*create warlock_spell_slots 1
-*create warlock_spell_slots_2 0
+*create pact_slots 1
 *create wizard_cantrip "none"
 *create wizard_cantrip_desc "You have mastered no working yet."
 *create wizard_cantrip_2 "none"
@@ -72,8 +71,10 @@
 *create wizard_cantrip_3_desc "You have mastered no third working yet."
 *create wizard_spell "none"
 *create wizard_spell_desc "Your spellbook holds nothing yet."
-*create wizard_spell_slots 2
-*create wizard_spell_slots_2 0
+*comment SPELL SLOTS (2026-11-14): one pool per slot level, shared by every class that has ordinary spell slots (wizard, bard, ranger). The class and level decide the
+*comment maxima (character_progression.txt refresh_class_resource_maxs), which also fills the pools once when the class is chosen. Pact Magic (warlock) is its own pool.
+*create spell_slots_1 0
+*create spell_slots_2 0
 *create bard_cantrip "none"
 *create bard_cantrip_desc "You have no trick ready yet."
 *create bard_cantrip_2 "none"
@@ -315,15 +316,12 @@
 *create false_life_why ""
 *comment One-shot spellbook cast result for the sidebar toast.
 *create spell_cast_toast ""
-*create bard_spell_slots 2
-*create bard_spell_slots_2 0
 *comment Bard Expertise uses proficient skill display names.
 *create bard_expertise_1 "none"
 *create bard_expertise_2 "none"
 *comment Ranger spells use Wisdom. Slots follow the half-caster progression.
 *create ranger_spell "none"
 *create ranger_spell_desc "You have no spell bound to your hunter's craft yet."
-*create ranger_spell_slots 0
 *create gender "man"
 *create age 19
 *create age_desc "Nineteen winters (A green youth)"
@@ -521,12 +519,14 @@
 *create fighter_second_wind_max 2
 *create fighter_action_surge_max 0
 *create barbarian_rage_max 2
-*create warlock_spell_slots_max 1
+*create pact_slots_max 1
 *comment Arcane Recovery is available once per long rest and restores the permitted spell-slot value on a short rest.
 *create wizard_arcane_recovery_used false
 *comment Wizard Scholar Expertise, stored as a proficient skill's display name.
 *create wizard_expertise_1 "none"
-*create wizard_spell_slots_max 2
+*comment The shared slot pools' maxima, and the class they were last filled for (refresh_class_resource_maxs fills them once when the class changes).
+*create spell_slots_max_1 0
+*create spell_slots_class ""
 *comment Arcane Tradition (wizard subclass), same pattern as warlock_patron below: "none" until chosen. Chosen automatically
 *comment at wizard level 3 (character_progression.txt do_level_up) since only one tradition (Abjurer) exists so far -- a real
 *comment choice page belongs here once a second one does. refresh_class_resource_maxs computes arcane_ward_max from it.
@@ -539,17 +539,12 @@
 *create arcane_ward_hp 0
 *create arcane_ward_max 0
 *create arcane_ward_created false
-*create bard_spell_slots_max 2
-*create ranger_spell_slots_max 0
-*comment 2ND-LEVEL SLOT POOLS (2026-11-08): a SEPARATE pool per level, not a rename of the one above -- every
-*comment existing spell is 1st level and keeps reading wizard_spell_slots/_max unchanged. Only Wizard and Bard
+*comment 2ND-LEVEL SLOT POOLS (2026-11-08): a SEPARATE pool per level. Only Wizard and Bard
 *comment (full casters) gain one at character level 3; Ranger (half-caster) does not until level 5, past this
-*comment game's current level-3 cap, so it gets none yet. Warlock's Pact Magic is NOT a second pool alongside the
-*comment first -- at level 3 its existing slots convert wholesale to 2nd level (character_progression.txt's
-*comment level-up grant zeroes warlock_spell_slots_max and moves the count to _max_2 instead of adding a tier).
-*create wizard_spell_slots_max_2 0
-*create bard_spell_slots_max_2 0
-*create warlock_spell_slots_max_2 0
+*comment game's current level-3 cap, so it gets none yet. Warlock's Pact Magic is ONE pool (pact_slots /
+*comment pact_slots_max) whose shared level (pact_slot_level) rises from 1 to 2 at warlock level 3.
+*create spell_slots_max_2 0
+*create pact_slot_level 1
 *comment Magical Cunning (Warlock level 2, PHB'24 p154, 2026-11-12): once per Long Rest, a 1-minute rite (not a
 *comment Short Rest -- no hour, no short_rests_left spent) regains half the current Pact Magic pool, rounded up.
 *create magical_cunning_used false
@@ -785,6 +780,9 @@
 *create spell_save_dc 8
 *comment Bare casting modifier for leveled-spell damage; update_dnd_stats owns the class-to-ability mapping.
 *create spell_damage_mod 0
+*comment The ability the character casts with ("int", "wis" or "cha") and its name for option text. update_dnd_stats sets both in the same class table as spell_save_dc; every spell attack roll reads casting_stat, so no spell names an ability itself.
+*create casting_stat "int"
+*create casting_stat_name "Intelligence"
 *create hp_current 12
 *create hp_max 12
 *create armor_class 13
@@ -4284,7 +4282,7 @@
 *comment UPCASTING (2026-11-08): the slot level a spell is actually being cast at. Model piece only -- nothing
 *comment sets or reads this yet. A spell's own choice body will default it to its own base level (no UI to ask
 *comment for anything higher exists yet), and only the level-2+ slot pools it would spend from exist so far
-*comment (wizard/bard/warlock_spell_slots_2, startup_parts/07_class_path.txt and 02_character_profile.txt). The
+*comment (spell_slots_2 and pact_slots/pact_slot_level, startup_parts/07_class_path.txt and 02_character_profile.txt). The
 *comment Magic Missile pilot is the first real consumer.
 *create combat_cast_at_level 0
 *comment Output of combat_range_name (combat.txt): the display name for whatever range number was just passed in

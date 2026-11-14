@@ -77,20 +77,30 @@
 *comment doubles it. A hand-set check_stat/check_skill pair that never goes through roll_skill_check adds nothing, so skill checks go through it.
 *set prof_bonus (2 + (((character_level - 1) - ((character_level - 1) modulo 4)) / 4))
 *comment Spell save DC (2026-09-27): 8 + proficiency + the caster's own spellcasting ability mod -- INT for
-*comment Wizard, WIS for Ranger, CHA for Warlock/Bard, no bonus for a class with no spellcasting stat (matches the dossier's own
+*comment Wizard, WIS for Ranger, CHA for Warlock/Bard, and a scroll reader's default for the rest (matches the dossier's own
 *comment ab_spell_dc, now the one durable place this formula lives instead of two).
-*temp uds_casting_mod 0
-*if (character_class = "wizard")
-  *set uds_casting_mod int_mod
+*comment CASTING ABILITY (2026-11-14): the class table below is the one place a class is matched to its ability. It sets casting_stat (and its name),
+*comment and the modifier is read from that, so the save DC, the damage modifier and every spell attack roll (combat.txt reads casting_stat) agree.
+*comment A subclass or feat that casts with another ability changes casting_stat here and nowhere else.
+*set casting_stat "int"
 *if ((character_class = "warlock") or (character_class = "bard"))
-  *set uds_casting_mod cha_mod
+  *set casting_stat "cha"
 *if (character_class = "ranger")
-  *set uds_casting_mod wis_mod
+  *set casting_stat "wis"
 *comment SPELL SCROLLS (the user, 2026-10-19): anyone can read a scroll, so a class with no spells has a default casting ability for the scroll's save DC and any modifier it adds: Fighter and Rogue use Intelligence, Barbarian uses Charisma.
-*if ((character_class = "fighter") or (character_class = "rogue"))
-  *set uds_casting_mod int_mod
 *if (character_class = "barbarian")
+  *set casting_stat "cha"
+*temp uds_casting_mod int_mod
+*set casting_stat_name "Intelligence"
+*if (casting_stat = "cha")
   *set uds_casting_mod cha_mod
+  *set casting_stat_name "Charisma"
+*if (casting_stat = "wis")
+  *set uds_casting_mod wis_mod
+  *set casting_stat_name "Wisdom"
+*comment Before a class is chosen there is no casting modifier at all, as before.
+*if (character_class = "none")
+  *set uds_casting_mod 0
 *set spell_save_dc ((8 + prof_bonus) + uds_casting_mod)
 *comment The bare modifier, kept as its own durable stat (2026-09-28) rather than being recomputed at each
 *comment spell site or read from uds_casting_mod -- that one is a *temp local to this label, and the spells that

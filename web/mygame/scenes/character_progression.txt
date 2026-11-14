@@ -83,6 +83,12 @@
 *comment level 2, 3 from level 11, 4 from level 17.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label refresh_class_resource_maxs
+*comment SHARED SPELL SLOTS (2026-11-14): one pool per slot level for every class with ordinary slots. The maxima start at 0 and the caster's own branch
+*comment below sets them, so a class with no slots has none. Pact Magic (warlock) keeps its own pool (pact_slots / pact_slots_max at pact_slot_level).
+*set spell_slots_max_1 0
+*set spell_slots_max_2 0
+*set pact_slots_max 0
+*set pact_slot_level 1
 *if (character_class = "fighter")
   *set fighter_second_wind_max 2
   *if (character_level >= 4)
@@ -106,33 +112,30 @@
   *if (character_level >= 17)
     *set barbarian_rage_max 6
 *if (character_class = "warlock")
-  *set warlock_spell_slots_max 1
+  *set pact_slots_max 1
   *if (character_level >= 2)
-    *set warlock_spell_slots_max 2
+    *set pact_slots_max 2
   *if (character_level >= 11)
-    *set warlock_spell_slots_max 3
+    *set pact_slots_max 3
   *if (character_level >= 17)
-    *set warlock_spell_slots_max 4
-  *comment Pact Magic (2026-11-08): NOT a second pool on top of the first -- all of a warlock's slots share one
-  *comment level, which rises with caster level. At level 3 the 2 slots above become 2nd level instead of staying
-  *comment 1st, so the 1st-level max is zeroed here rather than left standing alongside the new one.
-  *set warlock_spell_slots_max_2 0
+    *set pact_slots_max 4
+  *comment Pact Magic is one pool whose slot level rises with caster level (1 at warlock levels 1-2, 2 at level 3+).
+  *set pact_slot_level 1
   *if (character_level >= 3)
-    *set warlock_spell_slots_max 0
-    *set warlock_spell_slots_max_2 2
+    *set pact_slot_level 2
 *if (character_class = "rogue")
   *comment Sneak Attack, RAW: 1d6 at levels 1-2, 2d6 at 3-4, and one more d6 every two levels (half the level, rounded up).
   *set rogue_sneak_dice ((character_level + (character_level modulo 2)) / 2)
   *set rogue_sneak_attack_die (rogue_sneak_dice & "d6")
 *if (character_class = "wizard")
-  *set wizard_spell_slots_max 2
+  *set spell_slots_max_1 2
   *if (character_level >= 2)
-    *set wizard_spell_slots_max 3
+    *set spell_slots_max_1 3
   *if (character_level >= 3)
-    *set wizard_spell_slots_max 4
+    *set spell_slots_max_1 4
     *comment 2nd-level slots (2026-11-08), full-caster table: 2 at level 3, alongside the 1st-level pool above
     *comment (not a replacement -- see Warlock's own comment above for the one class where it is).
-    *set wizard_spell_slots_max_2 2
+    *set spell_slots_max_2 2
   *comment Arcane Ward (Abjurer, 2026-11-09): 2x wizard level + INT mod, RAW. Zero for every other wizard, so
   *comment nothing reads arcane_ward_max without also checking wizard_subclass elsewhere.
   *set arcane_ward_max 0
@@ -155,13 +158,13 @@
     *set bard_inspiration_started true
   *if (bard_inspiration_uses > bard_inspiration_max)
     *set bard_inspiration_uses bard_inspiration_max
-  *set bard_spell_slots_max 2
+  *set spell_slots_max_1 2
   *if (character_level >= 2)
-    *set bard_spell_slots_max 3
+    *set spell_slots_max_1 3
   *if (character_level >= 3)
-    *set bard_spell_slots_max 4
+    *set spell_slots_max_1 4
     *comment 2nd-level slots (2026-11-08), full-caster table: 2 at level 3, alongside the 1st-level pool above.
-    *set bard_spell_slots_max_2 2
+    *set spell_slots_max_2 2
 *if (character_class = "ranger")
   *comment Hunter's Mark free casts (the 2024 Favored Enemy -- see its *create comment, startup.txt): uses equal to
   *comment proficiency bonus, RAW, so this reads the existing prof_bonus rather than a level-threshold ladder
@@ -170,11 +173,18 @@
   *comment Hunter's Mark is always 1d6 (2024 rules), so there is no die ladder any more.
   *set favored_foe_die_sides 6
   *comment Spell slots (half caster): none at level 1, 2 at level 2, 3 at level 3.
-  *set ranger_spell_slots_max 0
+  *set spell_slots_max_1 0
   *if (character_level >= 2)
-    *set ranger_spell_slots_max 2
+    *set spell_slots_max_1 2
   *if (character_level >= 3)
-    *set ranger_spell_slots_max 3
+    *set spell_slots_max_1 3
+*comment The pools are filled once when the class is chosen (creation, or a dev preset that changes it); after that only rests, level-ups and casting move them.
+*comment Safe on a replay: the second pass finds the class already recorded.
+*if (not(spell_slots_class = character_class))
+  *set spell_slots_1 spell_slots_max_1
+  *set spell_slots_2 spell_slots_max_2
+  *set pact_slots pact_slots_max
+  *set spell_slots_class character_class
 *return
 
 *comment A long rest: temp hit points go, every pool refills to its maximum, and the Hexblood's Hex is ready again. Hit points are NOT
@@ -196,23 +206,19 @@
 *if (character_class = "barbarian")
   *set barbarian_rage_uses barbarian_rage_max
 *if (character_class = "warlock")
-  *set warlock_spell_slots warlock_spell_slots_max
-  *set warlock_spell_slots_2 warlock_spell_slots_max_2
+  *set pact_slots pact_slots_max
   *set magical_cunning_used false
+*set spell_slots_1 spell_slots_max_1
+*set spell_slots_2 spell_slots_max_2
 *if (character_class = "wizard")
-  *set wizard_spell_slots wizard_spell_slots_max
-  *set wizard_spell_slots_2 wizard_spell_slots_max_2
   *set wizard_arcane_recovery_used false
   *comment Arcane Ward (Abjurer): the ward itself, and the leftover HP it had, both lapse at a long rest -- it can be created again on the next Abjuration cast.
   *set arcane_ward_hp 0
   *set arcane_ward_created false
 *if (character_class = "bard")
-  *set bard_spell_slots bard_spell_slots_max
-  *set bard_spell_slots_2 bard_spell_slots_max_2
   *set bard_inspiration_uses bard_inspiration_max
 *if (character_class = "ranger")
   *set favored_foe_uses favored_foe_max
-  *set ranger_spell_slots ranger_spell_slots_max
 *if (race = "hexblood")
   *set hexblood_hex_used false
 *comment A long rest is when a preparing class chooses what it carries. Until the player has a way to choose, this carries as much of the book as
@@ -252,19 +258,19 @@
   *if (fighter_action_surge_uses < fighter_action_surge_max)
     *set sr_piece "Action Surge"
     *gosub short_rest_add_piece
-*if ((character_class = "warlock") and ((warlock_spell_slots < warlock_spell_slots_max) or (warlock_spell_slots_2 < warlock_spell_slots_max_2)))
+*if ((character_class = "warlock") and (pact_slots < pact_slots_max))
   *set sr_piece "Pact Magic slots"
   *gosub short_rest_add_piece
 *if ((character_class = "bard") and (bard_inspiration_uses < bard_inspiration_max))
   *set sr_piece "Bardic Inspiration"
   *gosub short_rest_add_piece
-*if ((character_class = "bard") and ((bard_spell_slots < bard_spell_slots_max) or (bard_spell_slots_2 < bard_spell_slots_max_2)))
+*if ((character_class = "bard") and ((spell_slots_1 < spell_slots_max_1) or (spell_slots_2 < spell_slots_max_2)))
   *set sr_piece "spell slots"
   *gosub short_rest_add_piece
-*if ((character_class = "wizard") and ((wizard_spell_slots < wizard_spell_slots_max) or (wizard_spell_slots_2 < wizard_spell_slots_max_2)))
+*if ((character_class = "wizard") and ((spell_slots_1 < spell_slots_max_1) or (spell_slots_2 < spell_slots_max_2)))
   *set sr_piece "spell slots"
   *gosub short_rest_add_piece
-*if ((character_class = "ranger") and (ranger_spell_slots < ranger_spell_slots_max))
+*if ((character_class = "ranger") and (spell_slots_1 < spell_slots_max_1))
   *set sr_piece "spell slots"
   *gosub short_rest_add_piece
 *comment FATIGUE RELIEF (2026-11-07, the user's call): the one give-back every class gets, since a class with every pool full otherwise had no reason to ever press this button outside a dungeon. minutes_since_rest ticks
@@ -321,45 +327,29 @@
     *set fighter_second_wind_uses + 1
   *set fighter_action_surge_uses fighter_action_surge_max
 *if (character_class = "warlock")
-  *set warlock_spell_slots warlock_spell_slots_max
-  *set warlock_spell_slots_2 warlock_spell_slots_max_2
+  *set pact_slots pact_slots_max
 *if (character_class = "bard")
   *set bard_inspiration_uses bard_inspiration_max
-*comment Half of the spell slots, rounded up (all slots are first level here, so that many slots), capped at what is missing. Each pool is written out by name: the quicktest walks every branch,
-*comment so a variable name built from the class (it would be "none_spell_slots" for a class-less character) fails there.
+*comment Half of the spell slots of each level, rounded up, capped at what is missing.
 *temp sr_half 0
-*if (character_class = "wizard")
-  *set sr_half ((wizard_spell_slots_max + (wizard_spell_slots_max modulo 2)) / 2)
-  *if (sr_half > (wizard_spell_slots_max - wizard_spell_slots))
-    *set sr_half (wizard_spell_slots_max - wizard_spell_slots)
-  *set wizard_spell_slots + sr_half
-  *comment 2nd-level pool (2026-11-08): the same half-back rule applied to its own max, independently of the 1st-level pool above.
-  *set sr_half ((wizard_spell_slots_max_2 + (wizard_spell_slots_max_2 modulo 2)) / 2)
-  *if (sr_half > (wizard_spell_slots_max_2 - wizard_spell_slots_2))
-    *set sr_half (wizard_spell_slots_max_2 - wizard_spell_slots_2)
-  *set wizard_spell_slots_2 + sr_half
-*if (character_class = "bard")
-  *set sr_half ((bard_spell_slots_max + (bard_spell_slots_max modulo 2)) / 2)
-  *if (sr_half > (bard_spell_slots_max - bard_spell_slots))
-    *set sr_half (bard_spell_slots_max - bard_spell_slots)
-  *set bard_spell_slots + sr_half
-  *comment 2nd-level pool (2026-11-08): same rule, own max, independent of the 1st-level pool above.
-  *set sr_half ((bard_spell_slots_max_2 + (bard_spell_slots_max_2 modulo 2)) / 2)
-  *if (sr_half > (bard_spell_slots_max_2 - bard_spell_slots_2))
-    *set sr_half (bard_spell_slots_max_2 - bard_spell_slots_2)
-  *set bard_spell_slots_2 + sr_half
-*if (character_class = "ranger")
-  *set sr_half ((ranger_spell_slots_max + (ranger_spell_slots_max modulo 2)) / 2)
-  *if (sr_half > (ranger_spell_slots_max - ranger_spell_slots))
-    *set sr_half (ranger_spell_slots_max - ranger_spell_slots)
-  *set ranger_spell_slots + sr_half
-*if (((character_class = "wizard") and (not(wizard_arcane_recovery_used))) and (wizard_spell_slots < wizard_spell_slots_max))
+*comment The shared pools: a class with no slots has a maximum of 0, so nothing is given. Each level's pool gets half of its own maximum.
+*if (spell_slots_max_1 > 0)
+  *set sr_half ((spell_slots_max_1 + (spell_slots_max_1 modulo 2)) / 2)
+  *if (sr_half > (spell_slots_max_1 - spell_slots_1))
+    *set sr_half (spell_slots_max_1 - spell_slots_1)
+  *set spell_slots_1 + sr_half
+*if (spell_slots_max_2 > 0)
+  *set sr_half ((spell_slots_max_2 + (spell_slots_max_2 modulo 2)) / 2)
+  *if (sr_half > (spell_slots_max_2 - spell_slots_2))
+    *set sr_half (spell_slots_max_2 - spell_slots_2)
+  *set spell_slots_2 + sr_half
+*if (((character_class = "wizard") and (not(wizard_arcane_recovery_used))) and (spell_slots_1 < spell_slots_max_1))
   *comment Arcane Recovery, on top of the half above: slots whose combined level is up to half the Wizard level, rounded up. Every slot is first level, so that is this many slots, capped at what is still missing.
   *temp sr_ar ((character_level + (character_level modulo 2)) / 2)
-  *temp sr_missing (wizard_spell_slots_max - wizard_spell_slots)
+  *temp sr_missing (spell_slots_max_1 - spell_slots_1)
   *if (sr_ar > sr_missing)
     *set sr_ar sr_missing
-  *set wizard_spell_slots + sr_ar
+  *set spell_slots_1 + sr_ar
   *set wizard_arcane_recovery_used true
 *comment FATIGUE RELIEF: turns minutes_since_rest back by one debt-tick (240 min), floored at 0, then rebuilds neglect_damage_fatigue
 *comment and fatigue_stage from that new total exactly as advance_time derives them (calendar.txt), so a replay or a later sleep sees a
@@ -390,20 +380,11 @@
 *comment global: *temp cannot cross the *gosub_scene boundary both callers reach this through).
 *label do_magical_cunning
 *set magical_cunning_used true
-*temp mc_half 0
-*temp mc_missing 0
-*if (warlock_spell_slots_max_2 > 0)
-  *set mc_half ((warlock_spell_slots_max_2 + (warlock_spell_slots_max_2 modulo 2)) / 2)
-  *set mc_missing (warlock_spell_slots_max_2 - warlock_spell_slots_2)
-  *if (mc_half > mc_missing)
-    *set mc_half mc_missing
-  *set warlock_spell_slots_2 + mc_half
-*else
-  *set mc_half ((warlock_spell_slots_max + (warlock_spell_slots_max modulo 2)) / 2)
-  *set mc_missing (warlock_spell_slots_max - warlock_spell_slots)
-  *if (mc_half > mc_missing)
-    *set mc_half mc_missing
-  *set warlock_spell_slots + mc_half
+*temp mc_half ((pact_slots_max + (pact_slots_max modulo 2)) / 2)
+*temp mc_missing (pact_slots_max - pact_slots)
+*if (mc_half > mc_missing)
+  *set mc_half mc_missing
+*set pact_slots + mc_half
 *set magical_cunning_gave mc_half
 *return
 
@@ -422,19 +403,19 @@
   [b][🕐 Short Rest | Second Wind ${fighter_second_wind_uses} / ${fighter_second_wind_max}@{(fighter_action_surge_max > 0)  · Action Surge ${fighter_action_surge_uses} / ${fighter_action_surge_max}|}][/b]
 *if (character_class = "warlock")
   *line_break
-  *if (warlock_spell_slots_max_2 > 0)
-    [b][🕐 Short Rest | Pact Magic slots (2nd) ${warlock_spell_slots_2} / ${warlock_spell_slots_max_2}][/b]
+  *if (pact_slot_level >= 2)
+    [b][🕐 Short Rest | Pact Magic slots (2nd) ${pact_slots} / ${pact_slots_max}][/b]
   *else
-    [b][🕐 Short Rest | Pact Magic slots ${warlock_spell_slots} / ${warlock_spell_slots_max}][/b]
+    [b][🕐 Short Rest | Pact Magic slots ${pact_slots} / ${pact_slots_max}][/b]
 *if (character_class = "bard")
   *line_break
-  [b][🕐 Short Rest | Bardic Inspiration ${bard_inspiration_uses} / ${bard_inspiration_max} | Spell slots ${bard_spell_slots} / ${bard_spell_slots_max}@{(bard_spell_slots_max_2 > 0)  · + 2nd ${bard_spell_slots_2} / ${bard_spell_slots_max_2}|}][/b]
+  [b][🕐 Short Rest | Bardic Inspiration ${bard_inspiration_uses} / ${bard_inspiration_max} | Spell slots ${spell_slots_1} / ${spell_slots_max_1}@{(spell_slots_max_2 > 0)  · + 2nd ${spell_slots_2} / ${spell_slots_max_2}|}][/b]
 *if (character_class = "wizard")
   *line_break
-  [b][🕐 Short Rest | Spell slots ${wizard_spell_slots} / ${wizard_spell_slots_max}@{(wizard_spell_slots_max_2 > 0)  · + 2nd ${wizard_spell_slots_2} / ${wizard_spell_slots_max_2}|}][/b]
-*if ((character_class = "ranger") and (ranger_spell_slots_max > 0))
+  [b][🕐 Short Rest | Spell slots ${spell_slots_1} / ${spell_slots_max_1}@{(spell_slots_max_2 > 0)  · + 2nd ${spell_slots_2} / ${spell_slots_max_2}|}][/b]
+*if ((character_class = "ranger") and (spell_slots_max_1 > 0))
   *line_break
-  [b][🕐 Short Rest | Spell slots ${ranger_spell_slots} / ${ranger_spell_slots_max}][/b]
+  [b][🕐 Short Rest | Spell slots ${spell_slots_1} / ${spell_slots_max_1}][/b]
 *return
 
 *label free_short_rest_banner
@@ -601,13 +582,9 @@
 *temp old_sw fighter_second_wind_max
 *temp old_as fighter_action_surge_max
 *temp old_rage barbarian_rage_max
-*temp old_pact warlock_spell_slots_max
-*temp old_pact_2 warlock_spell_slots_max_2
-*temp old_wiz wizard_spell_slots_max
-*temp old_wiz_2 wizard_spell_slots_max_2
-*temp old_bard bard_spell_slots_max
-*temp old_bard_2 bard_spell_slots_max_2
-*temp old_ranger ranger_spell_slots_max
+*temp old_pact pact_slots_max
+*temp old_slots_1 spell_slots_max_1
+*temp old_slots_2 spell_slots_max_2
 *set character_level (level_up_from + 1)
 *comment Arcane Tradition (2026-11-09): set BEFORE update_dnd_stats, not after like the other per-level hooks below --
 *comment refresh_class_resource_maxs (called by update_dnd_stats) reads wizard_subclass to size arcane_ward_max, so the
@@ -621,18 +598,9 @@
 *set fighter_second_wind_uses (fighter_second_wind_uses + (fighter_second_wind_max - old_sw))
 *set fighter_action_surge_uses (fighter_action_surge_uses + (fighter_action_surge_max - old_as))
 *set barbarian_rage_uses (barbarian_rage_uses + (barbarian_rage_max - old_rage))
-*comment Pact Magic's 1st-level pool can SHRINK on this level-up (level 3 zeroes it in favor of the 2nd-level
-*comment pool, character_progression.txt's slot-grant block above) -- clamped at 0 so a negative delta cannot
-*comment carry the current count negative; the 2nd-level pool's own delta (always growing so far) picks it up.
-*set warlock_spell_slots (warlock_spell_slots + (warlock_spell_slots_max - old_pact))
-*if (warlock_spell_slots < 0)
-  *set warlock_spell_slots 0
-*set warlock_spell_slots_2 (warlock_spell_slots_2 + (warlock_spell_slots_max_2 - old_pact_2))
-*set wizard_spell_slots (wizard_spell_slots + (wizard_spell_slots_max - old_wiz))
-*set wizard_spell_slots_2 (wizard_spell_slots_2 + (wizard_spell_slots_max_2 - old_wiz_2))
-*set bard_spell_slots (bard_spell_slots + (bard_spell_slots_max - old_bard))
-*set bard_spell_slots_2 (bard_spell_slots_2 + (bard_spell_slots_max_2 - old_bard_2))
-*set ranger_spell_slots (ranger_spell_slots + (ranger_spell_slots_max - old_ranger))
+*set pact_slots (pact_slots + (pact_slots_max - old_pact))
+*set spell_slots_1 (spell_slots_1 + (spell_slots_max_1 - old_slots_1))
+*set spell_slots_2 (spell_slots_2 + (spell_slots_max_2 - old_slots_2))
 *gosub refresh_level_up_progress
 *return
 
@@ -1934,7 +1902,7 @@ And the second.
 *label level_up_ranger_2
 *gosub_scene character_progression learn_spell "ranger" "hunters_mark" "Hunter's Mark—a long look, and one creature becomes your quarry. For a time every weapon hit on it lands truer, and you can pick the mark up and set it on a new quarry the moment the first one falls."
 *line_break
-[b][⭐ New: Spellcasting][/b] Wisdom is your casting ability, and you now have ${ranger_spell_slots} first-level spell slots. A Short Rest restores half your maximum slots, rounded up; a Long Rest restores them all. Hunter's Mark is always ready, and once your free casts are gone a slot can pay for it.
+[b][⭐ New: Spellcasting][/b] Wisdom is your casting ability, and you now have ${spell_slots_1} first-level spell slots. A Short Rest restores half your maximum slots, rounded up; a Long Rest restores them all. Hunter's Mark is always ready, and once your free casts are gone a slot can pay for it.
 *line_break
 Two more workings come to you from long hours reading the wild. Choose the first.
 
@@ -2431,19 +2399,19 @@ And a second.
   [b][Rage ${barbarian_rage_uses} / ${barbarian_rage_max}][/b]
 *if (character_class = "warlock")
   *line_break
-  *if (warlock_spell_slots_max_2 > 0)
-    [b][Pact Magic slots (2nd) ${warlock_spell_slots_2} / ${warlock_spell_slots_max_2}][/b]
+  *if (pact_slot_level >= 2)
+    [b][Pact Magic slots (2nd) ${pact_slots} / ${pact_slots_max}][/b]
   *else
-    [b][Pact Magic slots ${warlock_spell_slots} / ${warlock_spell_slots_max}][/b]
+    [b][Pact Magic slots ${pact_slots} / ${pact_slots_max}][/b]
 *if (character_class = "wizard")
   *line_break
-  [b][Spell slots ${wizard_spell_slots} / ${wizard_spell_slots_max}@{(wizard_spell_slots_max_2 > 0)  · + 2nd ${wizard_spell_slots_2} / ${wizard_spell_slots_max_2}|}][/b]
+  [b][Spell slots ${spell_slots_1} / ${spell_slots_max_1}@{(spell_slots_max_2 > 0)  · + 2nd ${spell_slots_2} / ${spell_slots_max_2}|}][/b]
 *if (character_class = "bard")
   *line_break
-  [b][Spell slots ${bard_spell_slots} / ${bard_spell_slots_max}@{(bard_spell_slots_max_2 > 0)  · + 2nd ${bard_spell_slots_2} / ${bard_spell_slots_max_2}|}][/b]
-*if ((character_class = "ranger") and (ranger_spell_slots_max > 0))
+  [b][Spell slots ${spell_slots_1} / ${spell_slots_max_1}@{(spell_slots_max_2 > 0)  · + 2nd ${spell_slots_2} / ${spell_slots_max_2}|}][/b]
+*if ((character_class = "ranger") and (spell_slots_max_1 > 0))
   *line_break
-  [b][Spell slots ${ranger_spell_slots} / ${ranger_spell_slots_max}][/b]
+  [b][Spell slots ${spell_slots_1} / ${spell_slots_max_1}][/b]
 *return
 
 *comment Consumables (the Saint Althea's Water phial, Ambrose's liniment and draught) are catalog items used through

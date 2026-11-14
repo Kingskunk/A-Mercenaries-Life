@@ -66,6 +66,10 @@ Cast, read your abilities, or change interface settings. Rest and Wait are in th
 *temp cc_hint "Spends 1 spell slot"
 *if (cc_cost = "free")
   *set cc_hint "No slot spent"
+*if (character_class = "warlock")
+  *set combat_cast_at_level pact_slot_level
+*else
+  *set combat_cast_at_level 1
 *gosub_scene combat_spells false_life_cast_check
 *temp cl_can false_life_can_cast
 *temp cl_cost false_life_cost
@@ -361,11 +365,12 @@ Cast, read your abilities, or change interface settings. Rest and Wait are in th
 *if (combat_engaged)
   *set spell_cast_toast "You cannot work a spell like this in the middle of a fight."
   *finish
-*comment UPCASTING (2026-11-08): this quick-cast path never offers a level choice -- forced to 1st level always,
-*comment regardless of what a stale combat_cast_at_level might otherwise hold. The in-combat "False Life: 2nd
-*comment level" option is the only way to spend a better slot on it; see [[project_spell_upcasting]] memory for
-*comment why this one was deliberately left out of scope.
-*set combat_cast_at_level 1
+*comment UPCASTING (2026-11-08): non-warlocks on this quick-cast path always cast at 1st level (no level choice);
+*comment a warlock's Pact Magic slots share pact_slot_level, so False Life quick-casts at pact_slot_level.
+*if (character_class = "warlock")
+  *set combat_cast_at_level pact_slot_level
+*else
+  *set combat_cast_at_level 1
 *gosub_scene combat_spells false_life_cast_check
 *if (false_life_can_cast)
   *gosub_scene combat_spells cast_false_life
@@ -565,7 +570,7 @@ Cast, read your abilities, or change interface settings. Rest and Wait are in th
 *if (magical_cunning_used)
   *set spell_cast_toast "You have already performed the rite since your last Long Rest."
   *finish
-*if (not((warlock_spell_slots < warlock_spell_slots_max) or (warlock_spell_slots_2 < warlock_spell_slots_max_2)))
+*if (pact_slots >= pact_slots_max)
   *set spell_cast_toast "Your Pact Magic is already full."
   *finish
 *if (not(vane_independent_operative))
@@ -575,10 +580,10 @@ Cast, read your abilities, or change interface settings. Rest and Wait are in th
   *set spell_cast_toast wait_lock_reason
   *finish
 *gosub_scene character_progression do_magical_cunning
-*if (warlock_spell_slots_max_2 > 0)
-  *set spell_cast_toast "Magical Cunning: Pact Magic slots (2nd) ${warlock_spell_slots_2} / ${warlock_spell_slots_max_2}."
+*if (pact_slot_level >= 2)
+  *set spell_cast_toast "Magical Cunning: Pact Magic slots (2nd) ${pact_slots} / ${pact_slots_max}."
 *else
-  *set spell_cast_toast "Magical Cunning: Pact Magic slots ${warlock_spell_slots} / ${warlock_spell_slots_max}."
+  *set spell_cast_toast "Magical Cunning: Pact Magic slots ${pact_slots} / ${pact_slots_max}."
 *finish
 
 *label codex_levelup
@@ -859,19 +864,19 @@ You change into it and settle the fit.
   [b]◈ 1ST-LEVEL SPELLS & SLOTS[/b]
   *if (not(wizard_spell = "none"))
     *line_break
-    • [b]Wizard Spell Slots: ${wizard_spell_slots}/${wizard_spell_slots_max}@{(wizard_spell_slots_max_2 > 0)  · · 2nd: ${wizard_spell_slots_2}/${wizard_spell_slots_max_2}|}[/b] — a Short Rest restores half each pool, rounded up; a Long Rest restores all. Arcane Recovery may restore additional slots once per Long Rest.
+    • [b]Wizard Spell Slots: ${spell_slots_1}/${spell_slots_max_1}@{(spell_slots_max_2 > 0)  · · 2nd: ${spell_slots_2}/${spell_slots_max_2}|}[/b] — a Short Rest restores half each pool, rounded up; a Long Rest restores all. Arcane Recovery may restore additional slots once per Long Rest.
   *if (not(warlock_spell = "none"))
     *line_break
-    *if (warlock_spell_slots_max_2 > 0)
-      • [b]Warlock Pact Magic Slots: ${warlock_spell_slots_2}/${warlock_spell_slots_max_2} (2nd level)[/b] — a Short or Long Rest restores all.
+    *if (pact_slot_level >= 2)
+      • [b]Warlock Pact Magic Slots: ${pact_slots}/${pact_slots_max} (2nd level)[/b] — a Short or Long Rest restores all.
     *else
-      • [b]Warlock Pact Magic Slots: ${warlock_spell_slots}/${warlock_spell_slots_max}[/b] — a Short or Long Rest restores all.
+      • [b]Warlock Pact Magic Slots: ${pact_slots}/${pact_slots_max}[/b] — a Short or Long Rest restores all.
   *if (((not(bard_spell = "none")) or (not(bard_spell_2 = "none"))) or (not(bard_spell_3 = "none")))
     *line_break
-    • [b]Bard Spell Slots: ${bard_spell_slots}/${bard_spell_slots_max}@{(bard_spell_slots_max_2 > 0)  · · 2nd: ${bard_spell_slots_2}/${bard_spell_slots_max_2}|}[/b] — a Short Rest restores half each pool, rounded up; a Long Rest restores all.
+    • [b]Bard Spell Slots: ${spell_slots_1}/${spell_slots_max_1}@{(spell_slots_max_2 > 0)  · · 2nd: ${spell_slots_2}/${spell_slots_max_2}|}[/b] — a Short Rest restores half each pool, rounded up; a Long Rest restores all.
   *if (not(ranger_spell = "none"))
     *line_break
-    • [b]Ranger Spell Slots: ${ranger_spell_slots}/${ranger_spell_slots_max}[/b] — a Short Rest restores half the pool, rounded up; a Long Rest restores all.
+    • [b]Ranger Spell Slots: ${spell_slots_1}/${spell_slots_max_1}[/b] — a Short Rest restores half the pool, rounded up; a Long Rest restores all.
   *comment GEN:BEGIN spell_book_cards -- generated by tools/gen_spell_book.js from tools/spell_book.json; edit the book, not this block
   *gosub book_print_cards "wizard_spell" 12
   *gosub book_print_cards "warlock_spell" 6

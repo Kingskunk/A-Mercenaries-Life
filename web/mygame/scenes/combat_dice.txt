@@ -599,7 +599,7 @@ ${combat_player_dmg_roll_banner}
   *comment Arming reserves neither resource. If the wizard spent their last slot on another spell or used their
   *comment reaction on an opportunity attack after arming, the held Shield is no longer executable.
   *if (shield_armed)
-    *if (((wizard_spell_slots <= 0) and (wizard_spell_slots_2 <= 0)) or (player_oa_used))
+    *if (((spell_slots_1 <= 0) and (spell_slots_2 <= 0)) or (player_oa_used))
       *set shield_armed false
   *comment Shield is a reaction "when you are hit", but it should only spend its slot when the +5 can actually
   *comment change that hit to a miss. A hit that still meets the Shielded AC (or a natural 20) leaves Shield
@@ -615,16 +615,16 @@ ${combat_player_dmg_roll_banner}
       *else
         *set cea_shield_can_block true
   *gosub combat_can_react "player" 0
-  *if (((((cea_shield_can_block) and (shield_armed)) and (not(shield_active))) and (combat_can_react_ok)) and ((wizard_spell_slots > 0) or (wizard_spell_slots_2 > 0)))
+  *if (((((cea_shield_can_block) and (shield_armed)) and (not(shield_active))) and (combat_can_react_ok)) and ((spell_slots_1 > 0) or (spell_slots_2 > 0)))
     *set shield_armed false
     *set shield_active true
     *comment UPCASTING (2026-11-08, the user's call): no mechanical difference at 2nd level -- Shield's only
     *comment reason to spend a higher slot is not wasting the cast when the 1st-level pool is already empty, so
     *comment this prefers it and only falls back to the 2nd-level pool when it has nothing left.
     *temp cea_shield_level 1
-    *if (wizard_spell_slots <= 0)
+    *if (spell_slots_1 <= 0)
       *set cea_shield_level 2
-    *gosub_scene combat_spells spend_spell_slot "wizard" cea_shield_level
+    *gosub_scene combat_spells spend_spell_slot cea_shield_level
     *gosub_scene combat_spells arcane_ward_on_abjuration_cast cea_shield_level
     *set player_oa_used true
     *set combat_shield_triggered true
@@ -702,19 +702,19 @@ ${combat_player_dmg_roll_banner}
       *set cae_absorb_type combat_enemy_extra_dmg_type
     *gosub combat_can_react "player" 0
     *temp cae_slot_ok false
-    *if ((character_class = "wizard") and (wizard_spell_slots > 0))
+    *if ((character_class = "wizard") and (spell_slots_1 > 0))
       *set cae_slot_ok true
-    *if ((character_class = "ranger") and (ranger_spell_slots > 0))
+    *if ((character_class = "ranger") and (spell_slots_1 > 0))
       *set cae_slot_ok true
     *if ((((absorb_elements_armed) and (not(cae_absorb_type = ""))) and (combat_can_react_ok)) and (cae_slot_ok))
       *set combat_absorb_triggered true
       *set absorb_elements_armed false
       *set absorb_elements_dmg_type cae_absorb_type
       *if (character_class = "wizard")
-        *set wizard_spell_slots - 1
+        *set spell_slots_1 - 1
         *gosub_scene combat_spells arcane_ward_on_abjuration_cast 1
       *else
-        *set ranger_spell_slots - 1
+        *set spell_slots_1 - 1
       *set player_oa_used true
       *comment Arms the melee rider for the player's own next hit (resolve_player_weapon_hit, this file) -- a
       *comment weapon attack only, RAW, and one-shot: that label clears the sides back to 0 once it fires.

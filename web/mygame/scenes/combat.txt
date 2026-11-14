@@ -1325,14 +1325,65 @@
   *set spell_range_tag "ranged"
 *if (check_skill = "Ray of Frost")
   *set spell_range_tag "ranged"
+*if (check_skill = "Ray of Sickness")
+  *set spell_range_tag "ranged"
 *if (check_skill = "Eldritch Blast")
   *set spell_range_tag "ranged"
 *if (check_skill = "Chill Touch")
   *set spell_range_tag "ranged"
 *if (check_skill = "Vicious Mockery")
   *set spell_range_tag "ranged"
+*if (check_skill = "Poison Spray")
+  *set spell_range_tag "ranged"
 *if (check_skill = "Shocking Grasp")
   *set spell_range_tag "touch"
+*if (check_skill = "Magic Missile")
+  *set spell_range_tag "ranged"
+*if (check_skill = "Dissonant Whispers")
+  *set spell_range_tag "ranged"
+*if (check_skill = "Cause Fear")
+  *set spell_range_tag "ranged"
+*if (check_skill = "Hex")
+  *set spell_range_tag "ranged"
+*if (check_skill = "Hunter's Mark")
+  *set spell_range_tag "ranged"
+*if (check_skill = "Bane")
+  *set spell_range_tag "ranged"
+*if (check_skill = "Grease")
+  *set spell_range_tag "ranged"
+*if (check_skill = "Ray of Frost")
+  *if (spell_range_at > combat_reach_medium)
+    *set spell_in_range false
+*if (check_skill = "Ray of Sickness")
+  *if (spell_range_at > combat_reach_medium)
+    *set spell_in_range false
+*if (check_skill = "Chill Touch")
+  *if (spell_range_at > combat_reach_medium)
+    *set spell_in_range false
+*if (check_skill = "Vicious Mockery")
+  *if (spell_range_at > combat_reach_medium)
+    *set spell_in_range false
+*if (check_skill = "Poison Spray")
+  *if (spell_range_at > combat_reach_medium)
+    *set spell_in_range false
+*if (check_skill = "Dissonant Whispers")
+  *if (spell_range_at > combat_reach_medium)
+    *set spell_in_range false
+*if (check_skill = "Cause Fear")
+  *if (spell_range_at > combat_reach_medium)
+    *set spell_in_range false
+*if (check_skill = "Hex")
+  *if (spell_range_at > combat_reach_medium)
+    *set spell_in_range false
+*if (check_skill = "Hunter's Mark")
+  *if (spell_range_at > combat_reach_medium)
+    *set spell_in_range false
+*if (check_skill = "Bane")
+  *if (spell_range_at > combat_reach_medium)
+    *set spell_in_range false
+*if (check_skill = "Grease")
+  *if (spell_range_at > combat_reach_medium)
+    *set spell_in_range false
 *if (spell_range_tag = "close")
   *if (spell_range_at <= 0)
     *set spell_in_range false
@@ -2513,13 +2564,11 @@
 *comment be spent after arming (for example, Magic Missile or an opportunity attack), so retire the stale arm before
 *comment the hub advertises +5 AC or decides which free options remain available.
 *if (shield_armed)
-  *if (((wizard_spell_slots <= 0) and (wizard_spell_slots_2 <= 0)) or (player_oa_used))
+  *if (((spell_slots_1 <= 0) and (spell_slots_2 <= 0)) or (player_oa_used))
     *set shield_armed false
 *if (absorb_elements_armed)
   *temp cae_still_ok false
-  *if ((character_class = "wizard") and (wizard_spell_slots > 0))
-    *set cae_still_ok true
-  *if ((character_class = "ranger") and (ranger_spell_slots > 0))
+  *if (spell_slots_1 > 0)
     *set cae_still_ok true
   *if ((not(cae_still_ok)) or (player_oa_used))
     *set absorb_elements_armed false
@@ -2725,22 +2774,19 @@
 *temp combat_can_hex false
 *if (combat_hex_orphaned)
   *set combat_can_hex true
-*elseif ((((held_hex) and ((warlock_spell_slots > 0) or (warlock_spell_slots_2 > 0))) or ((race_cantrip_2 = "hex") and (not(hexblood_hex_used)))) and (not(hex_active)))
+*elseif ((((held_hex) and (pact_slots > 0)) or ((race_cantrip_2 = "hex") and (not(hexblood_hex_used)))) and (not(hex_active)))
   *set combat_can_hex true
 *gosub combat_ally_hurt_check
 *comment Cure Wounds (Bard or Ranger, 2026-11-04): a slot of the caster's own pool and somebody wounded to lay a hand on. Reach is NOT asked here -- the spell is Touch, and
 *comment combat_friendly_validate is what refuses an ally who is standing too far off, so the player is told why rather than finding the option quietly gone.
 *temp combat_can_cure_wounds false
 *temp ccw_slots 0
-*if (character_class = "bard")
-  *set ccw_slots bard_spell_slots
-*if (character_class = "ranger")
-  *set ccw_slots ranger_spell_slots
+*set ccw_slots spell_slots_1
 *if ((known_cure_wounds) and (ccw_slots > 0))
   *if ((hp_current < hp_max) or (combat_ally_hurt_exists))
     *set combat_can_cure_wounds true
 *temp combat_can_healing_word false
-*if ((known_healing_word) and (bard_spell_slots > 0))
+*if ((known_healing_word) and (spell_slots_1 > 0))
   *if ((hp_current < hp_max) or (combat_ally_hurt_exists))
     *set combat_can_healing_word true
 *comment SPELL SCROLLS (the user, 2026-10-19; generated 2026-10-20): any character with the scroll can read it, with no slot. The catalog (tools/gear_catalog.json, effect.fight) says how each is offered; each Read option is shown only while its spell could be cast: the
@@ -2799,15 +2845,13 @@
 *comment the wizard still knows it and has both a spell slot and their reaction. shield_active is excluded because
 *comment the existing cast already lasts until the start of the wizard's next turn.
 *temp combat_can_shield false
-*if ((((((character_class = "wizard") and (known_shield)) and ((wizard_spell_slots > 0) or (wizard_spell_slots_2 > 0))) and (not(shield_armed))) and (not(shield_active))) and (not(player_oa_used)))
+*if ((((((character_class = "wizard") and (known_shield)) and ((spell_slots_1 > 0) or (spell_slots_2 > 0))) and (not(shield_armed))) and (not(shield_active))) and (not(player_oa_used)))
   *set combat_can_shield true
 *comment Absorb Elements (2026-11-08): a reaction like Shield, held for free until an incoming hit of one of its
 *comment five types can actually spend it. Wizard and Ranger share the spell, each off their own slot pool.
 *temp combat_can_absorb_elements false
 *temp cae_slot_ok false
-*if ((character_class = "wizard") and (wizard_spell_slots > 0))
-  *set cae_slot_ok true
-*if ((character_class = "ranger") and (ranger_spell_slots > 0))
+*if (spell_slots_1 > 0)
   *set cae_slot_ok true
 *if ((((known_absorb_elements) and (cae_slot_ok)) and (not(absorb_elements_armed))) and (not(player_oa_used)))
   *set combat_can_absorb_elements true
@@ -2833,7 +2877,7 @@
   *set combat_can_reckless true
 *comment Arms of Hadar (Warlock): a Pact Magic slot, the spell known, and a living enemy within reach.
 *temp combat_can_hadar false
-*if ((((character_class = "warlock") and (known_arms_of_hadar)) and ((warlock_spell_slots > 0) or (warlock_spell_slots_2 > 0))) and (combat_player_actions_left > 0))
+*if ((((character_class = "warlock") and (known_arms_of_hadar)) and (pact_slots > 0)) and (combat_player_actions_left > 0))
   *gosub combat_hadar_check
   *if (combat_hadar_ok)
     *set combat_can_hadar true
@@ -2841,10 +2885,11 @@
 *temp combat_can_fear false
 *if ((combat_player_actions_left > 0) and (known_cause_fear))
   *temp ccf_slots 0
-  *if (character_class = "wizard")
-    *set ccf_slots wizard_spell_slots
   *if (character_class = "warlock")
-    *set ccf_slots warlock_spell_slots
+    *if (pact_slot_level = 1)
+      *set ccf_slots pact_slots
+  *else
+    *set ccf_slots spell_slots_1
   *temp ccf_now {(("combat_enemy" & combat_active_target) & "_frightened")}
   *if ((ccf_slots > 0) and (ccf_now <= 0))
     *set combat_can_fear true
@@ -2857,16 +2902,17 @@
 *temp combat_can_fear_2 false
 *if ((combat_player_actions_left > 0) and (known_cause_fear))
   *temp ccf_slots_2 0
-  *if (character_class = "wizard")
-    *set ccf_slots_2 wizard_spell_slots_2
   *if (character_class = "warlock")
-    *set ccf_slots_2 warlock_spell_slots_2
+    *if (pact_slot_level >= 2)
+      *set ccf_slots_2 pact_slots
+  *else
+    *set ccf_slots_2 spell_slots_2
   *if (ccf_slots_2 > 0)
     *set combat_can_fear_2 true
 *comment Grease (Wizard, 2026-11-04): a wizard slot, an unspent action, the spell carried, and a living target whose footing is not already slick. The slick spreads under everything standing in the
 *comment target's own range band, so the gate only has to ask about the target itself -- resolve_cast_grease finds the rest.
 *temp combat_can_grease false
-*if ((((character_class = "wizard") and (known_grease)) and (wizard_spell_slots > 0)) and (combat_player_actions_left > 0))
+*if ((((character_class = "wizard") and (known_grease)) and (spell_slots_1 > 0)) and (combat_player_actions_left > 0))
   *temp cgr_now {(("combat_enemy" & combat_active_target) & "_greased")}
   *temp cgr_hp {(("combat_enemy" & combat_active_target) & "_hp")}
   *if ((cgr_now <= 0) and (cgr_hp > 0))
@@ -2875,7 +2921,7 @@
 *comment the caster -- same emanation Thunderwave and Arms of Hadar need, so it asks combat_hadar_check too.
 *temp combat_can_burning_hands false
 *if ((combat_player_actions_left > 0) and (known_burning_hands))
-  *if (wizard_spell_slots > 0)
+  *if (spell_slots_1 > 0)
     *gosub combat_hadar_check
     *if (combat_hadar_ok)
       *set combat_can_burning_hands true
@@ -2883,7 +2929,7 @@
 *comment _2 pool, not combat_can_burning_hands reused, since that one only ever asks about the 1st-level pool.
 *temp combat_can_burning_hands_2 false
 *if ((combat_player_actions_left > 0) and (known_burning_hands))
-  *if (wizard_spell_slots_2 > 0)
+  *if (spell_slots_2 > 0)
     *gosub combat_hadar_check
     *if (combat_hadar_ok)
       *set combat_can_burning_hands_2 true
@@ -2892,10 +2938,7 @@
 *temp combat_can_thunderwave false
 *if ((combat_player_actions_left > 0) and (known_thunderwave))
   *temp ctw_slots 0
-  *if (character_class = "wizard")
-    *set ctw_slots wizard_spell_slots
-  *if (character_class = "bard")
-    *set ctw_slots bard_spell_slots
+  *set ctw_slots spell_slots_1
   *if (ctw_slots > 0)
     *gosub combat_hadar_check
     *if (combat_hadar_ok)
@@ -2906,10 +2949,7 @@
 *temp combat_can_thunderwave_2 false
 *if ((combat_player_actions_left > 0) and (known_thunderwave))
   *temp ctw_slots_2 0
-  *if (character_class = "wizard")
-    *set ctw_slots_2 wizard_spell_slots_2
-  *if (character_class = "bard")
-    *set ctw_slots_2 bard_spell_slots_2
+  *set ctw_slots_2 spell_slots_2
   *if (ctw_slots_2 > 0)
     *gosub combat_hadar_check
     *if (combat_hadar_ok)
@@ -2920,13 +2960,13 @@
   *if (combat_dual_pair_ok)
     *set combat_can_dual_shot true
 *temp combat_can_ensnaring false
-*if (((known_ensnaring_strike) and (ranger_spell_slots > 0)) and (not(ensnaring_armed)))
+*if (((known_ensnaring_strike) and (spell_slots_1 > 0)) and (not(ensnaring_armed)))
   *set combat_can_ensnaring true
 *temp combat_can_hunters_mark false
 *if (character_class = "ranger")
   *if (combat_hm_orphaned)
     *set combat_can_hunters_mark true
-  *elseif (((favored_foe_uses > 0) or (ranger_spell_slots > 0)) and (not((combat_hm_live) and (favored_foe_target_slot = combat_active_target))))
+  *elseif (((favored_foe_uses > 0) or (spell_slots_1 > 0)) and (not((combat_hm_live) and (favored_foe_target_slot = combat_active_target))))
     *set combat_can_hunters_mark true
 *comment What the cast costs, for the button text: nothing to move an orphaned mark, a free cast while any are left, otherwise a spell slot.
 *temp chm_cost_text ""
@@ -2935,7 +2975,7 @@
 *elseif (favored_foe_uses > 0)
   *set chm_cost_text ", ${favored_foe_uses} free casts left"
 *else
-  *set chm_cost_text ", spending a spell slot (${ranger_spell_slots} left)"
+  *set chm_cost_text ", spending a spell slot (${spell_slots_1} left)"
 *temp combat_can_rage false
 *if (((character_class = "barbarian") and (not(is_raging))) and (barbarian_rage_uses > 0))
   *set combat_can_rage true
@@ -2968,15 +3008,15 @@
 *comment upcastable bonus action here -- spending the higher slot is a genuinely better trade (more HP), not
 *comment merely a fallback the way Shield's upcast is, so both levels stay separately offered.
 *temp combat_can_arcane_ward false
-*if (((wizard_subclass = "abjurer") and (arcane_ward_hp < arcane_ward_max)) and (wizard_spell_slots > 0))
+*if (((wizard_subclass = "abjurer") and (arcane_ward_hp < arcane_ward_max)) and (spell_slots_1 > 0))
   *set combat_can_arcane_ward true
 *temp combat_can_arcane_ward_2 false
-*if (((wizard_subclass = "abjurer") and (arcane_ward_hp < arcane_ward_max)) and (wizard_spell_slots_2 > 0))
+*if (((wizard_subclass = "abjurer") and (arcane_ward_hp < arcane_ward_max)) and (spell_slots_2 > 0))
   *set combat_can_arcane_ward_2 true
 *comment Magical Cunning (Warlock level 2, PHB'24 p154, 2026-11-12): once per Long Rest, a bonus action regains
 *comment half the current Pact Magic pool -- no slot of its own to spend, so just one gate, not an upcast pair.
 *temp combat_can_magical_cunning false
-*if ((((character_class = "warlock") and (character_level >= 2)) and (not(magical_cunning_used))) and ((warlock_spell_slots < warlock_spell_slots_max) or (warlock_spell_slots_2 < warlock_spell_slots_max_2)))
+*if ((((character_class = "warlock") and (character_level >= 2)) and (not(magical_cunning_used))) and (pact_slots < pact_slots_max))
   *set combat_can_magical_cunning true
 *temp combat_bonus_available false
 *comment Blade Ward MUST be in this or-chain. It is what separates "bonus action still unspent" from
@@ -3446,11 +3486,11 @@
   *if ((combat_can_true_strike) and (not(spells_blocked)))
     *comment Two options for one cantrip: the battle bar folds every "True Strike: X" pair into one slot and opens the variants on a click (battlehud.js). The Classic list shows both lines.
     *comment An ACTION, as in the 2024 rules: the cast IS the weapon attack, so it spends an attack exactly as the plain one does (resolve_weapon_attack_choice).
-    # [b][ACTION][/b] [b][True Strike: Weapon][/b] Strike with your ${weapon}, rolling with your @{(character_class = "wizard") Intelligence|Charisma} instead of your body, for the weapon's own damage.
+    # [b][ACTION][/b] [b][True Strike: Weapon][/b] Strike with your ${weapon}, rolling with your ${casting_stat_name} instead of your body, for the weapon's own damage.
       *set true_strike_on true
       *set true_strike_radiant false
       *goto fight_true_strike_go
-    # [b][ACTION][/b] [b][True Strike: Radiant][/b] Strike with your ${weapon}, rolling with your @{(character_class = "wizard") Intelligence|Charisma} instead of your body, but the blow burns with Radiant light.
+    # [b][ACTION][/b] [b][True Strike: Radiant][/b] Strike with your ${weapon}, rolling with your ${casting_stat_name} instead of your body, but the blow burns with Radiant light.
       *set true_strike_on true
       *set true_strike_radiant true
       *goto fight_true_strike_go
@@ -3764,7 +3804,7 @@
         *gosub_scene combat_movement fight_pick_target
         *set combat_current_spell_id "fire_bolt"
         *gosub_scene combat_prose pick_spell_flavor
-        *set check_stat "int"
+        *set check_stat casting_stat
         *set check_dc combat_enemy_ac
         *set check_skill "Fire Bolt"
         *set check_add_prof_bonus true
@@ -3810,7 +3850,7 @@
         *gosub_scene combat_movement fight_retarget_by_class "medium"
         *set combat_current_spell_id "ray_of_frost"
         *gosub_scene combat_prose pick_spell_flavor
-        *set check_stat "int"
+        *set check_stat casting_stat
         *set check_dc combat_enemy_ac
         *set check_skill "Ray of Frost"
         *set check_add_prof_bonus true
@@ -3848,12 +3888,12 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if ((((((combat_player_actions_left > 0) and (character_class = "wizard")) and (known_ray_of_sickness)) and (wizard_spell_slots > 0)) and (spell_reach_ok_ray_of_sickness)) and (not(spells_blocked)))
+  *if ((((((combat_player_actions_left > 0) and (character_class = "wizard")) and (known_ray_of_sickness)) and (spell_slots_1 > 0)) and (spell_reach_ok_ray_of_sickness)) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Ray of Sickness: 1st level][/b] Loose a sickly green ray of poison at ${combat_med_epithet}.
       *set combat_cast_at_level 1
       *goto fight_cast_ray_of_sickness
 
-  *if ((((((combat_player_actions_left > 0) and (character_class = "wizard")) and (known_ray_of_sickness)) and (wizard_spell_slots_2 > 0)) and (spell_reach_ok_ray_of_sickness)) and (not(spells_blocked)))
+  *if ((((((combat_player_actions_left > 0) and (character_class = "wizard")) and (known_ray_of_sickness)) and (spell_slots_2 > 0)) and (spell_reach_ok_ray_of_sickness)) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Ray of Sickness: 2nd level][/b] An empowered ray of poison: 3d8 instead of 2d8.
       *comment UPCASTING (2026-11-08): unlike Magic Missile's extra dart, Ray of Sickness's upcast changes the
       *comment damage FORMULA itself (RAW: +1d8 per slot level above 1st) -- resolve_cast_ray_of_sickness
@@ -3894,7 +3934,7 @@
         *comment enemy, so this is a no-op for every fight so far.
         *if (combat_enemy_metal_armor)
           *set advantage true
-        *set check_stat "int"
+        *set check_stat casting_stat
         *set check_dc combat_enemy_ac
         *set check_skill "Shocking Grasp"
         *set check_add_prof_bonus true
@@ -3943,7 +3983,7 @@
         *gosub_scene combat_movement fight_pick_target
         *set combat_current_spell_id "eldritch_blast"
         *gosub_scene combat_prose pick_spell_flavor
-        *set check_stat "cha"
+        *set check_stat casting_stat
         *set check_dc combat_enemy_ac
         *set check_skill "Eldritch Blast"
         *set check_add_prof_bonus true
@@ -4004,7 +4044,7 @@
         *gosub_scene combat_movement fight_retarget_by_class "medium"
         *set combat_current_spell_id "chill_touch"
         *gosub_scene combat_prose pick_spell_flavor
-        *set check_stat "cha"
+        *set check_stat casting_stat
         *set check_dc combat_enemy_ac
         *set check_skill "Chill Touch"
         *set check_add_prof_bonus true
@@ -4125,7 +4165,7 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if ((((combat_player_actions_left > 0) and (((character_class = "wizard") and (known_magic_missile)) and (wizard_spell_slots > 0)))) and (not(spells_blocked)))
+  *if ((((combat_player_actions_left > 0) and (((character_class = "wizard") and (known_magic_missile)) and (spell_slots_1 > 0)))) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Magic Missile: 1st level][/b] Loose three darts of force at targets you choose in the sidebar.
       *comment Arms targeting mode instead of casting immediately (2026-09-28) -- RAW lets the three darts be
       *comment split across up to three targets, not forced onto whichever single enemy fight_pick_target's
@@ -4142,7 +4182,7 @@
       *set combat_mm_darts_6 0
       *goto fight_target_magic_missile
 
-  *if ((((combat_player_actions_left > 0) and (((character_class = "wizard") and (known_magic_missile)) and (wizard_spell_slots_2 > 0)))) and (not(spells_blocked)))
+  *if ((((combat_player_actions_left > 0) and (((character_class = "wizard") and (known_magic_missile)) and (spell_slots_2 > 0)))) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Magic Missile: 2nd level][/b] Loose four darts of force, spending a 2nd-level slot.
       *comment UPCASTING PILOT (2026-11-08): Magic Missile's whole upcast, RAW, is "+1 dart per slot level above
       *comment 1st" -- no change to the per-dart damage math (still 1d4+1 each, resolve_magic_missile,
@@ -4173,7 +4213,7 @@
       *line_break
       *goto fight_bonus_spent
 
-  *if (((combat_player_actions_left > 0) and (((known_armor_of_agathys) and ((warlock_spell_slots > 0) or (warlock_spell_slots_2 > 0))) and (not(agathys_active)))) and (not(spells_blocked)))
+  *if (((combat_player_actions_left > 0) and (((known_armor_of_agathys) and (pact_slots > 0)) and (not(agathys_active)))) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Armor of Agathys][/b] Sheathe yourself in spectral frost that punishes melee strikes.
       *gosub_scene combat_spells resolve_cast_agathys
       A brittle casing of translucent, jagged rime coats your shoulders and arms, radiating bone-chilling cold. Any foe foolish enough to strike you will feel the frost shatter back against the blow.
@@ -4215,12 +4255,12 @@
       *line_break
       *goto fight_action_spent
 
-  *if (((((combat_player_actions_left > 0) and ((known_dissonant_whispers) and (bard_spell_slots > 0)))) and (spell_reach_ok_dissonant_whispers)) and (not(spells_blocked)))
+  *if (((((combat_player_actions_left > 0) and ((known_dissonant_whispers) and (spell_slots_1 > 0)))) and (spell_reach_ok_dissonant_whispers)) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Dissonant Whispers: 1st level][/b] A discordant psychic phrase wracks ${combat_med_epithet}.
       *set combat_cast_at_level 1
       *goto fight_cast_dissonant_whispers
 
-  *if (((((combat_player_actions_left > 0) and ((known_dissonant_whispers) and (bard_spell_slots_2 > 0)))) and (spell_reach_ok_dissonant_whispers)) and (not(spells_blocked)))
+  *if (((((combat_player_actions_left > 0) and ((known_dissonant_whispers) and (spell_slots_2 > 0)))) and (spell_reach_ok_dissonant_whispers)) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Dissonant Whispers: 2nd level][/b] An empowered phrase: 4d6 instead of 3d6.
       *comment UPCASTING (2026-11-09, RAW): +1d6 per slot level above 1st -- resolve_dissonant_whispers
       *comment (combat_spells.txt) reads combat_cast_at_level for the dice count, same shape Ray of Sickness/
@@ -4306,7 +4346,7 @@
       *gosub_scene combat_spells resolve_arms_of_hadar
       *goto fight_check_enemy_hp
 
-  *if ((((combat_player_actions_left > 0) and ((known_bane) and (bard_spell_slots > 0)))) and (not(spells_blocked)))
+  *if ((((combat_player_actions_left > 0) and ((known_bane) and (spell_slots_1 > 0)))) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Bane][/b] Sour the aim and nerve of every foe still standing near you.
       *comment No fight_pick_target re-sync here -- unlike every other targeted option, Bane doesn't act on the
       *comment single "active" target at all; resolve_cast_bane picks its own up to three targets internally.
@@ -4467,7 +4507,7 @@
       *line_break
       *goto fight_round_hub
 
-  *if ((((((combat_player_actions_left > 0) and (character_class = "warlock")) and (known_hellish_rebuke)) and ((warlock_spell_slots > 0) or (warlock_spell_slots_2 > 0))) and ((not(rebuke_armed)) and (not(player_oa_used)))) and (not(spells_blocked)))
+  *if ((((((combat_player_actions_left > 0) and (character_class = "warlock")) and (known_hellish_rebuke)) and (pact_slots > 0)) and ((not(rebuke_armed)) and (not(player_oa_used)))) and (not(spells_blocked)))
     # [b][Hellish Rebuke][/b] Hold a vengeful retort ready, to scorch whoever next wounds you.
       *set rebuke_armed true
       You bite down on a retort and hold it there, hot behind your teeth, ready to spit back at whoever next draws your blood.
@@ -4548,7 +4588,7 @@
 
   *if ((combat_can_arcane_ward) and (combat_player_bonus_left > 0))
     # [b][BONUS ACTION][/b] [b][Arcane Ward: 1st level][/b] Expend a 1st-level slot to mend the ward.
-      *gosub_scene combat_spells spend_spell_slot "wizard" 1
+      *gosub_scene combat_spells spend_spell_slot 1
       *gosub_scene combat_spells arcane_ward_on_abjuration_cast 1
       A strand of warding magic knits back into the ward around you.
       *line_break
@@ -4558,7 +4598,7 @@
 
   *if ((combat_can_arcane_ward_2) and (combat_player_bonus_left > 0))
     # [b][BONUS ACTION][/b] [b][Arcane Ward: 2nd level][/b] Expend a 2nd-level slot to mend the ward further.
-      *gosub_scene combat_spells spend_spell_slot "wizard" 2
+      *gosub_scene combat_spells spend_spell_slot 2
       *gosub_scene combat_spells arcane_ward_on_abjuration_cast 2
       A strand of warding magic knits back into the ward around you, stronger for the deeper well it was drawn from.
       *line_break
@@ -4571,10 +4611,10 @@
       *gosub_scene character_progression do_magical_cunning
       You murmur through the rite in a single hurried breath, and a measure of your pact's power answers, flooding back into you.
       *line_break
-      *if (warlock_spell_slots_max_2 > 0)
-        [b][🔮 Magical Cunning | Pact Magic slots (2nd) ${warlock_spell_slots_2} / ${warlock_spell_slots_max_2}][/b]
+      *if (pact_slot_level >= 2)
+        [b][🔮 Magical Cunning | Pact Magic slots (2nd) ${pact_slots} / ${pact_slots_max}][/b]
       *else
-        [b][🔮 Magical Cunning | Pact Magic slots ${warlock_spell_slots} / ${warlock_spell_slots_max}][/b]
+        [b][🔮 Magical Cunning | Pact Magic slots ${pact_slots} / ${pact_slots_max}][/b]
       *line_break
       *goto fight_bonus_spent
 
@@ -5348,7 +5388,7 @@ You unroll the pale sheet and read it aloud. A numb, leathery vitality spreads b
   *gosub_scene combat_dice resolve_enemy_save "combat_enemy_" "wisdom" "Wisdom" 0
   *comment Slot spent on cast, RAW, win or miss -- same as Ray of Sickness/Grease (combat_spells.txt).
   *comment spend_spell_slot (combat_spells.txt) picks the pool from combat_cast_at_level.
-  *gosub_scene combat_spells spend_spell_slot "bard" combat_cast_at_level
+  *gosub_scene combat_spells spend_spell_slot combat_cast_at_level
   *gosub_scene combat_spells resolve_dissonant_whispers
   *if (combat_enemy_hp <= 0)
     *gosub_scene combat_prose pick_spell_death_flavor
@@ -5384,8 +5424,8 @@ You unroll the pale sheet and read it aloud. A numb, leathery vitality spreads b
   *gosub_scene combat_prose pick_spell_flavor
   *comment Slot spent on cast, RAW, win or miss -- same as Grease/Dissonant Whispers (combat_spells.txt).
   *comment spend_spell_slot (combat_spells.txt) picks the pool from combat_cast_at_level.
-  *gosub_scene combat_spells spend_spell_slot "wizard" combat_cast_at_level
-  *set check_stat "int"
+  *gosub_scene combat_spells spend_spell_slot combat_cast_at_level
+  *set check_stat casting_stat
   *set check_dc combat_enemy_ac
   *set check_skill "Ray of Sickness"
   *set check_add_prof_bonus true
@@ -5457,7 +5497,7 @@ You unroll the pale sheet and read it aloud. A numb, leathery vitality spreads b
     *goto fight_check_enemy_hp
   # Cancel targeting.
     *comment Free -- arming and allocating cost nothing; only an actual cast does (fight_pick_target above
-    *comment hasn't run yet, wizard_spell_slots hasn't been spent, no action or bonus action was touched).
+    *comment hasn't run yet, spell_slots_1 hasn't been spent, no action or bonus action was touched).
     *set combat_mm_targeting_active false
     *set combat_mm_darts_1 0
     *set combat_mm_darts_2 0
@@ -5601,12 +5641,9 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *else
       *set check_stat "str"
     *set check_skill "Melee Attack"
-  *comment True Strike: the attack is rolled with the spellcasting ability instead of Strength or Dexterity (Intelligence for a wizard, Charisma for a warlock or bard). The damage bonus is swapped below.
+  *comment True Strike: the attack is rolled with the spellcasting ability instead of Strength or Dexterity (casting_stat, set by update_dnd_stats). The damage bonus is swapped below.
   *if (true_strike_on)
-    *if (character_class = "wizard")
-      *set check_stat "int"
-    *else
-      *set check_stat "cha"
+    *set check_stat casting_stat
   *set check_dc combat_enemy_ac
   *comment fwh/fwm land on one of 3 randomized variants (melee or ranged
   *comment per weapon_type) -- see pick_weapon_flavor below.
@@ -5671,10 +5708,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
           *set combat_player_dmg_bonus str_mod
     *comment True Strike: the spellcasting modifier replaces the Strength or Dexterity one, and the player may turn the damage to Radiant. The level 5 Radiant dice are rolled with the hit, in combat_dice.txt.
     *if (true_strike_on)
-      *if (character_class = "wizard")
-        *set combat_player_dmg_bonus int_mod
-      *else
-        *set combat_player_dmg_bonus cha_mod
+      *set combat_player_dmg_bonus spell_damage_mod
       *if (true_strike_radiant)
         *set combat_player_dmg_type "radiant"
     *comment Fighting Style: Dueling -- +2 damage with a one-handed melee

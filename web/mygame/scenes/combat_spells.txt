@@ -36,55 +36,29 @@
 *comment SPEND A SPELL SLOT AT A GIVEN LEVEL (2026-11-08)
 *comment One shared place for "which pool does this cast spend from", instead of the same *if (level >= 2) ...
 *comment *else ... copy-pasted into every upcastable spell's own cast body (Magic Missile and Ray of Sickness
-*comment both had their own copy until this). The level-1 pool is still the unsuffixed <class>_spell_slots
-*comment (never renamed -- see [[project_spell_upcasting]] memory for why), so level 1 is the one irregular case.
-*comment Written as an explicit *if/*elseif per class (2026-11-10), not {(...)}-indirection built from ssl_class/
-*comment ssl_level: quicktest's own branch-coverage walker forces the "true" side of every *if at least once
-*comment regardless of the real data (ssl_class can be "none", character_class's *create default, with ssl_level
-*comment at its own default of 0), so indirection built from the raw values could be forced into naming a
-*comment variable that was never *create'd -- and ranger has no _2 pool at all, so even a class-only indirection
-*comment isn't safe for every class. Every branch below only ever targets a variable that genuinely exists, so
-*comment nothing here can be forced into a crash; an unrecognized ssl_class (including "none") just spends
-*comment nothing, which is correct since there is nothing to spend. A new class, or a class's first _2 pool, is
-*comment still just one more *elseif here.
+*comment both had their own copy until this). Written as plain *if branches on values that always exist, never a
+*comment variable name built from the class or level: quicktest forces the true side of every *if, and a built name
+*comment could then point at a variable that was never created. A new slot level is one more branch here.
 *comment Does NOT reset combat_cast_at_level -- callers that read it again after spending (a dice-count formula
 *comment keyed off it, Ray of Sickness's own shape) would break if this cleared it first; each caller resets it
 *comment itself, once everything that needs it this cast has already read it.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label spend_spell_slot
-*params ssl_class ssl_level
-*if (ssl_class = "wizard")
-  *if (ssl_level >= 2)
-    *set wizard_spell_slots_2 - 1
-  *else
-    *set wizard_spell_slots - 1
-*elseif (ssl_class = "bard")
-  *if (ssl_level >= 2)
-    *set bard_spell_slots_2 - 1
-  *else
-    *set bard_spell_slots - 1
-*elseif (ssl_class = "warlock")
-  *if (ssl_level >= 2)
-    *set warlock_spell_slots_2 - 1
-  *else
-    *set warlock_spell_slots - 1
-*elseif (ssl_class = "ranger")
-  *set ranger_spell_slots - 1
+*params ssl_level
+*comment SHARED POOLS (2026-11-14): wizard, bard and ranger spend from one pool per slot level; warlocks use spend_pact_slot below.
+*if (ssl_level >= 2)
+  *set spell_slots_2 - 1
+*else
+  *set spell_slots_1 - 1
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment SPEND A PACT MAGIC SLOT (2026-11-12): Hex, Arms of Hadar, Armor of Agathys and Hellish Rebuke all
-*comment predate the Pact Magic pool-collapse above spend_spell_slot's own comment -- every warlock slot is the
-*comment same level, and that level (and which pool, warlock_spell_slots vs _2) rises with warlock level, so
-*comment these four kept spending the bare 1st-level pool even after it permanently zeroes at level 3. There is
-*comment no ssl_level to pass (a warlock never chooses a level the way spend_spell_slot's other callers do), so
-*comment this just spends from whichever pool refresh_class_resource_maxs actually left nonzero.
+*comment SPEND A PACT MAGIC SLOT (2026-11-14): Warlock's Pact Magic is one pool (pact_slots / pact_slots_max)
+*comment whose shared slot level (pact_slot_level) rises with warlock level. Every warlock slot spend
+*comment decrements pact_slots here; no level parameter is needed.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label spend_pact_slot
-*if (warlock_spell_slots_max_2 > 0)
-  *set warlock_spell_slots_2 - 1
-*else
-  *set warlock_spell_slots - 1
+*set pact_slots - 1
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -164,7 +138,7 @@ ${fsh}
     *comment (combat.txt) -- spend_spell_slot (above) picks the pool. Reset right after, so a stale "2" can never
     *comment leak into a later spell that forgets to set its own level (every caster of resolve_magic_missile
     *comment sets it explicitly).
-    *gosub spend_spell_slot "wizard" combat_cast_at_level
+    *gosub spend_spell_slot combat_cast_at_level
     *set combat_cast_at_level 1
   *else
     *gosub_scene equipment spend_consumable combat_scroll_id
@@ -255,7 +229,7 @@ ${fsh}
 *comment ENSNARING STRIKE (2026-10-12): the cast only arms it and spends the slot; combat.txt combat_ensnare_apply fires it on the next weapon hit. Ten rounds is the whole spell, the same flat stand-in for concentration Hunter's Mark uses.
 *label resolve_cast_ensnaring_strike
 *if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
-  *set ranger_spell_slots - 1
+  *set spell_slots_1 - 1
   *set ensnaring_armed true
   *set ensnaring_expires_round (combat_round + 9)
   *set combat_cast_locked true
@@ -268,7 +242,7 @@ ${fsh}
     *if (favored_foe_uses > 0)
       *set favored_foe_uses - 1
     *else
-      *set ranger_spell_slots - 1
+      *set spell_slots_1 - 1
   *set favored_foe_target_slot combat_active_target
   *set favored_foe_expires_round (combat_round + 9)
   *set combat_cast_locked true
@@ -420,7 +394,10 @@ ${combat_player_dmg_roll_banner}
 *comment auto-picked target it always had; only the >= 2 branch touches the new multi-target loop.
 *label resolve_cast_cause_fear
 *if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
-  *gosub spend_spell_slot character_class combat_cast_at_level
+  *if (character_class = "warlock")
+    *gosub spend_pact_slot
+  *else
+    *gosub spend_spell_slot combat_cast_at_level
   *comment The outer print check below reads combat_fear_banner's emptiness, not combat_cast_at_level --
   *comment that gets reset to 1 at the end of this very block, which would already have happened by the time a
   *comment REPLAY of this page re-reaches the outer check, silently flipping a replayed 2nd-level cast's print
@@ -498,13 +475,13 @@ ${combat_player_dmg_roll_banner}
 *comment concentration for any spell, and Bane isn't getting an exception. resolve_enemy_attack and resolve_enemy_
 *comment save both already check it themselves (see their own Bane comments), so nothing else needs to read this
 *comment label's own output.
-*comment Spell-slot cost lives here, inside the same guarded block as everything else (bard_spell_slots - 1) --
+*comment Spell-slot cost lives here, inside the same guarded block as everything else (spell_slots_1 - 1) --
 *comment same reasoning as resolve_dissonant_whispers/resolve_cast_hex: putting it in the bare *choice body
 *comment instead would let a Stats-screen replay double-spend it.
 *label resolve_cast_bane
 *if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
   *if (combat_scroll_id = "")
-    *set bard_spell_slots - 1
+    *set spell_slots_1 - 1
   *else
     *gosub_scene equipment spend_consumable combat_scroll_id
   *temp rcb_targeted 0
@@ -571,22 +548,13 @@ ${combat_player_dmg_roll_banner}
   *comment 2. Ranger never reaches the >= 2 branch with anything in it -- it has no 2nd-level pool
   *comment (startup_parts/07_class_path.txt), so a ranger simply can never pass this check at level 2.
   *temp flc_slots 0
-  *if (combat_cast_at_level >= 2)
-    *if (character_class = "wizard")
-      *set flc_slots wizard_spell_slots_2
-    *if (character_class = "bard")
-      *set flc_slots bard_spell_slots_2
-    *if (character_class = "warlock")
-      *set flc_slots warlock_spell_slots_2
+  *if (character_class = "warlock")
+    *if (pact_slot_level = combat_cast_at_level)
+      *set flc_slots pact_slots
+  *elseif (combat_cast_at_level >= 2)
+    *set flc_slots spell_slots_2
   *else
-    *if (character_class = "wizard")
-      *set flc_slots wizard_spell_slots
-    *if (character_class = "bard")
-      *set flc_slots bard_spell_slots
-    *if (character_class = "warlock")
-      *set flc_slots warlock_spell_slots
-    *if (character_class = "ranger")
-      *set flc_slots ranger_spell_slots
+    *set flc_slots spell_slots_1
   *if (flc_slots <= 0)
     *set false_life_why "You have no spell slot left to spend on it."
     *return
@@ -598,7 +566,10 @@ ${combat_player_dmg_roll_banner}
 *if (false_life_can_cast)
   *if (not(false_life_cast_locked)) or (not(locked_false_life_cast_page_id = page_id))
     *if (false_life_cost = "slot")
-      *gosub spend_spell_slot character_class combat_cast_at_level
+      *if (character_class = "warlock")
+        *gosub spend_pact_slot
+      *else
+        *gosub spend_spell_slot combat_cast_at_level
     *if (false_life_cost = "scroll")
       *gosub_scene equipment spend_consumable combat_scroll_id
     *temp fl_roll 0
@@ -632,7 +603,7 @@ ${combat_player_dmg_roll_banner}
 *comment Heals the player when combat_friendly_target is 0, otherwise the ally in that slot (chosen in the sidebar, see fight_target_friendly_healing_word).
 *if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
   *if (combat_scroll_id = "")
-    *set bard_spell_slots - 1
+    *set spell_slots_1 - 1
   *else
     *gosub_scene equipment spend_consumable combat_scroll_id
   *temp hw_roll 0
@@ -773,7 +744,7 @@ ${combat_player_dmg_roll_banner}
 *label resolve_cast_grease
 *if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
   *if (combat_scroll_id = "")
-    *set wizard_spell_slots - 1
+    *set spell_slots_1 - 1
   *else
     *gosub_scene equipment spend_consumable combat_scroll_id
   *temp rcg_band {(("combat_enemy" & combat_active_target) & "_range")}
@@ -839,7 +810,7 @@ ${combat_player_dmg_roll_banner}
   *if (not(combat_scroll_id = ""))
     *gosub_scene equipment spend_consumable combat_scroll_id
   *else
-    *gosub spend_spell_slot "wizard" combat_cast_at_level
+    *gosub spend_spell_slot combat_cast_at_level
   *temp bh_dice_count (combat_cast_at_level + 2)
   *temp bh_total 0
   *temp bh_dice_str ""
@@ -931,7 +902,10 @@ ${combat_player_dmg_roll_banner}
   *if (not(combat_scroll_id = ""))
     *gosub_scene equipment spend_consumable combat_scroll_id
   *else
-    *gosub spend_spell_slot character_class combat_cast_at_level
+    *if (character_class = "warlock")
+      *gosub spend_pact_slot
+    *else
+      *gosub spend_spell_slot combat_cast_at_level
   *temp tw_dice_count (combat_cast_at_level + 1)
   *temp tw_total 0
   *temp tw_dice_str ""
@@ -1022,9 +996,9 @@ ${combat_player_dmg_roll_banner}
 *comment Heals the player when combat_friendly_target is 0, otherwise the ally in that slot (chosen in the sidebar, see fight_target_friendly_cure_wounds).
 *if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
   *if (character_class = "ranger")
-    *set ranger_spell_slots - 1
+    *set spell_slots_1 - 1
   *else
-    *set bard_spell_slots - 1
+    *set spell_slots_1 - 1
   *temp cw_d1 0
   *temp cw_d2 0
   *rand cw_d1 1 8

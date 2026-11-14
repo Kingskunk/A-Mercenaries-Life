@@ -1515,26 +1515,24 @@ button#statSidebar .turnRow,
     if (poisonLeft > 0) condChipsHtml += "<div class=\"sbConds\"><span class=\"sbCond bad\" title=\"Poisoned: disadvantage on every d20 roll. About " + (poisonLeft >= 60 ? Math.ceil(poisonLeft / 60) + " hour" + (Math.ceil(poisonLeft / 60) === 1 ? "" : "s") : poisonLeft + " minutes") + " left.\">Poisoned</span></div>";
     var resourceHtml = "";
     if (s.character_class === "wizard") {
-      resourceHtml = slotRow("Spell Slots", s.wizard_spell_slots, s.wizard_spell_slots_max, "");
-      if (Number(s.wizard_spell_slots_max_2) > 0) {
-        resourceHtml += slotRow("2nd-Level Slots", s.wizard_spell_slots_2, s.wizard_spell_slots_max_2, " lvl2");
+      resourceHtml = slotRow("Spell Slots", s.spell_slots_1, s.spell_slots_max_1, "");
+      if (Number(s.spell_slots_max_2) > 0) {
+        resourceHtml += slotRow("2nd-Level Slots", s.spell_slots_2, s.spell_slots_max_2, " lvl2");
       }
     } else if (s.character_class === "warlock") {
-      // Pact Magic (2026-11-08): not a second pool alongside the first -- at level 3 the existing slots convert
-      // wholesale to 2nd level (character_progression.txt's level-up grant zeroes the 1st-level max), so this
-      // shows whichever pool actually holds the slots rather than ever showing two pact rows at once.
-      if (Number(s.warlock_spell_slots_max_2) > 0) {
-        resourceHtml = slotRow("Pact Slots (2nd)", s.warlock_spell_slots_2, s.warlock_spell_slots_max_2, " pact");
+      // Pact Magic (2026-11-14): one pool (pact_slots / pact_slots_max) whose shared level (pact_slot_level) rises with warlock level.
+      if (Number(s.pact_slot_level) >= 2) {
+        resourceHtml = slotRow("Pact Slots (2nd)", s.pact_slots, s.pact_slots_max, " pact");
       } else {
-        resourceHtml = slotRow("Pact Slots", s.warlock_spell_slots, s.warlock_spell_slots_max, " pact");
+        resourceHtml = slotRow("Pact Slots", s.pact_slots, s.pact_slots_max, " pact");
       }
       // Magical Cunning (Warlock level 2, PHB'24 p154, 2026-11-12): once per Long Rest, a 1-minute rite regains
       // half the live pool. Shown only once there is a level to have it, a use left, and something missing to
       // give (mirrors Heroic Inspiration's "nothing to press" rule just below). Gated the same place the sidebar's
       // Wait button is -- a 1-minute pause, not an hour -- rather than Rest's own reason (pagegate.js).
       if (Number(s.character_level) >= 2 && !isTruthy(s.magical_cunning_used)) {
-        var mcMax = Number(s.warlock_spell_slots_max_2) > 0 ? Number(s.warlock_spell_slots_max_2) : Number(s.warlock_spell_slots_max);
-        var mcCur = Number(s.warlock_spell_slots_max_2) > 0 ? Number(s.warlock_spell_slots_2) : Number(s.warlock_spell_slots);
+        var mcMax = Number(s.pact_slots_max);
+        var mcCur = Number(s.pact_slots);
         if (mcCur < mcMax) {
           var mcReason = (window.PageGate && window.PageGate.waitReason) ? window.PageGate.waitReason() : "";
           resourceHtml += "<button type=\"button\" class=\"spellCast\" data-spell-cast=\"codex_magical_cunning\"" + ((canOpenDossier() && !mcReason) ? "" : " disabled") +
@@ -1542,9 +1540,9 @@ button#statSidebar .turnRow,
         }
       }
     } else if (s.character_class === "bard") {
-      resourceHtml = slotRow("Spell Slots", s.bard_spell_slots, s.bard_spell_slots_max, "");
-      if (Number(s.bard_spell_slots_max_2) > 0) {
-        resourceHtml += slotRow("2nd-Level Slots", s.bard_spell_slots_2, s.bard_spell_slots_max_2, " lvl2");
+      resourceHtml = slotRow("Spell Slots", s.spell_slots_1, s.spell_slots_max_1, "");
+      if (Number(s.spell_slots_max_2) > 0) {
+        resourceHtml += slotRow("2nd-Level Slots", s.spell_slots_2, s.spell_slots_max_2, " lvl2");
       }
       if (Number(s.bard_inspiration_max) > 0 && true) {
         resourceHtml += "<div class=\"statRow\"><span>Inspiration</span><span>" + fmt(s.bard_inspiration_uses) + " / " + fmt(s.bard_inspiration_max) + "</span></div>";
@@ -1558,8 +1556,8 @@ button#statSidebar .turnRow,
       resourceHtml = "<div class=\"statRow\"><span>Rage</span><span>" + fmt(s.barbarian_rage_uses) + " / " + fmt(s.barbarian_rage_max) + "</span></div>";
     } else if (s.character_class === "ranger") {
       resourceHtml = "<div class=\"statRow\"><span>Hunter's Mark</span><span>" + fmt(s.favored_foe_uses) + " / " + fmt(s.favored_foe_max) + "</span></div>";
-      if (Number(s.ranger_spell_slots_max) > 0) {
-        resourceHtml += slotRow("Spell Slots", s.ranger_spell_slots, s.ranger_spell_slots_max, "");
+      if (Number(s.spell_slots_max_1) > 0) {
+        resourceHtml += slotRow("Spell Slots", s.spell_slots_1, s.spell_slots_max_1, "");
       }
     }
 
@@ -1742,10 +1740,10 @@ button#statSidebar .turnRow,
     // Turn Order, then the spellbook (unchanged inside), then quests and effects. Every class and data attribute the click, hover and spellbook code reads is kept.
     var sbClass = SB_CLASSES[s.character_class] ? s.character_class : "";
     var statsOrbs = "";
-    if (s.character_class === "wizard") statsOrbs = miniOrbs(s.wizard_spell_slots, s.wizard_spell_slots_max, "") + miniOrbs(s.wizard_spell_slots_2, s.wizard_spell_slots_max_2, " lvl2");
-    else if (s.character_class === "bard") statsOrbs = miniOrbs(s.bard_spell_slots, s.bard_spell_slots_max, "") + miniOrbs(s.bard_spell_slots_2, s.bard_spell_slots_max_2, " lvl2");
-    else if (s.character_class === "warlock") statsOrbs = Number(s.warlock_spell_slots_max_2) > 0 ? miniOrbs(s.warlock_spell_slots_2, s.warlock_spell_slots_max_2, " pact") : miniOrbs(s.warlock_spell_slots, s.warlock_spell_slots_max, " pact");
-    else if (s.character_class === "ranger") statsOrbs = miniOrbs(s.ranger_spell_slots, s.ranger_spell_slots_max, "");
+    if (s.character_class === "wizard") statsOrbs = miniOrbs(s.spell_slots_1, s.spell_slots_max_1, "") + miniOrbs(s.spell_slots_2, s.spell_slots_max_2, " lvl2");
+    else if (s.character_class === "bard") statsOrbs = miniOrbs(s.spell_slots_1, s.spell_slots_max_1, "") + miniOrbs(s.spell_slots_2, s.spell_slots_max_2, " lvl2");
+    else if (s.character_class === "warlock") statsOrbs = miniOrbs(s.pact_slots, s.pact_slots_max, " pact");
+    else if (s.character_class === "ranger") statsOrbs = miniOrbs(s.spell_slots_1, s.spell_slots_max_1, "");
     var SB_CASTERS = { wizard: 1, bard: 1, warlock: 1, ranger: 1 };
     var nonprofHtml = (isTruthy(s.armor_nonprof) || isTruthy(s.shield_nonprof)) ? "<div class=\"timePeriod\" title=\"Your class is not trained in this gear: disadvantage on STR and DEX rolls" + (SB_CASTERS[s.character_class] ? ", and no spellcasting while it is worn" : "") + "\" style=\"color:var(--ch-warn);font-style:normal;\">&#9888; " + (isTruthy(s.armor_nonprof) && isTruthy(s.shield_nonprof) ? "Armor &amp; shield" : (isTruthy(s.shield_nonprof) ? "Shield" : "Armor")) + ": not proficient</div>" : "";
     function abilTile(label, score, boon, mod) {
@@ -1866,7 +1864,7 @@ button#statSidebar .turnRow,
   // Deliberately display-only: armor_class itself is untouched, so nothing that derives real AC can
   // accidentally pick up the temporary +5.
   function shieldReady(s) {
-    return isTruthy(s.shield_active) || (isTruthy(s.shield_armed) && Number(s.wizard_spell_slots) > 0 && !isTruthy(s.player_oa_used));
+    return isTruthy(s.shield_active) || (isTruthy(s.shield_armed) && Number(s.spell_slots_1) > 0 && !isTruthy(s.player_oa_used));
   }
   function shieldActive(s) { return isTruthy(s.shield_active); }
   function effectiveAc(s) { return fmt(Number(s.armor_class) + (shieldActive(s) ? 5 : 0)); }
