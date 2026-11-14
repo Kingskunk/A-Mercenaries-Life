@@ -34,6 +34,11 @@
   var drag = null;          // an unfinished drag or click
   var rot = 0;              // quarter turns the player has turned the map, clockwise (0 to 3), kept between visits
   try { rot = (Number(window.localStorage.getItem("owMapRot2")) || 0) % 4; } catch (e) { rot = 0; }
+  var terrainOn = true;     // mountains, lakes, the other drawn art (overworld-art.js), AND the textured parchment paper (applyPaper(), below): all of it GPU-heavy on a weak tablet, all of it
+                             // one switch -- off, the map falls back to nodes, roads and mile labels over the paper's own flat colour
+  var milesOn = true;       // the "N mi" text along each road: a clutter toggle more than a performance one, though skipping it also skips the label-placement search (svg(), below) that runs it
+  try { milesOn = window.localStorage.getItem("owMapMiles") !== "0"; } catch (e) { milesOn = true; }
+  try { terrainOn = window.localStorage.getItem("owMapTerrain") !== "0"; } catch (e) { terrainOn = true; }
   var userAnimate = null;   // the player's own page-turn animation setting, kept while the map has it switched off (null: not switched off)
 
   function truthy(v) { return v === true || v === "true"; }
@@ -131,8 +136,8 @@
       minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
       minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
     });
-    // a drawn feature (a mountain range) stays in view with the tiles: the corners of its art's box, in map units, turned like a tile
-    featureList().forEach(function (f) {
+    // a drawn feature (a mountain range) stays in view with the tiles: the corners of its art's box, in map units, turned like a tile -- skipped with terrain off, so Fit/centre read just the nodes
+    if (terrainOn) featureList().forEach(function (f) {
       var art = (window.OVERWORLD_ART || {})[f.art];
       if (!art) return;
       [[art.bbox[0], art.bbox[1]], [art.bbox[2], art.bbox[1]], [art.bbox[0], art.bbox[3]], [art.bbox[2], art.bbox[3]]].forEach(function (c) {
@@ -174,6 +179,11 @@
   function applyPaper(bx, h) {
     var el = document.getElementById(PANEL_ID), paper = el && el.querySelector(".ow-paper");
     if (!paper || !view) return;
+    // Terrain off: skip the textured, blended paper too, and fall back to .ow-paper's own flat colour. Two tiled layers blended with background-blend-mode
+    // cost a per-pixel blend across the whole panel on EVERY call here (every pan/zoom frame), same as the drawn terrain art costs per-frame GPU work --
+    // this is the other half of that same cost, not a separate one.
+    if (!terrainOn) { paper.style.backgroundImage = "none"; return; }
+    paper.style.backgroundImage = "";   // back on: drop the inline override so the CSS rule's var(--art-parchment...) shows again
     var k = bx.w / view.w;                                 // screen pixels to one drawn unit
     var vx = view.cx - view.w / 2, vy = view.cy - h / 2;   // the corner of what is in view, in drawn units
     var t = PAPER_TILE * k, t2 = PAPER_TILE2 * k;
@@ -239,8 +249,9 @@
     }
     var out = "";
     // Features first, so the roads and tiles sit on top of them. The art is drawn in its own units (130 to a map unit), so the group scales it to the panel and turns it with the map (a quarter turn
-    // is rotate(90), the same turn P() gives a tile); the paths come straight from the SVG file (tools/gen_overworld_art.js). The name sits on the range, upright.
-    featureList().forEach(function (f) {
+    // is rotate(90), the same turn P() gives a tile); the paths come straight from the SVG file (tools/gen_overworld_art.js). The name sits on the range, upright. The Terrain button (controls(),
+    // below) skips this whole block: the drawn art is the heaviest thing the map paints, so switching it off is the one lever that can tell GPU-bound jank apart from everything else.
+    if (terrainOn) featureList().forEach(function (f) {
       var art = (window.OVERWORLD_ART || {})[f.art];
       if (!art) return;
             // scenery, and a feature with "Click: off" in its Description, take no part in any of it: no data-ow-feature for the click handler to find, no tabindex to tab onto,
@@ -259,16 +270,18 @@
       var plain = [], special = [];
       art.paths.forEach(function (p) { (p.c ? special : plain).push(p); });
       out += open;
-      // Two or three plain paths of the same feature (three traced peaks, a wood drawn as separate stands) often overlap at their edges. Giving the GROUP the kind's
-      // opacity, rather than each path its own fill-opacity (overworldmap.css .ow-fillgrp), is composited once: the paths stay fully opaque against each other and
-      // only the group's outer edge fades against the parchment, instead of every overlap stacking darker the more paths cover the same ground.
+      // Two or three plain paths of the same feature (three traced peaks, a wood drawn as separate stands) often overlap at their edges, and each one now carries
+      // its own fill-opacity (overworldmap.css .ow-fillgrp path, 2026-11-13) rather than the group as a whole: an overlap darkens a little where paths meet,
+      // traded on purpose for not forcing the browser to render the group to its own offscreen surface on every repaint (a real, per-frame GPU cost).
       if (plain.length) out += "<g class=\"ow-fillgrp\">" + plain.map(drawPath).join("") + "</g>";
       out += special.map(drawPath).join("") + "</g>";
       if (f.label && !f.decor) { var lp = P({ x: f.label[0], y: f.label[1] }); out += "<text class=\"ow-feature-name\" x=\"" + lp.x + "\" y=\"" + lp.y + "\" text-anchor=\"middle\">" + esc(f.name) + "</text>"; }
     });
-    // Rectangles the "10 mi" labels must keep clear of: every town circle and every name (as drawn below), then the labels already placed.
+    // Rectangles the "10 mi" labels must keep clear of: every town circle and every name (as drawn below), then the labels already placed. None of this runs
+    // with the Miles button off: nothing it computes is used for anything but placing that text, so the whole search (it runs once per edge, against every
+    // rectangle already placed, so cost grows with both) is skipped along with the text itself.
     var taken = [];
-    ids.forEach(function (id) {
+    if (milesOn) ids.forEach(function (id) {
       var n = OW.nodes[id], pp = P(n), big = n.kind === "city" ? 26 : (n.kind === "town" ? 22 : ((n.kind === "village" || n.kind === "fort") ? 18 : 15)), half = String(n.name).length * 4.6 + 6;
       taken.push([pp.x - big - 9, pp.y - big - 9, pp.x + big + 9, pp.y + big + 9]);
       taken.push([pp.x - half, pp.y + big + 4, pp.x + half, pp.y + big + 28]);
@@ -279,6 +292,7 @@
       var a = OW.nodes[e[0]], b = OW.nodes[e[1]], hot = onRoute[e[0] + ">" + e[1]];
       var pa = P(a), pb = P(b), terrain = e[3] || "road";
       out += "<line class=\"ow-edge" + (terrain !== "road" ? " ow-edge-" + terrain : "") + (hot ? " ow-edge-route" : "") + "\" x1=\"" + pa.x + "\" y1=\"" + pa.y + "\" x2=\"" + pb.x + "\" y2=\"" + pb.y + "\"/>";
+      if (!milesOn) return;
       // Try the middle of the leg first, then other spots along it, above the line and then below. A near-vertical leg can have no clear vertical position at all, so its last candidates move out to either side of the line.
       var label = String(e[2]) + " mi", w = label.length * 4.2 + 4, pick = null;
       [0.5, 0.4, 0.6, 0.3, 0.7, 0.25, 0.75].some(function (t) {
@@ -392,7 +406,9 @@
 
   function controls() {
     return "<div class=\"ow-ctl\"><button type=\"button\" data-ow-act=\"zoomin\" title=\"Zoom in\" aria-label=\"Zoom in\">+</button><button type=\"button\" data-ow-act=\"zoomout\" title=\"Zoom out\" aria-label=\"Zoom out\">&minus;</button>" +
-      "<button type=\"button\" data-ow-act=\"rotate\" title=\"Turn the map a quarter turn\" aria-label=\"Turn the map\">&#8635;</button><button type=\"button\" data-ow-act=\"center\" title=\"Back to you (M)\" aria-label=\"Centre on you\">Me</button><button type=\"button\" data-ow-act=\"fit\" title=\"Show the whole map\" aria-label=\"Show the whole map\">All</button></div>";
+      "<button type=\"button\" data-ow-act=\"rotate\" title=\"Turn the map a quarter turn\" aria-label=\"Turn the map\">&#8635;</button><button type=\"button\" data-ow-act=\"center\" title=\"Back to you (M)\" aria-label=\"Centre on you\">Me</button><button type=\"button\" data-ow-act=\"fit\" title=\"Show the whole map\" aria-label=\"Show the whole map\">All</button>" +
+      "<button type=\"button\" data-ow-act=\"terrain\" aria-pressed=\"" + terrainOn + "\" title=\"Show or hide the drawn terrain and the parchment texture, for a plainer, lighter map\" aria-label=\"Art\">Art</button>" +
+      "<button type=\"button\" data-ow-act=\"miles\" aria-pressed=\"" + milesOn + "\" title=\"Show or hide the mile labels along the roads\" aria-label=\"Miles\">Mi</button></div>";
   }
 
   function build(opts) {
@@ -465,7 +481,7 @@
         if (mx < view.cx - view.w / 2 + 60 || mx > view.cx + view.w / 2 - 60 || my < view.cy - h0 / 2 + 60 || my > view.cy + h0 / 2 - 60) { view.cx = mx; view.cy = my; }
       }
     }
-    var sig = [s.ow_pos, selected, selectedFeature, opts.enter ? opts.enter.text : "", (opts.direct || []).map(function (d) { return d.text; }).join("|"), (opts.deliver || []).map(function (d) { return d.text; }).join("|"), num(s.minutes_since_meal), num(s.minutes_since_rest), rot, num(s.ow_exposure_pct), truthy(s.has_trail_rations) ? 1 + num(s.spare_trail_rations) : 0, opts.camp ? "camp" : "", opts.dawn ? opts.dawn.text : "", Object.keys(OW.nodes).length].join("|");
+    var sig = [s.ow_pos, selected, selectedFeature, opts.enter ? opts.enter.text : "", (opts.direct || []).map(function (d) { return d.text; }).join("|"), (opts.deliver || []).map(function (d) { return d.text; }).join("|"), num(s.minutes_since_meal), num(s.minutes_since_rest), rot, terrainOn, milesOn, num(s.ow_exposure_pct), truthy(s.has_trail_rations) ? 1 + num(s.spare_trail_rations) : 0, opts.camp ? "camp" : "", opts.dawn ? opts.dawn.text : "", Object.keys(OW.nodes).length].join("|");
     var el = document.getElementById(PANEL_ID);
     if (el && sig === lastSig) return;
     if (sig !== lastSig) pressed = false; // a new page of options: the old press is over
@@ -522,6 +538,10 @@
     drag = { x: ev.clientX, y: ev.clientY, cx: view.cx, cy: view.cy, tile: tileOf(ev.target), feature: tileOf(ev.target) ? null : featureOf(ev.target), moved: false, id: ev.pointerId };
     try { bx.el.setPointerCapture(ev.pointerId); } catch (e) {}
   });
+  // A touch or a fast mouse can report more pointermove events than there are frames to paint them in; writing the viewBox on every one of them makes the
+  // browser lay out and repaint the whole map that many times a frame instead of once. Keeping the math (cheap) on every event but only calling applyView()
+  // (the DOM write) once per animation frame fixes that without changing where the map ends up -- the last position before each paint is still exact.
+  var panFrame = null;
   document.addEventListener("pointermove", function (ev) {
     if (!drag || ev.pointerId !== drag.id) return;
     var bx = box();
@@ -532,7 +552,7 @@
     bx.el.classList.add("dragging");
     var k = view.w / bx.w;
     view.cx = drag.cx - dx * k; view.cy = drag.cy - dy * k;
-    applyView();
+    if (panFrame === null) panFrame = requestAnimationFrame(function () { panFrame = null; applyView(); });
   });
   function endDrag(ev) {
     if (!drag || ev.pointerId !== drag.id) return;
@@ -546,12 +566,21 @@
   document.addEventListener("pointerup", endDrag);
   document.addEventListener("pointercancel", endDrag);
 
+  // Same coalescing as pointermove above: a fast trackpad fling can fire several wheel events before the next paint. Multiple factors queued for the same
+  // frame are multiplied together so a fling still zooms by the right total amount, just applied once.
+  var wheelFrame = null, wheelQueued = null;
   document.addEventListener("wheel", function (ev) {
     var bx = box();
     if (!bx || !inPanel(ev.target) || !bx.el.contains(ev.target)) return;
     ev.preventDefault();
     var r = bx.el.getBoundingClientRect();
-    zoomAt(ev.deltaY > 0 ? 1.18 : 1 / 1.18, (ev.clientX - r.left) / r.width, (ev.clientY - r.top) / r.height);
+    var factor = ev.deltaY > 0 ? 1.18 : 1 / 1.18, px = (ev.clientX - r.left) / r.width, py = (ev.clientY - r.top) / r.height;
+    wheelQueued = { factor: wheelQueued ? wheelQueued.factor * factor : factor, px: px, py: py };
+    if (wheelFrame === null) wheelFrame = requestAnimationFrame(function () {
+      wheelFrame = null;
+      var q = wheelQueued; wheelQueued = null;
+      if (q) zoomAt(q.factor, q.px, q.py);
+    });
   }, { passive: false });
 
   document.addEventListener("click", function (ev) {
@@ -567,6 +596,8 @@
     else if (act === "zoomin") zoomAt(1 / 1.4, 0.5, 0.5);
     else if (act === "zoomout") zoomAt(1.4, 0.5, 0.5);
     else if (act === "rotate") { rot = (rot + 1) % 4; try { window.localStorage.setItem("owMapRot2", String(rot)); } catch (e2) {} view = null; lastSig = ""; scan(); }
+    else if (act === "terrain") { terrainOn = !terrainOn; if (!terrainOn) selectedFeature = null; try { window.localStorage.setItem("owMapTerrain", terrainOn ? "1" : "0"); } catch (e2) {} lastSig = ""; scan(); }
+    else if (act === "miles") { milesOn = !milesOn; try { window.localStorage.setItem("owMapMiles", milesOn ? "1" : "0"); } catch (e2) {} lastSig = ""; scan(); }
     else if (act === "center") toggle();
     else if (act === "unpick") { selectedFeature = null; selected = null; scan(); }
     else if (act === "fit") { fit(); applyView(); }

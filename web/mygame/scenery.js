@@ -34,6 +34,13 @@
     the_river_road: "overworld_hilly_road", // temporary shared open-road view, until a flat-road backdrop exists
     the_high_grey_road: "overworld_hilly_road",
     the_northwest_road: "western_vale_road", // Langston's north-western road crosses the same open grassland (2026-11-02, the user: it was missing the Western Vale road's picture)
+    // The rest of the Vale road web (2026-11-14, the user): same open grassland as Western Vale Road and The Northwest Road, so every other named road tile out there wears the one picture too.
+    the_downs_road: "western_vale_road",
+    the_west_downs_road: "western_vale_road",
+    fold_crossing: "western_vale_road",
+    verdant_way: "western_vale_road",
+    mossy_road: "western_vale_road",
+    maple_turn: "western_vale_road",
     marlcross: "village_green",
     barleycross: "village_green",
     ashrun_holt: "ashrun_holt_clearing", // match the Ashrun Holt overworld tile to its entered clearing

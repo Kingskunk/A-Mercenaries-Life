@@ -707,6 +707,7 @@
       danger: 1,
       climate: -1,
       walk: "The road crosses open grassland here, cut by a scatter of sheepfolds, with ways splitting toward Millstow, Reedmere, Dunmow's walls and on along Verdant Way.",
+      water: "the lake", // close enough to Dunmow's shore to reach it (the user's geography, 2026-11-14)
       info: "A crossing on open grassland, named for the sheepfolds scattered along it, where the road splits toward Millstow, Reedmere, Dunmow and Verdant Way.",
       here: "The road crosses open grassland dotted with sheepfolds, with no roof close by but tracks running off toward the mill, the reeds, the city wall and the green way beyond."
     },
@@ -734,6 +735,7 @@
     danger: 2,
     climate: -1,
     walk: "The track runs damp and shaded here, moss thickening the stones along its edge, forking toward Harwick, Oatcroft, and the road east to Maple Turn.",
+    water: "the lake", // close enough to Dunmow's shore to reach it (the user's geography, 2026-11-14)
     info: "A junction on open ground, named for the moss greening the stones along it, where the way splits toward Harwick, Oatcroft and Maple Turn.",
     here: "The road forks here, moss greening the stones at its edge, with open ground stretching away on every side."
   },
@@ -743,6 +745,7 @@
     danger: 2,
     climate: -1,
     walk: "The road bends here beneath a stand of maples, with ways running on toward Oxworth, Esthorpe, Millstow, and west along Mossy Road.",
+    water: "the lake", // close enough to Dunmow's shore to reach it (the user's geography, 2026-11-14)
     info: "A bend in the road beneath a stand of maples, where the way splits toward Oxworth, Esthorpe, Millstow and Mossy Road to the west.",
     here: "The road bends here under a stand of maples, open grass rolling away on every side."
   },

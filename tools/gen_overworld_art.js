@@ -71,6 +71,14 @@ function parseTransform(str) {
 function apply(m, x, y) { return [m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]]; }
 
 // ---------------------------------------------------------------- a path's bounding box, from its points and control points (a safe over-estimate: the panel only uses it to keep the range in view)
+// Rounds every number in a path's d string to 2 decimal places, same token pattern pathPoints() uses below so it can't mis-split a command letter from a number.
+function roundD(d) {
+  return d.replace(/-?\d*\.?\d+(?:e[-+]?\d+)?/g, (s) => {
+    const n = Number(s);
+    return Number.isFinite(n) ? String(Math.round(n * 100) / 100) : s;
+  });
+}
+
 function pathPoints(d) {
   const toks = d.match(/[a-zA-Z]|-?\d*\.?\d+(?:e[-+]?\d+)?/g) || [];
   const pts = []; let i = 0, cmd = "", x = 0, y = 0, sx = 0, sy = 0;
@@ -236,7 +244,10 @@ function readFeatures(file) {
       if (!a.d) { fail(where + ": a path has no d"); continue; }
       const m = parseTransform((groupT + " " + (a.transform || "")).trim());
       pathPoints(a.d).forEach((q0) => { const q = apply(m, q0[0], q0[1]); pts.push(q); minx = Math.min(minx, q[0]); maxx = Math.max(maxx, q[0]); miny = Math.min(miny, q[1]); maxy = Math.max(maxy, q[1]); });
-      const e = { d: a.d.replace(/\s+/g, " ").trim() };
+      // The map never shows closer than MIN_W=220 SVG units across a panel a few hundred pixels wide (overworldmap.js), so a hundredth of a unit is already
+      // far finer than a screen pixel. Inkscape writes 4+ decimal digits per number; rounding to 2 cuts the biggest traced washes (forest, water) by roughly
+      // a third with no visible difference, since the geometry (point count) is unchanged -- only each number's own length shrinks.
+      const e = { d: roundD(a.d.replace(/\s+/g, " ").trim()) };
       if ((groupT + " " + (a.transform || "")).trim()) e.t = (groupT + " " + (a.transform || "")).trim();
       if (a.class) e.c = a.class.replace(/[^a-z0-9_ -]/gi, "").trim();
       paths.push(e);
