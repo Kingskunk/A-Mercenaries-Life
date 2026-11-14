@@ -165,7 +165,8 @@ setRegion(path.join(SCENES, "combat.txt"), "spell_reach_flags", genReachFlags())
 var stale = [];
 Object.keys(pending).forEach(function (p) {
   var current = fs.existsSync(p) ? fs.readFileSync(p, "utf8") : null;
-  if (current !== pending[p]) {
+  // Compared with line endings ignored: other generators write LF blocks into the same CRLF file, and a mixed file is not a stale one.
+  if (current === null || current.replace(/\r\n/g, "\n") !== pending[p].replace(/\r\n/g, "\n")) {
     stale.push(path.relative(ROOT, p));
     if (!CHECK) fs.writeFileSync(p, pending[p]);
   }
