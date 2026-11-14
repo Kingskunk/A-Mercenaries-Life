@@ -43,6 +43,7 @@
     maple_turn: "western_vale_road",
     marlcross: "village_green",
     barleycross: "village_green",
+    oxworth: "village_green",
     ashrun_holt: "ashrun_holt_clearing", // match the Ashrun Holt overworld tile to its entered clearing
     fallowmere: "fallowmere_pond_green", // Fallowmere overworld tile uses the village pond green view
     port_valen: "port_valen_river_gate", // the overworld node is the River Gate approach, not the quays
@@ -77,6 +78,8 @@
     "Langston/fallowmere/grey_gander": "fallowmere_grey_gander",
     "Langston/fallowmere/village_heads_hall": "generic_village_gathering_hall",
     "Langston/fallowmere/market": "fallowmere_market",
+    "hartwell/oxworth/oxworth": "village_green",
+    "hartwell/oxworth/oxworth_market": "oxworth_market",
     // Only a fallback: the dg_in_run RULES entry above (each dungeon's own rooms) matches first and wins
     // whenever a run is actually under way. This is what shows during the walk-in/out line, before dg_run_begin
     // has set dg_in_run (every entry calls dg_time -- a time advance, which can itself trigger the hub-condition

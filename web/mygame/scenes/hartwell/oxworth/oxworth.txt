@@ -1,0 +1,257 @@
+*comment ====================================================================================
+*comment OXWORTH: a cattle and herding village on the open down under the Viscounty of Hartwell (overworld tile "rn2"). Plan: Resources & Quest/OXWORTH_SETTLEMENT_PLAN.md.
+*comment Built so far: the hub with its three description layers (place, sky, street), rotating vignettes, arrival from overworld tile "rn2" (rn2_arrive), hours helpers for the four planned stops, and the road back out.
+*comment Planned secondary stops (to be wired into ox_menu as each file is built):
+*comment   - village_heads_hall.txt (Village Head's Hall + Contract Board)
+*comment   - yoke_and_horn.txt (The Yoke & Horn inn)
+*comment   - oxworth_market.txt (Oxworth Market, ox_market)
+*comment   - salting_yard.txt (The Salting & Cattle Yard)
+*comment Backdrop: village_green (scenery.js stand-in until bespoke art exists); ambience "village" (ambience.js ALIAS).
+*comment ====================================================================================
+
+*label oxworth
+*gosub ox_enter
+*gosub ox_header
+*gosub ox_layers
+*goto ox_menu
+
+*comment Shared setup so a direct visit and a later return land in the same state. ox_first_hub is true only on the first visit.
+*label ox_enter
+*temp ox_first_hub false
+*if (not(ox_seen))
+  *set ox_first_hub true
+*set current_district "oxworth"
+*set ox_seen true
+*gosub_scene calendar update_hub_condition
+*gosub ox_hours
+*gosub ox_hall_hours
+*gosub ox_yard_hours
+*return
+
+*comment The Village Head's Hall hours: open Morning through Afternoon. Shut at dusk, at night, in dangerous weather and on the rest day.
+*label ox_hall_hours
+*set ox_ok_hall false
+*set ox_hall_closed_reason "shut for the night"
+*if (day_of_week = "Hallowday")
+  *set ox_hall_closed_reason "closed for the rest day"
+  *return
+*if (street_life = "empty")
+  *set ox_hall_closed_reason "shut against the weather"
+  *return
+*if (time_period = "Dusk")
+  *set ox_hall_closed_reason "shut till morning"
+  *return
+*if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
+  *set ox_ok_hall true
+  *set ox_hall_closed_reason ""
+*return
+
+*comment Oxworth Market hours: Morning through Dusk, shut at night, on the rest day and while dangerous weather has emptied the streets.
+*label ox_hours
+*set ox_ok_market false
+*set ox_market_closed_reason "cleared and bolted for the night"
+*if (day_of_week = "Hallowday")
+  *set ox_market_closed_reason "closed for the rest day"
+  *return
+*if (street_life = "empty")
+  *set ox_market_closed_reason "empty in the weather"
+  *return
+*if ((((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon")) or (time_period = "Dusk"))
+  *set ox_ok_market true
+  *set ox_market_closed_reason ""
+*return
+
+*comment The Salting & Cattle Yard hours: Morning through Afternoon. Shut at dusk, at night, in dangerous weather and on the rest day.
+*label ox_yard_hours
+*set ox_ok_yard false
+*set ox_yard_closed_reason "locked up for the night"
+*if (day_of_week = "Hallowday")
+  *set ox_yard_closed_reason "quiet for the rest day"
+  *return
+*if (street_life = "empty")
+  *set ox_yard_closed_reason "shut against the weather"
+  *return
+*if (time_period = "Dusk")
+  *set ox_yard_closed_reason "banked down till morning"
+  *return
+*if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
+  *set ox_ok_yard true
+  *set ox_yard_closed_reason ""
+*return
+
+*comment The overworld's Oxworth tile (rn2) enters here. The last stretch of cattle lane costs five minutes once per arrival.
+*label rn2_arrive
+*set minutes_to_pass 5
+*set time_advance_call_id "ox_arrive_1"
+*gosub ox_walk_time
+*temp ox_first_arrival false
+*if (not(ox_arrival_seen))
+  *set ox_first_arrival true
+*set ox_arrival_seen true
+*gosub ox_enter
+*gosub ox_header
+*if (ox_first_arrival)
+  *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+    The cattle lane widens off the open down between split-rail cattle pens, leading toward low roofs and a few tallow-lit windows. Somewhere behind the dark hurdles a beast shifts and snorts in the straw.
+  *elseif (time_period = "Dusk")
+    The cattle lane widens between heavy timber pens as the light fails, cattle lowing behind the hurdles while smoke rises from low stone chimneys ahead.
+  *else
+    The road widens off the open down into a broad, trampled cattle lane bordered by heavy timber cattle pens, leading straight into a cluster of low stone-and-thatch roofs.
+*else
+  *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+    You follow the dark cattle lane between the pens toward the lit inn windows.
+  *elseif (time_period = "Dusk")
+    You come in along the cattle lane as the herds settle behind the hurdles for the night.
+  *else
+    You follow the worn cattle lane between the cattle pens into Oxworth.
+*line_break
+*gosub ox_layers
+*goto ox_menu
+
+*label ox_walk_time
+*set hours_to_pass 0
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return
+
+*label ox_header
+[b]◈ OXWORTH[/b]
+*line_break
+*return
+
+*label ox_layers
+*gosub ox_place
+*gosub ox_sky
+*gosub ox_street
+*return
+
+*comment Places return here without repeating the full village description.
+*label ox_return
+*gosub ox_enter
+*gosub ox_header
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  You come back out into the cattle lane, and the village lies quiet around the pens.
+*elseif (time_period = "Dusk")
+  You step back into the cattle lane as evening settles over the pens.
+*else
+  You come back out into Oxworth's cattle lane.
+*goto ox_menu
+
+*label ox_menu
+*comment Open-world free time: the sidebar's Wait and Rest work on this page.
+*set wait_ok_page page_id
+*set fresh_water_page page_id
+*choice
+  *if (ox_ok_market)
+    # [b]Oxworth Market[/b]: trestles, butcher's blocks and the beam-scale. [~5 min]
+      *goto_scene hartwell/oxworth/oxworth_market ox_market
+  *else
+    # [b]Oxworth Market[/b]: ${ox_market_closed_reason}.
+      *goto_scene hartwell/oxworth/oxworth_market ox_market_closed
+  # [b]The roads out of the village[/b]: leave Oxworth.
+    *set ow_pos "rn2"
+    *goto_scene overworld/overworld ow_here
+
+*comment ── LAYER 1: PLACE ── Fixed geography only. The long description prints once. Nothing here changes with the season or the hour.
+*label ox_place
+*line_break
+*if (ox_first_hub)
+  Oxworth sits squat on the open down, built around a wide, rutted cattle lane rather than a tidy green. Heavy split-rail cattle pens flank both approaches to the village, their turf worn down to packed earth and straw, with broad timber gates and stone troughs along the fence lines. Low cottages of rough fieldstone and dark timber huddle under deep thatch against the downs wind, each with a stout chimney and a small walled yard.
+
+  At the head of the lane stands a timber-and-turf hall with a mud-scraped porch and a wide notice board nailed beneath its eaves. Across the trampled yard beside the main pens, open trestles, butcher's blocks and an iron beam-scale sit under canvas awnings, while a long salting shed with brick rendering flues and stacked salt-casks backs onto the outer hurdles. Near the crossroads, a low stone inn hangs a carved wooden yoke and horn from an iron bracket above its door. Wood smoke, damp hide, brine and warm cattle hang heavy in the air.
+*else
+  Oxworth spreads along its wide cattle lane between the split-rail cattle pens, with the village head's hall at the head of the road, the market trestles and scale beside the main hurdles, the salting shed with its brick flues beyond, and the inn's yoke-and-horn sign near the crossroads.
+*return
+
+*comment ── LAYER 2: SKY ── Weather and light only, followed by the ground's recent-weather state.
+*label ox_sky
+*temp ox_dark false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set ox_dark true
+*if (weather = "Rain")
+  Rain darkens the split-rail pens and drips steadily off the low thatch, turning the trampled cattle lane into slick mud.
+*elseif (weather = "Storm")
+  Wind sweeps unimpeded off the open down, driving rain sideways across the pens. Canvas awnings snap over the market blocks, shutters bang, and cattle crowd to the leeward hurdles.
+*elseif (weather = "Fog")
+  Cold mist rolls off the downs and settles into the pens, hiding the far pastures and leaving only the nearest roofs and hurdle posts in view.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Wind-driven snow clings to the windward side of the pens and coats the thatch, while the open down beyond fades to pale grey.
+*elseif (weather = "Blizzard")
+  Blowing snow swallows the outer pens and the downs road alike. Even the village head's hall at the head of the lane is half lost in white.
+*elseif (weather = "Clear")
+  *if (ox_dark)
+    Clear starlight lies wide over the open down, throwing sharp shadows from the hurdle posts across the packed earth.
+  *elseif (time_period = "Dusk")
+    Low light stretches long shadows from the cattle pens across the lane and turns the smoke over the salting shed to pale gold.
+  *else
+    Bright, clean light pours over the open down, showing every roof and pen for half a mile around.
+*else
+  *if (ox_dark)
+    A heavy, starless sky presses down on the downs, with only the inn's lit windows and a lantern by the pens breaking the dark.
+  *else
+    Flat grey light sits over the down and dulls the rough stone of the cottages.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Water stands in the hoof-pocked ruts of the cattle lane, and the turf inside the pens is churned to deep mire.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The cattle lane is dark and greasy from recent rain, with shallow puddles along the fence lines.
+*return
+
+*comment ── LAYER 3: STREET ── Current village activity. Daytime work follows the season; the rotating vignette follows the clock.
+*label ox_street
+*temp ox_vignette (((campaign_day * 24) + clock_hour) modulo 6) + 1
+*temp ox_night false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set ox_night true
+*if ((street_life = "empty") and (not(ox_night)))
+  The cattle lane is churned mud and empty wind. Shutters are barred, the market awnings are lashed flat, and the cattle stand hunched behind the leeward hurdles.
+  *return
+*if (ox_night)
+  *if (ox_vignette = 1)
+    A watchman with a hooded lantern walks the outer pens, checking the gate bars before moving on.
+  *elseif (ox_vignette = 2)
+    Cattle shift and blow steam behind the dark hurdles, and a yard dog gives a single low bark.
+  *elseif (ox_vignette = 3)
+    Heavy boots scrape on the inn's porch as a pair of cattlemen step out into the cold and pull their cloaks tight.
+  *elseif (ox_vignette = 4)
+    A grease-lamp flickers in the salting shed window while someone banks the rendering hearth for the night.
+  *elseif (ox_vignette = 5)
+    Wind whistles through the split-rail fences and carries the smell of peat smoke down the lane.
+  *else
+    A loose gate-chain clinks against a post, and the rest of the village lies dark.
+  *return
+*if (time_period = "Dusk")
+  Cattlemen bar the outer pen gates for the night, scraping mud from their boots on the inn steps as tallow lamps come alight in the windows.
+  *return
+*if (day_of_week = "Hallowday")
+  The pens stand quiet and the salting flues are cold. Villagers in clean woollens gather in small knots near the hall porch, trading news of the Hartwell road while the dogs doze in the sun.
+  *return
+*if (day_of_week = "Marketday")
+  Carts from the Hartwell road and neighbouring farms crowd the cattle lane. Buyers poke at cattle ribs through the hurdles while hides and tallow tubs are weighed at the beam-scale.
+  *return
+*if (current_season = "Spring")
+  Calves bawl in the inner pens while hands mend winter-broken hurdles and haul out fresh straw.
+*elseif (current_season = "Summer")
+  Herds graze out on the high down by day, leaving the pens half empty and the salting hands busy with cheese-presses and tallow casks.
+*elseif (current_season = "Autumn")
+  The autumn drive packs every pen shoulder to shoulder. Cattlemen shout over the bawling of cattle, salt-wagons creak down from Hartwell, and tenant farmers argue loudly at the hall porch over trampled field edges.
+*else
+  Steam rises off the packed cattle in the pens, and thick wood smoke hangs low over the salting shed's flues.
+*if (ox_vignette = 1)
+  A herder with a long ash stick opens a hurdle gate and counts twelve horned steers through onto the lane.
+*elseif (ox_vignette = 2)
+  Two yard hands heave a dripping raw hide onto a wheelbarrow and trundle it toward the salting shed.
+*elseif (ox_vignette = 3)
+  A farmwife carries a basket of eggs and wrapped butter pats across the yard toward the market trestles.
+*elseif (ox_vignette = 4)
+  An old herdsman leans on the inn wall, whittling a peg while his black-and-white dog watches the pens.
+*elseif (ox_vignette = 5)
+  A carter checks the iron bands on a salt-cask before rolling it down his wagon's plank ramp.
+*else
+  A weathered man in a stained woollen coat stands by the hall porch, arguing with a neighbour over a broken boundary stake.
+*return

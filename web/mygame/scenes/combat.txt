@@ -2566,6 +2566,10 @@
 *if (shield_armed)
   *if (((spell_slots_1 <= 0) and (spell_slots_2 <= 0)) or (player_oa_used))
     *set shield_armed false
+*comment Hellish Rebuke is the same held reaction: arming reserves nothing, so a Pact slot spent on another spell (Hex, say) or the reaction used on an opportunity attack retires the stale arm before the hub advertises it.
+*if (rebuke_armed)
+  *if ((pact_slots <= 0) or (player_oa_used))
+    *set rebuke_armed false
 *if (absorb_elements_armed)
   *temp cae_still_ok false
   *if (spell_slots_1 > 0)
@@ -4007,6 +4011,8 @@
           *if ((inv_repelling_blast) and (combat_enemy_hp > 0))
             *gosub combat_size_rank combat_enemy_size
             *if ((combat_size_rank_value <= 3) and (combat_enemy_range < combat_max_range))
+              *comment The hit lowered the SCRATCH hit points; write them to the slot first, or the sync_in below reloads the old value over the wound and the damage is lost.
+              *gosub fight_sync_target_out
               *gosub_scene combat_movement combat_shift_target_range combat_active_target "away"
               *gosub fight_sync_target_in
               *gosub_scene combat_movement combat_range_name combat_enemy_range

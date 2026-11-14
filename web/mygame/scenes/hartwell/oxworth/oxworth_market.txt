@@ -1,0 +1,192 @@
+*comment ====================================================================================
+*comment OXWORTH MARKET (Oxworth): open trestles, butcher's blocks and a heavy iron beam-scale beside the main cattle pens. Plan: Resources & Quest/OXWORTH_SETTLEMENT_PLAN.md.
+*comment Open trade hub "ox_market" (tile "rn2", trade.js PILOT, market_defs.json, startup_parts/48_market.txt).
+*comment Closed on the rest day (Hallowday), at night and while dangerous weather has emptied the lanes.
+*comment Backdrop: Wallpaper/Oxworth_Market_Day.jpg and _Night.jpg (scenery.js SCENE_PLACES); ambience "village" (ambience.js ALIAS).
+*comment ====================================================================================
+
+*label ox_market
+*set minutes_to_pass 5
+*set time_advance_call_id "ox_market_walk_1"
+*gosub_scene hartwell/oxworth/oxworth ox_walk_time
+*gosub_scene hartwell/oxworth/oxworth ox_hours
+*if (not(ox_ok_market))
+  *set shop_open ""
+  *goto ox_market_closed
+*goto ox_market_ground
+
+*label ox_market_ground
+*gosub_scene hartwell/oxworth/oxworth ox_hours
+*if (not(ox_ok_market))
+  *set shop_open ""
+  *goto ox_market_closed
+*temp mk_first false
+*if (not(ox_market_seen))
+  *set mk_first true
+*set ox_market_seen true
+*temp mk_vignette (((campaign_day * 24) + clock_hour) modulo 6) + 1
+
+[b]◈ OXWORTH MARKET[/b]
+*line_break
+*gosub ox_market_layers
+*gosub ox_market_open_panel
+
+*comment Open-world free time: the sidebar's Wait and Rest work on this page.
+*set wait_ok_page page_id
+*choice
+  # ⚖ Settle up with the sellers.
+    *goto ox_market_settle
+  # Walk back to the cattle lane.
+    *set shop_open ""
+    *goto_scene hartwell/oxworth/oxworth ox_return
+
+*comment The trade panel's home: one open market for the whole yard, every commodity bought and the shelf sold from what it holds. Settling takes the panel's agreed totals (equipment.txt shop_check).
+*label ox_market_open_panel
+*set shop_open "ox_market"
+*set shop_rows ""
+*comment GEN:BEGIN ox_market_panel_rows
+*gosub_scene equipment market_rumor_check "ox_market"
+*comment GEN:END ox_market_panel_rows
+*return
+
+*label ox_market_cart_pass
+*comment GEN:BEGIN ox_market_cart_pass
+*gosub_scene equipment shop_cart_run "market" "ox_market_sell" "ox_market"
+*comment GEN:END ox_market_cart_pass
+*return
+
+*label ox_market_settle
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *gosub_scene equipment shop_begin
+  *gosub ox_market_cart_pass
+  *gosub_scene equipment shop_check
+  *if (shop_verdict = "ok")
+    *set shop_mode "apply"
+    *gosub ox_market_cart_pass
+    *set currency_add_amount (shop_tot_credit - shop_tot_cost)
+    *gosub_scene economy currency_add
+  *else
+    *set shop_mode "clear"
+    *gosub ox_market_cart_pass
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*if (shop_verdict = "empty")
+  You stand a moment by the trestles with nothing set aside, and the market goes on around you.
+  *page_break Back to the market…
+  *goto ox_market_ground
+*if (shop_verdict = "short")
+  You count your coin against the sums chalked on the casks and come up short. The goods stay where they are.
+  *page_break Back to the market…
+  *goto ox_market_ground
+*if ((shop_tot_bought > 0) and (shop_tot_sold > 0))
+  You go from stall to stall, setting your goods on the iron beam-scale and taking others up, while the scale-keeper chalks each weight until what is owed comes out square.
+*elseif (shop_tot_bought > 0)
+  You go from stall to stall, having each lot weighed on the beam-scale and counting out the coin, and a yard boy hauls your purchases to the edge of the lane.
+*else
+  At one trestle after another you set your goods on the scale, and each seller counts out coin from a greased leather purse.
+*if (not(shop_quote_line = ""))
+  *line_break
+  ${shop_quote_line}
+*if (not(shop_note_line = ""))
+  *line_break
+  ${shop_note_line}
+*if (shop_tot_sold > 0)
+  *line_break
+  [b][💰 Sold: ${shop_sold_list} for ${shop_credit_desc}][/b]
+*if (shop_tot_bought > 0)
+  *line_break
+  [b][🛒 Bought: ${shop_recv} for ${shop_cost_desc}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass shop_tot_minutes
+*if (shop_tot_sold > 0)
+  *set minutes_to_pass (minutes_to_pass + 5)
+*set time_advance_call_id "ox_market_trade"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Back to the market…
+*goto ox_market_ground
+
+*label ox_market_closed
+[b]◈ OXWORTH MARKET[/b]
+*line_break
+*if (day_of_week = "Hallowday")
+  The trestles are stacked against the salt-casks and the canvas tied down for the rest day. The iron beam-scale hangs bare above its plank platform, and only a pair of yard dogs snooze beside the hurdles.
+*elseif (street_life = "empty")
+  The trestles are stacked and the canvas lashed flat over the blocks and casks. Wind and weather sweep across the empty yard.
+*else
+  The trestles are stacked against the salt-casks and sheeted with canvas, and the beam-scale hangs silent above its platform. Across the hurdles, cattle shift in the dark.
+*choice
+  # Walk back to the cattle lane.
+    *goto_scene hartwell/oxworth/oxworth ox_return
+  # Wait by the pens a while. [~5 min]
+    *set minutes_to_pass 5
+    *set time_advance_call_id "ox_market_closed_wait"
+    *gosub_scene hartwell/oxworth/oxworth ox_walk_time
+    *goto_scene hartwell/oxworth/oxworth ox_return
+
+*comment ── LAYERS ── The yard is open to the downs sky, with canvas awnings over the blocks.
+*label ox_market_layers
+*gosub ox_market_place
+*gosub ox_market_sky
+*gosub ox_market_street
+*return
+
+*comment ── LAYER 1: PLACE ── Fixed geography only.
+*label ox_market_place
+*if (mk_first)
+  The market fills a trampled yard right beside Oxworth's main split-rail cattle pens. In the middle, a heavy iron beam-scale hangs from timber uprights on a plank platform, with scarred butcher's blocks and trestle tables ranged around it under stretched canvas awnings. The tables hold joints of beef wrapped in waxed paper, rounds of yellow cheese, butter crocks, baskets of eggs, tubs of rendered fat and folded raw hides bound with cord. Stacked salt-casks stand against the outer hurdles, and the brick rendering flues of the salting shed rise just behind the stalls. It smells of raw meat, brine, tallow and warm cattle.
+*else
+  The market stands beside the cattle pens as before: the iron beam-scale on its platform, the butcher's blocks and trestles under canvas awnings, the salt-casks by the hurdles, and the salting shed's flues behind.
+*return
+
+*comment ── LAYER 2: SKY ── Weather and light only, then ground state.
+*label ox_market_sky
+*if (weather = "Rain")
+  Rain drums on the stretched canvas awnings and runs in dark rivulets between the plank platform and the pens.
+*elseif (weather = "Fog")
+  Mist rolls off the open down and blurs the far hurdles and salt-casks into grey shapes.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Wet snow slides off the canvas awnings and turns to grey slush around the blocks and trestles.
+*elseif (weather = "Clear")
+  *if (time_period = "Dusk")
+    Low light slants across the pens, turning the canvas awnings and stacked salt-casks gold.
+  *else
+    Bright open-country light pours down across the yard and glints on the iron beam of the scale.
+*else
+  Flat grey light sits over the awnings and the dark hurdles behind them.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  The packed earth between the trestles is churned to mud, and water stands in every hoofprint.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The yard is dark and slick between the stalls from the last rain.
+*return
+
+*comment ── LAYER 3: STREET ── Current market activity.
+*label ox_market_street
+*if (time_period = "Dusk")
+  Sellers wash down the butcher's blocks and lash canvas over the casks, while the scale-keeper locks the iron weights into a stout wooden chest.
+  *return
+*if (day_of_week = "Marketday")
+  The yard is packed. Carters from the Hartwell road back wagons up to the hurdles, buyers test the heft of hides and beef quarters, and the beam-scale creaks without pause.
+  *return
+*if (time_period = "Morning")
+  Only half the stalls are laid out yet. A thick-shouldered man in a salt-stained canvas apron unlocks the weight chest at the scale platform while sellers prop up their awnings.
+  *return
+*if (mk_vignette = 1)
+  The scale-keeper in his salt-stained apron hooks a folded hide onto the beam-scale, waits for the bar to settle, and chalks the weight on a tally board.
+*elseif (mk_vignette = 2)
+  A buyer haggles over a tub of rendered fat, walks off toward the pens, and comes back two paces later.
+*elseif (mk_vignette = 3)
+  A farmwife sets baskets of eggs and wrapped butter pats along a trestle edge and counts coppers into her apron pocket.
+*elseif (mk_vignette = 4)
+  A butcher wipes his cleaver on a coarse cloth and wraps a dark red joint of beef in waxed paper.
+*elseif (mk_vignette = 5)
+  A carter rolls a salt-cask off his wagon's plank ramp while two yard boys steady it into line.
+*else
+  A yard dog trots under the trestles, noses at a dropped scrap, and ducks clear of a seller's boot.
+*return
