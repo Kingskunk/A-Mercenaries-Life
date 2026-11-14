@@ -306,8 +306,8 @@
     {
       id: "boar_meat", category: "provisions", owned: "has_boar_meat",
       weight: 2, stow: true, stack: true,
-      name: function (s) { var n = 1 + (Number(s.spare_boar_meat) || 0); return "Boar Meat" + (n > 1 ? " ×" + n : ""); },
-      description: "Dark, close-grained meat from a wild boar, for cooking or a trapper's trade."
+      name: function (s) { var n = 1 + (Number(s.spare_boar_meat) || 0); return "Pork Meat" + (n > 1 ? " ×" + n : ""); },
+      description: "Dark, close-grained pork from the woods, for cooking or a trapper's trade."
     },
     {
       id: "venison", category: "provisions", owned: "has_venison",
@@ -316,9 +316,15 @@
       description: "Lean, dark meat from an elk, for cooking or a trapper's trade."
     },
     {
+      id: "beef", category: "provisions", owned: "has_beef",
+      weight: 2, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_beef) || 0); return "Beef" + (n > 1 ? " ×" + n : ""); },
+      description: "Butchered beef off the drove, for cooking or the pot."
+    },
+    {
       id: "barley_loaf", category: "consumables", owned: "has_barley_loaf",
       weight: 0.75, stow: true, stack: true,
-      name: function (s) { var n = 1 + (Number(s.spare_barley_loaf) || 0); return "Barley Loaf" + (n > 1 ? " ×" + n : ""); },
+      name: function (s) { var n = 1 + (Number(s.spare_barley_loaf) || 0); return "Bread" + (n > 1 ? " ×" + n : ""); },
       description: "Dense barley-and-oat loaf from a Barleycross farm oven.",
       badge: "Holds off about 12 hours of hunger",
       use: true
@@ -368,8 +374,8 @@
     {
       id: "wine", category: "provisions", owned: "has_wine",
       weight: 20, stow: true, stack: true,
-      name: function (s) { var n = 1 + (Number(s.spare_wine) || 0); return "Wine Barrel" + (n > 1 ? " ×" + n : ""); },
-      description: "Small iron-hooped barrel of red vineyard wine."
+      name: function (s) { var n = 1 + (Number(s.spare_wine) || 0); return "Wine Cask" + (n > 1 ? " ×" + n : ""); },
+      description: "Small iron-hooped cask of red vineyard wine."
     },
     {
       id: "olives", category: "consumables", owned: "has_olives",
@@ -382,7 +388,7 @@
     {
       id: "oil", category: "provisions", owned: "has_oil",
       weight: 3, stow: true, stack: true,
-      name: function (s) { var n = 1 + (Number(s.spare_oil) || 0); return "Oil Flask" + (n > 1 ? " ×" + n : ""); },
+      name: function (s) { var n = 1 + (Number(s.spare_oil) || 0); return "Olive Oil" + (n > 1 ? " ×" + n : ""); },
       description: "Squat clay flask of pressed olive oil."
     },
     {
@@ -406,16 +412,8 @@
     {
       id: "farm_eggs", category: "provisions", owned: "has_farm_eggs",
       weight: 0.75, stow: true, stack: true,
-      name: function (s) { var n = 1 + (Number(s.spare_farm_eggs) || 0); return "Farm Eggs" + (n > 1 ? " ×" + n : ""); },
+      name: function (s) { var n = 1 + (Number(s.spare_farm_eggs) || 0); return "Eggs" + (n > 1 ? " ×" + n : ""); },
       description: "Six brown eggs packed safely in straw, for frying, baking, or a pot."
-    },
-    {
-      id: "dried_pork_sausage", category: "consumables", owned: "has_dried_pork_sausage",
-      weight: 0.4, stow: true, stack: true,
-      name: function (s) { var n = 1 + (Number(s.spare_dried_pork_sausage) || 0); return "Dried Pork Sausage" + (n > 1 ? " ×" + n : ""); },
-      description: "Short smoked pork sausage, wrapped for travel.",
-      badge: "Holds off about 12 hours of hunger",
-      use: true
     },
     {
       id: "onions", category: "provisions", owned: "has_onions",
@@ -658,8 +656,8 @@
     {
       id: "smoked_sausage_braise", category: "consumables", owned: "has_smoked_sausage_braise",
       weight: 1, stow: true, stack: true,
-      name: function (s) { var n = 1 + (Number(s.spare_smoked_sausage_braise) || 0); return "Smoked Sausage and Cabbage Braise" + (n > 1 ? " ×" + n : ""); },
-      description: "Crock of cabbage braised with smoked sausage.",
+      name: function (s) { var n = 1 + (Number(s.spare_smoked_sausage_braise) || 0); return "Pork and Cabbage Braise" + (n > 1 ? " ×" + n : ""); },
+      description: "Crock of cabbage braised with pork.",
       badge: "A full meal: +1 STR for 10 hours, +2 temporary HP",
       use: true
     },

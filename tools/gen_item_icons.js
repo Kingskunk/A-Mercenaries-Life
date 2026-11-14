@@ -202,6 +202,7 @@ const MAP = {
   hornwort: "../Generic/Hornworth_Generated_Source.png",
   wolfsbane: "../Generic/Wolfsbane_Generated_Source.png",
   venison: "FOOD_Raw_Steak_Unfaded_Icon.png",                                   // an elk's haunch (STAND-IN: no wild-meat art yet)
+  beef: "FOOD_Raw_Steak_Unfaded_Icon.png",                                      // Oxworth's cattle droving (the user, 2026-11-14: reuse the same raw-steak art as venison rather than wait on new art)
   heartwood_fruit: "FOOD_Goodberry_Unfaded_Icon.png",                   // Bark's reward
   honeycomb: "FOOD_Honey_Comb_Unfaded_Icon.png",                    // the Longshade bee tree
   frog_slime: "Bowl_With_Dead_Tadpoles_Unfaded_Icon.png",
@@ -264,7 +265,6 @@ const MAP = {
   wine: "../Generic/Weathered Wine Barrel Icon.png",          // the user's own art (2026-11-02): one barrel row for all wine
   root_vegetable_bundle: "FOOD_Turnip_Unfaded_Icon.png",
   farm_eggs: "FOOD_Egg_Unfaded_Icon.png",
-  dried_pork_sausage: "FOOD_Dried_Pork_Sausage_Unfaded_Icon.png",
   onions: "FOOD_Onion_Unfaded_Icon.png",
   potatoes: "FOOD_Potato_Unfaded_Icon.png",
   tomatoes: "FOOD_Tomato_Unfaded_Icon.png",

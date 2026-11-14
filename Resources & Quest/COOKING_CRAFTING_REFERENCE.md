@@ -32,12 +32,12 @@ Each recipe spends **one whole unit of each ingredient** at the unit's existing 
 
 | Recipe | Ingredients (one unit each) | Cost | DC | Boon on eating | Tier | Duration | Temp HP | Cook time | Finished-dish icon |
 | --- | --- | ---: | ---: | --- | --- | ---: | ---: | ---: | --- |
-| Dripping-Roasted Boar | Boar Meat + Animal Fat | 9 c | 10 | +1 STR | special | 12 hours | 2 | 60 min | `FOOD_Grilled_Pork_Leg_Unfaded_Icon.png` |
+| Dripping-Roasted Boar | Pork Meat + Animal Fat | 9 c | 10 | +1 STR | special | 12 hours | 2 | 60 min | `FOOD_Grilled_Pork_Leg_Unfaded_Icon.png` |
 | Onion-Seared Venison | Venison + Onions | 9 c | 10 | +1 DEX | special | 12 hours | 2 | 60 min | `FOOD_Grilled_Steak_Unfaded_Icon.png` |
 | Pot-Braised Chicken and Roots | Dressed Chicken + Root-Vegetable Bundle | 9 c | 11 | +1 CON | special | 12 hours | 2 | 60 min | `FOOD_Hearty_Dinner_Unfaded_Icon.png` |
 | Riverfish and Barley Pottage | Fish + Grain | 6 c | 11 | +1 CON | hearty | 10 hours | 2 | 45 min | `FOOD_Murky_Stew_Unfaded_Icon.png` |
 | Tomato Riverfish Broth | Fish + Tomatoes | 7 c | 11 | +1 WIS | hearty | 10 hours | 2 | 45 min | `FOOD_Seafood_Bouillabaisse_Unfaded_Icon.png` |
-| Smoked Sausage and Cabbage Braise | Dried Pork Sausage + Cabbage | 5 c | 10 | +1 STR | hearty | 10 hours | 2 | 45 min | `FOOD_Stout_Stew_Unfaded_Icon.png` |
+| Pork and Cabbage Braise | Pork Meat + Cabbage | 5 c | 10 | +1 STR | hearty | 10 hours | 2 | 45 min | `FOOD_Stout_Stew_Unfaded_Icon.png` |
 | Pumpkin and Onion Soup | Pumpkin + Onions | 5 c | 10 | +1 WIS | staple | 8 hours | 1 | 30 min | `FOOD_Pumpkin_Soup_Unfaded_Icon.png` |
 | Field-Garden Stew | Root-Vegetable Bundle + Cabbage | 4 c | 10 | +1 CON | staple | 8 hours | 1 | 30 min | `FOOD_Vegetable_Soup_Unfaded_Icon.png` |
 | Honeyed Barley Porridge | Grain + Honey | 6 c | 10 | +1 INT | staple | 8 hours | 1 | 30 min | `FOOD_Gruel_Unfaded_Icon.png` |
@@ -52,7 +52,7 @@ Each recipe spends **one whole unit of each ingredient** at the unit's existing 
 ## Recipe review before implementation
 
 - **Keep dishes plausible over a campfire.** Pottage, pudding, and braised chicken can be made in the lidded iron pot. The chicken illustration still shows a plated portion with roots. A separate frying pan is not an inventory item.
-- **Add a simple egg dish if the cookbook expands.** Farm Eggs + Onions could make Onion Egg Scramble; Farm Eggs + Cheese could make Cheese Eggs. A Dried Pork Sausage + Potatoes hash would likewise use two existing ingredients. Butter and beeswax have no recipe yet.
+- **Add a simple egg dish if the cookbook expands.** Eggs + Onions could make Onion Egg Scramble; Eggs + Cheese could make Cheese Eggs. A Pork Meat + Potatoes hash would likewise use two existing ingredients. Butter and beeswax have no recipe yet.
 - **Keep preparation distinct from eating.** The cooking attempt spends time and ingredients; a successful dish becomes a carried item. Its hunger relief and boon apply only when it is eaten.
 - **Recipe descriptions** should read as one meal. Prose about roasting a whole bird or haunch is fine here because the whole unit is spent.
 

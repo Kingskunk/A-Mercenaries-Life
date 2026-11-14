@@ -102,6 +102,7 @@ The kettle begins to whisper. Janna pours the hot water into two cups, then sett
     Janna holds your gaze. "That matters. It doesn't make the wanting go away, though." Her smile returns, smaller this time. "Maybe it makes it easier to carry."
 
 *set af_janna_after_hours_seen true
+*set janna_last_evening "ambition"
 *if (not(janna_bond_award_locked)) or (not(locked_janna_bond_page_id = page_id))
   *set janna_bond + 3
   *set janna_bond_award_locked true
@@ -141,9 +142,45 @@ The small room is warm from the chimney stones. A low lamp burns beside the tabl
   The river and mill-race are muffled beyond the wall.
 *elseif ((weather = "Snow") or (weather = "Sleet"))
   Meltwater ticks from the eaves outside, slow and regular.
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Water from the earlier rain still runs along the drainage stone outside the threshold, though the bricks inside are dry.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The lane behind the smithy is dark with damp from the recent rain, and a trace of wet earth clings to the threshold step.
+
+*temp ja_vignette (((campaign_day * 24) + clock_hour) modulo 4)
+*if (ja_vignette = 0)
+  Through the shared brick wall, the dying forge bed gives an occasional soft crack as the banked charcoal settles for the night.
+*elseif (ja_vignette = 1)
+  A pair of freshly oiled tongs and a leather apron hang on the peg beside the door, carrying the clean smell of tallow and hot iron.
+*elseif (ja_vignette = 2)
+  The iron kettle on the trivet lets out a thin, steady ribbon of steam, warming the herb bundle hung to dry against the chimney breast.
+*else
+  Down by the bank, the timber paddles of the mill-wheel creak once as the night current shifts against the weir gate.
 
 *if (not(ja_weekly_open))
-  Janna has already made room for you this week. She gives you a small smile from the table. "Come back when you can give the evening its due."
+  Janna looks up from the table with a warm, unhurried smile. "You were only here a night or two ago. Sit and warm your hands if you want, though the week's work still has the rest of my evening."
+  *if (janna_last_evening = "stew")
+    "I rebuilt that cart fitting this morning," she adds, amusement touching her mouth. "And I left the salt jar on the far shelf where it belongs."
+  *elseif (janna_last_evening = "loaf")
+    "There's still a heel of that carter's bread in the cloth," she adds. "Held up better than most of the flour in town."
+  *elseif (janna_last_evening = "town")
+    "The lane outside has been quieter since we talked," she says. "Nobody arguing under the eaves tonight, at least."
+  *elseif (janna_last_evening = "quench")
+    "That blade took the temper on the second heat," she tells you, nodding toward the shop wall. "Cold water and a calmer hand did it."
+  *elseif (janna_last_evening = "buckle")
+    "The buckle owner took the proper repair," she says with quiet satisfaction. "Paid the extra copper without a blink once I showed him the break."
+  *elseif (janna_last_evening = "axe")
+    "Torvald tested that hand axe on a seasoned oak knot today," she says. "Didn't chip. He didn't praise it, which means it's good."
+  *elseif (janna_last_evening = "post")
+    "Two watchmen drove a fresh stake beside that leaning marker post on the race," she says. "Still crooked, but it won't wash out with the next rain."
+  *elseif (janna_last_evening = "fisher")
+    "That hooded angler was back on the bank at dusk," she says softly. "Pulled in a grey perch the length of my forearm."
+  *elseif (janna_last_evening = "road")
+    "I looked out toward the High Grey Road when I unbarred the shutters at dawn," she murmurs. "Strange how different a road looks when you know someone walking it."
+  *elseif (janna_last_evening = "night")
+    Her gaze lingers on yours for a beat, her fingers brushing the back of your wrist as you pass the table. "I slept well after you left. Better than usual."
+  *elseif (janna_last_evening = "ambition")
+    She glances toward a scrap of charcoal-marked iron on the shelf. "Still practicing the strike for my own mark when the anvil's cold."
 *if ((janna_intimacy_unlocked) and (not(time_period = "Night")))
   Janna sets another piece of coal on the hearth. "Stay awhile if you want. I'm not settling in for the night yet."
 *choice
@@ -153,6 +190,8 @@ The small room is warm from the chimney stones. A low lamp burns beside the tabl
   *if ((janna_intimacy_unlocked) and ((ja_weekly_open) and (time_period = "Night")))
     # Ask Janna whether she wants to spend the night together. [~8 hours]
       *goto af_janna_intimacy_offer
+  # Stay a while and help with the evening's small work. [~2 hours]
+    *goto af_janna_ordinary_evening
   # Leave Janna to her evening.
     You rise from the table. "I'll let you have the quiet back."
 
@@ -160,12 +199,50 @@ The small room is warm from the chimney stones. A low lamp burns beside the tabl
 
     *goto_scene alderford/alderford alderford
 
+*comment Ordinary time is deliberately repeatable: it gives the relationship a lived-in rhythm,
+*comment but does not award Bond or consume the once-weekly meaningful evening.
+*label af_janna_ordinary_evening
+*temp ja_ordinary_variant (campaign_day modulo 3)
+*if (ja_ordinary_variant = 0)
+  A wooden tray of cooled rivets and iron washers sits on the bench beside an oiled rag. Janna nudges the cloth toward you. "Nothing that takes a hammer," she says. "Just wiping the quench damp off before rust finds them."
+
+  You sit across from her, rolling each pin through the oiled cloth and dropping it into the sorted bin while she marks the charcoal sacks in chalk on the bin lid. Every so often her knuckles brush yours over the wooden divider.
+
+  "Half the time in half the quiet," she says when the tray is empty. "I'll take that trade."
+*elseif (ja_ordinary_variant = 1)
+  Janna has a pair of long box-jaw tongs across her knees, binding fresh leather strips around the handles to spare her palms from the heat. When you reach for the spare awl and waxed cord, she slides the second pair across the bench to you.
+
+  The two of you work in an easy rhythm beside the warm chimney stones, pulling each stitch tight and trimming the ends flush. The only sounds are the whisper of the kettle and the steady turn of the wheel beyond the wall.
+
+  "Good tension," she says, testing your wrap with her thumb. "You've got steady hands when you aren't in a hurry."
+*else
+  Janna takes a flat iron shovel to bank the outer forge coals with damp ash for the night, and you follow to help check the timber gate-lever above the mill-race. Once the chains are pinned and the shutters barred from within, she pours two mugs of warm spiced water at the alcove table.
+
+  You sit together with your shoulders touching while the heat settles in the bricks behind you.
+
+  "Thanks for staying," she says quietly. "The shop closes easier when I'm not the only one locking it."
+
+*set hours_to_pass 2
+*set minutes_to_pass 0
+*set time_advance_call_id "af_janna_ordinary_evening"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*page_break Return to Alderford…
+*goto_scene alderford/alderford alderford
+
 *label af_janna_weekly_event
 *temp ja_event (ja_week modulo 3)
 *temp ja_cycle (((ja_week - 1) - ((ja_week - 1) modulo 3)) / 3)
 *temp ja_variant (ja_cycle modulo 3)
 *if (ja_event = 1)
   *if (ja_variant = 0)
+    *set janna_last_evening "stew"
     Two bowls wait on the table, and Janna is looking at them as though they have personally insulted her. "I put too much salt in it," she says. "That is what comes of thinking about rivets while cooking."
 
     *choice
@@ -182,6 +259,7 @@ The small room is warm from the chimney stones. A low lamp burns beside the tabl
 
         "Careful," Janna says, though she is smiling too. "I have tongs within reach." After a moment, she adds, "It is better with someone here to make the mistake feel smaller."
   *elseif (ja_variant = 1)
+    *set janna_last_evening "loaf"
     A wrapped loaf sits beside the kettle. Janna loosens the cloth and nods toward it. "A carter brought it by. I mended a harness for her last month, and she says she finally has the coin to settle the last of it. This was extra."
 
     *choice
@@ -198,6 +276,7 @@ The small room is warm from the chimney stones. A low lamp burns beside the tabl
 
         Janna answers without hesitation. "Tools. Repairs. Things people use until they forget the maker's name. I would like my mark on work that earns that kind of trust."
   *else
+    *set janna_last_evening "town"
     The kettle has gone quiet between you. Janna warms both bowls over the coals, then says, "I heard two people arguing outside about whether a place is worth keeping when all it does is ask more from you."
 
     *choice
@@ -215,6 +294,7 @@ The small room is warm from the chimney stones. A low lamp burns beside the tabl
         "So am I," Janna says. The answer comes quickly, then she smiles at it as if surprised. "I should do it more often."
 *elseif (ja_event = 2)
   *if (ja_variant = 0)
+    *set janna_last_evening "quench"
     The quench trough stands uncovered beside the forge, its water black in the lamplight. Janna stirs it with a bar and listens to the faint clink against the bottom. "Too warm for the edge I want," she says. "Stay a moment. I need to decide whether to start again."
 
     *choice
@@ -231,6 +311,7 @@ The small room is warm from the chimney stones. A low lamp burns beside the tabl
 
         "Yes," Janna says simply. "You do not have to fill the room to be in it."
   *elseif (ja_variant = 1)
+    *set janna_last_evening "buckle"
     Janna has a broken belt buckle on the bench, its tongue snapped cleanly through. "The owner wants it back by market day. I can patch it, but I would rather make the repair that lasts."
 
     *choice
@@ -247,6 +328,7 @@ The small room is warm from the chimney stones. A low lamp burns beside the tabl
 
         Janna looks surprised, then relieved. "Ten minutes I can manage." She pushes the buckle aside. "Tell me what has been happening beyond this shop."
   *else
+    *set janna_last_evening "axe"
     A small hand axe rests on the bench, newly sharpened. Janna holds it out by the haft. "I have been trying a different bevel. Does it feel honest to you?"
 
     *choice
@@ -264,6 +346,7 @@ The small room is warm from the chimney stones. A low lamp burns beside the tabl
         Janna stares at you for half a breath, then laughs hard enough to have to put a hand on the bench. "That is cruel." Her grin stays. "And not entirely wrong."
 *else
   *if (ja_variant = 0)
+    *set janna_last_evening "post"
     Janna takes you along the mill-race path after the shutters are barred. The water is higher than usual, shouldering hard at the stones. She stops at a leaning marker post and tests it with one hand. "Another hard rain and this will go."
 
     *choice
@@ -280,6 +363,7 @@ The small room is warm from the chimney stones. A low lamp burns beside the tabl
 
         "We can," Janna says. She looks at you with open appreciation. "You are good at turning worry into the next useful thing."
   *elseif (ja_variant = 1)
+    *set janna_last_evening "fisher"
     Further along the race, a line has been cast from the bank. Its owner sits under a hood, patient as a fence post. Janna lowers her voice as you pass. "They come out when the town is quiet. Says the river gives up better fish after dark."
 
     *choice
@@ -296,6 +380,7 @@ The small room is warm from the chimney stones. A low lamp burns beside the tabl
 
         Janna thinks for several steps. "The sound of work beginning before dawn," she says. "Not the work itself. Just the moment everyone decides the day is worth trying."
   *else
+    *set janna_last_evening "road"
     The path rises to a small stand of alder above the race, where the town lights are broken by branches. Janna rests her forearms on the rail and looks toward the dark line of the High Grey Road. "Some days I think about taking that road just to learn what I miss."
 
     *choice
@@ -435,6 +520,7 @@ Janna waits beside the hearth, watching your face rather than assuming an answer
 
 *label af_janna_after_intimacy
 *set janna_intimacy_return ""
+*set janna_last_evening "night"
 *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
   *set intimate_encounters + 1
   *set stat_bump_locked true

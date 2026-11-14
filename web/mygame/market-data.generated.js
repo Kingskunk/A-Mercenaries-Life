@@ -2314,17 +2314,6 @@ window.MARKET_DEFS = {
     },
     "need": 0.7
    },
-   "dried_pork_sausage": {
-    "base": 3,
-    "target": 96,
-    "stock0": 96,
-    "buyPct": 0.8,
-    "mult": 0.9,
-    "world": {
-     "tile": "fv"
-    },
-    "need": 0.7
-   },
    "onions": {
     "base": 2,
     "target": 144,
@@ -2419,6 +2408,17 @@ window.MARKET_DEFS = {
     "stock0": 89,
     "buyPct": 0.8,
     "mult": 0.975,
+    "world": {
+     "tile": "fv"
+    },
+    "need": 0.4
+   },
+   "beef": {
+    "base": 7,
+    "target": 27,
+    "stock0": 27,
+    "buyPct": 0.8,
+    "mult": 1.245,
     "world": {
      "tile": "fv"
     },
@@ -2747,6 +2747,17 @@ window.MARKET_DEFS = {
     },
     "need": 0.4
    },
+   "beef": {
+    "base": 7,
+    "target": 39,
+    "stock0": 39,
+    "buyPct": 0.8,
+    "mult": 1.215,
+    "world": {
+     "tile": "tm"
+    },
+    "need": 0.4
+   },
    "barley_loaf": {
     "base": 2,
     "target": 128,
@@ -2897,17 +2908,6 @@ window.MARKET_DEFS = {
     "base": 3,
     "target": 192,
     "stock0": 192,
-    "buyPct": 0.8,
-    "mult": 0.93,
-    "world": {
-     "tile": "tm"
-    },
-    "need": 0.7
-   },
-   "dried_pork_sausage": {
-    "base": 3,
-    "target": 128,
-    "stock0": 128,
     "buyPct": 0.8,
     "mult": 0.93,
     "world": {
@@ -3212,6 +3212,17 @@ window.MARKET_DEFS = {
     },
     "need": 0.4
    },
+   "beef": {
+    "base": 7,
+    "target": 21,
+    "stock0": 21,
+    "buyPct": 0.8,
+    "mult": 1.395,
+    "world": {
+     "tile": "bw"
+    },
+    "need": 0.4
+   },
    "barley_loaf": {
     "base": 2,
     "target": 96,
@@ -3236,8 +3247,8 @@ window.MARKET_DEFS = {
    },
    "cheese": {
     "base": 3,
-    "target": 91,
-    "stock0": 91,
+    "target": 92,
+    "stock0": 92,
     "buyPct": 0.8,
     "mult": 1.089,
     "world": {
@@ -3247,8 +3258,8 @@ window.MARKET_DEFS = {
    },
    "butter": {
     "base": 5,
-    "target": 85,
-    "stock0": 85,
+    "target": 86,
+    "stock0": 86,
     "buyPct": 0.8,
     "mult": 1.089,
     "world": {
@@ -3258,8 +3269,8 @@ window.MARKET_DEFS = {
    },
    "animal_fat": {
     "base": 3,
-    "target": 127,
-    "stock0": 127,
+    "target": 128,
+    "stock0": 128,
     "buyPct": 0.8,
     "mult": 1.119,
     "world": {
@@ -3364,17 +3375,6 @@ window.MARKET_DEFS = {
     "stock0": 141,
     "buyPct": 0.8,
     "mult": 1.089,
-    "world": {
-     "tile": "bw"
-    },
-    "need": 0.7
-   },
-   "dried_pork_sausage": {
-    "base": 3,
-    "target": 71,
-    "stock0": 71,
-    "buyPct": 0.8,
-    "mult": 1.084,
     "world": {
      "tile": "bw"
     },
@@ -3677,6 +3677,17 @@ window.MARKET_DEFS = {
     },
     "need": 0.4
    },
+   "beef": {
+    "base": 7,
+    "target": 26,
+    "stock0": 26,
+    "buyPct": 0.8,
+    "mult": 1.26,
+    "world": {
+     "tile": "fo"
+    },
+    "need": 0.4
+   },
    "barley_loaf": {
     "base": 2,
     "target": 96,
@@ -3827,17 +3838,6 @@ window.MARKET_DEFS = {
     "base": 3,
     "target": 144,
     "stock0": 144,
-    "buyPct": 0.8,
-    "mult": 0.975,
-    "world": {
-     "tile": "fo"
-    },
-    "need": 0.7
-   },
-   "dried_pork_sausage": {
-    "base": 3,
-    "target": 84,
-    "stock0": 84,
     "buyPct": 0.8,
     "mult": 0.975,
     "world": {
@@ -4142,6 +4142,17 @@ window.MARKET_DEFS = {
     },
     "need": 0.4
    },
+   "beef": {
+    "base": 7,
+    "target": 20,
+    "stock0": 20,
+    "buyPct": 0.8,
+    "mult": 1.42,
+    "world": {
+     "tile": "mc"
+    },
+    "need": 0.4
+   },
    "barley_loaf": {
     "base": 2,
     "target": 96,
@@ -4188,8 +4199,8 @@ window.MARKET_DEFS = {
    },
    "animal_fat": {
     "base": 3,
-    "target": 138,
-    "stock0": 138,
+    "target": 139,
+    "stock0": 139,
     "buyPct": 0.8,
     "mult": 1,
     "world": {
@@ -4292,17 +4303,6 @@ window.MARKET_DEFS = {
     "base": 3,
     "target": 144,
     "stock0": 144,
-    "buyPct": 0.8,
-    "mult": 1,
-    "world": {
-     "tile": "mc"
-    },
-    "need": 0.7
-   },
-   "dried_pork_sausage": {
-    "base": 3,
-    "target": 84,
-    "stock0": 84,
     "buyPct": 0.8,
     "mult": 1,
     "world": {
@@ -4608,6 +4608,17 @@ window.MARKET_DEFS = {
     },
     "need": 0.4
    },
+   "beef": {
+    "base": 7,
+    "target": 31,
+    "stock0": 31,
+    "buyPct": 0.8,
+    "mult": 1.335,
+    "world": {
+     "tile": "af"
+    },
+    "need": 0.4
+   },
    "barley_loaf": {
     "base": 2,
     "target": 128,
@@ -4758,17 +4769,6 @@ window.MARKET_DEFS = {
     "base": 3,
     "target": 192,
     "stock0": 192,
-    "buyPct": 0.8,
-    "mult": 0.99,
-    "world": {
-     "tile": "af"
-    },
-    "need": 0.7
-   },
-   "dried_pork_sausage": {
-    "base": 3,
-    "target": 128,
-    "stock0": 128,
     "buyPct": 0.8,
     "mult": 0.99,
     "world": {
@@ -4989,8 +4989,8 @@ window.MARKET_DEFS = {
    },
    "raw_hide": {
     "base": 8,
-    "target": 113,
-    "stock0": 113,
+    "target": 114,
+    "stock0": 114,
     "buyPct": 0.8,
     "mult": 1.065,
     "world": {
@@ -5068,6 +5068,17 @@ window.MARKET_DEFS = {
     "stock0": 56,
     "buyPct": 0.8,
     "mult": 1.105,
+    "world": {
+     "tile": "rv"
+    },
+    "need": 0.4
+   },
+   "beef": {
+    "base": 7,
+    "target": 22,
+    "stock0": 22,
+    "buyPct": 0.8,
+    "mult": 1.375,
     "world": {
      "tile": "rv"
     },
@@ -5223,17 +5234,6 @@ window.MARKET_DEFS = {
     "base": 3,
     "target": 144,
     "stock0": 144,
-    "buyPct": 0.8,
-    "mult": 1.03,
-    "world": {
-     "tile": "rv"
-    },
-    "need": 0.7
-   },
-   "dried_pork_sausage": {
-    "base": 3,
-    "target": 83,
-    "stock0": 83,
     "buyPct": 0.8,
     "mult": 1.03,
     "world": {
@@ -5454,8 +5454,8 @@ window.MARKET_DEFS = {
    },
    "raw_hide": {
     "base": 8,
-    "target": 76,
-    "stock0": 76,
+    "target": 77,
+    "stock0": 77,
     "buyPct": 0.8,
     "mult": 1.105,
     "world": {
@@ -5538,6 +5538,17 @@ window.MARKET_DEFS = {
     },
     "need": 0.4
    },
+   "beef": {
+    "base": 7,
+    "target": 20,
+    "stock0": 20,
+    "buyPct": 0.8,
+    "mult": 1.41,
+    "world": {
+     "tile": "wf"
+    },
+    "need": 0.4
+   },
    "barley_loaf": {
     "base": 2,
     "target": 96,
@@ -5562,8 +5573,8 @@ window.MARKET_DEFS = {
    },
    "cheese": {
     "base": 3,
-    "target": 95,
-    "stock0": 95,
+    "target": 96,
+    "stock0": 96,
     "buyPct": 0.8,
     "mult": 1.065,
     "world": {
@@ -5573,8 +5584,8 @@ window.MARKET_DEFS = {
    },
    "butter": {
     "base": 5,
-    "target": 89,
-    "stock0": 89,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
     "mult": 1.065,
     "world": {
@@ -5584,8 +5595,8 @@ window.MARKET_DEFS = {
    },
    "animal_fat": {
     "base": 3,
-    "target": 127,
-    "stock0": 127,
+    "target": 128,
+    "stock0": 128,
     "buyPct": 0.8,
     "mult": 1.09,
     "world": {
@@ -5688,17 +5699,6 @@ window.MARKET_DEFS = {
     "base": 3,
     "target": 144,
     "stock0": 144,
-    "buyPct": 0.8,
-    "mult": 1.065,
-    "world": {
-     "tile": "wf"
-    },
-    "need": 0.7
-   },
-   "dried_pork_sausage": {
-    "base": 3,
-    "target": 77,
-    "stock0": 77,
     "buyPct": 0.8,
     "mult": 1.065,
     "world": {
@@ -5919,8 +5919,8 @@ window.MARKET_DEFS = {
    },
    "raw_hide": {
     "base": 8,
-    "target": 70,
-    "stock0": 70,
+    "target": 71,
+    "stock0": 71,
     "buyPct": 0.8,
     "mult": 1.14,
     "world": {
@@ -6003,6 +6003,17 @@ window.MARKET_DEFS = {
     },
     "need": 0.4
    },
+   "beef": {
+    "base": 7,
+    "target": 42,
+    "stock0": 42,
+    "buyPct": 0.8,
+    "mult": 1.395,
+    "world": {
+     "tile": "pv"
+    },
+    "need": 0.4
+   },
    "barley_loaf": {
     "base": 2,
     "target": 192,
@@ -6049,8 +6060,8 @@ window.MARKET_DEFS = {
    },
    "animal_fat": {
     "base": 3,
-    "target": 265,
-    "stock0": 265,
+    "target": 266,
+    "stock0": 266,
     "buyPct": 0.8,
     "mult": 1.08,
     "world": {
@@ -6155,17 +6166,6 @@ window.MARKET_DEFS = {
     "stock0": 288,
     "buyPct": 0.8,
     "mult": 1.05,
-    "world": {
-     "tile": "pv"
-    },
-    "need": 0.7
-   },
-   "dried_pork_sausage": {
-    "base": 3,
-    "target": 164,
-    "stock0": 164,
-    "buyPct": 0.8,
-    "mult": 1.045,
     "world": {
      "tile": "pv"
     },
@@ -6383,8 +6383,8 @@ window.MARKET_DEFS = {
    },
    "raw_hide": {
     "base": 8,
-    "target": 146,
-    "stock0": 146,
+    "target": 147,
+    "stock0": 147,
     "buyPct": 0.8,
     "mult": 1.125,
     "world": {
@@ -6467,6 +6467,17 @@ window.MARKET_DEFS = {
     },
     "need": 0.4
    },
+   "beef": {
+    "base": 7,
+    "target": 74,
+    "stock0": 74,
+    "buyPct": 0.8,
+    "mult": 1.055,
+    "world": {
+     "tile": "lg"
+    },
+    "need": 0.4
+   },
    "barley_loaf": {
     "base": 2,
     "target": 160,
@@ -6513,8 +6524,8 @@ window.MARKET_DEFS = {
    },
    "animal_fat": {
     "base": 3,
-    "target": 236,
-    "stock0": 236,
+    "target": 240,
+    "stock0": 240,
     "buyPct": 0.8,
     "mult": 1.09,
     "world": {
@@ -6619,17 +6630,6 @@ window.MARKET_DEFS = {
     "stock0": 240,
     "buyPct": 0.8,
     "mult": 1.08,
-    "world": {
-     "tile": "lg"
-    },
-    "need": 0.7
-   },
-   "dried_pork_sausage": {
-    "base": 3,
-    "target": 96,
-    "stock0": 96,
-    "buyPct": 0.8,
-    "mult": 1.09,
     "world": {
      "tile": "lg"
     },
@@ -6932,6 +6932,17 @@ window.MARKET_DEFS = {
     },
     "need": 0.4
    },
+   "beef": {
+    "base": 7,
+    "target": 60,
+    "stock0": 60,
+    "buyPct": 0.8,
+    "mult": 0.975,
+    "world": {
+     "tile": "fm"
+    },
+    "need": 0.4
+   },
    "barley_loaf": {
     "base": 2,
     "target": 96,
@@ -6978,8 +6989,8 @@ window.MARKET_DEFS = {
    },
    "animal_fat": {
     "base": 3,
-    "target": 130,
-    "stock0": 130,
+    "target": 137,
+    "stock0": 137,
     "buyPct": 0.8,
     "mult": 1.045,
     "world": {
@@ -7084,17 +7095,6 @@ window.MARKET_DEFS = {
     "stock0": 144,
     "buyPct": 0.8,
     "mult": 1,
-    "world": {
-     "tile": "fm"
-    },
-    "need": 0.7
-   },
-   "dried_pork_sausage": {
-    "base": 3,
-    "target": 47,
-    "stock0": 47,
-    "buyPct": 0.8,
-    "mult": 1.17,
     "world": {
      "tile": "fm"
     },
@@ -7398,6 +7398,17 @@ window.MARKET_DEFS = {
     },
     "need": 0.4
    },
+   "beef": {
+    "base": 7,
+    "target": 63,
+    "stock0": 63,
+    "buyPct": 0.8,
+    "mult": 0.965,
+    "world": {
+     "tile": "bm"
+    },
+    "need": 0.4
+   },
    "barley_loaf": {
     "base": 2,
     "target": 96,
@@ -7444,8 +7455,8 @@ window.MARKET_DEFS = {
    },
    "animal_fat": {
     "base": 3,
-    "target": 139,
-    "stock0": 139,
+    "target": 144,
+    "stock0": 144,
     "buyPct": 0.8,
     "mult": 1,
     "world": {
@@ -7550,17 +7561,6 @@ window.MARKET_DEFS = {
     "stock0": 144,
     "buyPct": 0.8,
     "mult": 1,
-    "world": {
-     "tile": "bm"
-    },
-    "need": 0.7
-   },
-   "dried_pork_sausage": {
-    "base": 3,
-    "target": 46,
-    "stock0": 46,
-    "buyPct": 0.8,
-    "mult": 1.18,
     "world": {
      "tile": "bm"
     },
@@ -7864,6 +7864,17 @@ window.MARKET_DEFS = {
     },
     "need": 0.4
    },
+   "beef": {
+    "base": 7,
+    "target": 47,
+    "stock0": 47,
+    "buyPct": 0.8,
+    "mult": 1.04,
+    "world": {
+     "tile": "nv"
+    },
+    "need": 0.4
+   },
    "barley_loaf": {
     "base": 2,
     "target": 96,
@@ -7910,8 +7921,8 @@ window.MARKET_DEFS = {
    },
    "animal_fat": {
     "base": 3,
-    "target": 134,
-    "stock0": 134,
+    "target": 138,
+    "stock0": 138,
     "buyPct": 0.8,
     "mult": 1.075,
     "world": {
@@ -8015,17 +8026,6 @@ window.MARKET_DEFS = {
     "stock0": 144,
     "buyPct": 0.8,
     "mult": 1.065,
-    "world": {
-     "tile": "nv"
-    },
-    "need": 0.7
-   },
-   "dried_pork_sausage": {
-    "base": 3,
-    "target": 53,
-    "stock0": 53,
-    "buyPct": 0.8,
-    "mult": 1.125,
     "world": {
      "tile": "nv"
     },
