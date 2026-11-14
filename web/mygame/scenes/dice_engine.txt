@@ -47,7 +47,7 @@
   *set advantage true
 *comment Danger Sense (Barbarian level 2, 2026-10-02): advantage on Dexterity saving throws. A scene making a DEX saving throw sets save_vs "dex" first, the same
 *comment convention as the racial saves above (no scene makes one yet, so this is ready and has no caller). The 5e exception for being Incapacitated is not modelled.
-*if (((character_class = "barbarian") and (character_level >= 2)) and ((check_stat = "dex") and (save_vs = "dex")))
+*if ((feature_danger_sense) and ((check_stat = "dex") and (save_vs = "dex")))
   *set advantage true
 
 *comment Darkness (dungeon.txt, 2026-10-02): a dungeon run with no light left and no darkvision gives disadvantage on every d20 roll, attacks included. It is worked out here by calling
@@ -470,7 +470,7 @@
   *set rsc_prof {("skill_" & rsc_candidate)}
   *if (rsc_prof)
     *set rsc_mod + prof_bonus
-  *elseif ((character_class = "bard") and (character_level >= 2))
+  *elseif (feature_jack_of_all_trades)
     *comment Jack of All Trades (Bard, level 2): half the proficiency bonus, rounded down, on a skill the Bard is NOT proficient in. Counted here so the best-of-three
     *comment pick sees it, and carried into the roll itself below (check_flat_bonus), because roll_d20_check rebuilds the modifier from the ability score.
     *set rsc_mod + ((prof_bonus - (prof_bonus modulo 2)) / 2)
@@ -525,7 +525,7 @@
 *set check_add_prof_bonus rsc_best_prof
 *comment Jack of All Trades: the half-proficiency bonus for a non-proficient best skill rides on check_flat_bonus (added and cleared by roll_d20_check). It is cleared
 *comment again after the roll, as at every other caller, so a replayed page that skips the roll cannot leave it set for the next one.
-*if (((character_class = "bard") and (character_level >= 2)) and (not(rsc_best_prof)))
+*if ((feature_jack_of_all_trades) and (not(rsc_best_prof)))
   *set check_flat_bonus ((prof_bonus - (prof_bonus modulo 2)) / 2)
 *set check_skill_id rsc_best_skill
 *comment The winning skill decides which gear applies (see the comment in the loop). The Repair Kit rides on the shared repair task type, which roll_d20_check turns into its normal +1 and label; the Prybar's advantage is cleared by the roll like any other.

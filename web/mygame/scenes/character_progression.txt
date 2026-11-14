@@ -185,6 +185,42 @@
   *set spell_slots_2 spell_slots_max_2
   *set pact_slots pact_slots_max
   *set spell_slots_class character_class
+*gosub refresh_features
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment FEATURE FLAGS (refresh_features):
+*comment   feature_<name>  DERIVED. Means "the character can do this", whatever granted it. Recomputed from
+*comment                   scratch every time: all set false, then set true by each source. Named after the
+*comment                   ability, never after the class.
+*comment   feat_<name>     RESERVED for feats, which are CHOSEN and stored. A routine must never reset a
+*comment                   chosen value.
+*comment Readers test feature_ flags only. They never ask where a feature came from. Every line is a
+*comment fixed-value set, so the routine is safe to repeat and needs no replay lock.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label refresh_features
+*comment 1. Reset: every feature_ flag false.
+*set feature_reckless_attack false
+*set feature_danger_sense false
+*set feature_cunning_action false
+*set feature_magical_cunning false
+*set feature_jack_of_all_trades false
+*set feature_arcane_ward false
+*comment 2. From class and level.
+*if ((character_class = "barbarian") and (character_level >= 2))
+  *set feature_reckless_attack true
+  *set feature_danger_sense true
+*if ((character_class = "rogue") and (character_level >= 2))
+  *set feature_cunning_action true
+*if ((character_class = "warlock") and (character_level >= 2))
+  *set feature_magical_cunning true
+*if ((character_class = "bard") and (character_level >= 2))
+  *set feature_jack_of_all_trades true
+*comment 3. From subclass. Test class and subclass together.
+*if ((character_class = "wizard") and (wizard_subclass = "abjurer"))
+  *set feature_arcane_ward true
+*comment 4. From feats, origin and items.
+*comment A grant from a chosen feat is written here as a test of the feat_ variable; this routine never sets or resets a feat_.
 *return
 
 *comment A long rest: temp hit points go, every pool refills to its maximum, and the Hexblood's Hex is ready again. Hit points are NOT

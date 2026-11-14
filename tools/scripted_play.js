@@ -93,7 +93,9 @@ var DEFAULT_PRESET = "Vanguard Line Fighter";
 
 Scene.prototype.loadScene = function () {
   // "simflags" is a virtual scene: it refreshes the derived weather flags the way entering a hub does.
+  // "simfeatures" is a virtual scene: it refreshes feature_* flags after stats overrides change class, level or subclass.
   var file = this.name === "simflags" ? "*gosub_scene calendar update_hub_condition\n*finish"
+    : this.name === "simfeatures" ? "*gosub_scene character_progression refresh_features\n*finish"
     : slurpFile(ROOT + "/web/" + GAME + "/scenes/" + this.name + ".txt");
   this.loadLines(file);
   this.loaded = true;
@@ -350,6 +352,16 @@ function play(scn) {
     printed.length = 0;
   }
   Object.keys(scn.stats || {}).forEach(function (k) { stats[k] = scn.stats[k]; });
+  var sOverride = scn.stats || {};
+  if (("character_class" in sOverride) || ("character_level" in sOverride) || ("wizard_subclass" in sOverride)) {
+    // Recompute derived feature_* flags when a script overrides class, level or subclass in stats.
+    D.mode = "boot"; printed.length = 0;
+    new Scene("simfeatures", stats, nav, { debugMode: false }).execute();
+    printed.length = 0;
+    Object.keys(sOverride).forEach(function (k) {
+      if (/^feature_/.test(k)) stats[k] = sOverride[k];
+    });
+  }
   var purseBefore = purse(), hpBefore = stats.hp_current;
   resetRun();
   D.mode = "drive"; D.steps = scn.steps || []; D.rand = parseRand(scn.rand0 !== undefined ? scn.rand0 : (scn.rand !== undefined ? scn.rand : "mid"));
