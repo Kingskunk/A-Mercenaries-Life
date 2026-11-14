@@ -5,9 +5,9 @@
  * The real rules:
  *   - skill_lookup (scenes/dice_engine.txt): every skill's id, display name and default ability
  *   - the `*create skill_<id>` proficiency flags (scenes/startup.txt)
- *   - the expertise lines in roll_d20_check (scenes/dice_engine.txt): which class doubles which <class>_expertise_N variable
- * The copies: SB_SKILLS (id from the name, ability) and sbExpertSkills (class -> variables) in index.html.
- * A new skill, a changed ability or a new expertise class has to be mirrored there, or the sidebar shows a wrong number.
+ *   - the expertise line in roll_d20_check (scenes/dice_engine.txt): which shared expertise_<N> slots double proficiency
+ * The copies: SB_SKILLS (id from the name, ability) and sbExpertSkills (the shared expertise slots) in index.html.
+ * A new skill, a changed ability or a new expertise slot has to be mirrored there, or the sidebar shows a wrong number.
  *
  * Static text comparison, no engine needed. Exit code 1 on any mismatch.
  * usage: node tools/check_skill_sync.js [game=mygame]
@@ -55,35 +55,25 @@ Object.keys(real).forEach(function (id) {
 Object.keys(copy).forEach(function (id) { if (!real[id]) problems.push("skill '" + id + "' is in SB_SKILLS but not in skill_lookup"); });
 Object.keys(flags).forEach(function (id) { if (!real[id]) problems.push("*create skill_" + id + " exists in startup.txt but skill_lookup has no such skill"); });
 
-// Expertise: class -> variables, as roll_d20_check reads them against the real game, versus sbExpertSkills.
+// Expertise: shared slots read in roll_d20_check versus sbExpertSkills in index.html.
 var realExp = {};
 dice.split("\n").forEach(function (line) {
-  var cls = line.match(/character_class = "(\w+)"/);
-  var vars = line.match(/check_skill = \w+_expertise_\d/g);
-  if (!cls || !vars || line.trim().charAt(0) === "*" && line.indexOf("*comment") >= 0) return;
-  vars.forEach(function (v) {
-    var name = v.replace("check_skill = ", "");
-    (realExp[cls[1]] = realExp[cls[1]] || {})[name] = true;
-  });
+  if (line.trim().charAt(0) === "*" && line.indexOf("*comment") >= 0) return;
+  var vars = line.match(/check_skill = (expertise_\d+)/g);
+  if (!vars) return;
+  vars.forEach(function (v) { realExp[v.replace("check_skill = ", "")] = true; });
 });
 var fnBody = index.match(/function sbExpertSkills\(s\) \{([\s\S]*?)\n  \}/);
 if (!fnBody) { console.error("sbExpertSkills not found in index.html"); process.exit(1); }
 var copyExp = {};
-var er = /c === "(\w+)"\) return \[([^\]]*)\]/g;
-while ((m = er.exec(fnBody[1]))) {
-  copyExp[m[1]] = {};
-  (m[2].match(/s\.(\w+)/g) || []).forEach(function (v) { copyExp[m[1]][v.slice(2)] = true; });
-}
-var classes = {};
-Object.keys(realExp).concat(Object.keys(copyExp)).forEach(function (c) { classes[c] = true; });
-Object.keys(classes).forEach(function (c) {
-  var a = Object.keys(realExp[c] || {}).sort().join(", "), b = Object.keys(copyExp[c] || {}).sort().join(", ");
-  if (a !== b) problems.push("expertise for " + c + ": roll_d20_check uses [" + a + "], sbExpertSkills uses [" + b + "]");
-});
+(fnBody[1].match(/s\.(expertise_\d+)/g) || []).forEach(function (v) { copyExp[v.slice(2)] = true; });
+var a = Object.keys(realExp).sort().join(", "), b = Object.keys(copyExp).sort().join(", ");
+if (!a) problems.push("no expertise_<N> comparisons found in roll_d20_check (dice_engine.txt)");
+if (a !== b) problems.push("expertise slots: roll_d20_check uses [" + a + "], sbExpertSkills uses [" + b + "]");
 
 if (problems.length) {
   console.log("SKILL SYNC: " + problems.length + " mismatch(es)");
   problems.forEach(function (p) { console.log("  - " + p); });
   process.exit(1);
 }
-console.log("SKILL SYNC ok: " + Object.keys(real).length + " skills, expertise for " + Object.keys(realExp).join(", "));
+console.log("SKILL SYNC ok: " + Object.keys(real).length + " skills, expertise slots: " + Object.keys(realExp).sort().join(", "));
