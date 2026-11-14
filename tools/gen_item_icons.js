@@ -97,6 +97,8 @@ const MAP = {
   hall_insignia: "../Generic/Hall_Insignia_Generated_Source.png",
   althea_votive_ring: "../Generic/Altheas_Votive_Ring_Generated_Source.png",
   night_eye_ring: "../Generic/Night_Eye_Ring_Generated_Source.png",
+  janna_forged_ring: "../Generic/Jannas_Forged_Ring_Generated_Source.png",
+  talia_cord_ring: "../Generic/Talias_Cord_Ring_Generated_Source.png",
 
   // ---- consumables and tools
   potion: "POT_Potion_of_Healing_Unfaded_Icon.png",
@@ -201,8 +203,8 @@ const MAP = {
   sage: "../Generic/Sage_Generated_Source.png",                             // Chapter 3: the polypox cure herbs
   hornwort: "../Generic/Hornworth_Generated_Source.png",
   wolfsbane: "../Generic/Wolfsbane_Generated_Source.png",
-  venison: "FOOD_Raw_Steak_Unfaded_Icon.png",                                   // an elk's haunch (STAND-IN: no wild-meat art yet)
-  beef: "FOOD_Raw_Steak_Unfaded_Icon.png",                                      // Oxworth's cattle droving (the user, 2026-11-14: reuse the same raw-steak art as venison rather than wait on new art)
+  venison: "../Generic/Venison Haunch Icon.png",                                // the user's own art (2026-11-14), replacing the shared raw-steak stand-in so it no longer overlaps with Beef's icon
+  beef: "FOOD_Raw_Steak_Unfaded_Icon.png",                                      // Oxworth's cattle droving (STAND-IN: no cattle-specific art yet; venison moved off this icon 2026-11-14, so the two no longer overlap)
   heartwood_fruit: "FOOD_Goodberry_Unfaded_Icon.png",                   // Bark's reward
   honeycomb: "FOOD_Honey_Comb_Unfaded_Icon.png",                    // the Longshade bee tree
   frog_slime: "Bowl_With_Dead_Tadpoles_Unfaded_Icon.png",

@@ -3555,6 +3555,36 @@ window.EQUIPMENT_CATALOG = {
     },
     {
       "ids": [
+        "janna_forged_ring"
+      ],
+      "fields": {
+        "new_ring_desc": {
+          "type": "literal",
+          "value": "Janna's Iron Ring"
+        },
+        "new_ring_prose": {
+          "type": "literal",
+          "value": "stamped iron ring"
+        }
+      }
+    },
+    {
+      "ids": [
+        "talia_cord_ring"
+      ],
+      "fields": {
+        "new_ring_desc": {
+          "type": "literal",
+          "value": "Talia's River-Cord Ring"
+        },
+        "new_ring_prose": {
+          "type": "literal",
+          "value": "braided river-cord ring"
+        }
+      }
+    },
+    {
+      "ids": [
         "night_eye_ring"
       ],
       "fields": {

@@ -157,8 +157,14 @@ The small room is warm from the chimney stones. A low lamp burns beside the tabl
 *else
   Down by the bank, the timber paddles of the mill-wheel creak once as the night current shifts against the weir gate.
 
+*temp ja_hub_greet (((campaign_day * 3) + clock_hour) modulo 3)
 *if (not(ja_weekly_open))
-  Janna looks up from the table with a warm, unhurried smile. "You were only here a night or two ago. Sit and warm your hands if you want, though the week's work still has the rest of my evening."
+  *if (ja_hub_greet = 0)
+    Janna glances up from a cooled iron clasp on the table and nudges the spare chair out with her boot. She lets you know the week's heavy work still owns the rest of her evening, though the hearth's warm if you've time to sit awhile.
+  *elseif (ja_hub_greet = 1)
+    Janna sets down her oilstone when the side latch clicks, the set look leaving her shoulders as she spots you in the doorway. She still has small forge tallies to square away tonight, she tells you easily, though the bench can wait while you catch your breath.
+  *else
+    Janna turns from the trivet with two mugs half-poured and waves you toward the warm bricks. With the week's main quiet evening already behind you both, she doesn't rush to clear the bench, but her mouth softens at having company anyway.
   *if (janna_last_evening = "stew")
     "I rebuilt that cart fitting this morning," she adds, amusement touching her mouth. "And I left the salt jar on the far shelf where it belongs."
   *elseif (janna_last_evening = "loaf")
@@ -182,20 +188,37 @@ The small room is warm from the chimney stones. A low lamp burns beside the tabl
   *elseif (janna_last_evening = "ambition")
     She glances toward a scrap of charcoal-marked iron on the shelf. "Still practicing the strike for my own mark when the anvil's cold."
 *if ((janna_intimacy_unlocked) and (not(time_period = "Night")))
-  Janna sets another piece of coal on the hearth. "Stay awhile if you want. I'm not settling in for the night yet."
+  *if (ja_hub_greet = 0)
+    Janna adds a lump of coal to the hearth and gestures toward the bench, letting you know she isn't turning in early tonight.
+  *elseif (ja_hub_greet = 1)
+    With dusk still lingering past the shutters, Janna leaves the bed curtain drawn back and gives you an easy nod toward the table.
+  *else
+    Janna hooks the kettle higher on the trivet and says there's plenty of evening left if you aren't in a hurry back to the street.
 *choice
+  *if ((janna_bond >= 15) and (not(janna_keepsake_given)))
+    # Ask about the small cloth-wrapped iron band on the bench.
+      *goto af_janna_keepsake
   *if (ja_weekly_open)
     # Spend a quiet evening with Janna. [~1 hour]
       *goto af_janna_weekly_event
   *if ((janna_intimacy_unlocked) and ((ja_weekly_open) and (time_period = "Night")))
     # Ask Janna whether she wants to spend the night together. [~8 hours]
       *goto af_janna_intimacy_offer
+  *if ((janna_care_day = 0) or ((campaign_day - janna_care_day) >= 7))
+    # Ask Janna to look over your straps and edges before you head back out. [~30 min]
+      *goto af_janna_road_care
+  *if ((scrap_steel > 0) or (has_oil))
+    # Offer spare forge supplies for Janna's bench.
+      *goto af_janna_reciprocal_gift
   # Stay a while and help with the evening's small work. [~2 hours]
     *goto af_janna_ordinary_evening
   # Leave Janna to her evening.
-    You rise from the table. "I'll let you have the quiet back."
-
-    Janna walks you to the side door. "It will still be here when you return."
+    *if (ja_hub_greet = 0)
+      You push your chair back and leave Janna the quiet of the hearth for the night. She walks you to the side door, touches your sleeve briefly by the latch, and tells you to mind the dark mill-bank steps.
+    *elseif (ja_hub_greet = 1)
+      You gather your things before the lamp oil burns lower, sharing a brief nod with her across the table. Janna sees you out past the cold anvil and lingers a heartbeat in the doorway until your steps reach the lane.
+    *else
+      You rise and let her know you'll look in again when the road brings you back through Alderford. Janna leans her shoulder against the doorframe, watching you step out into the river mist with an easy nod before sliding the bolt shut.
 
     *goto_scene alderford/alderford alderford
 
@@ -430,33 +453,79 @@ The small room is warm from the chimney stones. A low lamp burns beside the tabl
 *comment ====================================================================================
 
 *label af_janna_intimacy_repeat_open
-The hearth alcove is already warm. Janna closes the curtain behind you, then waits by the bed instead of assuming what you came for.
+*temp ja_tone_beat ((campaign_day + clock_hour) modulo 3)
+*if (ja_tone_beat = 0)
+  The hearth alcove is already warm. Janna pulls the heavy curtain across the doorway, then waits by the bed instead of assuming what you came for.
 
-"Tell me," she says. "What do you want tonight?"
+  "Tell me," she says softly. "What do you want tonight?"
+*elseif (ja_tone_beat = 1)
+  Coal glow paints the brick wall warm amber. Janna drops the wooden bar on the side door and turns back toward you by the foot of the bed, unhurried and open.
+
+  "No guessing tonight," she murmurs. "Say what you'd like."
+*else
+  With the shutters latched against the river wind, the alcove holds only the sound of the waterwheel below. Janna sets the kettle clear of the coals and steps over to meet you beside the blankets.
+
+  "You're here," she says quietly, searching your face. "Tell me how you want this night."
 
 *choice
   # Ask Janna what she wants.
-    You take her hand and meet her eyes. "What do you want?"
+    *if (ja_tone_beat = 0)
+      You take her hand and meet her eyes. "What do you want?"
 
-    Janna's thumb presses once over your knuckles. "To stop carrying the whole week for an hour. To be wanted without having to guess." She draws you closer by the hand. "Can you give me that?"
+      Janna's thumb presses once over your knuckles. "To stop carrying the whole week for an hour. To be wanted without having to guess." She draws you closer by the hand. "Can you give me that?"
+    *elseif (ja_tone_beat = 1)
+      You step close enough to catch her fingers in yours. "Tell me what you need tonight."
+
+      Janna leans her forehead lightly against yours for a breath. "Heat. Weight. Someone who isn't asking me to fix anything before morning." Her grip tightens gently around your hand.
+    *else
+      You brush the hair back behind her ear and ask quietly what she's been wanting since the anvil went cold.
+
+      A small, unguarded breath leaves her shoulders. "Not to think about iron or morning orders for a few hours," she murmurs, pulling you toward the bed by your sleeve. "Just stay right here."
     *set janna_intimacy_tone "ask"
     *goto af_janna_intimacy_repeat_scene
   # Tell Janna you want her, plainly.
-    You step into her space. "I want you. I have been thinking about you since I left this place."
+    *if (ja_tone_beat = 0)
+      You step into her space. "I want you. I've been thinking about you since I left this place."
 
-    A rough laugh catches in Janna's throat. "That is plain enough for me." She hooks a finger under your chin and kisses you hard. "Then quit thinking."
+      A rough laugh catches in Janna's throat. "That's plain enough for me." She hooks a finger under your chin and kisses you hard. "Then quit thinking."
+    *elseif (ja_tone_beat = 1)
+      You close the distance between you and lay a steady palm at her waist. "I came straight here for you, Janna. Nothing complicated about it."
+
+      Dark warmth flashes in her eyes, and her mouth curves. "Good," she says, catching the front of your shirt to pull you down toward her. "Save the speeches for daylight."
+    *else
+      You meet her gaze without looking away. "You've been in my head half the road back to Alderford. I want you tonight."
+
+      Janna exhales a short, pleased laugh and reaches up to lace her fingers behind your neck. "Then don't stand across the room talking about it."
     *set janna_intimacy_tone "want"
     *goto af_janna_intimacy_repeat_scene
   # Tell Janna to take the lead.
-    You hold still beneath her gaze. "Show me what you want. I am with you."
+    *if (ja_tone_beat = 0)
+      You hold still beneath her gaze. "Show me what you want. I'm with you."
 
-    Janna searches your face, then nods once. "All right." Her palms settle against your chest, firm and certain. "Stay with me."
+      Janna searches your face, then nods once. "All right." Her palms settle against your chest, firm and certain. "Stay with me."
+    *elseif (ja_tone_beat = 1)
+      You catch both her wrists gently and raise them to your chest. "Your call tonight. Wherever you want to take this."
+
+      A quiet grin breaks across her face as she steps inside your reach. "Careful offering me the hammer," she murmurs against your collarbone before urging you backward.
+    *else
+      You lift a hand and let her set the distance. "Tonight's yours to steer. Tell me where you want me."
+
+      Janna's eyes narrow slightly with quiet heat. She catches your hand without hesitation and steers you toward the hearthside bed. "Then listen close."
     *set janna_intimacy_tone "lead"
     *goto af_janna_intimacy_repeat_scene
   # Say you would rather sit together tonight.
-    You brush your thumb along the back of her hand. "I want to stay. I do not need more than your company tonight."
+    *if (ja_tone_beat = 0)
+      You brush your thumb along the back of her hand. "I want to stay. I don't need more than your company tonight."
 
-    Janna's expression softens. "Then stay." She guides you to the table and pours the kettle between two cups. "That counts, too."
+      Janna's expression softens. "Then stay." She guides you to the table and pours the kettle between two cups. "That counts, too."
+    *elseif (ja_tone_beat = 1)
+      You squeeze her fingers and nod toward the warm hearth chairs. "Let's just sit awhile tonight. No rush past that."
+
+      The tension drains from her jaw in a long sigh. "Good," she says quietly, pulling the wool throw off the bed onto her shoulders. "I'm glad you don't push when things sit heavy."
+    *else
+      You shake your head gently and pull out the second chair by the chimney stones. "All I wanted tonight was quiet time with you out of the forge noise."
+
+      Janna sets her hand briefly over yours on the chair back before sitting across from you. "Then sit. I don't need anything louder than that either."
     *set janna_intimacy_tone "quiet"
     *goto af_janna_intimacy_repeat_quiet
 
@@ -493,34 +562,69 @@ The hearth alcove is already warm. Janna closes the curtain behind you, then wai
 *goto_scene alderford/janna_alcove af_janna_after_intimacy
 
 *label af_janna_intimacy_repeat_quiet
-You sit together until the kettle goes cold. Janna talks about a difficult piece of work, then listens while you speak of whatever you choose to share. When the hour has passed, she walks you to the curtain.
+*temp ja_quiet_beat ((campaign_day + clock_hour) modulo 3)
+*if (ja_quiet_beat = 0)
+  You sit together until the kettle goes cold. Janna talks through a stubborn iron fitting she reshaped earlier, then listens quietly while you share whatever's on your mind. When the hour winds down, she walks you to the curtain.
 
-"Come back when you want quiet," she says. "It is not lesser just because nobody is trying to prove anything."
+  "Come back when you want quiet," she says softly. "It isn't lesser just because nobody's trying to prove anything."
+*elseif (ja_quiet_beat = 1)
+  You draw the bench closer to the hearth warmth, leaning shoulder to shoulder while the coal bed clicks and settles. Neither of you hurries the talk; when you finally rise to go, Janna catches your hand briefly by the curtain ring.
+
+  "That did more for me than sleep would have," she murmurs before lifting the latch for you. "Walk safe out there."
+*else
+  Janna splits a thick crust of bread from the shelf and pours hot mint water into both mugs, leaving the work tools completely untouched at the far end of the bench. After an easy hour of low talk, she sees you to the side door with her palm resting lightly against your wrist.
+
+  "Come back whenever you need a dry hearth and no questions," she says quietly.
 *set janna_intimacy_tone ""
 *page_break Return to the alcove…
 *goto_scene alderford/janna_alcove af_janna_after_quiet
 
 *label af_janna_intimacy_offer
-Janna waits beside the hearth, watching your face rather than assuming an answer.
+*temp ja_offer_beat ((campaign_day + clock_hour) modulo 3)
+*if (ja_offer_beat = 0)
+  Janna waits beside the hearth, watching your face rather than assuming an answer.
+*elseif (ja_offer_beat = 1)
+  Janna sets the tongs neatly on the stone edge and looks across the table at you, open and unhurried.
+*else
+  Janna lets the kettle simmer low by the bricks and steps clear of the bench, giving you room to say what kind of night you're asking for.
 
 *choice
   # Tell her you want to spend the night together.
-    You step closer and say, "I want to stay with you tonight."
+    *if (ja_offer_beat = 0)
+      You step closer and say, "I want to stay with you tonight."
 
-    Janna reaches for your hand. "Then stay." She draws the curtain across the side door before leading you toward the warmth behind the chimney.
+      Janna reaches for your hand. "Then stay." She draws the curtain across the side door before leading you toward the warmth behind the chimney.
+    *elseif (ja_offer_beat = 1)
+      You close the gap across the room and catch her fingers gently in yours. "If you aren't turning me out early, I'd rather wake up here."
+
+      Warmth settles in Janna's eyes as she laces her fingers through yours. "Good," she says low, tugging the curtain cord with her free hand. "Then lock the door behind us."
+    *else
+      You meet her gaze plainly. "Let me stay with you tonight, Janna."
+
+      She studies you for half a beat, then smiles and steps inside your reach. "You don't have to ask twice." She draws the heavy wool curtain shut over the side glass.
     *set janna_bond_week ja_week
     *set janna_intimacy_return "alderford"
     *set janna_intimacy_tone ""
     *goto af_janna_intimacy_repeat_open
   # Tell her you would rather keep the evening quiet.
-    You shake your head gently. "I would rather sit with you a while."
+    *if (ja_offer_beat = 0)
+      You shake your head gently. "I'd rather sit with you a while."
 
-    Janna nods and shifts the kettle farther from the coals. "Then sit. That is enough."
+      Janna nods and shifts the kettle farther from the coals. "Then sit. That's enough."
+    *elseif (ja_offer_beat = 1)
+      You smile and pull out the second chair instead. "No rush tonight—just an hour by the fire while it's still warm."
+
+      "Fine by me," Janna says easily, reaching for the mugs on the shelf. "Pull close to the stone."
+    *else
+      You squeeze her shoulder lightly and nod toward the table. "I just wanted to see you before turning in for the night."
+
+      Janna's mouth curves into an unhurried smile as she settles back onto her bench. "Stay as long as you want."
     *goto af_janna_alcove_hub
 
 *label af_janna_after_intimacy
 *set janna_intimacy_return ""
 *set janna_last_evening "night"
+*temp ja_after_beat ((campaign_day + clock_hour) modulo 3)
 *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
   *set intimate_encounters + 1
   *set stat_bump_locked true
@@ -533,13 +637,33 @@ Janna waits beside the hearth, watching your face rather than assuming an answer
 Afterward, you lie together beneath the wool blankets while the furnace embers settle and the waterwheel turns beyond the wall. Janna stays close until your breathing has slowed.
 
 *if (janna_intimacy_tone = "ask")
-  "Thank you for asking," she says, her voice low in the warm room. "Most people think wanting something means they already know the answer."
+  *if (ja_after_beat = 0)
+    "Thank you for asking," she says, her voice low in the warm room. "Most people think wanting something means they already know the answer."
+  *elseif (ja_after_beat = 1)
+    "You actually listen when you ask a question," Janna murmurs against your collarbone. "That still catches me off guard."
+  *else
+    "It feels good not having to guess what you're thinking," she says softly, tracing small circles over your shoulder. "Ask me like that anytime."
 *elseif (janna_intimacy_tone = "want")
-  "You have a way of making a plain answer feel like a promise," Janna says. Her fingers close briefly around yours.
+  *if (ja_after_beat = 0)
+    "You have a way of making a plain answer feel like a promise," Janna says. Her fingers close briefly around yours.
+  *elseif (ja_after_beat = 1)
+    "Saying what you want without dressing it up suits you," Janna murmurs, tucking her chin neatly over your chest.
+  *else
+    "I like knowing straight away when you want me," she whispers, half-smiling against your neck. "Saves us both a waste of breath."
 *elseif (janna_intimacy_tone = "lead")
-  "Trust is not standing still," Janna says. "It is knowing the other person will catch you when you move."
+  *if (ja_after_beat = 0)
+    "Trust isn't standing still," Janna says. "It's knowing the other person will catch you when you move."
+  *elseif (ja_after_beat = 1)
+    "You didn't flinch once when I pushed," she murmurs, clearly pleased. "Good to know you hold your ground everywhere."
+  *else
+    "Don't get used to me taking all the weight," Janna teases softly through a slow breath, hooking one ankle over yours beneath the wool. "Next time I'll let you earn it."
 *else
-  "I am glad you asked," she says, her voice low in the warm room. "Come back when you want to. Not because either of us is keeping count."
+  *if (ja_after_beat = 0)
+    "I'm glad you asked," she says, her voice low in the warm room. "Come back when you want to. Not because either of us is counting nights."
+  *elseif (ja_after_beat = 1)
+    "Stay still a little longer," Janna murmurs, pulling the quilt higher over both shoulders. "The anvil doesn't own us till morning."
+  *else
+    "You sleep warmer than stone," she whispers with a quiet sigh, letting her head settle into the crook of your arm.
 *set janna_intimacy_tone ""
 *if (show_stat_hints)
   [b][Janna Bond +2: ${janna_bond}][/b]
@@ -573,13 +697,106 @@ Afterward, you lie together beneath the wool blankets while the furnace embers s
 *gosub_scene economy apply_unique_buff
 *gosub_scene calendar update_hub_condition
 
-The room is quiet when you wake. Janna is already at the table with two cups, one pushed toward the empty chair. Before you leave, she listens while you talk through the road ahead, asking the plain questions that cut a muddled plan back to its useful parts.
+*temp ja_wake_beat (campaign_day modulo 3)
+*if (ja_wake_beat = 0)
+  The room is quiet when you wake. Janna is already at the table with two cups, one pushed toward the empty chair. Before you leave, she listens while you talk through the road ahead, asking the plain questions that cut a muddled plan back to its useful parts.
 
-"You will manage," she says at last. "Just do not mistake carrying everything alone for strength."
+  "You'll manage," she says at last. "Just don't mistake carrying everything alone for strength."
+*elseif (ja_wake_beat = 1)
+  Grey morning light filters past the eaves by the time you stir. Janna is laced into her work boots at the hearth, coaxing fresh kindling under the kettle. She pours the first hot mug for you and sets beside it to talk over what lies ahead today.
+
+  "Take the straighter line where the mud dries," she tells you softly as you stand to leave, pressing a warm palm briefly to your cheek. "Come back in one piece."
+*else
+  Torvald's footsteps haven't reached the outer yard yet when you wake to the crackle of rekindled coals. Janna hands across roasted oats and boiled water, listening sharply while you weigh your next route out of town and offering two shrewd corrections without preaching.
+
+  At the curtain, she tugs your collar straight with soot-clean fingers. "Mind your footing out there," she murmurs, letting you out into the morning chill.
 
 [b][Tempered Resolve: +1 WIS for 3 days | Long Rest Resolved | Hygiene Restored to Clean][/b]
 *page_break Return to Alderford…
 *goto_scene alderford/alderford alderford
+
+*label af_janna_keepsake
+*set janna_keepsake_given true
+*set has_janna_forged_ring true
+You nod toward the folded bit of oiled linen beside the lamp. "Not a customer's piece, is it? It's too small for harness iron."
+
+Janna picks it up with thumb and forefinger, rolling the rag back to uncover a ring of dark hammered iron with a thin ribbon of copper inlaid around the band and her diamond mark struck clean into the flat top.
+
+"Leftover bar stock," she says, a faint color rising along her collar as she sets it into your palm. "My first anvil-mark that didn't split the grain. Figured it'd hold up better on your hand than sitting in my scrap tin."
+
+[b][+ Janna's Iron Ring][/b] (Ring slot: +1 Athletics while worn.)
+
+*page_break Slip it into your pack
+*goto af_janna_alcove_hub
+
+*label af_janna_road_care
+*set janna_care_day campaign_day
+You unbuckle your pack-straps and lay your ${weapon} across the bench edge. "Got half an hour before I'm back on the road? The damp's starting to work at the fittings."
+
+Janna clears a space beside the oilstone right away, testing the buckles with her thumb before reaching for a rag, tallow, and a fine-grain hone. She works quietly and fast—checking every rivet, dressing the leather where the rain's stiffened it, and drawing a clean edge without taking metal off where it isn't needed.
+
+"There," she says, buckling the last strap tight and tapping the bench. "Won't slip when your hands are cold."
+
+*set unique_buff_input_name "Honed & Tightened"
+*set unique_buff_input_desc "+1 DEX (Janna's Bench Tune-Up)"
+*set unique_buff_input_stat "dex"
+*set unique_buff_input_bonus 1
+*set unique_buff_input_minutes 1440
+*gosub_scene economy apply_unique_buff
+
+*set hours_to_pass 0
+*set minutes_to_pass 30
+*set time_advance_call_id "af_janna_road_care"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+[b][Buff: Honed & Tightened (+1 DEX for 24 hours)][/b]
+
+*page_break Thank her and step back
+*goto af_janna_alcove_hub
+
+*label af_janna_reciprocal_gift
+You unlace your pack and set it by the table leg. "I've got spare weight in here that belongs on a bench more than my back."
+*temp ja_gift_week ((((campaign_day - 1) - ((campaign_day - 1) modulo 7)) / 7) + 1)
+*choice
+  *if (scrap_steel > 0)
+    # Hand over a bundle of scrap steel.
+      *comment replay-ok: player-initiated single-item gift handoff
+      *if (scrap_steel > 0)
+        *set scrap_steel - 1
+      You lay the heavy iron fittings and bent stock onto the work-bench with a dull clink. "Saved these from the road instead of dumping them."
+
+      Janna picks up a piece, turns it toward the lamp to read the grain, and sets it straight into her good stock bin. "Better iron than half the mill-bar Torvald buys," she says, her mouth curving. "You know what's worth carrying."
+      *if (not(janna_gift_week = ja_gift_week))
+        *set janna_gift_week ja_gift_week
+        *set janna_bond + 1
+
+        [b][Janna Bond +1][/b]
+      *page_break Settle back by the hearth
+      *goto af_janna_alcove_hub
+  *if (has_oil)
+    # Hand over a clay flask of olive oil.
+      *if (spare_oil > 0)
+        *set spare_oil - 1
+      *else
+        *set has_oil false
+      You set the squat clay flask beside her oilstone. "Good pressed oil. Better than tallow for the fine hinges and the stones."
+
+      Janna pulls the stopper, sniffs once, and gives a short, pleased nod before setting it on the high shelf out of the coal dust. "Saves me an errand to the market tomorrow—and the stones drink the cheap stuff too fast anyway."
+      *if (not(janna_gift_week = ja_gift_week))
+        *set janna_gift_week ja_gift_week
+        *set janna_bond + 1
+
+        [b][Janna Bond +1][/b]
+      *page_break Settle back by the hearth
+      *goto af_janna_alcove_hub
+  # Tie your pack back up for now.
+    *goto af_janna_alcove_hub
 
 *label af_janna_after_quiet
 *set janna_intimacy_return ""

@@ -216,6 +216,8 @@
     west_longshade: [{ all: "river_current_stream", level: 0.3 }],
     deep_longshade: [{ all: "river_current_stream", level: 0.3 }],
     longshade_fluralainns_bower: [{ all: "river_current_stream", level: 0.28 }],
+    janna_hearth_alcove: [{ all: "watermill_ambience_needs_to_be_layered_on_top_water_and_mill_sound_only", level: 0.16 }],
+    talia_loft: [{ all: "river_current_stream", level: 0.18 }],
     alderford: [{ all: "watermill_ambience_needs_to_be_layered_on_top_water_and_mill_sound_only", level: 0.34 }],
     generic_village_inn_room: [{ day: "quiet_tavern", night: "crowded_tavern", level: 0.24 }],
     prologue_camp_night: [{ all: "marshland_night_crickets_shallowwater_ambience", level: 0.24 }],

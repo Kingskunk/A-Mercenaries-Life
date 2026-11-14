@@ -552,18 +552,22 @@
       if (!g.fixed) out += '<div class="tRow"><span>' + (kind === "buy" ? "On the shelf" : "Held here") + "</span><span><b>" + num(mk.st.stock[id]) + "</b></span></div>";
       if (sf > 1.1) out += '<div class="tRow"><span>Shelf</span><span class="' + dearC + '">thin</span></div>';
       else if (sf < 0.9) out += '<div class="tRow"><span>Shelf</span><span class="' + cheapC + '">well stocked</span></div>';
-      if (kind === "buy") { var rs = elsewhere("sell", id, trade, s).best; if (rs && first !== undefined && rs.v >= first * 1.1) out += '<div class="tRow"><span>Pays more</span><span><b>' + esc(rs.title) + "</b> · " + fmtUnit(rs.v, "sell") + " <i>" + (rs.heard ? "heard " : "") + ageText(rs.age) + "</i></span></div>"; }
-      var stops = lastStops(trade, s, 3), heard = lastStops(trade, s, 3, true);
-      function stopRows(list, word) {
-        list.forEach(function (st) {
-          var p = st.p[id], a = p && p[0] !== null && p[0] !== undefined ? fmtUnit(p[0] / 10, "buy") : "—", b = p && p[1] !== null && p[1] !== undefined ? fmtUnit(p[1] / 10, "sell") : "—";
-          out += '<div class="tRow"><span>' + esc(st.title) + ' <i>' + word + ageText(today() - st.d) + "</i></span><span>buy " + a + " · sell " + b + "</span></div>";
-        });
+      // The trade book is about commodities compared across the open markets (the comment at isOpenMarket's definition, above): a counter shop's own
+      // curated stock (a cooking pot, a lockpick set) is never sold anywhere else, so it has nothing to compare and no "other market" to hear word of.
+      if (isOpenMarket(trade)) {
+        if (kind === "buy") { var rs = elsewhere("sell", id, trade, s).best; if (rs && first !== undefined && rs.v >= first * 1.1) out += '<div class="tRow"><span>Pays more</span><span><b>' + esc(rs.title) + "</b> · " + fmtUnit(rs.v, "sell") + " <i>" + (rs.heard ? "heard " : "") + ageText(rs.age) + "</i></span></div>"; }
+        var stops = lastStops(trade, s, 3), heard = lastStops(trade, s, 3, true);
+        function stopRows(list, word) {
+          list.forEach(function (st) {
+            var p = st.p[id], a = p && p[0] !== null && p[0] !== undefined ? fmtUnit(p[0] / 10, "buy") : "—", b = p && p[1] !== null && p[1] !== undefined ? fmtUnit(p[1] / 10, "sell") : "—";
+            out += '<div class="tRow"><span>' + esc(st.title) + ' <i>' + word + ageText(today() - st.d) + "</i></span><span>buy " + a + " · sell " + b + "</span></div>";
+          });
+        }
+        out += '<div class="tSub">At your last stops</div>';
+        if (!stops.length) out += '<div class="tText">No other market seen yet.</div>';
+        stopRows(stops, "");
+        if (heard.length) { out += '<div class="tSub">Word on the road</div>'; stopRows(heard, "heard "); }
       }
-      out += '<div class="tSub">At your last stops</div>';
-      if (!stops.length) out += '<div class="tText">No other market seen yet.</div>';
-      stopRows(stops, "");
-      if (heard.length) { out += '<div class="tSub">Word on the road</div>'; stopRows(heard, "heard "); }
     }
     return out;
   }

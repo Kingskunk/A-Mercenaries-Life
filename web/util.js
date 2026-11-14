@@ -144,31 +144,33 @@ function safeTimeout(fn, time) {
   }, time);
 }
 
+// Continues a page in another scene file whose lines are already in memory (web/scene.js loadSceneFast). The continuation still runs only
+// after the code that asked for it has finished, but as a microtask, with no timer. (2026-11-14: it used to be safeTimeout(fn, 0). A browser
+// holds a chain of timers to 4 ms each, and one page crosses scene files dozens of times -- a time advance alone is 36 crossings -- so a page
+// turn spent about 300 ms doing nothing.) Nothing else gets a turn between two crossings now: no click, no timer, no repaint, so nothing can
+// see a page half run. A test harness that has replaced safeTimeout with its own (refresh_fuzz_test.js makes it immediate) keeps its own.
+var timerSafeTimeout = safeTimeout;
+function safeHandOff(fn) {
+  if (typeof Promise === "undefined" || safeTimeout !== timerSafeTimeout) return safeTimeout(fn, 0);
+  Promise.resolve().then(function() {
+    safeCall(null, fn);
+  });
+}
+
 function isDefined(x) {
     return "undefined" !== typeof x;
 }
 
+// The save is written as plain ASCII: every character above 127 becomes \uXXXX. JSON.stringify has already escaped the control characters
+// (below 32), so only the characters above 127 are visited here. (2026-11-14: this used to run a callback on every character of the save, about
+// 200,000 of them three times a page, which was 60-70 ms of each page turn. The output is the same, except that U+2028 and U+2029 are now
+// escaped as well; the old pattern skipped them because "." does not match a line separator. Both forms read back as the same text.)
+var jsonNonAsciiPattern = /[\u0080-￿]/g;
 function jsonStringifyAscii(obj) {
-  var output = JSON.stringify(obj).replace(/(.)/g, function(x) {
-    var code = x.charCodeAt(0);
-    if (code > 127 || code < 32) {
-     var outCode = code.toString(16);
-     switch (outCode.length) {
-       case 4:
-         return "\\u" + outCode;
-       case 3:
-         return "\\u0" + outCode;
-       case 2:
-         return "\\u00" + outCode;
-       case 1:
-         return "\\u000" + outCode;
-       default:
-         return x;
-     }
-    }
-    return x;
+  return JSON.stringify(obj).replace(jsonNonAsciiPattern, function(x) {
+    var outCode = x.charCodeAt(0).toString(16);
+    return "\\u" + "0000".slice(outCode.length) + outCode;
   });
-  return output;
 }
 
 function toJson(obj, standardized) {

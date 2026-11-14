@@ -200,6 +200,7 @@
   *if ((janna_romanced) and (not(af_smith_janna_checkin)))
     # Ask Janna whether she has a moment to talk.
       *set af_smith_janna_checkin true
+      *set janna_day_checkin_day campaign_day
       You wait until Janna has set the tongs down. "Have you a moment?"
 
       Her eyes lift to yours, private warmth cutting through the forge glare. "For you? A moment." She leans her hip against the bench, careful of the hot work. "I'm glad you came by in daylight, too. It's good to see someone when neither of you is trying to steal an hour from the night."
@@ -212,6 +213,9 @@
         # ⇥ [pvgo:home:alderford]
           *goto af_smith_floor
         *comment GEN:END place_steps home:alderford
+  *if ((janna_romanced) and ((af_smith_janna_checkin) and (not(janna_day_checkin_day = campaign_day))))
+    # Step by Janna's bench while Torvald works the anvil. [~15 min]
+      *goto af_smith_janna_day
   # Step back out onto the mill bank.
     *set shop_open ""
     *goto_scene alderford/alderford alderford
@@ -222,6 +226,119 @@
     *set shop_open ""
     *goto_scene alderford/alderford alderford
         *comment GEN:END place_steps home:alderford
+
+*label af_smith_janna_day
+*set janna_day_checkin_day campaign_day
+*temp js_day_beat (campaign_day modulo 4)
+*temp js_act_beat ((campaign_day + clock_hour) modulo 3)
+[b]◈ JANNA'S BENCH[/b]
+
+*if (js_day_beat = 0)
+  Janna plunges a pair of glowing wedges into the quench trough, sending a hiss of steam rolling across her bench. She wipes soot from her brow with the back of her wrist, glances toward Torvald at the heavy anvil, and gives you a private nod over the rising vapor.
+
+  "Good timing," she says low over the water noise. "The heat's enough to cook my boots through."
+*elseif (js_day_beat = 1)
+  By the shuttered mill-race door, Janna lifts a tin dipper from the drinking pail and leans against the timber post to catch the cool draft off the weir. When she sees you crossing the floor, the crease between her brows loosens.
+
+  "Don't tell Torvald I'm standing still," she murmurs, holding the dipper out toward you first. "Even iron has to cool between heats."
+*elseif (js_day_beat = 2)
+  Janna has a rough iron hinge laid out over a piece of chalked plank beside the finished racks, measuring pin holes with a pair of calipers. As you step beside the bench, she shifts slightly to make room for your shoulder against hers.
+
+  "Checking whether the holes line up straight before I punch them," she tells you, tapping the chalk mark with one thumb. "Saves an hour of swearing later."
+*else
+  At the scrap bin near the door, Janna turns over a bundle of flat iron bars, tapping each one lightly with a small hammer to listen for cracks in the metal. When she spots you standing clear of the forge arc, she sets the bundle down and rests both hands on the bin rim.
+
+  "Didn't expect to catch you in town at this hour," she says, warmth softening the crisp edge of her voice. "You look steadier in daylight than half the carters who come through that door."
+
+*if (janna_last_evening = "axe")
+  A timber wedge beside her oilstone already carries two crisp new bevels. "Been testing that grind on harder stock," she adds, catching your glance.
+*elseif (janna_last_evening = "buckle")
+  A newly riveted brass buckle rests in the tray beside her calipers, filed bright at the edges.
+*elseif (janna_last_evening = "quench")
+  The blackened bar at the corner of her rack shows an even blue sheen along the edge.
+*elseif (janna_last_evening = "night")
+  Her eyes linger on yours for a quiet half-beat longer than a customer's—unhurried and certain.
+
+*choice
+  # Lend her a hand at the bellows and tongs for a quick heat. [~30 min]
+    *if (js_act_beat = 0)
+      "Give me the spare tongs," you say, stepping onto the far side of the bench away from Torvald's hammer swing. "I'll hold the collar while you draw it."
+
+      Janna hands over the iron handles with a quick nod. "Mind the wrist turn when I strike." For half an hour you work in tight, wordless rhythm—pumping air into the coals, lifting the glowing band onto the horn, and turning it under her fast, measured blows until the seam shuts cleanly. When she sets the piece into the ash tray to cool, Torvald grunts once from the anvil without looking up, which passes for praise in his forge.
+
+      "Not bad," Janna murmurs, brushing scale from her knuckles as yours brush past. "You haven't forgotten how to time a strike."
+    *elseif (js_act_beat = 1)
+      You step behind the bellows frame and lean your weight into the lever while Janna feeds two rough mooring bars into the coals. "Say when they're bright," you call over the roar of the hearth.
+
+      Once the iron glows clean yellow, she draws the first bar across to the horn and sights along the eyelet while you work the second pair of tongs to steady the shank under her hammer. Half an hour clears the tray she'd stacked for dusk; Janna drops the finished pins into the water trough with a sharp hiss and taps the rim beside your fingers. "Cleaner eyes than I'd have turned alone," she says quietly.
+    *else
+      Torvald leaves a twisted cart-tire hoop beside Janna's bench while he steps back to dress a cold chisel, and you catch the far rim with the wide tongs before she has to wrestle it solo. "Tell me which flat needs drawing," you say, bracing your weight against the floorboards.
+
+      For thirty minutes you tilt and brace the heavy iron hoop to her short nods, letting her hammer chase the kink down the curve until the ring sits flat against the bench face. When the last sparks die on the wood, she wipes her cheek on her sleeve and gives a crooked smile. "Saved me an hour of fighting springy iron—and Torvald's lectures about patience."
+    *set hours_to_pass 0
+    *set minutes_to_pass 30
+    *set time_advance_call_id "af_smith_janna_assist"
+    *gosub_scene calendar advance_time
+    *gosub_scene calendar recalc_hp_from_neglect
+    *if (hp_current <= 0)
+      *set death_cause "starvation"
+      *if (neglect_damage_fatigue > neglect_damage_hunger)
+        *set death_cause "exhaustion"
+      *goto_scene death death_screen
+  # Exchange a few quiet words before stepping back from the bench. [~15 min]
+    *if (js_act_beat = 0)
+      You lean a hip against the cool edge of the tool chest, staying clear of Torvald's reach. "I didn't want to pull you off the anvil for long. Just wanted to check in while the sun was up."
+
+      "It counts for something," Janna says, setting her calipers down so she can look at you squarely. "Seeing you by the hearth at night is easy to wish for. Seeing you walk in through the front door in the middle of an ordinary day makes the rest of the work lighter." She picks her tongs back up as Torvald turns a fresh bar from the coals. "Watch yourself out there."
+    *elseif (js_act_beat = 1)
+      You settle onto an overturned nail keg clear of the hammer arc and ask how the river haulers have been treating the shop this week. Janna leans on her file for a spell, complaining dryly about carters who wait until an axle snaps before admitting a bolt was worn through.
+
+      Her voice drops softer as she asks where you're bound next, trading quick notes on the roads out of Alderford while Torvald measures a chisel edge. When the bellows slackens, she lifts her chin toward the door. "Don't wear yourself out for nothing out there."
+    *else
+      You step near the drinking pail out of the direct forge glare, trading low updates about what's moving along the wharf and how long you're lingering in town. Janna rests both hands on the cool bench corner and listens without hurrying you along.
+
+      "Half the folks through that door want something hammered straight before sunset," she remarks softly, glancing back toward the door. "It's nice having someone cross the threshold who only came to see how the day's treating me."
+    *set hours_to_pass 0
+    *set minutes_to_pass 15
+    *set time_advance_call_id "af_smith_janna_day_talk"
+    *gosub_scene calendar advance_time
+    *gosub_scene calendar recalc_hp_from_neglect
+    *if (hp_current <= 0)
+      *set death_cause "starvation"
+      *if (neglect_damage_fatigue > neglect_damage_hunger)
+        *set death_cause "exhaustion"
+      *goto_scene death death_screen
+  # Wait until Torvald turns to the hearth, then brush her hand by the tongs. [~15 min]
+    *if (js_act_beat = 0)
+      You step closer to inspect a finished hinge beside her elbow, waiting until Torvald's broad back is turned toward the glowing coals. "Your hands never slow down, do they?" you murmur, letting your fingers graze the warm back of hers along the bench.
+
+      Janna doesn't pull away. Instead her soot-warmed fingers turn briefly to curl around your wrist, steady and deliberate, before she releases you as the bellows wheeze behind her. "Only when you give them a reason to," she says quietly, the corner of her mouth lifting. "Come by the side door later if you're still in Alderford."
+    *elseif (js_act_beat = 1)
+      When Torvald bends over the coal bin with his iron scoop, you reach across to steady a tray of cooled bolts beside Janna's elbow and let your thumb slide deliberately over the inside of her wrist. She stays still a breath longer than the work asks for, her palm warming against yours under the noise of the mill-wheel.
+
+      As Torvald straightens back toward the anvil, Janna picks up her calipers and murmurs without looking up from the iron, "The latch won't be barred early tonight, if you're free past dusk."
+    *else
+      Torvald steps over to check the timber lever above the race gate, giving you five quiet seconds by the quench trough. You close the half-step between you and set your fingers briefly over Janna's where they rest on the wooden rail.
+
+      Her shoulder presses lightly into yours for an unhurried beat while the steam rises between the two of you. "Careful," she breathes, amusement warming her low voice before Torvald's boots sound again on the boards. "You'll make me spoil a heat if you stand that close."
+    *set hours_to_pass 0
+    *set minutes_to_pass 15
+    *set time_advance_call_id "af_smith_janna_day_touch"
+    *gosub_scene calendar advance_time
+    *gosub_scene calendar recalc_hp_from_neglect
+    *if (hp_current <= 0)
+      *set death_cause "starvation"
+      *if (neglect_damage_fatigue > neglect_damage_hunger)
+        *set death_cause "exhaustion"
+      *goto_scene death death_screen
+
+*choice
+  # Step back onto the forge floor.
+    *goto af_smith_floor
+  *comment GEN:BEGIN place_steps home:alderford -- generated by tools/gen_city_settlements.js from its registry; edit the registry, not this block
+  # ⇥ [pvgo:home:alderford]
+    *goto af_smith_floor
+  *comment GEN:END place_steps home:alderford
 
 *comment ── The racks: the six established Alderford pieces. Labels, prices, warnings and item grants all come from equipment.txt, so the same item cannot diverge from its Port Valen counterpart. ──
 *label af_smith_stock

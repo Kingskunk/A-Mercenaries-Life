@@ -291,13 +291,15 @@ Scene.prototype.loadSceneFast = function loadSceneFast(url) {
     this.loading = true;
     var result;
     var self = this;
+    // The scene's lines are already in memory in both of the first two cases, so the hand-off needs no timer: see safeHandOff (web/util.js).
+    var handOff = (typeof safeHandOff === "function") ? safeHandOff : function(fn) { safeTimeout(fn, 0); };
     if (typeof cachedResults != "undefined" && cachedResults && cachedResults[this.name]) {
       result = window.cachedResults[this.name];
-      return safeTimeout(function() {self.loadLinesFast(result.crc, result.lines, result.labels);}, 0);
+      return handOff(function() {self.loadLinesFast(result.crc, result.lines, result.labels);});
     } else if (typeof allScenes != "undefined") {
       result = allScenes[this.name];
       if (!result) throw new Error("Couldn't load scene '" + this.name + "'\nThe file doesn't exist.");
-      return safeTimeout(function() {self.loadLinesFast(result.crc, result.lines, result.labels);}, 0);
+      return handOff(function() {self.loadLinesFast(result.crc, result.lines, result.labels);});
     } else if (typeof window != "undefined" && window.isIosApp && window.isFile && !window.isOmnibusApp) {
       startLoading();
       var startedWaiting = new Date().getTime();
@@ -921,7 +923,16 @@ Scene.prototype.execute = function execute() {
       this.recoverFromInvalidResume();
       return;
     }
-    if (this.nav) this.nav.repairStats(stats);
+    // repairStats puts back any *create'd stat a save lacks, by walking every starting stat (about 7,000 here). That is wanted where a page
+    // begins and where a save is resumed, and both come through here on a scene nothing marked. A scene made mid-page, to carry the same page
+    // across a file boundary (goto_scene and return mark it _midPageHop), has the stats the page began with, so the walk is skipped for that one
+    // run. (2026-11-14: it ran at every crossing, 1.2 ms each, dozens of times a page.) The mark is cleared, so when this same scene object
+    // later begins a new page of its own (resetPage calls execute on it again), the stats are checked again.
+    if (this._midPageHop) {
+      this._midPageHop = false;
+    } else if (this.nav) {
+      this.nav.repairStats(stats);
+    }
     if (!this.temps._choiceEnds) this.temps._choiceEnds = {};
     doneLoading();
     if (typeof this.targetLabel != "undefined") {
@@ -1501,6 +1512,7 @@ Scene.prototype["return"] = function scene_return() {
       scene.savedResumeOffset = stackFrame.resumeOffset;
       scene.savedResumeLineText = stackFrame.resumeLineText;
       scene.accumulatedParagraph = this.accumulatedParagraph;
+      scene._midPageHop = true;
       if (this.randomtest) {
         // pop the stack in randomtest to avoid overflow
         clearScreen(function() {scene.execute()});
@@ -1663,6 +1675,7 @@ Scene.prototype.goto_scene = function gotoScene(data, isGosubScene) {
     if (typeof result.label != "undefined") scene.targetLabel = {label:result.label, origin:this.name, originLine:this.lineNum};
     if (typeof result.param != "undefined") scene.temps.param = result.param;
     if (this.redirectingFromStats) scene.redirectingFromStats = true;
+    scene._midPageHop = true;
     scene.execute();
 };
 

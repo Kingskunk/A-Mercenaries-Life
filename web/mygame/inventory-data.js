@@ -1489,6 +1489,22 @@
       equip: { slot: "ring", id: "althea_votive_ring" }
     },
     {
+      id: "janna_forged_ring", category: "accessories", owned: "has_janna_forged_ring",
+      weight: 0.1,
+      name: "Janna's Iron Ring",
+      description: "Hammered wrought iron inlaid with copper and marked with Janna's diamond touchmark. +1 Athletics while worn.",
+      badge: function (s) { return (s.equipped_ring1_id === "janna_forged_ring" || s.equipped_ring2_id === "janna_forged_ring") ? "Worn" : "Stowed"; },
+      equip: { slot: "ring", id: "janna_forged_ring" }
+    },
+    {
+      id: "talia_cord_ring", category: "accessories", owned: "has_talia_cord_ring",
+      weight: 0.1,
+      name: "Talia's River-Cord Ring",
+      description: "Waxed hemp and dark leather braided around a pale river shell in brass wire. +1 Perception while worn.",
+      badge: function (s) { return (s.equipped_ring1_id === "talia_cord_ring" || s.equipped_ring2_id === "talia_cord_ring") ? "Worn" : "Stowed"; },
+      equip: { slot: "ring", id: "talia_cord_ring" }
+    },
+    {
       id: "silverstar", category: "accessories", owned: "has_silverstar",
       weight: 0.1,
       name: "The Silverstar",
