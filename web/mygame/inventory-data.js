@@ -436,7 +436,7 @@
     {
       id: "dressed_chicken", category: "provisions", owned: "has_dressed_chicken",
       weight: 3, stow: true, stack: true,
-      name: function (s) { var n = 1 + (Number(s.spare_dressed_chicken) || 0); return "Dressed Chicken" + (n > 1 ? " ×" + n : ""); },
+      name: function (s) { var n = 1 + (Number(s.spare_dressed_chicken) || 0); return "Chicken Meat" + (n > 1 ? " ×" + n : ""); },
       description: "Plucked and cleaned farm chicken, wrapped for the road and ready for a fire or pot."
     },
     {

@@ -243,9 +243,9 @@
     weapon: "Weapons", armor: "Body armor", shield: "Shields & off-hand", head: "Headwear",
     cloak: "Cloaks", hands: "Gloves", feet: "Footwear", neck: "Neckwear", ring: "Rings",
     tool: "Tools", consumable: "Consumables", valuable: "Valuables", salvage: "Salvage", other: "Other",
-    provisions: "Provisions", raw_material: "Raw materials", worked_material: "Worked materials"
+    meats: "Meats", dairy: "Dairy", produce: "Produce", pantry: "Pantry", raw_material: "Raw materials", worked_material: "Worked materials"
   };
-  var CATEGORY_ORDER = ["weapon", "armor", "shield", "head", "cloak", "hands", "feet", "neck", "ring", "tool", "consumable", "valuable", "salvage", "other", "provisions", "raw_material", "worked_material"];
+  var CATEGORY_ORDER = ["weapon", "armor", "shield", "head", "cloak", "hands", "feet", "neck", "ring", "tool", "consumable", "valuable", "salvage", "other", "meats", "dairy", "produce", "pantry", "raw_material", "worked_material"];
   function categoryOf(it) {
     var kind = String(it && it.kind || "").toLowerCase();
     var group = String(it && it.group || "").toLowerCase();

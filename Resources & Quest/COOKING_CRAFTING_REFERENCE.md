@@ -34,7 +34,7 @@ Each recipe spends **one whole unit of each ingredient** at the unit's existing 
 | --- | --- | ---: | ---: | --- | --- | ---: | ---: | ---: | --- |
 | Dripping-Roasted Boar | Pork Meat + Animal Fat | 9 c | 10 | +1 STR | special | 12 hours | 2 | 60 min | `FOOD_Grilled_Pork_Leg_Unfaded_Icon.png` |
 | Onion-Seared Venison | Venison + Onions | 9 c | 10 | +1 DEX | special | 12 hours | 2 | 60 min | `FOOD_Grilled_Steak_Unfaded_Icon.png` |
-| Pot-Braised Chicken and Roots | Dressed Chicken + Root-Vegetable Bundle | 9 c | 11 | +1 CON | special | 12 hours | 2 | 60 min | `FOOD_Hearty_Dinner_Unfaded_Icon.png` |
+| Pot-Braised Chicken and Roots | Chicken Meat + Root-Vegetable Bundle | 9 c | 11 | +1 CON | special | 12 hours | 2 | 60 min | `FOOD_Hearty_Dinner_Unfaded_Icon.png` |
 | Riverfish and Barley Pottage | Fish + Grain | 6 c | 11 | +1 CON | hearty | 10 hours | 2 | 45 min | `FOOD_Murky_Stew_Unfaded_Icon.png` |
 | Tomato Riverfish Broth | Fish + Tomatoes | 7 c | 11 | +1 WIS | hearty | 10 hours | 2 | 45 min | `FOOD_Seafood_Bouillabaisse_Unfaded_Icon.png` |
 | Pork and Cabbage Braise | Pork Meat + Cabbage | 5 c | 10 | +1 STR | hearty | 10 hours | 2 | 45 min | `FOOD_Stout_Stew_Unfaded_Icon.png` |
