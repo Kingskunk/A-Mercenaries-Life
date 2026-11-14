@@ -61,6 +61,18 @@
 *set pact_slots - 1
 *return
 
+*comment SPEND THE LOWEST SLOT: the spending twin of refresh_slot_left, for a spell with no chosen casting level (a gate that asks
+*comment (slot_left_1 + slot_left_2) > 0). Pact Magic spends a pact slot; everyone else spends a 1st-level slot, or a 2nd when no 1st is left.
+*comment The caller's own replay lock covers it, as with the two routines above.
+*label spend_lowest_slot
+*if (pact_slots_max > 0)
+  *gosub spend_pact_slot
+*elseif (spell_slots_1 > 0)
+  *gosub spend_spell_slot 1
+*else
+  *gosub spend_spell_slot 2
+*return
+
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment REFRESH SLOT LEFT: one pool-neutral count of slots spendable on a 1st-level (slot_left_1) or
 *comment 2nd-level (slot_left_2) casting. Rule: a character with Pact Magic (pact_slots_max > 0) has
@@ -229,10 +241,11 @@ ${fsh}
 *if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
   *comment Moving Hex after its target falls costs a bonus action, not another use or spell slot.
   *if (not(combat_hex_orphaned))
+    *comment Payment (2026-11-14, the user: 2024 rules): a granted spell's free use goes first; after that it is cast from the caster's own slots, whatever their class.
     *if ((race_cantrip_2 = "hex") and (not(hexblood_hex_used)))
       *set hexblood_hex_used true
     *else
-      *gosub spend_pact_slot
+      *gosub spend_lowest_slot
   *set hex_active true
   *set hex_target_slot combat_active_target
   *set combat_cast_locked true
