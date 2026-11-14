@@ -809,7 +809,7 @@ ${combat_player_dmg_roll_banner}
       *temp rb_prefix (("combat_enemy" & combat_active_target) & "_")
       *set combat_save_quiet true
       *comment Lock index 0, not the attacker's slot: the attacker may also make a repeat Wisdom save (Frightened) later on this very page, and a shared index would hand it this save back.
-      *gosub resolve_enemy_save rb_prefix "dexterity" "Dexterity" 0
+      *gosub resolve_save rb_prefix "dexterity" "Dexterity" spell_save_dc 0
       *set combat_save_quiet false
       *temp rb_failed check_success
       *set combat_rebuke_save_banner combat_save_banner_0
@@ -1278,34 +1278,56 @@ ${combat_player_dmg_roll_banner}
 *return
 
 
-*comment resolve_enemy_save (2026-09-27): the enemy's own saving throw against the PLAYER's spell_save_dc -- the
-*comment D&D-correct direction (the target rolls, not the caster). Replaces Vicious Mockery/Dissonant Whispers'
-*comment old misuse of roll_d20_check, which had the PLAYER rolling their own CHA mod against a flat, hardcoded
-*comment DC 12 and calling it a "save." Reads the enemy's own rolled ability score off whichever field res_stat
-*comment names (apply_ability_score_range's groundwork, combat.txt) via score_to_mod above. No save-proficiency
-*comment bonus: none of this library's enemies have one declared yet, same "opt-in later" note as
-*comment apply_derived_combat_bonuses' combat_lib_prof_bonus. No nat-1/20 auto-fail/succeed either -- RAW gives
-*comment that shortcut to attack rolls and ability checks, never to saving throws. res_stat_label is the caller's
-*comment ready-to-print display string ("Wisdom"), same division of labor as roll_d20_check's own check_skill.
-*comment res_prefix (2026-09-27, generalized for Bane -- see resolve_cast_bane, combat_spells.txt) is which enemy to check,
-*comment same calling convention apply_derived_combat_bonuses/_ac/_hp already use: "combat_enemy_" for whichever
-*comment slot fight_pick_target/fight_sync_target_in have synced onto the active-target scratch (Vicious Mockery/
-*comment Dissonant Whispers' own use), or a specific "combat_enemyN_" directly (resolve_cast_bane checking
-*comment several different slots in one cast, none of which need to be "active" first).
-*comment Bane (2026-09-27, dormant): if this enemy's own {prefix}bane_expires_round hasn't passed, a fresh 1d4 is
-*comment rolled and subtracted from the total here too -- RAW, Bane's penalty hits saving throws as well as
-*comment attack rolls, including (correctly, and with no special-casing needed) a save against a second Bane cast
-*comment on an already-Baned target.
-*comment res_lock_index (2026-09-27) picks which of the 7 replay-lock slots above this call owns (see their own
-*comment header comment) -- 0 for Vicious Mockery/Dissonant Whispers' single-target call, 1-6 for resolve_cast_
-*comment bane checking a specific numbered slot. Needed for correctness even on the very first pass, not just a
-*comment Stats-and-back replay: without it, Bane's second and third targets in the same cast would see the first
-*comment target's roll already "locked" and silently reuse it instead of rolling their own.
-*comment Output: check_success (true = the enemy FAILED the save, the spell lands at full effect; false = the
-*comment enemy SAVED) -- the same variable and polarity resolve_dissonant_whispers and combat.txt's own Vicious
-*comment Mockery branch already read, so neither needed to change.
-*label resolve_enemy_save
-*params res_prefix res_stat res_stat_label res_lock_index
+*comment combat_player_sync (2026-11-14): copies the player's live name, six ability scores, and save-proficiency
+*comment bonuses onto the "combat_player_" prefix so resolve_save addresses the player the same way it
+*comment addresses an enemy or ally. Called from fight_setup (combat.txt) and at the end of update_dnd_stats
+*comment (character_stats.txt, after refresh_features). Fixed-value sets only, so safe to replay; does not
+*comment touch combat_player_bane_expires_round (fight_setup resets that to 0).
+*label combat_player_sync
+*set combat_player_name name
+*set combat_player_strength strength
+*set combat_player_dexterity dexterity
+*set combat_player_constitution constitution
+*set combat_player_intelligence intelligence
+*set combat_player_wisdom wisdom
+*set combat_player_charisma charisma
+*set combat_player_save_bonus_strength 0
+*set combat_player_save_bonus_dexterity 0
+*set combat_player_save_bonus_constitution 0
+*set combat_player_save_bonus_intelligence 0
+*set combat_player_save_bonus_wisdom 0
+*set combat_player_save_bonus_charisma 0
+*if (feature_save_prof_strength)
+  *set combat_player_save_bonus_strength prof_bonus
+*if (feature_save_prof_dexterity)
+  *set combat_player_save_bonus_dexterity prof_bonus
+*if (feature_save_prof_constitution)
+  *set combat_player_save_bonus_constitution prof_bonus
+*if (feature_save_prof_intelligence)
+  *set combat_player_save_bonus_intelligence prof_bonus
+*if (feature_save_prof_wisdom)
+  *set combat_player_save_bonus_wisdom prof_bonus
+*if (feature_save_prof_charisma)
+  *set combat_player_save_bonus_charisma prof_bonus
+*return
+
+*comment resolve_save (2026-09-27, generalized 2026-11-14): saving throw for any combatant addressed by prefix
+*comment ("combat_enemy_" active scratch, "combat_enemyN_", "combat_allyN_", or "combat_player_") against the
+*comment caller-supplied DC (res_dc). Reads {res_prefix & res_stat} for the ability score via score_to_mod,
+*comment {res_prefix & "name"} for the banner, and {res_prefix & "bane_expires_round"} for any active Bane
+*comment penalty (1d4 subtracted). When res_prefix is "combat_player_", it also adds the player's matching
+*comment save-proficiency bonus (combat_player_save_bonus_<stat>, synced by combat_player_sync); enemies and
+*comment allies currently have no save-proficiency fields. No nat-1/20 auto-fail/succeed (RAW gives that shortcut
+*comment to attack rolls and ability checks, never to saving throws). res_stat_label is the caller's display
+*comment string ("Wisdom"). Also obeys combat_save_disadv (roll twice, keep lower) and combat_save_quiet (store
+*comment banner in combat_save_banner_<N> without printing).
+*comment res_lock_index selects one of 8 page_id-scoped replay locks (combat_save_locked_0..7): 0 for single-target
+*comment player calls on an enemy, 1-6 for multi-target/per-slot calls (Bane, Arms of Hadar, Burning Hands,
+*comment Thunderwave, Grease, Frightened repeat, Philter, Ensnaring large reroll), 7 for the player.
+*comment Polarity: check_success is set TRUE WHEN THE TARGET FAILED THE SAVE (res_total < res_dc), and false
+*comment when the target saved.
+*label resolve_save
+*params res_prefix res_stat res_stat_label res_dc res_lock_index
 *temp res_lockname ("combat_save_locked_" & res_lock_index)
 *temp res_bannername ("combat_save_banner_" & res_lock_index)
 *temp res_successname ("combat_save_success_" & res_lock_index)
@@ -1321,6 +1343,7 @@ ${combat_player_dmg_roll_banner}
   *set combat_save_locked_4 false
   *set combat_save_locked_5 false
   *set combat_save_locked_6 false
+  *set combat_save_locked_7 false
   *set locked_combat_save_page_id page_id
 *if ({(res_lockname)}) and (locked_combat_save_page_id = page_id)
   *set check_success {(res_successname)}
@@ -1329,6 +1352,19 @@ ${combat_player_dmg_roll_banner}
   *temp res_score {(res_prefix & res_stat)}
   *gosub_scene startup score_to_mod res_score
   *temp res_mod sm_mod
+  *if (res_prefix = "combat_player_")
+    *if (res_stat = "strength")
+      *set res_mod + combat_player_save_bonus_strength
+    *if (res_stat = "dexterity")
+      *set res_mod + combat_player_save_bonus_dexterity
+    *if (res_stat = "constitution")
+      *set res_mod + combat_player_save_bonus_constitution
+    *if (res_stat = "intelligence")
+      *set res_mod + combat_player_save_bonus_intelligence
+    *if (res_stat = "wisdom")
+      *set res_mod + combat_player_save_bonus_wisdom
+    *if (res_stat = "charisma")
+      *set res_mod + combat_player_save_bonus_charisma
   *temp res_roll 0
   *rand res_roll 1 20
   *temp res_dis_note ""
@@ -1347,7 +1383,7 @@ ${combat_player_dmg_roll_banner}
     *rand res_bane_die 1 4
     *set res_total - res_bane_die
     *set res_bane_str " -${res_bane_die} (Bane)"
-  *set check_success (res_total < spell_save_dc)
+  *set check_success (res_total < res_dc)
   *temp res_mod_str ""
   *if (res_mod >= 0)
     *set res_mod_str "+${res_mod}"
@@ -1357,7 +1393,7 @@ ${combat_player_dmg_roll_banner}
   *temp res_verdict "SAVED"
   *if (check_success)
     *set res_verdict "FAILED"
-  *set res_banner "[b][🎲 ${res_name} Saving Throw: ${res_stat_label} (DC ${spell_save_dc}) | Roll: ${res_roll}${res_dis_note} ${res_mod_str}${res_bane_str} = ${res_total} — ${res_verdict}][/b]"
+  *set res_banner "[b][🎲 ${res_name} Saving Throw: ${res_stat_label} (DC ${res_dc}) | Roll: ${res_roll}${res_dis_note} ${res_mod_str}${res_bane_str} = ${res_total} — ${res_verdict}][/b]"
   *set {(res_successname)} check_success
   *set {(res_bannername)} res_banner
   *set {(res_lockname)} true

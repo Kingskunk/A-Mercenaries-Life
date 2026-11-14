@@ -16,7 +16,7 @@
 *comment Calling convention: combat.txt reaches every label here with *gosub_scene combat_spells <label> (these
 *comment were already *gosub_scene startup <label> before the split, since combat.txt and startup.txt were
 *comment already different files -- only the scene name changed, not the verb). Labels here that still need
-*comment combat_dice.txt's own primitives (apply_outgoing_damage_resist_vuln, resolve_enemy_save) reach back the
+*comment combat_dice.txt's own primitives (apply_outgoing_damage_resist_vuln, resolve_save) reach back the
 *comment same way, *gosub_scene combat_dice <label> -- *temp doesn't cross a *gosub_scene boundary in either direction, but
 *comment every value these labels pass or receive is already a *create'd global (combat_player_dmg_dealt,
 *comment combat_cast_result, check_success, etc.), so this split needed no new globals the way combat_prose.txt's
@@ -325,8 +325,8 @@ ${fsh}
     *temp aoh_hp {(aoh_p & "hp")}
     *temp aoh_range {(aoh_p & "range")}
     *if ((aoh_hp > 0) and (aoh_range <= 0))
-      *gosub_scene combat_dice resolve_enemy_save aoh_p "strength" "Strength" aoh_i
-      *comment check_success is inverted here (resolve_enemy_save: true = the enemy FAILED the save).
+      *gosub_scene combat_dice resolve_save aoh_p "strength" "Strength" spell_save_dc aoh_i
+      *comment check_success is inverted here (resolve_save: true = the enemy FAILED the save).
       *temp aoh_failed check_success
       *if (aoh_failed)
         *set combat_player_dmg_dealt aoh_total
@@ -388,7 +388,7 @@ ${combat_player_dmg_roll_banner}
   *rand combat_throw_v 1 3
   You pull the stopper with your teeth and hurl the flask at ${combat_enemy_epithet}.
   *line_break
-  *gosub_scene combat_dice resolve_enemy_save rti_p "dexterity" "Dexterity" combat_active_target
+  *gosub_scene combat_dice resolve_save rti_p "dexterity" "Dexterity" spell_save_dc combat_active_target
   *set spell_save_dc rti_old
   *set combat_throw_failed check_success
   *if (rti_item = "grease_flask")
@@ -438,8 +438,8 @@ ${combat_player_dmg_roll_banner}
   *set combat_fear_banner ""
   *if (combat_cast_at_level <= 1)
     *temp rcf_p (("combat_enemy" & combat_active_target) & "_")
-    *gosub_scene combat_dice resolve_enemy_save rcf_p "wisdom" "Wisdom" combat_active_target
-    *comment check_success is inverted here (resolve_enemy_save: true = the enemy FAILED the save).
+    *gosub_scene combat_dice resolve_save rcf_p "wisdom" "Wisdom" spell_save_dc combat_active_target
+    *comment check_success is inverted here (resolve_save: true = the enemy FAILED the save).
     *if (check_success)
       *set {(rcf_p & "frightened")} 10
       *set combat_fear_banner "[b][😨 ${combat_enemy_name} is Frightened: its attacks have disadvantage and it will not come closer][/b]"
@@ -463,7 +463,7 @@ ${combat_player_dmg_roll_banner}
         *temp rcf_hp {(rcf_p2 & "hp")}
         *temp rcf_now {(rcf_p2 & "frightened")}
         *if ((rcf_hp > 0) and (rcf_now <= 0))
-          *gosub_scene combat_dice resolve_enemy_save rcf_p2 "wisdom" "Wisdom" rcf_i
+          *gosub_scene combat_dice resolve_save rcf_p2 "wisdom" "Wisdom" spell_save_dc rcf_i
           *if (check_success)
             *set {(rcf_p2 & "frightened")} 10
             *set {(("combat_mm_banner_" & rcf_i))} "[b][😨 ${combat_enemy_name} is Frightened: its attacks have disadvantage and it will not come closer][/b]"
@@ -497,15 +497,15 @@ ${combat_player_dmg_roll_banner}
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment Up to three living enemies, front-to-back (the same order everything else in this engine already
 *comment fights a group down in -- fight_pick_target, fight_check_all_dead, the initiative roll), each make a
-*comment Charisma save against the player's own spell_save_dc via resolve_enemy_save above -- called directly
+*comment Charisma save against the player's own spell_save_dc via resolve_save above -- called directly
 *comment against each target's own numbered slot (lock indices 1-6) rather than the "active target" scratch
 *comment copy, since Bane's targets have no need to be the current target at all.
 *comment Whichever fails is Baned for 10 rounds (1 minute at 6 seconds/round): combat_round already advances
 *comment reliably once per round with its own replay lock (combat_next_turn, combat.txt), so bane_expires_round =
 *comment combat_round + 9 covers exactly ten rounds inclusive of the casting round. This is a flat, deliberate
 *comment stand-in for concentration -- the designer's explicit call (2026-09-27): nothing in this engine tracks
-*comment concentration for any spell, and Bane isn't getting an exception. resolve_enemy_attack and resolve_enemy_
-*comment save both already check it themselves (see their own Bane comments), so nothing else needs to read this
+*comment concentration for any spell, and Bane isn't getting an exception. resolve_enemy_attack and resolve_save
+*comment both already check it themselves (see their own Bane comments), so nothing else needs to read this
 *comment label's own output.
 *comment Spell-slot cost lives here, inside the same guarded block as everything else (spell_slots_1 - 1) --
 *comment same reasoning as resolve_dissonant_whispers/resolve_cast_hex: putting it in the bare *choice body
@@ -524,7 +524,7 @@ ${combat_player_dmg_roll_banner}
     *temp rcb_hp {(rcb_p & "hp")}
     *if (rcb_hp > 0)
       *set rcb_targeted + 1
-      *gosub_scene combat_dice resolve_enemy_save rcb_p "charisma" "Charisma" rcb_i
+      *gosub_scene combat_dice resolve_save rcb_p "charisma" "Charisma" spell_save_dc rcb_i
       *if (check_success)
         *set {(rcb_p & "bane_expires_round")} (combat_round + 9)
     *set rcb_i + 1
@@ -667,7 +667,7 @@ ${combat_player_dmg_roll_banner}
 *comment Bard's Charisma at all, while Magic Missile in the same file had a hardcoded +3. RAW "3d6" on a save-based
 *comment spell means 3d6 PLUS the casting modifier, and the halving applies to that total, not to the dice alone:
 *comment a successful save halves dice and modifier together, rounded down. check_success is already inverted
-*comment relative to its name (resolve_enemy_save: true = the enemy FAILED the save), so the full-damage branch
+*comment relative to its name (resolve_save: true = the enemy FAILED the save), so the full-damage branch
 *comment below is the one guarded by it, unchanged from before.
 *comment UPCASTING (2026-11-09, RAW): +1d6 per slot level above 1st, so dice count = combat_cast_at_level + 2
 *comment (3d6 at 1st, 4d6 at 2nd) -- same rolling-loop shape resolve_cast_ray_of_sickness/resolve_cast_thunderwave
@@ -795,8 +795,8 @@ ${combat_player_dmg_roll_banner}
     *temp rcg_range {(rcg_p & "range")}
     *if ((rcg_hp > 0) and (rcg_range = rcg_band))
       *temp rcg_name {(rcg_p & "name")}
-      *gosub_scene combat_dice resolve_enemy_save rcg_p "dexterity" "Dexterity" rcg_i
-      *comment check_success is inverted here (resolve_enemy_save: true = the enemy FAILED the save).
+      *gosub_scene combat_dice resolve_save rcg_p "dexterity" "Dexterity" spell_save_dc rcg_i
+      *comment check_success is inverted here (resolve_save: true = the enemy FAILED the save).
       *temp rcg_failed check_success
       *set {(rcg_p & "greased")} 3
       *set {(rcg_p & "grease_until")} rcg_until
@@ -875,8 +875,8 @@ ${combat_player_dmg_roll_banner}
     *temp bh_hp {(bh_p & "hp")}
     *temp bh_range {(bh_p & "range")}
     *if ((bh_hp > 0) and (bh_range <= 0))
-      *gosub_scene combat_dice resolve_enemy_save bh_p "dexterity" "Dexterity" bh_i
-      *comment check_success is inverted here (resolve_enemy_save: true = the enemy FAILED the save).
+      *gosub_scene combat_dice resolve_save bh_p "dexterity" "Dexterity" spell_save_dc bh_i
+      *comment check_success is inverted here (resolve_save: true = the enemy FAILED the save).
       *temp bh_failed check_success
       *if (bh_failed)
         *set combat_player_dmg_dealt bh_total
@@ -970,8 +970,8 @@ ${combat_player_dmg_roll_banner}
     *temp tw_hp {(tw_p & "hp")}
     *temp tw_range {(tw_p & "range")}
     *if ((tw_hp > 0) and (tw_range <= 0))
-      *gosub_scene combat_dice resolve_enemy_save tw_p "constitution" "Constitution" tw_i
-      *comment check_success is inverted here (resolve_enemy_save: true = the enemy FAILED the save).
+      *gosub_scene combat_dice resolve_save tw_p "constitution" "Constitution" spell_save_dc tw_i
+      *comment check_success is inverted here (resolve_save: true = the enemy FAILED the save).
       *temp tw_failed check_success
       *if (tw_failed)
         *set combat_player_dmg_dealt tw_total

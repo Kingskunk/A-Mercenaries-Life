@@ -1872,8 +1872,8 @@
 *create combat_ally_atk_used_sidearm false
 *comment DEX (2026-09-27, groundwork for initiative -- see combat_roll_initiative below) plus the other five
 *comment (2026-09-28, once atk_bonus/dmg_bonus started deriving from them the same way an enemy's do). Ally
-*comment saving throws would still need their own resolve_ally_save the way resolve_enemy_save exists for
-*comment enemies -- these scores alone don't add that, just feed the derived combat bonuses and initiative.
+*comment saving throws use the shared resolve_save routine (combat_dice.txt) with each ally slot's prefix --
+*comment these scores feed the derived combat bonuses, initiative, and saving throws.
 *create combat_ally1_dexterity 10
 *create combat_ally1_strength 10
 *create combat_ally1_constitution 10
@@ -2065,6 +2065,11 @@
 *create combat_ally3_flee_hp_pct 0
 *create combat_ally4_can_retreat false
 *create combat_ally4_flee_hp_pct 0
+*create combat_ally0_bane_expires_round 0
+*create combat_ally1_bane_expires_round 0
+*create combat_ally2_bane_expires_round 0
+*create combat_ally3_bane_expires_round 0
+*create combat_ally4_bane_expires_round 0
 *comment Ally type library (combat.txt: apply_ally_type/apply_ally_roster), mirroring the enemy one just above --
 *comment a scene sets combat_ally_lib_1 (and optionally _2/_3/_4) to a library type id ("archer", "guard") before
 *comment calling fight_library, instead of hand-authoring every ally stat inline. combat_apply_ally_slot/_type are
@@ -2401,6 +2406,23 @@
 *comment True when the foe is a creature (lacedon, mire_rat, beast) rather than a person: the player's lines then come from the
 *comment flavor_creature_ labels. Set with combat_player_keyed by apply_creature_weapon_flavor; cleared by fight_cleanup.
 *create combat_player_creature false
+*comment Player mirror for prefix-addressed combat routines (resolve_save with prefix "combat_player_").
+*comment combat_player_sync (combat_dice.txt) refreshes name, ability scores, and save bonuses from live stats;
+*comment fight_setup (combat.txt) resets combat_player_bane_expires_round to 0.
+*create combat_player_name ""
+*create combat_player_strength 10
+*create combat_player_dexterity 10
+*create combat_player_constitution 10
+*create combat_player_intelligence 10
+*create combat_player_wisdom 10
+*create combat_player_charisma 10
+*create combat_player_save_bonus_strength 0
+*create combat_player_save_bonus_dexterity 0
+*create combat_player_save_bonus_constitution 0
+*create combat_player_save_bonus_intelligence 0
+*create combat_player_save_bonus_wisdom 0
+*create combat_player_save_bonus_charisma 0
+*create combat_player_bane_expires_round 0
 *comment Enemy type library: which library type fills each slot ("" for a hand-authored slot), and the scratch fields
 *comment flavor_from_type (combat.txt) reads and writes. Plain variables rather than *params, like advance_time.
 *comment combat_lib_1/2/3: what a scene sets to call combat.txt fight_library (a library type id per slot); cleared by fight_cleanup.
@@ -2575,7 +2597,7 @@
 *comment combat_nonlethal_slot: the one enemy slot whose defeat is non-lethal (0 = none). While it is set, fight_sync_target_in makes combat_is_nonlethal follow the enemy being attacked, so the player's strike and finishing lines are the "beaten senseless" ones for that enemy only (the Burning Grove's mage; the Twig Blights keep the creature lines). The fight itself stays lethal for the player. Reset by fight_cleanup.
 *create combat_nonlethal_slot 0
 *comment UNIQUE ITEM USES IN A FIGHT (2026-11-01, the user's design; first used by Wolves of Langston Chapter 6). They sit on the HUD's Items button ("Items: <name>"). combat_cure_kind: a calling scene sets it (for example "lycanthropy") when a foe carries a curse the Silverstar can lift; while it is empty the
-*comment Silverstar's touch is not offered. combat_philter_stuns: the scene says the Philter of Remembrance works on this fight's foe (it stuns nobody else), combat_philter_dc is the Wisdom save DC. combat_save_disadv makes the next resolve_enemy_save roll twice and keep the lower. combat_philter_turns is the stun the
+*comment Silverstar's touch is not offered. combat_philter_stuns: the scene says the Philter of Remembrance works on this fight's foe (it stuns nobody else), combat_philter_dc is the Wisdom save DC. combat_save_disadv makes the next resolve_save roll twice and keep the lower. combat_philter_turns is the stun the
 *comment last throw rolled. Per enemy slot: _stunned is how many of its turns it will still lose, _stun_left what was left after the last lost turn, _stun_page the page that turn was lost on (a replay reprints it and never counts twice), _stun_kind picks the lines ("memory"), _stun_v a stored line number, and _stun_last_round
 *comment the round of its last lost turn (a stunned foe is easy to hit until the round after it). All reset by fight_cleanup; the fight-level flags too.
 *create combat_cure_kind ""

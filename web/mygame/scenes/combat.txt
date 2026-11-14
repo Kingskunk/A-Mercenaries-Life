@@ -81,6 +81,8 @@
 *label fight_setup
 *gosub_scene equipment expire_timed_weapon_magic
 *gosub_scene character_progression refresh_class_resource_maxs
+*gosub_scene combat_dice combat_player_sync
+*set combat_player_bane_expires_round 0
 *comment STALE SLOTS (2026-10-21, from the dev hub: summoned Blight Twigs showed in the next fight, and enemies of a fight the player fled did too). A slot beyond this fight's count keeps whatever hit points the last fight left in it, and the sidebar lane and anything that scans every slot see a living combatant there. Zero every ally and enemy slot above the counts before the fight is built; the slots in use are filled by the library or the hand-authored setup as always.
 *temp fss_e combat_enemy_count
 *temp fss_a combat_ally_count
@@ -1050,6 +1052,7 @@
   *comment just above: a guard reusing a slot an archer used last fight must not inherit her retreat fields.
   *set {(("combat_ally" & fc_a_i) & "_can_retreat")} false
   *set {(("combat_ally" & fc_a_i) & "_flee_hp_pct")} 0
+  *set {(("combat_ally" & fc_a_i) & "_bane_expires_round")} 0
   *set fc_a_i + 1
   *goto fight_cleanup_ally_loop
 *set player_last_hit_kind ""
@@ -1202,7 +1205,7 @@
 *set combat_enemy_nonmagic {(fti_p & "nonmagic")}
 *set combat_enemy_nonmagic_silvered {(fti_p & "nonmagic_silvered")}
 *set combat_enemy_nonmagic_adamantine {(fti_p & "nonmagic_adamantine")}
-*comment Ability scores: synced in like every other field above, so a saving-throw check (resolve_enemy_save)
+*comment Ability scores: synced in like every other field above, so a saving-throw check (resolve_save)
 *comment can read the bare combat_enemy_<score> for whichever slot is currently active, same as HP/AC/atk_bonus.
 *set combat_enemy_strength {(fti_p & "strength")}
 *set combat_enemy_dexterity {(fti_p & "dexterity")}
@@ -4091,7 +4094,7 @@
     *comment implementation, not so this option behaves differently from the others.
     # [b][ACTION][/b] [b][Vicious Mockery][/b] Hurl a barbed, perfectly-aimed insult at ${combat_med_epithet}.
       *comment Shares Fire Bolt's own whole-body replay lock (combat_cantrip_choice_locked, its own comment above
-      *comment has the full explanation) -- same bug shape, same one-action-per-page exclusivity. resolve_enemy_save
+      *comment has the full explanation) -- same bug shape, same one-action-per-page exclusivity. resolve_save
       *comment already locks its own roll (per-lock-index, page_id-keyed, shared with Dissonant Whispers via the
       *comment same index 0 -- also mutually exclusive with this by the same one-action-per-page reasoning), but
       *comment fight_pick_target/pick_spell_flavor/the disadvantage mark/resolve_player_hit still need the outer
@@ -4102,8 +4105,8 @@
         *set combat_current_spell_id "vicious_mockery"
         *gosub_scene combat_prose pick_spell_flavor
         *comment Enemy saving throw against the player's own spell_save_dc -- Vicious Mockery is a Wisdom save, RAW.
-        *comment The target rolls here (resolve_enemy_save, combat_dice.txt), not the player.
-        *gosub_scene combat_dice resolve_enemy_save "combat_enemy_" "wisdom" "Wisdom" 0
+        *comment The target rolls here (resolve_save, combat_dice.txt), not the player.
+        *gosub_scene combat_dice resolve_save "combat_enemy_" "wisdom" "Wisdom" spell_save_dc 0
         *if (check_success)
           *set combat_player_dmg_type "psychic"
           *set combat_player_dmg_dice_sides 4
@@ -4140,7 +4143,7 @@
         *gosub_scene combat_movement fight_retarget_by_class "short"
         *set combat_current_spell_id "poison_spray"
         *gosub_scene combat_prose pick_spell_flavor
-        *gosub_scene combat_dice resolve_enemy_save "combat_enemy_" "constitution" "Constitution" 0
+        *gosub_scene combat_dice resolve_save "combat_enemy_" "constitution" "Constitution" spell_save_dc 0
         *if (check_success)
           *set combat_player_dmg_type "poison"
           *set combat_player_dmg_dice_sides 12
@@ -4922,7 +4925,7 @@ You press the gnarled heart to your chest. It beats once against your palm, slow
   *set combat_save_disadv true
   You pull the stopper and hurl the philter at ${combat_enemy_epithet}.
   *line_break
-  *gosub_scene combat_dice resolve_enemy_save ftp_p "wisdom" "Wisdom" combat_active_target
+  *gosub_scene combat_dice resolve_save ftp_p "wisdom" "Wisdom" spell_save_dc combat_active_target
   *set combat_save_disadv false
   *set spell_save_dc ftp_old
   *set combat_throw_failed check_success
@@ -5385,8 +5388,8 @@ You unroll the pale sheet and read it aloud. A numb, leathery vitality spreads b
   *set combat_current_spell_id "dissonant_whispers"
   *gosub_scene combat_prose pick_spell_flavor
   *comment Enemy saving throw against the player's own spell_save_dc -- Dissonant Whispers is a Wisdom save,
-  *comment RAW. The target rolls here (resolve_enemy_save, combat_dice.txt), not the player.
-  *gosub_scene combat_dice resolve_enemy_save "combat_enemy_" "wisdom" "Wisdom" 0
+  *comment RAW. The target rolls here (resolve_save, combat_dice.txt), not the player.
+  *gosub_scene combat_dice resolve_save "combat_enemy_" "wisdom" "Wisdom" spell_save_dc 0
   *comment Slot spent on cast, RAW, win or miss -- same as Ray of Sickness/Grease (combat_spells.txt).
   *comment spend_spell_slot (combat_spells.txt) picks the pool from combat_cast_at_level.
   *gosub_scene combat_spells spend_spell_slot combat_cast_at_level
@@ -5966,7 +5969,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *temp cea_cs check_success
     *temp cea_p (("combat_enemy" & combat_active_target) & "_")
     *set combat_save_quiet true
-    *gosub_scene combat_dice resolve_enemy_save cea_p "strength" "Strength" 0
+    *gosub_scene combat_dice resolve_save cea_p "strength" "Strength" spell_save_dc 0
     *set combat_save_quiet false
     *set combat_ensnare_banner {("combat_save_banner_0")}
     *set combat_ensnare_banner2 ""
@@ -5974,7 +5977,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *gosub combat_size_rank combat_enemy_size
     *if ((check_success) and (combat_size_rank_value >= 3))
       *set combat_save_quiet true
-      *gosub_scene combat_dice resolve_enemy_save cea_p "strength" "Strength" combat_active_target
+      *gosub_scene combat_dice resolve_save cea_p "strength" "Strength" spell_save_dc combat_active_target
       *set combat_save_quiet false
       *set combat_ensnare_banner2 {(("combat_save_banner_" & combat_active_target))}
     *set combat_ensnare_result 1
@@ -7449,7 +7452,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *comment Frightened: the enemy repeats its Wisdom save at the end of its turn, and the fear ends on a success. If it died during its own turn (a Rebuke, Armor of Agathys) there is nothing to roll for.
     *if ((cnt_frightened > 0) and (combat_enemy_hp > 0))
       *temp cnt_fp (("combat_enemy" & cnt_slot) & "_")
-      *gosub_scene combat_dice resolve_enemy_save cnt_fp "wisdom" "Wisdom" cnt_slot
+      *gosub_scene combat_dice resolve_save cnt_fp "wisdom" "Wisdom" spell_save_dc cnt_slot
       *comment check_success is inverted: true = the enemy FAILED, so the fear holds (and runs down one round).
       *if (check_success)
         *set {(("combat_enemy" & cnt_slot) & "_frightened")} (cnt_frightened - 1)
