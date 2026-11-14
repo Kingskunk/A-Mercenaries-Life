@@ -728,15 +728,19 @@
 *temp cspel_i 1
 *label combat_sync_enemy_positions_from_legacy_ranges_loop
 *if (cspel_i <= combat_enemy_count)
-  *temp cspel_range {(("combat_enemy" & cspel_i) & "_range")}
-  *if (cspel_range < 0)
-    *set cspel_range 0
-  *if (cspel_range > combat_max_range)
-    *set cspel_range combat_max_range
-  *temp cspel_side {(("combat_enemy" & cspel_i) & "_side")}
-  *if (not(cspel_side = (0 - 1)))
-    *set cspel_side 1
-  *set {(("combat_enemy" & cspel_i) & "_position")} (combat_lane_player_position + (cspel_side * cspel_range))
+  *comment A fallen enemy is skipped: its range is frozen at death (combat_shift_all_ranges only updates the living), so
+  *comment re-deriving its position from that old range on every step made the body travel with the player. It stays where it fell.
+  *temp cspel_hp {(("combat_enemy" & cspel_i) & "_hp")}
+  *if (cspel_hp > 0)
+    *temp cspel_range {(("combat_enemy" & cspel_i) & "_range")}
+    *if (cspel_range < 0)
+      *set cspel_range 0
+    *if (cspel_range > combat_max_range)
+      *set cspel_range combat_max_range
+    *temp cspel_side {(("combat_enemy" & cspel_i) & "_side")}
+    *if (not(cspel_side = (0 - 1)))
+      *set cspel_side 1
+    *set {(("combat_enemy" & cspel_i) & "_position")} (combat_lane_player_position + (cspel_side * cspel_range))
   *set cspel_i + 1
   *goto combat_sync_enemy_positions_from_legacy_ranges_loop
 *return

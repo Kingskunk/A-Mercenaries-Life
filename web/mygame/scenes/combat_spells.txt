@@ -62,6 +62,25 @@
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment REFRESH SLOT LEFT: one pool-neutral count of slots spendable on a 1st-level (slot_left_1) or
+*comment 2nd-level (slot_left_2) casting. Rule: a character with Pact Magic (pact_slots_max > 0) has
+*comment slot_left_N = pact_slots when pact_slot_level = N, otherwise 0; everyone else has
+*comment slot_left_N = spell_slots_N. Fixed-value sets only, so safe to replay and needs no lock.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label refresh_slot_left
+*if (pact_slots_max > 0)
+  *set slot_left_1 0
+  *set slot_left_2 0
+  *if (pact_slot_level = 1)
+    *set slot_left_1 pact_slots
+  *elseif (pact_slot_level = 2)
+    *set slot_left_2 pact_slots
+*else
+  *set slot_left_1 spell_slots_1
+  *set slot_left_2 spell_slots_2
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment ARCANE WARD ON ABJURATION CAST (Abjurer, 2026-11-09, PHB'24 p172): called separately from each wizard
 *comment Abjuration spell's OWN slot-spend site (Shield and Absorb Elements in combat_dice.txt, Mage Armor in
 *comment equipment.txt) right after the slot is spent -- never folded into spend_spell_slot above, which every

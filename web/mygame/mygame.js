@@ -3066,6 +3066,8 @@ stats = {
  "spell_reach_result": "true",
  "spell_penalty_result": "false",
  "combat_reach_pinned": "false",
+ "slot_left_1": "0",
+ "slot_left_2": "0",
  "combat_flavor_enemy2_hit_1": "",
  "combat_flavor_enemy2_hit_2": "",
  "combat_flavor_enemy2_hit_3": "",

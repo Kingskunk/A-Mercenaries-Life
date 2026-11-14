@@ -2560,19 +2560,21 @@
   *set combat_turn_needs_advance false
   *gosub combat_chain_begin
   *goto combat_next_turn
+*comment Refresh pool-neutral spendable slot counts before any gate or held-reaction check reads them.
+*gosub_scene combat_spells refresh_slot_left
 *comment Shield is only a held reaction while the caster still has both resources it needs. A slot or reaction can
 *comment be spent after arming (for example, Magic Missile or an opportunity attack), so retire the stale arm before
 *comment the hub advertises +5 AC or decides which free options remain available.
 *if (shield_armed)
-  *if (((spell_slots_1 <= 0) and (spell_slots_2 <= 0)) or (player_oa_used))
+  *if (((slot_left_1 + slot_left_2) <= 0) or (player_oa_used))
     *set shield_armed false
 *comment Hellish Rebuke is the same held reaction: arming reserves nothing, so a Pact slot spent on another spell (Hex, say) or the reaction used on an opportunity attack retires the stale arm before the hub advertises it.
 *if (rebuke_armed)
-  *if ((pact_slots <= 0) or (player_oa_used))
+  *if (((slot_left_1 + slot_left_2) <= 0) or (player_oa_used))
     *set rebuke_armed false
 *if (absorb_elements_armed)
   *temp cae_still_ok false
-  *if (spell_slots_1 > 0)
+  *if (slot_left_1 > 0)
     *set cae_still_ok true
   *if ((not(cae_still_ok)) or (player_oa_used))
     *set absorb_elements_armed false
@@ -2778,19 +2780,19 @@
 *temp combat_can_hex false
 *if (combat_hex_orphaned)
   *set combat_can_hex true
-*elseif ((((held_hex) and (pact_slots > 0)) or ((race_cantrip_2 = "hex") and (not(hexblood_hex_used)))) and (not(hex_active)))
+*elseif ((((held_hex) and ((slot_left_1 + slot_left_2) > 0)) or ((race_cantrip_2 = "hex") and (not(hexblood_hex_used)))) and (not(hex_active)))
   *set combat_can_hex true
 *gosub combat_ally_hurt_check
 *comment Cure Wounds (Bard or Ranger, 2026-11-04): a slot of the caster's own pool and somebody wounded to lay a hand on. Reach is NOT asked here -- the spell is Touch, and
 *comment combat_friendly_validate is what refuses an ally who is standing too far off, so the player is told why rather than finding the option quietly gone.
 *temp combat_can_cure_wounds false
 *temp ccw_slots 0
-*set ccw_slots spell_slots_1
+*set ccw_slots slot_left_1
 *if ((known_cure_wounds) and (ccw_slots > 0))
   *if ((hp_current < hp_max) or (combat_ally_hurt_exists))
     *set combat_can_cure_wounds true
 *temp combat_can_healing_word false
-*if ((known_healing_word) and (spell_slots_1 > 0))
+*if ((known_healing_word) and (slot_left_1 > 0))
   *if ((hp_current < hp_max) or (combat_ally_hurt_exists))
     *set combat_can_healing_word true
 *comment SPELL SCROLLS (the user, 2026-10-19; generated 2026-10-20): any character with the scroll can read it, with no slot. The catalog (tools/gear_catalog.json, effect.fight) says how each is offered; each Read option is shown only while its spell could be cast: the
@@ -2849,13 +2851,13 @@
 *comment the wizard still knows it and has both a spell slot and their reaction. shield_active is excluded because
 *comment the existing cast already lasts until the start of the wizard's next turn.
 *temp combat_can_shield false
-*if ((((((character_class = "wizard") and (known_shield)) and ((spell_slots_1 > 0) or (spell_slots_2 > 0))) and (not(shield_armed))) and (not(shield_active))) and (not(player_oa_used)))
+*if (((((known_shield) and ((slot_left_1 + slot_left_2) > 0)) and (not(shield_armed))) and (not(shield_active))) and (not(player_oa_used)))
   *set combat_can_shield true
 *comment Absorb Elements (2026-11-08): a reaction like Shield, held for free until an incoming hit of one of its
 *comment five types can actually spend it. Wizard and Ranger share the spell, each off their own slot pool.
 *temp combat_can_absorb_elements false
 *temp cae_slot_ok false
-*if (spell_slots_1 > 0)
+*if (slot_left_1 > 0)
   *set cae_slot_ok true
 *if ((((known_absorb_elements) and (cae_slot_ok)) and (not(absorb_elements_armed))) and (not(player_oa_used)))
   *set combat_can_absorb_elements true
@@ -2881,7 +2883,7 @@
   *set combat_can_reckless true
 *comment Arms of Hadar (Warlock): a Pact Magic slot, the spell known, and a living enemy within reach.
 *temp combat_can_hadar false
-*if ((((character_class = "warlock") and (known_arms_of_hadar)) and (pact_slots > 0)) and (combat_player_actions_left > 0))
+*if (((known_arms_of_hadar) and ((slot_left_1 + slot_left_2) > 0)) and (combat_player_actions_left > 0))
   *gosub combat_hadar_check
   *if (combat_hadar_ok)
     *set combat_can_hadar true
@@ -2889,11 +2891,7 @@
 *temp combat_can_fear false
 *if ((combat_player_actions_left > 0) and (known_cause_fear))
   *temp ccf_slots 0
-  *if (character_class = "warlock")
-    *if (pact_slot_level = 1)
-      *set ccf_slots pact_slots
-  *else
-    *set ccf_slots spell_slots_1
+  *set ccf_slots slot_left_1
   *temp ccf_now {(("combat_enemy" & combat_active_target) & "_frightened")}
   *if ((ccf_slots > 0) and (ccf_now <= 0))
     *set combat_can_fear true
@@ -2906,17 +2904,13 @@
 *temp combat_can_fear_2 false
 *if ((combat_player_actions_left > 0) and (known_cause_fear))
   *temp ccf_slots_2 0
-  *if (character_class = "warlock")
-    *if (pact_slot_level >= 2)
-      *set ccf_slots_2 pact_slots
-  *else
-    *set ccf_slots_2 spell_slots_2
+  *set ccf_slots_2 slot_left_2
   *if (ccf_slots_2 > 0)
     *set combat_can_fear_2 true
 *comment Grease (Wizard, 2026-11-04): a wizard slot, an unspent action, the spell carried, and a living target whose footing is not already slick. The slick spreads under everything standing in the
 *comment target's own range band, so the gate only has to ask about the target itself -- resolve_cast_grease finds the rest.
 *temp combat_can_grease false
-*if ((((character_class = "wizard") and (known_grease)) and (spell_slots_1 > 0)) and (combat_player_actions_left > 0))
+*if (((known_grease) and (slot_left_1 > 0)) and (combat_player_actions_left > 0))
   *temp cgr_now {(("combat_enemy" & combat_active_target) & "_greased")}
   *temp cgr_hp {(("combat_enemy" & combat_active_target) & "_hp")}
   *if ((cgr_now <= 0) and (cgr_hp > 0))
@@ -2925,7 +2919,7 @@
 *comment the caster -- same emanation Thunderwave and Arms of Hadar need, so it asks combat_hadar_check too.
 *temp combat_can_burning_hands false
 *if ((combat_player_actions_left > 0) and (known_burning_hands))
-  *if (spell_slots_1 > 0)
+  *if (slot_left_1 > 0)
     *gosub combat_hadar_check
     *if (combat_hadar_ok)
       *set combat_can_burning_hands true
@@ -2933,7 +2927,7 @@
 *comment _2 pool, not combat_can_burning_hands reused, since that one only ever asks about the 1st-level pool.
 *temp combat_can_burning_hands_2 false
 *if ((combat_player_actions_left > 0) and (known_burning_hands))
-  *if (spell_slots_2 > 0)
+  *if (slot_left_2 > 0)
     *gosub combat_hadar_check
     *if (combat_hadar_ok)
       *set combat_can_burning_hands_2 true
@@ -2942,7 +2936,7 @@
 *temp combat_can_thunderwave false
 *if ((combat_player_actions_left > 0) and (known_thunderwave))
   *temp ctw_slots 0
-  *set ctw_slots spell_slots_1
+  *set ctw_slots slot_left_1
   *if (ctw_slots > 0)
     *gosub combat_hadar_check
     *if (combat_hadar_ok)
@@ -2953,7 +2947,7 @@
 *temp combat_can_thunderwave_2 false
 *if ((combat_player_actions_left > 0) and (known_thunderwave))
   *temp ctw_slots_2 0
-  *set ctw_slots_2 spell_slots_2
+  *set ctw_slots_2 slot_left_2
   *if (ctw_slots_2 > 0)
     *gosub combat_hadar_check
     *if (combat_hadar_ok)
@@ -2964,13 +2958,13 @@
   *if (combat_dual_pair_ok)
     *set combat_can_dual_shot true
 *temp combat_can_ensnaring false
-*if (((known_ensnaring_strike) and (spell_slots_1 > 0)) and (not(ensnaring_armed)))
+*if (((known_ensnaring_strike) and (slot_left_1 > 0)) and (not(ensnaring_armed)))
   *set combat_can_ensnaring true
 *temp combat_can_hunters_mark false
 *if (character_class = "ranger")
   *if (combat_hm_orphaned)
     *set combat_can_hunters_mark true
-  *elseif (((favored_foe_uses > 0) or (spell_slots_1 > 0)) and (not((combat_hm_live) and (favored_foe_target_slot = combat_active_target))))
+  *elseif (((favored_foe_uses > 0) or (slot_left_1 > 0)) and (not((combat_hm_live) and (favored_foe_target_slot = combat_active_target))))
     *set combat_can_hunters_mark true
 *comment What the cast costs, for the button text: nothing to move an orphaned mark, a free cast while any are left, otherwise a spell slot.
 *temp chm_cost_text ""
@@ -3892,12 +3886,12 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if ((((((combat_player_actions_left > 0) and (character_class = "wizard")) and (known_ray_of_sickness)) and (spell_slots_1 > 0)) and (spell_reach_ok_ray_of_sickness)) and (not(spells_blocked)))
+  *if (((((combat_player_actions_left > 0) and (known_ray_of_sickness)) and (slot_left_1 > 0)) and (spell_reach_ok_ray_of_sickness)) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Ray of Sickness: 1st level][/b] Loose a sickly green ray of poison at ${combat_med_epithet}.
       *set combat_cast_at_level 1
       *goto fight_cast_ray_of_sickness
 
-  *if ((((((combat_player_actions_left > 0) and (character_class = "wizard")) and (known_ray_of_sickness)) and (spell_slots_2 > 0)) and (spell_reach_ok_ray_of_sickness)) and (not(spells_blocked)))
+  *if (((((combat_player_actions_left > 0) and (known_ray_of_sickness)) and (slot_left_2 > 0)) and (spell_reach_ok_ray_of_sickness)) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Ray of Sickness: 2nd level][/b] An empowered ray of poison: 3d8 instead of 2d8.
       *comment UPCASTING (2026-11-08): unlike Magic Missile's extra dart, Ray of Sickness's upcast changes the
       *comment damage FORMULA itself (RAW: +1d8 per slot level above 1st) -- resolve_cast_ray_of_sickness
@@ -4171,7 +4165,7 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if ((((combat_player_actions_left > 0) and (((character_class = "wizard") and (known_magic_missile)) and (spell_slots_1 > 0)))) and (not(spells_blocked)))
+  *if ((((combat_player_actions_left > 0) and ((known_magic_missile) and (slot_left_1 > 0)))) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Magic Missile: 1st level][/b] Loose three darts of force at targets you choose in the sidebar.
       *comment Arms targeting mode instead of casting immediately (2026-09-28) -- RAW lets the three darts be
       *comment split across up to three targets, not forced onto whichever single enemy fight_pick_target's
@@ -4188,7 +4182,7 @@
       *set combat_mm_darts_6 0
       *goto fight_target_magic_missile
 
-  *if ((((combat_player_actions_left > 0) and (((character_class = "wizard") and (known_magic_missile)) and (spell_slots_2 > 0)))) and (not(spells_blocked)))
+  *if ((((combat_player_actions_left > 0) and ((known_magic_missile) and (slot_left_2 > 0)))) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Magic Missile: 2nd level][/b] Loose four darts of force, spending a 2nd-level slot.
       *comment UPCASTING PILOT (2026-11-08): Magic Missile's whole upcast, RAW, is "+1 dart per slot level above
       *comment 1st" -- no change to the per-dart damage math (still 1d4+1 each, resolve_magic_missile,
@@ -4219,7 +4213,7 @@
       *line_break
       *goto fight_bonus_spent
 
-  *if (((combat_player_actions_left > 0) and (((known_armor_of_agathys) and (pact_slots > 0)) and (not(agathys_active)))) and (not(spells_blocked)))
+  *if (((combat_player_actions_left > 0) and (((known_armor_of_agathys) and ((slot_left_1 + slot_left_2) > 0)) and (not(agathys_active)))) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Armor of Agathys][/b] Sheathe yourself in spectral frost that punishes melee strikes.
       *gosub_scene combat_spells resolve_cast_agathys
       A brittle casing of translucent, jagged rime coats your shoulders and arms, radiating bone-chilling cold. Any foe foolish enough to strike you will feel the frost shatter back against the blow.
@@ -4261,12 +4255,12 @@
       *line_break
       *goto fight_action_spent
 
-  *if (((((combat_player_actions_left > 0) and ((known_dissonant_whispers) and (spell_slots_1 > 0)))) and (spell_reach_ok_dissonant_whispers)) and (not(spells_blocked)))
+  *if (((((combat_player_actions_left > 0) and ((known_dissonant_whispers) and (slot_left_1 > 0)))) and (spell_reach_ok_dissonant_whispers)) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Dissonant Whispers: 1st level][/b] A discordant psychic phrase wracks ${combat_med_epithet}.
       *set combat_cast_at_level 1
       *goto fight_cast_dissonant_whispers
 
-  *if (((((combat_player_actions_left > 0) and ((known_dissonant_whispers) and (spell_slots_2 > 0)))) and (spell_reach_ok_dissonant_whispers)) and (not(spells_blocked)))
+  *if (((((combat_player_actions_left > 0) and ((known_dissonant_whispers) and (slot_left_2 > 0)))) and (spell_reach_ok_dissonant_whispers)) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Dissonant Whispers: 2nd level][/b] An empowered phrase: 4d6 instead of 3d6.
       *comment UPCASTING (2026-11-09, RAW): +1d6 per slot level above 1st -- resolve_dissonant_whispers
       *comment (combat_spells.txt) reads combat_cast_at_level for the dice count, same shape Ray of Sickness/
@@ -4352,7 +4346,7 @@
       *gosub_scene combat_spells resolve_arms_of_hadar
       *goto fight_check_enemy_hp
 
-  *if ((((combat_player_actions_left > 0) and ((known_bane) and (spell_slots_1 > 0)))) and (not(spells_blocked)))
+  *if ((((combat_player_actions_left > 0) and ((known_bane) and (slot_left_1 > 0)))) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Bane][/b] Sour the aim and nerve of every foe still standing near you.
       *comment No fight_pick_target re-sync here -- unlike every other targeted option, Bane doesn't act on the
       *comment single "active" target at all; resolve_cast_bane picks its own up to three targets internally.
@@ -4513,7 +4507,7 @@
       *line_break
       *goto fight_round_hub
 
-  *if ((((((combat_player_actions_left > 0) and (character_class = "warlock")) and (known_hellish_rebuke)) and (pact_slots > 0)) and ((not(rebuke_armed)) and (not(player_oa_used)))) and (not(spells_blocked)))
+  *if (((((combat_player_actions_left > 0) and (known_hellish_rebuke)) and ((slot_left_1 + slot_left_2) > 0)) and ((not(rebuke_armed)) and (not(player_oa_used)))) and (not(spells_blocked)))
     # [b][Hellish Rebuke][/b] Hold a vengeful retort ready, to scorch whoever next wounds you.
       *set rebuke_armed true
       You bite down on a retort and hold it there, hot behind your teeth, ready to spit back at whoever next draws your blood.
