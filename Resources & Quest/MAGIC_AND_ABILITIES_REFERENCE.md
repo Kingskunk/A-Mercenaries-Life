@@ -21,7 +21,7 @@ This reference describes what the game currently does. It is not a transcription
 | Medium Reach | The target is no farther than the fight's Mid-Range threshold. |
 | Long Reach | Any target in the current combat lane. |
 
-Ranged spell attacks made while Engaged have disadvantage. Saving-throw spells do not suffer that attack-roll penalty. `tools/spell_catalog.json` owns combat reach tags and `tools/gen_spells.js` writes the generated reach flags.
+Ranged spell attacks made while Engaged have disadvantage. Saving-throw spells do not suffer that attack-roll penalty. `tools/spell_book.json` owns combat reach tags and `tools/gen_spells.js` writes the generated reach flags.
 
 ---
 
@@ -150,7 +150,7 @@ The player-facing card must identify one of these states:
 |---|---|
 | Player-facing reference | `web/mygame/scenes/choicescript_stats.txt` — `codex_abilities`, `print_ability_card` |
 | Spell registry and sidebar order | `web/mygame/spell-data.js` |
-| Spell reach | `tools/spell_catalog.json` and generated block in `combat.txt` |
+| Spell reach | `tools/spell_book.json` and generated block in `combat.txt` |
 | Combat spell gates | `web/mygame/scenes/combat.txt` |
 | Combat spell resolution | `web/mygame/scenes/combat_spells.txt`, `combat_dice.txt` |
 | Story utility spell cost | `web/mygame/scenes/dungeon.txt` — `dg_spell_source`, `dg_spell_cast` |

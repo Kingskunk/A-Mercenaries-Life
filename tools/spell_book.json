@@ -53,7 +53,35 @@
     "learnable.<id>.desc      the long entry: the book's own written word for it, passed to learn_spell and shown when the spell is copied",
     "                         in. Usually one string shared by every class that can learn it -- but a FEW spells are flavoured differently",
     "                         per class (False Life: a wizard's necromantic rite reads nothing like a warlock's dark surge of vitality), so",
-    "                         this can instead be an object keyed by class name. Required for every class in `lists`, not only a copying one."
+    "                         this can instead be an object keyed by class name. Required for every class in `lists`, not only a copying one.",
+    "",
+    "RANGE AND REACH (run `node tools/gen_spells.js` after editing): `tools/gen_spells.js` reads `range` and `reach` from both",
+    "sections -- every entry in `cantrips` (spells not learned through a class book) and every entry in `learnable` that carries a",
+    "`range` -- and writes `spell_range_lookup` and `spell_reach_flags` in web/mygame/scenes/combat.txt plus",
+    "web/mygame/spell-reach.generated.js. Never edit inside a generated block by hand.",
+    "",
+    "The RANGE TAG answers TWO different questions, and the combat engine asks them separately:",
+    "  can I reach them?    -> gates whether the option is offered at all (close/touch cannot be used at the",
+    "                         wrong tier; they are UNAVAILABLE, not merely penalised)",
+    "  is the shot spoiled? -> gates disadvantage (ranged ONLY, and only at Engaged)",
+    "Collapsing those two is a real bug: a touch spell at Mid-Range should not be offered at disadvantage.",
+    "",
+    "Range and reach fields:",
+    "  name    the display name, which is what check_skill is set to at the call site -- this is the lookup key",
+    "  range   ranged | close | touch:",
+    "            ranged  Can hit any enemy at any tier (0=Engaged .. 3=Long Range). If ANY enemy is Engaged, the attack",
+    "                    roll has DISADVANTAGE -- the close-combat ranged penalty, identical for a weapon, a thrown weapon,",
+    "                    or a spell. Melee attacks never take this penalty.",
+    "            close   Can only hit enemies at Close (1) or Mid-Range (2) -- NOT Engaged. Offered at those tiers, and",
+    "                    never offered at Engaged, so a melee enemy closing on the caster takes the spell away. No penalty",
+    "                    of its own (the target is never adjacent, so the close-combat rule cannot apply). Reserved; unused.",
+    "            touch   Can only hit an Engaged enemy (0) -- never offered at any other tier. No penalty: a touch spell",
+    "                    IS a melee attack, and melee attacks are never penalised for being in melee.",
+    "  reach   touch | short | medium | long (optional; a touch-tagged spell is always touch, anything else defaults to long):",
+    "            touch   Engaged only (the same as the touch range tag)",
+    "            short   up to Close (1)",
+    "            medium  up to Mid-Range (2 in the four-band lane, 3 in the six-band one: combat_reach_medium)",
+    "            long    any distance (the default for a spell that gives none)"
   ],
   "copy_cost_per_level": 10,
   "classes": {
@@ -82,6 +110,43 @@
       "copies": false
     }
   },
+  "cantrips": {
+    "fire_bolt": {
+      "name": "Fire Bolt",
+      "range": "ranged",
+      "reach": "long"
+    },
+    "ray_of_frost": {
+      "name": "Ray of Frost",
+      "range": "ranged",
+      "reach": "medium"
+    },
+    "eldritch_blast": {
+      "name": "Eldritch Blast",
+      "range": "ranged",
+      "reach": "long"
+    },
+    "chill_touch": {
+      "name": "Chill Touch",
+      "range": "ranged",
+      "reach": "medium"
+    },
+    "vicious_mockery": {
+      "name": "Vicious Mockery",
+      "range": "ranged",
+      "reach": "medium"
+    },
+    "poison_spray": {
+      "name": "Poison Spray",
+      "range": "ranged",
+      "reach": "medium"
+    },
+    "shocking_grasp": {
+      "name": "Shocking Grasp",
+      "range": "touch",
+      "reach": "touch"
+    }
+  },
   "learnable": {
     "absorb_elements": {
       "name": "Absorb Elements",
@@ -100,6 +165,8 @@
       "lists": [
         "wizard"
       ],
+      "range": "ranged",
+      "reach": "medium",
       "pitch": "A greenish ray that leaves anything it hits sick and reeling.",
       "hint": "Ranged spell attack: 2d8 Poison, and Poisoned until the end of your next turn",
       "desc": "Ray of Sickness—a sickly green beam of pure Necromancy, carrying a dose of poison that lingers in whatever it strikes long after the light fades."
@@ -139,6 +206,8 @@
         "wizard",
         "warlock"
       ],
+      "range": "ranged",
+      "reach": "medium",
       "pitch": "Frighten one foe into keeping its distance.",
       "desc": "Cause Fear—a whispered dread planted straight into one mind. The target is frightened for as long as the fear holds: its blows come with disadvantage, and it will not willingly come closer."
     },
@@ -157,6 +226,8 @@
       "lists": [
         "bard"
       ],
+      "range": "ranged",
+      "reach": "medium",
       "pitch": "Sour the attacks and saves of up to three foes.",
       "desc": "Bane—a thread of ill luck looped around up to three throats at once, souring every blow and every plea they attempt afterward."
     },
@@ -219,6 +290,8 @@
       "lists": [
         "bard"
       ],
+      "range": "ranged",
+      "reach": "medium",
       "pitch": "A whisper of agony that makes a foe flee.",
       "desc": "Dissonant Whispers—a whispered dissonance planted directly in one mind, discordant enough that the target flinches and recoils before they even understand why."
     },
@@ -251,6 +324,8 @@
       "lists": [
         "wizard"
       ],
+      "range": "ranged",
+      "reach": "medium",
       "pitch": "A slick of conjured grease: foes in it fall.",
       "desc": "Grease—a slick of caustic grease conjured across the ground under a foe and everything standing with it. Those that fail to keep their footing go down at once, and every step taken in the slick afterward risks another fall until it wears away."
     },
@@ -269,6 +344,8 @@
       "lists": [
         "warlock"
       ],
+      "range": "ranged",
+      "reach": "medium",
       "pitch": "Curse a foe so your hits deal extra damage.",
       "race_exclude": [
         "hexblood"
@@ -291,6 +368,8 @@
       "lists": [
         "ranger"
       ],
+      "range": "ranged",
+      "reach": "medium",
       "pitch": "Mark one foe as your quarry: your hits on it land truer.",
       "desc": "Hunter's Mark—a long look, and one creature becomes your quarry. For a time every weapon hit on it lands truer, and you can pick the mark up and set it on a new quarry the moment the first one falls."
     },
@@ -328,6 +407,8 @@
       "lists": [
         "wizard"
       ],
+      "range": "ranged",
+      "reach": "long",
       "pitch": "Three darts of force that never miss.",
       "desc": "Magic Missile—three luminous darts of unerring magical force that strike with absolute certainty, bypassing armor, cover, and evasive dodges without fail."
     },

@@ -19,7 +19,7 @@
  * THE ENTRY FIELDS (2026-11-04) are what the spellbook panel prints as a reference page: `time` (casting
  * time), `range`, `components`, `duration` and `text`. They were added because the book gives a spell a
  * whole page and the one-line `_desc` left it almost empty.
- *   - `range` is OMITTED for any spell the combat engine knows: tools/spell_catalog.json owns reach, and
+ *   - `range` is OMITTED for any spell the combat engine knows: tools/spell_book.json owns reach, and
  *     spellbook.js reads it from window.SPELL_REACH so the book can never disagree with the fight. Only
  *     spells with no combat reach (Self, Touch, out-of-fight workings) carry a range here.
  *   - `duration` and the numbers in `text` follow THIS GAME where it departs from the books: False Life

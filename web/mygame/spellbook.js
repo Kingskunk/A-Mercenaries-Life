@@ -91,7 +91,7 @@
   }
   function levelWord(lvl) { return lvl === 0 ? "Cantrips" : "Level " + lvl; }
 
-  // A spell the fight knows gets its range from the fight: tools/spell_catalog.json owns reach, gen_spells.js writes it to
+  // A spell the fight knows gets its range from the fight: tools/spell_book.json owns reach, gen_spells.js writes it to
   // window.SPELL_REACH, and this turns that class into the range tiers the combat log already calls them. Only a spell with no
   // combat reach (Self, Touch, an out-of-fight working) falls back to its own `range` in spell-data.js, so the book and the
   // battlefield can never disagree about how far a spell throws.

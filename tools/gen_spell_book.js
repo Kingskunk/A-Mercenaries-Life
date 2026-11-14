@@ -612,7 +612,8 @@ setRegion(path.join(ROOT, "web", "mygame", "spell-data.js"), "spell_book_js_copy
 var stale = [];
 Object.keys(pending).forEach(function (p) {
   var current = fs.readFileSync(p, "utf8");
-  if (current !== pending[p]) {
+  // Compared with line endings ignored: a file with mixed or different endings is not a stale one.
+  if (current.replace(/\r\n/g, "\n") !== pending[p].replace(/\r\n/g, "\n")) {
     stale.push(path.relative(ROOT, p));
     if (!CHECK) fs.writeFileSync(p, pending[p]);
   }

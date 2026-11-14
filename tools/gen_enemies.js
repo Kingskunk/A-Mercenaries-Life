@@ -213,7 +213,8 @@ setRegion("enemy_type_dispatch", genDispatch());
 setRegion("enemy_type_labels", genTypeLabels());
 
 // ---------------------------------------------------------------- write or check
-var stale = text !== typesSource;
+// Compared with line endings ignored: a file with mixed or different endings is not a stale one.
+var stale = text.replace(/\r\n/g, "\n") !== typesSource.replace(/\r\n/g, "\n");
 if (CHECK) {
   if (stale) { console.error("gen_enemies: generated blocks are stale in web/mygame/scenes/combat_types.txt\nRun: node tools/gen_enemies.js"); process.exit(1); }
   console.log("gen_enemies: all generated blocks are up to date (" + types.length + " enemy types).");

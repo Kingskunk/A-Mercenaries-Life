@@ -168,8 +168,10 @@ var devText = setRegion(devSource, "dev_hub.txt", "encounter_menu", genMenu());
 devText = setRegion(devText, "dev_hub.txt", "encounter_run", genRun());
 
 var stale = [];
-if (combatText !== combatSource) stale.push("combat.txt");
-if (devText !== devSource) stale.push("dev_hub.txt");
+// Compared with line endings ignored: a file with mixed or different endings is not a stale one.
+function sameText(a, b) { return a.replace(/\r\n/g, "\n") === b.replace(/\r\n/g, "\n"); }
+if (!sameText(combatText, combatSource)) stale.push("combat.txt");
+if (!sameText(devText, devSource)) stale.push("dev_hub.txt");
 if (CHECK) {
   if (stale.length) { console.error("gen_encounters: generated blocks are stale in " + stale.join(", ") + "\nRun: node tools/gen_encounters.js"); process.exit(1); }
   console.log("gen_encounters: all generated blocks are up to date (" + encounters.length + " encounters).");
