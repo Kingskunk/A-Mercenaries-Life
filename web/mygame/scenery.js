@@ -80,6 +80,7 @@
     "Langston/fallowmere/market": "fallowmere_market",
     "hartwell/oxworth/oxworth": "village_green",
     "hartwell/oxworth/oxworth_market": "oxworth_market",
+    "hartwell/oxworth/yoke_and_horn": "oxworth_yoke_and_horn",
     // Only a fallback: the dg_in_run RULES entry above (each dungeon's own rooms) matches first and wins
     // whenever a run is actually under way. This is what shows during the walk-in/out line, before dg_run_begin
     // has set dg_in_run (every entry calls dg_time -- a time advance, which can itself trigger the hub-condition
@@ -282,8 +283,9 @@
     function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_inn_room" ? "generic_town_inn_room" : undefined; }, // Wagoner's Rest guest room and Kess's rented chamber
     function (s) { return s.sceneName === "timbermouth/split_pine_inn" && s.scenery_subplace === "town_inn_room" ? "generic_town_inn_room" : undefined; }, // Split Pine guest room
     function (s) { return s.sceneName === "Langston/pickled_hen" && s.scenery_subplace === "pickled_hen_room" ? "generic_town_inn_room" : undefined; }, // Pickled Hen guest room
-    function (s) { return s.scenery_subplace === "village_inn_room" && (s.sceneName === "alderford/drowned_oar" || s.sceneName === "alderford/redvein/red_lantern" || s.sceneName === "alderford/whitefold/white_ram" || s.sceneName === "Langston/barolo/red_stave" || s.sceneName === "Langston/broadmead/crooked_halter" || s.sceneName === "port_valen/brinewick/reedhouse" || s.sceneName === "Langston/fallowmere/grey_gander" || s.sceneName === "port_valen/marlcross/wayfarers_rest") ? "generic_village_inn_room" : undefined; }, // village inns and Maura's Drowned Oar rooms
+    function (s) { return s.scenery_subplace === "village_inn_room" && (s.sceneName === "alderford/drowned_oar" || s.sceneName === "alderford/redvein/red_lantern" || s.sceneName === "alderford/whitefold/white_ram" || s.sceneName === "Langston/barolo/red_stave" || s.sceneName === "Langston/broadmead/crooked_halter" || s.sceneName === "port_valen/brinewick/reedhouse" || s.sceneName === "Langston/fallowmere/grey_gander" || s.sceneName === "hartwell/oxworth/yoke_and_horn" || s.sceneName === "port_valen/marlcross/wayfarers_rest") ? "generic_village_inn_room" : undefined; }, // village inns and Maura's Drowned Oar rooms
     function (s) { return s.sceneName === "Langston/fallowmere/grey_gander" && s.scenery_subplace === "fallowmere_grey_gander_yard" ? "village_stable_yard" : undefined; }, // the Grey Gander's open cart yard (the taproom keeps its own picture)
+    function (s) { return s.sceneName === "hartwell/oxworth/yoke_and_horn" && s.scenery_subplace === "oxworth_yoke_and_horn_yard" ? "village_stable_yard" : undefined; }, // the Yoke & Horn's open cart yard (the common room keeps its own picture)
     function (s) { return s.sceneName === "Langston/broadmead/crooked_halter" && s.scenery_subplace === "broadmead_crooked_halter_yard" ? "village_stable_yard" : undefined; }, // the Crooked Halter's open stable yard (the common room keeps its own picture)
     function (s) { return s.sceneName === "Langston/barolo/red_stave" && s.scenery_subplace === "barolo_red_stave_court" ? "village_stable_yard" : undefined; }, // the Red Stave's open stable court (the hall keeps its own picture; the rented room is the village inn room above)
     function (s) { return s.sceneName === "port_valen/brinewick/reedhouse" && s.scenery_subplace === "reedhouse_stable_yard" ? "village_stable_yard" : undefined; }, // the Reedhouse's raised stable yard (the hall keeps its own picture)

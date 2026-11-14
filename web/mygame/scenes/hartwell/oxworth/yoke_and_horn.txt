@@ -1,0 +1,464 @@
+*comment ====================================================================================
+*comment THE YOKE & HORN (Oxworth): the cattlemen's inn near the crossroads, built of rough fieldstone against the downs wind. Plan: Resources & Quest/OXWORTH_SETTLEMENT_PLAN.md.
+*comment Innkeeper: Sigrin Copperpot (female dwarf, late forties, broad-shouldered, braided dark-grey hair, leather-trimmed wool apron, ink-stained thumb from tallow-and-beef receipts).
+*comment Built: common room with three layers, salted beef & root stew, house small-ale, rented room (24 hours), cart & stock yard, Sigrin's introduction & one-time talk topics, and night dice table (yoke_dice_bankroll).
+*comment Backdrop: Wallpaper/Oxworth_Yoke_And_Horn_Day.jpg and _Night.jpg (scenery.js SCENE_PLACES); ambience "tavern" (ambience.js ALIAS).
+*comment ====================================================================================
+
+*label ox_yh
+*set minutes_to_pass 5
+*set time_advance_call_id "ox_yh_walk_1"
+*gosub_scene hartwell/oxworth/oxworth ox_walk_time
+*goto ox_yh_hall
+
+*label ox_yh_hall
+*set scenery_subplace "village_inn_hall"
+*temp yh_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+*if (yh_now >= ox_yh_room_until)
+  *set ox_yh_room_active false
+*temp yh_first false
+*if (not(ox_yh_seen))
+  *set yh_first true
+*set ox_yh_seen true
+*temp yh_state "day"
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set yh_state "night"
+*elseif (time_period = "Morning")
+  *set yh_state "morning"
+*elseif (time_period = "Dusk")
+  *set yh_state "dusk"
+*temp yh_vignette (((campaign_day * 24) + clock_hour) modulo 4) + 1
+*temp yh_dice_open false
+*if (time_period = "Night")
+  *set yh_dice_open true
+*temp yh_talk_done false
+*if (((ox_yh_asked_work) and (ox_yh_asked_self)) and ((ox_yh_asked_dice) or (yh_dice_open)))
+  *set yh_talk_done true
+
+[b]◈ THE YOKE & HORN[/b]
+*line_break
+*gosub ox_yh_layers
+
+*comment Open-world free time: the sidebar's Wait and Rest work on this page.
+*set wait_ok_page page_id
+*choice
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 2)
+    # [2 Copper Bits] Buy a bowl of salted beef and root stew. [~20 min]@{show_stat_hints  [+2 Temp HP, +1 CON for 4h]|}
+      *set tavern_item_cost_copper 2
+      *goto ox_yh_stew
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 1)
+    # [1 Copper Bit] Buy a mug of the house small-ale. [~10 min]@{show_stat_hints  [+1 CHA for 4h]|}
+      *set tavern_item_cost_copper 1
+      *goto ox_yh_ale
+  *if (yh_dice_open)
+    # Take a stool at the cattlemen's dice table. [~5 min]
+      *goto ox_yh_dice
+  *if (not(yh_talk_done))
+    *if (not(ox_yh_talk_opened))
+      # Ask the dwarf behind the counter what she can tell you about Oxworth.
+        *goto ox_yh_talk
+    *else
+      # Talk with Sigrin a little longer.
+        *goto ox_yh_talk
+  *if (ox_yh_room_active)
+    # Go up to your room.
+      *goto ox_yh_room
+  *elseif ((((gold * 100) + (silver * 10)) + copper) >= ox_yh_rate_copper)
+    # [${ox_yh_rate_copper} Copper Bits] Take a room for 24 hours.
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+        *set currency_add_amount (0 - ox_yh_rate_copper)
+        *gosub_scene economy currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id page_id
+      *set ox_yh_room_active true
+      *set ox_yh_room_until (yh_now + 1440)
+      You count the coins onto the plank counter. "A room, please."
+
+      @{(met_sigrin) Sigrin|The dwarf woman} sweeps the coppers into a tin box and hangs an iron key on your finger. "Up the corner stair, second door on the left. Thick roof, dry tick." She taps the counter once with a knuckle. "Yours till this hour tomorrow."
+      *goto ox_yh_room
+  *else
+    # Ask what a room costs.
+      "What do you charge for a room?" you ask.
+
+      "Three coppers," @{(met_sigrin) Sigrin|the dwarf woman} says, squinting at the chalk slate. "Dry straw, heavy blanket, and the wind stays outside."
+      *choice
+        # Step back from the counter.
+          *goto ox_yh_hall
+        # Step back out into the cattle lane.
+          *goto_scene hartwell/oxworth/oxworth ox_return
+  # Go out to the cart yard.
+    *goto ox_yh_yard
+  # Step back out into the cattle lane.
+    *goto_scene hartwell/oxworth/oxworth ox_return
+
+*comment ── LAYERS: the common room uses the same place, sky and activity contract as the village.
+*label ox_yh_layers
+*gosub ox_yh_place
+*gosub ox_yh_sky
+*gosub ox_yh_street
+*return
+
+*comment ── LAYER 1: PLACE ── Permanent room geography and smell.
+*label ox_yh_place
+*if (yh_first)
+  The Yoke & Horn is built low and square of rough fieldstone, with smoke-darkened oak beams and a worn flagstone floor. A wide stone hearth anchors the far end, a blackened iron stewpot hanging over the coals beneath a weathered wooden ox-yoke and a curved horn mounted on the mantle. Scrubbed oak tables and heavy benches fill the middle of the room, and a thick plank counter runs along one wall in front of an ale cask on a stand, stoneware jugs and a chalked tally slate. In the corner, a narrow wooden stair climbs to a low loft, and a pair of bone dice rests on a ledge beside the chimney. The room smells of salted beef, wood smoke and spilled malt.
+*else
+  The inn's low stone room runs from the wide hearth and its mounted ox-yoke to the plank counter and the corner stair, with the scrubbed tables and benches set between.
+*return
+
+*comment ── LAYER 2: SKY ── Weather and light reaching the room through its deep-set windows, plus ground state.
+*label ox_yh_sky
+*if (weather_severity >= 3)
+  The outer shutters are barred tight and the fire is banked high. Wind groans across the thatch and rattles the latch.
+*elseif (weather = "Rain")
+  Rain hisses in the chimney flue and beads along the small leaded panes.
+*elseif (weather = "Fog")
+  Cold mist presses grey against the leaded glass, and the tallow sconces burn steady inside.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Slush melts off heavy boots by the threshold, and the hearth fire throws extra heat toward the tables.
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  The deep-set windows show only the dark downs sky and a faint lantern glow out in the yard.
+*elseif (time_period = "Dusk")
+  Low light slants through the leaded panes and catches the grease-smoke rising off the hearth.
+*elseif (weather = "Clear")
+  Clean downs light falls through the small windows in pale squares across the flagstones.
+*else
+  Flat grey light filters through the leaded glass, leaving the hearth to warm the room's colour.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Mud from the cattle lane is tracked halfway across the flagstones toward the hearth.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  Damp boot prints darken the flagstones inside the door.
+*return
+
+*comment ── LAYER 3: STREET ── Sigrin and the room's company.
+*label ox_yh_street
+*if (yh_first)
+  A broad-shouldered dwarf woman with braided dark-grey hair tucked behind her ears stands behind the plank counter, a heavy leather-trimmed apron tied over her woollen tunic and ink stains on her thumb from tallying receipts. She sizes you up the way a buyer sizes a steer's ribs.
+
+  "Stranger," she says, brisk and steady. "Stewpot's hot, ale's drawn, and the floor's dry. What'll it be?"
+*elseif (met_sigrin)
+  Sigrin stands behind the plank counter, wiping a stoneware jug with a coarse cloth while keeping an eye on the hearth.
+*else
+  The dwarf woman stands behind the plank counter, wiping a stoneware jug with a coarse cloth while keeping an eye on the hearth.
+
+*if (street_life = "empty")
+  Herdsmen and carters pack the benches waiting out the storm, damp wool steaming near the fire while @{(met_sigrin) Sigrin|the dwarf woman} passes mugs down the counter.
+*elseif (yh_state = "morning")
+  Most of the cattlemen are already out at the pens; two carters finish bowls of pottage by the door before hitching up for Hartwell.
+*elseif (yh_state = "dusk")
+  Hands drift in from the salting shed and the outer pens with mud to their knees, dropping onto the benches with quiet grunts.
+*elseif (yh_state = "night")
+  The tallow sconces burn low. Around the hearth table, the bone dice have come down from the chimney ledge and a small crowd watches the throws.
+*elseif (yh_vignette = 1)
+  A cattleman checks a chalk line on the slate, drops two coppers on the plank, and nods to @{(met_sigrin) Sigrin|the dwarf woman}.
+*elseif (yh_vignette = 2)
+  A salting hand sits near the coals with his stiff fingers wrapped round a warm mug.
+*elseif (yh_vignette = 3)
+  @{(met_sigrin) Sigrin|The dwarf woman} ladles broth from the stewpot into a wooden bowl and sets it down without spilling a drop.
+*else
+  Two carters argue quietly over whether Hartwell's market dues are worse than Langston's gate tolls.
+*return
+
+*label ox_yh_stew
+*set tavern_item_hp_heal 0
+*set tavern_item_temp_hp 2
+*set tavern_item_type "food"
+*set tavern_item_buff_name "Salted Beef Stew"
+*set tavern_item_buff_desc "+1 CON"
+*set tavern_item_buff_stat "con"
+*set tavern_item_buff_bonus 1
+*set tavern_item_buff_minutes 240
+*gosub_scene economy buy_tavern_item
+*set hours_to_pass 0
+*set minutes_to_pass 20
+*set time_advance_call_id "ox_yh_stew"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "exhaustion"
+  *goto_scene death death_screen
+@{(met_sigrin) Sigrin|The dwarf woman} ladles out a deep bowl of salted beef, turnips and barley simmered thick, with a heel of dark bread alongside. "Cured right across the lane," she says. "Won't go down light, and it won't leave you hollow." The broth is savoury and hot enough to chase the downs chill out of your shoulders.
+
+[b][Hearty Meal Eaten: +2 Temporary HP | Salted Beef Stew (+1 CON for 4 Hours) | HP: ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}][/b]
+*goto ox_yh_after_meal
+
+*label ox_yh_ale
+*set tavern_item_hp_heal 0
+*set tavern_item_temp_hp 0
+*set tavern_item_type "drink"
+*set tavern_item_buff_name "House Small-Ale"
+*set tavern_item_buff_desc "+1 CHA"
+*set tavern_item_buff_stat "cha"
+*set tavern_item_buff_bonus 1
+*set tavern_item_buff_minutes 240
+*gosub_scene economy buy_tavern_item
+*set hours_to_pass 0
+*set minutes_to_pass 10
+*set time_advance_call_id "ox_yh_ale"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "exhaustion"
+  *goto_scene death death_screen
+@{(met_sigrin) Sigrin|The dwarf woman} draws a mug of amber small-ale from the cask and slides it across the plank. It has a clean, malty bite and settles easy. "Brewed for men who still have to walk straight in the morning," she says.
+
+[b][House Small-Ale Drunk: +1 CHA for 4 Hours | HP: ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}][/b]
+*goto ox_yh_after_meal
+
+*label ox_yh_after_meal
+*temp yh_open_dice false
+*if (time_period = "Night")
+  *set yh_open_dice true
+*choice
+  # Order something else.
+    *goto ox_yh_hall
+  *if (yh_open_dice)
+    # Take a stool at the cattlemen's dice table. [~5 min]
+      *goto ox_yh_dice
+  # Go out to the cart yard.
+    *goto ox_yh_yard
+  *if (ox_yh_room_active)
+    # Go up to your room.
+      *goto ox_yh_room
+  # Step back out into the cattle lane.
+    *goto_scene hartwell/oxworth/oxworth ox_return
+
+*comment ── THE DICE TABLE ── Up only at night.
+*label ox_yh_dice
+*set minutes_to_pass 5
+*set time_advance_call_id "ox_yh_dice_walk"
+*gosub_scene calendar advance_time
+*if (not(ox_yh_dice_met))
+  *set ox_yh_dice_met true
+  You pull a stool up to the hearth table, where two cattlemen and a wagoner sit around a scarred oak board. The bone dice have come down from the chimney ledge, and a squat man with a braided beard and a leather cup runs the pot.
+
+  "Four coppers to throw," he says, rattling the dice once in the cup. "Beat the mark and take eight. @{(met_sigrin) Sigrin|The innkeeper} watches the slate, so keep your elbows honest."
+*else
+  *if (yoke_dice_bankroll > 0)
+    You take a stool by the hearth. The pot-keeper rattles the leather cup against the oak. "Four coppers a throw. Beat the mark for eight."
+  *else
+    You take a stool by the hearth, and the pot-keeper turns the empty tin dish upside down on the board. "Pot's cleaned out for the night," he says. "Try again tomorrow."
+*goto ox_yh_dice_menu
+
+*label ox_yh_dice_menu
+*temp hint_yoke_dice ""
+*if (show_stat_hints)
+  *set hint_yoke_dice " [DC 10]"
+The leather cup passes round the table, the bone dice clattering against the heavy oak.
+
+*choice
+  *if ((yoke_dice_bankroll > 0) and ((((gold * 100) + (silver * 10)) + copper) >= 4))
+    # Settle in at the board for a round.${hint_yoke_dice}
+      *set wager_bankroll_var "yoke_dice_bankroll"
+      *set wager_ante_copper 4
+      *set wager_win_copper 8
+      *set check_dc 10
+      *gosub_scene economy resolve_wager
+      *set hours_to_pass 0
+      *set minutes_to_pass 15
+      *set time_advance_call_id "ox_yh_dice"
+      *gosub_scene calendar advance_time
+      *gosub_scene calendar recalc_hp_from_neglect
+      *if (hp_current <= 0)
+        *set death_cause "exhaustion"
+        *goto_scene death death_screen
+      *if (check_success)
+        You pass a quarter hour trading throws with the table until the bone dice turn up high and clean. The wagoner groans and pushes back his stool while the pot-keeper counts eight coppers onto the oak. "Steady hand," he grunts.
+        [b][🎲 Dice Wager Won: +8 Copper Bits][/b]
+      *else
+        You trade throws for a quarter hour, but the bone dice come up short and skitter against the rim of the board. The pot-keeper rakes your four coppers into the dish. "Downs wind doesn't favour everyone tonight," he says.
+      *goto ox_yh_dice_menu
+  # Leave the table.
+    *goto ox_yh_hall
+
+*comment ── THE CART YARD ── Outdoors behind the inn.
+*label ox_yh_yard
+*set scenery_subplace "oxworth_yoke_and_horn_yard"
+*set wait_ok_page page_id
+*set fresh_water_page page_id
+
+[b]◈ THE YOKE & HORN: CART YARD[/b]
+*line_break
+A packed-earth yard lies behind the inn's stone wall, with a long timber hitching rail, a stone water trough and a row of covered stalls for carters' horses and pack mules. Stacked split firewood runs under the eaves, smelling of damp straw, horses and peat smoke.
+*if (weather_severity >= 3)
+  The horses stand pressed against the back of the stalls while wind drives weather across the open yard.
+*elseif (weather = "Rain")
+  Rain runs off the inn's thatch into the trough and darkens the packed earth around the hitching rail.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Slush gathers along the firewood stack, and steam rises off the stabled mules.
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  A small horn lantern hangs by the stable door, throwing a narrow ring of light across the hitching rail.
+*choice
+  # Go back inside.
+    *goto ox_yh_hall
+  # Step out into the cattle lane.
+    *goto_scene hartwell/oxworth/oxworth ox_return
+
+*label ox_yh_room
+*set scenery_subplace "village_inn_room"
+*temp yh_room_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+*if (yh_room_now >= ox_yh_room_until)
+  *set ox_yh_room_active false
+*if (not(ox_yh_room_active))
+  *goto ox_yh_hall
+*set wait_ok_page page_id
+*set fresh_water_page page_id
+
+[b]◈ YOUR ROOM: THE YOKE & HORN[/b]
+*line_break
+The room under the loft eaves is compact and solidly built, with thick fieldstone at the gable, a narrow timber bed under a heavy wool blanket, a washbasin and jug on a low chest, and iron pegs for your gear. A small shuttered window looks out over the cattle pens and the open down.
+
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  A thin thread of tallow light slips beneath the door, and the pens outside lie dark and still.
+*elseif (time_period = "Dusk")
+  Fading light catches the dust above the chest while voices rise from the common room below.
+*else
+  Daylight falls in a pale strip across the wool blanket from the gable window.
+
+*if (weather_severity >= 3)
+  Wind leans hard against the stone gable and hums under the eaves, though the room stays tight and dry.
+*elseif (weather = "Rain")
+  Rain drums steadily on the thatch above your head.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Frost gathers along the outer sill, while the heavy wool blanket holds the warmth.
+
+*choice
+  # Train in your room. [~${training_hours} Hours]
+    *gosub_scene character_progression inn_room_training "yoke_and_horn"
+    *page_break Back to your room…
+    *goto ox_yh_room
+  # Bar the door and sleep in the bed. [~8 Hours]
+    *goto ox_yh_sleep
+  # Wash in the basin. [~10 min]
+    *goto ox_yh_wash
+  # Go back down to the common room.
+    *goto ox_yh_hall
+  # Walk back out into the cattle lane.
+    *goto_scene hartwell/oxworth/oxworth ox_return
+
+*label ox_yh_sleep
+*set hours_to_pass 8
+*set minutes_to_pass 0
+*set time_advance_call_id "ox_yh_sleep"
+*gosub_scene calendar advance_time
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*set sleep_location_id "oxworth_yoke_and_horn"
+*set sleep_is_shared false
+*set sleep_is_permanent_home false
+*set sleep_is_paid_inn true
+*set sleep_tier_name "none"
+*set sleep_tier_stat1 "none"
+*set sleep_tier_bonus1 0
+*set sleep_tier_stat2 "none"
+*set sleep_tier_bonus2 0
+*gosub_scene calendar resolve_sleep
+You set your gear within reach, bar the door and pull the heavy wool blanket up to your chin. The murmur of the common room fades, and sleep takes you.
+*if ((time_period = "Morning") or (time_period = "Pre-Dawn"))
+  A gate banging shut in the cattle pens wakes you at daybreak, along with a herder whistling to his dog. You feel rested.
+*elseif (time_period = "Dusk")
+  You wake to the clink of mugs below and the last light at the gable window. The road ache has lifted.
+*elseif (time_period = "Night")
+  You wake in the dark to wind sweeping across the open down. Your fatigue has cleared.
+*else
+  Daylight slants across the chest when you wake, and the yard outside is busy. Your mind is clear.
+*if (not(sleep_gear_note = ""))
+  *line_break
+  ${sleep_gear_note}
+The key stays yours until this hour tomorrow.
+*goto ox_yh_room
+
+*label ox_yh_wash
+*set hours_to_pass 0
+*set minutes_to_pass 10
+*set time_advance_call_id "ox_yh_wash"
+*gosub_scene calendar advance_time
+*set minutes_since_wash 0
+*set hygiene_stage "Clean"
+*gosub_scene calendar update_hub_condition
+You pour cold well water into the basin and scrub off the cattle-lane dust and brine with the coarse soap beside the jug. The linen towel is rough and dry.
+*line_break
+[b][🧼 Washed Up: Hygiene Restored to Clean][/b]
+*choice
+  # Set the basin aside.
+    *goto ox_yh_room
+  # Go back down to the common room.
+    *goto ox_yh_hall
+
+*comment ── TALKING WITH SIGRIN ── Brisk, practical, good-humored without chatter. Each topic disappears once asked.
+*label ox_yh_talk
+*if (not(ox_yh_talk_opened))
+  *set ox_yh_talk_opened true
+  *set minutes_to_pass 5
+  *set time_advance_call_id "ox_yh_talk_open"
+  *gosub_scene calendar advance_time
+  You lean an elbow on the plank counter. "What can you tell me about Oxworth?"
+
+  The dwarf woman sets the stoneware jug down and folds her forearms on the wood. "Cattle, salt, and wind. Half the beef that feeds Hartwell walks through those pens out there, and the hides go north toward Harwick's tanneries." She jerks her chin toward the lane. "Plain folk, mostly. We pay Hartwell's market dues, complain about them over ale, and try to keep the herds out of the neighbour's barley."
+
+  "I'm ${name}," you say. "And you are?"
+
+  *set met_sigrin true
+  "Sigrin Copperpot, ${name}." She pushes a small wooden dish of pickled turnip slices across the counter. "First bite's on the house."
+*goto ox_yh_talk_menu
+
+*label ox_yh_talk_menu
+*temp yh_dice_up false
+*if (time_period = "Night")
+  *set yh_dice_up true
+*if (((ox_yh_asked_work) and (ox_yh_asked_self)) and ((ox_yh_asked_dice) or (yh_dice_up)))
+  *line_break
+  Sigrin turns back to her tally slate, and the common room carries on around you.
+  *page_break Back to the counter…
+  *goto ox_yh_hall
+*choice
+  *if (not(ox_yh_asked_work))
+    # Ask where a traveller can earn some coin around here.
+      *goto ox_yh_talk_work
+  *if (not(ox_yh_asked_self))
+    # Ask how she came to run The Yoke & Horn.
+      *goto ox_yh_talk_self
+  *if ((not(ox_yh_asked_dice)) and (not(yh_dice_up)))
+    # Ask about the bone dice on the chimney ledge.
+      *goto ox_yh_talk_dice
+  # That's enough for now.
+    *goto ox_yh_hall
+
+*label ox_yh_talk_work
+*set ox_yh_asked_work true
+*set ox_know_head true
+*set minutes_to_pass 5
+*set time_advance_call_id "ox_yh_talk_work"
+*gosub_scene calendar advance_time
+"Where can a traveller earn some coin around here?" you ask.
+
+"If you don't mind brine under your nails, the salting yard across the lane always needs another back to haul salt-sacks and mend hurdles," Sigrin says, tapping her inked thumb on the counter. "Pays honest copper for a day's sweat."
+
+"And if I'd rather stay on the road?"
+
+"Head up to the Village Head's Hall at the top of the lane. There's a Contract Board under the eaves."
+*goto ox_yh_talk_menu
+
+*label ox_yh_talk_self
+*set ox_yh_asked_self true
+*set minutes_to_pass 5
+*set time_advance_call_id "ox_yh_talk_self"
+*gosub_scene calendar advance_time
+"How did you come to run The Yoke & Horn?" you ask.
+
+"Came up from the quarry roads twenty years back," Sigrin says, straightening a row of pewter mugs. "My husband worked the cattle crushes till a horned steer pinned him and broke his leg crooked. Couldn't run the pens after that." She pats the thick stone wall beside the counter. "We'd saved enough to buy this corner house, so I hung a yoke and horn over the door and put a bigger pot on the fire. He tends the loft and the woodpile; I tend the stew and the coin."
+*goto ox_yh_talk_menu
+
+*label ox_yh_talk_dice
+*set ox_yh_asked_dice true
+*set minutes_to_pass 5
+*set time_advance_call_id "ox_yh_talk_dice"
+*gosub_scene calendar advance_time
+"What are the bone dice on the chimney ledge for?" you ask.
+
+"Night trade," Sigrin says, not looking up from her mugs. "Once the pens are barred, the cattlemen and wagoners clear a board by the fire. Four coppers a throw, one house pot, and I watch the slate so nobody pulls a loaded pair. Come back after dark if you want a seat."
+*goto ox_yh_talk_menu

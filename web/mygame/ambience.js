@@ -44,48 +44,48 @@
 
   // what each kind of place plays: day (by day), night (at night), all (at every hour). indoor: the weather is muffled there.
   var SOUND = {
-    forest:        { day: "forest_day", night: "forest_night" },
-    city:          { day: "city_day", night: "city_night" },
-    harbor:        { all: "medieval_harbour" },
-    boat_travel:   { all: "ship_sea_river_boat_travel_anytimeofday_waves_soft_talking_softboatcreaking_rope" },
-    dredge_end:    { all: "medieval_slums" },
+    forest: { day: "forest_day", night: "forest_night" },
+    city: { day: "city_day", night: "city_night" },
+    harbor: { all: "medieval_harbour" },
+    boat_travel: { all: "ship_sea_river_boat_travel_anytimeofday_waves_soft_talking_softboatcreaking_rope" },
+    dredge_end: { all: "medieval_slums" },
     black_oath_gangway_loft: { all: "medieval_slums", level: 0.18, indoor: true },
     black_oath_upstairs_room: { all: "medieval_slums", level: 0.18, indoor: true },
     black_lantern: { all: "ambience_background_coins_shuffling", indoor: true },
     black_lantern_back: { all: "ambience_background_coins_shuffling", indoor: true },
-    village:       { day: "generic_village", night: "generic_village_town_night" },
-    village_room:  { day: "generic_village", night: "generic_village_town_night", level: 0.18, indoor: true },
-    woodland:      { day: "woodland_village", night: "generic_village_town_night" },
-    shop:          { all: "city_indoor", indoor: true },
-    civic_indoor:  { all: "city_indoor", indoor: true },
+    village: { day: "generic_village", night: "generic_village_town_night" },
+    village_room: { day: "generic_village", night: "generic_village_town_night", level: 0.18, indoor: true },
+    woodland: { day: "woodland_village", night: "generic_village_town_night" },
+    shop: { all: "city_indoor", indoor: true },
+    civic_indoor: { all: "city_indoor", indoor: true },
     vane_contract_office: { all: "city_indoor", level: 0.45, indoor: true },
     ysolde_workroom: { all: "city_indoor", level: 0.40, indoor: true },
     varren_armory_shed: { all: "village_blacksmith_ambience", level: 0.38, indoor: true },
     kestrel_watchtower_room: { all: "military_camp_ambience", level: 0.28, indoor: false },
-    lodgings:      { all: "city_indoor", indoor: true },
-    factors_hall:  { all: "city_indoor", indoor: true },
+    lodgings: { all: "city_indoor", indoor: true },
+    factors_hall: { all: "city_indoor", indoor: true },
     "7_lantern_lane": { all: "city_indoor", indoor: true },   // No. 7 Lantern Lane: an empty room off a Middle Ward street, same quiet indoor bed as a shop or lodgings
     langston_hall: { all: "city_indoor", level: 0.45, indoor: true },
-    bathhouse:     { all: "bathhouse_ambience", indoor: true },
-    blacksmith:    { all: "village_blacksmith_ambience", indoor: true },
+    bathhouse: { all: "bathhouse_ambience", indoor: true },
+    blacksmith: { all: "village_blacksmith_ambience", indoor: true },
     private_supper: { all: "interior_palace_or_lage_noblehouse_distantalking_guardpatrol_crackling_fire", level: 0.55, indoor: true },
-    wedding_hall:   { all: "noble_gala_party_talking_glassclinking_softlaughter_nomusic", level: 0.72, indoor: true },
+    wedding_hall: { all: "noble_gala_party_talking_glassclinking_softlaughter_nomusic", level: 0.72, indoor: true },
     patrician_gala: { all: "interior_palace_or_lage_noblehouse_distantalking_guardpatrol_crackling_fire", level: 0.50, indoor: true },
-    warcamp:       { all: "military_camp_ambience", indoor: false },
-    bivouac:       { all: "military_camp_ambience", indoor: false },
-    marshland:     { day: "marshland_ambience_wind_birds_shallowwater_reeds", night: "marshland_night_crickets_shallowwater_ambience" },
-    undercroft:    { all: "city_indoor", indoor: true },
-    tavern:        { day: "quiet_tavern", night: "crowded_tavern", indoor: true },   // it fills up as the day ends
+    warcamp: { all: "military_camp_ambience", indoor: false },
+    bivouac: { all: "military_camp_ambience", indoor: false },
+    marshland: { day: "marshland_ambience_wind_birds_shallowwater_reeds", night: "marshland_night_crickets_shallowwater_ambience" },
+    undercroft: { all: "city_indoor", indoor: true },
+    tavern: { day: "quiet_tavern", night: "crowded_tavern", indoor: true },   // it fills up as the day ends
     funeral_tavern: { all: "crowded_tavern", indoor: true },   // Maybelline's service fills the Pickled Hen even during the day
-    sewer:         { all: "sewer", indoor: true },
+    sewer: { all: "sewer", indoor: true },
     silt_conduits: { all: "sewer", indoor: true },
-    open_road:     { day: "grassland_openfields_meadows_daytime", night: "nature_outdoors_night" },
+    open_road: { day: "grassland_openfields_meadows_daytime", night: "nature_outdoors_night" },
     // The True Sun temple (Langston, Chapter 5; the user's sound, 2026-10-31: white noise, near silence, a little suspense). Inside the temple a very soft indoor bed (the recording says it needs to be played very softly); the mausoleum is a touch quieter. The
     // grounds outside are the town's edge, so a hushed village by day and open night nature after dark.
-    temple_hall:   { all: "indoor_underground_silence_needstobeplayedverysoftly", level: 0.32, indoor: true },
-    temple_crypt:  { all: "indoor_underground_silence_needstobeplayedverysoftly", level: 0.26, indoor: true },
+    temple_hall: { all: "indoor_underground_silence_needstobeplayedverysoftly", level: 0.32, indoor: true },
+    temple_crypt: { all: "indoor_underground_silence_needstobeplayedverysoftly", level: 0.26, indoor: true },
     temple_grounds: { day: "generic_village", night: "nature_outdoors_night", level: 0.4 },
-    siege:         { all: "siege_battle" },
+    siege: { all: "siege_battle" },
     // A street or lane mid-panic (a chase, a shout, a shock) replaces the normal city day/night bed outright rather than
     // layering over it, so the fear reads as the room tone itself and not as a quiet background detail.
     panicked_crowd: { all: "ambience_panicked_crowd" }
@@ -108,6 +108,7 @@
     fallowmere_pond_green: "village",     // the village hub: a village by day, a hushed one at night
     fallowmere_market: "village",         // the open market on the green
     fallowmere_grey_gander: "tavern",     // the common room: a quiet tavern by day that fills as the day ends
+    oxworth_yoke_and_horn: "tavern",      // the common room: a quiet tavern by day that fills as the day ends
     broadmead: "village",                 // the village hub and the overworld tile: a village by day, a hushed one at night
     barolo: "village",                    // the village hub and the overworld tile: a village by day, a hushed one at night
     barolo_market: "village",             // the paved market yard is open air
@@ -238,9 +239,9 @@
   };
   var OVERWORLD_OPEN = { road: 1, woodroad: 1, hills: 1, forest: 1 };   // ground a rider travels over (not a town, a village or a fort)
 
-  try { var saved = JSON.parse(window.localStorage.getItem("ambience") || "null"); if (saved) cfg = { vol: Math.max(0, Math.min(1, Number(saved.vol))), mute: !!saved.mute }; } catch (e) {}
+  try { var saved = JSON.parse(window.localStorage.getItem("ambience") || "null"); if (saved) cfg = { vol: Math.max(0, Math.min(1, Number(saved.vol))), mute: !!saved.mute }; } catch (e) { }
   if (isNaN(cfg.vol)) cfg.vol = 0.5;
-  function save() { try { window.localStorage.setItem("ambience", JSON.stringify(cfg)); } catch (e) {} }
+  function save() { try { window.localStorage.setItem("ambience", JSON.stringify(cfg)); } catch (e) { } }
   function has(name) { return FILES.indexOf(name) >= 0; }
 
   // find the folder by loading the first known file from each place it could be (an audio element loads from file:// where fetch cannot)
@@ -358,7 +359,7 @@
       var L = layers[n], step = 0.1 / FADE;
       L.level += Math.max(-step, Math.min(step, L.target - L.level));
       apply(L);
-      if (L.target > 0 && L.el.paused && unlocked) { var p = L.el.play(); if (p && p.catch) p.catch(function () {}); }
+      if (L.target > 0 && L.el.paused && unlocked) { var p = L.el.play(); if (p && p.catch) p.catch(function () { }); }
       if (L.target === 0 && L.level <= 0.001 && !L.el.paused) L.el.pause();
     }
   }
