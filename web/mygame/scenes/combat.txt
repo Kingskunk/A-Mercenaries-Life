@@ -1794,9 +1794,7 @@
 *comment **Deliberately reuses resolve_enemy_attack and fight_narrate_enemy_turn whole, with no parallel path.**
 *comment That is what makes an opportunity attack behave like every other hit the player takes, for free: Shield
 *comment can still break through it, Armor of Agathys still bites back, resistance,
-*comment vulnerability, temp HP, conditions and stun all still apply. The death and rescue checks do NOT live in resolve_enemy_attack (they are in
-*comment combat_next_turn, after an enemy turn), so this label records the result in combat_outcome and each caller jumps on it (2026-11-15: a boar
-*comment dropped the player to 0 on a Fall Back and the fight carried on).
+*comment vulnerability, temp HP, conditions and stun all still apply, and the death and rescue checks still run.
 *comment Writing a "simpler" OA resolver would have quietly forked all of that. fight_narrate_enemy_turn is
 *comment equally safe to reuse: it narrates "this enemy attacks you" and nothing about closing distance, which
 *comment lives in combat_next_turn's own branch instead.
@@ -1816,11 +1814,6 @@
   *comment on this page -- including picking a new target. The sync above is what makes that safe.
   *gosub_scene combat_dice resolve_enemy_attack
   *gosub_scene combat_prose fight_narrate_enemy_turn "enemy" roa_candidate
-  *comment A *goto out of this *gosub would leave the stack wrong, so only flag it here. A replay that finds no candidate keeps the flag the first run set.
-  *if ((combat_player_can_die) and (hp_current <= 0))
-    *set combat_outcome "player_died"
-  *if ((not(combat_player_can_die)) and (hp_current <= 1))
-    *set combat_outcome "rescued"
 *return
 
 *label resolve_opportunity_attack_on_ally
@@ -3785,10 +3778,6 @@
         [b][🏃 You Push Forward — ${combat_range_display_name}][/b]
       *line_break
       *gosub resolve_opportunity_attack
-      *if (combat_outcome = "player_died")
-        *goto fight_player_died
-      *if (combat_outcome = "rescued")
-        *goto fight_rescued
       *goto fight_move_spent
 
   *if ((combat_player_moves_left > 0) and (combat_can_fall_back))
@@ -3835,10 +3824,6 @@
       *comment their own move rather than an attack appearing before the thing that caused it. No-op when
       *comment find_opportunity_attacker found nobody, or when Disengage covered the round.
       *gosub resolve_opportunity_attack
-      *if (combat_outcome = "player_died")
-        *goto fight_player_died
-      *if (combat_outcome = "rescued")
-        *goto fight_rescued
       *goto fight_move_spent
 
   *if (((combat_player_actions_left > 0) or (combat_cunning)) and (not(combat_player_on_difficult_terrain)))
@@ -4836,10 +4821,6 @@
       *gosub_scene combat_movement combat_shift_all_ranges "fallback"
       *label break_off_resolve_oa
       *gosub resolve_opportunity_attack
-      *if (combat_outcome = "player_died")
-        *goto fight_player_died
-      *if (combat_outcome = "rescued")
-        *goto fight_rescued
       *goto fight_fled
 
   # End your turn.
