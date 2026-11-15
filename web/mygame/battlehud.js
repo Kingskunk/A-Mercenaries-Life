@@ -26,6 +26,9 @@
   var seen = [];          // every action seen this fight, in hub order: {id, group, name, blurb}
   var offered = {};       // id -> radio, for the options on the page right now
   var tipFor = null;
+  var tipSlot = null;     // the slot element the card is showing for
+  var tipTimer = null;    // pending switch from the name alone to the full card
+  var TIP_FULL_MS = 1100; // hover this long before the full card opens (2026-11-15, the user): the name shows at once, so a passing pointer does not cover the field
   var flyFor = null;      // id of the slot whose variant pop-up is open (True Strike: Weapon / Radiant), or null
   var FLY_ID = "battleHudFly";
 
@@ -369,7 +372,19 @@
     }
     return el;
   }
-  function hideTip() { var el = document.getElementById(TIP_ID); if (el) el.className = ""; tipFor = null; }
+  function hideTip() { var el = document.getElementById(TIP_ID); if (el) el.className = ""; tipFor = null; tipSlot = null; if (tipTimer) { clearTimeout(tipTimer); tipTimer = null; } }
+  // Pointer or focus arrived on a slot: the name at once, the full card after TIP_FULL_MS on the same slot. Moving about inside one slot restarts nothing.
+  function hoverTip(slot) {
+    if (slot === tipSlot) return;
+    hideTip();
+    showTip(slot, false);
+    if (!tipFor) return;
+    tipSlot = slot;
+    tipTimer = setTimeout(function () {
+      tipTimer = null;
+      if (tipSlot === slot && document.body.contains(slot)) showTip(slot, true);
+    }, TIP_FULL_MS);
+  }
   // Data-driven hover cards: computed from live window.stats + SPELL_FACTS / ACTION_FACTS / SPELL_REACH, never parsed from choice prose.
   var ATTACK_KIND = { melee: "Melee", finesse: "Finesse melee", reach: "Reach melee", ranged: "Ranged" };
   var REACH_NAME = { touch: "Engaged", short: "Short range", medium: "Mid-range", long: "Long range" };
@@ -633,14 +648,14 @@
       (on ? "" : "<div class=\"bt-off\">" + esc(reasonFor({ id: vid, group: e.group })) + "</div>");
   }
 
-  function showTip(slot) {
+  function showTip(slot, full) {
     var id = slot.getAttribute("data-id");
     if (slot.classList && slot.classList.contains("bfly-btn")) {
       var fc = flyCardHtml(slot);
       if (!fc) return hideTip();
       var fel = tipEl();
       fel.innerHTML = fc;
-      fel.className = "on";
+      fel.className = full ? "on full" : "on";
       var fz = window.UI_ZOOM || 1, fr = slot.getBoundingClientRect(), ft = fel.getBoundingClientRect();
       var fleft = Math.min(Math.max(8, fr.left + fr.width / 2 - ft.width / 2), window.innerWidth - ft.width - 8);
       // above the whole fly-out, so its title and its other buttons stay in view
@@ -663,9 +678,11 @@
     } else {
       el.innerHTML = "<div class=\"bt-name\">" + esc(e.name) + "</div>" +
         (KIND[e.group] ? "<div class=\"bt-kind\">" + KIND[e.group] + "</div>" : "") +
+        // No facts recorded for this action yet (a new option): fall back to the option's own blurb, so the card is never just a name.
+        (e.blurb && e.blurb.replace(/[^A-Za-z]/g, "").length > 2 && e.blurb !== e.name ? "<div class=\"bt-text\">" + esc(e.blurb) + "</div>" : "") +
         (on ? "" : "<div class=\"bt-off\">" + esc(reasonFor(e)) + "</div>");
     }
-    el.className = "on";
+    el.className = full ? "on full" : "on";
     // Rects are in viewport pixels; the card is positioned in CSS pixels, which the screen-fit zoom (index.html, window.UI_ZOOM) scales. So measure
     // everything in viewport pixels, then divide by the zoom to set left/top.
     var z = window.UI_ZOOM || 1;
@@ -753,8 +770,8 @@
   });
 
   function slotOf(el) { return el && el.closest ? el.closest("#" + HUD_ID + " .bhud-slot, #" + HUD_ID + " .bhud-adv, #" + HUD_ID + " .bhud-weapon, #" + FLY_ID + " .bfly-btn") : null; }
-  document.addEventListener("mouseover", function (ev) { var sl = slotOf(ev.target); if (sl) showTip(sl); else if (tipFor) hideTip(); });
-  document.addEventListener("focusin", function (ev) { var sl = slotOf(ev.target); if (sl) showTip(sl); });
+  document.addEventListener("mouseover", function (ev) { var sl = slotOf(ev.target); if (sl) hoverTip(sl); else if (tipFor) hideTip(); });
+  document.addEventListener("focusin", function (ev) { var sl = slotOf(ev.target); if (sl) hoverTip(sl); });
   document.addEventListener("focusout", function () { hideTip(); });
 
   // Number keys fire the numbered slot, like a real hotbar; C toggles Battle HUD / Classic list.
