@@ -46,8 +46,8 @@
   // commands live on the relevant ally's sidebar card, where they can scale to a larger party.
   var SECTIONS = [
     { id: "action", groups: ["action"], cols: 6 },
-    { id: "bonus",  groups: ["bonus", "free"], cols: 4 },
-    { id: "other",  groups: ["other"], cols: 4 }
+    { id: "bonus", groups: ["bonus", "free"], cols: 4 },
+    { id: "other", groups: ["other"], cols: 4 }
   ];
   // Read, Items and Potions still cost an action, but they are utility menus rather than attacks or spells.
   // Lay their parent buttons out with Flee and End turn without changing their action colouring,
@@ -74,6 +74,7 @@
     already_marked: "Target is already marked",
     already_frightened: "Target is already Frightened",
     already_greased: "Target's ground is already greased",
+    already_temp_hp: "Already have temporary hit points",
     nothing_burning: "No fire to spread",
     wearing_armor: "Cannot cast while wearing armor",
     no_hurt_target: "Nobody needs healing",
@@ -86,7 +87,7 @@
   var WHY_RANK = [
     "armor", "no_slot_1", "no_slot_2", "no_slot", "no_hm_resource", "no_favored_use", "no_free_use",
     "cannot_see", "no_engaged_foe", "already_active", "already_armed", "already_marked",
-    "already_frightened", "already_greased", "nothing_burning", "wearing_armor", "no_hurt_target",
+    "already_frightened", "already_greased", "already_temp_hp", "nothing_burning", "wearing_armor", "no_hurt_target",
     "no_valid_weapon", "out_of_reach", "no_action", "no_bonus", "no_reaction"
   ];
   // Canonical fight_round_hub option order so seeded unoffered spells land where the hub places them once offered.
@@ -109,28 +110,121 @@
 
   // Spells seeded from turn 1 when their combat_why_* scene temp is present and not "unowned".
   var SEED_SPELLS = [
-    { id: "magic_missile", group: "action", name: "Magic Missile", blurb: "Loose darts of force at targets you choose.",
+    {
+      id: "booming_blade", group: "action", name: "Booming Blade", blurb: "Swing with thunder drawn tight along it.",
+      getVariants: function (s) {
+        var out = [];
+        if (s.weapon && s.weapon !== "none" && (!s.equipped_weapon_id || s.equipped_weapon_id !== "none")) {
+          out.push({ id: "booming_blade_" + slug(s.weapon), label: s.weapon, whyKey: "combat_why_booming_blade", blurb: "Strike with your " + s.weapon + " and wrap the target in booming energy." });
+        } else if (readWhyTemp("combat_why_booming_blade") !== null) {
+          out.push({ id: "booming_blade_weapon", label: "Weapon", whyKey: "combat_why_booming_blade", blurb: "Strike with a melee weapon and wrap the target in booming energy." });
+        }
+        if (s.sidearm && s.sidearm !== "none" && (!s.equipped_sidearm_id || s.equipped_sidearm_id !== "none") && readWhyTemp("combat_why_booming_blade_side") !== null) {
+          out.push({ id: "booming_blade_" + slug(s.sidearm), label: s.sidearm, whyKey: "combat_why_booming_blade_side", blurb: "Strike with your " + s.sidearm + " and wrap the target in booming energy." });
+        }
+        return out;
+      }
+    },
+    {
+      id: "true_strike", group: "action", name: "True Strike", blurb: "Strike using your casting ability.",
+      variants: [
+        { id: "true_strike_weapon", label: "Weapon", whyKey: "combat_why_true_strike", blurb: "Strike using your casting ability for the weapon's own damage." },
+        { id: "true_strike_radiant", label: "Radiant", whyKey: "combat_why_true_strike", blurb: "Strike using your casting ability, dealing radiant damage." }
+      ]
+    },
+    { id: "control_flames", group: "action", name: "Control Flames", whyKey: "combat_why_control_flames", blurb: "Spread the fire on a burning foe to the others on its tile." },
+    { id: "blade_ward", group: "action", name: "Blade Ward", whyKey: "combat_why_blade_ward", blurb: "Trace a shifting ward that spoils incoming attacks." },
+    { id: "fire_bolt", group: "action", name: "Fire Bolt", whyKey: "combat_why_fire_bolt", blurb: "Hurl a mote of arcane flame." },
+    { id: "ray_of_frost", group: "action", name: "Ray of Frost", whyKey: "combat_why_ray_of_frost", blurb: "Loose a beam of numbing cold." },
+    {
+      id: "ray_of_sickness", group: "action", name: "Ray of Sickness", blurb: "Loose a sickly green ray of poison.",
+      variants: [
+        { id: "ray_of_sickness_1st_level", label: "1st level", whyKey: "combat_why_ray_of_sickness", blurb: "Loose a sickly green ray of poison." },
+        { id: "ray_of_sickness_2nd_level", label: "2nd level", whyKey: "combat_why_ray_of_sickness_2", blurb: "An empowered ray of poison: 3d8 instead of 2d8." }
+      ]
+    },
+    { id: "shocking_grasp", group: "action", name: "Shocking Grasp", whyKey: "combat_why_shocking_grasp", blurb: "Drive a crackling jolt of lightning into a nearby foe." },
+    { id: "eldritch_blast", group: "action", name: "Eldritch Blast", whyKey: "combat_why_eldritch_blast", blurb: "Unleash a crackling beam of eldritch force." },
+    { id: "chill_touch", group: "action", name: "Chill Touch", whyKey: "combat_why_chill_touch", blurb: "Conjure a skeletal hand of necrotic frost." },
+    { id: "vicious_mockery", group: "action", name: "Vicious Mockery", whyKey: "combat_why_vicious_mockery", blurb: "Hurl a barbed, perfectly-aimed insult." },
+    { id: "poison_spray", group: "action", name: "Poison Spray", whyKey: "combat_why_poison_spray", blurb: "Fling a bitter puff of poison at the nearest foe." },
+    {
+      id: "magic_missile", group: "action", name: "Magic Missile", blurb: "Loose darts of force at targets you choose.",
       variants: [
         { id: "magic_missile_1st_level", label: "1st level", whyKey: "combat_why_magic_missile", blurb: "Loose three darts of force at targets you choose in the sidebar." },
         { id: "magic_missile_2nd_level", label: "2nd level", whyKey: "combat_why_magic_missile_2", blurb: "Loose four darts of force, spending a 2nd-level slot." }
       ]
     },
     { id: "hex", group: "bonus", name: "Hex", whyKey: "combat_why_hex", blurb: "Lay a baleful eldritch curse upon a foe." },
+    { id: "armor_of_agathys", group: "action", name: "Armor of Agathys", whyKey: "combat_why_armor_of_agathys", blurb: "Sheathe yourself in spectral frost that punishes melee strikes." },
+    { id: "mage_armor", group: "action", name: "Mage Armor", whyKey: "combat_why_mage_armor", blurb: "Lay a ward of unseen force over yourself: base AC 13 + Dexterity for 24 hours, while you wear no armor." },
+    {
+      id: "false_life", group: "action", name: "False Life", blurb: "Weave a necromantic shroud over your flesh.",
+      variants: [
+        { id: "false_life_1st_level", label: "1st level", whyKey: "combat_why_false_life", blurb: "Weave a necromantic shroud over your flesh: 1d4 + 4 temporary hit points for 12 hours." },
+        { id: "false_life_2nd_level", label: "2nd level", whyKey: "combat_why_false_life_2", blurb: "An empowered shroud: 1d4 + 9 temporary hit points for 12 hours." }
+      ]
+    },
+    {
+      id: "dissonant_whispers", group: "action", name: "Dissonant Whispers", blurb: "A discordant psychic phrase wracks a foe.",
+      variants: [
+        { id: "dissonant_whispers_1st_level", label: "1st level", whyKey: "combat_why_dissonant_whispers", blurb: "A discordant psychic phrase wracks a foe." },
+        { id: "dissonant_whispers_2nd_level", label: "2nd level", whyKey: "combat_why_dissonant_whispers_2", blurb: "An empowered phrase: 4d6 instead of 3d6." }
+      ]
+    },
+    {
+      id: "cause_fear", group: "action", name: "Cause Fear", blurb: "Plant a whispered dread in a foe.",
+      variants: [
+        { id: "cause_fear_1st_level", label: "1st level", whyKey: "combat_why_cause_fear", blurb: "Plant a whispered dread in a foe." },
+        { id: "cause_fear_2nd_level", label: "2nd level", whyKey: "combat_why_cause_fear_2", blurb: "Plant a whispered dread in up to two creatures you choose in the sidebar." }
+      ]
+    },
     { id: "blindness", group: "action", name: "Blindness", whyKey: "combat_why_blindness", blurb: "Strike a foe blind." },
-    { id: "burning_hands", group: "action", name: "Burning Hands", blurb: "A thin sheet of flame washes over whatever stands too close.",
+    { id: "grease", group: "action", name: "Grease", whyKey: "combat_why_grease", blurb: "Slick the ground under a foe and whatever is standing with it." },
+    {
+      id: "burning_hands", group: "action", name: "Burning Hands", blurb: "A thin sheet of flame washes over whatever stands too close.",
       variants: [
         { id: "burning_hands_1st_level", label: "1st level", whyKey: "combat_why_burning_hands", blurb: "A thin sheet of flame washes over whatever stands too close." },
         { id: "burning_hands_2nd_level", label: "2nd level", whyKey: "combat_why_burning_hands_2", blurb: "An empowered sheet of flame: 4d6 instead of 3d6." }
       ]
     },
+    {
+      id: "thunderwave", group: "action", name: "Thunderwave", blurb: "A wave of thunder rolls out from you and throws back whatever stands too close.",
+      variants: [
+        { id: "thunderwave_1st_level", label: "1st level", whyKey: "combat_why_thunderwave", blurb: "A wave of thunder rolls out from you and throws back whatever stands too close." },
+        { id: "thunderwave_2nd_level", label: "2nd level", whyKey: "combat_why_thunderwave_2", blurb: "An empowered wave of thunder: 3d8 instead of 2d8." }
+      ]
+    },
+    { id: "arms_of_hadar", group: "action", name: "Arms of Hadar", whyKey: "combat_why_arms_of_hadar", blurb: "Black arms lash every foe within reach, and what they catch cannot strike back." },
+    { id: "bane", group: "action", name: "Bane", whyKey: "combat_why_bane", blurb: "Sour the aim and nerve of every foe still standing near you." },
+    { id: "healing_word", group: "bonus", name: "Healing Word", whyKey: "combat_why_healing_word", blurb: "Speak a curative word across the fight." },
+    { id: "cure_wounds", group: "action", name: "Cure Wounds", whyKey: "combat_why_cure_wounds", blurb: "Lay a hand on a wound and knit it closed with magic." },
+    { id: "shield", group: "free", name: "Shield", whyKey: "combat_why_shield", blurb: "Hold the barrier-spell ready to snap into place when it can deflect a hit." },
     { id: "hellish_rebuke", group: "free", name: "Hellish Rebuke", whyKey: "combat_why_hellish_rebuke", blurb: "Hold a vengeful retort ready, to scorch whoever next wounds you." },
-    { id: "hunters_mark", group: "bonus", name: "Hunter's Mark", whyKey: "combat_why_hunters_mark", blurb: "Mark a foe as your quarry." }
+    { id: "absorb_elements", group: "free", name: "Absorb Elements", whyKey: "combat_why_absorb_elements", blurb: "Hold a ward ready, to turn an element's own force back into your next blow." },
+    { id: "hunters_mark", group: "bonus", name: "Hunter's Mark", whyKey: "combat_why_hunters_mark", blurb: "Mark a foe as your quarry." },
+    { id: "ensnaring_strike", group: "bonus", name: "Ensnaring Strike", whyKey: "combat_why_ensnaring_strike", blurb: "Your next weapon hit calls up thorned vines that bind the target." }
   ];
   var WHY_KEYS = {};
   SEED_SPELLS.forEach(function (sp) {
     if (sp.whyKey) WHY_KEYS[sp.id] = sp.whyKey;
     if (sp.variants) sp.variants.forEach(function (v) { WHY_KEYS[v.id] = v.whyKey; });
   });
+  function seedVariants(sp) {
+    if (!sp) return null;
+    if (typeof sp.getVariants === "function") return sp.getVariants(statsNow());
+    return sp.variants || null;
+  }
+  function whyKeyFor(id, parentId) {
+    if (WHY_KEYS[id]) return WHY_KEYS[id];
+    var parents = parentId ? [seedById(parentId)] : SEED_SPELLS;
+    for (var i = 0; i < parents.length; i++) {
+      var vars = seedVariants(parents[i]);
+      if (!vars) continue;
+      for (var j = 0; j < vars.length; j++) if (vars[j].id === id) return vars[j].whyKey;
+    }
+    return null;
+  }
   function sceneTemps() {
     var s = statsNow();
     return (s.scene && s.scene.temps) ? s.scene.temps : null;
@@ -211,7 +305,7 @@
     var liveMap = {};
     (liveVariants || []).forEach(function (v) { liveMap[v.id] = v; });
     var out = [];
-    seed.variants.forEach(function (sv) {
+    (seedVariants(seed) || []).forEach(function (sv) {
       var live = liveMap[sv.id];
       var code = readWhyTemp(sv.whyKey);
       if (live || code !== null) {
@@ -266,7 +360,7 @@
     items.forEach(function (it, i) {
       var at = -1, k;
       var seed = seedById(it.id);
-      var variants = (seed && seed.variants) ? activeVariantsFor(seed, it.variants) : it.variants;
+      var variants = seedVariants(seed) ? activeVariantsFor(seed, it.variants) : it.variants;
       for (k = 0; k < seen.length; k++) if (seen[k].id === it.id) { at = k; break; }
       if (at >= 0) { seen[at].blurb = it.blurb; seen[at].group = it.group; if (variants) seen[at].variants = variants; return; }
       insertSeen({ id: it.id, group: it.group, name: it.name, blurb: it.blurb, variants: variants }, items.slice(i + 1));
@@ -274,7 +368,7 @@
     SEED_SPELLS.forEach(function (sp) {
       var at = -1;
       for (var k = 0; k < seen.length; k++) if (seen[k].id === sp.id) { at = k; break; }
-      if (sp.variants) {
+      if (seedVariants(sp)) {
         var vars = activeVariantsFor(sp, at >= 0 ? seen[at].variants : []);
         if (!vars.length) return;
         if (at >= 0) { seen[at].variants = vars; return; }
@@ -284,23 +378,14 @@
         insertSeen({ id: sp.id, group: sp.group, name: sp.name, blurb: sp.blurb }, null);
       }
     });
-    ensureGhosts();
-  }
-
-  // Spells that are not fight-long but should still hold a slot while they cannot be cast (Mage Armor lasts a day, so at the start of a fight it is
-  // usually already up and the hub never offers it). Added once, at the end of the Actions, when the character has it and the hub is not showing it.
-  function ensureGhosts() {
-    var st = statsNow();
-    if (!(truthy(st.known_mage_armor) || truthy(st.inv_armor_of_shadows))) return;
-    for (var k = 0; k < seen.length; k++) if (seen[k].id === "mage_armor") return;
-    seen.push({ id: "mage_armor", group: "action", name: "Mage Armor", blurb: "Lay a ward of unseen force over yourself: base AC 13 + Dexterity for 24 hours, while you wear no armor." });
   }
 
   function whyForSlot(e) {
     var sp = seedById(e.id);
-    if (sp && sp.variants) {
+    var spVars = seedVariants(sp);
+    if (spVars) {
       var codes = [];
-      sp.variants.forEach(function (v) {
+      spVars.forEach(function (v) {
         var c = readWhyTemp(v.whyKey);
         if (c !== null && c !== "") codes.push(c);
       });
@@ -313,22 +398,17 @@
       }
       return best;
     }
-    var key = WHY_KEYS[e.id];
+    var key = whyKeyFor(e.id, e.parentId);
     if (!key) return null;
     var code = readWhyTemp(key);
     return (code && code !== "") ? code : null;
   }
 
-  // Why a remembered action is not on the page right now. Prefers live combat_why_* scene temps when present, falling back to guesses for everything else.
+  // Why a remembered action is not on the page right now. Prefers live combat_why_* scene temps for spells, falling back to non-spell slot guesses.
   function reasonFor(e) {
     var code = whyForSlot(e);
     if (code) return REASON_TEXT[code] || code;
     var s = statsNow();
-    if (e.id === "mage_armor") {
-      if (num(s.mage_armor_minutes_left) > 0) return "The ward is already on you (about " + Math.ceil(num(s.mage_armor_minutes_left) / 60) + " hours left)";
-      if (s.armor_type && s.armor_type !== "cloth") return "You are wearing armor, which the ward cannot sit over";
-      if (truthy(s.head_is_armor)) return "Your helmet counts as armor, which the ward cannot sit over";
-    }
     if (e.group === "move") {
       if (e.id === "push_forward") return "Nothing to advance on, the chokepoint is held, or you cannot move now";
       return "You are not in melee reach, or you cannot move now";
@@ -336,10 +416,8 @@
     if (e.group === "tactic") return "No ally is holding a chokepoint, or you cannot move now";
     if (e.group === "action" && num(s.combat_player_actions_left) <= 0) return "No action left this turn";
     if (e.group === "bonus" && num(s.combat_player_bonus_left) <= 0) return "No bonus action left this turn";
-    if (e.id === "true_strike" && s.weapon_type !== "ranged") return "Out of reach. Close in on an enemy first, with a weapon in hand";
     // A melee weapon can only strike an enemy in reach; fights now open at Close range, so this is the usual reason on the first turn.
     if ((e.id === "primary_attack" || e.id === "sidearm_attack") && (e.id === "primary_attack" ? s.weapon_type : s.sidearm_type) !== "ranged") return "Out of reach. Advance (free movement) to close in, then strike";
-    if (e.group === "free" && truthy(s.player_oa_used) && /shield|rebuke/.test(e.id)) return "Reaction already used this round";
     return "Not available right now";
   }
 
@@ -381,7 +459,7 @@
       (key ? " data-key=\"" + key + "\"" : "") + (on ? "" : " aria-disabled=\"true\"") + " aria-label=\"" + esc(e.name) + "\">" +
       (key ? "<span class=\"bhud-key\">" + key + "</span>" : "") +
       (art ? "<img class=\"bhud-wart\" src=\"" + art + "\" alt=\"\">"
-           : "<span class=\"bhud-wglyph\">" + glyph + "</span><span class=\"bhud-wlabel\">" + label + "</span>") + "</button>";
+        : "<span class=\"bhud-wglyph\">" + glyph + "</span><span class=\"bhud-wlabel\">" + label + "</span>") + "</button>";
   }
 
   function build() {
@@ -396,13 +474,13 @@
     var hasSidearm = !!(s.equipped_sidearm_id && s.equipped_sidearm_id !== "none" && sidearm && sidearm.name);
     var html = "<div class=\"bhud-bar\">" +
       "<div class=\"bhud-side\">" +
-        "<div class=\"bhud-weapons\">" +
-          (primary && primary.name ? weaponHtml(primary, ++pos, "Primary", "&#9876;&#65039;") : "") +
-          (hasSidearm ? weaponHtml(sidearm, ++pos, "Sidearm", "&#128481;&#65039;") : "") +
-        "</div>" +
-        "<div class=\"bhud-budget\"><b>Action</b>" + pips(actions, Math.max(1, actions), "act") + "</div>" +
-        "<div class=\"bhud-budget\"><b>Bonus</b>" + pips(bonus, Math.max(1, bonus), "bon") + "</div>" +
-        "<div class=\"bhud-budget\"><b>Move</b>" + pips(moveLeft, moveMax, "mov") + "</div>" +
+      "<div class=\"bhud-weapons\">" +
+      (primary && primary.name ? weaponHtml(primary, ++pos, "Primary", "&#9876;&#65039;") : "") +
+      (hasSidearm ? weaponHtml(sidearm, ++pos, "Sidearm", "&#128481;&#65039;") : "") +
+      "</div>" +
+      "<div class=\"bhud-budget\"><b>Action</b>" + pips(actions, Math.max(1, actions), "act") + "</div>" +
+      "<div class=\"bhud-budget\"><b>Bonus</b>" + pips(bonus, Math.max(1, bonus), "bon") + "</div>" +
+      "<div class=\"bhud-budget\"><b>Move</b>" + pips(moveLeft, moveMax, "mov") + "</div>" +
       "</div>";
     // The rail is deliberately only Advance / Retreat. Tactical ally orders are intentionally not rendered in
     // the bar: the companion card in the sidebar owns them, avoiding an ever-growing combat action grid.
@@ -476,7 +554,7 @@
     var e = null;
     for (var i = 0; i < seen.length; i++) if (seen[i].id === id) e = seen[i];
     var slot = document.querySelector("#" + HUD_ID + " .bhud-slot[data-id=\"" + id + "\"]");
-    if (!e || !e.variants || !e.variants.length || !slot || !offered[id]) return;
+    if (!e || !e.variants || !e.variants.length || !slot) return;
     hideTip();
     closeFly();
     flyFor = id;
@@ -790,7 +868,7 @@
     var on = !!offered[vid];
     if (!ITEM_MENUS[e.id]) {
       var card = spellCard(e.id, e.group, v.label) || actionCard(e, v.label);
-      if (card) return card + (on ? "" : "<div class=\"bt-off\">" + esc(reasonFor({ id: vid, group: e.group })) + "</div>");
+      if (card) return card + (on ? "" : "<div class=\"bt-off\">" + esc(reasonFor({ id: vid, group: e.group, parentId: pid })) + "</div>");
     }
     var item = packItemFor(v.label), s = statsNow(), name = v.label, badge = "", desc = "";
     if (item) {
@@ -900,10 +978,19 @@
     }
     remember(items);
     var temps = sceneTemps(), whySig = [];
-    if (temps) Object.keys(WHY_KEYS).sort().forEach(function (k) {
-      var tk = WHY_KEYS[k];
-      if (temps[tk] != null && temps[tk] !== "unowned") whySig.push(tk + "=" + temps[tk]);
-    });
+    if (temps) {
+      var seenKeys = {};
+      Object.keys(WHY_KEYS).forEach(function (k) { seenKeys[WHY_KEYS[k]] = true; });
+      SEED_SPELLS.forEach(function (sp) {
+        var vars = seedVariants(sp);
+        if (vars) vars.forEach(function (v) { if (v.whyKey) seenKeys[v.whyKey] = true; });
+      });
+      seenKeys.combat_why_booming_blade = true;
+      seenKeys.combat_why_booming_blade_side = true;
+      Object.keys(seenKeys).sort().forEach(function (tk) {
+        if (temps[tk] != null && temps[tk] !== "unowned") whySig.push(tk + "=" + temps[tk]);
+      });
+    }
     var sig = items.map(function (i) { return i.id; }).join("|") + "#" + seen.length + "#" + num(s.combat_player_actions_left) + "/" + num(s.combat_player_bonus_left) + "/" + num(s.combat_player_moves_left) + "/" + (truthy(s.player_oa_used) ? 1 : 0) + "#" + whySig.join(",");
     var el = document.getElementById(HUD_ID);
     if (el && sig === lastSig) return;

@@ -1926,6 +1926,32 @@
   *return
 *return
 
+*comment Ownership probe for cantrips (mirrors character_progression.txt refresh_known_spells).
+*comment Checks class/race cantrip slots so spells_blocked ("armor") still reports an owned cantrip instead of "unowned".
+*label combat_has_cantrip
+*params chc_id
+*set combat_has_cantrip_ok false
+*if ((wizard_cantrip = chc_id) or (wizard_cantrip_2 = chc_id))
+  *set combat_has_cantrip_ok true
+  *return
+*if (wizard_cantrip_3 = chc_id)
+  *set combat_has_cantrip_ok true
+  *return
+*if ((warlock_cantrip = chc_id) or (warlock_cantrip_2 = chc_id))
+  *set combat_has_cantrip_ok true
+  *return
+*if (chc_id = "booming_blade")
+  *return
+*if ((bard_cantrip = chc_id) or (bard_cantrip_2 = chc_id))
+  *set combat_has_cantrip_ok true
+  *return
+*if (chc_id = "true_strike")
+  *return
+*if ((race_cantrip = chc_id) or (race_cantrip_2 = chc_id))
+  *set combat_has_cantrip_ok true
+  *return
+*return
+
 *label combat_dual_shot_check
 *comment Dual Shot (2026-10-02): sets combat_dual_pair_ok when two living enemies stand at the same range tier. The engine has no distance between two
 *comment particular creatures, so "within 10 feet of the first target" is approximated as "the same range tier", the same shared-bucket idea the interception
@@ -3871,6 +3897,247 @@
   *if ((combat_why_res = "") and (combat_player_actions_left <= 0))
     *set combat_why_res "no_action"
   *set combat_why_hellish_rebuke combat_why_res
+*temp combat_has_cantrip_ok false
+*temp combat_why_booming_blade "unowned"
+*temp combat_why_booming_blade_side "unowned"
+*gosub combat_has_cantrip "booming_blade"
+*if ((combat_has_cantrip_ok) or (known_booming_blade))
+  *temp cw_bb_spec ""
+  *if ((equipped_weapon_id = "none") or (weapon_type = "ranged"))
+    *set cw_bb_spec "no_valid_weapon"
+  *gosub combat_eval_spell_why "free" "" false cw_bb_spec combat_primary_reach
+  *if ((combat_why_res = "") and (not(combat_can_attack)))
+    *set combat_why_res "no_action"
+  *set combat_why_booming_blade combat_why_res
+  *if (not(equipped_sidearm_id = "none"))
+    *temp cw_bbs_spec ""
+    *if (sidearm_type = "ranged")
+      *set cw_bbs_spec "no_valid_weapon"
+    *gosub combat_eval_spell_why "free" "" false cw_bbs_spec combat_sidearm_reach
+    *if ((combat_why_res = "") and (not(combat_can_attack)))
+      *set combat_why_res "no_action"
+    *set combat_why_booming_blade_side combat_why_res
+*temp combat_why_true_strike "unowned"
+*gosub combat_has_cantrip "true_strike"
+*if ((combat_has_cantrip_ok) or (known_true_strike))
+  *temp cw_ts_spec ""
+  *if (equipped_weapon_id = "none")
+    *set cw_ts_spec "no_valid_weapon"
+  *temp cw_ts_reach ((combat_wpn_far_ok) or (combat_primary_reach))
+  *gosub combat_eval_spell_why "free" "" false cw_ts_spec cw_ts_reach
+  *if ((combat_why_res = "") and (not(combat_can_attack)))
+    *set combat_why_res "no_action"
+  *set combat_why_true_strike combat_why_res
+*temp combat_why_control_flames "unowned"
+*gosub combat_has_cantrip "control_flames"
+*if ((combat_has_cantrip_ok) or (known_control_flames))
+  *gosub combat_spread_scan false
+  *temp cw_cf_flames_spec ""
+  *if (combat_spread_n <= 0)
+    *set cw_cf_flames_spec "nothing_burning"
+  *gosub combat_eval_spell_why "action" "" true cw_cf_flames_spec true
+  *set combat_why_control_flames combat_why_res
+*temp combat_why_blade_ward "unowned"
+*gosub combat_has_cantrip "blade_ward"
+*if ((combat_has_cantrip_ok) or (known_blade_ward))
+  *gosub combat_eval_spell_why "action" "" false "" true
+  *set combat_why_blade_ward combat_why_res
+*temp combat_why_fire_bolt "unowned"
+*gosub combat_has_cantrip "fire_bolt"
+*if ((combat_has_cantrip_ok) or (known_fire_bolt))
+  *gosub combat_eval_spell_why "action" "" false "" true
+  *set combat_why_fire_bolt combat_why_res
+*temp combat_why_ray_of_frost "unowned"
+*gosub combat_has_cantrip "ray_of_frost"
+*if ((combat_has_cantrip_ok) or (known_ray_of_frost))
+  *gosub combat_eval_spell_why "action" "" false "" spell_reach_ok_ray_of_frost
+  *set combat_why_ray_of_frost combat_why_res
+*temp combat_why_ray_of_sickness "unowned"
+*temp combat_why_ray_of_sickness_2 "unowned"
+*if (((((held_ray_of_sickness) or (race_cantrip = "ray_of_sickness")) or (race_cantrip_2 = "ray_of_sickness")) and ((not(class_prepares)) or (prepared_ray_of_sickness))) or (known_ray_of_sickness))
+  *if ((combat_has_pool_1) or (pact_slots_max = 0))
+    *gosub combat_eval_spell_why "action" cw_slot_1 false "" spell_reach_ok_ray_of_sickness
+    *set combat_why_ray_of_sickness combat_why_res
+  *if ((combat_has_pool_2) or (slot_left_2 > 0))
+    *gosub combat_eval_spell_why "action" cw_slot_2 false "" spell_reach_ok_ray_of_sickness
+    *set combat_why_ray_of_sickness_2 combat_why_res
+*temp combat_why_shocking_grasp "unowned"
+*gosub combat_has_cantrip "shocking_grasp"
+*if ((combat_has_cantrip_ok) or (known_shocking_grasp))
+  *gosub combat_eval_spell_why "action" "" false "" spell_reach_ok_shocking_grasp
+  *set combat_why_shocking_grasp combat_why_res
+*temp combat_why_eldritch_blast "unowned"
+*gosub combat_has_cantrip "eldritch_blast"
+*if ((combat_has_cantrip_ok) or (known_eldritch_blast))
+  *gosub combat_eval_spell_why "action" "" false "" true
+  *set combat_why_eldritch_blast combat_why_res
+*temp combat_why_chill_touch "unowned"
+*gosub combat_has_cantrip "chill_touch"
+*if ((combat_has_cantrip_ok) or (known_chill_touch))
+  *gosub combat_eval_spell_why "action" "" false "" spell_reach_ok_chill_touch
+  *set combat_why_chill_touch combat_why_res
+*temp combat_why_vicious_mockery "unowned"
+*gosub combat_has_cantrip "vicious_mockery"
+*if ((combat_has_cantrip_ok) or (known_vicious_mockery))
+  *gosub combat_eval_spell_why "action" "" false "" spell_reach_ok_vicious_mockery
+  *set combat_why_vicious_mockery combat_why_res
+*temp combat_why_poison_spray "unowned"
+*gosub combat_has_cantrip "poison_spray"
+*if ((combat_has_cantrip_ok) or (known_poison_spray))
+  *gosub combat_eval_spell_why "action" "" true "" spell_reach_ok_poison_spray
+  *set combat_why_poison_spray combat_why_res
+*temp combat_why_armor_of_agathys "unowned"
+*if (((((held_armor_of_agathys) or (race_cantrip = "armor_of_agathys")) or (race_cantrip_2 = "armor_of_agathys")) and ((not(class_prepares)) or (prepared_armor_of_agathys))) or (known_armor_of_agathys))
+  *temp cw_aoa_spec ""
+  *if (agathys_active)
+    *set cw_aoa_spec "already_active"
+  *gosub combat_eval_spell_why "action" cw_slot_any false cw_aoa_spec true
+  *set combat_why_armor_of_agathys combat_why_res
+*temp combat_why_mage_armor "unowned"
+*temp cw_ma_owned false
+*if (((((held_mage_armor) or (race_cantrip = "mage_armor")) or (race_cantrip_2 = "mage_armor")) and ((not(class_prepares)) or (prepared_mage_armor))) or ((inv_armor_of_shadows) or (known_mage_armor)))
+  *set cw_ma_owned true
+*if (cw_ma_owned)
+  *gosub_scene equipment mage_armor_cast_check
+  *temp cw_ma_slot ""
+  *if (not(mage_armor_cost = "free"))
+    *if ((character_class = "warlock") and (pact_slots <= 0))
+      *set cw_ma_slot "no_slot"
+    *elseif ((not(character_class = "warlock")) and (spell_slots_1 <= 0))
+      *set cw_ma_slot "no_slot_1"
+  *temp cw_ma_spec ""
+  *if ((not(armor_type = "cloth")) or (head_is_armor))
+    *set cw_ma_spec "wearing_armor"
+  *elseif ((mage_armor_minutes_left > 0) and (not((feature_arcane_ward) and ((arcane_ward_hp < arcane_ward_max) and (mage_armor_cost = "slot")))))
+    *set cw_ma_spec "already_active"
+  *gosub combat_eval_spell_why "action" cw_ma_slot false cw_ma_spec true
+  *set combat_why_mage_armor combat_why_res
+*temp combat_why_false_life "unowned"
+*temp combat_why_false_life_2 "unowned"
+*temp cw_fl_owned false
+*if (((((held_false_life) or (race_cantrip = "false_life")) or (race_cantrip_2 = "false_life")) and ((not(class_prepares)) or (prepared_false_life))) or ((inv_fiendish_vigor) or (known_false_life)))
+  *set cw_fl_owned true
+*if (cw_fl_owned)
+  *temp cw_fl_spec ""
+  *if (temp_hp > 0)
+    *set cw_fl_spec "already_temp_hp"
+  *if ((inv_fiendish_vigor) or ((combat_has_pool_1) or (pact_slots_max = 0)))
+    *set combat_cast_at_level 1
+    *gosub_scene combat_spells false_life_cast_check
+    *temp cw_fl1_slot ""
+    *if (not(false_life_cost = "free"))
+      *if ((character_class = "warlock") and (pact_slots <= 0))
+        *set cw_fl1_slot "no_slot"
+      *elseif ((not(character_class = "warlock")) and (spell_slots_1 <= 0))
+        *set cw_fl1_slot "no_slot_1"
+    *gosub combat_eval_spell_why "action" cw_fl1_slot false cw_fl_spec true
+    *set combat_why_false_life combat_why_res
+  *if ((not(inv_fiendish_vigor)) and ((combat_has_pool_2) or (slot_left_2 > 0)))
+    *set combat_cast_at_level 2
+    *gosub_scene combat_spells false_life_cast_check
+    *temp cw_fl2_slot ""
+    *if (not(false_life_cost = "free"))
+      *if ((character_class = "warlock") and ((not(pact_slot_level = 2)) or (pact_slots <= 0)))
+        *set cw_fl2_slot "no_slot_2"
+      *elseif ((not(character_class = "warlock")) and (spell_slots_2 <= 0))
+        *set cw_fl2_slot "no_slot_2"
+    *gosub combat_eval_spell_why "action" cw_fl2_slot false cw_fl_spec true
+    *set combat_why_false_life_2 combat_why_res
+    *set combat_cast_at_level 1
+*temp combat_why_dissonant_whispers "unowned"
+*temp combat_why_dissonant_whispers_2 "unowned"
+*if (((((held_dissonant_whispers) or (race_cantrip = "dissonant_whispers")) or (race_cantrip_2 = "dissonant_whispers")) and ((not(class_prepares)) or (prepared_dissonant_whispers))) or (known_dissonant_whispers))
+  *if ((combat_has_pool_1) or (pact_slots_max = 0))
+    *gosub combat_eval_spell_why "action" cw_slot_1 true "" spell_reach_ok_dissonant_whispers
+    *set combat_why_dissonant_whispers combat_why_res
+  *if ((combat_has_pool_2) or (slot_left_2 > 0))
+    *gosub combat_eval_spell_why "action" cw_slot_2 true "" spell_reach_ok_dissonant_whispers
+    *set combat_why_dissonant_whispers_2 combat_why_res
+*temp combat_why_cause_fear "unowned"
+*temp combat_why_cause_fear_2 "unowned"
+*if (((((held_cause_fear) or (race_cantrip = "cause_fear")) or (race_cantrip_2 = "cause_fear")) and ((not(class_prepares)) or (prepared_cause_fear))) or (known_cause_fear))
+  *if ((combat_has_pool_1) or (pact_slots_max = 0))
+    *temp cw_cf_now {(("combat_enemy" & combat_active_target) & "_frightened")}
+    *temp cw_cf_spec ""
+    *if (cw_cf_now > 0)
+      *set cw_cf_spec "already_frightened"
+    *gosub combat_eval_spell_why "action" cw_slot_1 true cw_cf_spec spell_reach_ok_cause_fear
+    *set combat_why_cause_fear combat_why_res
+  *if ((combat_has_pool_2) or (slot_left_2 > 0))
+    *gosub combat_eval_spell_why "action" cw_slot_2 true "" true
+    *set combat_why_cause_fear_2 combat_why_res
+*temp combat_why_grease "unowned"
+*if (((((held_grease) or (race_cantrip = "grease")) or (race_cantrip_2 = "grease")) and ((not(class_prepares)) or (prepared_grease))) or (known_grease))
+  *temp cw_gr_now {(("combat_enemy" & combat_active_target) & "_greased")}
+  *temp cw_gr_hp {(("combat_enemy" & combat_active_target) & "_hp")}
+  *temp cw_gr_spec ""
+  *if ((cw_gr_now > 0) or (cw_gr_hp <= 0))
+    *set cw_gr_spec "already_greased"
+  *gosub combat_eval_spell_why "action" cw_slot_1 false cw_gr_spec spell_reach_ok_grease
+  *set combat_why_grease combat_why_res
+*temp combat_why_thunderwave "unowned"
+*temp combat_why_thunderwave_2 "unowned"
+*if (((((held_thunderwave) or (race_cantrip = "thunderwave")) or (race_cantrip_2 = "thunderwave")) and ((not(class_prepares)) or (prepared_thunderwave))) or (known_thunderwave))
+  *temp cw_tw_spec ""
+  *if (not(combat_hadar_ok))
+    *set cw_tw_spec "no_engaged_foe"
+  *if ((combat_has_pool_1) or (pact_slots_max = 0))
+    *gosub combat_eval_spell_why "action" cw_slot_1 false cw_tw_spec true
+    *set combat_why_thunderwave combat_why_res
+  *if ((combat_has_pool_2) or (slot_left_2 > 0))
+    *gosub combat_eval_spell_why "action" cw_slot_2 false cw_tw_spec true
+    *set combat_why_thunderwave_2 combat_why_res
+*temp combat_why_arms_of_hadar "unowned"
+*if (((((held_arms_of_hadar) or (race_cantrip = "arms_of_hadar")) or (race_cantrip_2 = "arms_of_hadar")) and ((not(class_prepares)) or (prepared_arms_of_hadar))) or (known_arms_of_hadar))
+  *temp cw_hadar_spec ""
+  *if (not(combat_hadar_ok))
+    *set cw_hadar_spec "no_engaged_foe"
+  *gosub combat_eval_spell_why "action" cw_slot_any false cw_hadar_spec true
+  *set combat_why_arms_of_hadar combat_why_res
+*temp combat_why_bane "unowned"
+*if (((((held_bane) or (race_cantrip = "bane")) or (race_cantrip_2 = "bane")) and ((not(class_prepares)) or (prepared_bane))) or (known_bane))
+  *gosub combat_eval_spell_why "action" cw_slot_1 true "" true
+  *set combat_why_bane combat_why_res
+*temp combat_why_healing_word "unowned"
+*if (((((held_healing_word) or (race_cantrip = "healing_word")) or (race_cantrip_2 = "healing_word")) and ((not(class_prepares)) or (prepared_healing_word))) or (known_healing_word))
+  *temp cw_hw_sight false
+  *temp cw_hw_spec ""
+  *if ((hp_current >= hp_max) and (not(combat_ally_hurt_exists)))
+    *set cw_hw_spec "no_hurt_target"
+  *elseif ((hp_current >= hp_max) and (combat_ally_hurt_exists))
+    *set cw_hw_sight true
+  *gosub combat_eval_spell_why "bonus" cw_slot_1 cw_hw_sight cw_hw_spec true
+  *set combat_why_healing_word combat_why_res
+*temp combat_why_cure_wounds "unowned"
+*if (((((held_cure_wounds) or (race_cantrip = "cure_wounds")) or (race_cantrip_2 = "cure_wounds")) and ((not(class_prepares)) or (prepared_cure_wounds))) or (known_cure_wounds))
+  *temp cw_cw_spec ""
+  *if ((hp_current >= hp_max) and (not(combat_ally_hurt_exists)))
+    *set cw_cw_spec "no_hurt_target"
+  *gosub combat_eval_spell_why "action" cw_slot_1 false cw_cw_spec true
+  *set combat_why_cure_wounds combat_why_res
+*temp combat_why_shield "unowned"
+*if (((((held_shield) or (race_cantrip = "shield")) or (race_cantrip_2 = "shield")) and ((not(class_prepares)) or (prepared_shield))) or (known_shield))
+  *temp cw_sh_spec ""
+  *if (shield_active)
+    *set cw_sh_spec "already_active"
+  *elseif (shield_armed)
+    *set cw_sh_spec "already_armed"
+  *gosub combat_eval_spell_why "reaction" cw_slot_any false cw_sh_spec true
+  *set combat_why_shield combat_why_res
+*temp combat_why_absorb_elements "unowned"
+*if (((((held_absorb_elements) or (race_cantrip = "absorb_elements")) or (race_cantrip_2 = "absorb_elements")) and ((not(class_prepares)) or (prepared_absorb_elements))) or (known_absorb_elements))
+  *temp cw_ae_spec ""
+  *if (absorb_elements_armed)
+    *set cw_ae_spec "already_armed"
+  *gosub combat_eval_spell_why "reaction" cw_slot_1 false cw_ae_spec true
+  *set combat_why_absorb_elements combat_why_res
+*temp combat_why_ensnaring_strike "unowned"
+*if (((((held_ensnaring_strike) or (race_cantrip = "ensnaring_strike")) or (race_cantrip_2 = "ensnaring_strike")) and ((not(class_prepares)) or (prepared_ensnaring_strike))) or (known_ensnaring_strike))
+  *temp cw_es_spec ""
+  *if (ensnaring_armed)
+    *set cw_es_spec "already_armed"
+  *gosub combat_eval_spell_why "bonus" cw_slot_1 false cw_es_spec true
+  *set combat_why_ensnaring_strike combat_why_res
 *comment Auto-end: silently loops back to the queue once there's truly nothing left to spend a resource on, not
 *comment just once every pool counter happens to read zero -- attacks_left and bonus_left both sit at their full
 *comment value on a turn that never touched them (a caster who casts instead of swinging, or any turn where no
@@ -3915,20 +4182,20 @@
         *goto resolve_weapon_attack_choice
   *comment GEN:END combat_arrow_options
 
-  *if ((combat_can_booming) and (not(spells_blocked)))
+  *if (combat_why_booming_blade = "")
     *comment One variant per melee weapon: the battle bar folds "Booming Blade: X" into one slot and opens the weapons on a click (battlehud.js). The Classic list shows each as a line.
     *comment An ACTION, as in the 2024 rules: the cast IS the melee attack, so it spends an attack as the plain one does. booming_armed is set only for the length of that one swing (fight_attack_spent clears it).
     # [b][ACTION][/b] [b][Booming Blade: ${weapon}][/b] Swing with thunder drawn tight along it: the foe struck takes thunder if it moves of its own accord.
       *set booming_armed true
       *set booming_side false
       *goto fight_booming_go
-  *if ((combat_can_booming_side) and (not(spells_blocked)))
+  *if (combat_why_booming_blade_side = "")
     # [b][ACTION][/b] [b][Booming Blade: ${sidearm}][/b] Swing with thunder drawn tight along it: the foe struck takes thunder if it moves of its own accord.
       *set booming_armed true
       *set booming_side true
       *goto fight_booming_go
 
-  *if ((combat_can_true_strike) and (not(spells_blocked)))
+  *if (combat_why_true_strike = "")
     *comment Two options for one cantrip: the battle bar folds every "True Strike: X" pair into one slot and opens the variants on a click (battlehud.js). The Classic list shows both lines.
     *comment An ACTION, as in the 2024 rules: the cast IS the weapon attack, so it spends an attack exactly as the plain one does (resolve_weapon_attack_choice).
     # [b][ACTION][/b] [b][True Strike: Weapon][/b] Strike with your ${weapon}, rolling with your ${casting_stat_name} instead of your body, for the weapon's own damage.
@@ -4220,7 +4487,7 @@
         *goto fight_bonus_spent
       *goto fight_action_spent
 
-  *if ((((combat_player_actions_left > 0) and (combat_can_spread)) and (not(spells_blocked))) and (combat_player_can_see))
+  *if (combat_why_control_flames = "")
     # [b][ACTION][/b] [b][Control Flames][/b] Spread the fire on a burning foe to the others on its tile.
       *comment Shares the cantrip replay lock (combat_cantrip_choice_locked) with the attack cantrips: they all cost the ACTION, so they are mutually exclusive on a page.
       *if (not(combat_cantrip_choice_locked)) or (not(locked_combat_cantrip_choice_page_id = page_id))
@@ -4235,7 +4502,7 @@
       *line_break
       *goto fight_action_spent
 
-  *if ((combat_can_blade_ward) and (not(spells_blocked)))
+  *if (combat_why_blade_ward = "")
     # [b][ACTION][/b] [b][Blade Ward][/b] Trace a shifting ward that spoils incoming attacks.@{show_stat_hints  [Concentration, 10 rounds: -1d4 to enemy attack rolls]|}
       *gosub_scene combat_spells resolve_cast_blade_ward
       You trace a shifting sigil in the air, and a faint haze of force shimmers around you, throwing off anyone trying to line up a blow.
@@ -4243,7 +4510,7 @@
       *gosub_scene combat_prose print_concentration_ended_banner
       *goto fight_action_spent
 
-  *if ((((combat_player_actions_left > 0) and (known_fire_bolt))) and (not(spells_blocked)))
+  *if (combat_why_fire_bolt = "")
     # [b][ACTION][/b] [b][Fire Bolt][/b] Hurl a mote of arcane flame at ${combat_enemy_epithet}.
       *comment Whole-body replay lock (2026-09-30, shared by every attack-roll cantrip option below -- Ray of
       *comment Frost/Shocking Grasp/Eldritch Blast/Chill Touch -- plus Vicious Mockery just past them, one shared
@@ -4294,7 +4561,7 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if (((((combat_player_actions_left > 0) and (known_ray_of_frost)) and (spell_reach_ok_ray_of_frost))) and (not(spells_blocked)))
+  *if (combat_why_ray_of_frost = "")
     # [b][ACTION][/b] [b][Ray of Frost][/b] Loose a beam of numbing cold at ${combat_med_epithet}.
       *comment Shares Fire Bolt's own whole-body replay lock (combat_cantrip_choice_locked, its own comment above
       *comment has the full explanation) -- same bug shape, same one-action-per-page exclusivity.
@@ -4341,12 +4608,12 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if (((((combat_player_actions_left > 0) and (known_ray_of_sickness)) and (slot_left_1 > 0)) and (spell_reach_ok_ray_of_sickness)) and (not(spells_blocked)))
+  *if (combat_why_ray_of_sickness = "")
     # [b][ACTION][/b] [b][Ray of Sickness: 1st level][/b] Loose a sickly green ray of poison at ${combat_med_epithet}.
       *set combat_cast_at_level 1
       *goto fight_cast_ray_of_sickness
 
-  *if (((((combat_player_actions_left > 0) and (known_ray_of_sickness)) and (slot_left_2 > 0)) and (spell_reach_ok_ray_of_sickness)) and (not(spells_blocked)))
+  *if (combat_why_ray_of_sickness_2 = "")
     # [b][ACTION][/b] [b][Ray of Sickness: 2nd level][/b] An empowered ray of poison: 3d8 instead of 2d8.
       *comment UPCASTING (2026-11-08): unlike Magic Missile's extra dart, Ray of Sickness's upcast changes the
       *comment damage FORMULA itself (RAW: +1d8 per slot level above 1st) -- resolve_cast_ray_of_sickness
@@ -4354,7 +4621,7 @@
       *set combat_cast_at_level 2
       *goto fight_cast_ray_of_sickness
 
-  *if (((((combat_player_actions_left > 0) and (combat_melee_reach)) and (known_shocking_grasp))) and (not(spells_blocked)))
+  *if (combat_why_shocking_grasp = "")
     *comment TOUCH reach (tools/spell_book.json: "shocking_grasp" is range "touch"), so it is only usable against
     *comment a target you are actually touching -- a spell you cannot reach is not offered at a penalty, it is simply
     *comment not offered. This is the REACH gate, a DIFFERENT question from spell_range_of's disadvantage below: a
@@ -4428,7 +4695,7 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if ((((combat_player_actions_left > 0) and (known_eldritch_blast))) and (not(spells_blocked)))
+  *if (combat_why_eldritch_blast = "")
     # [b][ACTION][/b] [b][Eldritch Blast][/b] Unleash a crackling beam of eldritch force at ${combat_enemy_epithet}.
       *comment Shares Fire Bolt's own whole-body replay lock (combat_cantrip_choice_locked, its own comment above
       *comment has the full explanation) -- same bug shape, same one-action-per-page exclusivity.
@@ -4490,7 +4757,7 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if (((((combat_player_actions_left > 0) and (known_chill_touch)) and (spell_reach_ok_chill_touch))) and (not(spells_blocked)))
+  *if (combat_why_chill_touch = "")
     # [b][ACTION][/b] [b][Chill Touch][/b] Conjure a skeletal hand of necrotic frost against ${combat_med_epithet}.
       *comment Shares Fire Bolt's own whole-body replay lock (combat_cantrip_choice_locked, its own comment above
       *comment has the full explanation) -- same bug shape, same one-action-per-page exclusivity.
@@ -4535,7 +4802,7 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if (((((combat_player_actions_left > 0) and (known_vicious_mockery)) and (spell_reach_ok_vicious_mockery))) and (not(spells_blocked)))
+  *if (combat_why_vicious_mockery = "")
     *comment Tagged "ranged" in tools/spell_book.json, but deliberately NOT wired to spell_range_of's penalty
     *comment and deliberately NOT gated on reach: Vicious Mockery resolves as a Wisdom SAVE (below), so the
     *comment player never makes an attack roll to spoil. The close-combat penalty is a penalty on the ATTACK
@@ -4586,7 +4853,7 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if ((((((combat_player_actions_left > 0) and (known_poison_spray)) and (spell_reach_ok_poison_spray))) and (not(spells_blocked))) and (combat_player_can_see))
+  *if (combat_why_poison_spray = "")
     *comment POISON SPRAY (2026-10-20, the 2024 cantrip): a Constitution SAVE against the player's spell save DC, like Vicious Mockery's Wisdom one, so there is no attack roll and Hex cannot fire. 1d12 poison on a failure; the dice scale at 5th level (2d12), which no character reaches yet, so resolve_player_hit still rolls one die. Reach "short" (30 ft): Close or nearer. The Poisoner's Robes add 1d4 poison to this (combat_dice.txt resolve_player_hit).
     # [b][ACTION][/b] [b][Poison Spray][/b] Fling a bitter puff of poison at the nearest foe.
       *if (not(combat_cantrip_choice_locked)) or (not(locked_combat_cantrip_choice_page_id = page_id))
@@ -4669,7 +4936,7 @@
       *gosub_scene combat_prose print_concentration_ended_banner
       *goto fight_bonus_spent
 
-  *if (((combat_player_actions_left > 0) and (((known_armor_of_agathys) and ((slot_left_1 + slot_left_2) > 0)) and (not(agathys_active)))) and (not(spells_blocked)))
+  *if (combat_why_armor_of_agathys = "")
     # [b][ACTION][/b] [b][Armor of Agathys][/b] Sheathe yourself in spectral frost that punishes melee strikes.
       *gosub_scene combat_spells resolve_cast_agathys
       A brittle casing of translucent, jagged rime coats your shoulders and arms, radiating bone-chilling cold. Any foe foolish enough to strike you will feel the frost shatter back against the blow.
@@ -4678,7 +4945,7 @@
       *line_break
       *goto fight_action_spent
 
-  *if ((combat_can_mage_armor) and (not(spells_blocked)))
+  *if (combat_why_mage_armor = "")
     # [b][ACTION][/b] [b][Mage Armor][/b] Lay a ward of unseen force over yourself: base AC 13 + Dexterity for 24 hours, while you wear no armor.
       *comment Not a fight-long effect: it lasts a day and is still there after the fight. equipment.txt cast_mage_armor spends the slot (none for Armor of Shadows), starts the 24-hour timer
       *comment and recomputes armor_class; it carries its own per-page lock, so a replay of this page cannot spend a second slot.
@@ -4689,7 +4956,7 @@
       *line_break
       *goto fight_action_spent
 
-  *if ((combat_can_false_life) and (not(spells_blocked)))
+  *if (combat_why_false_life = "")
     # [b][ACTION][/b] [b][False Life: 1st level][/b] Weave a necromantic shroud over your flesh: 1d4 + 4 temporary hit points for 12 hours.
       *set combat_cast_at_level 1
       *gosub_scene combat_spells resolve_cast_false_life
@@ -4699,7 +4966,7 @@
       *line_break
       *goto fight_action_spent
 
-  *if ((combat_can_false_life_2) and (not(spells_blocked)))
+  *if (combat_why_false_life_2 = "")
     # [b][ACTION][/b] [b][False Life: 2nd level][/b] An empowered shroud: 1d4 + 9 temporary hit points for 12 hours.
       *comment UPCASTING (2026-11-08, RAW): +5 temp HP per slot level above 1st -- cast_false_life
       *comment (combat_spells.txt) reads combat_cast_at_level for the actual math, this just arms it.
@@ -4711,12 +4978,12 @@
       *line_break
       *goto fight_action_spent
 
-  *if ((((((combat_player_actions_left > 0) and ((known_dissonant_whispers) and (slot_left_1 > 0)))) and (spell_reach_ok_dissonant_whispers)) and (not(spells_blocked))) and (combat_player_can_see))
+  *if (combat_why_dissonant_whispers = "")
     # [b][ACTION][/b] [b][Dissonant Whispers: 1st level][/b] A discordant psychic phrase wracks ${combat_med_epithet}.
       *set combat_cast_at_level 1
       *goto fight_cast_dissonant_whispers
 
-  *if ((((((combat_player_actions_left > 0) and ((known_dissonant_whispers) and (slot_left_2 > 0)))) and (spell_reach_ok_dissonant_whispers)) and (not(spells_blocked))) and (combat_player_can_see))
+  *if (combat_why_dissonant_whispers_2 = "")
     # [b][ACTION][/b] [b][Dissonant Whispers: 2nd level][/b] An empowered phrase: 4d6 instead of 3d6.
       *comment UPCASTING (2026-11-09, RAW): +1d6 per slot level above 1st -- resolve_dissonant_whispers
       *comment (combat_spells.txt) reads combat_cast_at_level for the dice count, same shape Ray of Sickness/
@@ -4724,7 +4991,7 @@
       *set combat_cast_at_level 2
       *goto fight_cast_dissonant_whispers
 
-  *if (((((combat_can_fear) and (spell_reach_ok_cause_fear))) and (not(spells_blocked))) and (combat_player_can_see))
+  *if (combat_why_cause_fear = "")
     # [b][ACTION][/b] [b][Cause Fear: 1st level][/b] Plant a whispered dread in ${combat_med_epithet}.@{show_stat_hints  [Wisdom Save]|}
       *set combat_cast_at_level 1
       *gosub_scene combat_movement fight_pick_target
@@ -4734,7 +5001,7 @@
       *gosub_scene combat_spells resolve_cast_cause_fear
       *goto fight_action_spent
 
-  *if (((combat_can_fear_2) and (not(spells_blocked))) and (combat_player_can_see))
+  *if (combat_why_cause_fear_2 = "")
     # [b][ACTION][/b] [b][Cause Fear: 2nd level][/b] Plant a whispered dread in up to two creatures you choose in the sidebar.
       *comment UPCASTING (2026-11-08): arms the same per-target allocation sidebar Magic Missile's darts use --
       *comment one "dart" per target here just means "frighten this one", not stacked damage, so
@@ -4757,7 +5024,7 @@
       *gosub_scene combat_spells resolve_cast_blindness
       *goto fight_action_spent
 
-  *if (((combat_can_grease) and (spell_reach_ok_grease)) and (not(spells_blocked)))
+  *if (combat_why_grease = "")
     # [b][ACTION][/b] [b][Grease][/b] Slick the ground under ${combat_med_epithet} and whatever is standing with it.@{show_stat_hints  [Dexterity Save, Prone]|}
       *gosub_scene combat_movement fight_pick_target
       *gosub_scene combat_movement fight_retarget_by_class "medium"
@@ -4784,7 +5051,7 @@
       *gosub_scene combat_spells resolve_cast_burning_hands
       *goto fight_check_enemy_hp
 
-  *if ((combat_can_thunderwave) and (not(spells_blocked)))
+  *if (combat_why_thunderwave = "")
     # [b][ACTION][/b] [b][Thunderwave: 1st level][/b] A wave of thunder rolls out from you and throws back whatever stands too close.@{show_stat_hints  [Constitution Save, 2d8 Thunder, Push]|}
       *set combat_cast_at_level 1
       *gosub_scene combat_prose flavor_thunderwave
@@ -4792,7 +5059,7 @@
       *gosub_scene combat_spells resolve_cast_thunderwave
       *goto fight_check_enemy_hp
 
-  *if ((combat_can_thunderwave_2) and (not(spells_blocked)))
+  *if (combat_why_thunderwave_2 = "")
     # [b][ACTION][/b] [b][Thunderwave: 2nd level][/b] An empowered wave of thunder: 3d8 instead of 2d8.@{show_stat_hints  [Constitution Save, 3d8 Thunder, Push]|}
       *comment UPCASTING (2026-11-08, RAW): +1d8 per slot level above 1st -- resolve_cast_thunderwave
       *comment (combat_spells.txt) reads combat_cast_at_level for the dice count, same shape Ray of Sickness uses.
@@ -4802,14 +5069,14 @@
       *gosub_scene combat_spells resolve_cast_thunderwave
       *goto fight_check_enemy_hp
 
-  *if ((combat_can_hadar) and (not(spells_blocked)))
+  *if (combat_why_arms_of_hadar = "")
     # [b][ACTION][/b] [b][Arms of Hadar][/b] Black arms lash every foe within reach, and what they catch cannot strike back.@{show_stat_hints  [Strength Save, 2d6 Necrotic]|}
       *gosub_scene combat_prose flavor_arms_of_hadar
       *line_break
       *gosub_scene combat_spells resolve_arms_of_hadar
       *goto fight_check_enemy_hp
 
-  *if (((((combat_player_actions_left > 0) and ((known_bane) and (slot_left_1 > 0)))) and (not(spells_blocked))) and (combat_player_can_see))
+  *if (combat_why_bane = "")
     # [b][ACTION][/b] [b][Bane][/b] Sour the aim and nerve of every foe still standing near you.
       *comment No fight_pick_target re-sync here -- unlike every other targeted option, Bane doesn't act on the
       *comment single "active" target at all; resolve_cast_bane picks its own up to three targets internally.
@@ -4818,7 +5085,7 @@
       *gosub_scene combat_spells resolve_cast_bane
       *goto fight_action_spent
 
-  *if (((combat_can_healing_word) and (combat_player_bonus_left > 0)) and (not(spells_blocked)))
+  *if (combat_why_healing_word = "")
     # [b][BONUS ACTION][/b] [b][Healing Word][/b] @{combat_hw_ally Speak a curative word across the fight, to you or an ally.|Speak a curative syllable to knit your gashes.}
       *comment With an ally on the field the player picks who is healed in the sidebar (fight_target_friendly_healing_word); alone, it heals the caster at once, as it always did.
       *set combat_friendly_target 0
@@ -4837,7 +5104,7 @@
       *line_break
       *goto fight_bonus_spent
 
-  *if (((combat_can_cure_wounds) and (combat_player_actions_left > 0)) and (not(spells_blocked)))
+  *if (combat_why_cure_wounds = "")
     # [b][ACTION][/b] [b][Cure Wounds][/b] @{combat_ally_alive_exists Lay a hand on your own wound, or on one beside you.|Lay a hand on the worst of your wounds and hold it there.}@{show_stat_hints  [Heals 2d8 plus your casting modifier, at arm's length]|}
       *comment Touch, so combat_friendly_reach is 0: the ally has to be standing at the same range as the caster. With nobody else on the field it simply heals the caster, as Healing Word does.
       *set combat_friendly_target 0
@@ -4961,7 +5228,7 @@
         *goto fight_bonus_spent
       *goto fight_action_spent
 
-  *if ((combat_can_shield) and (not(spells_blocked)))
+  *if (combat_why_shield = "")
     # [b][Shield][/b] Hold the barrier-spell ready to snap into place when it can deflect a hit.
       *set shield_armed true
       You murmur the first half of the somatic phrase under your breath, holding the working coiled and ready at your fingertips, costing you nothing to keep it there.
@@ -4979,7 +5246,7 @@
       *line_break
       *goto fight_round_hub
 
-  *if ((combat_can_absorb_elements) and (not(spells_blocked)))
+  *if (combat_why_absorb_elements = "")
     # [b][Absorb Elements][/b] Hold a ward ready, to turn an element's own force back into your next blow.
       *set absorb_elements_armed true
       You hold the counter-working coiled at your fingertips, waiting for the air itself to turn hostile.
@@ -5009,7 +5276,7 @@
       *gosub_scene combat_prose print_concentration_ended_banner
       *goto fight_bonus_spent
 
-  *if (((combat_can_ensnaring) and (combat_player_bonus_left > 0)) and (not(spells_blocked)))
+  *if (combat_why_ensnaring_strike = "")
     # [b][BONUS ACTION][/b] [b][Ensnaring Strike][/b] Your next weapon hit calls up thorned vines that bind the target if it fails a Strength save.@{show_stat_hints  [Strength Save, 1d6 Piercing]|}
       *gosub_scene combat_spells resolve_cast_ensnaring_strike
       You murmur the word and feel thorns rise along your weapon, waiting for a hit to carry them.

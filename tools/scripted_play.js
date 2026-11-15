@@ -93,16 +93,29 @@ timeout = null;
 var GAME = "mygame";
 var DEFAULT_PRESET = "Vanguard Line Fighter";
 
+var SCENE_CACHE = {};   // "game/scene" -> { crc, lines, labels }, filled on a scene's first load (see loadScene)
+
 Scene.prototype.loadScene = function () {
   // "simflags" is a virtual scene: it refreshes the derived weather flags the way entering a hub does.
   // "simfeatures" is a virtual scene: it refreshes feature_* flags after stats overrides change class, level or subclass.
   // "simfight" is a virtual scene a play script can START in ("scene": "simfight", no label): it calls combat fight_library the way a story scene does, so a fight that
   // ENDS (death, rescue, flight, victory) has a caller to return to. Starting at combat:fight_library directly leaves that last *return with nowhere to go.
-  var file = this.name === "simflags" ? "*gosub_scene calendar update_hub_condition\n*finish"
-    : this.name === "simfeatures" ? "*gosub_scene character_progression refresh_features\n*finish"
-    : this.name === "simfight" ? "*gosub_scene combat fight_library\nFight over: ${combat_outcome}.\n*ending"
-    : slurpFile(ROOT + "/web/" + GAME + "/scenes/" + this.name + ".txt");
-  this.loadLines(file);
+  // SPEED (2026-11-15, profiled): every *gosub_scene builds a new Scene and loads its file again, and loadLines checksums the whole text with the engine's
+  // crc32 (web/util.js), which walks it a character at a time through string arithmetic. A fight crosses into combat_dice, combat_prose and combat_spells
+  // constantly, so about 60% of a run went on re-checksumming half-megabyte files and another 20% on re-reading and re-splitting them. The compiled game
+  // never pays this: it hands each scene its lines, labels and checksum ready-made (loadLinesFast). This does the same after a scene's first load.
+  // Nothing writes to a loaded scene's lines or labels, so one copy is shared. Set SCENE_CACHE_OFF=1 to load the old way.
+  var cached = SCENE_CACHE[GAME + "/" + this.name];
+  if (cached) {
+    this.crc = cached.crc; this.lines = cached.lines; this.labels = cached.labels;
+  } else {
+    var file = this.name === "simflags" ? "*gosub_scene calendar update_hub_condition\n*finish"
+      : this.name === "simfeatures" ? "*gosub_scene character_progression refresh_features\n*finish"
+      : this.name === "simfight" ? "*gosub_scene combat fight_library\nFight over: ${combat_outcome}.\n*ending"
+      : slurpFile(ROOT + "/web/" + GAME + "/scenes/" + this.name + ".txt");
+    this.loadLines(file);
+    if (!process.env.SCENE_CACHE_OFF) SCENE_CACHE[GAME + "/" + this.name] = { crc: this.crc, lines: this.lines, labels: this.labels };
+  }
   this.loaded = true;
   if (this.executing) this.execute();
 };
