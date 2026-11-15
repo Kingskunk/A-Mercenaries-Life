@@ -1032,3 +1032,76 @@
     *set combat_enemy_condition_icon combat_enemy_move2_condition_icon
 *return
 
+*comment ============================================================================
+*comment ENEMY ASSIGNED SPELL CHOOSER (Step 3c, 2026-11-15)
+*comment Evaluates up to 3 fight-assigned spell places (cast_spell_1..3, cast_uses_1..3, cast_chance_1..3)
+*comment on the active enemy slot (combat_active_target). Replay-locked per slot on locked_combat_enemy_cast_page_id
+*comment so a Stats replay never re-rolls chance or drops an already-spent cast.
+*comment Outputs: combat_enemy_cast_spell ("" if attacking normally), combat_enemy_cast_place (1..3 or 0).
+*comment ============================================================================
+*label fight_pick_enemy_spell
+*set combat_enemy_cast_spell ""
+*set combat_enemy_cast_place 0
+*if (combat_active_target <= 0)
+  *return
+*if (not(locked_combat_enemy_cast_page_id = page_id))
+  *set combat_enemy_cast_locked_1 false
+  *set combat_enemy_cast_locked_2 false
+  *set combat_enemy_cast_locked_3 false
+  *set combat_enemy_cast_locked_4 false
+  *set combat_enemy_cast_locked_5 false
+  *set combat_enemy_cast_locked_6 false
+  *set locked_combat_enemy_cast_page_id page_id
+*temp fpes_lock ("combat_enemy_cast_locked_" & combat_active_target)
+*temp fpes_sp_cache (("combat_enemy" & combat_active_target) & "_cast_picked_spell")
+*temp fpes_pl_cache (("combat_enemy" & combat_active_target) & "_cast_picked_place")
+*if ({fpes_lock})
+  *set combat_enemy_cast_spell {fpes_sp_cache}
+  *set combat_enemy_cast_place {fpes_pl_cache}
+  *return
+*temp fpes_p (("combat_enemy" & combat_active_target) & "_")
+*temp fpes_picked_spell ""
+*temp fpes_picked_place 0
+*temp fpes_k 1
+*label fpes_loop
+*if (fpes_k <= 3)
+  *temp fpes_id {(fpes_p & ("cast_spell_" & fpes_k))}
+  *temp fpes_uses {(fpes_p & ("cast_uses_" & fpes_k))}
+  *temp fpes_chance {(fpes_p & ("cast_chance_" & fpes_k))}
+  *if ((not(fpes_id = "")) and ((fpes_uses > 0) and (fpes_chance > 0)))
+    *gosub spell_worth_casting fpes_p fpes_id
+    *if (combat_spell_worth_it)
+      *temp fpes_roll 0
+      *rand fpes_roll 1 100
+      *if (fpes_roll <= fpes_chance)
+        *set fpes_picked_spell fpes_id
+        *set fpes_picked_place fpes_k
+        *goto fpes_done
+  *set fpes_k + 1
+  *goto fpes_loop
+*label fpes_done
+*set combat_enemy_cast_spell fpes_picked_spell
+*set combat_enemy_cast_place fpes_picked_place
+*set {fpes_sp_cache} fpes_picked_spell
+*set {fpes_pl_cache} fpes_picked_place
+*set {fpes_lock} true
+*return
+
+*comment Per-spell worth-casting checks (explicit *if on literal ids, never construct variable names from spell_id).
+*label spell_worth_casting
+*params swc_caster_prefix swc_spell_id
+*set combat_spell_worth_it false
+*if ({(swc_caster_prefix & "hp")} <= 0)
+  *return
+*if (swc_spell_id = "blindness")
+  *if (combat_player_hidden)
+    *return
+  *gosub_scene combat_dice condition_has swc_caster_prefix "blinded"
+  *if (condition_result)
+    *return
+  *gosub_scene combat_dice condition_has "combat_player_" "blinded"
+  *if (condition_result)
+    *return
+  *set combat_spell_worth_it true
+*return
+

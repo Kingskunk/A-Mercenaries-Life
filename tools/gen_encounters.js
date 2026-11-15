@@ -30,6 +30,10 @@ var ORDINALS = ["first", "second", "third", "fourth", "fifth", "sixth"];
 var catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "encounter_catalog.json"), "utf8"));
 var enemyTypes = {};
 JSON.parse(fs.readFileSync(path.join(__dirname, "enemy_catalog.json"), "utf8")).types.forEach(function (t) { enemyTypes[t.id] = t; });
+var spellBook = JSON.parse(fs.readFileSync(path.join(__dirname, "spell_book.json"), "utf8"));
+var validSpells = {};
+Object.keys(spellBook.cantrips || {}).concat(Object.keys(spellBook.learnable || {})).forEach(function (id) { validSpells[id] = true; });
+var VALID_CAST_STATS = { strength: true, dexterity: true, constitution: true, intelligence: true, wisdom: true, charisma: true };
 
 // ---------------------------------------------------------------- validation and expansion into slots
 var errors = [];
@@ -68,6 +72,27 @@ var encounters = (catalog.encounters || []).map(function (enc) {
     if (ranges && ranges.length !== count) fail(ew, "range lists " + ranges.length + " tiers for " + count + " enemies");
     var name = e.name || t.name;
     var group = e.group || name;
+    var spells = null;
+    if (e.spells !== undefined) {
+      if (!Array.isArray(e.spells)) fail(ew, "spells must be an array");
+      else if (e.spells.length > 3) fail(ew, "at most 3 spells per enemy (got " + e.spells.length + ")");
+      else {
+        spells = e.spells.map(function (sp, si) {
+          var sw = ew + " spells[" + si + "]";
+          if (!sp || typeof sp !== "object") { fail(sw, "spell entry must be an object"); return null; }
+          if (!sp.id || !validSpells[sp.id]) fail(sw, "unknown spell id " + JSON.stringify(sp.id) + " (not in tools/spell_book.json)");
+          if (!isInt(sp.uses) || sp.uses < 1) fail(sw, "uses must be a whole number >= 1");
+          if (!isInt(sp.chance) || sp.chance < 1 || sp.chance > 100) fail(sw, "chance must be a whole number from 1 to 100");
+          return { id: sp.id, uses: sp.uses, chance: sp.chance };
+        });
+      }
+    }
+    if (e.cast_stat !== undefined && !VALID_CAST_STATS[e.cast_stat]) {
+      fail(ew, "cast_stat must be one of strength, dexterity, constitution, intelligence, wisdom, charisma");
+    }
+    if (e.cast_dc !== undefined && (!isInt(e.cast_dc) || e.cast_dc < 1)) {
+      fail(ew, "cast_dc must be a whole number >= 1");
+    }
     for (var i = 0; i < count; i++) {
       var range = ranges ? ranges[i] : e.range;
       if (range !== undefined && (!isInt(range) || range < 0 || range > 3)) fail(ew, "range must be 0 to 3");
@@ -75,7 +100,7 @@ var encounters = (catalog.encounters || []).map(function (enc) {
       var epithet;
       if (e.epithet) epithet = count > 1 ? e.epithet.replace(/^the /, "the " + ORDINALS[i] + " ") : e.epithet;
       else epithet = count > 1 ? "the " + ORDINALS[i] + " " + name.toLowerCase() : "the " + name.toLowerCase();
-      slots.push({ type: e.type, name: slotName, epithet: epithet, group: group, hp: e.hp, ac: e.ac, atk: e.atk, resolve: e.resolve, range: range, arrives: e.arrives });
+      slots.push({ type: e.type, name: slotName, epithet: epithet, group: group, hp: e.hp, ac: e.ac, atk: e.atk, resolve: e.resolve, range: range, arrives: e.arrives, spells: spells, cast_stat: e.cast_stat, cast_dc: e.cast_dc });
     }
   });
   if (slots.length && slots[0].arrives !== undefined) fail(where, "the first enemy is there from the start; put a reinforcement later in the list");
@@ -115,6 +140,17 @@ function genLabel(x) {
     if (s.resolve !== undefined) out.push("*set " + field(n, "resolve_override") + " " + s.resolve);
     if (s.arrives !== undefined) out.push("*set combat_enemy" + n + "_arrives " + s.arrives);
     if (s.range !== undefined) out.push("*set " + (n === 1 ? "combat_enemy_range" : "combat_enemy" + n + "_range") + " " + s.range);
+    if (s.spells && s.spells.length) {
+      s.spells.forEach(function (sp, si) {
+        if (!sp) return;
+        var k = si + 1;
+        out.push("*set " + field(n, "cast_spell_" + k + "_override") + " " + quote(sp.id));
+        out.push("*set " + field(n, "cast_uses_" + k + "_override") + " " + sp.uses);
+        out.push("*set " + field(n, "cast_chance_" + k + "_override") + " " + sp.chance);
+      });
+    }
+    if (s.cast_stat !== undefined) out.push("*set " + field(n, "cast_stat_override") + " " + quote(s.cast_stat));
+    if (s.cast_dc !== undefined) out.push("*set " + field(n, "cast_dc_override") + " " + s.cast_dc);
   });
   out.push("*goto fight_library");
   out.push("");

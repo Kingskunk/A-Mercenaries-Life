@@ -524,9 +524,8 @@ ${combat_player_dmg_roll_banner}
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment SPELL: BLINDNESS (Bard or Wizard, 2nd level): Action, 1 minute, Constitution save vs spell_save_dc.
 *comment Not concentration, no upcasting. Repeat Constitution save at the end of each of the target's turns runs in
-*comment condition_tick (combat_dice.txt). Replay-locked (combat_cast_locked) so refreshing never spends a second slot
-*comment or re-rolls the save; flavor prose (fsh) and outcome banner (combat_blindness_banner) are set inside the lock
-*comment and printed outside it.
+*comment condition_tick (combat_dice.txt). Player payment (spend_spell_slot 2) and player replay lock live here;
+*comment the shared save + Blinded application live in spell_effect_blindness (combat_dice.txt).
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_cast_blindness
 *if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
@@ -534,19 +533,83 @@ ${combat_player_dmg_roll_banner}
   *gosub spend_spell_slot 2
   *gosub_scene combat_prose flavor_blindness
   *temp rcb_p (("combat_enemy" & combat_active_target) & "_")
-  *gosub_scene combat_dice resolve_save rcb_p "constitution" "Constitution" spell_save_dc combat_active_target
-  *comment check_success is inverted here (resolve_save: true = the enemy FAILED the save).
-  *if (check_success)
-    *gosub_scene combat_dice condition_apply rcb_p "blinded" 10 spell_save_dc
-    *set combat_blindness_banner "[b][👁️ ${combat_enemy_name} is Blinded: its attacks have disadvantage; attacks against it have advantage][/b]"
-  *else
-    *set combat_blindness_banner "[b][💨 ${combat_enemy_name} fights off the blindness][/b]"
+  *gosub_scene combat_dice spell_effect_blindness "combat_player_" rcb_p spell_save_dc combat_active_target
+  *set combat_blindness_banner combat_spell_effect_banner
   *set combat_cast_locked true
   *set locked_combat_cast_page_id page_id
 ${fsh}
 *line_break
 ${combat_blindness_banner}
 *line_break
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment NPC SPELL: BLINDNESS (Step 3c, 2026-11-15): Three-layer architecture -- payment + per-slot replay lock here;
+*comment shared save + Blinded effect in spell_effect_blindness (combat_dice.txt); caster prose in combat_prose.txt.
+*comment Parameters: caster_prefix ("combat_enemy1_" / "combat_ally1_"), target_prefix, resolve_save lock_index (0..7),
+*comment and assigned spell place (1..3, or 0 for direct script tests).
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label resolve_npc_cast_blindness
+*params rncb_caster rncb_target rncb_lock rncb_place
+*temp rncb_key "enemy1"
+*if (rncb_caster = "combat_enemy1_")
+  *set rncb_key "enemy1"
+*elseif (rncb_caster = "combat_enemy2_")
+  *set rncb_key "enemy2"
+*elseif (rncb_caster = "combat_enemy3_")
+  *set rncb_key "enemy3"
+*elseif (rncb_caster = "combat_enemy4_")
+  *set rncb_key "enemy4"
+*elseif (rncb_caster = "combat_enemy5_")
+  *set rncb_key "enemy5"
+*elseif (rncb_caster = "combat_enemy6_")
+  *set rncb_key "enemy6"
+*elseif (rncb_caster = "combat_ally1_")
+  *set rncb_key "ally1"
+*elseif (rncb_caster = "combat_ally2_")
+  *set rncb_key "ally2"
+*elseif (rncb_caster = "combat_ally3_")
+  *set rncb_key "ally3"
+*elseif (rncb_caster = "combat_ally4_")
+  *set rncb_key "ally4"
+*if (not(locked_combat_npc_cast_page_id = page_id))
+  *set combat_npc_cast_locked_enemy1 false
+  *set combat_npc_cast_locked_enemy2 false
+  *set combat_npc_cast_locked_enemy3 false
+  *set combat_npc_cast_locked_enemy4 false
+  *set combat_npc_cast_locked_enemy5 false
+  *set combat_npc_cast_locked_enemy6 false
+  *set combat_npc_cast_locked_ally1 false
+  *set combat_npc_cast_locked_ally2 false
+  *set combat_npc_cast_locked_ally3 false
+  *set combat_npc_cast_locked_ally4 false
+  *set locked_combat_npc_cast_page_id page_id
+*temp rncb_lockname ("combat_npc_cast_locked_" & rncb_key)
+*temp rncb_prosename ("combat_npc_cast_prose_" & rncb_key)
+*temp rncb_savename ("combat_npc_cast_save_banner_" & rncb_key)
+*temp rncb_effname ("combat_npc_cast_effect_banner_" & rncb_key)
+*if (not({rncb_lockname}))
+  *if ((rncb_place >= 1) and (rncb_place <= 3))
+    *temp rncb_ufield ((rncb_caster & "cast_uses_") & rncb_place)
+    *if ({rncb_ufield} > 0)
+      *set {(rncb_ufield)} ({rncb_ufield} - 1)
+  *set combat_caster_name {(rncb_caster & "name")}
+  *set combat_caster_epithet {(rncb_caster & "epithet")}
+  *gosub_scene combat_prose flavor_npc_blindness
+  *set {rncb_prosename} fsh
+  *temp rncb_dc {(rncb_caster & "cast_dc")}
+  *if (rncb_dc <= 0)
+    *set rncb_dc 10
+  *set combat_save_quiet true
+  *gosub_scene combat_dice spell_effect_blindness rncb_caster rncb_target rncb_dc rncb_lock
+  *set combat_save_quiet false
+  *set {rncb_savename} {("combat_save_banner_" & rncb_lock)}
+  *set {rncb_effname} combat_spell_effect_banner
+  *set {rncb_lockname} true
+*set combat_npc_cast_prose {rncb_prosename}
+*set combat_npc_cast_save_banner {rncb_savename}
+*set combat_npc_cast_effect_banner {rncb_effname}
+*gosub_scene combat_prose fight_narrate_npc_cast
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

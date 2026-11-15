@@ -82,6 +82,16 @@ catalog.encounters.forEach(function (enc) {
     if (s.e.resolve !== undefined) expect(w + "resolve", state[p + "resolve"], s.e.resolve);
     if (s.range !== undefined) expect(w + "opening range", state[p + "range"], s.range);
     if (s.e.arrives !== undefined) expect(w + "arrives", state[p + "arrives"], s.e.arrives);
+    if (s.e.spells && s.e.spells.length) {
+      s.e.spells.forEach(function (sp, idx) {
+        const m = idx + 1;
+        expect(w + "cast_spell_" + m, state[p + "cast_spell_" + m], sp.id);
+        expect(w + "cast_uses_" + m, state[p + "cast_uses_" + m], sp.uses);
+        expect(w + "cast_chance_" + m, state[p + "cast_chance_" + m], sp.chance);
+      });
+      if (s.e.cast_dc !== undefined) expect(w + "cast_dc", state[p + "cast_dc"], s.e.cast_dc);
+      else expect(w + "cast_dc derived > 0", Number(state[p + "cast_dc"]) > 0, true);
+    }
   });
   const left = Object.keys(state).filter((k) => /_override$/.test(k) && String(state[k]) !== String(base[k]));
   expect(at + "every override consumed", left.join(","), "");

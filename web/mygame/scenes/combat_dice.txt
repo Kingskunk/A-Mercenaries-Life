@@ -1667,6 +1667,30 @@ ${combat_player_dmg_roll_banner}
       *set {(ct_prefix & "blinded")} ct_left
 *return
 
+*comment Shared spell effect: Blindness (Step 3c, 2026-11-15). Caller handles cast payment, prose, and cast-level replay lock.
+*comment Parameters: caster_prefix, target_prefix, save_dc, resolve_save lock_index (0..6 enemies, 7 player).
+*comment Outputs: combat_spell_effect_applied (boolean), combat_spell_effect_banner (string); respects combat_save_quiet.
+*label spell_effect_blindness
+*params seb_caster_prefix seb_target_prefix seb_dc seb_lock
+*set combat_spell_effect_applied false
+*set combat_spell_effect_banner ""
+*set {("combat_save_locked_" & seb_lock)} false
+*gosub resolve_save seb_target_prefix "constitution" "Constitution" seb_dc seb_lock
+*temp seb_tname {(seb_target_prefix & "name")}
+*if (check_success)
+  *gosub condition_apply seb_target_prefix "blinded" 10 seb_dc
+  *set combat_spell_effect_applied true
+  *if (seb_target_prefix = "combat_player_")
+    *set combat_spell_effect_banner "[b][👁️ You are Blinded: your attacks have disadvantage; attacks against you have advantage][/b]"
+  *else
+    *set combat_spell_effect_banner "[b][👁️ ${seb_tname} is Blinded: its attacks have disadvantage; attacks against it have advantage][/b]"
+*else
+  *if (seb_target_prefix = "combat_player_")
+    *set combat_spell_effect_banner "[b][💨 You fight off the blindness][/b]"
+  *else
+    *set combat_spell_effect_banner "[b][💨 ${seb_tname} fights off the blindness][/b]"
+*return
+
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment CONCENTRATION (2026-11-15, 2024 rules, Part 1 & Part 2)
 *comment Storage: <prefix>concentrating holds the spell id ("none" when idle) on "combat_player_", "combat_enemy0..6_",
