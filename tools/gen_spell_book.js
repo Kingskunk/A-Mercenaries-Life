@@ -15,7 +15,7 @@
  *   spell-data.js               spell_book_js_copy   SPELL_LISTS / SPELL_LEVELS / SPELL_SCROLLS / COPY_*: what the book panel needs to show the loose leaves
  *   prologue/class_select.txt and character_progression.txt   the PICK MENUS (2026-11-04) -- the options in every "choose a spell" *choice at
  *     creation and on a level-up, one marker per menu (see the MENUS array below, and spell_book.json's readme). Adding a spell to a class's
- *     `lists` is enough: it appears in every menu that class offers with no other edit.
+ *     `lists` is enough: it appears in every menu for that class whose maxLevel covers the spell's level with no other edit.
  *
  * Usage: node tools/gen_spell_book.js [--check]      --check exits 1 if any block is stale. After a change run node tools/build_startup.js too.
  */
@@ -490,7 +490,10 @@ function cannotOfferFor(id) {
 // format "A" (prologue/class_select.txt, creation): "# [b]Name[/b]: pitch[@hint]", falls through, no *goto.
 // format "B" (character_progression.txt, level-up): "# Name. pitch@{show_stat_hints  [hint or "Spell: Name"]|}", always a *goto.
 function genPickMenu(cfg) {
-  var cls = cfg.cls, pool = listOf(cls), L = [];
+  var maxLevel = cfg.maxLevel == null ? 1 : cfg.maxLevel;
+  if (!(maxLevel >= 1)) throw new Error("menu " + cfg.marker + " needs maxLevel >= 1");
+  var cls = cfg.cls, pool = listOf(cls).filter(function (id) { return BOOK.learnable[id].level <= maxLevel; }), L = [];
+  if (!pool.length) throw new Error("menu " + cfg.marker + " has no spells at or below level " + maxLevel + " for " + cls);
   pool.forEach(function (id) {
     var sp = BOOK.learnable[id];
     L.push("*if (" + guardFor(id) + ")");
@@ -515,26 +518,33 @@ function genPickMenu(cfg) {
   if (cfg.format === "B") L.push("    *goto " + cfg.goto);
   return L;
 }
-// The manifest: marker name -> {file, cls, format, goto}. This is scene WIRING (which label a menu's *goto needs), not spell
-// data, so it lives here as code rather than in spell_book.json. Every entry's pool is listOf(cls) -- the class's full list --
-// per the readme: there is no notion of a menu offering only part of a class's book.
+// The manifest: marker name -> {file, cls, maxLevel, format, goto}. This is scene WIRING (which label a menu's *goto needs), not spell
+// data, so it lives here as code rather than in spell_book.json. maxLevel is the highest spell level offered (defaults to 1 when
+// omitted): each menu's pool is listOf(cls) filtered to records with level <= maxLevel, so creation and level 2 menus stay
+// 1st-level only while level 3 menus (maxLevel: 2) offer up to 2nd-level spells.
 var CLASS_SELECT = path.join(SCENES, "prologue", "class_select.txt");
 var PROGRESSION_FILE = path.join(SCENES, "character_progression.txt");
 var MENUS = [
-  { marker: "bard_create_1", file: CLASS_SELECT, cls: "bard", format: "A" },
-  { marker: "bard_create_2", file: CLASS_SELECT, cls: "bard", format: "A" },
-  { marker: "bard_create_3", file: CLASS_SELECT, cls: "bard", format: "A" },
-  { marker: "bard_create_4", file: CLASS_SELECT, cls: "bard", format: "A" },
-  { marker: "wizard_create_1", file: CLASS_SELECT, cls: "wizard", format: "A" },
-  { marker: "wizard_create_2", file: CLASS_SELECT, cls: "wizard", format: "A" },
-  { marker: "wizard_create_3", file: CLASS_SELECT, cls: "wizard", format: "A" },
-  { marker: "wizard_create_4", file: CLASS_SELECT, cls: "wizard", format: "A" },
-  { marker: "warlock_create_1", file: CLASS_SELECT, cls: "warlock", format: "A" },
-  { marker: "warlock_create_2", file: CLASS_SELECT, cls: "warlock", format: "A" },
-  { marker: "bard_lvl2_pick", file: PROGRESSION_FILE, cls: "bard", format: "B", goto: "level_up_bard_2_done" },
-  { marker: "ranger_lvl2_pick_1", file: PROGRESSION_FILE, cls: "ranger", format: "B", goto: "level_up_ranger_2_second" },
-  { marker: "ranger_lvl2_pick_2", file: PROGRESSION_FILE, cls: "ranger", format: "B", goto: "level_up_ranger_2_style" },
-  { marker: "warlock_lvl2_pick", file: PROGRESSION_FILE, cls: "warlock", format: "B", goto: "level_up_warlock_2_done" }
+  { marker: "bard_create_1", file: CLASS_SELECT, cls: "bard", maxLevel: 1, format: "A" },
+  { marker: "bard_create_2", file: CLASS_SELECT, cls: "bard", maxLevel: 1, format: "A" },
+  { marker: "bard_create_3", file: CLASS_SELECT, cls: "bard", maxLevel: 1, format: "A" },
+  { marker: "bard_create_4", file: CLASS_SELECT, cls: "bard", maxLevel: 1, format: "A" },
+  { marker: "wizard_create_1", file: CLASS_SELECT, cls: "wizard", maxLevel: 1, format: "A" },
+  { marker: "wizard_create_2", file: CLASS_SELECT, cls: "wizard", maxLevel: 1, format: "A" },
+  { marker: "wizard_create_3", file: CLASS_SELECT, cls: "wizard", maxLevel: 1, format: "A" },
+  { marker: "wizard_create_4", file: CLASS_SELECT, cls: "wizard", maxLevel: 1, format: "A" },
+  { marker: "warlock_create_1", file: CLASS_SELECT, cls: "warlock", maxLevel: 1, format: "A" },
+  { marker: "warlock_create_2", file: CLASS_SELECT, cls: "warlock", maxLevel: 1, format: "A" },
+  { marker: "bard_lvl2_pick", file: PROGRESSION_FILE, cls: "bard", maxLevel: 1, format: "B", goto: "level_up_bard_2_done" },
+  { marker: "bard_lvl3_pick", file: PROGRESSION_FILE, cls: "bard", maxLevel: 2, format: "B", goto: "level_up_bard_3_done" },
+  { marker: "ranger_lvl2_pick_1", file: PROGRESSION_FILE, cls: "ranger", maxLevel: 1, format: "B", goto: "level_up_ranger_2_second" },
+  { marker: "ranger_lvl2_pick_2", file: PROGRESSION_FILE, cls: "ranger", maxLevel: 1, format: "B", goto: "level_up_ranger_2_style" },
+  { marker: "warlock_lvl2_pick", file: PROGRESSION_FILE, cls: "warlock", maxLevel: 1, format: "B", goto: "level_up_warlock_2_done" },
+  { marker: "warlock_lvl3_pick", file: PROGRESSION_FILE, cls: "warlock", maxLevel: 2, format: "B", goto: "level_up_warlock_3_done" },
+  { marker: "wizard_lvl2_pick_1", file: PROGRESSION_FILE, cls: "wizard", maxLevel: 1, format: "B", goto: "level_up_wizard_2_spell_second" },
+  { marker: "wizard_lvl2_pick_2", file: PROGRESSION_FILE, cls: "wizard", maxLevel: 1, format: "B", goto: "level_up_wizard_2_done" },
+  { marker: "wizard_lvl3_pick_1", file: PROGRESSION_FILE, cls: "wizard", maxLevel: 2, format: "B", goto: "level_up_wizard_3_second" },
+  { marker: "wizard_lvl3_pick_2", file: PROGRESSION_FILE, cls: "wizard", maxLevel: 2, format: "B", goto: "level_up_wizard_3_done" }
 ];
 
 // ---------------------------------------------------------------- spell_book_js_slots
