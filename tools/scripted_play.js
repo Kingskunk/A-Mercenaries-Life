@@ -48,7 +48,7 @@
  *             A step may instead be { "absent": "text" | ["text", ...] }: it picks nothing, and fails the run if the menu on screen offers an option
  *             containing any of those texts (a spell that must be unavailable). The next step then acts on the same menu.
  *   picks     the same steps as one string: "text@high;other text*"  (@word sets rand, a trailing * = whileAvail)
- *   watch     variable names whose final values are reported
+ *   watch     variable names (globals, or *temps on the active scene) whose final values are reported
  *   requireNoDeadSpace  true: fail this scenario if a *line_break prints an empty line
  *   refresh   true: after every page, replay it on a copy (what opening Stats and returning does) and
  *             report any variable that changes; a reward or a time advance that is not guarded shows up here
@@ -388,7 +388,12 @@ function play(scn) {
   var last = D.events[D.events.length - 1];
   var status = D.errors.length ? "error" : !last ? "finished" : last.type === "stop" ? "menu" : last.type === "exit" ? "exit" : "finished";
   var watch = {};
-  (scn.watch || []).forEach(function (k) { watch[k] = stats[k]; });
+  var sceneTemps = (stats.scene && stats.scene.temps) ? stats.scene.temps : null;
+  (scn.watch || []).forEach(function (k) {
+    if (Object.prototype.hasOwnProperty.call(stats, k)) watch[k] = stats[k];
+    else if (sceneTemps && Object.prototype.hasOwnProperty.call(sceneTemps, k)) watch[k] = sceneTemps[k];
+    else watch[k] = undefined;
+  });
   return {
     status: status, text: plainTranscript(D.events), events: D.events.slice(), log: D.log.slice(), exits: D.exits.slice(),
     errors: D.errors.slice(), stopped: D.stopped, purseDelta: purse() - purseBefore,

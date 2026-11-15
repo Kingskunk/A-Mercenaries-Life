@@ -1895,6 +1895,37 @@
   *goto combat_hadar_check_loop
 *return
 
+*label combat_eval_spell_why
+*params cesw_cost cesw_slot_why cesw_sight_need cesw_spec_why cesw_reach_ok
+*comment Shared spell-availability reason evaluator (Step 7b): writes combat_why_res in priority order
+*comment (armor > no slot > cannot see > spell-specific > out of reach > budget spent). Empty string means castable now.
+*set combat_why_res ""
+*if (spells_blocked)
+  *set combat_why_res "armor"
+  *return
+*if (cesw_slot_why != "")
+  *set combat_why_res cesw_slot_why
+  *return
+*if ((cesw_sight_need) and (not(combat_player_can_see)))
+  *set combat_why_res "cannot_see"
+  *return
+*if (cesw_spec_why != "")
+  *set combat_why_res cesw_spec_why
+  *return
+*if (not(cesw_reach_ok))
+  *set combat_why_res "out_of_reach"
+  *return
+*if ((cesw_cost = "action") and (combat_player_actions_left <= 0))
+  *set combat_why_res "no_action"
+  *return
+*if ((cesw_cost = "bonus") and (combat_player_bonus_left <= 0))
+  *set combat_why_res "no_bonus"
+  *return
+*if ((cesw_cost = "reaction") and (player_oa_used))
+  *set combat_why_res "no_reaction"
+  *return
+*return
+
 *label combat_dual_shot_check
 *comment Dual Shot (2026-10-02): sets combat_dual_pair_ok when two living enemies stand at the same range tier. The engine has no distance between two
 *comment particular creatures, so "within 10 feet of the first target" is approximated as "the same range tier", the same shared-bucket idea the interception
@@ -3256,10 +3287,6 @@
   *set ccf_slots_2 slot_left_2
   *if (ccf_slots_2 > 0)
     *set combat_can_fear_2 true
-*comment Blindness (Bard or Wizard, 2nd level): a 2nd-level slot, an unspent action, and the spell known/prepared.
-*temp combat_can_blindness false
-*if (((combat_player_actions_left > 0) and (known_blindness)) and (slot_left_2 > 0))
-  *set combat_can_blindness true
 *comment Grease (Wizard, 2026-11-04): a wizard slot, an unspent action, the spell carried, and a living target whose footing is not already slick. The slick spreads under everything standing in the
 *comment target's own range band, so the gate only has to ask about the target itself -- resolve_cast_grease finds the rest.
 *temp combat_can_grease false
@@ -3268,22 +3295,6 @@
   *temp cgr_hp {(("combat_enemy" & combat_active_target) & "_hp")}
   *if ((cgr_now <= 0) and (cgr_hp > 0))
     *set combat_can_grease true
-*comment Burning Hands (Wizard, 2026-11-09): a wizard slot, an unspent action, and a living enemy Engaged with
-*comment the caster -- same emanation Thunderwave and Arms of Hadar need, so it asks combat_hadar_check too.
-*temp combat_can_burning_hands false
-*if ((combat_player_actions_left > 0) and (known_burning_hands))
-  *if (slot_left_1 > 0)
-    *gosub combat_hadar_check
-    *if (combat_hadar_ok)
-      *set combat_can_burning_hands true
-*comment UPCASTING (2026-11-09): same shape as Thunderwave's own two gates -- a separate check against the
-*comment _2 pool, not combat_can_burning_hands reused, since that one only ever asks about the 1st-level pool.
-*temp combat_can_burning_hands_2 false
-*if ((combat_player_actions_left > 0) and (known_burning_hands))
-  *if (slot_left_2 > 0)
-    *gosub combat_hadar_check
-    *if (combat_hadar_ok)
-      *set combat_can_burning_hands_2 true
 *comment Thunderwave (Wizard or Bard, 2026-11-04): a slot of the caster's own pool, an unspent action, and a living enemy Engaged with the caster -- the same emanation Arms of Hadar needs, so it asks
 *comment combat_hadar_check rather than walking the slots a second time.
 *temp combat_can_thunderwave false
@@ -3769,6 +3780,97 @@
   *set combat_push_text "past ${combat_engaged_epithet}, leaving them at your back."
   *if ((cmc_chosen_push < cmc_range_sentinel) and (not(cmc_push_opens)))
     *set combat_push_text "past ${combat_engaged_epithet}, leaving them at your back, and close on the nearest enemy ahead. (${combat_push_from_name} → ${combat_push_to_name})"
+*comment SPELL AVAILABILITY REASONS (Step 7b, Part A): "" = castable now, "unowned" = not known/prepared/eligible this fight, otherwise a short reason code.
+*temp combat_why_res ""
+*temp combat_has_pool_1 false
+*temp combat_has_pool_2 false
+*if (pact_slots_max > 0)
+  *if (pact_slot_level = 1)
+    *set combat_has_pool_1 true
+  *elseif (pact_slot_level = 2)
+    *set combat_has_pool_2 true
+*else
+  *if ((spell_slots_max_1 > 0) or (spell_slots_1 > 0))
+    *set combat_has_pool_1 true
+  *if ((spell_slots_max_2 > 0) or (spell_slots_2 > 0))
+    *set combat_has_pool_2 true
+*if (slot_left_1 > 0)
+  *set combat_has_pool_1 true
+*if (slot_left_2 > 0)
+  *set combat_has_pool_2 true
+*temp cw_slot_1 ""
+*if (slot_left_1 <= 0)
+  *set cw_slot_1 "no_slot_1"
+*temp cw_slot_2 ""
+*if (slot_left_2 <= 0)
+  *set cw_slot_2 "no_slot_2"
+*temp cw_slot_any ""
+*if ((slot_left_1 + slot_left_2) <= 0)
+  *set cw_slot_any "no_slot"
+*gosub combat_hadar_check
+*temp combat_why_magic_missile "unowned"
+*temp combat_why_magic_missile_2 "unowned"
+*if (((((held_magic_missile) or (race_cantrip = "magic_missile")) or (race_cantrip_2 = "magic_missile")) and ((not(class_prepares)) or (prepared_magic_missile))) or (known_magic_missile))
+  *if ((combat_has_pool_1) or (pact_slots_max = 0))
+    *gosub combat_eval_spell_why "action" cw_slot_1 true "" true
+    *set combat_why_magic_missile combat_why_res
+  *if ((combat_has_pool_2) or (slot_left_2 > 0))
+    *gosub combat_eval_spell_why "action" cw_slot_2 true "" true
+    *set combat_why_magic_missile_2 combat_why_res
+*temp combat_why_hex "unowned"
+*if ((((((held_hex) or (race_cantrip = "hex")) or (race_cantrip_2 = "hex")) and ((not(class_prepares)) or (prepared_hex))) or (combat_hex_orphaned)) or (hex_active))
+  *temp cw_hex_slot ""
+  *if ((not(combat_hex_orphaned)) and (not((race_cantrip_2 = "hex") and (not(hexblood_hex_used)))))
+    *if ((slot_left_1 + slot_left_2) <= 0)
+      *if ((race_cantrip_2 = "hex") and ((not(combat_has_pool_1)) and (not(combat_has_pool_2))))
+        *set cw_hex_slot "no_free_use"
+      *else
+        *set cw_hex_slot "no_slot"
+  *temp cw_hex_spec ""
+  *if ((not(combat_hex_orphaned)) and (hex_active))
+    *set cw_hex_spec "already_active"
+  *gosub combat_eval_spell_why "bonus" cw_hex_slot true cw_hex_spec spell_reach_ok_hex
+  *set combat_why_hex combat_why_res
+*temp combat_why_blindness "unowned"
+*if (((((held_blindness) or (race_cantrip = "blindness")) or (race_cantrip_2 = "blindness")) and ((not(class_prepares)) or (prepared_blindness))) or (known_blindness))
+  *gosub combat_eval_spell_why "action" cw_slot_2 true "" spell_reach_ok_blindness
+  *set combat_why_blindness combat_why_res
+*temp combat_why_burning_hands "unowned"
+*temp combat_why_burning_hands_2 "unowned"
+*if (((((held_burning_hands) or (race_cantrip = "burning_hands")) or (race_cantrip_2 = "burning_hands")) and ((not(class_prepares)) or (prepared_burning_hands))) or (known_burning_hands))
+  *temp cw_bh_spec ""
+  *if (not(combat_hadar_ok))
+    *set cw_bh_spec "no_engaged_foe"
+  *if ((combat_has_pool_1) or (pact_slots_max = 0))
+    *gosub combat_eval_spell_why "action" cw_slot_1 false cw_bh_spec true
+    *set combat_why_burning_hands combat_why_res
+  *if ((combat_has_pool_2) or (slot_left_2 > 0))
+    *gosub combat_eval_spell_why "action" cw_slot_2 false cw_bh_spec true
+    *set combat_why_burning_hands_2 combat_why_res
+*temp combat_why_hunters_mark "unowned"
+*if (character_class = "ranger")
+  *temp cw_hm_slot ""
+  *if (not(combat_hm_orphaned))
+    *if ((favored_foe_uses <= 0) and (slot_left_1 <= 0))
+      *if (combat_has_pool_1)
+        *set cw_hm_slot "no_hm_resource"
+      *else
+        *set cw_hm_slot "no_favored_use"
+  *temp cw_hm_spec ""
+  *if (not(combat_hm_orphaned))
+    *if ((combat_hm_live) and (favored_foe_target_slot = combat_active_target))
+      *set cw_hm_spec "already_marked"
+  *gosub combat_eval_spell_why "bonus" cw_hm_slot true cw_hm_spec spell_reach_ok_hunters_mark
+  *set combat_why_hunters_mark combat_why_res
+*temp combat_why_hellish_rebuke "unowned"
+*if (((((held_hellish_rebuke) or (race_cantrip = "hellish_rebuke")) or (race_cantrip_2 = "hellish_rebuke")) and ((not(class_prepares)) or (prepared_hellish_rebuke))) or (known_hellish_rebuke))
+  *temp cw_hr_spec ""
+  *if (rebuke_armed)
+    *set cw_hr_spec "already_armed"
+  *gosub combat_eval_spell_why "reaction" cw_slot_any true cw_hr_spec true
+  *if ((combat_why_res = "") and (combat_player_actions_left <= 0))
+    *set combat_why_res "no_action"
+  *set combat_why_hellish_rebuke combat_why_res
 *comment Auto-end: silently loops back to the queue once there's truly nothing left to spend a resource on, not
 *comment just once every pool counter happens to read zero -- attacks_left and bonus_left both sit at their full
 *comment value on a turn that never touched them (a caster who casts instead of swinging, or any turn where no
@@ -4518,7 +4620,7 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if (((((combat_player_actions_left > 0) and ((known_magic_missile) and (slot_left_1 > 0)))) and (not(spells_blocked))) and (combat_player_can_see))
+  *if (combat_why_magic_missile = "")
     # [b][ACTION][/b] [b][Magic Missile: 1st level][/b] Loose three darts of force at targets you choose in the sidebar.
       *comment Arms targeting mode instead of casting immediately (2026-09-28) -- RAW lets the three darts be
       *comment split across up to three targets, not forced onto whichever single enemy fight_pick_target's
@@ -4535,7 +4637,7 @@
       *set combat_mm_darts_6 0
       *goto fight_target_magic_missile
 
-  *if (((((combat_player_actions_left > 0) and ((known_magic_missile) and (slot_left_2 > 0)))) and (not(spells_blocked))) and (combat_player_can_see))
+  *if (combat_why_magic_missile_2 = "")
     # [b][ACTION][/b] [b][Magic Missile: 2nd level][/b] Loose four darts of force, spending a 2nd-level slot.
       *comment UPCASTING PILOT (2026-11-08): Magic Missile's whole upcast, RAW, is "+1 dart per slot level above
       *comment 1st" -- no change to the per-dart damage math (still 1d4+1 each, resolve_magic_missile,
@@ -4555,7 +4657,7 @@
       *set combat_mm_darts_6 0
       *goto fight_target_magic_missile
 
-  *if ((((((combat_can_hex) and (combat_player_bonus_left > 0))) and (spell_reach_ok_hex)) and (not(spells_blocked))) and (combat_player_can_see))
+  *if (combat_why_hex = "")
     # [b][BONUS ACTION][/b] [b][Hex][/b] @{combat_hex_orphaned Move your curse to|Lay a baleful eldritch curse upon} ${combat_med_epithet}.
       *gosub_scene combat_movement fight_pick_target
       *gosub_scene combat_movement fight_retarget_by_class "medium"
@@ -4648,7 +4750,7 @@
       *set combat_mm_darts_6 0
       *goto fight_target_cause_fear
 
-  *if ((((combat_can_blindness) and (spell_reach_ok_blindness)) and (not(spells_blocked))) and (combat_player_can_see))
+  *if (combat_why_blindness = "")
     # [b][ACTION][/b] [b][Blindness][/b] Strike ${combat_enemy_epithet} blind.@{show_stat_hints  [Constitution Save]|}
       *if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
         *gosub_scene combat_movement fight_pick_target
@@ -4664,7 +4766,7 @@
       *gosub_scene combat_spells resolve_cast_grease
       *goto fight_action_spent
 
-  *if ((combat_can_burning_hands) and (not(spells_blocked)))
+  *if (combat_why_burning_hands = "")
     # [b][ACTION][/b] [b][Burning Hands: 1st level][/b] A thin sheet of flame washes over whatever stands too close.@{show_stat_hints  [Dexterity Save, 3d6 Fire]|}
       *set combat_cast_at_level 1
       *gosub_scene combat_prose flavor_burning_hands
@@ -4672,7 +4774,7 @@
       *gosub_scene combat_spells resolve_cast_burning_hands
       *goto fight_check_enemy_hp
 
-  *if ((combat_can_burning_hands_2) and (not(spells_blocked)))
+  *if (combat_why_burning_hands_2 = "")
     # [b][ACTION][/b] [b][Burning Hands: 2nd level][/b] An empowered sheet of flame: 4d6 instead of 3d6.@{show_stat_hints  [Dexterity Save, 4d6 Fire]|}
       *comment UPCASTING (2026-11-09, RAW): +1d6 per slot level above 1st -- resolve_cast_burning_hands
       *comment (combat_spells.txt) reads combat_cast_at_level for the dice count, same shape Thunderwave uses.
@@ -4868,7 +4970,7 @@
       *line_break
       *goto fight_round_hub
 
-  *if ((((((combat_player_actions_left > 0) and (known_hellish_rebuke)) and ((slot_left_1 + slot_left_2) > 0)) and ((not(rebuke_armed)) and (not(player_oa_used)))) and (not(spells_blocked))) and (combat_player_can_see))
+  *if (combat_why_hellish_rebuke = "")
     # [b][Hellish Rebuke][/b] Hold a vengeful retort ready, to scorch whoever next wounds you.
       *set rebuke_armed true
       You bite down on a retort and hold it there, hot behind your teeth, ready to spit back at whoever next draws your blood.
@@ -4896,7 +4998,7 @@
       *line_break
       *goto fight_bonus_spent
 
-  *if ((((((combat_can_hunters_mark) and (combat_player_bonus_left > 0))) and (spell_reach_ok_hunters_mark)) and (not(spells_blocked))) and (combat_player_can_see))
+  *if (combat_why_hunters_mark = "")
     # [b][BONUS ACTION][/b] [b][Hunter's Mark][/b] @{combat_hm_orphaned Move your mark to|Mark} ${combat_med_epithet} as your quarry${chm_cost_text}.
       *gosub_scene combat_movement fight_pick_target
       *gosub_scene combat_movement fight_retarget_by_class "medium"

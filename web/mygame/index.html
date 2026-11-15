@@ -1024,7 +1024,7 @@ button#statSidebar .turnRow,
   }
   // ── Battle stage (2026-11-03) ──────────────────────────────────────────────────────────────────────────
   // While the battle HUD is up, the hub's choice list is hidden and the framed story column used to stand mostly empty. The stage draws the
-  // battlefield lane in that space, full width, with every combatant as a token standing on its tile. The prose keeps the top of the frame and
+  // battlefield lane in that space, full width, with every combatant as a token standing on its tile. The stage sits at the top of the frame (2026-11-15); the prose runs below it and
   // scrolls as before. Like the sidebar strip, it only formats window.stats: a token click goes through the same data-target / data-friendly
   // handlers the turn-order rows use, and the hover cards are the same #csTip cards. While the stage shows, the sidebar strip is left out.
   // It shows only when the column is tall enough to give it room; otherwise the sidebar strip stays as it was. Classic list hides it too.
@@ -1201,7 +1201,8 @@ button#statSidebar .turnRow,
   // shows, so while it is up they are hidden (battlestage.css, .stageStatusLine). Each line goes with one <br> beside it, so no blank line is left,
   // and a paragraph left with nothing else is hidden too. They are marked as the page is written (a MutationObserver runs before the page is
   // painted), so they never flash; with the Classic list, or out of a fight, the class does nothing and they read as before.
-  var STATUS_LINE_RE = /^\[[^\[\]]*?\bRound \d+(?:\]|\s+\u2014)|^\[[^\[\]]+:\s*HP\s+-?\d+\s*\/\s*\d+[^\]]*\(AC\s+\d+/;
+  // "[\u26a1 Turn Order: You, ...]" joined them on 2026-11-15 (the user): the sidebar's Turn Order panel and the stage's "Acts next" tag already show it.
+  var STATUS_LINE_RE = /^\[[^\[\]]*?\bRound \d+(?:\]|\s+\u2014)|^\[[^\[\]]+:\s*HP\s+-?\d+\s*\/\s*\d+[^\]]*\(AC\s+\d+|^\[[^\[\]]*?\bTurn Order:/;
   function isBlankNode(n) { return n.nodeType === 3 && !/\S/.test(n.nodeValue); }
   function siblingBr(b, dir) {
     var n = b[dir];
@@ -1703,10 +1704,10 @@ button#statSidebar .turnRow,
       actingNextKey = upcoming ? upcoming.kind + ":" + upcoming.slot : null;
       if (upcoming) {
         var atag = "<span class=\"rangeTag\" title=\"Distance from you\">(" + esc(upcoming.tier) + ")</span>";
-        var asub = combatantSubLine(s, upcoming.kind, upcoming.slot);
+        // Name and distance only (2026-11-15, the user): what it can do ("can close and attack") is on its own row just below, and was printed twice.
         alertHtml += "<div class=\"statRow alertRow\"><span>Acting next</span><span class=\"turnMain\"><span><span class=\"" +
           (upcoming.enemy ? "enemyName" : "allyName") + "\">" + esc(upcoming.name) + "</span> " + atag +
-          "</span>" + (asub ? "<span class=\"turnSub\">" + asub + "</span>" : "") + "</span></div>";
+          "</span></span></div>";
       }
       if (engaged.length) {
         alertHtml += "<div class=\"statRow alertRow\"><span>In your reach</span><span class=\"alertReach\">" +

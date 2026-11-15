@@ -58,6 +58,95 @@
   var MIN_ROWS = 3;       // empty cells fill each grid to at least this many rows
   var KIND = { action: "Action", bonus: "Bonus action", free: "Free", move: "Movement", tactic: "Tactical movement", other: "" };
 
+  // Reason texts keyed by combat_why_* codes emitted by fight_round_hub (combat.txt). Short factual phrases only, zero control hints.
+  var REASON_TEXT = {
+    armor: "Untrained armor blocks spells",
+    no_slot_1: "No 1st-level slot left",
+    no_slot_2: "No 2nd-level slot left",
+    no_slot: "No spell slot left",
+    no_hm_resource: "No Favored Enemy use or 1st-level slot left",
+    no_favored_use: "No Favored Enemy use left",
+    no_free_use: "Free cast already used",
+    cannot_see: "You cannot see a target",
+    no_engaged_foe: "No foe is Engaged",
+    already_active: "Already active",
+    already_armed: "Already armed",
+    already_marked: "Target is already marked",
+    already_frightened: "Target is already Frightened",
+    already_greased: "Target's ground is already greased",
+    nothing_burning: "No fire to spread",
+    wearing_armor: "Cannot cast while wearing armor",
+    no_hurt_target: "Nobody needs healing",
+    no_valid_weapon: "No eligible weapon equipped",
+    out_of_reach: "Out of reach",
+    no_action: "No action left this turn",
+    no_bonus: "No bonus action left this turn",
+    no_reaction: "Reaction already used this round"
+  };
+  var WHY_RANK = [
+    "armor", "no_slot_1", "no_slot_2", "no_slot", "no_hm_resource", "no_favored_use", "no_free_use",
+    "cannot_see", "no_engaged_foe", "already_active", "already_armed", "already_marked",
+    "already_frightened", "already_greased", "nothing_burning", "wearing_armor", "no_hurt_target",
+    "no_valid_weapon", "out_of_reach", "no_action", "no_bonus", "no_reaction"
+  ];
+  // Canonical fight_round_hub option order so seeded unoffered spells land where the hub places them once offered.
+  var HUB_ORDER = [
+    "primary_attack", "shoot", "booming_blade", "true_strike", "bardic_inspiration",
+    "swap_weapons", "reckless_attack", "dual_shot", "sidearm_attack", "shove",
+    "push_forward", "fall_back", "dash",
+    "control_flames", "blade_ward", "fire_bolt", "ray_of_frost", "ray_of_sickness",
+    "shocking_grasp", "eldritch_blast", "chill_touch", "vicious_mockery", "poison_spray",
+    "magic_missile", "hex", "armor_of_agathys", "mage_armor", "false_life",
+    "dissonant_whispers", "cause_fear", "blindness", "grease", "burning_hands",
+    "thunderwave", "arms_of_hadar", "bane", "healing_word", "cure_wounds",
+    "read", "dodge", "intimidate", "hide",
+    "shield", "hellish_rebuke", "absorb_elements", "second_wind", "hunters_mark",
+    "ensnaring_strike", "action_surge", "rage", "arcane_ward", "magical_cunning",
+    "throw", "potions", "items", "flee", "end_turn"
+  ];
+  var HUB_RANK = {};
+  HUB_ORDER.forEach(function (id, idx) { HUB_RANK[id] = idx; });
+
+  // Spells seeded from turn 1 when their combat_why_* scene temp is present and not "unowned".
+  var SEED_SPELLS = [
+    { id: "magic_missile", group: "action", name: "Magic Missile", blurb: "Loose darts of force at targets you choose.",
+      variants: [
+        { id: "magic_missile_1st_level", label: "1st level", whyKey: "combat_why_magic_missile", blurb: "Loose three darts of force at targets you choose in the sidebar." },
+        { id: "magic_missile_2nd_level", label: "2nd level", whyKey: "combat_why_magic_missile_2", blurb: "Loose four darts of force, spending a 2nd-level slot." }
+      ]
+    },
+    { id: "hex", group: "bonus", name: "Hex", whyKey: "combat_why_hex", blurb: "Lay a baleful eldritch curse upon a foe." },
+    { id: "blindness", group: "action", name: "Blindness", whyKey: "combat_why_blindness", blurb: "Strike a foe blind." },
+    { id: "burning_hands", group: "action", name: "Burning Hands", blurb: "A thin sheet of flame washes over whatever stands too close.",
+      variants: [
+        { id: "burning_hands_1st_level", label: "1st level", whyKey: "combat_why_burning_hands", blurb: "A thin sheet of flame washes over whatever stands too close." },
+        { id: "burning_hands_2nd_level", label: "2nd level", whyKey: "combat_why_burning_hands_2", blurb: "An empowered sheet of flame: 4d6 instead of 3d6." }
+      ]
+    },
+    { id: "hellish_rebuke", group: "free", name: "Hellish Rebuke", whyKey: "combat_why_hellish_rebuke", blurb: "Hold a vengeful retort ready, to scorch whoever next wounds you." },
+    { id: "hunters_mark", group: "bonus", name: "Hunter's Mark", whyKey: "combat_why_hunters_mark", blurb: "Mark a foe as your quarry." }
+  ];
+  var WHY_KEYS = {};
+  SEED_SPELLS.forEach(function (sp) {
+    if (sp.whyKey) WHY_KEYS[sp.id] = sp.whyKey;
+    if (sp.variants) sp.variants.forEach(function (v) { WHY_KEYS[v.id] = v.whyKey; });
+  });
+  function sceneTemps() {
+    var s = statsNow();
+    return (s.scene && s.scene.temps) ? s.scene.temps : null;
+  }
+  function readWhyTemp(key) {
+    var t = sceneTemps();
+    if (!t || !Object.prototype.hasOwnProperty.call(t, key)) return null;
+    var v = t[key];
+    if (v == null || v === "unowned") return null;
+    return String(v);
+  }
+  function seedById(id) {
+    for (var i = 0; i < SEED_SPELLS.length; i++) if (SEED_SPELLS[i].id === id) return SEED_SPELLS[i];
+    return null;
+  }
+
   function iconFor(name) {
     var key = slug(name);
     return (window.SPELL_ICONS || {})[key] || (window.ACTION_ICONS || {})[key] || "";
@@ -118,8 +207,44 @@
     return hub ? out : null;
   }
 
-  // Folds the page's current options into the remembered list. A new action goes in just before the next already-known option that
-  // follows it on the page, so it lands where the hub itself puts it; otherwise it goes on the end.
+  function activeVariantsFor(seed, liveVariants) {
+    var liveMap = {};
+    (liveVariants || []).forEach(function (v) { liveMap[v.id] = v; });
+    var out = [];
+    seed.variants.forEach(function (sv) {
+      var live = liveMap[sv.id];
+      var code = readWhyTemp(sv.whyKey);
+      if (live || code !== null) {
+        out.push({
+          id: sv.id,
+          label: live ? live.label : sv.label,
+          blurb: live ? live.blurb : sv.blurb,
+          radio: live ? live.radio : null
+        });
+      }
+    });
+    return out;
+  }
+
+  function insertSeen(entry, followingItems) {
+    var rank = HUB_RANK.hasOwnProperty(entry.id) ? HUB_RANK[entry.id] : -1;
+    var k;
+    if (rank >= 0) {
+      for (k = 0; k < seen.length; k++) {
+        var r = HUB_RANK.hasOwnProperty(seen[k].id) ? HUB_RANK[seen[k].id] : -1;
+        if (r > rank) { seen.splice(k, 0, entry); return; }
+      }
+    }
+    if (followingItems) {
+      for (var j = 0; j < followingItems.length; j++) {
+        for (k = 0; k < seen.length; k++) if (seen[k].id === followingItems[j].id) { seen.splice(k, 0, entry); return; }
+      }
+    }
+    seen.push(entry);
+  }
+
+  // Folds the page's current options into the remembered list. Seeded spells with a live combat_why_* temp sit in exact hub order
+  // from turn one even before they can be cast; everything else keeps its hub splice position.
   function remember(items) {
     // Advance and Retreat always have their places, offered or not.
     if (!seen.length) {
@@ -140,14 +265,24 @@
     });
     items.forEach(function (it, i) {
       var at = -1, k;
+      var seed = seedById(it.id);
+      var variants = (seed && seed.variants) ? activeVariantsFor(seed, it.variants) : it.variants;
       for (k = 0; k < seen.length; k++) if (seen[k].id === it.id) { at = k; break; }
-      if (at >= 0) { seen[at].blurb = it.blurb; seen[at].group = it.group; if (it.variants) seen[at].variants = it.variants; return; }
-      var entry = { id: it.id, group: it.group, name: it.name, blurb: it.blurb, variants: it.variants };
-      var before = -1;
-      for (var j = i + 1; j < items.length && before < 0; j++) {
-        for (k = 0; k < seen.length; k++) if (seen[k].id === items[j].id) { before = k; break; }
+      if (at >= 0) { seen[at].blurb = it.blurb; seen[at].group = it.group; if (variants) seen[at].variants = variants; return; }
+      insertSeen({ id: it.id, group: it.group, name: it.name, blurb: it.blurb, variants: variants }, items.slice(i + 1));
+    });
+    SEED_SPELLS.forEach(function (sp) {
+      var at = -1;
+      for (var k = 0; k < seen.length; k++) if (seen[k].id === sp.id) { at = k; break; }
+      if (sp.variants) {
+        var vars = activeVariantsFor(sp, at >= 0 ? seen[at].variants : []);
+        if (!vars.length) return;
+        if (at >= 0) { seen[at].variants = vars; return; }
+        insertSeen({ id: sp.id, group: sp.group, name: sp.name, blurb: vars[0].blurb, variants: vars }, null);
+      } else if (readWhyTemp(sp.whyKey) !== null) {
+        if (at >= 0) return;
+        insertSeen({ id: sp.id, group: sp.group, name: sp.name, blurb: sp.blurb }, null);
       }
-      if (before >= 0) seen.splice(before, 0, entry); else seen.push(entry);
     });
     ensureGhosts();
   }
@@ -161,8 +296,33 @@
     seen.push({ id: "mage_armor", group: "action", name: "Mage Armor", blurb: "Lay a ward of unseen force over yourself: base AC 13 + Dexterity for 24 hours, while you wear no armor." });
   }
 
-  // Why a remembered action is not on the page right now. Best effort from the turn budget; the hub's own gates are the truth.
+  function whyForSlot(e) {
+    var sp = seedById(e.id);
+    if (sp && sp.variants) {
+      var codes = [];
+      sp.variants.forEach(function (v) {
+        var c = readWhyTemp(v.whyKey);
+        if (c !== null && c !== "") codes.push(c);
+      });
+      if (!codes.length) return null;
+      if (codes.length > 1 && codes.every(function (c) { return c === "no_slot_1" || c === "no_slot_2"; })) return "no_slot";
+      var best = codes[0], bestRank = WHY_RANK.indexOf(best);
+      for (var i = 1; i < codes.length; i++) {
+        var r = WHY_RANK.indexOf(codes[i]);
+        if (r > bestRank) { best = codes[i]; bestRank = r; }
+      }
+      return best;
+    }
+    var key = WHY_KEYS[e.id];
+    if (!key) return null;
+    var code = readWhyTemp(key);
+    return (code && code !== "") ? code : null;
+  }
+
+  // Why a remembered action is not on the page right now. Prefers live combat_why_* scene temps when present, falling back to guesses for everything else.
   function reasonFor(e) {
+    var code = whyForSlot(e);
+    if (code) return REASON_TEXT[code] || code;
     var s = statsNow();
     if (e.id === "mage_armor") {
       if (num(s.mage_armor_minutes_left) > 0) return "The ward is already on you (about " + Math.ceil(num(s.mage_armor_minutes_left) / 60) + " hours left)";
@@ -739,7 +899,12 @@
       return;
     }
     remember(items);
-    var sig = items.map(function (i) { return i.id; }).join("|") + "#" + seen.length + "#" + num(s.combat_player_actions_left) + "/" + num(s.combat_player_bonus_left) + "/" + num(s.combat_player_moves_left) + "/" + (truthy(s.player_oa_used) ? 1 : 0);
+    var temps = sceneTemps(), whySig = [];
+    if (temps) Object.keys(WHY_KEYS).sort().forEach(function (k) {
+      var tk = WHY_KEYS[k];
+      if (temps[tk] != null && temps[tk] !== "unowned") whySig.push(tk + "=" + temps[tk]);
+    });
+    var sig = items.map(function (i) { return i.id; }).join("|") + "#" + seen.length + "#" + num(s.combat_player_actions_left) + "/" + num(s.combat_player_bonus_left) + "/" + num(s.combat_player_moves_left) + "/" + (truthy(s.player_oa_used) ? 1 : 0) + "#" + whySig.join(",");
     var el = document.getElementById(HUD_ID);
     if (el && sig === lastSig) return;
     if (sig !== lastSig) { pressed = false; closeFly(); } // a new page of options: the old press is over
