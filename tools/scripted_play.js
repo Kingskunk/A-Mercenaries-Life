@@ -94,8 +94,11 @@ var DEFAULT_PRESET = "Vanguard Line Fighter";
 Scene.prototype.loadScene = function () {
   // "simflags" is a virtual scene: it refreshes the derived weather flags the way entering a hub does.
   // "simfeatures" is a virtual scene: it refreshes feature_* flags after stats overrides change class, level or subclass.
+  // "simfight" is a virtual scene a play script can START in ("scene": "simfight", no label): it calls combat fight_library the way a story scene does, so a fight that
+  // ENDS (death, rescue, flight, victory) has a caller to return to. Starting at combat:fight_library directly leaves that last *return with nowhere to go.
   var file = this.name === "simflags" ? "*gosub_scene calendar update_hub_condition\n*finish"
     : this.name === "simfeatures" ? "*gosub_scene character_progression refresh_features\n*finish"
+    : this.name === "simfight" ? "*gosub_scene combat fight_library\nFight over: ${combat_outcome}.\n*ending"
     : slurpFile(ROOT + "/web/" + GAME + "/scenes/" + this.name + ".txt");
   this.loadLines(file);
   this.loaded = true;

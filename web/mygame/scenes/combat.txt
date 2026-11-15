@@ -85,6 +85,8 @@
 *set combat_player_bane_expires_round 0
 *set combat_player_concentrating "none"
 *set combat_conc_result false
+*set combat_conc_save_triggered false
+*set combat_conc_save_banner ""
 *set combat_conc_ended_banner ""
 *set ensnaring_armed false
 *set ensnaring_expires_round 0
@@ -137,6 +139,7 @@
 *set true_strike_radiant false
 *set combat_save_quiet false
 *set blade_ward_rounds 0
+*set blade_ward_just_cast false
 *set dodge_active false
 *set is_raging false
 *set combat_agathys_triggered false
@@ -688,6 +691,7 @@
 *set true_strike_radiant false
 *set combat_save_quiet false
 *set blade_ward_rounds 0
+*set blade_ward_just_cast false
 *set dodge_active false
 *set is_raging false
 *set combat_agathys_triggered false
@@ -1098,6 +1102,8 @@
 *set combat_player_blinded_dc 0
 *set combat_player_concentrating "none"
 *set combat_conc_result false
+*set combat_conc_save_triggered false
+*set combat_conc_save_banner ""
 *set combat_conc_ended_banner ""
 *set player_last_hit_kind ""
 *set player_last_hit_slot 0
@@ -1286,6 +1292,8 @@
 
 *label fight_sync_target_out
 *set {(("combat_enemy" & combat_active_target) & "_hp")} combat_enemy_hp
+*if (combat_enemy_hp <= 0)
+  *gosub_scene combat_dice concentration_end (("combat_enemy" & combat_active_target) & "_")
 *return
 
 *comment Legacy fights use 0 Engaged, 1 Close, 2 Mid-Range, 3 Long Range; expanded6 uses 0 Engaged, 1 Close,
@@ -1786,7 +1794,9 @@
 *comment **Deliberately reuses resolve_enemy_attack and fight_narrate_enemy_turn whole, with no parallel path.**
 *comment That is what makes an opportunity attack behave like every other hit the player takes, for free: Shield
 *comment can still break through it, Armor of Agathys still bites back, resistance,
-*comment vulnerability, temp HP, conditions and stun all still apply, and the death and rescue checks still run.
+*comment vulnerability, temp HP, conditions and stun all still apply. The death and rescue checks do NOT live in resolve_enemy_attack (they are in
+*comment combat_next_turn, after an enemy turn), so this label records the result in combat_outcome and each caller jumps on it (2026-11-15: a boar
+*comment dropped the player to 0 on a Fall Back and the fight carried on).
 *comment Writing a "simpler" OA resolver would have quietly forked all of that. fight_narrate_enemy_turn is
 *comment equally safe to reuse: it narrates "this enemy attacks you" and nothing about closing distance, which
 *comment lives in combat_next_turn's own branch instead.
@@ -1806,6 +1816,11 @@
   *comment on this page -- including picking a new target. The sync above is what makes that safe.
   *gosub_scene combat_dice resolve_enemy_attack
   *gosub_scene combat_prose fight_narrate_enemy_turn "enemy" roa_candidate
+  *comment A *goto out of this *gosub would leave the stack wrong, so only flag it here. A replay that finds no candidate keeps the flag the first run set.
+  *if ((combat_player_can_die) and (hp_current <= 0))
+    *set combat_outcome "player_died"
+  *if ((not(combat_player_can_die)) and (hp_current <= 1))
+    *set combat_outcome "rescued"
 *return
 
 *label resolve_opportunity_attack_on_ally
@@ -2493,11 +2508,14 @@
 
 *label blade_ward_tick
 *comment Advances Blade Ward's 10-round concentration count by ONE player turn (fight_end_player_turn only).
+*comment Clears blade_ward_just_cast without decrementing on the turn cast, covering 10 rounds of enemy turns.
 *comment A turn lost to a stun still counts as a turn here.
 *comment Replay-locked on the page_id idiom: an unguarded *set here re-runs on page replay and would
 *comment expire the ward early.
 *if (not(blade_ward_tick_locked)) or (not(locked_blade_ward_tick_page_id = page_id))
-  *if (blade_ward_rounds > 0)
+  *if (blade_ward_just_cast)
+    *set blade_ward_just_cast false
+  *elseif (blade_ward_rounds > 0)
     *set blade_ward_rounds - 1
     *if (blade_ward_rounds <= 0)
       *gosub_scene combat_dice concentration_reconcile
@@ -3767,6 +3785,10 @@
         [b][🏃 You Push Forward — ${combat_range_display_name}][/b]
       *line_break
       *gosub resolve_opportunity_attack
+      *if (combat_outcome = "player_died")
+        *goto fight_player_died
+      *if (combat_outcome = "rescued")
+        *goto fight_rescued
       *goto fight_move_spent
 
   *if ((combat_player_moves_left > 0) and (combat_can_fall_back))
@@ -3813,6 +3835,10 @@
       *comment their own move rather than an attack appearing before the thing that caused it. No-op when
       *comment find_opportunity_attacker found nobody, or when Disengage covered the round.
       *gosub resolve_opportunity_attack
+      *if (combat_outcome = "player_died")
+        *goto fight_player_died
+      *if (combat_outcome = "rescued")
+        *goto fight_rescued
       *goto fight_move_spent
 
   *if (((combat_player_actions_left > 0) or (combat_cunning)) and (not(combat_player_on_difficult_terrain)))
@@ -4810,6 +4836,10 @@
       *gosub_scene combat_movement combat_shift_all_ranges "fallback"
       *label break_off_resolve_oa
       *gosub resolve_opportunity_attack
+      *if (combat_outcome = "player_died")
+        *goto fight_player_died
+      *if (combat_outcome = "rescued")
+        *goto fight_rescued
       *goto fight_fled
 
   # End your turn.
@@ -7546,6 +7576,8 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *if (cnt_wet > 0)
       *set {(("combat_enemy" & cnt_slot) & "_wet")} (cnt_wet - 1)
     *comment Frightened: the enemy repeats its Wisdom save at the end of its turn, and the fear ends on a success. If it died during its own turn (a Rebuke, Armor of Agathys) there is nothing to roll for.
+    *comment Re-read live _frightened: breaking player concentration on Cause Fear during this turn zeroes it before end-of-turn.
+    *set cnt_frightened {(("combat_enemy" & cnt_slot) & "_frightened")}
     *if ((cnt_frightened > 0) and (combat_enemy_hp > 0))
       *temp cnt_fp (("combat_enemy" & cnt_slot) & "_")
       *gosub_scene combat_dice resolve_save cnt_fp "wisdom" "Wisdom" spell_save_dc cnt_slot

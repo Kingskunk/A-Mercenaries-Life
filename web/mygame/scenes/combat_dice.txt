@@ -691,6 +691,9 @@ ${combat_player_dmg_roll_banner}
   *set combat_rebuke_triggered false
   *set combat_absorb_triggered false
   *set combat_condition_inflicted false
+  *set combat_conc_save_triggered false
+  *set combat_conc_save_banner ""
+  *set combat_conc_ended_banner ""
   *if (((combat_enemy_hit_success) and (cea_save_failed)) and (combat_enemy_inflicts_condition))
     *set disadvantage true
     *set combat_condition_inflicted true
@@ -817,6 +820,10 @@ ${combat_player_dmg_roll_banner}
     *else
       *if (hp_current < 1)
         *set hp_current 1
+    *temp cea_conc_prev_quiet combat_save_quiet
+    *set combat_save_quiet true
+    *gosub concentration_damage_check "combat_player_" cea_post_ward 7
+    *set combat_save_quiet cea_conc_prev_quiet
     *comment HELLISH REBUKE (Warlock): armed earlier, it fires on the first hit that actually damages the player, spending a Pact Magic slot and the reaction. The attacker makes a
     *comment Dexterity save; 2d10 fire, half on a save. Anything that resists or is vulnerable to fire is handled by the same outgoing check as every other player damage.
     *comment A hit that stuns also takes the reaction it would have answered with (the stun lands with the blow, just above), RAW.
@@ -1042,8 +1049,9 @@ ${combat_player_dmg_roll_banner}
     *set combat_enemy_dmg_on_ally_dealt reao_dmg_total
     *gosub record_last_hit "ally" reao_a_slot "enemy" combat_active_target
     *set {(reao_ap & "hp")} - reao_dmg_total
-    *if ({(reao_ap & "hp")} < 0)
+    *if ({(reao_ap & "hp")} <= 0)
       *set {(reao_ap & "hp")} 0
+      *gosub concentration_end reao_ap
   *set {(reao_lockname)} true
 *temp reao_atk_banner_text {(reao_atk_bannername)}
 *temp reao_dmg_banner_text {(reao_bannername)}
@@ -1328,8 +1336,9 @@ ${combat_player_dmg_roll_banner}
     *set combat_ally_dmg_dealt raa_dmg_after
     *gosub record_last_hit "enemy" raa_e_slot "ally" raa_a_slot
     *set {(raa_ep & "hp")} - raa_dmg_after
-    *if ({(raa_ep & "hp")} < 0)
+    *if ({(raa_ep & "hp")} <= 0)
       *set {(raa_ep & "hp")} 0
+      *gosub concentration_end raa_ep
   *set {(raa_lockname)} true
 *comment No trailing *line_break after the last banner here, deliberately -- fight_narrate_ally_attack (combat.txt),
 *comment the only caller, already opens with its own leading break. A break here too would stack into a full
@@ -1653,14 +1662,19 @@ ${combat_player_dmg_roll_banner}
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment CONCENTRATION (2026-11-15, 2024 rules, Part 1: one spell at a time)
+*comment CONCENTRATION (2026-11-15, 2024 rules, Part 1 & Part 2)
 *comment Storage: <prefix>concentrating holds the spell id ("none" when idle) on "combat_player_", "combat_enemy0..6_",
 *comment and "combat_ally0..4_" (NEVER on combat_enemy_ scratch). The existing ten-round maximums stay as each spell's
-*comment ceiling; concentration adds an earlier way for effects to drop when another concentration spell is cast.
+*comment ceiling; concentration adds two earlier ways for effects to drop: casting another concentration spell
+*comment (concentration_begin) or failing a Constitution saving throw on taking combat damage
+*comment (concentration_damage_check: DC max(10, floor(damage / 2)); Arcane Ward absorption is excluded, temp HP counts,
+*comment dropping to 0 HP makes no save). Dying also calls concentration_end. Damage checks are wired for the player
+*comment in resolve_enemy_attack; enemy/ally callers are deferred.
 *comment How to add a new concentration spell:
 *comment   1. Add "concentration": true to its record in tools/spell_book.json and run `node tools/gen_spell_book.js`.
 *comment   2. Add an explicit `*if (ce_id = "<spell_id>")` branch in concentration_end below to clear all ongoing combat
-*comment      state the spell leaves behind (explicit branches only, never construct variable names from spell_id).
+*comment      state the spell leaves behind (explicit branches only, never construct variable names from spell_id), and add
+*comment      its display name to concentration_format_ended_banner.
 *comment   3. If the spell ends on round expiry or when its targets clear/die, add its active check to
 *comment      concentration_reconcile below so concentration returns to "none" without needing another cast.
 *comment   4. Inside the cast's replay lock (combat_spells.txt / combat.txt), call
@@ -1731,7 +1745,30 @@ ${combat_player_dmg_roll_banner}
 *if (ce_id = "blade_ward")
   *if (ce_prefix = "combat_player_")
     *set blade_ward_rounds 0
+    *set blade_ward_just_cast false
   *return
+*return
+
+*label concentration_format_ended_banner
+*params cf_prefix cf_spell_id
+*temp cf_name cf_spell_id
+*if (cf_spell_id = "hex")
+  *set cf_name "Hex"
+*if (cf_spell_id = "hunters_mark")
+  *set cf_name "Hunter's Mark"
+*if (cf_spell_id = "ensnaring_strike")
+  *set cf_name "Ensnaring Strike"
+*if (cf_spell_id = "bane")
+  *set cf_name "Bane"
+*if (cf_spell_id = "cause_fear")
+  *set cf_name "Cause Fear"
+*if (cf_spell_id = "blade_ward")
+  *set cf_name "Blade Ward"
+*if (cf_prefix = "combat_player_")
+  *set combat_conc_ended_banner "[b][🔮 Concentration on ${cf_name} ends][/b]"
+*else
+  *temp cf_cname {(cf_prefix & "name")}
+  *set combat_conc_ended_banner "[b][🔮 ${cf_cname}: concentration on ${cf_name} ends][/b]"
 *return
 
 *label concentration_begin
@@ -1739,27 +1776,36 @@ ${combat_player_dmg_roll_banner}
 *set combat_conc_ended_banner ""
 *temp cb_prev {(cb_prefix & "concentrating")}
 *if (not(cb_prev = "none"))
-  *temp cb_prev_name cb_prev
-  *if (cb_prev = "hex")
-    *set cb_prev_name "Hex"
-  *if (cb_prev = "hunters_mark")
-    *set cb_prev_name "Hunter's Mark"
-  *if (cb_prev = "ensnaring_strike")
-    *set cb_prev_name "Ensnaring Strike"
-  *if (cb_prev = "bane")
-    *set cb_prev_name "Bane"
-  *if (cb_prev = "cause_fear")
-    *set cb_prev_name "Cause Fear"
-  *if (cb_prev = "blade_ward")
-    *set cb_prev_name "Blade Ward"
   *gosub concentration_end cb_prefix
   *if (not(cb_prev = cb_spell_id))
-    *if (cb_prefix = "combat_player_")
-      *set combat_conc_ended_banner "[b][🔮 Concentration on ${cb_prev_name} ends][/b]"
-    *else
-      *temp cb_cname {(cb_prefix & "name")}
-      *set combat_conc_ended_banner "[b][🔮 ${cb_cname}: concentration on ${cb_prev_name} ends][/b]"
+    *gosub concentration_format_ended_banner cb_prefix cb_prev
 *set {(cb_prefix & "concentrating")} cb_spell_id
+*return
+
+*label concentration_damage_check
+*params cdc_prefix cdc_dmg cdc_lock
+*if (cdc_dmg <= 0)
+  *return
+*temp cdc_spell {(cdc_prefix & "concentrating")}
+*if (cdc_spell = "none")
+  *return
+*comment Future enemy/ally callers guard {prefix}hp > 0 upstream (player uses hp_current, not combat_player_hp).
+*if ((cdc_prefix = "combat_player_") and (hp_current <= 0))
+  *return
+*temp cdc_half ((cdc_dmg - (cdc_dmg modulo 2)) / 2)
+*temp cdc_dc 10
+*if (cdc_half > 10)
+  *set cdc_dc cdc_half
+*set combat_save_dmg_type ""
+*comment Feat hook: War Caster would grant advantage on this concentration Constitution save.
+*set {("combat_save_locked_" & cdc_lock)} false
+*gosub resolve_save cdc_prefix "constitution" "Constitution" cdc_dc cdc_lock
+*if (cdc_prefix = "combat_player_")
+  *set combat_conc_save_triggered true
+  *set combat_conc_save_banner {("combat_save_banner_" & cdc_lock)}
+*if (check_success)
+  *gosub concentration_end cdc_prefix
+  *gosub concentration_format_ended_banner cdc_prefix cdc_spell
 *return
 
 *label concentration_reconcile
