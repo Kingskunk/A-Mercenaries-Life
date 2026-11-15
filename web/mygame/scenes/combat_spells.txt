@@ -508,6 +508,34 @@ ${combat_player_dmg_roll_banner}
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SPELL: BLINDNESS (Bard or Wizard, 2nd level): Action, 1 minute, Constitution save vs spell_save_dc.
+*comment Not concentration, no upcasting. Repeat Constitution save at the end of each of the target's turns runs in
+*comment condition_tick (combat_dice.txt). Replay-locked (combat_cast_locked) so refreshing never spends a second slot
+*comment or re-rolls the save; flavor prose (fsh) and outcome banner (combat_blindness_banner) are set inside the lock
+*comment and printed outside it.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label resolve_cast_blindness
+*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
+  *set combat_blindness_banner ""
+  *gosub spend_spell_slot 2
+  *gosub_scene combat_prose flavor_blindness
+  *temp rcb_p (("combat_enemy" & combat_active_target) & "_")
+  *gosub_scene combat_dice resolve_save rcb_p "constitution" "Constitution" spell_save_dc combat_active_target
+  *comment check_success is inverted here (resolve_save: true = the enemy FAILED the save).
+  *if (check_success)
+    *gosub_scene combat_dice condition_apply rcb_p "blinded" 10 spell_save_dc
+    *set combat_blindness_banner "[b][👁️ ${combat_enemy_name} is Blinded: its attacks have disadvantage; attacks against it have advantage][/b]"
+  *else
+    *set combat_blindness_banner "[b][💨 ${combat_enemy_name} fights off the blindness][/b]"
+  *set combat_cast_locked true
+  *set locked_combat_cast_page_id page_id
+${fsh}
+*line_break
+${combat_blindness_banner}
+*line_break
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment SPELL: BANE (Bard, 1st level -- wired into the bard_spell/bard_spell_2 pool, 2026-09-27)
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment Up to three living enemies, front-to-back (the same order everything else in this engine already

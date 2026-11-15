@@ -729,6 +729,7 @@
 *set held_burning_hands false
 *set held_thunderwave false
 *set held_unseen_servant false
+*set held_blindness false
 *gosub book_scan "wizard_spell" 12
 *gosub book_scan "warlock_spell" 6
 *gosub book_scan "bard_spell" 8
@@ -764,6 +765,7 @@
 *set known_burning_hands (((((held_burning_hands) or (race_cantrip = "burning_hands")) or (race_cantrip_2 = "burning_hands")) and ((not(class_prepares)) or (prepared_burning_hands))) and (not(spells_blocked)))
 *set known_thunderwave (((((held_thunderwave) or (race_cantrip = "thunderwave")) or (race_cantrip_2 = "thunderwave")) and ((not(class_prepares)) or (prepared_thunderwave))) and (not(spells_blocked)))
 *set known_unseen_servant (((((held_unseen_servant) or (race_cantrip = "unseen_servant")) or (race_cantrip_2 = "unseen_servant")) and ((not(class_prepares)) or (prepared_unseen_servant))) and (not(spells_blocked)))
+*set known_blindness (((((held_blindness) or (race_cantrip = "blindness")) or (race_cantrip_2 = "blindness")) and ((not(class_prepares)) or (prepared_blindness))) and (not(spells_blocked)))
 *comment GEN:END spell_book_refresh
 *comment Otherworldly Leap lets the Warlock cast Jump, so the Warlock knows it.
 *if ((inv_otherworldly_leap) and (not(spells_blocked)))
@@ -860,6 +862,8 @@
   *set held_thunderwave true
 *if (hm_id = "unseen_servant")
   *set held_unseen_servant true
+*if (hm_id = "blindness")
+  *set held_blindness true
 *return
 
 *comment BOOK CLEAR EXTRA: empties every slot after the first of every class (the Dev Hub's reset back to a level 1 loadout; a preset then sets slot 1 itself).
@@ -945,6 +949,7 @@
 *set prepared_burning_hands false
 *set prepared_thunderwave false
 *set prepared_unseen_servant false
+*set prepared_blindness false
 *set prepared_count 0
 *set prepared_count (prepared_count + 0)
 *return
@@ -1104,6 +1109,11 @@
     *set prepared_count + 1
   *else
     *set prepared_unseen_servant false
+*if (prepared_blindness)
+  *if (held_blindness)
+    *set prepared_count + 1
+  *else
+    *set prepared_blindness false
 *return
 
 *comment PREPARE SET: carry one spell, or put it back. prepare_set "magic_missile" true. It refuses to carry what is not in the book, and refuses to go
@@ -1444,6 +1454,17 @@
       *else
         *set prepared_unseen_servant false
         *set prepare_result "cleared"
+  *if (ps_id = "blindness")
+    *if (held_blindness)
+      *if (ps_on)
+        *if ((prepared_blindness) or (prepared_count < prepared_max))
+          *set prepared_blindness true
+          *set prepare_result "set"
+        *else
+          *set prepare_result "full"
+      *else
+        *set prepared_blindness false
+        *set prepare_result "cleared"
   *if ((prepare_result = "set") or (prepare_result = "cleared"))
     *gosub prepare_count
     *gosub refresh_known_spells
@@ -1550,6 +1571,9 @@
   *if (((not(prepared_unseen_servant)) and (held_unseen_servant)) and (prepared_count < prepared_max))
     *set prepared_unseen_servant true
     *set prepared_count + 1
+  *if (((not(prepared_blindness)) and (held_blindness)) and (prepared_count < prepared_max))
+    *set prepared_blindness true
+    *set prepared_count + 1
   *gosub refresh_known_spells
 *return
 
@@ -1619,6 +1643,8 @@
   *set spell_desc_text "Burning Hands—a thin sheet of flame that leaps from your spread fingers and washes over everything close enough to touch. What fails to flinch away in time carries the burn with it; what braces takes the heat and little more."
 *if (sd_id = "thunderwave")
   *set spell_desc_text "Thunderwave—a wave of thunderous force that rolls out from you in every direction, hard enough to lift what it catches off its feet. Those that fail to brace take the full weight of it and are thrown back a step; those that brace take the noise and keep their ground."
+*if (sd_id = "blindness")
+  *set spell_desc_text "Blindness—a sharp pinch of power across one foe's eyes that drops their world to dark. They swing blind and leave themselves open until they manage to force their sight back."
 *return
 
 *comment CAN COPY SPELL: may this character write this spell into their book, and what would it cost? Sets copy_result and copy_cost, and
@@ -1640,6 +1666,9 @@
   *set copy_result "not_on_list"
   *if ((cc_id = "absorb_elements") or ((cc_id = "ray_of_sickness") or ((cc_id = "alarm") or ((cc_id = "cause_fear") or ((cc_id = "comprehend_languages") or ((cc_id = "detect_magic") or ((cc_id = "false_life") or ((cc_id = "feather_fall") or ((cc_id = "grease") or ((cc_id = "identify") or ((cc_id = "jump") or ((cc_id = "mage_armor") or ((cc_id = "magic_missile") or ((cc_id = "shield") or ((cc_id = "burning_hands") or (cc_id = "thunderwave"))))))))))))))))
     *set copy_cost 10
+    *set copy_result "ok"
+  *if (cc_id = "blindness")
+    *set copy_cost 20
     *set copy_result "ok"
 *if (copy_result = "ok")
   *if (cc_id = "absorb_elements")
@@ -1689,6 +1718,9 @@
       *set copy_result "already_known"
   *if (cc_id = "thunderwave")
     *if (held_thunderwave)
+      *set copy_result "already_known"
+  *if (cc_id = "blindness")
+    *if (held_blindness)
       *set copy_result "already_known"
 *if (copy_result = "ok")
   *if (book_room_left < 1)
@@ -2500,7 +2532,11 @@ And a second.
     # Thunderwave. A wave of thunder that throws back what is close.@{show_stat_hints  [Spell: Thunderwave]|}
       *gosub_scene character_progression learn_spell "bard" "thunderwave" "Thunderwave—a wave of thunderous force that rolls out from you in every direction, hard enough to lift what it catches off its feet. Those that fail to brace take the full weight of it and are thrown back a step; those that brace take the noise and keep their ground."
       *goto level_up_bard_3_done
-  *if ((held_bane and (held_charm_person and (held_comprehend_languages and (held_cure_wounds and (held_detect_magic and ((held_disguise_self or (race = "hexblood")) and (held_dissonant_whispers and (held_healing_word and (held_speak_with_animals and held_thunderwave))))))))))
+  *if (not(held_blindness))
+    # Blindness. Strike one foe blind until they shake it off.@{show_stat_hints  [Spell: Blindness]|}
+      *gosub_scene character_progression learn_spell "bard" "blindness" "Blindness—a sharp pinch of power across one foe's eyes that drops their world to dark. They swing blind and leave themselves open until they manage to force their sight back."
+      *goto level_up_bard_3_done
+  *if ((held_bane and (held_charm_person and (held_comprehend_languages and (held_cure_wounds and (held_detect_magic and ((held_disguise_self or (race = "hexblood")) and (held_dissonant_whispers and (held_healing_word and (held_speak_with_animals and (held_thunderwave and held_blindness)))))))))))
     # You have learned all you can for now.
       *goto level_up_bard_3_done
   *comment GEN:END bard_lvl3_pick
@@ -2782,7 +2818,11 @@ And a second.
     # Thunderwave. A wave of thunder that throws back what is close.@{show_stat_hints  [Spell: Thunderwave]|}
       *gosub_scene character_progression learn_spell "wizard" "thunderwave" "Thunderwave—a wave of thunderous force that rolls out from you in every direction, hard enough to lift what it catches off its feet. Those that fail to brace take the full weight of it and are thrown back a step; those that brace take the noise and keep their ground."
       *goto level_up_wizard_3_second
-  *if ((held_absorb_elements and (held_ray_of_sickness and (held_alarm and (held_cause_fear and (held_comprehend_languages and (held_detect_magic and (held_false_life and (held_feather_fall and (held_grease and (held_identify and (held_jump and (held_mage_armor and (held_magic_missile and (held_shield and (held_burning_hands and held_thunderwave))))))))))))))))
+  *if (not(held_blindness))
+    # Blindness. Strike one foe blind until they shake it off.@{show_stat_hints  [Spell: Blindness]|}
+      *gosub_scene character_progression learn_spell "wizard" "blindness" "Blindness—a sharp pinch of power across one foe's eyes that drops their world to dark. They swing blind and leave themselves open until they manage to force their sight back."
+      *goto level_up_wizard_3_second
+  *if ((held_absorb_elements and (held_ray_of_sickness and (held_alarm and (held_cause_fear and (held_comprehend_languages and (held_detect_magic and (held_false_life and (held_feather_fall and (held_grease and (held_identify and (held_jump and (held_mage_armor and (held_magic_missile and (held_shield and (held_burning_hands and (held_thunderwave and held_blindness)))))))))))))))))
     # You have learned all you can for now.
       *goto level_up_wizard_3_second
   *comment GEN:END wizard_lvl3_pick_1
@@ -2857,7 +2897,11 @@ And a second.
     # Thunderwave. A wave of thunder that throws back what is close.@{show_stat_hints  [Spell: Thunderwave]|}
       *gosub_scene character_progression learn_spell "wizard" "thunderwave" "Thunderwave—a wave of thunderous force that rolls out from you in every direction, hard enough to lift what it catches off its feet. Those that fail to brace take the full weight of it and are thrown back a step; those that brace take the noise and keep their ground."
       *goto level_up_wizard_3_done
-  *if ((held_absorb_elements and (held_ray_of_sickness and (held_alarm and (held_cause_fear and (held_comprehend_languages and (held_detect_magic and (held_false_life and (held_feather_fall and (held_grease and (held_identify and (held_jump and (held_mage_armor and (held_magic_missile and (held_shield and (held_burning_hands and held_thunderwave))))))))))))))))
+  *if (not(held_blindness))
+    # Blindness. Strike one foe blind until they shake it off.@{show_stat_hints  [Spell: Blindness]|}
+      *gosub_scene character_progression learn_spell "wizard" "blindness" "Blindness—a sharp pinch of power across one foe's eyes that drops their world to dark. They swing blind and leave themselves open until they manage to force their sight back."
+      *goto level_up_wizard_3_done
+  *if ((held_absorb_elements and (held_ray_of_sickness and (held_alarm and (held_cause_fear and (held_comprehend_languages and (held_detect_magic and (held_false_life and (held_feather_fall and (held_grease and (held_identify and (held_jump and (held_mage_armor and (held_magic_missile and (held_shield and (held_burning_hands and (held_thunderwave and held_blindness)))))))))))))))))
     # You have learned all you can for now.
       *goto level_up_wizard_3_done
   *comment GEN:END wizard_lvl3_pick_2

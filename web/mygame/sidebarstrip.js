@@ -6,7 +6,7 @@
  *   - a strip beside the place banner, drawn outside the page containers (the engine copies and animates those on every page turn, so nothing can live inside them), showing what the player needs to see
  *     out of combat: hunger, fatigue and hygiene as pills, the time, day and date, the period and weather, the purse, Wait / Rest / Travel, and the button that opens the sidebar again (the spellbook is reached from there);
  *   - on a narrow window (the same 1100px line index.html hides the sidebar at, where it used to be missing altogether) the sidebar opens as a drawer over the story instead of a docked column.
- * In a fight on a wide window the sidebar comes back by itself (it holds the turn order); folding it while the fight lasts is allowed, and the fight's end returns to the player's choice.
+ * In a fight on a wide window the sidebar comes back by itself (it holds the turn order) and cannot be folded while the fight lasts; the fight's end returns to the player's choice.
  *
  * Nothing here has game logic. The values are read from window.stats (the same fields the sidebar reads); Wait / Rest / Travel click the sidebar's own buttons (they exist in the DOM even while it is hidden, and the
  * sidebar's click handler does the work and decides whether each is allowed: their disabled state and tooltip are mirrored); the spellbook button opens the sidebar and its spellbook.
@@ -17,7 +17,7 @@
   var KEY = "sidebar_folded";
   var NARROW = window.matchMedia ? window.matchMedia("(max-width: 1100px)") : { matches: false };
   var html = document.documentElement;
-  var strip = null, lastStrip = "", folded = false, drawer = false, combatDismissed = false, wasCombat = false;
+  var strip = null, lastStrip = "", folded = false, drawer = false;
 
   try { folded = window.localStorage.getItem(KEY) === "1"; } catch (e) { /* no storage: the sidebar simply shows */ }
 
@@ -83,12 +83,10 @@
     var charOn = !!(s.intake_completed && s.intake_completed !== "false");
     var wide = !NARROW.matches;
     var combat = isTruthy(s.combat_engaged);
-    if (combat && !wasCombat) combatDismissed = false;
-    if (!combat && wasCombat) combatDismissed = false;
-    wasCombat = combat;
 
     // the sidebar is folded away when the player chose that (and it is not a fight they have not dismissed), and always on a narrow window (where it is a drawer, opened on request)
-    var away = wide ? (folded && !(combat && !combatDismissed)) : true;
+    // In a fight on a wide window the sidebar always shows and cannot be folded (2026-11-15, the user): the strip that brings it back sits in the banner row, which a fight can cover.
+    var away = wide ? (folded && !combat) : true;
     if (!wide && !charOn) drawer = false;
     html.classList.toggle("sbHidden", charOn && wide && away);
     html.classList.toggle("sbDrawer", charOn && !wide && drawer);
@@ -115,11 +113,11 @@
   }
 
   function expand() {
-    if (NARROW.matches) drawer = true; else { folded = false; combatDismissed = false; save(); }
+    if (NARROW.matches) drawer = true; else { folded = false; save(); }
     sync();
   }
   function collapse() {
-    if (NARROW.matches) drawer = false; else { folded = true; combatDismissed = true; save(); }
+    if (NARROW.matches) drawer = false; else if (isTruthy((window.stats || {}).combat_engaged)) return; else { folded = true; save(); }
     sync();
   }
 

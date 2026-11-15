@@ -1396,6 +1396,8 @@
   *set spell_range_tag "ranged"
 *if (check_skill = "Magic Missile")
   *set spell_range_tag "ranged"
+*if (check_skill = "Blindness")
+  *set spell_range_tag "ranged"
 *if (check_skill = "Ray of Frost")
   *if (spell_range_at > combat_reach_medium)
     *set spell_in_range false
@@ -1496,11 +1498,16 @@
 *comment Advantage from the target itself (a prone enemy after grease, 2026-10-12) comes from combat_attack_edge in combat_dice.txt, the one rule every attacker, ally attacks included, asks.
 *temp cha_tag combat_attack_tag
 *set combat_attack_tag ""
+*gosub_scene combat_dice condition_has "combat_player_" "blinded"
+*if (condition_result)
+  *set disadvantage true
+  *set combat_atk_blinded true
 *gosub_scene combat_dice combat_attack_edge combat_enemy_range combat_active_target cha_tag
 *if (combat_edge_adv)
   *set advantage true
-  [b][🎯 ${combat_enemy_name}: ${combat_edge_label}. Your attack has advantage.][/b]
-  *line_break
+  *if (not(disadvantage))
+    [b][🎯 ${combat_enemy_name}: ${combat_edge_label}. Your attack has advantage.][/b]
+    *line_break
 *if (combat_player_hidden)
   *set combat_player_hidden false
   *set advantage true
@@ -1509,10 +1516,6 @@
   *set combat_hide_free_round (combat_round + 2)
   [b][👤 You strike from hiding, and your cover breaks.][/b]
   *line_break
-*gosub_scene combat_dice condition_has "combat_player_" "blinded"
-*if (condition_result)
-  *set disadvantage true
-  *set combat_atk_blinded true
 *return
 
 *label combat_hide_dc_calc
@@ -2971,6 +2974,10 @@
   *set ccf_slots_2 slot_left_2
   *if (ccf_slots_2 > 0)
     *set combat_can_fear_2 true
+*comment Blindness (Bard or Wizard, 2nd level): a 2nd-level slot, an unspent action, and the spell known/prepared.
+*temp combat_can_blindness false
+*if (((combat_player_actions_left > 0) and (known_blindness)) and (slot_left_2 > 0))
+  *set combat_can_blindness true
 *comment Grease (Wizard, 2026-11-04): a wizard slot, an unspent action, the spell carried, and a living target whose footing is not already slick. The slick spreads under everything standing in the
 *comment target's own range band, so the gate only has to ask about the target itself -- resolve_cast_grease finds the rest.
 *temp combat_can_grease false
@@ -3320,6 +3327,7 @@
 *temp spell_reach_ok_hex combat_in_medium
 *temp spell_reach_ok_hunters_mark combat_in_medium
 *temp spell_reach_ok_magic_missile combat_in_long
+*temp spell_reach_ok_blindness combat_in_long
 *comment GEN:END spell_reach_flags
 *comment Tell the player why a short-reach spell or weapon has gone from the menu, instead of letting it vanish without a word.
 *if ((combat_in_long) and (not(combat_in_medium)))
@@ -4357,6 +4365,13 @@
       *set combat_mm_darts_5 0
       *set combat_mm_darts_6 0
       *goto fight_target_cause_fear
+
+  *if (((combat_can_blindness) and (spell_reach_ok_blindness)) and (not(spells_blocked)))
+    # [b][ACTION][/b] [b][Blindness][/b] Strike ${combat_enemy_epithet} blind.@{show_stat_hints  [Constitution Save]|}
+      *if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
+        *gosub_scene combat_movement fight_pick_target
+      *gosub_scene combat_spells resolve_cast_blindness
+      *goto fight_action_spent
 
   *if (((combat_can_grease) and (spell_reach_ok_grease)) and (not(spells_blocked)))
     # [b][ACTION][/b] [b][Grease][/b] Slick the ground under ${combat_med_epithet} and whatever is standing with it.@{show_stat_hints  [Dexterity Save, Prone]|}

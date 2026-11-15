@@ -181,7 +181,12 @@
       text: "A wave of thunderous force rolls out from you in every direction, hard enough to lift what it catches off its feet. It wounds what stands close and throws it back a step; what braces for it takes the noise and holds its ground." },
     { id: "unseen_servant", name: "Unseen Servant", level: 1, schools: "Conjuration",
       time: "Action (ritual)", range: "Far", components: "V, S", duration: "An hour",
-      text: "An invisible, mindless force you can summon to fetch, carry, clean, or open things at your spoken command. It has no wits and no courage: it will not fight, and it cannot be ordered to." }
+      text: "An invisible, mindless force you can summon to fetch, carry, clean, or open things at your spoken command. It has no wits and no courage: it will not fight, and it cannot be ordered to." },
+
+    // ── 2nd-level spells ───────────────────────────────────────────────
+    { id: "blindness", name: "Blindness", level: 2, schools: "Transmutation",
+      time: "Action", components: "V", duration: "A minute",
+      text: "A sudden dark that drops over one foe's eyes. While it lasts, their blows swing blind with disadvantage and every strike against them comes easier, until their body fights the working off." }
   ];
 
   // The stat fields that can hold a spell id. The sidebar reads all of them rather than branching on
@@ -248,7 +253,8 @@
     "speak_with_animals": ["bard","ranger"],
     "burning_hands": ["wizard"],
     "thunderwave": ["wizard","bard"],
-    "unseen_servant": ["warlock"]
+    "unseen_servant": ["warlock"],
+    "blindness": ["bard","wizard"]
     };
   var SPELL_LEVELS = {
       "absorb_elements": 1,
@@ -280,7 +286,8 @@
     "speak_with_animals": 1,
     "burning_hands": 1,
     "thunderwave": 1,
-    "unseen_servant": 1
+    "unseen_servant": 1,
+    "blindness": 2
     };
   // A scroll an item grants, keyed by the spell it carries (from tools/gear_catalog.json effect.spell). A spell with no scroll
   // simply never appears among the loose leaves.
