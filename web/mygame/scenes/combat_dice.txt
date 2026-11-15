@@ -527,6 +527,17 @@ ${combat_player_dmg_roll_banner}
     *temp cea_fright {(("combat_enemy" & combat_active_target) & "_frightened")}
     *if (cea_fright > 0)
       *set combat_enemy_disadvantage true
+    *comment Blinded: attacks by a blinded combatant have disadvantage; attacks against a blinded combatant have advantage.
+    *temp cea_atk_blinded false
+    *gosub condition_has (("combat_enemy" & combat_active_target) & "_") "blinded"
+    *if (condition_result)
+      *set combat_enemy_disadvantage true
+      *set cea_atk_blinded true
+    *temp cea_def_blinded false
+    *gosub condition_has "combat_player_" "blinded"
+    *if (condition_result)
+      *set combat_enemy_advantage true
+      *set cea_def_blinded true
     *temp cea_dis false
     *comment Both disadvantage sources are precomputed into one flag rather than written as a mixed
     *comment `((A) or (B)) and (C)` condition. ChoiceScript's parser requires binary operators to be strictly
@@ -552,6 +563,8 @@ ${combat_player_dmg_roll_banner}
       *comment the Shield banner printing a stale AC. Same reason the shield fix names its own cause.
       *if (cea_ranged_pinned)
         *set cea_adv_label " (Disadvantage — in reach)"
+      *elseif (cea_atk_blinded)
+        *set cea_adv_label " (Disadvantage — Blinded)"
       *else
         *set cea_adv_label " (Disadvantage)"
     *if (cea_adv)
@@ -559,7 +572,10 @@ ${combat_player_dmg_roll_banner}
       *rand cea_roll_2 1 20
       *if (cea_roll_2 > cea_roll)
         *set cea_roll cea_roll_2
-      *set cea_adv_label " (Advantage)"
+      *if (cea_def_blinded)
+        *set cea_adv_label " (Advantage — Blinded)"
+      *else
+        *set cea_adv_label " (Advantage)"
     *comment Consumed on this actual roll (2026-09-28): reset both the bare scratch AND the per-slot field this
     *comment enemy's own storage lives in, or fight_sync_target_in would just re-sync "still true" back onto the
     *comment bare scratch the next time this same slot becomes active target.
@@ -902,6 +918,16 @@ ${combat_player_dmg_roll_banner}
     *comment A stunned ally is easy to hit (2026-11-03, RAW), the same as a stunned player.
     *if ({(reao_ap & "stunned")} > 0)
       *set combat_enemy_advantage true
+    *temp reao_atk_blinded false
+    *gosub condition_has (("combat_enemy" & combat_active_target) & "_") "blinded"
+    *if (condition_result)
+      *set combat_enemy_disadvantage true
+      *set reao_atk_blinded true
+    *temp reao_def_blinded false
+    *gosub condition_has reao_ap "blinded"
+    *if (condition_result)
+      *set combat_enemy_advantage true
+      *set reao_def_blinded true
     *temp reao_roll 0
     *rand reao_roll 1 20
     *temp reao_adv_label ""
@@ -922,6 +948,8 @@ ${combat_player_dmg_roll_banner}
         *set reao_roll reao_roll_2
       *if (reao_pinned)
         *set reao_adv_label " (Disadvantage — in reach)"
+      *elseif (reao_atk_blinded)
+        *set reao_adv_label " (Disadvantage — Blinded)"
       *else
         *set reao_adv_label " (Disadvantage)"
     *if ((combat_enemy_advantage) and ((not(combat_enemy_disadvantage)) and (not(reao_pinned))))
@@ -929,7 +957,10 @@ ${combat_player_dmg_roll_banner}
       *rand reao_roll_2 1 20
       *if (reao_roll_2 > reao_roll)
         *set reao_roll reao_roll_2
-      *set reao_adv_label " (Advantage)"
+      *if (reao_def_blinded)
+        *set reao_adv_label " (Advantage — Blinded)"
+      *else
+        *set reao_adv_label " (Advantage)"
     *comment Consumed on this actual roll (2026-09-28): reset both the bare scratch AND the per-slot field this
     *comment enemy's own storage lives in, or fight_sync_target_in would just re-sync "still true" back onto the
     *comment bare scratch the next time this same slot becomes active target.
@@ -1128,6 +1159,11 @@ ${combat_player_dmg_roll_banner}
   *set combat_edge_adv true
   *if (combat_edge_label = "")
     *set combat_edge_label "Greased"
+*gosub condition_has (("combat_enemy" & cae_slot) & "_") "blinded"
+*if (condition_result)
+  *set combat_edge_adv true
+  *if (combat_edge_label = "")
+    *set combat_edge_label "Blinded"
 *return
 
 *label resolve_ally_attack
@@ -1191,16 +1227,22 @@ ${combat_player_dmg_roll_banner}
   *temp raa_roll 0
   *rand raa_roll 1 20
   *temp raa_adv_label ""
-  *if (raa_ranged_pinned)
+  *gosub condition_has raa_ap "blinded"
+  *temp raa_blinded condition_result
+  *temp raa_dis ((raa_ranged_pinned) or (raa_blinded))
+  *if (raa_dis)
     *temp raa_roll_2 0
     *rand raa_roll_2 1 20
     *if (raa_roll_2 < raa_roll)
       *set raa_roll raa_roll_2
-    *set raa_adv_label " (Disadvantage — in reach)"
-  *comment Advantage from the target (a prone enemy, combat_attack_edge): it takes the better of two d20s, and cancels the in-reach disadvantage above if both apply.
+    *if (raa_ranged_pinned)
+      *set raa_adv_label " (Disadvantage — in reach)"
+    *else
+      *set raa_adv_label " (Disadvantage — Blinded)"
+  *comment Advantage from the target (prone/stunned/restrained/greased/blinded, combat_attack_edge): it takes the better of two d20s, and cancels disadvantage above if both apply.
   *gosub combat_attack_edge raa_range raa_e_slot ""
   *if (combat_edge_adv)
-    *if (raa_ranged_pinned)
+    *if (raa_dis)
       *comment Advantage and disadvantage cancel: one plain d20, so the lower of the two dice rolled above is thrown away.
       *rand raa_roll 1 20
       *set raa_adv_label ""
@@ -1537,5 +1579,70 @@ ${combat_player_dmg_roll_banner}
   *else
     *set {(rebd_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${rebd_dmg}${rebd_dice_note}${rebd_bonus_part} = ${rebd_dmg_total}][/b]"
     *set combat_enemy_dmg_dealt rebd_dmg_total
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SHARED COMBAT CONDITIONS (prefix-addressed: "combat_enemyN_", "combat_allyN_", "combat_player_")
+*comment Storage rule: each condition is stored as ROUNDS LEFT (0 = absent; 1 = until the end of next turn;
+*comment 10 = one minute) on <prefix><name>, with an optional repeat-save DC on <prefix><name>_dc (0 = no save).
+*comment To add a new condition:
+*comment   1. Add *create <prefix><name> 0 (and <prefix><name>_dc 0 if repeatable) in startup_parts/31_combat_engine_state.txt
+*comment      (plus mygame.js) on combat_enemy0..6_, combat_ally0..4_, and combat_player_ (NEVER combat_enemy_ scratch).
+*comment   2. Reset both fields to 0 in combat.txt fight_cleanup (enemy, ally, player) and unused-slot setup loops.
+*comment   3. Tick it in condition_tick below (with its repeat-save ability or dc = 0 countdown).
+*comment   4. Wire its mechanical effect at the narrowest shared hook and add its status/turn display in combat.txt.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label condition_apply
+*params ca_prefix ca_name ca_rounds ca_dc
+*temp ca_field (ca_prefix & ca_name)
+*temp ca_dc_field (ca_field & "_dc")
+*temp ca_cur {(ca_field)}
+*if (ca_rounds > ca_cur)
+  *set {(ca_field)} ca_rounds
+*set {(ca_dc_field)} ca_dc
+*return
+
+*label condition_has
+*params ch_prefix ch_name
+*temp ch_val {(ch_prefix & ch_name)}
+*set condition_result (ch_val > 0)
+*return
+
+*label condition_end
+*params ce_prefix ce_name
+*temp ce_field (ce_prefix & ce_name)
+*set {(ce_field)} 0
+*set {(ce_field & "_dc")} 0
+*return
+
+*label condition_tick
+*params ct_prefix ct_lock
+*gosub condition_has ct_prefix "blinded"
+*if (condition_result)
+  *temp ct_rounds {(ct_prefix & "blinded")}
+  *temp ct_dc {(ct_prefix & "blinded_dc")}
+  *temp ct_name {(ct_prefix & "name")}
+  *temp ct_ended false
+  *if (ct_dc > 0)
+    *set {("combat_save_locked_" & ct_lock)} false
+    *gosub resolve_save ct_prefix "constitution" "Constitution" ct_dc ct_lock
+    *set combat_turn_advanced_this_page true
+    *if (not(check_success))
+      *set ct_ended true
+  *if (ct_ended)
+    *gosub condition_end ct_prefix "blinded"
+    [b][👁️ ${ct_name} is no longer Blinded][/b]
+    *line_break
+    *set combat_turn_advanced_this_page true
+  *else
+    *temp ct_left (ct_rounds - 1)
+    *if (ct_left <= 0)
+      *gosub condition_end ct_prefix "blinded"
+      [b][👁️ ${ct_name} is no longer Blinded][/b]
+      *line_break
+      *set combat_turn_advanced_this_page true
+    *else
+      *set {(ct_prefix & "blinded")} ct_left
 *return
 

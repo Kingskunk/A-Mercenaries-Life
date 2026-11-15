@@ -92,6 +92,8 @@
   *if (fss_i > fss_e)
     *set {(("combat_enemy" & fss_i) & "_hp")} 0
     *set {(("combat_enemy" & fss_i) & "_max_hp")} 0
+    *set {(("combat_enemy" & fss_i) & "_blinded")} 0
+    *set {(("combat_enemy" & fss_i) & "_blinded_dc")} 0
   *set fss_i (fss_i + 1)
   *goto fight_setup_stale_loop
 *set fss_i 1
@@ -101,6 +103,8 @@
     *set {(("combat_ally" & fss_i) & "_hp")} 0
     *set {(("combat_ally" & fss_i) & "_max_hp")} 0
     *set {(("combat_ally" & fss_i) & "_name")} "none"
+    *set {(("combat_ally" & fss_i) & "_blinded")} 0
+    *set {(("combat_ally" & fss_i) & "_blinded_dc")} 0
   *set fss_i (fss_i + 1)
   *goto fight_setup_stale_ally_loop
 *gosub_scene character_progression refresh_known_spells
@@ -971,6 +975,8 @@
   *comment whatever fight reuses this slot number next.
   *set {(fc_p & "slowed")} 0
   *set {(fc_p & "frightened")} 0
+  *set {(fc_p & "blinded")} 0
+  *set {(fc_p & "blinded_dc")} 0
   *set {(fc_p & "disadvantage")} false
   *set {(fc_p & "advantage")} false
   *comment Range: 0 means Engaged, every type's default -- reset per-slot for the same reason as Bane above.
@@ -1076,8 +1082,12 @@
   *set {(("combat_ally" & fc_a_i) & "_can_retreat")} false
   *set {(("combat_ally" & fc_a_i) & "_flee_hp_pct")} 0
   *set {(("combat_ally" & fc_a_i) & "_bane_expires_round")} 0
+  *set {(("combat_ally" & fc_a_i) & "_blinded")} 0
+  *set {(("combat_ally" & fc_a_i) & "_blinded_dc")} 0
   *set fc_a_i + 1
   *goto fight_cleanup_ally_loop
+*set combat_player_blinded 0
+*set combat_player_blinded_dc 0
 *set player_last_hit_kind ""
 *set player_last_hit_slot 0
 *set player_last_hit_round 0
@@ -1499,6 +1509,10 @@
   *set combat_hide_free_round (combat_round + 2)
   [b][👤 You strike from hiding, and your cover breaks.][/b]
   *line_break
+*gosub_scene combat_dice condition_has "combat_player_" "blinded"
+*if (condition_result)
+  *set disadvantage true
+  *set combat_atk_blinded true
 *return
 
 *label combat_hide_dc_calc
@@ -1885,6 +1899,13 @@
 *set check_dc combat_enemy_ac
 *set check_add_prof_bonus true
 *gosub combat_apply_weapon_magic_attack
+*gosub_scene combat_dice combat_attack_edge 0 combat_active_target ""
+*if (combat_edge_adv)
+  *set advantage true
+*gosub_scene combat_dice condition_has "combat_player_" "blinded"
+*if (condition_result)
+  *set disadvantage true
+  *set combat_atk_blinded true
 *gosub_scene dice_engine roll_d20_check
 *set check_flat_bonus 0
 *if (check_success)
@@ -2505,6 +2526,7 @@
 *comment The chain of enemy and ally turns starts here (see REPLAY-SAFE TURN CHAINS above).
 *gosub combat_chain_begin
 *gosub blade_ward_tick
+*gosub_scene combat_dice condition_tick "combat_player_" 7
 *goto combat_next_turn
 
 *label combat_spend_attack
@@ -2742,6 +2764,12 @@
 *if (agathys_active)
   *line_break
   [b][❄️ Armor of Agathys Active — ${temp_hp} Temp HP | 5 Cold Damage Retaliation][/b]
+*if (combat_player_blinded > 0)
+  *line_break
+  *if (combat_player_blinded = 1)
+    [b][👁️ Blinded (1 round) — your attacks have disadvantage; attacks against you have advantage][/b]
+  *else
+    [b][👁️ Blinded (${combat_player_blinded} rounds) — your attacks have disadvantage; attacks against you have advantage][/b]
 *if (combat_player_bonus_left < combat_player_bonus_max)
   *line_break
   [b][⚡ Bonus action used | ${combat_player_bonus_left} left this round][/b]
@@ -6962,6 +6990,14 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *line_break
     *set combat_active_target cnt_slot
     *gosub fight_sync_target_in
+    *gosub_scene combat_dice condition_has (("combat_enemy" & cnt_slot) & "_") "blinded"
+    *if (condition_result)
+      *temp cnt_eb {(("combat_enemy" & cnt_slot) & "_blinded")}
+      *if (cnt_eb = 1)
+        [b][👁️ ${combat_enemy_name} is Blinded (1 round)][/b]
+      *else
+        [b][👁️ ${combat_enemy_name} is Blinded (${cnt_eb} rounds)][/b]
+      *line_break
     *gosub_scene combat_ai find_intercepting_ally
     *comment A melee enemy picks its NEAREST opponent instead (choose_melee_enemy_target, combat_ai.txt): it overwrites combat_intercepting_ally and sets combat_enemy_goal_ally. Ranged enemies keep the line above as it was.
     *set combat_enemy_goal_ally 0
@@ -7515,6 +7551,9 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
         *set {(("combat_enemy" & cnt_slot) & "_frightened")} 0
         [b][😌 ${combat_enemy_name} shakes off the fear][/b]
         *line_break
+    *if (combat_enemy_hp > 0)
+      *temp cnt_cp (("combat_enemy" & cnt_slot) & "_")
+      *gosub_scene combat_dice condition_tick cnt_cp cnt_slot
 *if (cnt_kind = "ally")
   *comment select_ally_attack_target (2026-09-29, plan §11.1) picks this ally's target: ranged-prefers-ranged or
   *comment melee-prefers-closest-tier, falling back to fight_pick_target's own plain kill-priority (2026-09-28)
@@ -7524,14 +7563,23 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *comment Turn divider -- see the matching comment in the enemy branch above.
     ────────────────────
     *line_break
+    *gosub_scene combat_dice condition_has (("combat_ally" & cnt_slot) & "_") "blinded"
+    *if (condition_result)
+      *temp cnt_ab {(("combat_ally" & cnt_slot) & "_blinded")}
+      *temp cnt_aname {(("combat_ally" & cnt_slot) & "_name")}
+      *if (cnt_ab = 1)
+        [b][👁️ ${cnt_aname} is Blinded (1 round)][/b]
+      *else
+        [b][👁️ ${cnt_aname} is Blinded (${cnt_ab} rounds)][/b]
+      *line_break
     *comment STUN, ally side (2026-11-03): a stunned ally loses the turn before anything else, through the same gate as an enemy.
     *gosub combat_stun_gate "ally" cnt_slot
     *if (combat_stun_stop)
-      *goto combat_next_turn
+      *goto cnt_ally_tail
     *comment MORALE (2026-11-03): a wavering ally falls back and covers up instead of fighting (see MORALE).
     *gosub combat_morale_turn "ally" cnt_slot
     *if (combat_morale_stop)
-      *goto combat_next_turn
+      *goto cnt_ally_tail
     *temp cnt_a_chase_target {(("combat_ally" & cnt_slot) & "_chase_target")}
     *comment Ally-side rows 3-4 mirror (2026-09-29, on request): read fresh, before the chase check, since a
     *comment retreat/disengage decision needs this ally's OWN weapon/range/can_retreat -- unlike the shot-resolution
@@ -7769,6 +7817,10 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
               *gosub fight_check_all_dead
               *if (combat_all_enemies_dead)
                 *goto fight_victory
+    *label cnt_ally_tail
+    *if ({(("combat_ally" & cnt_slot) & "_hp")} > 0)
+      *temp cnt_ap (("combat_ally" & cnt_slot) & "_")
+      *gosub_scene combat_dice condition_tick cnt_ap 0
 *goto combat_next_turn
 
 *comment ============================================================================
