@@ -136,8 +136,7 @@
 *set true_strike_on false
 *set true_strike_radiant false
 *set combat_save_quiet false
-*set blade_ward_active false
-*set blade_ward_survived_a_turn false
+*set blade_ward_rounds 0
 *set dodge_active false
 *set is_raging false
 *set combat_agathys_triggered false
@@ -688,8 +687,7 @@
 *set true_strike_on false
 *set true_strike_radiant false
 *set combat_save_quiet false
-*set blade_ward_active false
-*set blade_ward_survived_a_turn false
+*set blade_ward_rounds 0
 *set dodge_active false
 *set is_raging false
 *set combat_agathys_triggered false
@@ -1787,7 +1785,7 @@
 *comment
 *comment **Deliberately reuses resolve_enemy_attack and fight_narrate_enemy_turn whole, with no parallel path.**
 *comment That is what makes an opportunity attack behave like every other hit the player takes, for free: Shield
-*comment can still break through it, Armor of Agathys still bites back, Blade Ward still halves it, resistance,
+*comment can still break through it, Armor of Agathys still bites back, resistance,
 *comment vulnerability, temp HP, conditions and stun all still apply, and the death and rescue checks still run.
 *comment Writing a "simpler" OA resolver would have quietly forked all of that. fight_narrate_enemy_turn is
 *comment equally safe to reuse: it narrates "this enemy attacks you" and nothing about closing distance, which
@@ -2494,22 +2492,15 @@
 *return
 
 *label blade_ward_tick
-*comment Advances Blade Ward's "until the end of your next turn" by ONE player turn. Called from
-*comment fight_end_player_turn only, which is the whole point: combat_next_turn itself recurses once per
-*comment COMBATANT (the enemy branch *goto's back into it at the bottom of the label), so a tick placed
-*comment there would fire again after every single enemy attack and the ward would evaporate before the
-*comment second enemy ever swung. Survived-then-clear gives the RAW span exactly: the first player
-*comment turn-end after the cast sets survived, the second one clears.
-*comment A turn lost to a stun still counts as a turn (player_stunned routes through the same shim) --
-*comment agreed house rule, and the conservative reading.
+*comment Advances Blade Ward's 10-round concentration count by ONE player turn (fight_end_player_turn only).
+*comment A turn lost to a stun still counts as a turn here.
 *comment Replay-locked on the page_id idiom: an unguarded *set here re-runs on page replay and would
-*comment expire the ward a full turn early.
+*comment expire the ward early.
 *if (not(blade_ward_tick_locked)) or (not(locked_blade_ward_tick_page_id = page_id))
-  *if (blade_ward_active)
-    *if (blade_ward_survived_a_turn)
-      *set blade_ward_active false
-    *else
-      *set blade_ward_survived_a_turn true
+  *if (blade_ward_rounds > 0)
+    *set blade_ward_rounds - 1
+    *if (blade_ward_rounds <= 0)
+      *gosub_scene combat_dice concentration_reconcile
   *set blade_ward_tick_locked true
   *set locked_blade_ward_tick_page_id page_id
 *return
@@ -2724,17 +2715,9 @@
 *elseif (combat_round < combat_hide_free_round)
   *line_break
   [b][👁️ You were just seen: no hiding again until a turn has passed][/b]
-*if (blade_ward_active)
+*if (blade_ward_rounds > 0)
   *line_break
-  *comment blade_ward_survived_a_turn true means this is its SECOND displayed round -- the tick
-  *comment (blade_ward_tick, above) clears blade_ward_active the moment this turn ends, before that
-  *comment round's own attacks resolve, so the plain banner would claim protection for a round that's
-  *comment already spent. Blade Ward cannot be recast while it is up or fading (see combat_can_blade_ward), so
-  *comment the ward is only ever protecting on alternating rounds.
-  *if (blade_ward_survived_a_turn)
-    [b][🛡️ Blade Warded — fading, clears when you end this turn][/b]
-  *else
-    [b][🛡️ Blade Warded — slashing, piercing & bludgeoning attacks hit for half][/b]
+  [b][🛡️ Blade Warded (@{(blade_ward_rounds = 1) 1 round|${blade_ward_rounds} rounds}) — enemies subtract 1d4 from attack rolls against you][/b]
 *if (combat_inspired_self)
   *line_break
   [b][🎵 Inspired: a 1d${bard_inspiration_die_sides} waits to save a failed roll][/b]
@@ -3063,16 +3046,11 @@
 *temp combat_can_rage false
 *if (((character_class = "barbarian") and (not(is_raging))) and (barbarian_rage_uses > 0))
   *set combat_can_rage true
-*comment Blade Ward: a cantrip, so no spell-slot gate (contrast Healing Word above) -- just "do you know
-*comment it" across the three caster cantrip families, which is why it is one long or-chain over seven
-*comment variables rather than a character_class test. Gated on not(blade_ward_active) (2026-10-01): RAW lets you
-*comment re-cast to refresh, but recasting while it was fading kept the ward up every round, so a caster could trade
-*comment blows with a fighter. It can now only be cast again once it has fully expired, which is every other round.
+*comment Blade Ward (2024 rules): an action cantrip with concentration up to 1 minute (10 rounds).
+*comment May be recast while active to refresh the count and keep concentration.
 *temp combat_can_blade_ward false
-*if (known_blade_ward)
+*if ((combat_player_actions_left > 0) and (known_blade_ward))
   *set combat_can_blade_ward true
-*if (blade_ward_active)
-  *set combat_can_blade_ward false
 *comment CONTROL FLAMES (2026-10-19, the user): offered while some enemy burns and another living enemy on the SAME lane tile has less fire than it (combat_spread_scan).
 *temp combat_can_spread false
 *if ((known_control_flames) and (combat_player_actions_left > 0))
@@ -3103,12 +3081,8 @@
 *if (((feature_magical_cunning) and (not(magical_cunning_used))) and (pact_slots < pact_slots_max))
   *set combat_can_magical_cunning true
 *temp combat_bonus_available false
-*comment Blade Ward MUST be in this or-chain. It is what separates "bonus action still unspent" from
-*comment "nothing left to spend at all" for the auto-end check below -- leave it out and that check
-*comment concludes the turn is over, never shows the hub, and the option becomes unreachable forever.
+*comment Lists every usable bonus-action feature so the auto-end check knows when a bonus action can still be spent.
 *if (((combat_can_hex) or (combat_can_healing_word)) or ((combat_can_second_wind) or (combat_can_rage)))
-  *set combat_bonus_available true
-*if (combat_can_blade_ward)
   *set combat_bonus_available true
 *if (combat_can_hunters_mark)
   *set combat_bonus_available true
@@ -3873,6 +3847,14 @@
       *line_break
       [b][🔥 Control Flames: the fire spreads to @{(combat_spread_done_n = 1) 1 other foe|${combat_spread_done_n} other foes}][/b]
       *line_break
+      *goto fight_action_spent
+
+  *if ((combat_can_blade_ward) and (not(spells_blocked)))
+    # [b][ACTION][/b] [b][Blade Ward][/b] Trace a shifting ward that spoils incoming attacks.@{show_stat_hints  [Concentration, 10 rounds: -1d4 to enemy attack rolls]|}
+      *gosub_scene combat_spells resolve_cast_blade_ward
+      You trace a shifting sigil in the air, and a faint haze of force shimmers around you, throwing off anyone trying to line up a blow.
+      *line_break
+      *gosub_scene combat_prose print_concentration_ended_banner
       *goto fight_action_spent
 
   *if ((((combat_player_actions_left > 0) and (known_fire_bolt))) and (not(spells_blocked)))
@@ -4667,19 +4649,6 @@
     # [b][BONUS ACTION][/b] [b][Rage][/b] Let the fury take you.
       *gosub_scene character_progression activate_rage
       A hot, roaring pressure floods your chest, dulling the pain and the fear to nothing at all.
-      *line_break
-      *goto fight_bonus_spent
-
-  *if (((combat_can_blade_ward) and (combat_player_bonus_left > 0)) and (not(spells_blocked)))
-    # [b][BONUS ACTION][/b] [b][Blade Ward][/b] Blows land on the sigil, not on you.
-      *comment Sets BOTH flags so a fresh cast always starts clean. Only offered when no ward is up or fading.
-      *comment Idempotent, so this pair needs no replay lock (the tick, which is not idempotent, has
-      *comment one). No spell-slot cost: it is a cantrip.
-      *set blade_ward_active true
-      *set blade_ward_survived_a_turn false
-      You extend your hand and trace a sigil of warding in the air, and the blows that follow find the sigil instead of you.
-      *comment No banner here: the hub's own "Blade Warded" status line reopens with this same page
-      *comment and says the same thing, exactly as Shield does (see its option above).
       *line_break
       *goto fight_bonus_spent
 

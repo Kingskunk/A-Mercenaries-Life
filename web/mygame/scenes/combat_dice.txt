@@ -81,14 +81,11 @@
 *comment explicitly -- there's no default that would silently let a save-based spell through.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label adjust_incoming_damage_packet
-*comment The player as defender: ONE damage packet through the shared core, so a piercing bite and its poison rider are resolved separately in the same hit. Rage and Blade Ward (the three physical types) and Brine Antivenom (poison)
+*comment The player as defender: ONE damage packet through the shared core, so a piercing bite and its poison rider are resolved separately in the same hit. Rage (the three physical types) and Brine Antivenom (poison)
 *comment are resistances granted in code, not in the lists, so they ride in on combat_extra_resist and cancel against a vulnerability to the same type like any other.
 *params aidp_amount aidp_type
 *set combat_extra_resist false
 *if ((character_class = "barbarian") and (is_raging))
-  *if (((aidp_type = "bludgeoning") or (aidp_type = "piercing")) or (aidp_type = "slashing"))
-    *set combat_extra_resist true
-*if (blade_ward_active)
   *if (((aidp_type = "bludgeoning") or (aidp_type = "piercing")) or (aidp_type = "slashing"))
     *set combat_extra_resist true
 *if ((aidp_type = "poison") and (brine_minutes_left > 0))
@@ -602,6 +599,15 @@ ${combat_player_dmg_roll_banner}
       *rand cea_bane_die 1 4
       *set combat_enemy_atk_total - cea_bane_die
       *set cea_bane_str " -${cea_bane_die} (Bane)"
+    *comment Blade Ward (2024 rules): Concentration cantrip. While blade_ward_rounds > 0, each attack roll
+    *comment against the player subtracts a fresh 1d4, stacking with Bane. Save-based enemy attacks skip
+    *comment this attack-roll branch completely.
+    *temp cea_bw_str ""
+    *if (blade_ward_rounds > 0)
+      *temp cea_bw_die 0
+      *rand cea_bw_die 1 4
+      *set combat_enemy_atk_total - cea_bw_die
+      *set cea_bw_str " -${cea_bw_die} (Blade Ward)"
     *comment Dodge (RAW +5 AC for the current turn) and Shield (RAW +5 AC when hit) are BOTH just additions to
     *comment the AC an attack is tested against, and they stack. Building cea_dc ONCE, up front, and testing
     *comment everything against it keeps the three things that must agree -- the hit check, Shield's re-check,
@@ -678,7 +684,7 @@ ${combat_player_dmg_roll_banner}
         *set cea_ac_str " (Shield cannot stop this hit)"
       *else
         *set cea_ac_str " (Shield not needed)"
-    *set {(cea_atk_bannername)} "[b][🎲 ${combat_enemy_name} Attack Roll: ${cea_roll} ${cea_atk_bonus_str}${combat_high_ground_attack_label}${cea_adv_label}${cea_bane_str} = ${combat_enemy_atk_total} vs AC ${cea_dc}${cea_ac_str} — ${cea_atk_verdict}][/b]"
+    *set {(cea_atk_bannername)} "[b][🎲 ${combat_enemy_name} Attack Roll: ${cea_roll} ${cea_atk_bonus_str}${combat_high_ground_attack_label}${cea_adv_label}${cea_bane_str}${cea_bw_str} = ${combat_enemy_atk_total} vs AC ${cea_dc}${cea_ac_str} — ${cea_atk_verdict}][/b]"
   *set combat_enemy_dmg_dealt 0
   *set combat_agathys_triggered false
   *set combat_agathys_shattered false
@@ -1722,6 +1728,10 @@ ${combat_player_dmg_roll_banner}
       *set ce_fi + 1
       *goto ce_fear_loop
   *return
+*if (ce_id = "blade_ward")
+  *if (ce_prefix = "combat_player_")
+    *set blade_ward_rounds 0
+  *return
 *return
 
 *label concentration_begin
@@ -1740,17 +1750,24 @@ ${combat_player_dmg_roll_banner}
     *set cb_prev_name "Bane"
   *if (cb_prev = "cause_fear")
     *set cb_prev_name "Cause Fear"
+  *if (cb_prev = "blade_ward")
+    *set cb_prev_name "Blade Ward"
   *gosub concentration_end cb_prefix
-  *if (cb_prefix = "combat_player_")
-    *set combat_conc_ended_banner "[b][🔮 Concentration on ${cb_prev_name} ends][/b]"
-  *else
-    *temp cb_cname {(cb_prefix & "name")}
-    *set combat_conc_ended_banner "[b][🔮 ${cb_cname}: concentration on ${cb_prev_name} ends][/b]"
+  *if (not(cb_prev = cb_spell_id))
+    *if (cb_prefix = "combat_player_")
+      *set combat_conc_ended_banner "[b][🔮 Concentration on ${cb_prev_name} ends][/b]"
+    *else
+      *temp cb_cname {(cb_prefix & "name")}
+      *set combat_conc_ended_banner "[b][🔮 ${cb_cname}: concentration on ${cb_prev_name} ends][/b]"
 *set {(cb_prefix & "concentrating")} cb_spell_id
 *return
 
 *label concentration_reconcile
 *if (combat_player_concentrating = "none")
+  *return
+*if (combat_player_concentrating = "blade_ward")
+  *if (blade_ward_rounds <= 0)
+    *gosub concentration_end "combat_player_"
   *return
 *if (combat_player_concentrating = "hex")
   *if ((not(hex_active)) or (hex_target_slot <= 0))

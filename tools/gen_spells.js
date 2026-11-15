@@ -37,7 +37,9 @@ Object.keys(cantrips).forEach(function (id) {
     throw new Error("spell id '" + id + "' appears in both cantrips and learnable");
   }
   var c = cantrips[id];
-  spells.push({ id: id, name: c && c.name, range: c && c.range, reach: c && c.reach });
+  if (c && Object.prototype.hasOwnProperty.call(c, "range")) {
+    spells.push({ id: id, name: c.name, range: c.range, reach: c.reach });
+  }
 });
 Object.keys(learnable).forEach(function (id) {
   var l = learnable[id];

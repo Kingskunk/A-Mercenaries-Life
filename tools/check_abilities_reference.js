@@ -38,7 +38,7 @@ const requiredText = [
   "False Life — Action · Self · 12 hours.",
   "Ray of Frost — Combat: Action · Medium Reach",
   "Chill Touch — Combat: Action · Medium Reach",
-  "Blade Ward — Combat: Bonus Action.",
+  "Blade Ward — Combat: Action · Concentration, up to 10 rounds.",
   "Dissonant Whispers — Combat: Action · Medium Reach",
   "3d6 + casting modifier Psychic damage",
   "At certain lethal moments, you can endure the blow instead of falling."

@@ -415,7 +415,7 @@
 *create combat_flavor_weapon_blocked ""
 *create combat_defense_prefix ""
 *comment The defense core (combat_dice.txt adjust_damage_packet) reads the DEFENDER by field prefix ("combat_enemy_", "combat_enemy3_", "combat_ally2_", "player_") and the ATTACKER's weapon through these scratch flags, which a caller sets just before it
-*comment sets combat_packet_is_weapon true: combat_atk_magical, _silvered and _adamantine. combat_extra_resist is true when code outside the lists grants resistance to the type (Rage, Blade Ward, Brine Antivenom). combat_def_* are what defense_flags found.
+*comment sets combat_packet_is_weapon true: combat_atk_magical, _silvered and _adamantine. combat_extra_resist is true when code outside the lists grants resistance to the type (Rage, Brine Antivenom). combat_def_* are what defense_flags found.
 *create combat_atk_magical false
 *create combat_atk_silvered false
 *create combat_atk_adamantine false
@@ -2572,20 +2572,13 @@
 *create combat_mm_banner_4 ""
 *create combat_mm_banner_5 ""
 *create combat_mm_banner_6 ""
-*comment BLADE WARD (house rule: a bonus-action Blade Ward, not RAW's 1 action) -- a cantrip for
-*comment warlocks, wizards and bards. Until the end of your NEXT turn you have resistance to
-*comment bludgeoning, piercing and slashing from weapon attacks. Two flags because "end of your next
-*comment turn" is a duration measured in player turns, not rounds:
-*create blade_ward_active false
-*comment blade_ward_survived_a_turn set true by the FIRST player turn-end after the cast, which is
-*comment                                what makes the SECOND one expire it (see blade_ward_tick, combat.txt)
-*comment The re-cast resets survived_a_turn as well as active: without that, casting on the turn after
-*comment the ward looks like a no-op and the effect still dies a turn early. Idempotent, so it needs
-*comment no replay lock of its own (unlike the tick, which does).
-*create blade_ward_survived_a_turn false
-*comment Replay guard for blade_ward_tick: it mutates a fight-scoped flag, and a bare *set re-runs when
-*comment the page is replayed, which would expire the ward a whole turn early. Same page_id idiom as
-*comment combat_spend_bonus (create at startup.txt:1053-1054).
+*comment BLADE WARD (2024 rules) -- a cantrip for bards, warlocks, and wizards. Action, Concentration,
+*comment up to 1 minute (10 rounds). While > 0, each attack roll against the player subtracts 1d4.
+*comment Ticks down by 1 at the end of each player turn in blade_ward_tick (combat.txt).
+*create blade_ward_rounds 0
+*comment Replay guard for blade_ward_tick: it mutates a fight-scoped counter, and a bare *set re-runs when
+*comment the page is replayed, which would expire the ward early. Same page_id idiom as
+*comment combat_spend_bonus.
 *create blade_ward_tick_locked false
 *create locked_blade_ward_tick_page_id 0
 *comment ═══ DODGE (2026-09-28) ═══ RAW 2014 "Actions in Combat": +5 AC for the current turn, and you cannot

@@ -80,7 +80,7 @@ The player-facing card must identify one of these states:
 
 | Spell | Status | Implemented effect |
 |---|---|---|
-| Blade Ward | Combat | Bonus action; halves weapon bludgeoning, piercing and slashing damage through the end of the next turn; cannot be refreshed while active. |
+| Blade Ward | Combat | Action; concentration up to 10 rounds; creatures subtract `1d4` from attack rolls against you. |
 | Booming Blade | Combat | Engaged melee weapon attack; a hit marks the target and voluntary movement triggers Thunder damage. |
 | True Strike | Combat | One weapon attack using the casting ability; choose normal weapon damage or Radiant; gains scaling Radiant dice from level 5. |
 | Fire Bolt | Combat / Exploration | Long Reach spell attack for `1d10` Fire; also starts camp and crafting fires. |

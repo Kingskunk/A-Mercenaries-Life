@@ -35,8 +35,8 @@
   var SPELL_DATA = [
     // ── Cantrips (level 0) ──
     { id: "blade_ward", name: "Blade Ward", level: 0, schools: "Abjuration",
-      time: "Action", range: "Self", components: "V, S", duration: "One round",
-      text: "A warding sign cut in the air, thickening it against steel. Until your next turn, weapon blows land softer. Worth the turn when you are badly hurt and cannot get out of reach, and wasted at any other time." },
+      time: "Action", range: "Self", components: "V, S", duration: "Concentration, a minute",
+      text: "A shifting ward of force traced in the air. While you concentrate, any creature that makes an attack roll against you subtracts 1d4 from the roll." },
     { id: "booming_blade", name: "Booming Blade", level: 0, schools: "Evocation",
       time: "Action", range: "Your weapon's reach", components: "S, weapon", duration: "One round",
       text: "You strike with your weapon and leave the air around the target humming with stored thunder. The blow lands as a normal melee attack; if the target then moves, the hum breaks and deals 1d8 thunder damage." },

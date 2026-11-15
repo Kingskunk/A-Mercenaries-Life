@@ -574,7 +574,9 @@ function genJsCopy() {
   L.push("var SPELL_LEVELS = {");
   L.push(ids.map(function (id) { return "    " + JSON.stringify(id) + ": " + BOOK.learnable[id].level; }).join(",\n"));
   L.push("  };");
-  var concIds = ids.filter(function (id) { return Boolean(BOOK.learnable[id].concentration); });
+  var cantripIds = Object.keys(BOOK.cantrips || {});
+  var concIds = cantripIds.filter(function (id) { return Boolean(BOOK.cantrips[id] && BOOK.cantrips[id].concentration); })
+    .concat(ids.filter(function (id) { return Boolean(BOOK.learnable[id].concentration); }));
   L.push("var SPELL_CONCENTRATION = {");
   L.push(concIds.map(function (id) { return "    " + JSON.stringify(id) + ": true"; }).join(",\n"));
   L.push("  };");
