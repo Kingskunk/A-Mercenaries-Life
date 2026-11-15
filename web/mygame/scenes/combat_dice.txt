@@ -820,10 +820,16 @@ ${combat_player_dmg_roll_banner}
     *else
       *if (hp_current < 1)
         *set hp_current 1
-    *temp cea_conc_prev_quiet combat_save_quiet
-    *set combat_save_quiet true
-    *gosub concentration_damage_check "combat_player_" cea_post_ward 7
-    *set combat_save_quiet cea_conc_prev_quiet
+    *comment A hit that stuns (2026-11-15, the user, 2024 rules): Stunned includes Incapacitated, which ends concentration outright, so no save is rolled. A blow that also ends the fight
+    *comment (0 HP, or 1 HP in a non-lethal fight) falls through to the damage check, which skips itself.
+    *temp cea_conc_down ((hp_current <= 0) or ((not(combat_player_can_die)) and (hp_current <= 1)))
+    *if ((combat_stun_inflicted) and (not(cea_conc_down)))
+      *gosub concentration_end_incapacitated "combat_player_"
+    *else
+      *temp cea_conc_prev_quiet combat_save_quiet
+      *set combat_save_quiet true
+      *gosub concentration_damage_check "combat_player_" cea_post_ward 7
+      *set combat_save_quiet cea_conc_prev_quiet
     *comment HELLISH REBUKE (Warlock): armed earlier, it fires on the first hit that actually damages the player, spending a Pact Magic slot and the reaction. The attacker makes a
     *comment Dexterity save; 2d10 fire, half on a save. Anything that resists or is vulnerable to fire is handled by the same outgoing check as every other player damage.
     *comment A hit that stuns also takes the reaction it would have answered with (the stun lands with the blow, just above), RAW.
@@ -1782,6 +1788,17 @@ ${combat_player_dmg_roll_banner}
 *set {(cb_prefix & "concentrating")} cb_spell_id
 *return
 
+*comment Incapacitated (Stunned and the like) ends concentration with no save. Builds the same "ends" banner the damage save does; the caller prints it.
+*comment Wired for the player's stun in resolve_enemy_attack. An enemy or ally that concentrates calls this wherever it is stunned.
+*label concentration_end_incapacitated
+*params cei_prefix
+*temp cei_spell {(cei_prefix & "concentrating")}
+*if (cei_spell = "none")
+  *return
+*gosub concentration_end cei_prefix
+*gosub concentration_format_ended_banner cei_prefix cei_spell
+*return
+
 *label concentration_damage_check
 *params cdc_prefix cdc_dmg cdc_lock
 *if (cdc_dmg <= 0)
@@ -1791,6 +1808,9 @@ ${combat_player_dmg_roll_banner}
   *return
 *comment Future enemy/ally callers guard {prefix}hp > 0 upstream (player uses hp_current, not combat_player_hp).
 *if ((cdc_prefix = "combat_player_") and (hp_current <= 0))
+  *return
+*comment A non-lethal fight stops the player at 1 HP and ends there as a rescue (combat_next_turn), so that blow is the same as dropping to 0: no save.
+*if (((cdc_prefix = "combat_player_") and (not(combat_player_can_die))) and (hp_current <= 1))
   *return
 *temp cdc_half ((cdc_dmg - (cdc_dmg modulo 2)) / 2)
 *temp cdc_dc 10
