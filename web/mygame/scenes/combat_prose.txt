@@ -54,6 +54,7 @@
 *comment "archer"/"slinger" so the type reverts to its normal bow/sling lines next turn) is enough to pull the
 *comment dagger pool instead of the bow/sling one below, with no other change to this label's own logic.
 *if (combat_enemy_used_sidearm) and (not(fnet_type = ""))
+  *comment Quick-draw / melee-range sidearm (dagger for archer/slinger, Burning Hands for hedge_mage): both route through the _dagger pool suffix.
   *set fnet_type "${fnet_type}_dagger"
 *comment Per-slot replay lock (2026-09-30, real bug caught live via refresh_fuzz_test.js): this label is called
 *comment once per acting enemy per turn, and several enemies can act within one page before the player's next
@@ -185,6 +186,8 @@
   *if (combat_enemy_hit_success)
     *if (combat_incoming_blocked)
       ${combat_flavor_incoming_blocked}
+    *elseif (combat_enemy_save_halved)
+      ${fnet_miss}
     *else
       ${fnet_hit}
     *line_break
@@ -284,7 +287,32 @@
 *rand fnaa_v 1 5
 *temp fnaa_line ""
 *if (fnaa_knife)
-  *gosub flavor_ally_dagger
+  *if (fnaa_type = "hedge_mage")
+    *comment The caster's melee-range fallback against an ally: Burning Hands (3d6 fire, DEX save DC 13, half on a save).
+    *if (combat_enemy_save_halved) or (not(fnaa_hit))
+      *if (fnaa_v = 1)
+        *set fnaa_line "$!{combat_attacker_epithet} snaps their wrists together and looses an arc of flame, and ${combat_defender_epithet} ducks clear of the core while the outer sparks singe their shoulder."
+      *if (fnaa_v = 2)
+        *set fnaa_line "$!{combat_attacker_epithet} sends a sheet of fire roaring forward, and ${combat_defender_epithet} twists sideways just enough to take only the scorching edge."
+      *if (fnaa_v = 3)
+        *set fnaa_line "At arm's length, ${combat_attacker_epithet} sweeps a fan of fire across the gap, and ${combat_defender_epithet} pivots clear of its heart so only the outer tongue catches their ribs."
+      *if (fnaa_v = 4)
+        *set fnaa_line "Flame bursts from ${combat_attacker_epithet}'s spread fingers, and ${combat_defender_epithet} drops low under the main blast as heat rolls over their back."
+      *if (fnaa_v = 5)
+        *set fnaa_line "$!{combat_attacker_epithet} lets loose a sudden fan of flame, and ${combat_defender_epithet} throws an arm up and reels back from the worst of it."
+    *else
+      *if (fnaa_v = 1)
+        *set fnaa_line "$!{combat_attacker_epithet} spreads both hands wide, thumbs locked, and a roaring fan of flame washes straight across ${combat_defender_epithet}."
+      *if (fnaa_v = 2)
+        *set fnaa_line "$!{combat_attacker_epithet} drives both palms forward, and a sheet of bright fire catches ${combat_defender_epithet} full in the chest."
+      *if (fnaa_v = 3)
+        *set fnaa_line "At arm's length, ${combat_attacker_epithet} unleashes a broad sweep of orange flame that scorches ${combat_defender_epithet} from hip to throat."
+      *if (fnaa_v = 4)
+        *set fnaa_line "Flame leaps from ${combat_attacker_epithet}'s outstretched fingers and washes over ${combat_defender_epithet} before they can turn aside."
+      *if (fnaa_v = 5)
+        *set fnaa_line "$!{combat_attacker_epithet} snaps their wrists apart, sending a wall of heat and sparks crashing across ${combat_defender_epithet}'s shoulder."
+  *else
+    *gosub flavor_ally_dagger
 *elseif (fnaa_claws)
   *comment A twig-and-bramble creature (the Gnarled Bramble Heart's Blight Twigs, or an enemy Twig Blight striking an ally): claws, thorns and knotted fists, never a weapon.
   *if (fnaa_v = 1)
@@ -1947,31 +1975,31 @@ ${fnaa_line}
 *return
 
 *label flavor_type_hedge_mage_dagger
-*comment The caster's quarterstaff, drawn when the spray is no use at this range (the same routing as the archer's dagger: combat_prose.txt fight_narrate_enemy_turn adds _dagger when the sidearm is in use). No move 2.
+*comment The caster's melee-range fallback, Burning Hands (3d6 fire, DEX save DC 13, half on a save), routed through the same _dagger sidearm suffix as the archer/slinger dagger. fft_hit is a failed save (caught full in the flame); fft_miss is a successful save (ducking clear of the heart so only the edge catches you for half damage). No move 2.
 *if (fft_v = 1)
-  *set fft_hit "$!{combat_enemy_epithet} swings the staff in a short arc, and the butt cracks across your ribs."
-  *set fft_miss "$!{combat_enemy_epithet} swings the staff in a short arc, but you lean back, and the butt goes past your chest."
+  *set fft_hit "$!{combat_enemy_epithet} spreads both hands wide, thumbs locked, and a roaring fan of flame washes straight across your chest."
+  *set fft_miss "$!{combat_enemy_epithet} spreads both hands wide, thumbs locked, and you twist sideways just fast enough that only the edge of the flame rakes your sleeve."
 *if (fft_v = 2)
-  *set fft_hit "$!{combat_enemy_epithet} jabs the staff into your stomach, and the breath leaves you in a rush."
-  *set fft_miss "$!{combat_enemy_epithet} jabs the staff at your stomach, but you turn it aside with a forearm."
+  *set fft_hit "From outstretched fingers, ${combat_enemy_epithet} sends a sheet of bright fire rolling over you before you can break out of its path."
+  *set fft_miss "A sheet of bright fire leaps from ${combat_enemy_epithet}'s outstretched fingers, and you drop low underneath it, feeling only a hot lick graze your shoulder."
 *if (fft_v = 3)
-  *set fft_hit "$!{combat_enemy_epithet} sweeps the staff low, and the shaft cracks into your shin."
-  *set fft_miss "$!{combat_enemy_epithet} sweeps the staff low, and you hop it clean."
+  *set fft_hit "$!{combat_enemy_epithet} whips their palms forward with a snapped syllable, and a cone of fire engulfs your ribs and shoulders."
+  *set fft_miss "$!{combat_enemy_epithet} whips their palms forward with a snapped syllable, and you throw yourself back as the heat of the blast sears past your forearm."
 *if (fft_v = 4)
-  *set fft_hit "Backing a step, ${combat_enemy_epithet} brings the staff round overhand, and it lands across your shoulder with a heavy crack."
-  *set fft_miss "Backing a step, ${combat_enemy_epithet} brings the staff round overhand, but you read the arc and slip under it."
+  *set fft_hit "Twin fans of sparks meet at ${combat_enemy_epithet}'s fingertips and blossom into a wall of fire that catches you full in the face and collar."
+  *set fft_miss "Twin fans of sparks bloom from ${combat_enemy_epithet}'s fingertips, and you wrench aside, taking only a stinging fringe of flame across your hip."
 *if (fft_v = 5)
-  *set fft_hit "$!{combat_enemy_epithet} drives the staff's end at your face, and you take the blow on the jaw as you turn away."
-  *set fft_miss "$!{combat_enemy_epithet} drives the staff's end at your face, but you slip the thrust, and the staff skims past your ear."
+  *set fft_hit "Cornered at arm's length, ${combat_enemy_epithet} unleashes a broad sweep of orange flame that scorches you from hip to throat."
+  *set fft_miss "Cornered at arm's length, ${combat_enemy_epithet} unleashes a broad sweep of orange flame, and you pivot clear of its heart so only the outer tongue catches your ribs."
 *if (fft_v = 6)
-  *set fft_hit "$!{combat_enemy_epithet} hooks the staff behind your knee and wrenches, and the leg buckles as the shaft jars against the joint."
-  *set fft_miss "$!{combat_enemy_epithet} hooks the staff for your knee, but you shift your leg out of the curve of it."
+  *set fft_hit "$!{combat_enemy_epithet} thrusts splayed hands toward you, and a sudden torrent of fire hammers into your guard and blisters your arms."
+  *set fft_miss "$!{combat_enemy_epithet} thrusts splayed hands toward you, and you whip an arm up in time to turn most of the torrent aside, though its heat bites through your sleeve."
 *if (fft_v = 7)
-  *set fft_hit "Cornered, ${combat_enemy_epithet} whips the staff up in a two-handed arc, and the shaft cracks down across your forearm."
-  *set fft_miss "Cornered, ${combat_enemy_epithet} whips the staff up in a two-handed arc, but you catch the shaft on your own guard and shove it aside."
+  *set fft_hit "With one sharp word, ${combat_enemy_epithet} floods the space between you with roaring fire, leaving no gap to slip free."
+  *set fft_miss "With one sharp word, ${combat_enemy_epithet} floods the space between you with roaring fire, and you roll out of the center, skin stinging where the trailing flame licks your calf."
 *if (fft_v = 8)
-  *set fft_hit "$!{combat_enemy_epithet} spins the staff end over end and strikes your hip with the tail of the swing."
-  *set fft_miss "$!{combat_enemy_epithet} spins the staff end over end, but the swing runs wide, and you step out of its reach."
+  *set fft_hit "$!{combat_enemy_epithet} snaps their wrists together and looses a crackling arc of flame that wraps your torso in blinding heat."
+  *set fft_miss "$!{combat_enemy_epithet} snaps their wrists together and looses a crackling arc of flame, and you duck clear of the core while the outer sparks singe your shoulder."
 *return
 
 *label flavor_type_twig_blight

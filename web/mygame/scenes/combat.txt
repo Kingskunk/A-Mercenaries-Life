@@ -252,6 +252,10 @@
 *set combat_enemy1_sidearm_dmg_dice_sides combat_enemy_sidearm_dmg_dice_sides
 *set combat_enemy1_sidearm_dmg_bonus combat_enemy_sidearm_dmg_bonus
 *set combat_enemy1_sidearm_dmg_type combat_enemy_sidearm_dmg_type
+*set combat_enemy1_sidearm_save_stat combat_enemy_sidearm_save_stat
+*set combat_enemy1_sidearm_save_dc combat_enemy_sidearm_save_dc
+*set combat_enemy1_sidearm_save_half combat_enemy_sidearm_save_half
+*set combat_enemy1_sidearm_dmg_dice combat_enemy_sidearm_dmg_dice
 *comment Commit-and-chase's per-type odds (2026-09-29, plan §11.3/6a retrofit): same snapshot, same reason,
 *comment same bug shape as sidearm above -- every apply_type_<name> slot-1 branch that sets a tactical type's
 *comment chase odds only ever writes the BARE combat_enemy_chase_chance, so without this line a slot-1 tactical
@@ -638,6 +642,11 @@
 *comment The second strike runs on its OWN page: resolve_enemy_attack and fight_narrate_enemy_turn lock their dice and their text per slot per page_id, so a second call on the first attack's page would
 *comment only replay the first roll. A page break gives it a fresh page_id (and a refresh replays only this page), at the cost of one click.
 *page_break The second blow follows…
+*set combat_enemy_atk_save_stat ""
+*set combat_enemy_atk_save_dc 0
+*set combat_enemy_atk_save_half false
+*set combat_enemy_atk_dmg_dice 1
+*set combat_enemy_save_halved false
 *set combat_enemy_dmg_dice_sides 4
 *set combat_enemy_move2_chance 0
 *gosub_scene combat_dice resolve_enemy_attack
@@ -801,6 +810,16 @@
 *set combat_enemy_sidearm_dmg_dice_sides 4
 *set combat_enemy_sidearm_dmg_bonus 0
 *set combat_enemy_sidearm_dmg_type "piercing"
+*set combat_enemy_sidearm_save_stat ""
+*set combat_enemy_sidearm_save_dc 0
+*set combat_enemy_sidearm_save_half false
+*set combat_enemy_sidearm_dmg_dice 1
+*set combat_enemy_atk_save_stat ""
+*set combat_enemy_atk_save_dc 0
+*set combat_enemy_atk_save_half false
+*set combat_enemy_atk_dmg_dice 1
+*set combat_enemy_save_halved false
+*set combat_save_dmg_type ""
 *comment Commit-and-chase (2026-09-29, plan §11.3/6a): bare/active-target reset, same place and reason as
 *comment weapon_type above.
 *set combat_enemy_chase_target 0
@@ -874,6 +893,10 @@
   *set {(fc_p & "sidearm_dmg_dice_sides")} 4
   *set {(fc_p & "sidearm_dmg_bonus")} 0
   *set {(fc_p & "sidearm_dmg_type")} "piercing"
+  *set {(fc_p & "sidearm_save_stat")} ""
+  *set {(fc_p & "sidearm_save_dc")} 0
+  *set {(fc_p & "sidearm_save_half")} false
+  *set {(fc_p & "sidearm_dmg_dice")} 1
   *comment Commit-and-chase (2026-09-29, plan §11.3/6a): per-slot reset, same leftover-state reason as every
   *comment other field in this loop -- a fresh fight's slot 2 must never inherit a chase already in progress.
   *set {(fc_p & "chase_target")} 0
@@ -1177,6 +1200,15 @@
 *set combat_enemy_sidearm_dmg_dice_sides {(fti_p & "sidearm_dmg_dice_sides")}
 *set combat_enemy_sidearm_dmg_bonus {(fti_p & "sidearm_dmg_bonus")}
 *set combat_enemy_sidearm_dmg_type {(fti_p & "sidearm_dmg_type")}
+*set combat_enemy_sidearm_save_stat {(fti_p & "sidearm_save_stat")}
+*set combat_enemy_sidearm_save_dc {(fti_p & "sidearm_save_dc")}
+*set combat_enemy_sidearm_save_half {(fti_p & "sidearm_save_half")}
+*set combat_enemy_sidearm_dmg_dice {(fti_p & "sidearm_dmg_dice")}
+*set combat_enemy_atk_save_stat ""
+*set combat_enemy_atk_save_dc 0
+*set combat_enemy_atk_save_half false
+*set combat_enemy_atk_dmg_dice 1
+*set combat_enemy_save_halved false
 *comment Commit-and-chase (2026-09-29, plan §11.3/6a): synced the same way as every field above.
 *set combat_enemy_chase_target {(fti_p & "chase_target")}
 *set combat_enemy_chase_range {(fti_p & "chase_range")}
@@ -6871,6 +6903,10 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *set combat_enemy_dmg_dice_sides combat_enemy_sidearm_dmg_dice_sides
   *set combat_enemy_dmg_bonus combat_enemy_sidearm_dmg_bonus
   *set combat_enemy_dmg_type combat_enemy_sidearm_dmg_type
+  *set combat_enemy_atk_save_stat combat_enemy_sidearm_save_stat
+  *set combat_enemy_atk_save_dc combat_enemy_sidearm_save_dc
+  *set combat_enemy_atk_save_half combat_enemy_sidearm_save_half
+  *set combat_enemy_atk_dmg_dice combat_enemy_sidearm_dmg_dice
   *set combat_enemy_move2_chance 0
   *set combat_enemy_used_sidearm true
 *return
@@ -7149,6 +7185,11 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
             *gosub_scene combat_dice resolve_enemy_attack_on_ally combat_intercepting_ally
             *gosub_scene combat_prose fight_narrate_ally_attack "enemy" cnt_slot "ally" combat_intercepting_ally combat_enemy_atk_on_ally_hit
             *set combat_enemy_used_sidearm false
+            *set combat_enemy_atk_save_stat ""
+            *set combat_enemy_atk_save_dc 0
+            *set combat_enemy_atk_save_half false
+            *set combat_enemy_atk_dmg_dice 1
+            *set combat_enemy_save_halved false
           *else
             *gosub_scene combat_ai fight_pick_enemy_move
             *gosub_scene combat_dice resolve_enemy_attack
@@ -7193,6 +7234,11 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
       *gosub_scene combat_dice resolve_enemy_attack_on_ally combat_intercepting_ally
       *gosub_scene combat_prose fight_narrate_ally_attack "enemy" cnt_slot "ally" combat_intercepting_ally combat_enemy_atk_on_ally_hit
       *set combat_enemy_used_sidearm false
+      *set combat_enemy_atk_save_stat ""
+      *set combat_enemy_atk_save_dc 0
+      *set combat_enemy_atk_save_half false
+      *set combat_enemy_atk_dmg_dice 1
+      *set combat_enemy_save_halved false
       *set combat_turn_advanced_this_page true
     *elseif (combat_enemy_goal_ally > 0)
       *comment NEAREST-TARGET CLOSING (2026-10-11): the nearest opponent is an ally that is not in reach yet, so this enemy closes on IT, not on the player. Same tempo as closing on the player: a free step, and
@@ -7422,12 +7468,21 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
         *set combat_enemy_dmg_dice_sides combat_enemy_sidearm_dmg_dice_sides
         *set combat_enemy_dmg_bonus combat_enemy_sidearm_dmg_bonus
         *set combat_enemy_dmg_type combat_enemy_sidearm_dmg_type
+        *set combat_enemy_atk_save_stat combat_enemy_sidearm_save_stat
+        *set combat_enemy_atk_save_dc combat_enemy_sidearm_save_dc
+        *set combat_enemy_atk_save_half combat_enemy_sidearm_save_half
+        *set combat_enemy_atk_dmg_dice combat_enemy_sidearm_dmg_dice
         *set combat_enemy_move2_chance 0
         *set combat_enemy_used_sidearm true
       *gosub_scene combat_ai fight_pick_enemy_move
       *gosub_scene combat_dice resolve_enemy_attack
       *gosub_scene combat_prose fight_narrate_enemy_turn
       *set combat_enemy_used_sidearm false
+      *set combat_enemy_atk_save_stat ""
+      *set combat_enemy_atk_save_dc 0
+      *set combat_enemy_atk_save_half false
+      *set combat_enemy_atk_dmg_dice 1
+      *set combat_enemy_save_halved false
       *set combat_turn_advanced_this_page true
       *if ((combat_multiattack_slot = cnt_slot) and (hp_current > 1))
         *gosub fight_enemy_extra_attack

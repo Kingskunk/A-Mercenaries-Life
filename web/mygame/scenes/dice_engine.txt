@@ -37,30 +37,8 @@
 *comment D&D 5E D20 SKILL CHECK ENGINE
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label roll_d20_check
-*comment Racial saves that grant advantage — a calling scene sets save_vs before gosubbing in
-*if ((race = "elf") and ((save_vs = "charmed") or (save_vs = "sleep")))
-  *set advantage true
-*if ((race = "dwarf") and (save_vs = "poison"))
-  *set advantage true
-*comment Brine Antivenom (2026-10-23): advantage on a save against poison for its four hours.
-*if ((save_vs = "poison") and (brine_minutes_left > 0))
-  *set advantage true
-*comment Danger Sense (Barbarian level 2, 2026-10-02): advantage on Dexterity saving throws. A scene making a DEX saving throw sets save_vs "dex" first, the same
-*comment convention as the racial saves above (no scene makes one yet, so this is ready and has no caller). The 5e exception for being Incapacitated is not modelled.
-*if ((feature_danger_sense) and ((check_stat = "dex") and (save_vs = "dex")))
-  *set advantage true
-
-*comment Darkness (dungeon.txt, 2026-10-02): a dungeon run with no light left and no darkvision gives disadvantage on every d20 roll, attacks included. It is worked out here by calling
-*comment dungeon.txt dg_dark_check itself, so it can never read a stale flag and can never disagree with it. (Until 2026-10-15 this copied the first half of that rule and forgot that an open-air dungeon such as the
-*comment Longshade Forest is lit by day, so a character without darkvision rolled with disadvantage in daylight; found while testing the Hidden Spring.) It changes nothing outside a run.
-*if (dg_in_run)
-  *gosub_scene dungeon dg_dark_check
-  *if (dg_dark)
-    *set disadvantage true
-
-*comment Poisoned (the user, 2026-10-31): disadvantage on every d20 roll the player makes, attacks and saves included, for as long as poisoned_minutes_left lasts. It cancels against advantage like any other source.
-*if (poisoned_minutes_left > 0)
-  *set disadvantage true
+*comment Collect save- and condition-based advantage/disadvantage from one shared helper so combat_dice.txt resolve_save stays synced with roll_d20_check.
+*gosub collect_save_modifiers
 
 *temp adv_label ""
 *temp guidance_roll 0
@@ -324,6 +302,32 @@
 *comment is fixed per skill by RAW, not something a caller picks -- adding a new skill only ever means adding
 *comment one *create (above) and one branch here, never touching roll_skill_check or roll_d20_check themselves.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label collect_save_modifiers
+*comment Shared player advantage/disadvantage sources (placed after roll_d20_check so quicktest's entry label stays first).
+*comment Called by roll_d20_check here and by combat_dice.txt resolve_save for player saving throws.
+*comment Racial saves that grant advantage — a calling scene sets save_vs before gosubbing in.
+*if ((race = "elf") and ((save_vs = "charmed") or (save_vs = "sleep")))
+  *set advantage true
+*if ((race = "dwarf") and (save_vs = "poison"))
+  *set advantage true
+*comment Brine Antivenom (2026-10-23): advantage on a save against poison for its four hours.
+*if ((save_vs = "poison") and (brine_minutes_left > 0))
+  *set advantage true
+*comment Danger Sense (Barbarian level 2): advantage on Dexterity saving throws (save_vs != "none" separates a save from a DEX skill check, including DEX saves against poison/fire). The 5e exception for being Incapacitated is not modelled.
+*if ((feature_danger_sense) and ((check_stat = "dex") and (not(save_vs = "none"))))
+  *set advantage true
+
+*comment Darkness (dungeon.txt, 2026-10-02): a dungeon run with no light left and no darkvision gives disadvantage on every d20 roll, attacks and saves included. Worked out here via dungeon.txt dg_dark_check so it can never read a stale flag.
+*if (dg_in_run)
+  *gosub_scene dungeon dg_dark_check
+  *if (dg_dark)
+    *set disadvantage true
+
+*comment Poisoned (the user, 2026-10-31): disadvantage on every d20 roll the player makes, attacks and saves included, for as long as poisoned_minutes_left lasts. It cancels against advantage like any other source.
+*if (poisoned_minutes_left > 0)
+  *set disadvantage true
+*return
+
 *label skill_lookup
 *params skl_id
 *set skill_lookup_ability ""

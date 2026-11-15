@@ -80,10 +80,23 @@ types.forEach(function (t) {
   }
   if (t.sidearm) {
     var s = t.sidearm;
+    var SAVE_ABILITIES = ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"];
     if (!WEAPONS[s.weapon_type]) bad(t, "sidearm.weapon_type must be melee | ranged");
     if (!isInt(s.dice)) bad(t, "sidearm.dice must be the damage die's sides");
+    if (s.dmg_dice !== undefined && (!isInt(s.dmg_dice) || s.dmg_dice < 1)) bad(t, "sidearm.dmg_dice must be >= 1");
     dmgType(t, "sidearm", s.dmg_type);
     ["atk_bonus", "dmg_bonus"].forEach(function (k) { if (s[k] !== "weapon" && !isInt(s[k])) bad(t, "sidearm." + k + " must be a whole number or \"weapon\""); });
+    if (s.save_stat !== undefined) {
+      if (SAVE_ABILITIES.indexOf(s.save_stat) === -1) bad(t, "sidearm.save_stat must be one of " + SAVE_ABILITIES.join(" | "));
+      if (s.save_dc === undefined) bad(t, "sidearm.save_dc is required when sidearm.save_stat is set");
+      if (typeof s.save_dc === "string") {
+        if (!t.abilities || !t.abilities[s.save_dc]) bad(t, "sidearm.save_dc ability " + s.save_dc + " must exist in abilities");
+        if (!isInt(t.proficiency)) bad(t, "sidearm.save_dc ability derivation requires integer proficiency");
+      } else if (!isInt(s.save_dc) || s.save_dc < 1) {
+        bad(t, "sidearm.save_dc must be a positive integer or ability name");
+      }
+      if (s.save_half !== undefined && typeof s.save_half !== "boolean") bad(t, "sidearm.save_half must be true | false");
+    }
   }
   if (t.stun !== undefined && (!t.stun || !t.stun.name || !t.stun.icon)) bad(t, "stun needs a name and an icon");
   if (t.vulnerable !== undefined) String(t.vulnerable).split(/\s+/).forEach(function (v) { dmgType(t, "vulnerable", v); });
@@ -147,6 +160,16 @@ function genTypeLabel(t) {
     L.push(set("sidearm_dmg_dice_sides", s.dice));
     L.push(set("sidearm_dmg_bonus", s.dmg_bonus === "weapon" ? "{(apt_p & \"dmg_bonus\")}" : s.dmg_bonus));
     L.push(set("sidearm_dmg_type", q(s.dmg_type)));
+    if (s.dmg_dice !== undefined) L.push(set("sidearm_dmg_dice", s.dmg_dice));
+    if (s.save_stat !== undefined) {
+      // Save DC derivation: when save_dc names an ability ("intelligence"), derive 8 + proficiency + mod(max_score).
+      var saveDc = typeof s.save_dc === "string"
+        ? 8 + t.proficiency + Math.floor((t.abilities[s.save_dc][1] - 10) / 2)
+        : s.save_dc;
+      L.push(set("sidearm_save_stat", q(s.save_stat)));
+      L.push(set("sidearm_save_dc", saveDc));
+      if (s.save_half !== undefined) L.push(set("sidearm_save_half", s.save_half));
+    }
   }
   if (t.vulnerable) L.push(set("vulnerable_types", q(t.vulnerable)));
   if (t.stun) {

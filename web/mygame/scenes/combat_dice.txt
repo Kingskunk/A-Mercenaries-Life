@@ -475,194 +475,201 @@ ${combat_player_dmg_roll_banner}
   *set locked_combat_enemy_atk_page_id page_id
 *temp cea_already_locked {cea_lockname}
 *if (not(cea_already_locked))
-  *comment Ranged-at-closerange penalty: a ranged attack made against a creature within 5 feet of the attacker
-  *comment has disadvantage -- "Ranged Attacks in Close Combat". It applies to a weapon, a spell, or any other
-  *comment means, and it is UNCONDITIONAL: being surrounded by one foe or eight is the same single instance of
-  *comment disadvantage, never more. MELEE attacks are never penalised for being in melee; that is the other
-  *comment half of the rule and this game does not implement it (unarmed strikes are melee too, so they are
-  *comment unaffected). The player's own ranged attacks, ranged spells and cantrips take the same penalty
-  *comment (combat.txt's resolve_weapon_attack_choice and the six cantrip options, via spell_range_of).
-  *comment
-  *comment Adopted deliberately, because it is the only change that does all three of:
-  *comment   (a) gives closing on a ranged enemy a payoff -- a melee weapon needs range 0 to swing at all
-  *comment       (combat.txt's attack gate), so a Long Range archer is otherwise 3 turns of free damage;
-  *comment   (b) lets a melee ally SUPPRESS an archer by body-blocking it, instead of being a pure HP sponge
-  *comment       that the archer shoots past at full accuracy;
-  *comment   (c) gives ranged enemies a reason to fall back, which is the one piece of positioning they never
-  *comment       do -- the closing branch is gated to non-ranged, so they currently only ever advance.
-  *comment No new durable state: combat_enemy_range IS this enemy's distance to the player (its only target,
-  *comment since interception only ever redirects it to a MELEE ally), so "within reach of the creature it is
-  *comment shooting" is simply `range <= 0`. **Deliberately a *temp derived here rather than a write to
-  *comment combat_enemy_disadvantage**, which is the CONDITION-based flag (Ray of Frost and friends set it
-  *comment per-slot) and is consumed on this very roll eleven lines below -- writing to it would silently eat a
-  *comment debuff that is still owed. OR'd in at roll time so the two causes compose, and the advantage branch is
-  *comment gated on it too, so advantage still cancels it.
-  *comment KNOWN LIMIT: this does not cover resolve_enemy_attack_on_ally. find_intercepting_ally gates on the
-  *comment ALLY's weapon_type, not the enemy's, so a RANGED enemy can attack an engaged melee ally -- and since
-  *comment there is no enemy-to-ally distance in this model, an archer shooting an ally gets no penalty here.
-  *comment That is the cost of treating melee as a shared adjacency bucket; a real per-pair distance would
-  *comment close both this gap and the interception looseness documented in find_intercepting_ally.
-  *temp cea_ranged_pinned false
-  *comment 2026-10-23 (the user): any opponent in the shooter's tile counts, not only the player (combat_ranged_cornered, set by choose_ranged_enemy_target), as the 2024 rule has it: a ranged attack roll, a spell attack included, has disadvantage while a hostile is within 5 feet.
-  *if ((combat_enemy_weapon_type = "ranged") and ((combat_enemy_range <= 0) or (combat_ranged_cornered)))
-    *set cea_ranged_pinned true
-  *temp cea_roll 0
-  *rand cea_roll 1 20
-  *temp cea_adv_label ""
-  *comment Reckless Attack (the Barbarian's, until their next turn): every attack roll against the player has advantage.
-  *if (combat_reckless_active)
-    *set combat_enemy_advantage true
-  *comment A stunned player is easy to hit (2026-11-03, RAW: attacks against a stunned creature have advantage), as a stunned enemy already is (combat_attack_edge).
-  *if (player_stunned)
-    *set combat_enemy_advantage true
-  *comment Frightened (Cause Fear): a frightened enemy attacks with disadvantage.
-  *temp cea_fright {(("combat_enemy" & combat_active_target) & "_frightened")}
-  *if (cea_fright > 0)
-    *set combat_enemy_disadvantage true
-  *temp cea_dis false
-  *comment Both disadvantage sources are precomputed into one flag rather than written as a mixed
-  *comment `((A) or (B)) and (C)` condition. ChoiceScript's parser requires binary operators to be strictly
-  *comment left-nested with each partial result parenthesized (the shape choicescript_stats.txt:669 and :1086 use),
-  *comment so the flat mixed form is a hard PARSE error, not a wrong answer -- and it failed that way at runtime
-  *comment even though node compile.js reported a clean build. Flat and self-documenting beats clever here, and it
-  *comment matches how the movement check precomputes its own cmc_* flags for the same reason.
-  *if ((combat_enemy_disadvantage) or (cea_ranged_pinned))
-    *if (not(combat_enemy_advantage))
-      *set cea_dis true
-  *temp cea_adv false
-  *if (combat_enemy_advantage)
-    *if (not(combat_enemy_disadvantage))
-      *if (not(cea_ranged_pinned))
-        *set cea_adv true
-  *if (cea_dis)
-    *temp cea_roll_2 0
-    *rand cea_roll_2 1 20
-    *if (cea_roll_2 < cea_roll)
-      *set cea_roll cea_roll_2
-    *comment Named separately from a debuff on purpose: the player cast nothing, so a bare "(Disadvantage)"
-    *comment against an archer they simply walked up to would read as a bug -- the same class of confusion as
-    *comment the Shield banner printing a stale AC. Same reason the shield fix names its own cause.
-    *if (cea_ranged_pinned)
-      *set cea_adv_label " (Disadvantage — in reach)"
-    *else
-      *set cea_adv_label " (Disadvantage)"
-  *if (cea_adv)
-    *temp cea_roll_2 0
-    *rand cea_roll_2 1 20
-    *if (cea_roll_2 > cea_roll)
-      *set cea_roll cea_roll_2
-    *set cea_adv_label " (Advantage)"
-  *comment Consumed on this actual roll (2026-09-28): reset both the bare scratch AND the per-slot field this
-  *comment enemy's own storage lives in, or fight_sync_target_in would just re-sync "still true" back onto the
-  *comment bare scratch the next time this same slot becomes active target.
-  *set combat_enemy_advantage false
-  *set combat_enemy_disadvantage false
-  *set {(("combat_enemy" & combat_active_target) & "_advantage")} false
-  *set {(("combat_enemy" & combat_active_target) & "_disadvantage")} false
-  *set combat_high_ground_attack_bonus 0
-  *set combat_high_ground_attack_label ""
-  *if (combat_enemy_weapon_type = "ranged")
-    *gosub_scene combat_movement combat_get_high_ground_attack_modifier "enemy" combat_active_target "player" 0
-  *set combat_enemy_atk_total ((cea_roll + combat_enemy_atk_bonus) + combat_high_ground_attack_bonus)
-  *temp cea_atk_bonus_str ""
-  *if (combat_enemy_atk_bonus >= 0)
-    *set cea_atk_bonus_str "+${combat_enemy_atk_bonus}"
-  *else
-    *set cea_atk_bonus_str "${combat_enemy_atk_bonus}"
-  *comment Bane (2026-09-27, dormant -- see resolve_cast_bane, combat_spells.txt): if this enemy's own bane_expires_round
-  *comment (synced in by fight_sync_target_in) hasn't passed, a fresh 1d4 comes off the attack total -- RAW,
-  *comment re-rolled every attack, never touching damage.
-  *temp cea_bane_str ""
-  *if (combat_enemy_bane_expires_round >= combat_round)
-    *temp cea_bane_die 0
-    *rand cea_bane_die 1 4
-    *set combat_enemy_atk_total - cea_bane_die
-    *set cea_bane_str " -${cea_bane_die} (Bane)"
-  *comment Dodge (RAW +5 AC for the current turn) and Shield (RAW +5 AC when hit) are BOTH just additions to
-  *comment the AC an attack is tested against, and they stack. Building cea_dc ONCE, up front, and testing
-  *comment everything against it keeps the three things that must agree -- the hit check, Shield's re-check,
-  *comment and the printed DC -- from drifting apart, which is exactly the bug the Shield fix had to chase
-  *comment down. The banner also names which bonuses were live, so "+5 Dodge" or "+5 Dodge +5 Shield" tells the
-  *comment player why a number moved rather than leaving them to infer it.
-  *set combat_cover_ranged_defense_bonus 0
-  *set combat_cover_ranged_defense_label ""
-  *if (combat_enemy_weapon_type = "ranged")
-    *gosub_scene combat_movement combat_get_cover_ranged_defense_bonus "player" 0
-  *temp cea_dc (armor_class + combat_cover_ranged_defense_bonus)
-  *if (dodge_active)
-    *set cea_dc (cea_dc + 5)
-  *comment A Shield that already fired this round (shield_active) is simply +5 AC for this attack too (RAW: until the start of the caster's next turn).
-  *if (shield_active)
-    *set cea_dc (cea_dc + 5)
-  *set combat_enemy_hit_success (combat_enemy_atk_total >= cea_dc)
   *set combat_shield_triggered false
-  *comment Arming reserves neither resource. If the wizard spent their last slot on another spell or used their
-  *comment reaction on an opportunity attack after arming, the held Shield is no longer executable.
-  *if (shield_armed)
-    *if (((spell_slots_1 <= 0) and (spell_slots_2 <= 0)) or (player_oa_used))
-      *set shield_armed false
-  *comment Shield is a reaction "when you are hit", but it should only spend its slot when the +5 can actually
-  *comment change that hit to a miss. A hit that still meets the Shielded AC (or a natural 20) leaves Shield
-  *comment armed for a later attack instead of wasting the caster's reaction and spell slot.
-  *temp cea_shield_can_block false
-  *temp cea_shield_cannot_block false
-  *if (shield_armed)
-    *if (combat_enemy_hit_success)
-      *if (cea_roll = 20)
-        *set cea_shield_cannot_block true
-      *elseif (combat_enemy_atk_total >= (cea_dc + 5))
-        *set cea_shield_cannot_block true
+  *set combat_enemy_save_halved false
+  *temp cea_is_save (not(combat_enemy_atk_save_stat = ""))
+  *temp cea_save_failed true
+  *if (cea_is_save)
+    *gosub resolve_enemy_save_attack "combat_player_" cea_atk_bannername
+    *set cea_save_failed check_success
+  *else
+    *comment Ranged-at-closerange penalty: a ranged attack made against a creature within 5 feet of the attacker
+    *comment has disadvantage -- "Ranged Attacks in Close Combat". It applies to a weapon, a spell, or any other
+    *comment means, and it is UNCONDITIONAL: being surrounded by one foe or eight is the same single instance of
+    *comment disadvantage, never more. MELEE attacks are never penalised for being in melee; that is the other
+    *comment half of the rule and this game does not implement it (unarmed strikes are melee too, so they are
+    *comment unaffected). The player's own ranged attacks, ranged spells and cantrips take the same penalty
+    *comment (combat.txt's resolve_weapon_attack_choice and the six cantrip options, via spell_range_of).
+    *comment
+    *comment Adopted deliberately, because it is the only change that does all three of:
+    *comment   (a) gives closing on a ranged enemy a payoff -- a melee weapon needs range 0 to swing at all
+    *comment       (combat.txt's attack gate), so a Long Range archer is otherwise 3 turns of free damage;
+    *comment   (b) lets a melee ally SUPPRESS an archer by body-blocking it, instead of being a pure HP sponge
+    *comment       that the archer shoots past at full accuracy;
+    *comment   (c) gives ranged enemies a reason to fall back, which is the one piece of positioning they never
+    *comment       do -- the closing branch is gated to non-ranged, so they currently only ever advance.
+    *comment No new durable state: combat_enemy_range IS this enemy's distance to the player (its only target,
+    *comment since interception only ever redirects it to a MELEE ally), so "within reach of the creature it is
+    *comment shooting" is simply `range <= 0`. **Deliberately a *temp derived here rather than a write to
+    *comment combat_enemy_disadvantage**, which is the CONDITION-based flag (Ray of Frost and friends set it
+    *comment per-slot) and is consumed on this very roll eleven lines below -- writing to it would silently eat a
+    *comment debuff that is still owed. OR'd in at roll time so the two causes compose, and the advantage branch is
+    *comment gated on it too, so advantage still cancels it.
+    *comment KNOWN LIMIT: this does not cover resolve_enemy_attack_on_ally. find_intercepting_ally gates on the
+    *comment ALLY's weapon_type, not the enemy's, so a RANGED enemy can attack an engaged melee ally -- and since
+    *comment there is no enemy-to-ally distance in this model, an archer shooting an ally gets no penalty here.
+    *comment That is the cost of treating melee as a shared adjacency bucket; a real per-pair distance would
+    *comment close both this gap and the interception looseness documented in find_intercepting_ally.
+    *temp cea_ranged_pinned false
+    *comment 2026-10-23 (the user): any opponent in the shooter's tile counts, not only the player (combat_ranged_cornered, set by choose_ranged_enemy_target), as the 2024 rule has it: a ranged attack roll, a spell attack included, has disadvantage while a hostile is within 5 feet.
+    *if ((combat_enemy_weapon_type = "ranged") and ((combat_enemy_range <= 0) or (combat_ranged_cornered)))
+      *set cea_ranged_pinned true
+    *temp cea_roll 0
+    *rand cea_roll 1 20
+    *temp cea_adv_label ""
+    *comment Reckless Attack (the Barbarian's, until their next turn): every attack roll against the player has advantage.
+    *if (combat_reckless_active)
+      *set combat_enemy_advantage true
+    *comment A stunned player is easy to hit (2026-11-03, RAW: attacks against a stunned creature have advantage), as a stunned enemy already is (combat_attack_edge).
+    *if (player_stunned)
+      *set combat_enemy_advantage true
+    *comment Frightened (Cause Fear): a frightened enemy attacks with disadvantage.
+    *temp cea_fright {(("combat_enemy" & combat_active_target) & "_frightened")}
+    *if (cea_fright > 0)
+      *set combat_enemy_disadvantage true
+    *temp cea_dis false
+    *comment Both disadvantage sources are precomputed into one flag rather than written as a mixed
+    *comment `((A) or (B)) and (C)` condition. ChoiceScript's parser requires binary operators to be strictly
+    *comment left-nested with each partial result parenthesized (the shape choicescript_stats.txt:669 and :1086 use),
+    *comment so the flat mixed form is a hard PARSE error, not a wrong answer -- and it failed that way at runtime
+    *comment even though node compile.js reported a clean build. Flat and self-documenting beats clever here, and it
+    *comment matches how the movement check precomputes its own cmc_* flags for the same reason.
+    *if ((combat_enemy_disadvantage) or (cea_ranged_pinned))
+      *if (not(combat_enemy_advantage))
+        *set cea_dis true
+    *temp cea_adv false
+    *if (combat_enemy_advantage)
+      *if (not(combat_enemy_disadvantage))
+        *if (not(cea_ranged_pinned))
+          *set cea_adv true
+    *if (cea_dis)
+      *temp cea_roll_2 0
+      *rand cea_roll_2 1 20
+      *if (cea_roll_2 < cea_roll)
+        *set cea_roll cea_roll_2
+      *comment Named separately from a debuff on purpose: the player cast nothing, so a bare "(Disadvantage)"
+      *comment against an archer they simply walked up to would read as a bug -- the same class of confusion as
+      *comment the Shield banner printing a stale AC. Same reason the shield fix names its own cause.
+      *if (cea_ranged_pinned)
+        *set cea_adv_label " (Disadvantage — in reach)"
       *else
-        *set cea_shield_can_block true
-  *gosub combat_can_react "player" 0
-  *if (((((cea_shield_can_block) and (shield_armed)) and (not(shield_active))) and (combat_can_react_ok)) and ((spell_slots_1 > 0) or (spell_slots_2 > 0)))
-    *set shield_armed false
-    *set shield_active true
-    *comment UPCASTING (2026-11-08, the user's call): no mechanical difference at 2nd level -- Shield's only
-    *comment reason to spend a higher slot is not wasting the cast when the 1st-level pool is already empty, so
-    *comment this prefers it and only falls back to the 2nd-level pool when it has nothing left.
-    *temp cea_shield_level 1
-    *if (spell_slots_1 <= 0)
-      *set cea_shield_level 2
-    *gosub_scene combat_spells spend_spell_slot cea_shield_level
-    *gosub_scene combat_spells arcane_ward_on_abjuration_cast cea_shield_level
-    *set player_oa_used true
-    *set combat_shield_triggered true
-    *set cea_dc (cea_dc + 5)
-    *set combat_enemy_hit_success (combat_enemy_atk_total >= cea_dc)
-  *comment Banner (2026-09-27): built here, now that combat_enemy_hit_success has its FINAL value. The DC
-  *comment printed is cea_dc itself, the number the roll was actually compared against -- before the Shield
-  *comment fix this printed a bare armor_class even when the roll had just been re-tested at AC+5, so a
-  *comment working Shield looked identical to an ignored one.
-  *temp cea_atk_verdict "MISS"
-  *if (combat_enemy_hit_success)
-    *set cea_atk_verdict "HIT"
-  *comment The AC printed is the final number the roll was compared against (cea_dc), so a bonus is shown as a breakdown in brackets, "vs AC 17 (12 +5 Shield)", not appended to it
-  *comment ("AC 17 +5 Shield" read as 22, because the 17 already includes the +5). An armed Shield that did not
-  *comment fire says whether the attack already missed or was too high for +5 to deflect.
-  *temp cea_ac_str ""
-  *if ((combat_cover_ranged_defense_bonus > 0) or ((dodge_active) or (shield_active)))
-    *set cea_ac_str " (${armor_class}"
-    *if (combat_cover_ranged_defense_bonus > 0)
-      *set cea_ac_str "${cea_ac_str} +2 Cover"
-    *if (dodge_active)
-      *set cea_ac_str "${cea_ac_str} +5 Dodge"
-    *if (shield_active)
-      *set cea_ac_str "${cea_ac_str} +5 Shield"
-    *set cea_ac_str "${cea_ac_str})"
-  *elseif ((shield_armed) and (not(combat_shield_triggered)))
-    *if (cea_shield_cannot_block)
-      *set cea_ac_str " (Shield cannot stop this hit)"
+        *set cea_adv_label " (Disadvantage)"
+    *if (cea_adv)
+      *temp cea_roll_2 0
+      *rand cea_roll_2 1 20
+      *if (cea_roll_2 > cea_roll)
+        *set cea_roll cea_roll_2
+      *set cea_adv_label " (Advantage)"
+    *comment Consumed on this actual roll (2026-09-28): reset both the bare scratch AND the per-slot field this
+    *comment enemy's own storage lives in, or fight_sync_target_in would just re-sync "still true" back onto the
+    *comment bare scratch the next time this same slot becomes active target.
+    *set combat_enemy_advantage false
+    *set combat_enemy_disadvantage false
+    *set {(("combat_enemy" & combat_active_target) & "_advantage")} false
+    *set {(("combat_enemy" & combat_active_target) & "_disadvantage")} false
+    *set combat_high_ground_attack_bonus 0
+    *set combat_high_ground_attack_label ""
+    *if (combat_enemy_weapon_type = "ranged")
+      *gosub_scene combat_movement combat_get_high_ground_attack_modifier "enemy" combat_active_target "player" 0
+    *set combat_enemy_atk_total ((cea_roll + combat_enemy_atk_bonus) + combat_high_ground_attack_bonus)
+    *temp cea_atk_bonus_str ""
+    *if (combat_enemy_atk_bonus >= 0)
+      *set cea_atk_bonus_str "+${combat_enemy_atk_bonus}"
     *else
-      *set cea_ac_str " (Shield not needed)"
-  *set {(cea_atk_bannername)} "[b][🎲 ${combat_enemy_name} Attack Roll: ${cea_roll} ${cea_atk_bonus_str}${combat_high_ground_attack_label}${cea_adv_label}${cea_bane_str} = ${combat_enemy_atk_total} vs AC ${cea_dc}${cea_ac_str} — ${cea_atk_verdict}][/b]"
+      *set cea_atk_bonus_str "${combat_enemy_atk_bonus}"
+    *comment Bane (2026-09-27, dormant -- see resolve_cast_bane, combat_spells.txt): if this enemy's own bane_expires_round
+    *comment (synced in by fight_sync_target_in) hasn't passed, a fresh 1d4 comes off the attack total -- RAW,
+    *comment re-rolled every attack, never touching damage.
+    *temp cea_bane_str ""
+    *if (combat_enemy_bane_expires_round >= combat_round)
+      *temp cea_bane_die 0
+      *rand cea_bane_die 1 4
+      *set combat_enemy_atk_total - cea_bane_die
+      *set cea_bane_str " -${cea_bane_die} (Bane)"
+    *comment Dodge (RAW +5 AC for the current turn) and Shield (RAW +5 AC when hit) are BOTH just additions to
+    *comment the AC an attack is tested against, and they stack. Building cea_dc ONCE, up front, and testing
+    *comment everything against it keeps the three things that must agree -- the hit check, Shield's re-check,
+    *comment and the printed DC -- from drifting apart, which is exactly the bug the Shield fix had to chase
+    *comment down. The banner also names which bonuses were live, so "+5 Dodge" or "+5 Dodge +5 Shield" tells the
+    *comment player why a number moved rather than leaving them to infer it.
+    *set combat_cover_ranged_defense_bonus 0
+    *set combat_cover_ranged_defense_label ""
+    *if (combat_enemy_weapon_type = "ranged")
+      *gosub_scene combat_movement combat_get_cover_ranged_defense_bonus "player" 0
+    *temp cea_dc (armor_class + combat_cover_ranged_defense_bonus)
+    *if (dodge_active)
+      *set cea_dc (cea_dc + 5)
+    *comment A Shield that already fired this round (shield_active) is simply +5 AC for this attack too (RAW: until the start of the caster's next turn).
+    *if (shield_active)
+      *set cea_dc (cea_dc + 5)
+    *set combat_enemy_hit_success (combat_enemy_atk_total >= cea_dc)
+    *comment Arming reserves neither resource. If the wizard spent their last slot on another spell or used their
+    *comment reaction on an opportunity attack after arming, the held Shield is no longer executable.
+    *if (shield_armed)
+      *if (((spell_slots_1 <= 0) and (spell_slots_2 <= 0)) or (player_oa_used))
+        *set shield_armed false
+    *comment Shield is a reaction "when you are hit", but it should only spend its slot when the +5 can actually
+    *comment change that hit to a miss. A hit that still meets the Shielded AC (or a natural 20) leaves Shield
+    *comment armed for a later attack instead of wasting the caster's reaction and spell slot.
+    *temp cea_shield_can_block false
+    *temp cea_shield_cannot_block false
+    *if (shield_armed)
+      *if (combat_enemy_hit_success)
+        *if (cea_roll = 20)
+          *set cea_shield_cannot_block true
+        *elseif (combat_enemy_atk_total >= (cea_dc + 5))
+          *set cea_shield_cannot_block true
+        *else
+          *set cea_shield_can_block true
+    *gosub combat_can_react "player" 0
+    *if (((((cea_shield_can_block) and (shield_armed)) and (not(shield_active))) and (combat_can_react_ok)) and ((spell_slots_1 > 0) or (spell_slots_2 > 0)))
+      *set shield_armed false
+      *set shield_active true
+      *comment UPCASTING (2026-11-08, the user's call): no mechanical difference at 2nd level -- Shield's only
+      *comment reason to spend a higher slot is not wasting the cast when the 1st-level pool is already empty, so
+      *comment this prefers it and only falls back to the 2nd-level pool when it has nothing left.
+      *temp cea_shield_level 1
+      *if (spell_slots_1 <= 0)
+        *set cea_shield_level 2
+      *gosub_scene combat_spells spend_spell_slot cea_shield_level
+      *gosub_scene combat_spells arcane_ward_on_abjuration_cast cea_shield_level
+      *set player_oa_used true
+      *set combat_shield_triggered true
+      *set cea_dc (cea_dc + 5)
+      *set combat_enemy_hit_success (combat_enemy_atk_total >= cea_dc)
+    *comment Banner (2026-09-27): built here, now that combat_enemy_hit_success has its FINAL value. The DC
+    *comment printed is cea_dc itself, the number the roll was actually compared against -- before the Shield
+    *comment fix this printed a bare armor_class even when the roll had just been re-tested at AC+5, so a
+    *comment working Shield looked identical to an ignored one.
+    *temp cea_atk_verdict "MISS"
+    *if (combat_enemy_hit_success)
+      *set cea_atk_verdict "HIT"
+    *comment The AC printed is the final number the roll was compared against (cea_dc), so a bonus is shown as a breakdown in brackets, "vs AC 17 (12 +5 Shield)", not appended to it
+    *comment ("AC 17 +5 Shield" read as 22, because the 17 already includes the +5). An armed Shield that did not
+    *comment fire says whether the attack already missed or was too high for +5 to deflect.
+    *temp cea_ac_str ""
+    *if ((combat_cover_ranged_defense_bonus > 0) or ((dodge_active) or (shield_active)))
+      *set cea_ac_str " (${armor_class}"
+      *if (combat_cover_ranged_defense_bonus > 0)
+        *set cea_ac_str "${cea_ac_str} +2 Cover"
+      *if (dodge_active)
+        *set cea_ac_str "${cea_ac_str} +5 Dodge"
+      *if (shield_active)
+        *set cea_ac_str "${cea_ac_str} +5 Shield"
+      *set cea_ac_str "${cea_ac_str})"
+    *elseif ((shield_armed) and (not(combat_shield_triggered)))
+      *if (cea_shield_cannot_block)
+        *set cea_ac_str " (Shield cannot stop this hit)"
+      *else
+        *set cea_ac_str " (Shield not needed)"
+    *set {(cea_atk_bannername)} "[b][🎲 ${combat_enemy_name} Attack Roll: ${cea_roll} ${cea_atk_bonus_str}${combat_high_ground_attack_label}${cea_adv_label}${cea_bane_str} = ${combat_enemy_atk_total} vs AC ${cea_dc}${cea_ac_str} — ${cea_atk_verdict}][/b]"
   *set combat_enemy_dmg_dealt 0
   *set combat_agathys_triggered false
   *set combat_agathys_shattered false
   *set combat_rebuke_triggered false
   *set combat_absorb_triggered false
   *set combat_condition_inflicted false
-  *if ((combat_enemy_hit_success) and (combat_enemy_inflicts_condition))
+  *if (((combat_enemy_hit_success) and (cea_save_failed)) and (combat_enemy_inflicts_condition))
     *set disadvantage true
     *set combat_condition_inflicted true
     *comment Movement conditions (2026-09-27): see the create comment (startup.txt) for which three names these
@@ -673,22 +680,13 @@ ${combat_player_dmg_roll_banner}
   *if (combat_enemy_hit_success)
     *gosub record_last_hit "player" 0 "enemy" combat_active_target
   *set combat_stun_inflicted false
-  *if ((combat_enemy_hit_success) and (combat_enemy_inflicts_stun))
+  *if (((combat_enemy_hit_success) and (cea_save_failed)) and (combat_enemy_inflicts_stun))
     *set player_stunned true
     *set combat_stun_inflicted true
   *set {(cea_bannername)} ""
   *if (combat_enemy_hit_success)
-    *temp cea_dmg 0
-    *rand cea_dmg 1 combat_enemy_dmg_dice_sides
-    *temp cea_bonus_str ""
-    *if (combat_enemy_dmg_bonus >= 0)
-      *set cea_bonus_str "+${combat_enemy_dmg_bonus}"
-    *else
-      *set cea_bonus_str "${combat_enemy_dmg_bonus}"
-    *temp cea_dmg_total (cea_dmg + combat_enemy_dmg_bonus)
-    *set {(cea_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${cea_dmg} ${cea_bonus_str} = ${cea_dmg_total}][/b]"
-    *set cea_dmg (cea_dmg + combat_enemy_dmg_bonus)
-    *set combat_enemy_dmg_dealt cea_dmg
+    *gosub roll_enemy_base_dmg cea_bannername
+    *temp cea_pre_resist combat_enemy_dmg_dealt
     *comment ABSORB ELEMENTS (Wizard/Ranger, 2026-11-08): armed earlier like Shield and Hellish Rebuke, free to
     *comment hold. Checks the primary type first, falling back to the elemental rider (combat_enemy_extra_dmg_type)
     *comment only when the primary isn't one of the five -- an attack almost never matches on both, but if it did,
@@ -744,6 +742,12 @@ ${combat_player_dmg_roll_banner}
         *set cea_extra_bonus_str "${combat_enemy_extra_dmg_bonus}"
       *gosub adjust_incoming_damage_packet cea_extra_raw combat_enemy_extra_dmg_type
       *set combat_enemy_dmg_dealt + combat_packet_damage
+      *temp cea_dmg (cea_pre_resist - combat_enemy_dmg_bonus)
+      *temp cea_bonus_str ""
+      *if (combat_enemy_dmg_bonus >= 0)
+        *set cea_bonus_str "+${combat_enemy_dmg_bonus}"
+      *else
+        *set cea_bonus_str "${combat_enemy_dmg_bonus}"
       *set {(cea_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${cea_dmg} ${cea_bonus_str} = ${cea_primary_after}${combat_incoming_dmg_suffix} + ${cea_extra_roll} ${cea_extra_bonus_str} ${combat_enemy_extra_dmg_type} = ${combat_packet_damage}${combat_packet_suffix} | Total ${combat_enemy_dmg_dealt}][/b]"
     *if ((agathys_active) and (temp_hp > 0))
       *set combat_agathys_triggered true
@@ -885,104 +889,119 @@ ${combat_player_dmg_roll_banner}
   *set locked_combat_enemy_atk_page_id page_id
 *temp reao_already_locked {reao_lockname}
 *if (not(reao_already_locked))
-  *if (combat_reckless_active)
-    *set combat_enemy_advantage true
-  *comment A stunned ally is easy to hit (2026-11-03, RAW), the same as a stunned player.
-  *if ({(reao_ap & "stunned")} > 0)
-    *set combat_enemy_advantage true
-  *temp reao_roll 0
-  *rand reao_roll 1 20
-  *temp reao_adv_label ""
-  *comment 2026-10-23 (the user): a ranged attacker with any opponent in its tile shoots an ally at disadvantage too (the same pin as resolve_enemy_attack's cea_ranged_pinned); a quick-drawn sidearm is melee and is not pinned.
-  *temp reao_pinned false
-  *if ((combat_enemy_weapon_type = "ranged") and (combat_ranged_cornered))
-    *set reao_pinned true
-  *temp reao_dis false
-  *comment A wavering ally covering up (combat.txt MORALE) is attacked at disadvantage until its next turn.
-  *temp reao_dodging {(reao_ap & "dodging")}
-  *if (((combat_enemy_disadvantage) or (reao_pinned)) or (reao_dodging))
-    *if (not(combat_enemy_advantage))
-      *set reao_dis true
-  *if (reao_dis)
-    *temp reao_roll_2 0
-    *rand reao_roll_2 1 20
-    *if (reao_roll_2 < reao_roll)
-      *set reao_roll reao_roll_2
-    *if (reao_pinned)
-      *set reao_adv_label " (Disadvantage — in reach)"
-    *else
-      *set reao_adv_label " (Disadvantage)"
-  *if ((combat_enemy_advantage) and ((not(combat_enemy_disadvantage)) and (not(reao_pinned))))
-    *temp reao_roll_2 0
-    *rand reao_roll_2 1 20
-    *if (reao_roll_2 > reao_roll)
-      *set reao_roll reao_roll_2
-    *set reao_adv_label " (Advantage)"
-  *comment Consumed on this actual roll (2026-09-28): reset both the bare scratch AND the per-slot field this
-  *comment enemy's own storage lives in, or fight_sync_target_in would just re-sync "still true" back onto the
-  *comment bare scratch the next time this same slot becomes active target.
-  *set combat_enemy_advantage false
-  *set combat_enemy_disadvantage false
-  *set {(("combat_enemy" & combat_active_target) & "_advantage")} false
-  *set {(("combat_enemy" & combat_active_target) & "_disadvantage")} false
-  *temp reao_base_target_ac {(reao_ap & "ac")}
-  *temp reao_target_ac reao_base_target_ac
-  *set combat_high_ground_attack_bonus 0
-  *set combat_high_ground_attack_label ""
-  *if (combat_enemy_weapon_type = "ranged")
-    *gosub_scene combat_movement combat_get_high_ground_attack_modifier "enemy" combat_active_target "ally" reao_a_slot
-  *set combat_cover_ranged_defense_bonus 0
-  *set combat_cover_ranged_defense_label ""
-  *if (combat_enemy_weapon_type = "ranged")
-    *gosub_scene combat_movement combat_get_cover_ranged_defense_bonus "ally" reao_a_slot
-  *set reao_target_ac (reao_target_ac + combat_cover_ranged_defense_bonus)
-  *temp reao_total ((reao_roll + combat_enemy_atk_bonus) + combat_high_ground_attack_bonus)
-  *temp reao_bonus_str ""
-  *if (combat_enemy_atk_bonus >= 0)
-    *set reao_bonus_str "+${combat_enemy_atk_bonus}"
+  *set combat_enemy_save_halved false
+  *temp reao_is_save (not(combat_enemy_atk_save_stat = ""))
+  *temp reao_save_failed true
+  *if (reao_is_save)
+    *gosub resolve_enemy_save_attack reao_ap reao_atk_bannername
+    *set reao_save_failed check_success
+    *set combat_enemy_atk_on_ally_hit combat_enemy_hit_success
   *else
-    *set reao_bonus_str "${combat_enemy_atk_bonus}"
-  *comment Bane (see resolve_cast_bane, combat_spells.txt): the same 1d4-off-the-roll penalty resolve_enemy_attack
-  *comment applies, reading the same already-synced combat_enemy_bane_expires_round (fight_sync_target_in ran for
-  *comment this exact enemy slot before combat_next_turn ever decided to redirect it here).
-  *temp reao_bane_str ""
-  *if (combat_enemy_bane_expires_round >= combat_round)
-    *temp reao_bane_die 0
-    *rand reao_bane_die 1 4
-    *set reao_total - reao_bane_die
-    *set reao_bane_str " -${reao_bane_die} (Bane)"
-  *set combat_enemy_atk_on_ally_hit (reao_total >= reao_target_ac)
-  *temp reao_verdict "MISS"
-  *if (combat_enemy_atk_on_ally_hit)
-    *set reao_verdict "HIT"
-  *temp reao_ac_str ""
-  *if (combat_cover_ranged_defense_bonus > 0)
-    *set reao_ac_str " (${reao_base_target_ac} +2 Cover)"
-  *set {(reao_atk_bannername)} "[b][🎲 ${combat_enemy_name} Attack Roll: ${reao_roll} ${reao_bonus_str}${combat_high_ground_attack_label}${reao_adv_label}${reao_bane_str} = ${reao_total} vs AC ${reao_target_ac}${reao_ac_str} — ${reao_verdict}][/b]"
+    *if (combat_reckless_active)
+      *set combat_enemy_advantage true
+    *comment A stunned ally is easy to hit (2026-11-03, RAW), the same as a stunned player.
+    *if ({(reao_ap & "stunned")} > 0)
+      *set combat_enemy_advantage true
+    *temp reao_roll 0
+    *rand reao_roll 1 20
+    *temp reao_adv_label ""
+    *comment 2026-10-23 (the user): a ranged attacker with any opponent in its tile shoots an ally at disadvantage too (the same pin as resolve_enemy_attack's cea_ranged_pinned); a quick-drawn sidearm is melee and is not pinned.
+    *temp reao_pinned false
+    *if ((combat_enemy_weapon_type = "ranged") and (combat_ranged_cornered))
+      *set reao_pinned true
+    *temp reao_dis false
+    *comment A wavering ally covering up (combat.txt MORALE) is attacked at disadvantage until its next turn.
+    *temp reao_dodging {(reao_ap & "dodging")}
+    *if (((combat_enemy_disadvantage) or (reao_pinned)) or (reao_dodging))
+      *if (not(combat_enemy_advantage))
+        *set reao_dis true
+    *if (reao_dis)
+      *temp reao_roll_2 0
+      *rand reao_roll_2 1 20
+      *if (reao_roll_2 < reao_roll)
+        *set reao_roll reao_roll_2
+      *if (reao_pinned)
+        *set reao_adv_label " (Disadvantage — in reach)"
+      *else
+        *set reao_adv_label " (Disadvantage)"
+    *if ((combat_enemy_advantage) and ((not(combat_enemy_disadvantage)) and (not(reao_pinned))))
+      *temp reao_roll_2 0
+      *rand reao_roll_2 1 20
+      *if (reao_roll_2 > reao_roll)
+        *set reao_roll reao_roll_2
+      *set reao_adv_label " (Advantage)"
+    *comment Consumed on this actual roll (2026-09-28): reset both the bare scratch AND the per-slot field this
+    *comment enemy's own storage lives in, or fight_sync_target_in would just re-sync "still true" back onto the
+    *comment bare scratch the next time this same slot becomes active target.
+    *set combat_enemy_advantage false
+    *set combat_enemy_disadvantage false
+    *set {(("combat_enemy" & combat_active_target) & "_advantage")} false
+    *set {(("combat_enemy" & combat_active_target) & "_disadvantage")} false
+    *temp reao_base_target_ac {(reao_ap & "ac")}
+    *temp reao_target_ac reao_base_target_ac
+    *set combat_high_ground_attack_bonus 0
+    *set combat_high_ground_attack_label ""
+    *if (combat_enemy_weapon_type = "ranged")
+      *gosub_scene combat_movement combat_get_high_ground_attack_modifier "enemy" combat_active_target "ally" reao_a_slot
+    *set combat_cover_ranged_defense_bonus 0
+    *set combat_cover_ranged_defense_label ""
+    *if (combat_enemy_weapon_type = "ranged")
+      *gosub_scene combat_movement combat_get_cover_ranged_defense_bonus "ally" reao_a_slot
+    *set reao_target_ac (reao_target_ac + combat_cover_ranged_defense_bonus)
+    *temp reao_total ((reao_roll + combat_enemy_atk_bonus) + combat_high_ground_attack_bonus)
+    *temp reao_bonus_str ""
+    *if (combat_enemy_atk_bonus >= 0)
+      *set reao_bonus_str "+${combat_enemy_atk_bonus}"
+    *else
+      *set reao_bonus_str "${combat_enemy_atk_bonus}"
+    *comment Bane (see resolve_cast_bane, combat_spells.txt): the same 1d4-off-the-roll penalty resolve_enemy_attack
+    *comment applies, reading the same already-synced combat_enemy_bane_expires_round (fight_sync_target_in ran for
+    *comment this exact enemy slot before combat_next_turn ever decided to redirect it here).
+    *temp reao_bane_str ""
+    *if (combat_enemy_bane_expires_round >= combat_round)
+      *temp reao_bane_die 0
+      *rand reao_bane_die 1 4
+      *set reao_total - reao_bane_die
+      *set reao_bane_str " -${reao_bane_die} (Bane)"
+    *set combat_enemy_atk_on_ally_hit (reao_total >= reao_target_ac)
+    *temp reao_verdict "MISS"
+    *if (combat_enemy_atk_on_ally_hit)
+      *set reao_verdict "HIT"
+    *temp reao_ac_str ""
+    *if (combat_cover_ranged_defense_bonus > 0)
+      *set reao_ac_str " (${reao_base_target_ac} +2 Cover)"
+    *set {(reao_atk_bannername)} "[b][🎲 ${combat_enemy_name} Attack Roll: ${reao_roll} ${reao_bonus_str}${combat_high_ground_attack_label}${reao_adv_label}${reao_bane_str} = ${reao_total} vs AC ${reao_target_ac}${reao_ac_str} — ${reao_verdict}][/b]"
   *set {(reao_bannername)} ""
   *set combat_enemy_dmg_on_ally_dealt 0
   *set combat_ally_blow_blocked false
   *if (combat_enemy_atk_on_ally_hit)
-    *temp reao_dmg 0
-    *rand reao_dmg 1 combat_enemy_dmg_dice_sides
-    *temp reao_dmg_bonus_str ""
-    *if (combat_enemy_dmg_bonus >= 0)
-      *set reao_dmg_bonus_str "+${combat_enemy_dmg_bonus}"
-    *else
-      *set reao_dmg_bonus_str "${combat_enemy_dmg_bonus}"
-    *temp reao_dmg_total (reao_dmg + combat_enemy_dmg_bonus)
-    *set {(reao_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${reao_dmg} ${reao_dmg_bonus_str} = ${reao_dmg_total}][/b]"
+    *gosub roll_enemy_base_dmg reao_bannername
+    *temp reao_dmg_pre combat_enemy_dmg_dealt
+    *temp reao_dmg_total combat_enemy_dmg_dealt
     *comment An ally's own defenses (combat_allyN_resist_types, _vulnerable_types, _immune_types): the blight twig takes double fire; an ally can be resistant or immune to any number of types, through the same core the player and the enemies use.
     *gosub adjust_damage_packet reao_ap reao_dmg_total combat_enemy_dmg_type 0
     *temp reao_tag combat_packet_suffix
     *set combat_ally_blow_blocked combat_packet_blocked
     *set reao_dmg_total combat_packet_damage
-    *set {(reao_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${reao_dmg} ${reao_dmg_bonus_str} = ${reao_dmg_total}${reao_tag}][/b]"
+    *temp reao_dmg (reao_dmg_pre - combat_enemy_dmg_bonus)
+    *temp reao_dmg_bonus_str ""
+    *if (combat_enemy_dmg_bonus >= 0)
+      *set reao_dmg_bonus_str "+${combat_enemy_dmg_bonus}"
+    *else
+      *set reao_dmg_bonus_str "${combat_enemy_dmg_bonus}"
+    *if ((not(reao_tag = "")) or (not(reao_dmg_total = reao_dmg_pre)))
+      *if ((combat_enemy_atk_dmg_dice = 1) and (not(combat_enemy_save_halved)))
+        *set {(reao_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${reao_dmg} ${reao_dmg_bonus_str} = ${reao_dmg_total}${reao_tag}][/b]"
+      *else
+        *set {(reao_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${reao_dmg_pre} -> ${reao_dmg_total}${reao_tag}][/b]"
     *comment A stunning blow (2026-11-03) stuns an ally just as it stuns the player (resolve_enemy_attack): the ally loses its next turn (combat.txt combat_stun_gate "ally").
-    *if ((combat_enemy_inflicts_stun) and ({(reao_ap & "hp")} > reao_dmg_total))
+    *if (((combat_enemy_inflicts_stun) and (reao_save_failed)) and ({(reao_ap & "hp")} > reao_dmg_total))
       *set {(reao_ap & "stunned")} 1
       *set {(reao_ap & "stun_kind")} ""
-      *set {(reao_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${reao_dmg} ${reao_dmg_bonus_str} = ${reao_dmg_total}${reao_tag} | ${combat_enemy_stun_icon} ${combat_enemy_stun_name}][/b]"
+      *if ((combat_enemy_atk_dmg_dice = 1) and (not(combat_enemy_save_halved)))
+        *set {(reao_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${reao_dmg} ${reao_dmg_bonus_str} = ${reao_dmg_total}${reao_tag} | ${combat_enemy_stun_icon} ${combat_enemy_stun_name}][/b]"
+      *else
+        *set {(reao_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${reao_dmg_total}${reao_tag} | ${combat_enemy_stun_icon} ${combat_enemy_stun_name}][/b]"
     *set combat_enemy_dmg_on_ally_dealt reao_dmg_total
     *gosub record_last_hit "ally" reao_a_slot "enemy" combat_active_target
     *set {(reao_ap & "hp")} - reao_dmg_total
@@ -1349,6 +1368,41 @@ ${combat_player_dmg_roll_banner}
   *set check_success {(res_successname)}
   *set res_banner {(res_bannername)}
 *else
+  *temp res_adv false
+  *temp res_dis combat_save_disadv
+  *if (res_prefix = "combat_player_")
+    *gosub combat_player_sync
+    *temp res_prev_stat check_stat
+    *temp res_prev_adv advantage
+    *temp res_prev_dis disadvantage
+    *set advantage false
+    *set disadvantage false
+    *if (res_stat = "strength")
+      *set check_stat "str"
+    *elseif (res_stat = "dexterity")
+      *set check_stat "dex"
+    *elseif (res_stat = "constitution")
+      *set check_stat "con"
+    *elseif (res_stat = "intelligence")
+      *set check_stat "int"
+    *elseif (res_stat = "wisdom")
+      *set check_stat "wis"
+    *else
+      *set check_stat "cha"
+    *if (((combat_save_dmg_type = "poison") or (combat_save_dmg_type = "charmed")) or (combat_save_dmg_type = "sleep"))
+      *set save_vs combat_save_dmg_type
+    *elseif (res_stat = "dexterity")
+      *set save_vs "dex"
+    *else
+      *set save_vs "save"
+    *gosub_scene dice_engine collect_save_modifiers
+    *set res_adv advantage
+    *if (disadvantage)
+      *set res_dis true
+    *set check_stat res_prev_stat
+    *set save_vs "none"
+    *set advantage res_prev_adv
+    *set disadvantage res_prev_dis
   *temp res_score {(res_prefix & res_stat)}
   *gosub_scene startup score_to_mod res_score
   *temp res_mod sm_mod
@@ -1367,10 +1421,15 @@ ${combat_player_dmg_roll_banner}
       *set res_mod + combat_player_save_bonus_charisma
   *temp res_roll 0
   *rand res_roll 1 20
+  *temp res_roll_b 0
   *temp res_dis_note ""
-  *comment combat_save_disadv (the Philter of Remembrance, 2026-11-01): roll twice and keep the lower.
-  *if (combat_save_disadv)
-    *temp res_roll_b 0
+  *comment Fold save advantage and disadvantage (including combat_save_disadv) cleanly: opposite sources cancel to a single die.
+  *if ((res_adv) and (not(res_dis)))
+    *rand res_roll_b 1 20
+    *if (res_roll_b > res_roll)
+      *set res_roll res_roll_b
+    *set res_dis_note " (advantage)"
+  *if ((res_dis) and (not(res_adv)))
     *rand res_roll_b 1 20
     *if (res_roll_b < res_roll)
       *set res_roll res_roll_b
@@ -1398,9 +1457,85 @@ ${combat_player_dmg_roll_banner}
   *set {(res_bannername)} res_banner
   *set {(res_lockname)} true
   *set locked_combat_save_page_id page_id
+*set combat_save_dmg_type ""
 *comment combat_save_quiet (Hellish Rebuke): the caller prints the banner itself, in order, so it is only stored here.
 *if (not(combat_save_quiet))
   ${res_banner}
   *line_break
+*return
+
+*comment Shared helper for save-based enemy attacks (player or ally target). Sets combat_enemy_hit_success,
+*comment combat_enemy_save_halved, {resa_atk_bannername}, and leaves check_success = true when target FAILED.
+*label resolve_enemy_save_attack
+*params resa_target_prefix resa_atk_bannername
+*temp resa_save_stat combat_enemy_atk_save_stat
+*if (resa_save_stat = "")
+  *set resa_save_stat "dexterity"
+*temp resa_stat_label "Charisma"
+*if (resa_save_stat = "strength")
+  *set resa_stat_label "Strength"
+*if (resa_save_stat = "dexterity")
+  *set resa_stat_label "Dexterity"
+*if (resa_save_stat = "constitution")
+  *set resa_stat_label "Constitution"
+*if (resa_save_stat = "intelligence")
+  *set resa_stat_label "Intelligence"
+*if (resa_save_stat = "wisdom")
+  *set resa_stat_label "Wisdom"
+*set combat_save_locked_7 false
+*set combat_save_dmg_type combat_enemy_dmg_type
+*set combat_save_quiet true
+*gosub resolve_save resa_target_prefix resa_save_stat resa_stat_label combat_enemy_atk_save_dc 7
+*set combat_save_quiet false
+*set {(resa_atk_bannername)} combat_save_banner_7
+*set combat_enemy_atk_total 0
+*set combat_enemy_save_halved false
+*if (check_success)
+  *set combat_enemy_hit_success true
+*elseif (combat_enemy_atk_save_half)
+  *set combat_enemy_hit_success true
+  *set combat_enemy_save_halved true
+*else
+  *set combat_enemy_hit_success false
+*return
+
+*comment Shared helper to roll combat_enemy_atk_dmg_dice * d{combat_enemy_dmg_dice_sides} + bonus,
+*comment halve on save-for-half, format {rebd_bannername}, and store result in combat_enemy_dmg_dealt.
+*label roll_enemy_base_dmg
+*params rebd_bannername
+*temp rebd_dmg 0
+*temp rebd_bonus_str ""
+*if (combat_enemy_dmg_bonus >= 0)
+  *set rebd_bonus_str "+${combat_enemy_dmg_bonus}"
+*else
+  *set rebd_bonus_str "${combat_enemy_dmg_bonus}"
+*if ((combat_enemy_atk_dmg_dice = 1) and (not(combat_enemy_save_halved)))
+  *rand rebd_dmg 1 combat_enemy_dmg_dice_sides
+  *temp rebd_dmg_total (rebd_dmg + combat_enemy_dmg_bonus)
+  *set {(rebd_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${rebd_dmg} ${rebd_bonus_str} = ${rebd_dmg_total}][/b]"
+  *set combat_enemy_dmg_dealt rebd_dmg_total
+*else
+  *temp rebd_di 1
+  *temp rebd_die 0
+  *label rebd_dmg_dice_loop
+  *if (rebd_di <= combat_enemy_atk_dmg_dice)
+    *rand rebd_die 1 combat_enemy_dmg_dice_sides
+    *set rebd_dmg + rebd_die
+    *set rebd_di + 1
+    *goto rebd_dmg_dice_loop
+  *temp rebd_dmg_total (rebd_dmg + combat_enemy_dmg_bonus)
+  *temp rebd_dice_note ""
+  *if (combat_enemy_atk_dmg_dice > 1)
+    *set rebd_dice_note " (${combat_enemy_atk_dmg_dice}d${combat_enemy_dmg_dice_sides})"
+  *temp rebd_bonus_part " ${rebd_bonus_str}"
+  *if ((combat_enemy_atk_dmg_dice > 1) and (combat_enemy_dmg_bonus = 0))
+    *set rebd_bonus_part ""
+  *if (combat_enemy_save_halved)
+    *temp rebd_dmg_half ((rebd_dmg_total - (rebd_dmg_total modulo 2)) / 2)
+    *set {(rebd_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${rebd_dmg}${rebd_dice_note}${rebd_bonus_part} = ${rebd_dmg_total} -> ${rebd_dmg_half} (saved, half)][/b]"
+    *set combat_enemy_dmg_dealt rebd_dmg_half
+  *else
+    *set {(rebd_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${rebd_dmg}${rebd_dice_note}${rebd_bonus_part} = ${rebd_dmg_total}][/b]"
+    *set combat_enemy_dmg_dealt rebd_dmg_total
 *return
 
