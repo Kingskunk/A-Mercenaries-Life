@@ -83,11 +83,13 @@ catalog.encounters.forEach(function (enc) {
     if (s.range !== undefined) expect(w + "opening range", state[p + "range"], s.range);
     if (s.e.arrives !== undefined) expect(w + "arrives", state[p + "arrives"], s.e.arrives);
     if (s.e.spells && s.e.spells.length) {
+      const sb = JSON.parse(fs.readFileSync(path.join(__dirname, "spell_book.json"), "utf8"));
       s.e.spells.forEach(function (sp, idx) {
         const m = idx + 1;
+        const isCantrip = !!(sb.cantrips && sb.cantrips[sp.id]);
         expect(w + "cast_spell_" + m, state[p + "cast_spell_" + m], sp.id);
-        expect(w + "cast_uses_" + m, state[p + "cast_uses_" + m], sp.uses);
-        expect(w + "cast_chance_" + m, state[p + "cast_chance_" + m], sp.chance);
+        expect(w + "cast_uses_" + m, state[p + "cast_uses_" + m], isCantrip ? 0 : (sp.uses === undefined ? 1 : sp.uses));
+        expect(w + "cast_chance_" + m, state[p + "cast_chance_" + m], isCantrip ? (sp.chance || 0) : sp.chance);
       });
       if (s.e.cast_dc !== undefined) expect(w + "cast_dc", state[p + "cast_dc"], s.e.cast_dc);
       else expect(w + "cast_dc derived > 0", Number(state[p + "cast_dc"]) > 0, true);

@@ -31,8 +31,10 @@ var catalog = JSON.parse(fs.readFileSync(path.join(__dirname, "encounter_catalog
 var enemyTypes = {};
 JSON.parse(fs.readFileSync(path.join(__dirname, "enemy_catalog.json"), "utf8")).types.forEach(function (t) { enemyTypes[t.id] = t; });
 var spellBook = JSON.parse(fs.readFileSync(path.join(__dirname, "spell_book.json"), "utf8"));
+var cantripSpells = spellBook.cantrips || {};
+var learnableSpells = spellBook.learnable || {};
 var validSpells = {};
-Object.keys(spellBook.cantrips || {}).concat(Object.keys(spellBook.learnable || {})).forEach(function (id) { validSpells[id] = true; });
+Object.keys(cantripSpells).concat(Object.keys(learnableSpells)).forEach(function (id) { validSpells[id] = true; });
 var VALID_CAST_STATS = { strength: true, dexterity: true, constitution: true, intelligence: true, wisdom: true, charisma: true };
 
 // ---------------------------------------------------------------- validation and expansion into slots
@@ -77,14 +79,28 @@ var encounters = (catalog.encounters || []).map(function (enc) {
       if (!Array.isArray(e.spells)) fail(ew, "spells must be an array");
       else if (e.spells.length > 3) fail(ew, "at most 3 spells per enemy (got " + e.spells.length + ")");
       else {
+        var atWillAttackCount = 0;
         spells = e.spells.map(function (sp, si) {
           var sw = ew + " spells[" + si + "]";
           if (!sp || typeof sp !== "object") { fail(sw, "spell entry must be an object"); return null; }
           if (!sp.id || !validSpells[sp.id]) fail(sw, "unknown spell id " + JSON.stringify(sp.id) + " (not in tools/spell_book.json)");
-          if (!isInt(sp.uses) || sp.uses < 1) fail(sw, "uses must be a whole number >= 1");
+          var isCantrip = !!cantripSpells[sp.id];
+          if (isCantrip) {
+            if (sp.uses !== undefined) fail(sw, "cantrips are at-will and cannot specify uses");
+            if (cantripSpells[sp.id].reach !== undefined) atWillAttackCount++;
+            if (sp.chance !== undefined && (!isInt(sp.chance) || sp.chance < 1 || sp.chance > 100)) {
+              fail(sw, "chance must be a whole number from 1 to 100");
+            }
+            return { id: sp.id, isCantrip: true, chance: sp.chance };
+          }
+          var uses = sp.uses === undefined ? 1 : sp.uses;
+          if (!isInt(uses) || uses < 1) fail(sw, "uses must be a whole number >= 1");
           if (!isInt(sp.chance) || sp.chance < 1 || sp.chance > 100) fail(sw, "chance must be a whole number from 1 to 100");
-          return { id: sp.id, uses: sp.uses, chance: sp.chance };
+          return { id: sp.id, isCantrip: false, uses: uses, chance: sp.chance };
         });
+        if (atWillAttackCount >= 2) {
+          fail(ew, "at most one at-will attack spell per enemy (an enemy has one base attack)");
+        }
       }
     }
     if (e.cast_stat !== undefined && !VALID_CAST_STATS[e.cast_stat]) {
@@ -145,8 +161,8 @@ function genLabel(x) {
         if (!sp) return;
         var k = si + 1;
         out.push("*set " + field(n, "cast_spell_" + k + "_override") + " " + quote(sp.id));
-        out.push("*set " + field(n, "cast_uses_" + k + "_override") + " " + sp.uses);
-        out.push("*set " + field(n, "cast_chance_" + k + "_override") + " " + sp.chance);
+        if (!sp.isCantrip) out.push("*set " + field(n, "cast_uses_" + k + "_override") + " " + sp.uses);
+        if (sp.chance !== undefined) out.push("*set " + field(n, "cast_chance_" + k + "_override") + " " + sp.chance);
       });
     }
     if (s.cast_stat !== undefined) out.push("*set " + field(n, "cast_stat_override") + " " + quote(s.cast_stat));

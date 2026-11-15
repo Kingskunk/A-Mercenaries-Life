@@ -612,6 +612,70 @@ ${combat_blindness_banner}
 *gosub_scene combat_prose fight_narrate_npc_cast
 *return
 
+*label spend_npc_spell_use
+*comment Replay-locked use payment for attack-profile NPC spells (Step 3c-2).
+*params snsu_caster snsu_place
+*temp snsu_key "enemy1"
+*if (snsu_caster = "combat_enemy1_")
+  *set snsu_key "enemy1"
+*elseif (snsu_caster = "combat_enemy2_")
+  *set snsu_key "enemy2"
+*elseif (snsu_caster = "combat_enemy3_")
+  *set snsu_key "enemy3"
+*elseif (snsu_caster = "combat_enemy4_")
+  *set snsu_key "enemy4"
+*elseif (snsu_caster = "combat_enemy5_")
+  *set snsu_key "enemy5"
+*elseif (snsu_caster = "combat_enemy6_")
+  *set snsu_key "enemy6"
+*elseif (snsu_caster = "combat_ally1_")
+  *set snsu_key "ally1"
+*elseif (snsu_caster = "combat_ally2_")
+  *set snsu_key "ally2"
+*elseif (snsu_caster = "combat_ally3_")
+  *set snsu_key "ally3"
+*elseif (snsu_caster = "combat_ally4_")
+  *set snsu_key "ally4"
+*if (not(locked_combat_npc_cast_page_id = page_id))
+  *set combat_npc_cast_locked_enemy1 false
+  *set combat_npc_cast_locked_enemy2 false
+  *set combat_npc_cast_locked_enemy3 false
+  *set combat_npc_cast_locked_enemy4 false
+  *set combat_npc_cast_locked_enemy5 false
+  *set combat_npc_cast_locked_enemy6 false
+  *set combat_npc_cast_locked_ally1 false
+  *set combat_npc_cast_locked_ally2 false
+  *set combat_npc_cast_locked_ally3 false
+  *set combat_npc_cast_locked_ally4 false
+  *set locked_combat_npc_cast_page_id page_id
+*temp snsu_lockname ("combat_npc_cast_locked_" & snsu_key)
+*if (not({snsu_lockname}))
+  *if ((snsu_place >= 1) and (snsu_place <= 3))
+    *temp snsu_ufield ((snsu_caster & "cast_uses_") & snsu_place)
+    *if ({snsu_ufield} > 0)
+      *set {(snsu_ufield)} ({snsu_ufield} - 1)
+  *set {snsu_lockname} true
+*return
+
+*label load_enemy_spell_profile
+*comment Loads an assigned attack-profile spell's numbers into the active enemy's scratch attack fields (Step 3c-2) so resolve_enemy_attack / resolve_enemy_attack_on_ally runs the unified damage pipeline.
+*params lesp_caster lesp_spell_id
+*set combat_enemy_used_sidearm false
+*set combat_enemy_move2_chance 0
+*if (lesp_spell_id = "burning_hands")
+  *temp lesp_dc {(lesp_caster & "cast_dc")}
+  *if (lesp_dc <= 0)
+    *set lesp_dc 10
+  *set combat_enemy_weapon_type "melee"
+  *set combat_enemy_atk_save_stat "dexterity"
+  *set combat_enemy_atk_save_dc lesp_dc
+  *set combat_enemy_atk_save_half true
+  *set combat_enemy_atk_dmg_dice 3
+  *set combat_enemy_dmg_dice_sides 6
+  *set combat_enemy_dmg_bonus 0
+  *set combat_enemy_dmg_type "fire"
+*return
+
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment SPELL: BANE (Bard, 1st level -- wired into the bard_spell/bard_spell_2 pool, 2026-09-27)
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

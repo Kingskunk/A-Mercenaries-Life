@@ -48,14 +48,18 @@
 *temp fnet_ep (("combat_enemy" & combat_active_target) & "_")
 *temp fnet_fp (("combat_flavor_enemy" & combat_active_target) & "_")
 *set fnet_type {(fnet_ep & "flavor_type")}
-*comment Quick-draw (2026-09-29, Ranged-AI plan §4.8): combat_enemy_used_sidearm is set for this one turn only,
-*comment by combat_next_turn's row-2 decision, right before it calls resolve_enemy_attack with this slot's sidearm
-*comment fields swapped in. Redirecting the TYPE ID here (never the per-slot flavor_type field itself, which stays
-*comment "archer"/"slinger" so the type reverts to its normal bow/sling lines next turn) is enough to pull the
-*comment dagger pool instead of the bow/sling one below, with no other change to this label's own logic.
-*if (combat_enemy_used_sidearm) and (not(fnet_type = ""))
-  *comment Quick-draw / melee-range sidearm (dagger for archer/slinger, Burning Hands for hedge_mage): both route through the _dagger pool suffix.
-  *set fnet_type "${fnet_type}_dagger"
+*temp fnet_has_ps false
+*if ((({(fnet_ep & "cast_spell_1")} = "poison_spray") or ({(fnet_ep & "cast_spell_2")} = "poison_spray")) or ({(fnet_ep & "cast_spell_3")} = "poison_spray"))
+  *set fnet_has_ps true
+*comment Assigned spells (Step 3c-2) take precedence over both body flavor_type and quick-draw _dagger prose.
+*if (not(combat_enemy_cast_spell = ""))
+  *set fnet_type combat_enemy_cast_spell
+*elseif (combat_enemy_used_sidearm) and (not(fnet_type = ""))
+  *comment Quick-draw melee-range sidearm: if an at-will attack spell moved the body's own weapon into sidearm, keep the body flavor_type; otherwise (archer/slinger dagger) route through _dagger.
+  *if (not(fnet_has_ps))
+    *set fnet_type "${fnet_type}_dagger"
+*elseif (fnet_has_ps)
+  *set fnet_type "poison_spray"
 *comment Per-slot replay lock (2026-09-30, real bug caught live via refresh_fuzz_test.js): this label is called
 *comment once per acting enemy per turn, and several enemies can act within one page before the player's next
 *comment choice -- same "shared subroutine called multiple times on one page" shape as resolve_enemy_attack's own
@@ -102,58 +106,62 @@
 *comment so an inline {} indirection read on the wrong side of one would look up combat_flavor_enemy1_hit_1 (which
 *comment does not exist -- slot 1 uses the bare, unnumbered pool) every time slot 1 is active, not just when the
 *comment slot-2-and-beyond branch is actually taken.
-*if (combat_active_target > 1)
-  *if (not({(fnet_fp & "hit_1")} = ""))
-    *set fnet_use_override true
-*if ((combat_active_target > 1) and (not(fnet_type = "")))
-  *set fnet_use_override true
-*if (fnet_use_override)
+*if ((combat_enemy_cast_spell = "") and (not((fnet_has_ps) and (not(combat_enemy_used_sidearm)))))
   *if (combat_active_target > 1)
+    *if (not({(fnet_fp & "hit_1")} = ""))
+      *set fnet_use_override true
+  *if ((combat_active_target > 1) and (not(fnet_type = "")))
+    *set fnet_use_override true
+  *if (fnet_use_override)
+    *if (combat_active_target > 1)
+      *if (fnet_v = 1)
+        *set fnet_hit {(fnet_fp & "hit_1")}
+        *set fnet_miss {(fnet_fp & "miss_1")}
+      *if (fnet_v = 2)
+        *set fnet_hit {(fnet_fp & "hit_2")}
+        *set fnet_miss {(fnet_fp & "miss_2")}
+      *if (fnet_v = 3)
+        *set fnet_hit {(fnet_fp & "hit_3")}
+        *set fnet_miss {(fnet_fp & "miss_3")}
+      *if (fnet_v = 4)
+        *set fnet_hit {(fnet_fp & "hit_4")}
+        *set fnet_miss {(fnet_fp & "miss_4")}
+      *if (fnet_v = 5)
+        *set fnet_hit {(fnet_fp & "hit_5")}
+        *set fnet_miss {(fnet_fp & "miss_5")}
+  *else
     *if (fnet_v = 1)
-      *set fnet_hit {(fnet_fp & "hit_1")}
-      *set fnet_miss {(fnet_fp & "miss_1")}
+      *set fnet_hit combat_flavor_enemy_hit_1
+      *set fnet_miss combat_flavor_enemy_miss_1
     *if (fnet_v = 2)
-      *set fnet_hit {(fnet_fp & "hit_2")}
-      *set fnet_miss {(fnet_fp & "miss_2")}
+      *set fnet_hit combat_flavor_enemy_hit_2
+      *set fnet_miss combat_flavor_enemy_miss_2
     *if (fnet_v = 3)
-      *set fnet_hit {(fnet_fp & "hit_3")}
-      *set fnet_miss {(fnet_fp & "miss_3")}
+      *set fnet_hit combat_flavor_enemy_hit_3
+      *set fnet_miss combat_flavor_enemy_miss_3
     *if (fnet_v = 4)
-      *set fnet_hit {(fnet_fp & "hit_4")}
-      *set fnet_miss {(fnet_fp & "miss_4")}
+      *set fnet_hit combat_flavor_enemy_hit_4
+      *set fnet_miss combat_flavor_enemy_miss_4
     *if (fnet_v = 5)
-      *set fnet_hit {(fnet_fp & "hit_5")}
-      *set fnet_miss {(fnet_fp & "miss_5")}
+      *set fnet_hit combat_flavor_enemy_hit_5
+      *set fnet_miss combat_flavor_enemy_miss_5
+  *if (fnet_hit = "")
+    *if (not(fnet_type = ""))
+      *set fnet_hit fft_hit
+    *elseif (fnet_use_override)
+      *set fnet_hit {(fnet_fp & "hit_1")}
+    *else
+      *set fnet_hit combat_flavor_enemy_hit_1
+  *if (fnet_miss = "")
+    *if (not(fnet_type = ""))
+      *set fnet_miss fft_miss
+    *elseif (fnet_use_override)
+      *set fnet_miss {(fnet_fp & "miss_1")}
+    *else
+      *set fnet_miss combat_flavor_enemy_miss_1
 *else
-  *if (fnet_v = 1)
-    *set fnet_hit combat_flavor_enemy_hit_1
-    *set fnet_miss combat_flavor_enemy_miss_1
-  *if (fnet_v = 2)
-    *set fnet_hit combat_flavor_enemy_hit_2
-    *set fnet_miss combat_flavor_enemy_miss_2
-  *if (fnet_v = 3)
-    *set fnet_hit combat_flavor_enemy_hit_3
-    *set fnet_miss combat_flavor_enemy_miss_3
-  *if (fnet_v = 4)
-    *set fnet_hit combat_flavor_enemy_hit_4
-    *set fnet_miss combat_flavor_enemy_miss_4
-  *if (fnet_v = 5)
-    *set fnet_hit combat_flavor_enemy_hit_5
-    *set fnet_miss combat_flavor_enemy_miss_5
-*if (fnet_hit = "")
-  *if (not(fnet_type = ""))
-    *set fnet_hit fft_hit
-  *elseif (fnet_use_override)
-    *set fnet_hit {(fnet_fp & "hit_1")}
-  *else
-    *set fnet_hit combat_flavor_enemy_hit_1
-*if (fnet_miss = "")
-  *if (not(fnet_type = ""))
-    *set fnet_miss fft_miss
-  *elseif (fnet_use_override)
-    *set fnet_miss {(fnet_fp & "miss_1")}
-  *else
-    *set fnet_miss combat_flavor_enemy_miss_1
+  *set fnet_hit fft_hit
+  *set fnet_miss fft_miss
 *comment Movepool override -- move 2 gets its own line instead of the variant pool above, since it fires far less
 *comment often per fight. A library slot draws one of three pairs from flavor_from_type; a per-slot
 *comment combat_flavor_enemy*_move2_hit/miss (set by a hand-authored fight, or as local color) replaces it. Picked
@@ -293,39 +301,66 @@
 *temp fnaa_type {(fnaa_ap & "flavor_type")}
 *temp fnaa_claws ((fnaa_type = "blight_twig") or (fnaa_type = "twig_blight"))
 *temp fnaa_knife (((fnaa_attacker_kind = "ally") and (combat_ally_atk_used_sidearm)) or ((fnaa_attacker_kind = "enemy") and (combat_enemy_used_sidearm)))
+*temp fnaa_has_ps false
+*if (fnaa_attacker_kind = "enemy")
+  *if ((({(fnaa_ap & "cast_spell_1")} = "poison_spray") or ({(fnaa_ap & "cast_spell_2")} = "poison_spray")) or ({(fnaa_ap & "cast_spell_3")} = "poison_spray"))
+    *set fnaa_has_ps true
 *temp fnaa_dp ((("combat_" & fnaa_defender_kind) & fnaa_defender_slot) & "_")
 *set combat_defender_name {(fnaa_dp & "name")}
 *set combat_defender_epithet {(fnaa_dp & "epithet")}
 *temp fnaa_v 1
 *rand fnaa_v 1 5
 *temp fnaa_line ""
-*if (fnaa_knife)
-  *if (fnaa_type = "hedge_mage")
-    *comment The caster's melee-range fallback against an ally: Burning Hands (3d6 fire, DEX save DC 13, half on a save).
-    *if (combat_enemy_save_halved) or (not(fnaa_hit))
-      *if (fnaa_v = 1)
-        *set fnaa_line "$!{combat_attacker_epithet} snaps their wrists together and looses an arc of flame, and ${combat_defender_epithet} ducks clear of the core while the outer sparks singe their shoulder."
-      *if (fnaa_v = 2)
-        *set fnaa_line "$!{combat_attacker_epithet} sends a sheet of fire roaring forward, and ${combat_defender_epithet} twists sideways just enough to take only the scorching edge."
-      *if (fnaa_v = 3)
-        *set fnaa_line "At arm's length, ${combat_attacker_epithet} sweeps a fan of fire across the gap, and ${combat_defender_epithet} pivots clear of its heart so only the outer tongue catches their ribs."
-      *if (fnaa_v = 4)
-        *set fnaa_line "Flame bursts from ${combat_attacker_epithet}'s spread fingers, and ${combat_defender_epithet} drops low under the main blast as heat rolls over their back."
-      *if (fnaa_v = 5)
-        *set fnaa_line "$!{combat_attacker_epithet} lets loose a sudden fan of flame, and ${combat_defender_epithet} throws an arm up and reels back from the worst of it."
-    *else
-      *if (fnaa_v = 1)
-        *set fnaa_line "$!{combat_attacker_epithet} spreads both hands wide, thumbs locked, and a roaring fan of flame washes straight across ${combat_defender_epithet}."
-      *if (fnaa_v = 2)
-        *set fnaa_line "$!{combat_attacker_epithet} drives both palms forward, and a sheet of bright fire catches ${combat_defender_epithet} full in the chest."
-      *if (fnaa_v = 3)
-        *set fnaa_line "At arm's length, ${combat_attacker_epithet} unleashes a broad sweep of orange flame that scorches ${combat_defender_epithet} from hip to throat."
-      *if (fnaa_v = 4)
-        *set fnaa_line "Flame leaps from ${combat_attacker_epithet}'s outstretched fingers and washes over ${combat_defender_epithet} before they can turn aside."
-      *if (fnaa_v = 5)
-        *set fnaa_line "$!{combat_attacker_epithet} snaps their wrists apart, sending a wall of heat and sparks crashing across ${combat_defender_epithet}'s shoulder."
+*if ((fnaa_attacker_kind = "enemy") and (combat_enemy_cast_spell = "burning_hands"))
+  *comment An enemy casting Burning Hands against an intercepting ally (3d6 fire, DEX save, half on a save).
+  *if (combat_enemy_save_halved) or (not(fnaa_hit))
+    *if (fnaa_v = 1)
+      *set fnaa_line "$!{combat_attacker_epithet} snaps their wrists together and looses an arc of flame, and ${combat_defender_epithet} ducks clear of the core while the outer sparks singe their shoulder."
+    *if (fnaa_v = 2)
+      *set fnaa_line "$!{combat_attacker_epithet} sends a sheet of fire roaring forward, and ${combat_defender_epithet} twists sideways just enough to take only the scorching edge."
+    *if (fnaa_v = 3)
+      *set fnaa_line "At arm's length, ${combat_attacker_epithet} sweeps a fan of fire across the gap, and ${combat_defender_epithet} pivots clear of its heart so only the outer tongue catches their ribs."
+    *if (fnaa_v = 4)
+      *set fnaa_line "Flame bursts from ${combat_attacker_epithet}'s spread fingers, and ${combat_defender_epithet} drops low under the main blast as heat rolls over their back."
+    *if (fnaa_v = 5)
+      *set fnaa_line "$!{combat_attacker_epithet} lets loose a sudden fan of flame, and ${combat_defender_epithet} throws an arm up and reels back from the worst of it."
   *else
-    *gosub flavor_ally_dagger
+    *if (fnaa_v = 1)
+      *set fnaa_line "$!{combat_attacker_epithet} spreads both hands wide, thumbs locked, and a roaring fan of flame washes straight across ${combat_defender_epithet}."
+    *if (fnaa_v = 2)
+      *set fnaa_line "$!{combat_attacker_epithet} drives both palms forward, and a sheet of bright fire catches ${combat_defender_epithet} full in the chest."
+    *if (fnaa_v = 3)
+      *set fnaa_line "At arm's length, ${combat_attacker_epithet} unleashes a broad sweep of orange flame that scorches ${combat_defender_epithet} from hip to throat."
+    *if (fnaa_v = 4)
+      *set fnaa_line "Flame leaps from ${combat_attacker_epithet}'s outstretched fingers and washes over ${combat_defender_epithet} before they can turn aside."
+    *if (fnaa_v = 5)
+      *set fnaa_line "$!{combat_attacker_epithet} snaps their wrists apart, sending a wall of heat and sparks crashing across ${combat_defender_epithet}'s shoulder."
+*elseif ((fnaa_knife) and (not(fnaa_has_ps)))
+  *gosub flavor_ally_dagger
+*elseif ((fnaa_has_ps) and (not(fnaa_knife)))
+  *comment An enemy casting Poison Spray at an intercepting or ranged ally (ranged spell attack, 1d12 poison).
+  *if (fnaa_hit)
+    *if (fnaa_v = 1)
+      *set fnaa_line "$!{combat_attacker_epithet} thrusts out a palm, and a jet of green-yellow vapor catches ${combat_defender_epithet} full in the face."
+    *if (fnaa_v = 2)
+      *set fnaa_line "A sour mist boils off ${combat_attacker_epithet}'s fingers and rolls straight over ${combat_defender_epithet}, leaving them coughing hard."
+    *if (fnaa_v = 3)
+      *set fnaa_line "$!{combat_attacker_epithet} flicks a hand, and a gout of bitter vapor washes across ${combat_defender_epithet}'s chest."
+    *if (fnaa_v = 4)
+      *set fnaa_line "$!{combat_attacker_epithet} draws two fingers through the air, and a ribbon of poison whips into ${combat_defender_epithet}'s flank."
+    *if (fnaa_v = 5)
+      *set fnaa_line "A hiss of stinging fog leaps from ${combat_attacker_epithet}'s palm and envelops ${combat_defender_epithet} before they can break clear."
+  *else
+    *if (fnaa_v = 1)
+      *set fnaa_line "$!{combat_attacker_epithet} thrusts out a palm, but ${combat_defender_epithet} throws an arm up and twists aside as the vapor drifts past."
+    *if (fnaa_v = 2)
+      *set fnaa_line "A sour mist boils off ${combat_attacker_epithet}'s fingers, and ${combat_defender_epithet} breaks clear before it can settle."
+    *if (fnaa_v = 3)
+      *set fnaa_line "$!{combat_attacker_epithet} flicks a gout of bitter vapor across the gap, and ${combat_defender_epithet} ducks cleanly underneath it."
+    *if (fnaa_v = 4)
+      *set fnaa_line "$!{combat_attacker_epithet} whips a ribbon of poison out from two fingers, but ${combat_defender_epithet} shifts aside and lets it dissolve."
+    *if (fnaa_v = 5)
+      *set fnaa_line "A hiss of stinging fog leaps from ${combat_attacker_epithet}'s palm, and ${combat_defender_epithet} backs out of it untouched."
 *elseif (fnaa_claws)
   *comment A twig-and-bramble creature (the Gnarled Bramble Heart's Blight Twigs, or an enemy Twig Blight striking an ally): claws, thorns and knotted fists, never a weapon.
   *if (fnaa_v = 1)
@@ -1465,8 +1500,10 @@ ${fnaa_line}
   *gosub flavor_type_beast
 *if (fft_type = "hedge_mage")
   *gosub flavor_type_hedge_mage
-*if (fft_type = "hedge_mage_dagger")
-  *gosub flavor_type_hedge_mage_dagger
+*if (fft_type = "poison_spray")
+  *gosub flavor_npc_poison_spray
+*if (fft_type = "burning_hands")
+  *gosub flavor_npc_burning_hands
 *if (fft_type = "twig_blight")
   *gosub flavor_type_twig_blight
 *if (fft_type = "zombie")
@@ -1997,7 +2034,35 @@ ${fnaa_line}
 *return
 
 *label flavor_type_hedge_mage
-*comment A caster's Poison Spray: a jet, mist or ribbon of poison from the hand. No move 2. The lines name no cloak, staff or place, so any caster in the library can use them.
+*comment A quarterstaff fighter: swings, jabs, and low sweeps with a length of ash wood. No move 2.
+*if (fft_v = 1)
+  *set fft_hit "$!{combat_enemy_epithet} brings the staff down in a heavy two-handed arc that cracks hard across your shoulder."
+  *set fft_miss "$!{combat_enemy_epithet} brings the staff down in a heavy two-handed arc, and you step inside their reach so the wood whistles past your ear."
+*if (fft_v = 2)
+  *set fft_hit "With a quick shift of hands, ${combat_enemy_epithet} drives the end of their staff straight into your ribs."
+  *set fft_miss "$!{combat_enemy_epithet} shifts both hands on the shaft and jabs at your ribs, but you twist sideways and let the tip slide past."
+*if (fft_v = 3)
+  *set fft_hit "$!{combat_enemy_epithet} sweeps the lower end of the quarterstaff around, catching your shin and rattling you clean up to the hip."
+  *set fft_miss "$!{combat_enemy_epithet} whips the low end of the quarterstaff at your legs, and you hop clear as the wood snaps through empty air."
+*if (fft_v = 4)
+  *set fft_hit "The ash staff flashes across in a tight flat swing, and the heavy wood slams against your jaw before you can duck."
+  *set fft_miss "The ash staff whips across at head height, and you drop low underneath it, feeling the wind stir your collar."
+*if (fft_v = 5)
+  *set fft_hit "$!{combat_enemy_epithet} steps forward and hooks the staff behind your heel, clipping your knee hard as they follow through across your forearm."
+  *set fft_miss "$!{combat_enemy_epithet} reaches in to hook at your knee, but you plant your back foot and knock the tip wide."
+*if (fft_v = 6)
+  *set fft_hit "A short, sharp thrust catches you square in the chest, driving the breath out of your lungs as ${combat_enemy_epithet} leans their weight behind the wood."
+  *set fft_miss "A short, sharp thrust darts toward your chest, and you turn a shoulder to slap the spinning shaft aside."
+*if (fft_v = 7)
+  *set fft_hit "$!{combat_enemy_epithet} spins the quarterstaff overhead and drops the butt end onto your collarbone with a dull thud."
+  *set fft_miss "$!{combat_enemy_epithet} winds up to bring the butt end down, giving you time to throw an arm up and catch the shaft before it lands."
+*if (fft_v = 8)
+  *set fft_hit "$!{combat_enemy_epithet} whips both hands through a backhand cut that stings across your wrist and numbs your fingers."
+  *set fft_miss "$!{combat_enemy_epithet} snaps a backhand swing across the gap, and you pull back an inch as the wood grazes your sleeve."
+*return
+
+*label flavor_npc_poison_spray
+*comment Poison Spray (keyed by spell id): a jet, mist or ribbon of poison from the hand. No move 2. The lines name no cloak, staff or place, so any caster in the library can use them.
 *if (fft_v = 1)
   *set fft_hit "$!{combat_enemy_epithet} thrusts out a palm, and a jet of green-yellow vapor slaps into your face, burning your eyes and throat as you choke it down."
   *set fft_miss "$!{combat_enemy_epithet} thrusts out a palm and spits a word, but you throw an arm across your face and twist aside, and the cloud sags past you."
@@ -2024,8 +2089,8 @@ ${fnaa_line}
   *set fft_miss "The spray leaves ${combat_enemy_epithet}'s hand on the second word, but you have already turned a shoulder to it, and the mist falls short of you."
 *return
 
-*label flavor_type_hedge_mage_dagger
-*comment The caster's melee-range fallback, Burning Hands (3d6 fire, DEX save DC 13, half on a save), routed through the same _dagger sidearm suffix as the archer/slinger dagger. fft_hit is a failed save (caught full in the flame); fft_miss is a successful save (ducking clear of the heart so only the edge catches you for half damage). No move 2.
+*label flavor_npc_burning_hands
+*comment An assigned caster's Burning Hands (3d6 fire, DEX save against cast_dc, half on a save), keyed by spell id. fft_hit is a failed save (caught full in the flame); fft_miss is a successful save (ducking clear of the heart so only the edge catches you for half damage). No move 2.
 *if (fft_v = 1)
   *set fft_hit "$!{combat_enemy_epithet} spreads both hands wide, thumbs locked, and a roaring fan of flame washes straight across your chest."
   *set fft_miss "$!{combat_enemy_epithet} spreads both hands wide, thumbs locked, and you twist sideways just fast enough that only the edge of the flame rakes your sleeve."

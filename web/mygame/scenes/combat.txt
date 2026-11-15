@@ -111,6 +111,8 @@
     *set {(("combat_enemy" & fss_i) & "_cast_chance_2")} 0
     *set {(("combat_enemy" & fss_i) & "_cast_chance_3")} 0
     *set {(("combat_enemy" & fss_i) & "_cast_dc")} 0
+    *set {(("combat_enemy" & fss_i) & "_cast_atk_bonus")} 0
+    *set {(("combat_enemy" & fss_i) & "_spell_base_applied")} false
   *set {(("combat_enemy" & fss_i) & "_concentrating")} "none"
   *set fss_i (fss_i + 1)
   *goto fight_setup_stale_loop
@@ -133,6 +135,7 @@
     *set {(("combat_ally" & fss_i) & "_cast_chance_2")} 0
     *set {(("combat_ally" & fss_i) & "_cast_chance_3")} 0
     *set {(("combat_ally" & fss_i) & "_cast_dc")} 0
+    *set {(("combat_ally" & fss_i) & "_cast_atk_bonus")} 0
   *set {(("combat_ally" & fss_i) & "_concentrating")} "none"
   *set fss_i (fss_i + 1)
   *goto fight_setup_stale_ally_loop
@@ -372,6 +375,12 @@
 *set combat_enemy1_nonmagic combat_enemy_nonmagic
 *set combat_enemy1_nonmagic_silvered combat_enemy_nonmagic_silvered
 *set combat_enemy1_nonmagic_adamantine combat_enemy_nonmagic_adamantine
+*temp fs_sb_i 1
+*label fight_setup_spell_base_loop
+*if (fs_sb_i <= combat_enemy_count)
+  *gosub apply_enemy_spell_base fs_sb_i
+  *set fs_sb_i + 1
+  *goto fight_setup_spell_base_loop
 *set combat_active_target 1
 *comment Existing content remains on its authored four-band scale until a fight explicitly sets expanded6. The
 *comment six-band lane has room for terrain and manoeuvre without silently turning old "Long Range (3)" starts
@@ -498,15 +507,16 @@
 *return
 
 *label compute_cast_dc
-*comment Derives <prefix>cast_dc = 8 + prof + stat modifier unless cast_dc_override > 0 or no spells are assigned. If cast_stat is empty, picks the highest of Intelligence, Wisdom, and Charisma.
+*comment Derives <prefix>cast_dc = 8 + prof + stat modifier (unless cast_dc_override > 0) and <prefix>cast_atk_bonus = prof + stat modifier when any spell is assigned. If cast_stat is empty, picks the highest of Intelligence, Wisdom, and Charisma.
 *params cdc_prefix cdc_stat cdc_dc_ov
 *if (cdc_dc_ov > 0)
   *set {(cdc_prefix & "cast_dc")} cdc_dc_ov
-  *return
-*if ({(cdc_prefix & "cast_dc")} > 0)
+*elseif ({(cdc_prefix & "cast_dc")} > 0)
   *return
 *if ((({(cdc_prefix & "cast_spell_1")} = "") and ({(cdc_prefix & "cast_spell_2")} = "")) and ({(cdc_prefix & "cast_spell_3")} = ""))
-  *set {(cdc_prefix & "cast_dc")} 0
+  *if (cdc_dc_ov <= 0)
+    *set {(cdc_prefix & "cast_dc")} 0
+  *set {(cdc_prefix & "cast_atk_bonus")} 0
   *return
 *temp cdc_score 0
 *if (cdc_stat = "intelligence")
@@ -534,7 +544,55 @@
 *temp cdc_prof {(cdc_prefix & "prof")}
 *if (cdc_prof <= 0)
   *set cdc_prof combat_lib_prof_bonus
-*set {(cdc_prefix & "cast_dc")} ((8 + cdc_prof) + sm_mod)
+*if (cdc_dc_ov <= 0)
+  *set {(cdc_prefix & "cast_dc")} ((8 + cdc_prof) + sm_mod)
+*set {(cdc_prefix & "cast_atk_bonus")} (cdc_prof + sm_mod)
+*return
+
+*label apply_enemy_spell_base
+*comment Replaces an enemy slot's base attack with an at-will attack spell (Poison Spray) when assigned, moving the body's own weapon into sidearm_* (Step 3c-2).
+*params aesb_slot
+*temp aesb_p (("combat_enemy" & aesb_slot) & "_")
+*temp aesb_ps false
+*if ({(aesb_p & "cast_spell_1")} = "poison_spray")
+  *set aesb_ps true
+*if ({(aesb_p & "cast_spell_2")} = "poison_spray")
+  *set aesb_ps true
+*if ({(aesb_p & "cast_spell_3")} = "poison_spray")
+  *set aesb_ps true
+*if (aesb_ps)
+  *if (not({(aesb_p & "spell_base_applied")}))
+    *set {(aesb_p & "spell_base_applied")} true
+    *set {(aesb_p & "sidearm_weapon_type")} {(aesb_p & "weapon_type")}
+    *set {(aesb_p & "sidearm_atk_bonus")} {(aesb_p & "atk_bonus")}
+    *set {(aesb_p & "sidearm_dmg_dice_sides")} {(aesb_p & "dmg_dice_sides")}
+    *set {(aesb_p & "sidearm_dmg_bonus")} {(aesb_p & "dmg_bonus")}
+    *set {(aesb_p & "sidearm_dmg_type")} {(aesb_p & "dmg_type")}
+    *set {(aesb_p & "sidearm_dmg_dice")} 1
+    *set {(aesb_p & "sidearm_save_stat")} ""
+    *set {(aesb_p & "sidearm_save_dc")} 0
+    *set {(aesb_p & "sidearm_save_half")} false
+  *set {(aesb_p & "weapon_type")} "ranged"
+  *set {(aesb_p & "reach")} "medium"
+  *set {(aesb_p & "dmg_dice_sides")} 12
+  *set {(aesb_p & "dmg_type")} "poison"
+  *set {(aesb_p & "dmg_bonus")} 0
+  *set {(aesb_p & "atk_bonus")} {(aesb_p & "cast_atk_bonus")}
+  *if (aesb_slot = 1)
+    *set combat_enemy_sidearm_weapon_type combat_enemy1_sidearm_weapon_type
+    *set combat_enemy_sidearm_atk_bonus combat_enemy1_sidearm_atk_bonus
+    *set combat_enemy_sidearm_dmg_dice_sides combat_enemy1_sidearm_dmg_dice_sides
+    *set combat_enemy_sidearm_dmg_bonus combat_enemy1_sidearm_dmg_bonus
+    *set combat_enemy_sidearm_dmg_type combat_enemy1_sidearm_dmg_type
+    *set combat_enemy_sidearm_dmg_dice 1
+    *set combat_enemy_sidearm_save_stat ""
+    *set combat_enemy_sidearm_save_dc 0
+    *set combat_enemy_sidearm_save_half false
+    *set combat_enemy_weapon_type combat_enemy1_weapon_type
+    *set combat_enemy_dmg_dice_sides combat_enemy1_dmg_dice_sides
+    *set combat_enemy_dmg_type combat_enemy1_dmg_type
+    *set combat_enemy_dmg_bonus combat_enemy1_dmg_bonus
+    *set combat_enemy_atk_bonus combat_enemy1_atk_bonus
 *return
 
 *label cri_is_better_than_best
@@ -1113,6 +1171,7 @@
   *set {(fc_p & "blinded")} 0
   *set {(fc_p & "blinded_dc")} 0
   *set {(fc_p & "concentrating")} "none"
+  *set {(fc_p & "spell_base_applied")} false
   *set {(fc_p & "disadvantage")} false
   *set {(fc_p & "advantage")} false
   *comment Range: 0 means Engaged, every type's default -- reset per-slot for the same reason as Bane above.
@@ -1165,6 +1224,7 @@
   *set {(fc_p & "cast_chance_2")} 0
   *set {(fc_p & "cast_chance_3")} 0
   *set {(fc_p & "cast_dc")} 0
+  *set {(fc_p & "cast_atk_bonus")} 0
   *set {(fc_p & "cast_spell_1_override")} ""
   *set {(fc_p & "cast_spell_2_override")} ""
   *set {(fc_p & "cast_spell_3_override")} ""
@@ -1254,6 +1314,7 @@
   *set {(("combat_ally" & fc_a_i) & "_cast_chance_2")} 0
   *set {(("combat_ally" & fc_a_i) & "_cast_chance_3")} 0
   *set {(("combat_ally" & fc_a_i) & "_cast_dc")} 0
+  *set {(("combat_ally" & fc_a_i) & "_cast_atk_bonus")} 0
   *set fc_a_i + 1
   *goto fight_cleanup_ally_loop
 *set combat_player_blinded 0
@@ -2234,6 +2295,27 @@
 *temp ccd_stay (((ccd_p_shot * ccd_p_shot) * ccd_avg_shot))
 *if (ccd_has_staff)
   *set ccd_stay ((ccd_p_staff * ccd_avg_staff) * 100)
+*if (combat_active_target > 0)
+  *temp ccd_has_bh false
+  *temp ccd_ep (("combat_enemy" & combat_active_target) & "_")
+  *if ((({(ccd_ep & "cast_spell_1")} = "burning_hands") and ({(ccd_ep & "cast_uses_1")} > 0)) and ({(ccd_ep & "cast_chance_1")} > 0))
+    *set ccd_has_bh true
+  *if ((({(ccd_ep & "cast_spell_2")} = "burning_hands") and ({(ccd_ep & "cast_uses_2")} > 0)) and ({(ccd_ep & "cast_chance_2")} > 0))
+    *set ccd_has_bh true
+  *if ((({(ccd_ep & "cast_spell_3")} = "burning_hands") and ({(ccd_ep & "cast_uses_3")} > 0)) and ({(ccd_ep & "cast_chance_3")} > 0))
+    *set ccd_has_bh true
+  *if (ccd_has_bh)
+    *temp ccd_bh_atk {(ccd_ep & "cast_atk_bonus")}
+    *if (ccd_bh_atk <= 0)
+      *set ccd_bh_atk combat_enemy_atk_bonus
+    *temp ccd_p_bh (5 * (21 - (ccd_ac - ccd_bh_atk)))
+    *if (ccd_p_bh < 5)
+      *set ccd_p_bh 5
+    *if (ccd_p_bh > 95)
+      *set ccd_p_bh 95
+    *temp ccd_bh_stay ((ccd_p_bh * 7) * 100)
+    *if (ccd_bh_stay > ccd_stay)
+      *set ccd_stay ccd_bh_stay
 *if ((ccd_oa_sides > 0) and (ccd_oa_max >= combat_enemy_hp))
   *set combat_cornered_choice "disengage"
 *elseif ((ccd_dealt - ccd_taken) < ccd_stay)
@@ -7137,6 +7219,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *label combat_enemy_player_action
 *comment Shared enemy-vs-player action dispatcher (Step 3c): picks and casts an assigned spell before falling back to fight_pick_enemy_move + resolve_enemy_attack. Multiattack callers gate their extra attack on combat_enemy_cast_spell = "" so a spell replaces the attack sequence.
 *params cepa_slot
+*temp cepa_p (("combat_enemy" & cepa_slot) & "_")
 *set combat_enemy_cast_spell ""
 *set combat_enemy_cast_place 0
 *if (not(combat_player_hidden))
@@ -7144,12 +7227,51 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *if (combat_enemy_cast_spell = "blindness")
   *set combat_caster_name combat_enemy_name
   *set combat_caster_epithet combat_enemy_epithet
-  *gosub_scene combat_spells resolve_npc_cast_blindness (("combat_enemy" & cepa_slot) & "_") "combat_player_" 7 combat_enemy_cast_place
+  *gosub_scene combat_spells resolve_npc_cast_blindness cepa_p "combat_player_" 7 combat_enemy_cast_place
+  *set combat_turn_advanced_this_page true
+  *return
+*if (combat_enemy_cast_spell = "burning_hands")
+  *gosub_scene combat_spells spend_npc_spell_use cepa_p combat_enemy_cast_place
+  *gosub_scene combat_spells load_enemy_spell_profile cepa_p "burning_hands"
+  *gosub_scene combat_dice resolve_enemy_attack
+  *gosub_scene combat_prose fight_narrate_enemy_turn
+  *set combat_enemy_used_sidearm false
+  *set combat_enemy_atk_save_stat ""
+  *set combat_enemy_atk_save_dc 0
+  *set combat_enemy_atk_save_half false
+  *set combat_enemy_atk_dmg_dice 1
+  *set combat_enemy_save_halved false
   *set combat_turn_advanced_this_page true
   *return
 *gosub_scene combat_ai fight_pick_enemy_move
 *gosub_scene combat_dice resolve_enemy_attack
 *gosub_scene combat_prose fight_narrate_enemy_turn
+*return
+
+*label fight_enemy_ally_attack
+*comment Shared enemy-vs-intercepting-ally attack dispatcher (Step 3c-2): lets an enemy in melee reach cast an assigned close-range attack-profile spell (burning_hands) before falling back to sidearm quick-draw and normal melee/ranged ally attack.
+*params feaa_slot
+*temp feaa_p (("combat_enemy" & feaa_slot) & "_")
+*set combat_enemy_cast_spell ""
+*set combat_enemy_cast_place 0
+*if ((combat_ranged_cornered) or (not(combat_enemy_weapon_type = "ranged")))
+  *gosub_scene combat_ai fight_pick_ally_intercept_spell
+*if (combat_enemy_cast_spell = "burning_hands")
+  *gosub_scene combat_spells spend_npc_spell_use feaa_p combat_enemy_cast_place
+  *gosub_scene combat_spells load_enemy_spell_profile feaa_p "burning_hands"
+*elseif ((combat_enemy_weapon_type = "ranged") and (combat_ranged_cornered))
+  *gosub fight_enemy_quickdraw
+*gosub_scene combat_dice resolve_enemy_attack_on_ally combat_intercepting_ally
+*gosub_scene combat_prose fight_narrate_ally_attack "enemy" feaa_slot "ally" combat_intercepting_ally combat_enemy_atk_on_ally_hit
+*set combat_enemy_cast_spell ""
+*set combat_enemy_cast_place 0
+*set combat_enemy_used_sidearm false
+*set combat_enemy_atk_save_stat ""
+*set combat_enemy_atk_save_dc 0
+*set combat_enemy_atk_save_half false
+*set combat_enemy_atk_dmg_dice 1
+*set combat_enemy_save_halved false
+*set combat_turn_advanced_this_page true
 *return
 
 *label combat_next_turn
@@ -7429,18 +7551,11 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
           *comment The target is chosen again from the new tile (2026-10-11): the one it was cornered by is usually clear now, and the shot goes to the most wounded of everyone it can see, not always to the player.
           *gosub_scene combat_ai choose_ranged_enemy_target cnt_slot
           *if (combat_intercepting_ally > 0)
-            *if (combat_ranged_cornered)
-              *gosub fight_enemy_quickdraw
-            *gosub_scene combat_dice resolve_enemy_attack_on_ally combat_intercepting_ally
-            *gosub_scene combat_prose fight_narrate_ally_attack "enemy" cnt_slot "ally" combat_intercepting_ally combat_enemy_atk_on_ally_hit
-            *set combat_enemy_used_sidearm false
-            *set combat_enemy_atk_save_stat ""
-            *set combat_enemy_atk_save_dc 0
-            *set combat_enemy_atk_save_half false
-            *set combat_enemy_atk_dmg_dice 1
-            *set combat_enemy_save_halved false
+            *gosub fight_enemy_ally_attack cnt_slot
           *else
             *gosub combat_enemy_player_action cnt_slot
+            *set combat_enemy_cast_spell ""
+            *set combat_enemy_cast_place 0
           *if (combat_player_can_die) and (hp_current <= 0)
             *goto fight_player_died
           *if (not(combat_player_can_die)) and (hp_current <= 1)
@@ -7475,18 +7590,8 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
         *gosub fight_booming_trigger
         *if (combat_boom_killed)
           *goto cnt_boom_tail
-      *comment A cornered ranged enemy (the ally it picked shares its tile) cannot back off, so it draws its sidearm for this attack, exactly as it does against the player (2026-10-11).
-      *if ((combat_enemy_weapon_type = "ranged") and (combat_ranged_cornered))
-        *gosub fight_enemy_quickdraw
-      *gosub_scene combat_dice resolve_enemy_attack_on_ally combat_intercepting_ally
-      *gosub_scene combat_prose fight_narrate_ally_attack "enemy" cnt_slot "ally" combat_intercepting_ally combat_enemy_atk_on_ally_hit
-      *set combat_enemy_used_sidearm false
-      *set combat_enemy_atk_save_stat ""
-      *set combat_enemy_atk_save_dc 0
-      *set combat_enemy_atk_save_half false
-      *set combat_enemy_atk_dmg_dice 1
-      *set combat_enemy_save_halved false
-      *set combat_turn_advanced_this_page true
+      *comment A cornered ranged enemy (the ally it picked shares its tile) cannot back off, so it draws its sidearm or casts a close-range spell against the intercepting ally (Step 3c-2).
+      *gosub fight_enemy_ally_attack cnt_slot
     *elseif (combat_enemy_goal_ally > 0)
       *comment NEAREST-TARGET CLOSING (2026-10-11): the nearest opponent is an ally that is not in reach yet, so this enemy closes on IT, not on the player. Same tempo as closing on the player: a free step, and
       *comment a Dash for a second one (unless Slowed or the ground is difficult), attacking this same turn only if the free step alone got there. Nothing here is rolled; the choice was made by distance.
@@ -7599,6 +7704,8 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
         *goto cnt_boom_tail
       *if ((combat_enemy_range <= cnt_e_tier) and (not(cnt_o_dashed)))
         *gosub combat_enemy_player_action cnt_slot
+        *set combat_enemy_cast_spell ""
+        *set combat_enemy_cast_place 0
         *if (combat_player_can_die) and (hp_current <= 0)
           *goto fight_player_died
         *if (not(combat_player_can_die)) and (hp_current <= 1)
@@ -7667,6 +7774,8 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
           *gosub combat_enemy_player_action cnt_slot
           *if ((combat_enemy_cast_spell = "") and ((combat_multiattack_slot = cnt_slot) and (hp_current > 1)))
             *gosub fight_enemy_extra_attack
+          *set combat_enemy_cast_spell ""
+          *set combat_enemy_cast_place 0
           *if (combat_player_can_die) and (hp_current <= 0)
             *goto fight_player_died
           *if (not(combat_player_can_die)) and (hp_current <= 1)
@@ -7727,6 +7836,8 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
       *set combat_turn_advanced_this_page true
       *if ((combat_enemy_cast_spell = "") and ((combat_multiattack_slot = cnt_slot) and (hp_current > 1)))
         *gosub fight_enemy_extra_attack
+      *set combat_enemy_cast_spell ""
+      *set combat_enemy_cast_place 0
       *if (combat_player_can_die) and (hp_current <= 0)
         *goto fight_player_died
       *if (not(combat_player_can_die)) and (hp_current <= 1)
@@ -8174,7 +8285,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *goto fight_library
 
 *label fight_hedge_mage_blindness
-*comment Encounter template "hedge_mage_blindness": Test encounter assigning Blindness (1 use, 100% chance) to a Hedge-Mage at Mid-Range.
+*comment Encounter template "hedge_mage_blindness": Test encounter assigning Poison Spray (at-will), Burning Hands (3 uses, 100% chance), and Blindness (1 use, 100% chance) to a Hedge-Mage at Mid-Range.
 *set combat_is_nonlethal false
 *set combat_no_morale false
 *set combat_lib_1 "hedge_mage"
@@ -8182,9 +8293,13 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *set combat_enemy_epithet_override "the hedge-mage"
 *set combat_enemy1_group "Hedge-Mage"
 *set combat_enemy_range 2
-*set combat_enemy_cast_spell_1_override "blindness"
-*set combat_enemy_cast_uses_1_override 1
-*set combat_enemy_cast_chance_1_override 100
+*set combat_enemy_cast_spell_1_override "poison_spray"
+*set combat_enemy_cast_spell_2_override "burning_hands"
+*set combat_enemy_cast_uses_2_override 3
+*set combat_enemy_cast_chance_2_override 100
+*set combat_enemy_cast_spell_3_override "blindness"
+*set combat_enemy_cast_uses_3_override 1
+*set combat_enemy_cast_chance_3_override 100
 *goto fight_library
 
 *comment GEN:END encounter_labels
@@ -8200,9 +8315,13 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *set combat_enemy_name_override "Grey-Cloaked Man"
 *set combat_enemy_epithet_override "the grey-cloaked man"
 *set combat_enemy_range 2
-*set combat_enemy_cast_spell_1_override "blindness"
-*set combat_enemy_cast_uses_1_override 1
-*set combat_enemy_cast_chance_1_override 50
+*set combat_enemy_cast_spell_1_override "poison_spray"
+*set combat_enemy_cast_spell_2_override "burning_hands"
+*set combat_enemy_cast_uses_2_override 3
+*set combat_enemy_cast_chance_2_override 100
+*set combat_enemy_cast_spell_3_override "blindness"
+*set combat_enemy_cast_uses_3_override 1
+*set combat_enemy_cast_chance_3_override 50
 *if (combat_dubhar_blights >= 1)
   *set combat_lib_2 "twig_blight"
   *set combat_enemy2_range 1

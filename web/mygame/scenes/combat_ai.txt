@@ -1068,7 +1068,7 @@
   *temp fpes_id {(fpes_p & ("cast_spell_" & fpes_k))}
   *temp fpes_uses {(fpes_p & ("cast_uses_" & fpes_k))}
   *temp fpes_chance {(fpes_p & ("cast_chance_" & fpes_k))}
-  *if ((not(fpes_id = "")) and ((fpes_uses > 0) and (fpes_chance > 0)))
+  *if (((not(fpes_id = "")) and (not(fpes_id = "poison_spray"))) and ((fpes_uses > 0) and (fpes_chance > 0)))
     *gosub spell_worth_casting fpes_p fpes_id
     *if (combat_spell_worth_it)
       *temp fpes_roll 0
@@ -1103,5 +1103,57 @@
   *if (condition_result)
     *return
   *set combat_spell_worth_it true
+  *return
+*if (swc_spell_id = "burning_hands")
+  *if (not(combat_player_hidden)) and (combat_enemy_range <= 0)
+    *set combat_spell_worth_it true
+  *return
+*return
+
+*label fight_pick_ally_intercept_spell
+*comment Chooses an offensive melee-range attack-profile spell for an enemy attacking an intercepting ally in reach (Step 3c-2). Shares the per-slot page replay lock with fight_pick_enemy_spell.
+*set combat_enemy_cast_spell ""
+*set combat_enemy_cast_place 0
+*if (combat_active_target <= 0)
+  *return
+*if (not(locked_combat_enemy_cast_page_id = page_id))
+  *set combat_enemy_cast_locked_1 false
+  *set combat_enemy_cast_locked_2 false
+  *set combat_enemy_cast_locked_3 false
+  *set combat_enemy_cast_locked_4 false
+  *set combat_enemy_cast_locked_5 false
+  *set combat_enemy_cast_locked_6 false
+  *set locked_combat_enemy_cast_page_id page_id
+*temp fpais_lock ("combat_enemy_cast_locked_" & combat_active_target)
+*temp fpais_sp_cache (("combat_enemy" & combat_active_target) & "_cast_picked_spell")
+*temp fpais_pl_cache (("combat_enemy" & combat_active_target) & "_cast_picked_place")
+*if ({fpais_lock})
+  *set combat_enemy_cast_spell {fpais_sp_cache}
+  *set combat_enemy_cast_place {fpais_pl_cache}
+  *return
+*temp fpais_p (("combat_enemy" & combat_active_target) & "_")
+*temp fpais_picked_spell ""
+*temp fpais_picked_place 0
+*temp fpais_k 1
+*label fpais_loop
+*if (fpais_k <= 3)
+  *temp fpais_id {(fpais_p & ("cast_spell_" & fpais_k))}
+  *temp fpais_uses {(fpais_p & ("cast_uses_" & fpais_k))}
+  *temp fpais_chance {(fpais_p & ("cast_chance_" & fpais_k))}
+  *if ((fpais_id = "burning_hands") and ((fpais_uses > 0) and (fpais_chance > 0)))
+    *temp fpais_roll 0
+    *rand fpais_roll 1 100
+    *if (fpais_roll <= fpais_chance)
+      *set fpais_picked_spell fpais_id
+      *set fpais_picked_place fpais_k
+      *goto fpais_done
+  *set fpais_k + 1
+  *goto fpais_loop
+*label fpais_done
+*set combat_enemy_cast_spell fpais_picked_spell
+*set combat_enemy_cast_place fpais_picked_place
+*set {fpais_sp_cache} fpais_picked_spell
+*set {fpais_pl_cache} fpais_picked_place
+*set {fpais_lock} true
 *return
 
