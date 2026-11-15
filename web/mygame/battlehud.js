@@ -566,7 +566,7 @@
       // The item menus (Potions, Read, Items, Throw, Shoot) show the art alone: the name and what the item does are on the hover card, the same card the Pack gives it.
       var iconOnly = !!(icon && ITEM_MENUS[e.id]);
       return "<button type=\"button\" class=\"bfly-btn bhud-" + e.group + (iconOnly ? " bfly-icon" : "") + (on ? "" : " off") + "\" data-bhud=\"pick\" data-id=\"" + esc(v.id) + "\" data-parent=\"" + esc(e.id) + "\"" +
-        (on ? "" : " aria-disabled=\"true\"") + " aria-label=\"" + esc(v.label) + "\"" + (iconOnly ? "" : " title=\"" + esc(v.blurb) + "\"") + ">" +
+        (on ? "" : " aria-disabled=\"true\"") + " aria-label=\"" + esc(v.label) + "\"" + ">" +   // no title attribute: the browser drew its own plain tooltip (the option's blurb) beside the styled card
         (icon ? "<img class=\"bhud-icon\" src=\"" + icon + "\" alt=\"\">" : "") + (iconOnly ? "" : "<span>" + esc(v.label) + "</span>") + "</button>";
     }).join("") + "</div>";
     el.className = "on";
