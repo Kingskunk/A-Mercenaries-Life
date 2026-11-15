@@ -4740,9 +4740,13 @@ You fill the empty @{(jug_fill_n = 1) jug|jugs} from ${jug_refill_source}, then 
 *if ((not(armor_type = "cloth")) or (head_is_armor))
   *set mage_armor_why "You are wearing armor, which the ward cannot sit over."
   *return
+*comment Recasting over a live Mage Armor is refused as a wasted cast, EXCEPT for an Abjurer whose Arcane Ward is not full (2026-11-14, the user): the
+*comment slot then buys ward hit points, which is a real reason to cast it again.
 *if (mage_armor_minutes_left > 0)
-  *set mage_armor_why "The ward is already on you."
-  *return
+  *temp mac_recast_for_ward (((feature_arcane_ward) and (arcane_ward_hp < arcane_ward_max)) and (mage_armor_cost = "slot"))
+  *if (not(mac_recast_for_ward))
+    *set mage_armor_why "The ward is already on you."
+    *return
 *if (mage_armor_cost = "slot")
   *temp mac_slots 0
   *set mac_slots spell_slots_1

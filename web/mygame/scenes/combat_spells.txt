@@ -103,9 +103,24 @@
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label arcane_ward_on_abjuration_cast
 *params awoac_level
+*comment The first Abjuration cast since a long rest CREATES the ward at its full hit points (2026-11-14, the user: until then it only added
+*comment the 2-per-slot-level regain to an empty ward, so a first Shield left a ward of 2). Every later cast regains twice the slot level.
 *if (feature_arcane_ward)
-  *set arcane_ward_created true
-  *set arcane_ward_hp (arcane_ward_hp + (2 * awoac_level))
+  *if (not(arcane_ward_created))
+    *set arcane_ward_created true
+    *set arcane_ward_hp arcane_ward_max
+  *else
+    *set arcane_ward_hp (arcane_ward_hp + (2 * awoac_level))
+    *if (arcane_ward_hp > arcane_ward_max)
+      *set arcane_ward_hp arcane_ward_max
+*return
+
+*comment ARCANE WARD MEND: the bonus-action recharge (a slot spent with no spell cast). It only ever regains twice the slot level; it never
+*comment creates the ward at full, which is the Abjuration cast's job above.
+*label arcane_ward_mend
+*params awm_level
+*if (feature_arcane_ward)
+  *set arcane_ward_hp (arcane_ward_hp + (2 * awm_level))
   *if (arcane_ward_hp > arcane_ward_max)
     *set arcane_ward_hp arcane_ward_max
 *return
