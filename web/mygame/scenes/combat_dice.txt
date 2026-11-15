@@ -348,7 +348,7 @@ ${combat_player_dmg_roll_banner}
     *set combat_player_dmg_dealt + combat_packet_damage
     *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} [b][+ ${cwh_hex_die} necrotic (Hex) = ${combat_packet_damage}${combat_packet_suffix}][/b]"
   *comment Hunter's Mark (see startup.txt's *create comment): only the CURRENTLY marked slot benefits, unlike Hex's global flag, since only one creature can be marked at a time. favored_foe_target_slot > 0 rules out the unmarked
-  *comment default (slot 0 never exists); expires_round >= combat_round is the flat 10-round/no-concentration duration check. The mark is cast as its own bonus action, so it is already live when the first weapon hit lands.
+  *comment default (slot 0 never exists); expires_round >= combat_round is the 10-round maximum ceiling (concentration can end it earlier). The mark is cast as its own bonus action, so it is already live when the first weapon hit lands.
   *if (((favored_foe_target_slot > 0) and (favored_foe_target_slot = combat_active_target)) and (favored_foe_expires_round >= combat_round))
     *temp cwh_ff_die 0
     *rand cwh_ff_die 1 favored_foe_die_sides
@@ -1644,5 +1644,159 @@ ${combat_player_dmg_roll_banner}
       *set combat_turn_advanced_this_page true
     *else
       *set {(ct_prefix & "blinded")} ct_left
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment CONCENTRATION (2026-11-15, 2024 rules, Part 1: one spell at a time)
+*comment Storage: <prefix>concentrating holds the spell id ("none" when idle) on "combat_player_", "combat_enemy0..6_",
+*comment and "combat_ally0..4_" (NEVER on combat_enemy_ scratch). The existing ten-round maximums stay as each spell's
+*comment ceiling; concentration adds an earlier way for effects to drop when another concentration spell is cast.
+*comment How to add a new concentration spell:
+*comment   1. Add "concentration": true to its record in tools/spell_book.json and run `node tools/gen_spell_book.js`.
+*comment   2. Add an explicit `*if (ce_id = "<spell_id>")` branch in concentration_end below to clear all ongoing combat
+*comment      state the spell leaves behind (explicit branches only, never construct variable names from spell_id).
+*comment   3. If the spell ends on round expiry or when its targets clear/die, add its active check to
+*comment      concentration_reconcile below so concentration returns to "none" without needing another cast.
+*comment   4. Inside the cast's replay lock (combat_spells.txt / combat.txt), call
+*comment      `*gosub_scene combat_dice concentration_begin "<prefix>" "<spell_id>"` (and clear via concentration_end if
+*comment      zero targets failed the initial save); outside the lock, call
+*comment      `*gosub_scene combat_prose print_concentration_ended_banner`.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*label concentration_has
+*params chs_prefix
+*temp chs_val {(chs_prefix & "concentrating")}
+*set combat_conc_result (not(chs_val = "none"))
+*return
+
+*label concentration_end
+*params ce_prefix
+*temp ce_id {(ce_prefix & "concentrating")}
+*if (ce_id = "none")
+  *return
+*set {(ce_prefix & "concentrating")} "none"
+*if (ce_id = "hex")
+  *if (ce_prefix = "combat_player_")
+    *set hex_active false
+    *set hex_target_slot 0
+  *return
+*if (ce_id = "hunters_mark")
+  *if (ce_prefix = "combat_player_")
+    *set favored_foe_target_slot 0
+    *set favored_foe_expires_round 0
+  *return
+*if (ce_id = "ensnaring_strike")
+  *if (ce_prefix = "combat_player_")
+    *set ensnaring_armed false
+    *set ensnaring_expires_round 0
+    *temp ce_ei 1
+    *label ce_ensnare_loop
+    *if (ce_ei <= combat_enemy_slot_cap)
+      *set {(("combat_enemy" & ce_ei) & "_restrained_until")} 0
+      *set ce_ei + 1
+      *goto ce_ensnare_loop
+  *return
+*if (ce_id = "bane")
+  *if (ce_prefix = "combat_player_")
+    *temp ce_bi 1
+    *label ce_bane_enemy_loop
+    *if (ce_bi <= combat_enemy_slot_cap)
+      *set {(("combat_enemy" & ce_bi) & "_bane_expires_round")} 0
+      *set ce_bi + 1
+      *goto ce_bane_enemy_loop
+  *else
+    *set combat_player_bane_expires_round 0
+    *temp ce_bai 1
+    *label ce_bane_ally_loop
+    *if (ce_bai <= combat_ally_slot_cap)
+      *set {(("combat_ally" & ce_bai) & "_bane_expires_round")} 0
+      *set ce_bai + 1
+      *goto ce_bane_ally_loop
+  *return
+*if (ce_id = "cause_fear")
+  *if (ce_prefix = "combat_player_")
+    *temp ce_fi 1
+    *label ce_fear_loop
+    *if (ce_fi <= combat_enemy_slot_cap)
+      *set {(("combat_enemy" & ce_fi) & "_frightened")} 0
+      *set ce_fi + 1
+      *goto ce_fear_loop
+  *return
+*return
+
+*label concentration_begin
+*params cb_prefix cb_spell_id
+*set combat_conc_ended_banner ""
+*temp cb_prev {(cb_prefix & "concentrating")}
+*if (not(cb_prev = "none"))
+  *temp cb_prev_name cb_prev
+  *if (cb_prev = "hex")
+    *set cb_prev_name "Hex"
+  *if (cb_prev = "hunters_mark")
+    *set cb_prev_name "Hunter's Mark"
+  *if (cb_prev = "ensnaring_strike")
+    *set cb_prev_name "Ensnaring Strike"
+  *if (cb_prev = "bane")
+    *set cb_prev_name "Bane"
+  *if (cb_prev = "cause_fear")
+    *set cb_prev_name "Cause Fear"
+  *gosub concentration_end cb_prefix
+  *if (cb_prefix = "combat_player_")
+    *set combat_conc_ended_banner "[b][🔮 Concentration on ${cb_prev_name} ends][/b]"
+  *else
+    *temp cb_cname {(cb_prefix & "name")}
+    *set combat_conc_ended_banner "[b][🔮 ${cb_cname}: concentration on ${cb_prev_name} ends][/b]"
+*set {(cb_prefix & "concentrating")} cb_spell_id
+*return
+
+*label concentration_reconcile
+*if (combat_player_concentrating = "none")
+  *return
+*if (combat_player_concentrating = "hex")
+  *if ((not(hex_active)) or (hex_target_slot <= 0))
+    *gosub concentration_end "combat_player_"
+  *return
+*if (combat_player_concentrating = "hunters_mark")
+  *if ((favored_foe_target_slot <= 0) or (combat_round > favored_foe_expires_round))
+    *gosub concentration_end "combat_player_"
+  *return
+*if (combat_player_concentrating = "ensnaring_strike")
+  *if ((ensnaring_armed) and (ensnaring_expires_round >= combat_round))
+    *return
+  *temp cre_i 1
+  *label cre_ensnare_loop
+  *if (cre_i <= combat_enemy_count)
+    *temp cre_hp {(("combat_enemy" & cre_i) & "_hp")}
+    *temp cre_ru {(("combat_enemy" & cre_i) & "_restrained_until")}
+    *if ((cre_hp > 0) and (cre_ru >= combat_round))
+      *return
+    *set cre_i + 1
+    *goto cre_ensnare_loop
+  *gosub concentration_end "combat_player_"
+  *return
+*if (combat_player_concentrating = "bane")
+  *temp crb_i 1
+  *label crb_bane_loop
+  *if (crb_i <= combat_enemy_count)
+    *temp crb_hp {(("combat_enemy" & crb_i) & "_hp")}
+    *temp crb_be {(("combat_enemy" & crb_i) & "_bane_expires_round")}
+    *if ((crb_hp > 0) and (crb_be >= combat_round))
+      *return
+    *set crb_i + 1
+    *goto crb_bane_loop
+  *gosub concentration_end "combat_player_"
+  *return
+*if (combat_player_concentrating = "cause_fear")
+  *temp crf_i 1
+  *label crf_fear_loop
+  *if (crf_i <= combat_enemy_count)
+    *temp crf_hp {(("combat_enemy" & crf_i) & "_hp")}
+    *temp crf_fr {(("combat_enemy" & crf_i) & "_frightened")}
+    *if ((crf_hp > 0) and (crf_fr > 0))
+      *return
+    *set crf_i + 1
+    *goto crf_fear_loop
+  *gosub concentration_end "combat_player_"
+  *return
 *return
 

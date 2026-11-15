@@ -289,6 +289,13 @@
     "unseen_servant": 1,
     "blindness": 2
     };
+  var SPELL_CONCENTRATION = {
+      "cause_fear": true,
+    "bane": true,
+    "hex": true,
+    "ensnaring_strike": true,
+    "hunters_mark": true
+    };
   // A scroll an item grants, keyed by the spell it carries (from tools/gear_catalog.json effect.spell). A spell with no scroll
   // simply never appears among the loose leaves.
   var SPELL_SCROLLS = {
@@ -323,6 +330,7 @@
   window.BOOK_SLOTS = BOOK_SLOTS;
   window.SPELL_LISTS = SPELL_LISTS;
   window.SPELL_LEVELS = SPELL_LEVELS;
+  window.SPELL_CONCENTRATION = SPELL_CONCENTRATION;
   window.SPELL_SCROLLS = SPELL_SCROLLS;
   window.COPY_COST_PER_LEVEL = COPY_COST_PER_LEVEL;
   window.COPY_CLASSES = COPY_CLASSES;

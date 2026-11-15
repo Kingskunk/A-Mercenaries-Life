@@ -254,13 +254,16 @@ ${fsh}
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_cast_hex
 *if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
-  *comment Moving Hex after its target falls costs a bonus action, not another use or spell slot.
+  *comment Moving Hex after its target falls costs a bonus action, not another use or spell slot, and keeps existing concentration intact.
   *if (not(combat_hex_orphaned))
     *comment Payment (2026-11-14, the user: 2024 rules): a granted spell's free use goes first; after that it is cast from the caster's own slots, whatever their class.
     *if ((race_cantrip_2 = "hex") and (not(hexblood_hex_used)))
       *set hexblood_hex_used true
     *else
       *gosub spend_lowest_slot
+    *gosub_scene combat_dice concentration_begin "combat_player_" "hex"
+  *else
+    *set combat_conc_ended_banner ""
   *set hex_active true
   *set hex_target_slot combat_active_target
   *set combat_cast_locked true
@@ -269,14 +272,15 @@ ${fsh}
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment SPELL: HUNTER'S MARK (Ranger, bonus action; the Ranger's level 1 feature, see startup.txt)
-*comment Marks combat_active_target for 10 rounds. A fresh cast spends one free use (favored_foe_uses), and a level 2+ Ranger with none left spends
-*comment a spell slot instead. Moving a mark whose creature dropped (combat_hm_orphaned, set when the hub opened) costs nothing. The extra damage itself is added in resolve_player_weapon_hit.
+*comment Marks combat_active_target for up to 10 rounds (concentration). A fresh cast spends one free use (favored_foe_uses), and a level 2+ Ranger with none left spends
+*comment a spell slot instead. Moving a mark whose creature dropped (combat_hm_orphaned, set when the hub opened) costs nothing and preserves concentration. The extra damage itself is added in resolve_player_weapon_hit.
 *comment Replay-locked with the other single-cast spells (combat_cast_locked).
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment ENSNARING STRIKE (2026-10-12): the cast only arms it and spends the slot; combat.txt combat_ensnare_apply fires it on the next weapon hit. Ten rounds is the whole spell, the same flat stand-in for concentration Hunter's Mark uses.
+*comment ENSNARING STRIKE (2026-10-12): the cast only arms it and spends the slot; combat.txt combat_ensnare_apply fires it on the next weapon hit. Ten rounds is the maximum ceiling; concentration can end it earlier.
 *label resolve_cast_ensnaring_strike
 *if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
   *set spell_slots_1 - 1
+  *gosub_scene combat_dice concentration_begin "combat_player_" "ensnaring_strike"
   *set ensnaring_armed true
   *set ensnaring_expires_round (combat_round + 9)
   *set combat_cast_locked true
@@ -290,6 +294,9 @@ ${fsh}
       *set favored_foe_uses - 1
     *else
       *set spell_slots_1 - 1
+    *gosub_scene combat_dice concentration_begin "combat_player_" "hunters_mark"
+  *else
+    *set combat_conc_ended_banner ""
   *set favored_foe_target_slot combat_active_target
   *set favored_foe_expires_round (combat_round + 9)
   *set combat_cast_locked true
@@ -381,8 +388,8 @@ ${combat_player_dmg_roll_banner}
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment SPELL: CAUSE FEAR (Wizard and Warlock, 1st level, 2026-10-02): the active target makes a Wisdom save against spell_save_dc; on a failure it is Frightened for up to 10 rounds, the engine's flat
-*comment stand-in for concentration (nothing here tracks concentration, as with Bane). A frightened enemy attacks with disadvantage and will not close the distance, and it repeats its Wisdom save at
+*comment SPELL: CAUSE FEAR (Wizard and Warlock, 1st level, 2026-10-02): the active target makes a Wisdom save against spell_save_dc; on a failure it is Frightened for up to 10 rounds (concentration).
+*comment A frightened enemy attacks with disadvantage and will not close the distance, and it repeats its Wisdom save at
 *comment the end of each of its turns, ending the fear on a success (combat_next_turn, combat.txt). Costs a slot of the caster's own pool. Replay-locked (combat_cast_locked).
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -445,17 +452,20 @@ ${combat_player_dmg_roll_banner}
     *gosub spend_pact_slot
   *else
     *gosub spend_spell_slot combat_cast_at_level
+  *gosub_scene combat_dice concentration_begin "combat_player_" "cause_fear"
   *comment The outer print check below reads combat_fear_banner's emptiness, not combat_cast_at_level --
   *comment that gets reset to 1 at the end of this very block, which would already have happened by the time a
   *comment REPLAY of this page re-reaches the outer check, silently flipping a replayed 2nd-level cast's print
   *comment branch back to the 1st-level one. Clearing whichever branch's own output isn't used keeps the two
   *comment banner stores from ever both being non-empty from a stale earlier cast.
   *set combat_fear_banner ""
+  *temp rcf_any_frightened false
   *if (combat_cast_at_level <= 1)
     *temp rcf_p (("combat_enemy" & combat_active_target) & "_")
     *gosub_scene combat_dice resolve_save rcf_p "wisdom" "Wisdom" spell_save_dc combat_active_target
     *comment check_success is inverted here (resolve_save: true = the enemy FAILED the save).
     *if (check_success)
+      *set rcf_any_frightened true
       *set {(rcf_p & "frightened")} 10
       *set combat_fear_banner "[b][😨 ${combat_enemy_name} is Frightened: its attacks have disadvantage and it will not come closer][/b]"
     *else
@@ -480,6 +490,7 @@ ${combat_player_dmg_roll_banner}
         *if ((rcf_hp > 0) and (rcf_now <= 0))
           *gosub_scene combat_dice resolve_save rcf_p2 "wisdom" "Wisdom" spell_save_dc rcf_i
           *if (check_success)
+            *set rcf_any_frightened true
             *set {(rcf_p2 & "frightened")} 10
             *set {(("combat_mm_banner_" & rcf_i))} "[b][😨 ${combat_enemy_name} is Frightened: its attacks have disadvantage and it will not come closer][/b]"
           *else
@@ -488,6 +499,8 @@ ${combat_player_dmg_roll_banner}
           *set {(("combat_mm_banner_" & rcf_i))} "[b][— ${combat_enemy_name} is no longer a valid target][/b]"
       *set rcf_i + 1
       *goto resolve_cast_cause_fear_loop
+  *if (not(rcf_any_frightened))
+    *gosub_scene combat_dice concentration_end "combat_player_"
   *comment One-shot, cleared now -- everything above has already read it.
   *set combat_cast_at_level 1
   *set combat_cast_locked true
@@ -505,6 +518,7 @@ ${combat_player_dmg_roll_banner}
       *line_break
     *set rcf_pi + 1
     *goto resolve_cast_cause_fear_print_loop
+*gosub_scene combat_prose print_concentration_ended_banner
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -545,11 +559,8 @@ ${combat_blindness_banner}
 *comment copy, since Bane's targets have no need to be the current target at all.
 *comment Whichever fails is Baned for 10 rounds (1 minute at 6 seconds/round): combat_round already advances
 *comment reliably once per round with its own replay lock (combat_next_turn, combat.txt), so bane_expires_round =
-*comment combat_round + 9 covers exactly ten rounds inclusive of the casting round. This is a flat, deliberate
-*comment stand-in for concentration -- the designer's explicit call (2026-09-27): nothing in this engine tracks
-*comment concentration for any spell, and Bane isn't getting an exception. resolve_enemy_attack and resolve_save
-*comment both already check it themselves (see their own Bane comments), so nothing else needs to read this
-*comment label's own output.
+*comment combat_round + 9 covers the ten-round maximum inclusive of the casting round (concentration can end it earlier).
+*comment resolve_enemy_attack and resolve_save both already check it themselves (see their own Bane comments), so nothing else needs to read this label's own output.
 *comment Spell-slot cost lives here, inside the same guarded block as everything else (spell_slots_1 - 1) --
 *comment same reasoning as resolve_dissonant_whispers/resolve_cast_hex: putting it in the bare *choice body
 *comment instead would let a Stats-screen replay double-spend it.
@@ -559,7 +570,9 @@ ${combat_blindness_banner}
     *set spell_slots_1 - 1
   *else
     *gosub_scene equipment spend_consumable combat_scroll_id
+  *gosub_scene combat_dice concentration_begin "combat_player_" "bane"
   *temp rcb_targeted 0
+  *temp rcb_any_baned false
   *temp rcb_i 1
   *label resolve_cast_bane_loop
   *if (rcb_i <= combat_enemy_count) and (rcb_targeted < 3)
@@ -569,11 +582,15 @@ ${combat_blindness_banner}
       *set rcb_targeted + 1
       *gosub_scene combat_dice resolve_save rcb_p "charisma" "Charisma" spell_save_dc rcb_i
       *if (check_success)
+        *set rcb_any_baned true
         *set {(rcb_p & "bane_expires_round")} (combat_round + 9)
     *set rcb_i + 1
     *goto resolve_cast_bane_loop
+  *if (not(rcb_any_baned))
+    *gosub_scene combat_dice concentration_end "combat_player_"
   *set combat_cast_locked true
   *set locked_combat_cast_page_id page_id
+*gosub_scene combat_prose print_concentration_ended_banner
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

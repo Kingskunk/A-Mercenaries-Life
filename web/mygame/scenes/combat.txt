@@ -83,6 +83,11 @@
 *gosub_scene character_progression refresh_class_resource_maxs
 *gosub_scene combat_dice combat_player_sync
 *set combat_player_bane_expires_round 0
+*set combat_player_concentrating "none"
+*set combat_conc_result false
+*set combat_conc_ended_banner ""
+*set ensnaring_armed false
+*set ensnaring_expires_round 0
 *comment STALE SLOTS (2026-10-21, from the dev hub: summoned Blight Twigs showed in the next fight, and enemies of a fight the player fled did too). A slot beyond this fight's count keeps whatever hit points the last fight left in it, and the sidebar lane and anything that scans every slot see a living combatant there. Zero every ally and enemy slot above the counts before the fight is built; the slots in use are filled by the library or the hand-authored setup as always.
 *temp fss_e combat_enemy_count
 *temp fss_a combat_ally_count
@@ -94,6 +99,7 @@
     *set {(("combat_enemy" & fss_i) & "_max_hp")} 0
     *set {(("combat_enemy" & fss_i) & "_blinded")} 0
     *set {(("combat_enemy" & fss_i) & "_blinded_dc")} 0
+  *set {(("combat_enemy" & fss_i) & "_concentrating")} "none"
   *set fss_i (fss_i + 1)
   *goto fight_setup_stale_loop
 *set fss_i 1
@@ -105,6 +111,7 @@
     *set {(("combat_ally" & fss_i) & "_name")} "none"
     *set {(("combat_ally" & fss_i) & "_blinded")} 0
     *set {(("combat_ally" & fss_i) & "_blinded_dc")} 0
+  *set {(("combat_ally" & fss_i) & "_concentrating")} "none"
   *set fss_i (fss_i + 1)
   *goto fight_setup_stale_ally_loop
 *gosub_scene character_progression refresh_known_spells
@@ -740,6 +747,7 @@
 *set combat_player_hidden false
 *set combat_hide_uses 0
 *set ensnaring_armed false
+*set ensnaring_expires_round 0
 *set combat_hide_free_round 0
 *set player_movement_restricted false
 *set combat_shove_success false
@@ -977,6 +985,7 @@
   *set {(fc_p & "frightened")} 0
   *set {(fc_p & "blinded")} 0
   *set {(fc_p & "blinded_dc")} 0
+  *set {(fc_p & "concentrating")} "none"
   *set {(fc_p & "disadvantage")} false
   *set {(fc_p & "advantage")} false
   *comment Range: 0 means Engaged, every type's default -- reset per-slot for the same reason as Bane above.
@@ -1084,10 +1093,14 @@
   *set {(("combat_ally" & fc_a_i) & "_bane_expires_round")} 0
   *set {(("combat_ally" & fc_a_i) & "_blinded")} 0
   *set {(("combat_ally" & fc_a_i) & "_blinded_dc")} 0
+  *set {(("combat_ally" & fc_a_i) & "_concentrating")} "none"
   *set fc_a_i + 1
   *goto fight_cleanup_ally_loop
 *set combat_player_blinded 0
 *set combat_player_blinded_dc 0
+*set combat_player_concentrating "none"
+*set combat_conc_result false
+*set combat_conc_ended_banner ""
 *set player_last_hit_kind ""
 *set player_last_hit_slot 0
 *set player_last_hit_round 0
@@ -2446,6 +2459,7 @@
 *set combat_move_touched_difficult_terrain false
 *set combat_sneak_spent false
 *set player_movement_restricted false
+*gosub_scene combat_dice concentration_reconcile
 *return
 
 *label combat_spend_action
@@ -2732,6 +2746,7 @@
   *line_break
   [b][⚔️ Reckless: advantage on your Strength attacks, and advantage against you, until your next turn][/b]
 *gosub_scene combat_movement combat_refresh_ally_distances
+*gosub_scene combat_dice concentration_reconcile
 *gosub combat_hm_state
 *gosub combat_hex_state
 *if (combat_hm_live)
@@ -4283,6 +4298,7 @@
       *comment No banner here -- the hub's own "Hex" status line (fight_round_hub) says the same thing the
       *comment instant this reopens it, so a second copy here would just repeat it on the very same page.
       *line_break
+      *gosub_scene combat_prose print_concentration_ended_banner
       *goto fight_bonus_spent
 
   *if (((combat_player_actions_left > 0) and (((known_armor_of_agathys) and ((slot_left_1 + slot_left_2) > 0)) and (not(agathys_active)))) and (not(spells_blocked)))
@@ -4622,6 +4638,7 @@
       *gosub_scene combat_prose flavor_hunters_mark combat_hm_orphaned
       *comment No banner here: the hub's own "Hunter's Mark" status line says the same thing the instant it reopens.
       *line_break
+      *gosub_scene combat_prose print_concentration_ended_banner
       *goto fight_bonus_spent
 
   *if (((combat_can_ensnaring) and (combat_player_bonus_left > 0)) and (not(spells_blocked)))
@@ -4629,6 +4646,7 @@
       *gosub_scene combat_spells resolve_cast_ensnaring_strike
       You murmur the word and feel thorns rise along your weapon, waiting for a hit to carry them.
       *line_break
+      *gosub_scene combat_prose print_concentration_ended_banner
       *goto fight_bonus_spent
 
   *if (combat_can_action_surge)
@@ -5979,6 +5997,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *gosub fight_check_all_dead
 *if (combat_all_enemies_dead)
   *goto fight_victory
+*gosub_scene combat_dice concentration_reconcile
 *gosub_scene combat_movement fight_pick_target
 *if (combat_dual_shot_active)
   *comment Dual Shot: the first shot is done. Start the second one, on its own page, at the second target. The shot spends the one attack once the
@@ -6060,6 +6079,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
       *set combat_ensnare_result 2
       *set {(cea_p & "restrained_until")} ensnaring_expires_round
     *set check_success cea_cs
+  *gosub_scene combat_dice concentration_reconcile
 *return
 
 *comment SPECIAL ARROWS (2026-10-15, Fire Arrow and Ice Arrow). Called inside the weapon-hit lock right after the weapon's own hit is resolved. combat_arrow_used is the arrow loosed ("fire", "ice" or ""). On a hit that leaves the target standing it adds 1d4 of its
@@ -6191,6 +6211,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *else
     The vines hold ${combat_enemy_epithet} where they stand, and they fight from the spot.
     *line_break
+*gosub_scene combat_dice concentration_reconcile
 *set combat_turn_advanced_this_page true
 *return
 
@@ -7569,6 +7590,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *if (combat_enemy_hp > 0)
       *temp cnt_cp (("combat_enemy" & cnt_slot) & "_")
       *gosub_scene combat_dice condition_tick cnt_cp cnt_slot
+    *gosub_scene combat_dice concentration_reconcile
 *if (cnt_kind = "ally")
   *comment select_ally_attack_target (2026-09-29, plan §11.1) picks this ally's target: ranged-prefers-ranged or
   *comment melee-prefers-closest-tier, falling back to fight_pick_target's own plain kill-priority (2026-09-28)
@@ -7836,6 +7858,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *if ({(("combat_ally" & cnt_slot) & "_hp")} > 0)
       *temp cnt_ap (("combat_ally" & cnt_slot) & "_")
       *gosub_scene combat_dice condition_tick cnt_ap 0
+    *gosub_scene combat_dice concentration_reconcile
 *goto combat_next_turn
 
 *comment ============================================================================

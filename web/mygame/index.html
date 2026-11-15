@@ -293,6 +293,7 @@ var rootDir = "../";
 }
 #statSidebar .spellRow:hover { background: var(--ch-hover); }
 #statSidebar .spellRow[aria-pressed="true"] { background: var(--ch-crimson-soft); font-weight: 600; }
+#statSidebar .spellRow.spellUnprepared { opacity: 0.45; }
 #statSidebar .spellRow img { width: 18px; height: 18px; object-fit: contain; flex: 0 0 auto; }
 /* Fallback for spells with no art in ICONS/ (and any spell outside the generated --batch set): an
    initials chip, so the row still reads as a list item instead of a broken image. */
@@ -2727,11 +2728,13 @@ button#statSidebar .turnRow,
     } else if (!shown.length) {
       body = "<div class=\"spellEmpty\">Nothing at " + spellTabLabel(spellTab).toLowerCase() + ".</div>";
     } else {
-      var rows = "";
+      var rows = "", st = window.stats || {};
       for (i = 0; i < shown.length; i++) {
         var sp = shown[i];
         if (sp.id === spellPicked) pick = sp;
-        rows += "<button type=\"button\" class=\"spellRow\" data-spell=\"" + esc(sp.id) + "\"" +
+        // A class that prepares (the wizard) can hold more spells than it carries: one left out of today's preparation cannot be cast, so its row is dimmed and marked.
+        var unprep = sp.meta.level > 0 && isTruthy(st.class_prepares) && !isTruthy(st["prepared_" + sp.id]);
+        rows += "<button type=\"button\" class=\"spellRow" + (unprep ? " spellUnprepared" : "") + "\" data-spell=\"" + esc(sp.id) + "\"" + (unprep ? " title=\"Not prepared\"" : "") +
                 " aria-pressed=\"" + (spellPicked === sp.id) + "\">" + spellArt(sp.id) +
                 "<span class=\"spellName\">" + esc(sp.meta.name) + "</span>" +
                 "<span class=\"spellLvl\">" + (sp.meta.level === 0 ? "C" : sp.meta.level) + "</span></button>";

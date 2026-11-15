@@ -574,6 +574,10 @@ function genJsCopy() {
   L.push("var SPELL_LEVELS = {");
   L.push(ids.map(function (id) { return "    " + JSON.stringify(id) + ": " + BOOK.learnable[id].level; }).join(",\n"));
   L.push("  };");
+  var concIds = ids.filter(function (id) { return Boolean(BOOK.learnable[id].concentration); });
+  L.push("var SPELL_CONCENTRATION = {");
+  L.push(concIds.map(function (id) { return "    " + JSON.stringify(id) + ": true"; }).join(",\n"));
+  L.push("  };");
   L.push("// A scroll an item grants, keyed by the spell it carries (from tools/gear_catalog.json effect.spell). A spell with no scroll");
   L.push("// simply never appears among the loose leaves.");
   L.push("var SPELL_SCROLLS = {");
