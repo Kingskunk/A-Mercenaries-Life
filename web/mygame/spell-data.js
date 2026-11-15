@@ -290,7 +290,8 @@
     "blindness": 2
     };
   var SPELL_CONCENTRATION = {
-      "cause_fear": true,
+      "blade_ward": true,
+    "cause_fear": true,
     "bane": true,
     "hex": true,
     "ensnaring_strike": true,
