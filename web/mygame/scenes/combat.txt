@@ -3074,6 +3074,12 @@
 *comment untouched max must NOT be enough to start attacking -- there's no action left to spend on it. Once
 *comment attacking has started (attacks_left < max, action already committed), later swings from Extra Attack
 *comment don't need to re-check actions_left, matching RAW: Extra Attack is more attacks inside one action spent.
+*comment SIGHT (2026-11-15, the user, 2024 rules): a Blinded caster cannot cast a spell whose target must be one it can see. Those gates add combat_player_can_see: Magic Missile, Cause Fear, Blindness,
+*comment Control Flames, Hex, Hunter's Mark, Bane, Poison Spray, Dissonant Whispers, Hellish Rebuke, Healing Word on an ally, and the scrolls of those. Attack-roll spells keep Blinded's disadvantage
+*comment instead. Area spells with no chosen target (Burning Hands, Thunderwave, Arms of Hadar, Grease) and Vicious Mockery (a target it can see OR hear) are unaffected.
+*temp combat_player_can_see true
+*if (combat_player_blinded > 0)
+  *set combat_player_can_see false
 *temp combat_can_attack false
 *if (combat_player_attacks_left > 0)
   *if (combat_player_attacks_left < combat_player_attacks_max)
@@ -3128,9 +3134,15 @@
 *if ((known_cure_wounds) and (ccw_slots > 0))
   *if ((hp_current < hp_max) or (combat_ally_hurt_exists))
     *set combat_can_cure_wounds true
+*comment Healing Word reaches an ally only when the caster can see (SIGHT, above); the same two flags serve the scroll.
+*temp combat_hw_ally false
+*temp combat_hw_ally_hurt false
+*if (combat_player_can_see)
+  *set combat_hw_ally combat_ally_alive_exists
+  *set combat_hw_ally_hurt combat_ally_hurt_exists
 *temp combat_can_healing_word false
 *if ((known_healing_word) and (slot_left_1 > 0))
-  *if ((hp_current < hp_max) or (combat_ally_hurt_exists))
+  *if ((hp_current < hp_max) or (combat_hw_ally_hurt))
     *set combat_can_healing_word true
 *comment SPELL SCROLLS (the user, 2026-10-19; generated 2026-10-20): any character with the scroll can read it, with no slot. The catalog (tools/gear_catalog.json, effect.fight) says how each is offered; each Read option is shown only while its spell could be cast: the
 *comment action or bonus action is there and the spell's own gate label (fight_read_can_<spell>, below) says yes. Written by tools/gen_gear.js.
@@ -4106,7 +4118,7 @@
         *goto fight_bonus_spent
       *goto fight_action_spent
 
-  *if (((combat_player_actions_left > 0) and (combat_can_spread)) and (not(spells_blocked)))
+  *if ((((combat_player_actions_left > 0) and (combat_can_spread)) and (not(spells_blocked))) and (combat_player_can_see))
     # [b][ACTION][/b] [b][Control Flames][/b] Spread the fire on a burning foe to the others on its tile.
       *comment Shares the cantrip replay lock (combat_cantrip_choice_locked) with the attack cantrips: they all cost the ACTION, so they are mutually exclusive on a page.
       *if (not(combat_cantrip_choice_locked)) or (not(locked_combat_cantrip_choice_page_id = page_id))
@@ -4472,7 +4484,7 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if (((((combat_player_actions_left > 0) and (known_poison_spray)) and (spell_reach_ok_poison_spray))) and (not(spells_blocked)))
+  *if ((((((combat_player_actions_left > 0) and (known_poison_spray)) and (spell_reach_ok_poison_spray))) and (not(spells_blocked))) and (combat_player_can_see))
     *comment POISON SPRAY (2026-10-20, the 2024 cantrip): a Constitution SAVE against the player's spell save DC, like Vicious Mockery's Wisdom one, so there is no attack roll and Hex cannot fire. 1d12 poison on a failure; the dice scale at 5th level (2d12), which no character reaches yet, so resolve_player_hit still rolls one die. Reach "short" (30 ft): Close or nearer. The Poisoner's Robes add 1d4 poison to this (combat_dice.txt resolve_player_hit).
     # [b][ACTION][/b] [b][Poison Spray][/b] Fling a bitter puff of poison at the nearest foe.
       *if (not(combat_cantrip_choice_locked)) or (not(locked_combat_cantrip_choice_page_id = page_id))
@@ -4506,7 +4518,7 @@
       *line_break
       *goto fight_check_enemy_hp
 
-  *if ((((combat_player_actions_left > 0) and ((known_magic_missile) and (slot_left_1 > 0)))) and (not(spells_blocked)))
+  *if (((((combat_player_actions_left > 0) and ((known_magic_missile) and (slot_left_1 > 0)))) and (not(spells_blocked))) and (combat_player_can_see))
     # [b][ACTION][/b] [b][Magic Missile: 1st level][/b] Loose three darts of force at targets you choose in the sidebar.
       *comment Arms targeting mode instead of casting immediately (2026-09-28) -- RAW lets the three darts be
       *comment split across up to three targets, not forced onto whichever single enemy fight_pick_target's
@@ -4523,7 +4535,7 @@
       *set combat_mm_darts_6 0
       *goto fight_target_magic_missile
 
-  *if ((((combat_player_actions_left > 0) and ((known_magic_missile) and (slot_left_2 > 0)))) and (not(spells_blocked)))
+  *if (((((combat_player_actions_left > 0) and ((known_magic_missile) and (slot_left_2 > 0)))) and (not(spells_blocked))) and (combat_player_can_see))
     # [b][ACTION][/b] [b][Magic Missile: 2nd level][/b] Loose four darts of force, spending a 2nd-level slot.
       *comment UPCASTING PILOT (2026-11-08): Magic Missile's whole upcast, RAW, is "+1 dart per slot level above
       *comment 1st" -- no change to the per-dart damage math (still 1d4+1 each, resolve_magic_missile,
@@ -4543,7 +4555,7 @@
       *set combat_mm_darts_6 0
       *goto fight_target_magic_missile
 
-  *if (((((combat_can_hex) and (combat_player_bonus_left > 0))) and (spell_reach_ok_hex)) and (not(spells_blocked)))
+  *if ((((((combat_can_hex) and (combat_player_bonus_left > 0))) and (spell_reach_ok_hex)) and (not(spells_blocked))) and (combat_player_can_see))
     # [b][BONUS ACTION][/b] [b][Hex][/b] @{combat_hex_orphaned Move your curse to|Lay a baleful eldritch curse upon} ${combat_med_epithet}.
       *gosub_scene combat_movement fight_pick_target
       *gosub_scene combat_movement fight_retarget_by_class "medium"
@@ -4597,12 +4609,12 @@
       *line_break
       *goto fight_action_spent
 
-  *if (((((combat_player_actions_left > 0) and ((known_dissonant_whispers) and (slot_left_1 > 0)))) and (spell_reach_ok_dissonant_whispers)) and (not(spells_blocked)))
+  *if ((((((combat_player_actions_left > 0) and ((known_dissonant_whispers) and (slot_left_1 > 0)))) and (spell_reach_ok_dissonant_whispers)) and (not(spells_blocked))) and (combat_player_can_see))
     # [b][ACTION][/b] [b][Dissonant Whispers: 1st level][/b] A discordant psychic phrase wracks ${combat_med_epithet}.
       *set combat_cast_at_level 1
       *goto fight_cast_dissonant_whispers
 
-  *if (((((combat_player_actions_left > 0) and ((known_dissonant_whispers) and (slot_left_2 > 0)))) and (spell_reach_ok_dissonant_whispers)) and (not(spells_blocked)))
+  *if ((((((combat_player_actions_left > 0) and ((known_dissonant_whispers) and (slot_left_2 > 0)))) and (spell_reach_ok_dissonant_whispers)) and (not(spells_blocked))) and (combat_player_can_see))
     # [b][ACTION][/b] [b][Dissonant Whispers: 2nd level][/b] An empowered phrase: 4d6 instead of 3d6.
       *comment UPCASTING (2026-11-09, RAW): +1d6 per slot level above 1st -- resolve_dissonant_whispers
       *comment (combat_spells.txt) reads combat_cast_at_level for the dice count, same shape Ray of Sickness/
@@ -4610,7 +4622,7 @@
       *set combat_cast_at_level 2
       *goto fight_cast_dissonant_whispers
 
-  *if ((((combat_can_fear) and (spell_reach_ok_cause_fear))) and (not(spells_blocked)))
+  *if (((((combat_can_fear) and (spell_reach_ok_cause_fear))) and (not(spells_blocked))) and (combat_player_can_see))
     # [b][ACTION][/b] [b][Cause Fear: 1st level][/b] Plant a whispered dread in ${combat_med_epithet}.@{show_stat_hints  [Wisdom Save]|}
       *set combat_cast_at_level 1
       *gosub_scene combat_movement fight_pick_target
@@ -4620,7 +4632,7 @@
       *gosub_scene combat_spells resolve_cast_cause_fear
       *goto fight_action_spent
 
-  *if ((combat_can_fear_2) and (not(spells_blocked)))
+  *if (((combat_can_fear_2) and (not(spells_blocked))) and (combat_player_can_see))
     # [b][ACTION][/b] [b][Cause Fear: 2nd level][/b] Plant a whispered dread in up to two creatures you choose in the sidebar.
       *comment UPCASTING (2026-11-08): arms the same per-target allocation sidebar Magic Missile's darts use --
       *comment one "dart" per target here just means "frighten this one", not stacked damage, so
@@ -4636,7 +4648,7 @@
       *set combat_mm_darts_6 0
       *goto fight_target_cause_fear
 
-  *if (((combat_can_blindness) and (spell_reach_ok_blindness)) and (not(spells_blocked)))
+  *if ((((combat_can_blindness) and (spell_reach_ok_blindness)) and (not(spells_blocked))) and (combat_player_can_see))
     # [b][ACTION][/b] [b][Blindness][/b] Strike ${combat_enemy_epithet} blind.@{show_stat_hints  [Constitution Save]|}
       *if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
         *gosub_scene combat_movement fight_pick_target
@@ -4695,7 +4707,7 @@
       *gosub_scene combat_spells resolve_arms_of_hadar
       *goto fight_check_enemy_hp
 
-  *if ((((combat_player_actions_left > 0) and ((known_bane) and (slot_left_1 > 0)))) and (not(spells_blocked)))
+  *if (((((combat_player_actions_left > 0) and ((known_bane) and (slot_left_1 > 0)))) and (not(spells_blocked))) and (combat_player_can_see))
     # [b][ACTION][/b] [b][Bane][/b] Sour the aim and nerve of every foe still standing near you.
       *comment No fight_pick_target re-sync here -- unlike every other targeted option, Bane doesn't act on the
       *comment single "active" target at all; resolve_cast_bane picks its own up to three targets internally.
@@ -4705,10 +4717,10 @@
       *goto fight_action_spent
 
   *if (((combat_can_healing_word) and (combat_player_bonus_left > 0)) and (not(spells_blocked)))
-    # [b][BONUS ACTION][/b] [b][Healing Word][/b] @{combat_ally_alive_exists Speak a curative word across the fight, to you or an ally.|Speak a curative syllable to knit your gashes.}
+    # [b][BONUS ACTION][/b] [b][Healing Word][/b] @{combat_hw_ally Speak a curative word across the fight, to you or an ally.|Speak a curative syllable to knit your gashes.}
       *comment With an ally on the field the player picks who is healed in the sidebar (fight_target_friendly_healing_word); alone, it heals the caster at once, as it always did.
       *set combat_friendly_target 0
-      *if (combat_ally_alive_exists)
+      *if (combat_hw_ally)
         *set combat_friendly_reach 3
         *if (hp_current < hp_max)
           *set combat_friendly_target 0
@@ -4750,7 +4762,7 @@
       *set combat_scroll_id "scroll_magic_missile"
       *goto fight_read_magic_missile
   *if (combat_read_healing_word)
-    # [b][BONUS ACTION][/b] [b][Read: Healing Word Scroll][/b] @{combat_ally_alive_exists Speak the line across the fight, to you or an ally.|Speak the line to knit your gashes.}@{show_stat_hints  [Heals 1d4 plus your casting modifier]|}
+    # [b][BONUS ACTION][/b] [b][Read: Healing Word Scroll][/b] @{combat_hw_ally Speak the line across the fight, to you or an ally.|Speak the line to knit your gashes.}@{show_stat_hints  [Heals 1d4 plus your casting modifier]|}
       *set combat_scroll_id "scroll_healing_word"
       *goto fight_read_healing_word
   *if (combat_read_mage_armor)
@@ -4856,7 +4868,7 @@
       *line_break
       *goto fight_round_hub
 
-  *if (((((combat_player_actions_left > 0) and (known_hellish_rebuke)) and ((slot_left_1 + slot_left_2) > 0)) and ((not(rebuke_armed)) and (not(player_oa_used)))) and (not(spells_blocked)))
+  *if ((((((combat_player_actions_left > 0) and (known_hellish_rebuke)) and ((slot_left_1 + slot_left_2) > 0)) and ((not(rebuke_armed)) and (not(player_oa_used)))) and (not(spells_blocked))) and (combat_player_can_see))
     # [b][Hellish Rebuke][/b] Hold a vengeful retort ready, to scorch whoever next wounds you.
       *set rebuke_armed true
       You bite down on a retort and hold it there, hot behind your teeth, ready to spit back at whoever next draws your blood.
@@ -4884,7 +4896,7 @@
       *line_break
       *goto fight_bonus_spent
 
-  *if (((((combat_can_hunters_mark) and (combat_player_bonus_left > 0))) and (spell_reach_ok_hunters_mark)) and (not(spells_blocked)))
+  *if ((((((combat_can_hunters_mark) and (combat_player_bonus_left > 0))) and (spell_reach_ok_hunters_mark)) and (not(spells_blocked))) and (combat_player_can_see))
     # [b][BONUS ACTION][/b] [b][Hunter's Mark][/b] @{combat_hm_orphaned Move your mark to|Mark} ${combat_med_epithet} as your quarry${chm_cost_text}.
       *gosub_scene combat_movement fight_pick_target
       *gosub_scene combat_movement fight_retarget_by_class "medium"
@@ -5548,11 +5560,11 @@ ${use_text}
 *comment ── THE SPELL SCROLLS' FIGHT LABELS (2026-10-20). For each scroll with effect.fight in the catalog: fight_read_can_<spell> sets combat_read_ok (is there a reason to read it now? the action budget is already checked by the generated code) and
 *comment fight_read_<spell> is what the Read option does, ending in the usual spent-action line. combat_scroll_id is already set to the scroll's item id. ──
 *label fight_read_can_magic_missile
-*set combat_read_ok true
+*set combat_read_ok combat_player_can_see
 *return
 
 *label fight_read_can_bane
-*set combat_read_ok true
+*set combat_read_ok combat_player_can_see
 *return
 
 *label fight_read_can_grease
@@ -5565,7 +5577,7 @@ ${use_text}
 
 *label fight_read_can_healing_word
 *set combat_read_ok false
-*if ((hp_current < hp_max) or (combat_ally_hurt_exists))
+*if ((hp_current < hp_max) or (combat_hw_ally_hurt))
   *set combat_read_ok true
 *return
 
@@ -5605,7 +5617,7 @@ ${use_text}
 
 *label fight_read_healing_word
 *set combat_friendly_target 0
-*if (combat_ally_alive_exists)
+*if (combat_hw_ally)
   *set combat_friendly_reach 3
   *if (hp_current < hp_max)
     *set combat_friendly_target 0

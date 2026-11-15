@@ -240,7 +240,6 @@
         "<div class=\"bhud-budget\"><b>Action</b>" + pips(actions, Math.max(1, actions), "act") + "</div>" +
         "<div class=\"bhud-budget\"><b>Bonus</b>" + pips(bonus, Math.max(1, bonus), "bon") + "</div>" +
         "<div class=\"bhud-budget\"><b>Move</b>" + pips(moveLeft, moveMax, "mov") + "</div>" +
-        "<button type=\"button\" class=\"bhud-toggle\" data-bhud=\"classic\">Classic list</button>" +
       "</div>";
     // The rail is deliberately only Advance / Retreat. Tactical ally orders are intentionally not rendered in
     // the bar: the companion card in the sidebar owns them, avoiding an ever-growing combat action grid.
@@ -371,21 +370,226 @@
     return el;
   }
   function hideTip() { var el = document.getElementById(TIP_ID); if (el) el.className = ""; tipFor = null; }
-  // The card for the Primary and Sidearm buttons: what is actually in that hand. The weapon_* and sidearm_* variables are written by equipment.txt
-  // (the description, the damage with its type, melee/finesse/ranged, one or two hands), so this only formats them.
+  // Data-driven hover cards: computed from live window.stats + SPELL_FACTS / ACTION_FACTS / SPELL_REACH, never parsed from choice prose.
   var ATTACK_KIND = { melee: "Melee", finesse: "Finesse melee", reach: "Reach melee", ranged: "Ranged" };
+  var REACH_NAME = { touch: "Engaged", short: "Short range", medium: "Mid-range", long: "Long range" };
+  var COST_NAME = { action: "Action", bonus: "Bonus action", reaction: "Reaction", free: "Free", move: "Move", minute: "1 minute" };
+  var SKILL_STAT = { athletics: "str", stealth: "dex", intimidation: "cha" };
+
+  function signed(n) { return (n >= 0 ? "+" : "") + n; }
+  function capFirst(t) { return t ? t.charAt(0).toUpperCase() + t.slice(1) : ""; }
+  function ordinal(n) { return n === 1 ? "1st" : (n === 2 ? "2nd" : (n === 3 ? "3rd" : n + "th")); }
+  function parseVariantSlot(label) {
+    var m = /^(\d+)(?:st|nd|rd|th)?\s+level$/i.exec(String(label || "").trim());
+    return m ? parseInt(m[1], 10) : 0;
+  }
+  function scaleDice(baseDice, extraDice, steps) {
+    if (!steps || !extraDice) return baseDice;
+    var b = /^(\d+)d(\d+)$/i.exec(baseDice || "");
+    var x = /^(\d+)d(\d+)$/i.exec(extraDice || "");
+    if (b && x && b[2] === x[2]) return (parseInt(b[1], 10) + parseInt(x[1], 10) * steps) + "d" + b[2];
+    return baseDice + " + " + (steps > 1 ? steps + "\u00d7" : "") + extraDice;
+  }
+  function formatDiceAndMod(dice, flatMod) {
+    if (!flatMod) return dice;
+    return dice + (flatMod > 0 ? "+" + flatMod : String(flatMod));
+  }
+  function castingMod(s) {
+    var cs = s.casting_stat;
+    if (cs === "int" || cs === "cha" || cs === "wis") return num(s[cs + "_mod"]);
+    return num(s.spell_damage_mod);
+  }
+  function spellAttackBonus(s) {
+    return num(s.prof_bonus) + castingMod(s);
+  }
+  function spellSaveDc(s) {
+    return s.spell_save_dc != null && isFinite(Number(s.spell_save_dc)) ? num(s.spell_save_dc) : (8 + num(s.prof_bonus) + castingMod(s));
+  }
+  function cantripStep(scaleObj, level) {
+    var hit = null, keys = [5, 11, 17];
+    for (var i = 0; i < keys.length; i++) if (level >= keys[i] && scaleObj[keys[i]]) hit = scaleObj[keys[i]];
+    return hit;
+  }
+  function skillBonus(s, skill) {
+    var stat = SKILL_STAT[skill];
+    var mod = stat ? num(s[stat + "_mod"]) : 0;
+    var prof = truthy(s["skill_" + skill]) ? num(s.prof_bonus) : 0;
+    var exp = (s.expertise_1 === skill || s.expertise_2 === skill || s.expertise_3 === skill || s.expertise_4 === skill) ? num(s.prof_bonus) : 0;
+    var ring = (skill === "athletics" && (s.equipped_ring1_id === "janna_forged_ring" || s.equipped_ring2_id === "janna_forged_ring")) ? 1 : 0;
+    return mod + prof + exp + ring;
+  }
+  function weaponStats(s, pre, opts) {
+    opts = opts || {};
+    var desc = s[pre + "_desc"], type = s[pre + "_type"], hands = s[pre + "_hands"];
+    if (!desc || desc === "None" || desc === "none" || !type || type === "none") return null;
+    var strMod = num(s.str_mod), dexMod = num(s.dex_mod);
+    var abMod = opts.useCasting ? castingMod(s) : (type === "ranged" ? dexMod : (type === "finesse" ? Math.max(strMod, dexMod) : strMod));
+    var magic = num(s[pre + "_magic"]);
+    var archery = (type === "ranged" && s.fighting_style === "archery") ? 2 : 0;
+    var flimsy = truthy(s[pre + "_flimsy"]) ? -1 : 0;
+    var atk = num(s.prof_bonus) + abMod + archery + magic + flimsy;
+    var dice = type === "finesse" ? "1d4" : (type === "ranged" ? "1d6" : (hands === "two_handed" ? "1d12" : "1d8"));
+    var dueling = (s.fighting_style === "dueling" && type !== "ranged" && hands !== "two_handed") ? 2 : 0;
+    var rage = (!opts.ignoreRage && s.character_class === "barbarian" && truthy(s.is_raging) && type !== "ranged" && (type !== "finesse" || strMod > dexMod)) ? num(s.barbarian_rage_damage_bonus) : 0;
+    var dmgMod = abMod + dueling + rage + magic;
+    var rawDmg = String(s[pre + "_damage"] || "");
+    var dmgType = opts.overrideDmgType || ((s[pre + "_damage_type"] && s[pre + "_damage_type"] !== "none") ? s[pre + "_damage_type"] : (rawDmg.split(/\s+/)[1] || ""));
+    var range = type === "ranged" ? (REACH_NAME[s[pre + "_reach"] || "long"] || "Long range") : (type === "reach" ? "Engaged or Close" : "Engaged");
+    var props = [];
+    if (type === "finesse") props.push("Finesse");
+    else if (type === "reach") props.push("Reach");
+    props.push(hands === "two_handed" ? "Two-handed" : "One-handed");
+    if (magic > 0) props.push(signed(magic) + " magic");
+    else if (truthy(s[pre + "_magical"])) props.push("Magical");
+    if (truthy(s[pre + "_silvered"])) props.push("Silvered");
+    if (truthy(s[pre + "_adamantine"])) props.push("Adamantine");
+    if (truthy(s[pre + "_flimsy"])) props.push("Flimsy (-1 hit)");
+    var notes = [];
+    if (s.fighting_style === "close_combat" && type === "ranged") notes.push("+2 dmg at Engaged");
+    if (s.character_class === "rogue" && (type === "finesse" || type === "ranged") && num(s.rogue_sneak_dice) > 0) notes.push("+" + num(s.rogue_sneak_dice) + "d6 Sneak Attack");
+    if (truthy(s.hex_active)) notes.push("+1d6 necrotic (Hex)");
+    if (num(s.favored_foe_target_slot) > 0 && num(s.favored_foe_die_sides) > 0) notes.push("+1d" + num(s.favored_foe_die_sides) + " force (Hunter's Mark)");
+    return {
+      desc: desc, atk: atk, dice: dice, dmgMod: dmgMod, dmgType: dmgType,
+      range: range, props: props, notes: notes,
+      dmgExpr: formatDiceAndMod(dice, dmgMod) + (dmgType ? " " + dmgType : "")
+    };
+  }
   function weaponCard(id) {
-    var s = statsNow(), pre = id === "primary_attack" ? "weapon" : (id === "sidearm_attack" ? "sidearm" : "");
+    var pre = id === "primary_attack" ? "weapon" : (id === "sidearm_attack" ? "sidearm" : "");
     if (!pre) return "";
-    var desc = s[pre + "_desc"], dmg = s[pre + "_damage"], type = s[pre + "_type"], hands = s[pre + "_hands"];
-    if (!desc || desc === "None" || desc === "none") return "";
-    var bits = [];
-    if (dmg && dmg !== "none") bits.push("Damage: " + dmg);
-    if (type && ATTACK_KIND[type]) bits.push(ATTACK_KIND[type]);
-    if (hands) bits.push(hands === "two_handed" ? "Two-handed" : "One-handed");
-    return "<div class=\"bt-name\">" + esc(desc) + "</div>" +
-      "<div class=\"bt-kind\">" + (pre === "weapon" ? "Primary weapon" : "Sidearm") + "</div>" +
-      (bits.length ? "<div class=\"bt-text\">" + esc(bits.join(" · ")) + "</div>" : "");
+    var w = weaponStats(statsNow(), pre);
+    if (!w) return "";
+    return "<div class=\"bt-name\">" + esc(w.desc) + "</div>" +
+      "<div class=\"bt-kind\">" + (pre === "weapon" ? "Primary weapon" : "Sidearm") + " \u00b7 Action</div>" +
+      "<div class=\"bt-text\">" + esc(signed(w.atk) + " to hit \u00b7 " + w.dmgExpr) + "</div>" +
+      "<div class=\"bt-text\">" + esc(w.props.concat([w.range]).join(" \u00b7 ")) + "</div>" +
+      (w.notes.length ? "<div class=\"bt-text\">" + esc(w.notes.join(" \u00b7 ")) + "</div>" : "");
+  }
+  function spellCard(id, group, variantLabel) {
+    var fact = (window.SPELL_FACTS || {})[id];
+    if (!fact || !fact.combat) return "";
+    var s = statsNow(), c = fact.combat, baseLevel = fact.level || 0;
+    var slotLevel = parseVariantSlot(variantLabel) || baseLevel;
+    var up = (baseLevel > 0 && slotLevel > baseLevel) ? (slotLevel - baseLevel) : 0;
+    var cmod = castingMod(s), lvl = num(s.character_level);
+    var title = fact.name + (variantLabel && !parseVariantSlot(variantLabel) ? " (" + variantLabel + ")" : "");
+    var kindBits = [COST_NAME[c.cost] || KIND[group] || ""];
+    if (slotLevel > 0) kindBits.push(ordinal(slotLevel) + "-level slot");
+    if (fact.concentration) kindBits.push("Concentration");
+    var mainBits = [], extraNotes = [];
+
+    if (c.attack_kind === "weapon") {
+      if (id === "true_strike") {
+        var rad = variantLabel ? /radiant/i.test(variantLabel) : false;
+        var wt = weaponStats(s, "weapon", { useCasting: true, ignoreRage: true, overrideDmgType: rad ? "radiant" : "" });
+        var tsStep = c.cantrip_scale ? cantripStep(c.cantrip_scale, lvl) : null;
+        if (wt) {
+          var tsDmg = wt.dmgExpr + (tsStep && tsStep.extra_dice ? " + " + tsStep.extra_dice + " radiant" : "");
+          mainBits.push(signed(wt.atk) + " to hit", tsDmg, wt.range);
+        }
+        if (!variantLabel) extraNotes.push("Weapon damage or radiant damage; uses casting ability");
+      } else if (id === "booming_blade") {
+        var pre = (variantLabel && s.sidearm && slug(variantLabel) === slug(s.sidearm)) ? "sidearm" : "weapon";
+        var wb = weaponStats(s, pre);
+        var bbStep = c.cantrip_scale ? cantripStep(c.cantrip_scale, lvl) : null;
+        var moveDice = (bbStep && bbStep.on_move_dice) || c.base_move_dice || "1d8";
+        if (wb) {
+          var hitExtra = (bbStep && bbStep.on_hit_dice) ? " + " + bbStep.on_hit_dice + " thunder" : "";
+          mainBits.push(signed(wb.atk) + " to hit", wb.dmgExpr + hitExtra, wb.range);
+        }
+        extraNotes.push("If target moves: " + moveDice + " thunder");
+      }
+    } else if (c.resolution === "attack") {
+      var atkDice = c.damage_dice || "";
+      if (up > 0 && c.upcast && c.upcast.damage_dice) atkDice = scaleDice(atkDice, c.upcast.damage_dice, up);
+      var atkFlat = (c.add_casting_mod ? cmod : 0) + (id === "eldritch_blast" && truthy(s.inv_agonizing_blast) && num(s.cha_mod) > 0 ? num(s.cha_mod) : 0);
+      if (atkDice) {
+        var atkDmg = formatDiceAndMod(atkDice, atkFlat) + (c.damage_type ? " " + c.damage_type : "");
+        if (c.damage_type === "poison" && s.equipped_armor_id === "poisoners_robes") atkDmg += " (+1d4 Poisoner's Robes)";
+        mainBits.push(atkDmg);
+      }
+      mainBits.push(signed(spellAttackBonus(s)) + " to hit");
+      if (id === "eldritch_blast" && truthy(s.inv_repelling_blast)) extraNotes.push("Repelling Blast: pushes Large or smaller 1 step back");
+    } else if (c.resolution === "save") {
+      var svDice = c.damage_dice || "";
+      if (up > 0 && c.upcast && c.upcast.damage_dice) svDice = scaleDice(svDice, c.upcast.damage_dice, up);
+      var svFlat = c.add_casting_mod ? cmod : 0;
+      if (svDice) mainBits.push(formatDiceAndMod(svDice, svFlat) + (c.damage_type ? " " + c.damage_type : ""));
+      if (c.save_ability) mainBits.push(capFirst(c.save_ability) + " save DC " + spellSaveDc(s));
+      if (c.half_on_save) mainBits.push("half on a save");
+    } else if (c.resolution === "auto") {
+      var proj = (c.projectiles || 0) + (up > 0 && c.upcast && c.upcast.projectiles ? c.upcast.projectiles * up : 0);
+      var perDart = formatDiceAndMod(c.damage_dice || "1d4", c.damage_flat || 0);
+      mainBits.push((proj > 1 ? proj + " \u00d7 (" + perDart + ")" : perDart) + (c.damage_type ? " " + c.damage_type : ""), "Automatic hit");
+    } else if (c.resolution === "heal") {
+      mainBits.push(formatDiceAndMod(c.heal_dice || "1d4", c.add_casting_mod ? cmod : 0) + " healing");
+    } else if (c.resolution === "effect") {
+      if (c.temp_hp_dice || c.temp_hp_flat) {
+        var thpFlat = (c.temp_hp_flat || 0) + (up > 0 && c.upcast && c.upcast.temp_hp_flat ? c.upcast.temp_hp_flat * up : 0);
+        mainBits.push((c.temp_hp_dice ? formatDiceAndMod(c.temp_hp_dice, thpFlat) : String(thpFlat)) + " temp HP");
+      }
+      if (c.damage_flat && c.damage_type) mainBits.push(c.damage_flat + " " + c.damage_type + " to melee attackers");
+    }
+
+    var metaBits = [];
+    var rch = fact.reach || (window.SPELL_REACH || {})[id];
+    var rangeLabel = REACH_NAME[rch] || (fact.range && REACH_NAME[fact.range]) || "";
+    var areaLabel = c.area || "";
+    if (!areaLabel && c.upcast && c.upcast.targets) {
+      var tCount = 1 + c.upcast.targets * up;
+      areaLabel = tCount === 1 ? "1 foe" : "Up to " + tCount + " foes";
+    }
+    if (rangeLabel && areaLabel && areaLabel.toLowerCase() !== rangeLabel.toLowerCase()) metaBits.push(rangeLabel + " \u00b7 " + areaLabel);
+    else if (rangeLabel || areaLabel) metaBits.push(rangeLabel || areaLabel);
+    if (c.duration) metaBits.push(c.duration);
+
+    if (c.effect && id !== "true_strike" && id !== "booming_blade" && id !== "armor_of_agathys") extraNotes.push(c.effect);
+    var schoolLine = (baseLevel === 0 ? "Cantrip" : ordinal(slotLevel) + "-level") + " \u00b7 " + fact.school;
+    return "<div class=\"bt-name\">" + esc(title) + "</div>" +
+      "<div class=\"bt-kind\">" + esc(kindBits.filter(Boolean).join(" \u00b7 ")) + "</div>" +
+      (mainBits.length ? "<div class=\"bt-text\">" + esc(mainBits.join(" \u00b7 ")) + "</div>" : "") +
+      (metaBits.length ? "<div class=\"bt-text\">" + esc(metaBits.join(" \u00b7 ")) + "</div>" : "") +
+      extraNotes.map(function (n) { return "<div class=\"bt-text\">" + esc(n) + "</div>"; }).join("") +
+      "<div class=\"bt-school\">" + esc(schoolLine) + "</div>";
+  }
+  function actionCard(e, variantLabel) {
+    var a = (window.ACTION_FACTS || {})[e.id];
+    if (!a) return "";
+    var s = statsNow(), costText = KIND[e.group] || COST_NAME[a.cost] || "";
+    var kindBits = [costText, a.kind];
+    if (a.uses_stat && a.max_stat && s[a.max_stat] != null) kindBits.push(num(s[a.uses_stat]) + "/" + num(s[a.max_stat]) + " uses");
+    var mainBits = [], metaBits = [];
+    if (e.id === "arcane_ward") {
+      var wl = parseVariantSlot(variantLabel);
+      if (wl > 0 && a.ward_per_level) mainBits.push("Restores " + (wl * a.ward_per_level) + " ward HP");
+      if (s.arcane_ward_max != null) mainBits.push("Ward: " + num(s.arcane_ward_hp) + "/" + num(s.arcane_ward_max) + " HP");
+    } else if (a.resolution === "heal") {
+      mainBits.push(formatDiceAndMod(a.heal_dice || "1d10", a.add_level ? num(s.character_level) : 0) + " healing");
+    } else if (a.resolution === "check" && a.skill) {
+      var sk = skillBonus(s, a.skill);
+      var dcText = (a.dc_stat && num(s[a.dc_stat]) > 0) ? " vs. DC " + num(s[a.dc_stat]) : "";
+      mainBits.push(capFirst(a.skill) + " " + signed(sk) + dcText);
+    } else if (a.attack_kind === "weapon") {
+      var wa = weaponStats(s, "weapon");
+      if (wa) mainBits.push(signed(wa.atk) + " to hit", wa.dmgExpr, wa.range);
+    }
+    var eff = a.effect || "";
+    if (a.die_stat) eff = eff.replace(/\{die\}/g, "1d" + (num(s[a.die_stat]) || 6));
+    if (a.bonus_stat) eff = eff.replace(/\{bonus\}/g, String(num(s[a.bonus_stat])));
+    if (e.id === "magical_cunning") {
+      var regain = Math.max(1, Math.ceil(num(s.warlock_slots_max) / 2));
+      eff = eff.replace(/\{slots\}/g, String(regain)).replace(/\{slot_word\}/g, regain === 1 ? "slot" : "slots");
+    }
+    var loc = a.reach ? (REACH_NAME[a.reach] || a.reach) : (a.area || "");
+    if (loc) metaBits.push(loc);
+    if (a.duration) metaBits.push(a.duration);
+    var title = a.name + (variantLabel ? " (" + variantLabel + ")" : "");
+    return "<div class=\"bt-name\">" + esc(title) + "</div>" +
+      "<div class=\"bt-kind\">" + esc(kindBits.filter(Boolean).join(" \u00b7 ")) + "</div>" +
+      (mainBits.length ? "<div class=\"bt-text\">" + esc(mainBits.join(" \u00b7 ")) + "</div>" : "") +
+      (metaBits.length ? "<div class=\"bt-text\">" + esc(metaBits.join(" \u00b7 ")) + "</div>" : "") +
+      (eff ? "<div class=\"bt-text\">" + esc(eff) + "</div>" : "");
   }
 
   // The Pack's entry for an item named on a button: the names match the Pack's (a leading "The" or "Gnarled" aside), so the card says what the Pack's card says.
@@ -408,6 +612,11 @@
     if (!e || !e.variants) return "";
     for (k = 0; k < e.variants.length; k++) if (e.variants[k].id === vid) v = e.variants[k];
     if (!v) return "";
+    var on = !!offered[vid];
+    if (!ITEM_MENUS[e.id]) {
+      var card = spellCard(e.id, e.group, v.label) || actionCard(e, v.label);
+      if (card) return card + (on ? "" : "<div class=\"bt-off\">" + esc(reasonFor({ id: vid, group: e.group })) + "</div>");
+    }
     var item = packItemFor(v.label), s = statsNow(), name = v.label, badge = "", desc = "";
     if (item) {
       try {
@@ -417,8 +626,6 @@
         desc = typeof item.description === "function" ? item.description(s) : (item.description || "");
       } catch (err) { /* the label alone will do */ }
     }
-    if (!desc && !badge) desc = String(v.blurb || "");
-    var on = !!offered[vid];
     return "<div class=\"bt-name\">" + esc(name) + "</div>" +
       "<div class=\"bt-kind\">" + esc([KIND[e.group], ITEM_MENUS[e.id]].filter(Boolean).join(" \u00b7 ")) + "</div>" +
       (badge ? "<div class=\"bt-meta\">" + esc(badge) + "</div>" : "") +
@@ -450,15 +657,14 @@
     if (!e || flyFor === id) return;
     var on = !!offered[id];
     var el = tipEl();
-    var wc = weaponCard(id);
-    if (wc) {
-      el.innerHTML = wc + (on ? "" : "<div class=\"bt-off\">" + esc(reasonFor(e)) + "</div>");
-    } else
-    el.innerHTML = "<div class=\"bt-name\">" + esc(e.name) + "</div>" +
-      (KIND[e.group] ? "<div class=\"bt-kind\">" + KIND[e.group] + "</div>" : "") +
-      (e.variants && e.variants.length ? "<div class=\"bt-text\">Click to choose: " + esc(e.variants.map(function (v) { return v.label; }).join(" or ")) + ".</div>" : "") +
-      (e.blurb && e.blurb.replace(/[^A-Za-z]/g, "").length > 2 && e.blurb !== e.name ? "<div class=\"bt-text\">" + esc(e.blurb) + "</div>" : "") +
-      (on ? "" : "<div class=\"bt-off\">" + esc(reasonFor(e)) + "</div>");
+    var card = weaponCard(id) || spellCard(id, e.group, "") || actionCard(e, "");
+    if (card) {
+      el.innerHTML = card + (on ? "" : "<div class=\"bt-off\">" + esc(reasonFor(e)) + "</div>");
+    } else {
+      el.innerHTML = "<div class=\"bt-name\">" + esc(e.name) + "</div>" +
+        (KIND[e.group] ? "<div class=\"bt-kind\">" + KIND[e.group] + "</div>" : "") +
+        (on ? "" : "<div class=\"bt-off\">" + esc(reasonFor(e)) + "</div>");
+    }
     el.className = "on";
     // Rects are in viewport pixels; the card is positioned in CSS pixels, which the screen-fit zoom (index.html, window.UI_ZOOM) scales. So measure
     // everything in viewport pixels, then divide by the zoom to set left/top.
@@ -511,23 +717,10 @@
       return;
     }
     if (!items) {
-      // Classic list asked for, or not the hub: put the dock away. When classic, leave a small way back.
+      // Classic list asked for, or not the hub: put the dock away.
       remove();
-      var back = document.getElementById("battleHudBack");
-      var wantBack = classic && inFight && hubItems();
-      if (wantBack && !back) {
-        back = document.createElement("button");
-        back.id = "battleHudBack";
-        back.type = "button";
-        back.textContent = "Battle HUD";
-        back.setAttribute("data-bhud", "hud");
-        var form = document.querySelector("#main form");
-        if (form) form.parentNode.insertBefore(back, form);
-      } else if (!wantBack && back && back.parentNode) back.parentNode.removeChild(back);
       return;
     }
-    var back2 = document.getElementById("battleHudBack");
-    if (back2 && back2.parentNode) back2.parentNode.removeChild(back2);
     remember(items);
     var sig = items.map(function (i) { return i.id; }).join("|") + "#" + seen.length + "#" + num(s.combat_player_actions_left) + "/" + num(s.combat_player_bonus_left) + "/" + num(s.combat_player_moves_left) + "/" + (truthy(s.player_oa_used) ? 1 : 0);
     var el = document.getElementById(HUD_ID);
@@ -557,8 +750,6 @@
     if (act === "fly") toggleFly(t.getAttribute("data-id"));
     else if (flyFor && act !== "pick") closeFly();
     if (act === "pick") pick(t.getAttribute("data-id"));
-    else if (act === "classic") { classic = true; scan(); }
-    else if (act === "hud") { classic = false; scan(); }
   });
 
   function slotOf(el) { return el && el.closest ? el.closest("#" + HUD_ID + " .bhud-slot, #" + HUD_ID + " .bhud-adv, #" + HUD_ID + " .bhud-weapon, #" + FLY_ID + " .bfly-btn") : null; }
@@ -566,14 +757,22 @@
   document.addEventListener("focusin", function (ev) { var sl = slotOf(ev.target); if (sl) showTip(sl); });
   document.addEventListener("focusout", function () { hideTip(); });
 
-  // Number keys fire the numbered slot, like a real hotbar.
+  // Number keys fire the numbered slot, like a real hotbar; C toggles Battle HUD / Classic list.
   document.addEventListener("keydown", function (ev) {
     if (ev.key === "Escape" && flyFor) { closeFly(); return; }
     if (ev.ctrlKey || ev.metaKey || ev.altKey || ev.shiftKey) return;
-    if (!document.body.classList.contains("battleHudOn")) return;
     if (document.querySelector("dialog[open]")) return;
     var tag = ev.target && ev.target.tagName ? ev.target.tagName.toLowerCase() : "";
     if (tag === "input" || tag === "textarea" || tag === "select") return;
+    if ((ev.key === "c" || ev.key === "C") && !ev.repeat) {
+      if (truthy(statsNow().combat_engaged) && hubItems()) {
+        ev.preventDefault();
+        classic = !classic;
+        scan();
+        return;
+      }
+    }
+    if (!document.body.classList.contains("battleHudOn")) return;
     if (!/^[1-9]$/.test(ev.key)) return;
     var slot = document.querySelector("#" + HUD_ID + " .bhud-slot[data-key=\"" + ev.key + "\"]");
     if (slot) {

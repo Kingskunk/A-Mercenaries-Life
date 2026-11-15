@@ -45,6 +45,8 @@
  *   steps     [{ "pick": "text in the option" | number (1 = first option), "rand": "low"|"mid"|"high"|0..1,
  *               "whileAvail": true, "optional": true }]  whileAvail repeats the step until its option is gone (attack rounds); optional skips the step
  *               when its option is not on offer, instead of stopping with "pick not found" (one move list can then run through many different fights)
+ *             A step may instead be { "absent": "text" | ["text", ...] }: it picks nothing, and fails the run if the menu on screen offers an option
+ *             containing any of those texts (a spell that must be unavailable). The next step then acts on the same menu.
  *   picks     the same steps as one string: "text@high;other text*"  (@word sets rand, a trailing * = whileAvail)
  *   watch     variable names whose final values are reported
  *   requireNoDeadSpace  true: fail this scenario if a *line_break prints an empty line
@@ -180,6 +182,14 @@ Scene.prototype.choice = function (data, isFakeChoice) {
   var idx = -1, step = null;
   while (D.stepIdx < D.steps.length) {
     step = D.steps[D.stepIdx];
+    // An "absent" step picks nothing: it fails the run if the menu now on screen offers any option containing that text, then moves on.
+    if (step.absent !== undefined) {
+      [].concat(step.absent).forEach(function (t) {
+        var hit = names.filter(function (n) { return n.indexOf(t) !== -1; })[0];
+        if (hit) D.errors.push("step " + (D.stepIdx + 1) + ": '" + t + "' should not be on offer, but it is: " + hit);
+      });
+      D.stepIdx++; idx = -1; continue;
+    }
     idx = typeof step.pick === "number" ? step.pick - 1 : names.findIndex(function (n) { return n.indexOf(step.pick) !== -1; });
     if (idx >= names.length) idx = -1;
     if (idx >= 0) break;

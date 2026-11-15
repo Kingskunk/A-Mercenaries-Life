@@ -580,6 +580,30 @@ function genJsCopy() {
   L.push("var SPELL_CONCENTRATION = {");
   L.push(concIds.map(function (id) { return "    " + JSON.stringify(id) + ": true"; }).join(",\n"));
   L.push("  };");
+  var VALID_RES = { attack: true, save: true, auto: true, heal: true, effect: true };
+  var VALID_COST = { action: true, bonus: true, reaction: true, minute: true };
+  var allFacts = {};
+  function addFact(id, sp, level) {
+    if (!sp || !sp.school || !sp.combat) throw new Error("spell_book.json: '" + id + "' is missing school or combat facts");
+    var c = sp.combat;
+    if (!VALID_COST[c.cost]) throw new Error("spell_book.json: '" + id + "' has invalid combat.cost '" + c.cost + "'");
+    if (c.slot_level !== level) throw new Error("spell_book.json: '" + id + "' combat.slot_level (" + c.slot_level + ") !== level (" + level + ")");
+    if (!VALID_RES[c.resolution]) throw new Error("spell_book.json: '" + id + "' has invalid combat.resolution '" + c.resolution + "'");
+    if (!c.duration) throw new Error("spell_book.json: '" + id + "' is missing combat.duration");
+    var entry = { name: sp.name, level: level, school: sp.school };
+    if (sp.concentration) entry.concentration = true;
+    if (sp.range) entry.range = sp.range;
+    if (sp.reach) entry.reach = sp.reach;
+    entry.combat = c;
+    allFacts[id] = entry;
+  }
+  cantripIds.forEach(function (id) { addFact(id, BOOK.cantrips[id], 0); });
+  ids.forEach(function (id) { addFact(id, BOOK.learnable[id], BOOK.learnable[id].level); });
+  L.push("// Combat facts and schools generated from tools/spell_book.json (cantrips + learnable).");
+  L.push("var SPELL_FACTS = {");
+  var factKeys = Object.keys(allFacts);
+  L.push(factKeys.map(function (id) { return "    " + JSON.stringify(id) + ": " + JSON.stringify(allFacts[id]); }).join(",\n"));
+  L.push("  };");
   L.push("// A scroll an item grants, keyed by the spell it carries (from tools/gear_catalog.json effect.spell). A spell with no scroll");
   L.push("// simply never appears among the loose leaves.");
   L.push("var SPELL_SCROLLS = {");
