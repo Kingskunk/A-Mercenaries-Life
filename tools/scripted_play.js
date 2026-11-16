@@ -35,7 +35,7 @@
  *   scene     scene file without .txt (default port_valen)
  *   label     label to start at (required to start mid-scene; omit to start at the top)
  *   preset    text found in a dev-menu option, e.g. "Cadre Battle-Abjurer" (default "Vanguard Line Fighter")
- *   weather   Clear, Overcast, Rain, Fog, Snow, Sleet, Storm or Blizzard
+ *   weather   Clear, Overcast, Rain, Fog, Snow, Sleet, Storm or Blizzard (pins the whole day in the zone: sets weather_day and an all-day window too)
  *   time      Pre-Dawn, Morning, Midday, Afternoon, Dusk or Night (sets the hour and the clock text)
  *   day       Ironday, Tideday, Marketday, Hearthday, Forgeday, Greyday or Hallowday (sets campaign_day)
  *   stats     object of variables set last, so they win over weather/time/day and the preset
@@ -50,7 +50,8 @@
  *   picks     the same steps as one string: "text@high;other text*"  (@word sets rand, a trailing * = whileAvail)
  *   gosub     true: start the label as if a *gosub_scene had called it, so a subroutine label that ends in *return finishes cleanly (see "simend" below)
  *   watch     variable names (globals, or *temps on the active scene) whose final values are reported
- *   requireNoDeadSpace  true: fail this scenario if a *line_break prints an empty line
+ *   allowDeadSpace  true: do NOT fail this scenario for a *line_break that prints an empty line. A run fails for one by default (2026-11-16); this
+ *             flag is a debt marker for a script that crosses a page with one not yet fixed, so grep for it. requireNoDeadSpace is now the default and is ignored.
  *   refresh   true: after every page, replay it on a copy (what opening Stats and returning does) and
  *             report any variable that changes; a reward or a time advance that is not guarded shows up here
  *   refreshText  true (with refresh): also report a replay whose printed text differs from the first pass's
@@ -354,6 +355,12 @@ function worldFromShorthands(scn) {
   if (scn.weather !== undefined) {
     if (WEATHERS.indexOf(scn.weather) < 0) throw new Error("weather must be one of " + WEATHERS.join(", "));
     w.weather = scn.weather;
+    // The calendar re-derives `weather` from the zone's weather_day and its window (calendar.txt weather_now) every time a hub runs
+    // update_hub_condition, so setting `weather` alone is undone on the first page. Pin the zone's whole day to the same weather, so the
+    // shortcut means what it says. A script that needs a changing day sets weather_day / wx_window_* itself in `stats`, which win.
+    w.weather_day = scn.weather;
+    w.weather_day_wet = (scn.weather === "Rain" || scn.weather === "Sleet" || scn.weather === "Storm");
+    w.wx_window_start = 0; w.wx_window_len = 24;
   }
   if (scn.time !== undefined) {
     if (!(scn.time in HOURS)) throw new Error("time must be one of " + Object.keys(HOURS).join(", "));
@@ -575,7 +582,7 @@ function main(argv) {
   var r = play(scn);
   console.log(flags.json ? formatJson(scn, r) : formatText(scn, r, { raw: !!flags.raw, menus: !flags["no-menus"] }));
   var bad = r.errors.length || r.refreshDiffs.some(function (d) { return !KNOWN_ENGINE_DIFF.test(d); }) ||
-    (scn.requireNoDeadSpace && r.deadSpace.length);
+    (!scn.allowDeadSpace && r.deadSpace.length);
   return bad ? 1 : 0;
 }
 
