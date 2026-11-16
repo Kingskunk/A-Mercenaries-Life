@@ -1,6 +1,6 @@
 # Project guide
 
-A ChoiceScript game: an open-world, low-fantasy life simulator with D&D-style fights. The game is in `web/mygame/` (scenes in `web/mygame/scenes/`), the tools are in `tools/`, and the design documents are in `Resources & Quest/`.
+A ChoiceScript game: an open-world, fantasy life simulator with D&D-style fights. The game is in `web/mygame/` (scenes in `web/mygame/scenes/`), the tools are in `tools/`, and the design documents are in `Resources & Quest/`.
 
 This file only says where to look. The rules are in the files it names. Read the one for your task before you write anything.
 
