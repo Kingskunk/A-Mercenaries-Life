@@ -70,7 +70,7 @@ node tools/play_all.js --root=<worktree> --out=<old folder>     the same on the 
 node quicktest.js mygame startup combat combat_spells combat_movement combat_dice combat_prose combat_ai dice_engine dev_hub equipment choicescript_stats dungeon character_stats
 ```
 
-On 2026-11-16 the folder holds 1,647 scripts and all 1,647 pass (it was 1,531 of 1,645 at commit `21532cb5`; see 3.0). `node tools/play_all.js` exiting 0 is the whole check, and any failure belongs to the change being made.
+On 2026-11-16 the folder holds 1,649 scripts and all 1,649 pass (see 3.0). `node tools/play_all.js` exiting 0 is the whole check, and any failure belongs to the change being made.
 
 ### Rules block to paste at the top of a hand-off prompt
 
@@ -97,35 +97,11 @@ RULES FOR THIS SESSION
 
 In the order I would take it. Each item is one hand-off, sized to review in one sitting.
 
-### 3.0 Clear the 114 failing play scripts (DONE 2026-11-16: 0 of 1,647 fail)
+### 3.0 Clear the failing play scripts (DONE 2026-11-16)
 
-With the folder at zero, `node tools/play_all.js` exiting 0 is the whole check. What the 114 turned out to be:
+All 1,649 scripts pass, and `node tools/play_all.js` exiting 0 is the whole check. The causes and fixes are in the commit messages. The testing rules that came out of it are in `GAMEPLAY_MECHANICS_RULES.md` section 4, under `scripted_play.js`.
 
-- **Stale scripts, repaired** (most of them): out-of-date option names and step lists, scripts that ran past the end of a subroutine (the harness now has `"gosub": true` for those), shop scripts moved to the trade panel's settle labels, a script that forced the weather the zone system overwrites, and a refresh self-test (`lyra_paid`) that could never pass. One script (`peddler_posting_read_on`) was deleted with approval.
-- **Real faults in the game, fixed:** two in `longshade_dryad.txt` (the morning counter and a line break), the Conduit Spout (jugs now fill only on the spout page, not the whole square), 17 dev-hub jump entries lost in `bfce4f22` (restored), the dev-hub fire and ice arrows granted twice on a refresh, the Chapter 5 quest count left stale until the next hub, and doubled line breaks before `fight_victory` (an ally's blow, and the end of an enemy's turn: new flag `combat_ally_break_deferred` and label `fight_victory_quiet`) and in the dev hub and Oxworth.
-- **Harness faults, fixed in `scripted_play.js`:** a script starting in the same scene as the preset menu inherited the preset's page-start line, so a refresh replayed the preset; `spell_learn_result "learned" -> "known"` is now a known, expected replay difference.
-- **Global rules added afterwards (2026-11-16):** dead space is now a failure for every script; the 42 that still print one carry `"allowDeadSpace": true` (grep for it to find the remaining debt; `requireNoDeadSpace` is ignored). The `weather` shortcut now pins the zone's whole day (`weather_day`, an all-day window), which the calendar used to undo on the first hub. 37 scripts that set Rain, Storm, Fog or Snow had been passing in clear weather and now run in the weather they name; all still pass.
-
-The old table of failures at commit `21532cb5`, grouped by the first line each script reported (kept for the record):
-
-| Count | Reason | Likely meaning |
-| --- | --- | --- |
-| 42 | `invalid return; we've already returned` (in `character_progression`, `combat`, `calendar`, `crafting`, `character_stats`, `equipment`, `prologue/battle_black_sinks`) | The script runs past the end of what it was written to test. Usually the script needs a last step or a stop point, not a code change. |
-| about 25 | `no option matches '...'` (Cut ferns, Sell the water jug, Make Green Honey Mash, and others) | The option was renamed, moved or removed after the script was written. |
-| 8 | `startup line N: ... doesn't contain` a label or scene | The script starts at a label or scene that no longer exists. |
-| about 10 | `Refresh check: ... N differences` | A page that does not replay the same. Some of these may be real faults, not stale scripts. |
-| 4 | `DEAD SPACE` | An empty line printed on the page. A real, small display fault. |
-
-By area: `undead` 9, `ambrose` 9, `longshade` 8, `dev` 8, `wolves` 6, `jug` 6, `cook` 5, then smaller groups. Most are story and crafting scripts, not fight scripts.
-
-How to do it:
-
-1. Take one group at a time, by reason. Do not mix groups in one hand-off.
-2. For each script decide one of three things: **repair the script** (the game is right), **fix the game** (the script found a real fault), or **propose deleting it** (it tests something that no longer exists).
-3. Never delete a script without the designer's approval. List the proposed deletions with one line of reason each.
-4. The refresh and dead-space groups come last and get the most care, because they are the ones most likely to be real faults.
-
-Done: `node tools/play_all.js` reports 0 failed, and the counts in section 2 are updated.
+Open: 42 scripts carry `"allowDeadSpace": true` (`grep -l allowDeadSpace tools/play_scripts/*.json`). Each is a doubled line break to fix and then drop the flag.
 
 ### 3.1 Convert the spells that fit the shared roll as it stands
 
