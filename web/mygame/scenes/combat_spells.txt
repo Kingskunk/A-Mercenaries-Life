@@ -178,63 +178,60 @@
   *gosub_scene combat_prose flavor_spell_magic_missile_split
 ${fsh}
 *line_break
-*if (not(combat_magic_missile_locked)) or (not(locked_combat_magic_missile_page_id = page_id))
-  *if (combat_scroll_id = "")
-    *comment UPCASTING (2026-11-08): combat_cast_at_level is set by whichever option armed targeting mode
-    *comment (combat.txt) -- spend_spell_slot (above) picks the pool. Reset right after, so a stale "2" can never
-    *comment leak into a later spell that forgets to set its own level (every caster of resolve_magic_missile
-    *comment sets it explicitly).
-    *gosub spend_spell_slot combat_cast_at_level
-    *set combat_cast_at_level 1
-  *else
-    *gosub_scene equipment spend_consumable combat_scroll_id
-  *comment Always Force damage, RAW -- no per-caster variation.
-  *set combat_player_dmg_type "force"
-  *set combat_mm_banner_1 ""
-  *set combat_mm_banner_2 ""
-  *set combat_mm_banner_3 ""
-  *set combat_mm_banner_4 ""
-  *set combat_mm_banner_5 ""
-  *set combat_mm_banner_6 ""
-  *temp mm_i 1
-  *label resolve_magic_missile_dmg_loop
-  *if (mm_i <= combat_enemy_slot_cap)
-    *temp mm_n {(("combat_mm_darts_" & mm_i))}
-    *if (mm_n > 0)
-      *set combat_active_target mm_i
-      *gosub_scene combat fight_sync_target_in
-      *temp mm_roll 0
-      *temp mm_dice_str ""
-      *temp mm_j 1
-      *label resolve_magic_missile_dart_loop
-      *if (mm_j <= mm_n)
-        *temp mm_die 0
-        *rand mm_die 1 4
-        *set mm_roll + mm_die
-        *if (mm_j = 1)
-          *set mm_dice_str "${mm_die}"
-        *else
-          *set mm_dice_str "${mm_dice_str}+${mm_die}"
-        *set mm_j + 1
-        *goto resolve_magic_missile_dart_loop
-      *comment No Hex here, deliberately: the darts auto-hit with no attack roll (RAW, and per Sage Advice), so
-      *comment they don't satisfy Hex's "hit with an attack" trigger -- same reasoning as the save-based spells.
-      *set combat_player_dmg_dealt (mm_roll + mm_n)
-      *gosub_scene combat_dice apply_outgoing_damage_resist_vuln
-      *set combat_enemy_hp - combat_player_dmg_dealt
-      *if (combat_enemy_hp < 0)
-        *set combat_enemy_hp 0
-      *gosub_scene combat fight_sync_target_out
-      *temp mm_banner_val ""
-      *if (combat_enemy_hp <= 0)
-        *set mm_banner_val "[b][💀 ${combat_enemy_name} Defeated: ${mm_dice_str} +${mm_n} = ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]"
+*if (combat_scroll_id = "")
+  *comment UPCASTING (2026-11-08): combat_cast_at_level is set by whichever option armed targeting mode
+  *comment (combat.txt) -- spend_spell_slot (above) picks the pool. Reset right after, so a stale "2" can never
+  *comment leak into a later spell that forgets to set its own level (every caster of resolve_magic_missile
+  *comment sets it explicitly).
+  *gosub spend_spell_slot combat_cast_at_level
+  *set combat_cast_at_level 1
+*else
+  *gosub_scene equipment spend_consumable combat_scroll_id
+*comment Always Force damage, RAW -- no per-caster variation.
+*set combat_player_dmg_type "force"
+*set combat_mm_banner_1 ""
+*set combat_mm_banner_2 ""
+*set combat_mm_banner_3 ""
+*set combat_mm_banner_4 ""
+*set combat_mm_banner_5 ""
+*set combat_mm_banner_6 ""
+*temp mm_i 1
+*label resolve_magic_missile_dmg_loop
+*if (mm_i <= combat_enemy_slot_cap)
+  *temp mm_n {(("combat_mm_darts_" & mm_i))}
+  *if (mm_n > 0)
+    *set combat_active_target mm_i
+    *gosub_scene combat fight_sync_target_in
+    *temp mm_roll 0
+    *temp mm_dice_str ""
+    *temp mm_j 1
+    *label resolve_magic_missile_dart_loop
+    *if (mm_j <= mm_n)
+      *temp mm_die 0
+      *rand mm_die 1 4
+      *set mm_roll + mm_die
+      *if (mm_j = 1)
+        *set mm_dice_str "${mm_die}"
       *else
-        *set mm_banner_val "[b][✨ ${combat_enemy_name}: ${mm_dice_str} +${mm_n} = ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]"
-      *set {(("combat_mm_banner_" & mm_i))} mm_banner_val
-    *set mm_i + 1
-    *goto resolve_magic_missile_dmg_loop
-  *set combat_magic_missile_locked true
-  *set locked_combat_magic_missile_page_id page_id
+        *set mm_dice_str "${mm_dice_str}+${mm_die}"
+      *set mm_j + 1
+      *goto resolve_magic_missile_dart_loop
+    *comment No Hex here, deliberately: the darts auto-hit with no attack roll (RAW, and per Sage Advice), so
+    *comment they don't satisfy Hex's "hit with an attack" trigger -- same reasoning as the save-based spells.
+    *set combat_player_dmg_dealt (mm_roll + mm_n)
+    *gosub_scene combat_dice apply_outgoing_damage_resist_vuln
+    *set combat_enemy_hp - combat_player_dmg_dealt
+    *if (combat_enemy_hp < 0)
+      *set combat_enemy_hp 0
+    *gosub_scene combat fight_sync_target_out
+    *temp mm_banner_val ""
+    *if (combat_enemy_hp <= 0)
+      *set mm_banner_val "[b][💀 ${combat_enemy_name} Defeated: ${mm_dice_str} +${mm_n} = ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]"
+    *else
+      *set mm_banner_val "[b][✨ ${combat_enemy_name}: ${mm_dice_str} +${mm_n} = ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]"
+    *set {(("combat_mm_banner_" & mm_i))} mm_banner_val
+  *set mm_i + 1
+  *goto resolve_magic_missile_dmg_loop
 *temp mm_pi 1
 *label resolve_magic_missile_print_loop
 *if (mm_pi <= combat_enemy_slot_cap)
@@ -253,21 +250,18 @@ ${fsh}
 *comment comment for how each caller declares which one it is.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_cast_hex
-*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
-  *comment Moving Hex after its target falls costs a bonus action, not another use or spell slot, and keeps existing concentration intact.
-  *if (not(combat_hex_orphaned))
-    *comment Payment (2026-11-14, the user: 2024 rules): a granted spell's free use goes first; after that it is cast from the caster's own slots, whatever their class.
-    *if ((race_cantrip_2 = "hex") and (not(hexblood_hex_used)))
-      *set hexblood_hex_used true
-    *else
-      *gosub spend_lowest_slot
-    *gosub_scene combat_dice concentration_begin "combat_player_" "hex"
+*comment Moving Hex after its target falls costs a bonus action, not another use or spell slot, and keeps existing concentration intact.
+*if (not(combat_hex_orphaned))
+  *comment Payment (2026-11-14, the user: 2024 rules): a granted spell's free use goes first; after that it is cast from the caster's own slots, whatever their class.
+  *if ((race_cantrip_2 = "hex") and (not(hexblood_hex_used)))
+    *set hexblood_hex_used true
   *else
-    *set combat_conc_ended_banner ""
-  *set hex_active true
-  *set hex_target_slot combat_active_target
-  *set combat_cast_locked true
-  *set locked_combat_cast_page_id page_id
+    *gosub spend_lowest_slot
+  *gosub_scene combat_dice concentration_begin "combat_player_" "hex"
+*else
+  *set combat_conc_ended_banner ""
+*set hex_active true
+*set hex_target_slot combat_active_target
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -278,29 +272,23 @@ ${fsh}
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment ENSNARING STRIKE (2026-10-12): the cast only arms it and spends the slot; combat.txt combat_ensnare_apply fires it on the next weapon hit. Ten rounds is the maximum ceiling; concentration can end it earlier.
 *label resolve_cast_ensnaring_strike
-*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
-  *set spell_slots_1 - 1
-  *gosub_scene combat_dice concentration_begin "combat_player_" "ensnaring_strike"
-  *set ensnaring_armed true
-  *set ensnaring_expires_round (combat_round + 9)
-  *set combat_cast_locked true
-  *set locked_combat_cast_page_id page_id
+*set spell_slots_1 - 1
+*gosub_scene combat_dice concentration_begin "combat_player_" "ensnaring_strike"
+*set ensnaring_armed true
+*set ensnaring_expires_round (combat_round + 9)
 *return
 
 *label resolve_cast_hunters_mark
-*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
-  *if (not(combat_hm_orphaned))
-    *if (favored_foe_uses > 0)
-      *set favored_foe_uses - 1
-    *else
-      *set spell_slots_1 - 1
-    *gosub_scene combat_dice concentration_begin "combat_player_" "hunters_mark"
+*if (not(combat_hm_orphaned))
+  *if (favored_foe_uses > 0)
+    *set favored_foe_uses - 1
   *else
-    *set combat_conc_ended_banner ""
-  *set favored_foe_target_slot combat_active_target
-  *set favored_foe_expires_round (combat_round + 9)
-  *set combat_cast_locked true
-  *set locked_combat_cast_page_id page_id
+    *set spell_slots_1 - 1
+  *gosub_scene combat_dice concentration_begin "combat_player_" "hunters_mark"
+*else
+  *set combat_conc_ended_banner ""
+*set favored_foe_target_slot combat_active_target
+*set favored_foe_expires_round (combat_round + 9)
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -308,14 +296,11 @@ ${fsh}
 *comment Spends one use and arms the die: on the ally picked by combat_inspire_pick when there is one, on the Bard otherwise. Replay-locked (combat_cast_locked).
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_bardic_inspiration
-*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
-  *set bard_inspiration_uses - 1
-  *if (combat_inspire_ally_pick > 0)
-    *set combat_inspired_ally combat_inspire_ally_pick
-  *else
-    *set combat_inspired_self true
-  *set combat_cast_locked true
-  *set locked_combat_cast_page_id page_id
+*set bard_inspiration_uses - 1
+*if (combat_inspire_ally_pick > 0)
+  *set combat_inspired_ally combat_inspire_ally_pick
+*else
+  *set combat_inspired_self true
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -325,55 +310,52 @@ ${fsh}
 *comment slot. Replay-locked (combat_cast_locked); the per-target result lines are kept in combat_mm_banner_1..6, Magic Missile's per-slot banner fields, and printed after the lock.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_arms_of_hadar
-*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
-  *gosub spend_pact_slot
-  *temp aoh_d1 0
-  *temp aoh_d2 0
-  *rand aoh_d1 1 6
-  *rand aoh_d2 1 6
-  *temp aoh_total (aoh_d1 + aoh_d2)
-  *set combat_player_dmg_roll_banner "[b][🎲 Arms of Hadar: ${aoh_d1}+${aoh_d2} = ${aoh_total} necrotic][/b]"
-  *set combat_player_dmg_type "necrotic"
-  *set combat_mm_banner_1 ""
-  *set combat_mm_banner_2 ""
-  *set combat_mm_banner_3 ""
-  *set combat_mm_banner_4 ""
-  *set combat_mm_banner_5 ""
-  *set combat_mm_banner_6 ""
-  *temp aoh_i 1
-  *label resolve_arms_of_hadar_loop
-  *if (aoh_i <= combat_enemy_count)
-    *temp aoh_p (("combat_enemy" & aoh_i) & "_")
-    *temp aoh_hp {(aoh_p & "hp")}
-    *temp aoh_range {(aoh_p & "range")}
-    *if ((aoh_hp > 0) and (aoh_range <= 0))
-      *gosub_scene combat_dice resolve_save aoh_p "strength" "Strength" spell_save_dc aoh_i
-      *comment check_success is inverted here (resolve_save: true = the enemy FAILED the save).
-      *temp aoh_failed check_success
-      *if (aoh_failed)
-        *set combat_player_dmg_dealt aoh_total
-        *set {(aoh_p & "oa_used")} true
-      *else
-        *set combat_player_dmg_dealt ((aoh_total - (aoh_total modulo 2)) / 2)
-      *set combat_active_target aoh_i
-      *gosub_scene combat fight_sync_target_in
-      *gosub_scene combat_dice apply_outgoing_damage_resist_vuln
-      *set combat_enemy_hp - combat_player_dmg_dealt
-      *if (combat_enemy_hp < 0)
-        *set combat_enemy_hp 0
-      *gosub_scene combat fight_sync_target_out
-      *temp aoh_line ""
-      *if (aoh_failed)
-        *set aoh_line "${combat_enemy_name}: ${combat_player_dmg_dealt} necrotic damage${combat_outgoing_dmg_suffix}, and it cannot take reactions until its next turn"
-      *else
-        *set aoh_line "${combat_enemy_name}: ${combat_player_dmg_dealt} necrotic damage${combat_outgoing_dmg_suffix} (saved, half)"
-      *if (combat_enemy_hp <= 0)
-        *set aoh_line "${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} necrotic damage${combat_outgoing_dmg_suffix}"
-      *set {(("combat_mm_banner_" & aoh_i))} "[b][🖤 ${aoh_line}][/b]"
-    *set aoh_i + 1
-    *goto resolve_arms_of_hadar_loop
-  *set combat_cast_locked true
-  *set locked_combat_cast_page_id page_id
+*gosub spend_pact_slot
+*temp aoh_d1 0
+*temp aoh_d2 0
+*rand aoh_d1 1 6
+*rand aoh_d2 1 6
+*temp aoh_total (aoh_d1 + aoh_d2)
+*set combat_player_dmg_roll_banner "[b][🎲 Arms of Hadar: ${aoh_d1}+${aoh_d2} = ${aoh_total} necrotic][/b]"
+*set combat_player_dmg_type "necrotic"
+*set combat_mm_banner_1 ""
+*set combat_mm_banner_2 ""
+*set combat_mm_banner_3 ""
+*set combat_mm_banner_4 ""
+*set combat_mm_banner_5 ""
+*set combat_mm_banner_6 ""
+*temp aoh_i 1
+*label resolve_arms_of_hadar_loop
+*if (aoh_i <= combat_enemy_count)
+  *temp aoh_p (("combat_enemy" & aoh_i) & "_")
+  *temp aoh_hp {(aoh_p & "hp")}
+  *temp aoh_range {(aoh_p & "range")}
+  *if ((aoh_hp > 0) and (aoh_range <= 0))
+    *gosub_scene combat_dice resolve_save aoh_p "strength" "Strength" spell_save_dc aoh_i
+    *comment check_success is inverted here (resolve_save: true = the enemy FAILED the save).
+    *temp aoh_failed check_success
+    *if (aoh_failed)
+      *set combat_player_dmg_dealt aoh_total
+      *set {(aoh_p & "oa_used")} true
+    *else
+      *set combat_player_dmg_dealt ((aoh_total - (aoh_total modulo 2)) / 2)
+    *set combat_active_target aoh_i
+    *gosub_scene combat fight_sync_target_in
+    *gosub_scene combat_dice apply_outgoing_damage_resist_vuln
+    *set combat_enemy_hp - combat_player_dmg_dealt
+    *if (combat_enemy_hp < 0)
+      *set combat_enemy_hp 0
+    *gosub_scene combat fight_sync_target_out
+    *temp aoh_line ""
+    *if (aoh_failed)
+      *set aoh_line "${combat_enemy_name}: ${combat_player_dmg_dealt} necrotic damage${combat_outgoing_dmg_suffix}, and it cannot take reactions until its next turn"
+    *else
+      *set aoh_line "${combat_enemy_name}: ${combat_player_dmg_dealt} necrotic damage${combat_outgoing_dmg_suffix} (saved, half)"
+    *if (combat_enemy_hp <= 0)
+      *set aoh_line "${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} necrotic damage${combat_outgoing_dmg_suffix}"
+    *set {(("combat_mm_banner_" & aoh_i))} "[b][🖤 ${aoh_line}][/b]"
+  *set aoh_i + 1
+  *goto resolve_arms_of_hadar_loop
 ${combat_player_dmg_roll_banner}
 *line_break
 *temp aoh_pi 1
@@ -399,26 +381,23 @@ ${combat_player_dmg_roll_banner}
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_throw_item
 *params rti_item
-*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
-  *gosub_scene equipment spend_consumable rti_item
-  *temp rti_p (("combat_enemy" & combat_active_target) & "_")
-  *temp rti_old spell_save_dc
-  *set spell_save_dc ((8 + prof_bonus) + dex_mod)
-  *set combat_throw_dc spell_save_dc
-  *set combat_throw_name combat_enemy_name
-  *set combat_throw_epithet combat_enemy_epithet
-  *rand combat_throw_v 1 3
-  You pull the stopper with your teeth and hurl the flask at ${combat_enemy_epithet}.
-  *line_break
-  *gosub_scene combat_dice resolve_save rti_p "dexterity" "Dexterity" spell_save_dc combat_active_target
-  *set spell_save_dc rti_old
-  *set combat_throw_failed check_success
-  *if (rti_item = "grease_flask")
-    *if (check_success)
-      *set {(rti_p & "greased")} 2
-      *set {(rti_p & "grease_until")} (combat_round + 4)
-  *set combat_cast_locked true
-  *set locked_combat_cast_page_id page_id
+*gosub_scene equipment spend_consumable rti_item
+*temp rti_p (("combat_enemy" & combat_active_target) & "_")
+*temp rti_old spell_save_dc
+*set spell_save_dc ((8 + prof_bonus) + dex_mod)
+*set combat_throw_dc spell_save_dc
+*set combat_throw_name combat_enemy_name
+*set combat_throw_epithet combat_enemy_epithet
+*rand combat_throw_v 1 3
+You pull the stopper with your teeth and hurl the flask at ${combat_enemy_epithet}.
+*line_break
+*gosub_scene combat_dice resolve_save rti_p "dexterity" "Dexterity" spell_save_dc combat_active_target
+*set spell_save_dc rti_old
+*set combat_throw_failed check_success
+*if (rti_item = "grease_flask")
+  *if (check_success)
+    *set {(rti_p & "greased")} 2
+    *set {(rti_p & "grease_until")} (combat_round + 4)
 *if (combat_throw_failed)
   *if (combat_throw_v = 1)
     The flask bursts on ${combat_throw_epithet}'s legs, and thick yellow grease runs down to the ground and spreads under their feet.
@@ -447,64 +426,61 @@ ${combat_player_dmg_roll_banner}
 *comment thing -- the sidebar still enforces one dart per target). The 1st-level path keeps the single
 *comment auto-picked target it always had; only the >= 2 branch touches the new multi-target loop.
 *label resolve_cast_cause_fear
-*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
-  *if (character_class = "warlock")
-    *gosub spend_pact_slot
+*if (character_class = "warlock")
+  *gosub spend_pact_slot
+*else
+  *gosub spend_spell_slot combat_cast_at_level
+*gosub_scene combat_dice concentration_begin "combat_player_" "cause_fear"
+*comment The outer print check below reads combat_fear_banner's emptiness, not combat_cast_at_level --
+*comment that gets reset to 1 at the end of this very block, which would already have happened by the time a
+*comment REPLAY of this page re-reaches the outer check, silently flipping a replayed 2nd-level cast's print
+*comment branch back to the 1st-level one. Clearing whichever branch's own output isn't used keeps the two
+*comment banner stores from ever both being non-empty from a stale earlier cast.
+*set combat_fear_banner ""
+*temp rcf_any_frightened false
+*if (combat_cast_at_level <= 1)
+  *temp rcf_p (("combat_enemy" & combat_active_target) & "_")
+  *gosub_scene combat_dice resolve_save rcf_p "wisdom" "Wisdom" spell_save_dc combat_active_target
+  *comment check_success is inverted here (resolve_save: true = the enemy FAILED the save).
+  *if (check_success)
+    *set rcf_any_frightened true
+    *set {(rcf_p & "frightened")} 10
+    *set combat_fear_banner "[b][😨 ${combat_enemy_name} is Frightened: its attacks have disadvantage and it will not come closer][/b]"
   *else
-    *gosub spend_spell_slot combat_cast_at_level
-  *gosub_scene combat_dice concentration_begin "combat_player_" "cause_fear"
-  *comment The outer print check below reads combat_fear_banner's emptiness, not combat_cast_at_level --
-  *comment that gets reset to 1 at the end of this very block, which would already have happened by the time a
-  *comment REPLAY of this page re-reaches the outer check, silently flipping a replayed 2nd-level cast's print
-  *comment branch back to the 1st-level one. Clearing whichever branch's own output isn't used keeps the two
-  *comment banner stores from ever both being non-empty from a stale earlier cast.
-  *set combat_fear_banner ""
-  *temp rcf_any_frightened false
-  *if (combat_cast_at_level <= 1)
-    *temp rcf_p (("combat_enemy" & combat_active_target) & "_")
-    *gosub_scene combat_dice resolve_save rcf_p "wisdom" "Wisdom" spell_save_dc combat_active_target
-    *comment check_success is inverted here (resolve_save: true = the enemy FAILED the save).
-    *if (check_success)
-      *set rcf_any_frightened true
-      *set {(rcf_p & "frightened")} 10
-      *set combat_fear_banner "[b][😨 ${combat_enemy_name} is Frightened: its attacks have disadvantage and it will not come closer][/b]"
-    *else
-      *set combat_fear_banner "[b][💨 ${combat_enemy_name} fights off the dread][/b]"
-  *else
-    *set combat_mm_banner_1 ""
-    *set combat_mm_banner_2 ""
-    *set combat_mm_banner_3 ""
-    *set combat_mm_banner_4 ""
-    *set combat_mm_banner_5 ""
-    *set combat_mm_banner_6 ""
-    *temp rcf_i 1
-    *label resolve_cast_cause_fear_loop
-    *if (rcf_i <= combat_enemy_slot_cap)
-      *temp rcf_n {(("combat_mm_darts_" & rcf_i))}
-      *if (rcf_n > 0)
-        *set combat_active_target rcf_i
-        *gosub_scene combat fight_sync_target_in
-        *temp rcf_p2 (("combat_enemy" & rcf_i) & "_")
-        *temp rcf_hp {(rcf_p2 & "hp")}
-        *temp rcf_now {(rcf_p2 & "frightened")}
-        *if ((rcf_hp > 0) and (rcf_now <= 0))
-          *gosub_scene combat_dice resolve_save rcf_p2 "wisdom" "Wisdom" spell_save_dc rcf_i
-          *if (check_success)
-            *set rcf_any_frightened true
-            *set {(rcf_p2 & "frightened")} 10
-            *set {(("combat_mm_banner_" & rcf_i))} "[b][😨 ${combat_enemy_name} is Frightened: its attacks have disadvantage and it will not come closer][/b]"
-          *else
-            *set {(("combat_mm_banner_" & rcf_i))} "[b][💨 ${combat_enemy_name} fights off the dread][/b]"
+    *set combat_fear_banner "[b][💨 ${combat_enemy_name} fights off the dread][/b]"
+*else
+  *set combat_mm_banner_1 ""
+  *set combat_mm_banner_2 ""
+  *set combat_mm_banner_3 ""
+  *set combat_mm_banner_4 ""
+  *set combat_mm_banner_5 ""
+  *set combat_mm_banner_6 ""
+  *temp rcf_i 1
+  *label resolve_cast_cause_fear_loop
+  *if (rcf_i <= combat_enemy_slot_cap)
+    *temp rcf_n {(("combat_mm_darts_" & rcf_i))}
+    *if (rcf_n > 0)
+      *set combat_active_target rcf_i
+      *gosub_scene combat fight_sync_target_in
+      *temp rcf_p2 (("combat_enemy" & rcf_i) & "_")
+      *temp rcf_hp {(rcf_p2 & "hp")}
+      *temp rcf_now {(rcf_p2 & "frightened")}
+      *if ((rcf_hp > 0) and (rcf_now <= 0))
+        *gosub_scene combat_dice resolve_save rcf_p2 "wisdom" "Wisdom" spell_save_dc rcf_i
+        *if (check_success)
+          *set rcf_any_frightened true
+          *set {(rcf_p2 & "frightened")} 10
+          *set {(("combat_mm_banner_" & rcf_i))} "[b][😨 ${combat_enemy_name} is Frightened: its attacks have disadvantage and it will not come closer][/b]"
         *else
-          *set {(("combat_mm_banner_" & rcf_i))} "[b][— ${combat_enemy_name} is no longer a valid target][/b]"
-      *set rcf_i + 1
-      *goto resolve_cast_cause_fear_loop
-  *if (not(rcf_any_frightened))
-    *gosub_scene combat_dice concentration_end "combat_player_"
-  *comment One-shot, cleared now -- everything above has already read it.
-  *set combat_cast_at_level 1
-  *set combat_cast_locked true
-  *set locked_combat_cast_page_id page_id
+          *set {(("combat_mm_banner_" & rcf_i))} "[b][💨 ${combat_enemy_name} fights off the dread][/b]"
+      *else
+        *set {(("combat_mm_banner_" & rcf_i))} "[b][— ${combat_enemy_name} is no longer a valid target][/b]"
+    *set rcf_i + 1
+    *goto resolve_cast_cause_fear_loop
+*if (not(rcf_any_frightened))
+  *gosub_scene combat_dice concentration_end "combat_player_"
+*comment One-shot, cleared now -- everything above has already read it.
+*set combat_cast_at_level 1
 *if (not(combat_fear_banner = ""))
   ${combat_fear_banner}
   *line_break
@@ -528,15 +504,12 @@ ${combat_player_dmg_roll_banner}
 *comment the shared save + Blinded application live in spell_effect_blindness (combat_dice.txt).
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_cast_blindness
-*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
-  *set combat_blindness_banner ""
-  *gosub spend_spell_slot 2
-  *gosub_scene combat_prose flavor_blindness
-  *temp rcb_p (("combat_enemy" & combat_active_target) & "_")
-  *gosub_scene combat_dice spell_effect_blindness "combat_player_" rcb_p spell_save_dc combat_active_target
-  *set combat_blindness_banner combat_spell_effect_banner
-  *set combat_cast_locked true
-  *set locked_combat_cast_page_id page_id
+*set combat_blindness_banner ""
+*gosub spend_spell_slot 2
+*gosub_scene combat_prose flavor_blindness
+*temp rcb_p (("combat_enemy" & combat_active_target) & "_")
+*gosub_scene combat_dice spell_effect_blindness "combat_player_" rcb_p spell_save_dc combat_active_target
+*set combat_blindness_banner combat_spell_effect_banner
 ${fsh}
 *line_break
 ${combat_blindness_banner}
@@ -572,40 +545,25 @@ ${combat_blindness_banner}
   *set rncb_key "ally3"
 *elseif (rncb_caster = "combat_ally4_")
   *set rncb_key "ally4"
-*if (not(locked_combat_npc_cast_page_id = page_id))
-  *set combat_npc_cast_locked_enemy1 false
-  *set combat_npc_cast_locked_enemy2 false
-  *set combat_npc_cast_locked_enemy3 false
-  *set combat_npc_cast_locked_enemy4 false
-  *set combat_npc_cast_locked_enemy5 false
-  *set combat_npc_cast_locked_enemy6 false
-  *set combat_npc_cast_locked_ally1 false
-  *set combat_npc_cast_locked_ally2 false
-  *set combat_npc_cast_locked_ally3 false
-  *set combat_npc_cast_locked_ally4 false
-  *set locked_combat_npc_cast_page_id page_id
-*temp rncb_lockname ("combat_npc_cast_locked_" & rncb_key)
 *temp rncb_prosename ("combat_npc_cast_prose_" & rncb_key)
 *temp rncb_savename ("combat_npc_cast_save_banner_" & rncb_key)
 *temp rncb_effname ("combat_npc_cast_effect_banner_" & rncb_key)
-*if (not({rncb_lockname}))
-  *if ((rncb_place >= 1) and (rncb_place <= 3))
-    *temp rncb_ufield ((rncb_caster & "cast_uses_") & rncb_place)
-    *if ({rncb_ufield} > 0)
-      *set {(rncb_ufield)} ({rncb_ufield} - 1)
-  *set combat_caster_name {(rncb_caster & "name")}
-  *set combat_caster_epithet {(rncb_caster & "epithet")}
-  *gosub_scene combat_prose flavor_npc_blindness
-  *set {rncb_prosename} fsh
-  *temp rncb_dc {(rncb_caster & "cast_dc")}
-  *if (rncb_dc <= 0)
-    *set rncb_dc 10
-  *set combat_save_quiet true
-  *gosub_scene combat_dice spell_effect_blindness rncb_caster rncb_target rncb_dc rncb_lock
-  *set combat_save_quiet false
-  *set {rncb_savename} {("combat_save_banner_" & rncb_lock)}
-  *set {rncb_effname} combat_spell_effect_banner
-  *set {rncb_lockname} true
+*if ((rncb_place >= 1) and (rncb_place <= 3))
+  *temp rncb_ufield ((rncb_caster & "cast_uses_") & rncb_place)
+  *if ({rncb_ufield} > 0)
+    *set {(rncb_ufield)} ({rncb_ufield} - 1)
+*set combat_caster_name {(rncb_caster & "name")}
+*set combat_caster_epithet {(rncb_caster & "epithet")}
+*gosub_scene combat_prose flavor_npc_blindness
+*set {rncb_prosename} fsh
+*temp rncb_dc {(rncb_caster & "cast_dc")}
+*if (rncb_dc <= 0)
+  *set rncb_dc 10
+*set combat_save_quiet true
+*gosub_scene combat_dice spell_effect_blindness rncb_caster rncb_target rncb_dc rncb_lock
+*set combat_save_quiet false
+*set {rncb_savename} {("combat_save_banner_" & rncb_lock)}
+*set {rncb_effname} combat_spell_effect_banner
 *set combat_npc_cast_prose {rncb_prosename}
 *set combat_npc_cast_save_banner {rncb_savename}
 *set combat_npc_cast_effect_banner {rncb_effname}
@@ -613,48 +571,12 @@ ${combat_blindness_banner}
 *return
 
 *label spend_npc_spell_use
-*comment Replay-locked use payment for attack-profile NPC spells (Step 3c-2).
+*comment Use payment for attack-profile NPC spells (Step 3c-2); turn chains rely on combat_chain_begin/_end.
 *params snsu_caster snsu_place
-*temp snsu_key "enemy1"
-*if (snsu_caster = "combat_enemy1_")
-  *set snsu_key "enemy1"
-*elseif (snsu_caster = "combat_enemy2_")
-  *set snsu_key "enemy2"
-*elseif (snsu_caster = "combat_enemy3_")
-  *set snsu_key "enemy3"
-*elseif (snsu_caster = "combat_enemy4_")
-  *set snsu_key "enemy4"
-*elseif (snsu_caster = "combat_enemy5_")
-  *set snsu_key "enemy5"
-*elseif (snsu_caster = "combat_enemy6_")
-  *set snsu_key "enemy6"
-*elseif (snsu_caster = "combat_ally1_")
-  *set snsu_key "ally1"
-*elseif (snsu_caster = "combat_ally2_")
-  *set snsu_key "ally2"
-*elseif (snsu_caster = "combat_ally3_")
-  *set snsu_key "ally3"
-*elseif (snsu_caster = "combat_ally4_")
-  *set snsu_key "ally4"
-*if (not(locked_combat_npc_cast_page_id = page_id))
-  *set combat_npc_cast_locked_enemy1 false
-  *set combat_npc_cast_locked_enemy2 false
-  *set combat_npc_cast_locked_enemy3 false
-  *set combat_npc_cast_locked_enemy4 false
-  *set combat_npc_cast_locked_enemy5 false
-  *set combat_npc_cast_locked_enemy6 false
-  *set combat_npc_cast_locked_ally1 false
-  *set combat_npc_cast_locked_ally2 false
-  *set combat_npc_cast_locked_ally3 false
-  *set combat_npc_cast_locked_ally4 false
-  *set locked_combat_npc_cast_page_id page_id
-*temp snsu_lockname ("combat_npc_cast_locked_" & snsu_key)
-*if (not({snsu_lockname}))
-  *if ((snsu_place >= 1) and (snsu_place <= 3))
-    *temp snsu_ufield ((snsu_caster & "cast_uses_") & snsu_place)
-    *if ({snsu_ufield} > 0)
-      *set {(snsu_ufield)} ({snsu_ufield} - 1)
-  *set {snsu_lockname} true
+*if ((snsu_place >= 1) and (snsu_place <= 3))
+  *temp snsu_ufield ((snsu_caster & "cast_uses_") & snsu_place)
+  *if ({snsu_ufield} > 0)
+    *set {(snsu_ufield)} ({snsu_ufield} - 1)
 *return
 
 *label load_enemy_spell_profile
@@ -692,31 +614,28 @@ ${combat_blindness_banner}
 *comment same reasoning as resolve_dissonant_whispers/resolve_cast_hex: putting it in the bare *choice body
 *comment instead would let a Stats-screen replay double-spend it.
 *label resolve_cast_bane
-*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
-  *if (combat_scroll_id = "")
-    *set spell_slots_1 - 1
-  *else
-    *gosub_scene equipment spend_consumable combat_scroll_id
-  *gosub_scene combat_dice concentration_begin "combat_player_" "bane"
-  *temp rcb_targeted 0
-  *temp rcb_any_baned false
-  *temp rcb_i 1
-  *label resolve_cast_bane_loop
-  *if (rcb_i <= combat_enemy_count) and (rcb_targeted < 3)
-    *temp rcb_p (("combat_enemy" & rcb_i) & "_")
-    *temp rcb_hp {(rcb_p & "hp")}
-    *if (rcb_hp > 0)
-      *set rcb_targeted + 1
-      *gosub_scene combat_dice resolve_save rcb_p "charisma" "Charisma" spell_save_dc rcb_i
-      *if (check_success)
-        *set rcb_any_baned true
-        *set {(rcb_p & "bane_expires_round")} (combat_round + 9)
-    *set rcb_i + 1
-    *goto resolve_cast_bane_loop
-  *if (not(rcb_any_baned))
-    *gosub_scene combat_dice concentration_end "combat_player_"
-  *set combat_cast_locked true
-  *set locked_combat_cast_page_id page_id
+*if (combat_scroll_id = "")
+  *set spell_slots_1 - 1
+*else
+  *gosub_scene equipment spend_consumable combat_scroll_id
+*gosub_scene combat_dice concentration_begin "combat_player_" "bane"
+*temp rcb_targeted 0
+*temp rcb_any_baned false
+*temp rcb_i 1
+*label resolve_cast_bane_loop
+*if (rcb_i <= combat_enemy_count) and (rcb_targeted < 3)
+  *temp rcb_p (("combat_enemy" & rcb_i) & "_")
+  *temp rcb_hp {(rcb_p & "hp")}
+  *if (rcb_hp > 0)
+    *set rcb_targeted + 1
+    *gosub_scene combat_dice resolve_save rcb_p "charisma" "Charisma" spell_save_dc rcb_i
+    *if (check_success)
+      *set rcb_any_baned true
+      *set {(rcb_p & "bane_expires_round")} (combat_round + 9)
+  *set rcb_i + 1
+  *goto resolve_cast_bane_loop
+*if (not(rcb_any_baned))
+  *gosub_scene combat_dice concentration_end "combat_player_"
 *gosub_scene combat_prose print_concentration_ended_banner
 *return
 
@@ -727,26 +646,20 @@ ${combat_blindness_banner}
 *comment combat_conc_ended_banner before print_concentration_ended_banner runs.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_cast_blade_ward
-*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
-  *gosub_scene combat_dice concentration_begin "combat_player_" "blade_ward"
-  *set blade_ward_rounds 10
-  *set blade_ward_just_cast true
-  *set combat_cast_locked true
-  *set locked_combat_cast_page_id page_id
+*gosub_scene combat_dice concentration_begin "combat_player_" "blade_ward"
+*set blade_ward_rounds 10
+*set blade_ward_just_cast true
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment SPELL: ARMOR OF AGATHYS (5 Temp HP + 5 Cold Retaliation)
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_cast_agathys
-*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
-  *gosub spend_pact_slot
-  *comment Temporary hit points never stack (5e): the ward gives 5 unless more are already held.
-  *if (temp_hp < 5)
-    *set temp_hp 5
-  *set agathys_active true
-  *set combat_cast_locked true
-  *set locked_combat_cast_page_id page_id
+*gosub spend_pact_slot
+*comment Temporary hit points never stack (5e): the ward gives 5 unless more are already held.
+*if (temp_hp < 5)
+  *set temp_hp 5
+*set agathys_active true
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -835,30 +748,27 @@ ${combat_blindness_banner}
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_cast_healing_word
 *comment Heals the player when combat_friendly_target is 0, otherwise the ally in that slot (chosen in the sidebar, see fight_target_friendly_healing_word).
-*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
-  *if (combat_scroll_id = "")
-    *set spell_slots_1 - 1
-  *else
-    *gosub_scene equipment spend_consumable combat_scroll_id
-  *temp hw_roll 0
-  *rand hw_roll 1 4
-  *comment The casting modifier (spell_damage_mod): a Bard's Charisma as always, and for a scroll read by anyone, the reader's own (Intelligence for a Fighter or Rogue, Charisma for a Barbarian).
-  *set combat_cast_result (hw_roll + spell_damage_mod)
-  *if (combat_cast_result < 1)
-    *set combat_cast_result 1
-  *if (combat_friendly_target = 0)
-    *set hp_current + combat_cast_result
-    *if (hp_current > hp_max)
-      *set hp_current hp_max
-  *else
-    *temp hw_hp {(("combat_ally" & combat_friendly_target) & "_hp")}
-    *temp hw_max {(("combat_ally" & combat_friendly_target) & "_max_hp")}
-    *set hw_hp + combat_cast_result
-    *if (hw_hp > hw_max)
-      *set hw_hp hw_max
-    *set {(("combat_ally" & combat_friendly_target) & "_hp")} hw_hp
-  *set combat_cast_locked true
-  *set locked_combat_cast_page_id page_id
+*if (combat_scroll_id = "")
+  *set spell_slots_1 - 1
+*else
+  *gosub_scene equipment spend_consumable combat_scroll_id
+*temp hw_roll 0
+*rand hw_roll 1 4
+*comment The casting modifier (spell_damage_mod): a Bard's Charisma as always, and for a scroll read by anyone, the reader's own (Intelligence for a Fighter or Rogue, Charisma for a Barbarian).
+*set combat_cast_result (hw_roll + spell_damage_mod)
+*if (combat_cast_result < 1)
+  *set combat_cast_result 1
+*if (combat_friendly_target = 0)
+  *set hp_current + combat_cast_result
+  *if (hp_current > hp_max)
+    *set hp_current hp_max
+*else
+  *temp hw_hp {(("combat_ally" & combat_friendly_target) & "_hp")}
+  *temp hw_max {(("combat_ally" & combat_friendly_target) & "_max_hp")}
+  *set hw_hp + combat_cast_result
+  *if (hw_hp > hw_max)
+    *set hw_hp hw_max
+  *set {(("combat_ally" & combat_friendly_target) & "_hp")} hw_hp
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -878,46 +788,43 @@ ${combat_blindness_banner}
 *comment spend_spell_slot call site -- this label only ever does the damage math, same as before.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_dissonant_whispers
-*if (not(combat_dissonant_whispers_locked)) or (not(locked_combat_dissonant_whispers_page_id = page_id))
-  *comment Always Psychic damage, RAW -- no per-caster variation, so it's set
-  *comment here rather than at combat.txt's call site.
-  *set combat_player_dmg_type "psychic"
-  *temp dw_dice_count (combat_cast_at_level + 2)
-  *temp dw_total 0
-  *temp dw_dice_str ""
-  *temp dw_di 1
-  *label resolve_dissonant_whispers_loop
-  *if (dw_di <= dw_dice_count)
-    *temp dw_die 0
-    *rand dw_die 1 6
-    *set dw_total + dw_die
-    *if (dw_di = 1)
-      *set dw_dice_str "${dw_die}"
-    *else
-      *set dw_dice_str "${dw_dice_str}+${dw_die}"
-    *set dw_di + 1
-    *goto resolve_dissonant_whispers_loop
-  *temp dw_mod_str ""
-  *if (spell_damage_mod >= 0)
-    *set dw_mod_str "+${spell_damage_mod}"
+*comment Always Psychic damage, RAW -- no per-caster variation, so it's set
+*comment here rather than at combat.txt's call site.
+*set combat_player_dmg_type "psychic"
+*temp dw_dice_count (combat_cast_at_level + 2)
+*temp dw_total 0
+*temp dw_dice_str ""
+*temp dw_di 1
+*label resolve_dissonant_whispers_loop
+*if (dw_di <= dw_dice_count)
+  *temp dw_die 0
+  *rand dw_die 1 6
+  *set dw_total + dw_die
+  *if (dw_di = 1)
+    *set dw_dice_str "${dw_die}"
   *else
-    *set dw_mod_str "${spell_damage_mod}"
-  *comment Modifier applied AFTER the dice and BEFORE the halving below, so a successful save halves dice
-  *comment and modifier together rather than halving the dice and handing back a full modifier (randomtest caught
-  *comment the first draft of this, which *set dw_total on a never-declared var instead of *temp-ing it).
-  *set dw_total + spell_damage_mod
-  *if (check_success)
-    *set combat_player_dmg_dealt dw_total
-    *set combat_player_dmg_roll_banner "[b][🎲 Dissonant Whispers: ${dw_dice_str} ${dw_mod_str} = ${dw_total}][/b]"
-  *else
-    *set combat_player_dmg_dealt ((dw_total - (dw_total modulo 2)) / 2)
-    *set combat_player_dmg_roll_banner "[b][🎲 Dissonant Whispers: ${dw_dice_str} ${dw_mod_str} = ${dw_total} — Halved (Saved): ${combat_player_dmg_dealt}][/b]"
-  *gosub_scene combat_dice apply_outgoing_damage_resist_vuln
-  *set combat_enemy_hp - combat_player_dmg_dealt
-  *if (combat_enemy_hp < 0)
-    *set combat_enemy_hp 0
-  *set combat_dissonant_whispers_locked true
-  *set locked_combat_dissonant_whispers_page_id page_id
+    *set dw_dice_str "${dw_dice_str}+${dw_die}"
+  *set dw_di + 1
+  *goto resolve_dissonant_whispers_loop
+*temp dw_mod_str ""
+*if (spell_damage_mod >= 0)
+  *set dw_mod_str "+${spell_damage_mod}"
+*else
+  *set dw_mod_str "${spell_damage_mod}"
+*comment Modifier applied AFTER the dice and BEFORE the halving below, so a successful save halves dice
+*comment and modifier together rather than halving the dice and handing back a full modifier (randomtest caught
+*comment the first draft of this, which *set dw_total on a never-declared var instead of *temp-ing it).
+*set dw_total + spell_damage_mod
+*if (check_success)
+  *set combat_player_dmg_dealt dw_total
+  *set combat_player_dmg_roll_banner "[b][🎲 Dissonant Whispers: ${dw_dice_str} ${dw_mod_str} = ${dw_total}][/b]"
+*else
+  *set combat_player_dmg_dealt ((dw_total - (dw_total modulo 2)) / 2)
+  *set combat_player_dmg_roll_banner "[b][🎲 Dissonant Whispers: ${dw_dice_str} ${dw_mod_str} = ${dw_total} — Halved (Saved): ${combat_player_dmg_dealt}][/b]"
+*gosub_scene combat_dice apply_outgoing_damage_resist_vuln
+*set combat_enemy_hp - combat_player_dmg_dealt
+*if (combat_enemy_hp < 0)
+  *set combat_enemy_hp 0
 *if (not(combat_save_quiet))
   ${combat_player_dmg_roll_banner}
   *line_break
@@ -937,32 +844,29 @@ ${combat_blindness_banner}
 *comment a poison-resistant or Poisoner's Robes-wearing caster works exactly as it would through the normal path.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_cast_ray_of_sickness
-*if (not(combat_ray_of_sickness_locked)) or (not(locked_combat_ray_of_sickness_page_id = page_id))
-  *set combat_player_dmg_type "poison"
-  *temp ros_dice_count (combat_cast_at_level + 1)
-  *temp ros_total 0
-  *temp ros_dice_str ""
-  *temp ros_i 1
-  *label resolve_cast_ray_of_sickness_loop
-  *if (ros_i <= ros_dice_count)
-    *temp ros_die 0
-    *rand ros_die 1 8
-    *set ros_total + ros_die
-    *if (ros_i = 1)
-      *set ros_dice_str "${ros_die}"
-    *else
-      *set ros_dice_str "${ros_dice_str}+${ros_die}"
-    *set ros_i + 1
-    *goto resolve_cast_ray_of_sickness_loop
-  *set combat_player_dmg_dealt ros_total
-  *set combat_player_dmg_roll_banner "[b][🎲 Ray of Sickness: ${ros_dice_str} = ${combat_player_dmg_dealt}][/b]"
-  *gosub_scene combat_dice apply_outgoing_damage_resist_vuln
-  *gosub_scene combat_dice apply_poison_rider
-  *set combat_enemy_hp - combat_player_dmg_dealt
-  *if (combat_enemy_hp < 0)
-    *set combat_enemy_hp 0
-  *set combat_ray_of_sickness_locked true
-  *set locked_combat_ray_of_sickness_page_id page_id
+*set combat_player_dmg_type "poison"
+*temp ros_dice_count (combat_cast_at_level + 1)
+*temp ros_total 0
+*temp ros_dice_str ""
+*temp ros_i 1
+*label resolve_cast_ray_of_sickness_loop
+*if (ros_i <= ros_dice_count)
+  *temp ros_die 0
+  *rand ros_die 1 8
+  *set ros_total + ros_die
+  *if (ros_i = 1)
+    *set ros_dice_str "${ros_die}"
+  *else
+    *set ros_dice_str "${ros_dice_str}+${ros_die}"
+  *set ros_i + 1
+  *goto resolve_cast_ray_of_sickness_loop
+*set combat_player_dmg_dealt ros_total
+*set combat_player_dmg_roll_banner "[b][🎲 Ray of Sickness: ${ros_dice_str} = ${combat_player_dmg_dealt}][/b]"
+*gosub_scene combat_dice apply_outgoing_damage_resist_vuln
+*gosub_scene combat_dice apply_poison_rider
+*set combat_enemy_hp - combat_player_dmg_dealt
+*if (combat_enemy_hp < 0)
+  *set combat_enemy_hp 0
 ${combat_player_dmg_roll_banner}
 *line_break
 *return
@@ -977,43 +881,40 @@ ${combat_player_dmg_roll_banner}
 *comment the per-target lines are kept in combat_mm_banner_1..6, Magic Missile's per-slot banner fields, and printed after the lock, the same shape Arms of Hadar uses above.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_cast_grease
-*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
-  *if (combat_scroll_id = "")
-    *set spell_slots_1 - 1
-  *else
-    *gosub_scene equipment spend_consumable combat_scroll_id
-  *temp rcg_band {(("combat_enemy" & combat_active_target) & "_range")}
-  *temp rcg_until (combat_round + 6)
-  *set combat_mm_banner_1 ""
-  *set combat_mm_banner_2 ""
-  *set combat_mm_banner_3 ""
-  *set combat_mm_banner_4 ""
-  *set combat_mm_banner_5 ""
-  *set combat_mm_banner_6 ""
-  *temp rcg_i 1
-  *label resolve_cast_grease_loop
-  *if (rcg_i <= combat_enemy_count)
-    *temp rcg_p (("combat_enemy" & rcg_i) & "_")
-    *temp rcg_hp {(rcg_p & "hp")}
-    *temp rcg_range {(rcg_p & "range")}
-    *if ((rcg_hp > 0) and (rcg_range = rcg_band))
-      *temp rcg_name {(rcg_p & "name")}
-      *gosub_scene combat_dice resolve_save rcg_p "dexterity" "Dexterity" spell_save_dc rcg_i
-      *comment check_success is inverted here (resolve_save: true = the enemy FAILED the save).
-      *temp rcg_failed check_success
-      *set {(rcg_p & "greased")} 3
-      *set {(rcg_p & "grease_until")} rcg_until
-      *temp rcg_line ""
-      *if (rcg_failed)
-        *set {(rcg_p & "prone")} true
-        *set rcg_line "${rcg_name} loses its footing and goes down in the grease"
-      *else
-        *set rcg_line "${rcg_name} keeps its feet, but the ground under it is slick now"
-      *set {(("combat_mm_banner_" & rcg_i))} "[b][🧴 ${rcg_line}][/b]"
-    *set rcg_i + 1
-    *goto resolve_cast_grease_loop
-  *set combat_cast_locked true
-  *set locked_combat_cast_page_id page_id
+*if (combat_scroll_id = "")
+  *set spell_slots_1 - 1
+*else
+  *gosub_scene equipment spend_consumable combat_scroll_id
+*temp rcg_band {(("combat_enemy" & combat_active_target) & "_range")}
+*temp rcg_until (combat_round + 6)
+*set combat_mm_banner_1 ""
+*set combat_mm_banner_2 ""
+*set combat_mm_banner_3 ""
+*set combat_mm_banner_4 ""
+*set combat_mm_banner_5 ""
+*set combat_mm_banner_6 ""
+*temp rcg_i 1
+*label resolve_cast_grease_loop
+*if (rcg_i <= combat_enemy_count)
+  *temp rcg_p (("combat_enemy" & rcg_i) & "_")
+  *temp rcg_hp {(rcg_p & "hp")}
+  *temp rcg_range {(rcg_p & "range")}
+  *if ((rcg_hp > 0) and (rcg_range = rcg_band))
+    *temp rcg_name {(rcg_p & "name")}
+    *gosub_scene combat_dice resolve_save rcg_p "dexterity" "Dexterity" spell_save_dc rcg_i
+    *comment check_success is inverted here (resolve_save: true = the enemy FAILED the save).
+    *temp rcg_failed check_success
+    *set {(rcg_p & "greased")} 3
+    *set {(rcg_p & "grease_until")} rcg_until
+    *temp rcg_line ""
+    *if (rcg_failed)
+      *set {(rcg_p & "prone")} true
+      *set rcg_line "${rcg_name} loses its footing and goes down in the grease"
+    *else
+      *set rcg_line "${rcg_name} keeps its feet, but the ground under it is slick now"
+    *set {(("combat_mm_banner_" & rcg_i))} "[b][🧴 ${rcg_line}][/b]"
+  *set rcg_i + 1
+  *goto resolve_cast_grease_loop
 *temp rcg_pi 1
 *label resolve_cast_grease_print_loop
 *if (rcg_pi <= combat_enemy_slot_cap)
@@ -1041,69 +942,66 @@ ${combat_player_dmg_roll_banner}
 *comment Thunderwave/Grease/Magic Missile's split targeting, and printed after the lock.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_cast_burning_hands
-*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
-  *if (not(combat_scroll_id = ""))
-    *gosub_scene equipment spend_consumable combat_scroll_id
+*if (not(combat_scroll_id = ""))
+  *gosub_scene equipment spend_consumable combat_scroll_id
+*else
+  *gosub spend_spell_slot combat_cast_at_level
+*temp bh_dice_count (combat_cast_at_level + 2)
+*temp bh_total 0
+*temp bh_dice_str ""
+*temp bh_di 1
+*label resolve_cast_burning_hands_dice_loop
+*if (bh_di <= bh_dice_count)
+  *temp bh_die 0
+  *rand bh_die 1 6
+  *set bh_total + bh_die
+  *if (bh_di = 1)
+    *set bh_dice_str "${bh_die}"
   *else
-    *gosub spend_spell_slot combat_cast_at_level
-  *temp bh_dice_count (combat_cast_at_level + 2)
-  *temp bh_total 0
-  *temp bh_dice_str ""
-  *temp bh_di 1
-  *label resolve_cast_burning_hands_dice_loop
-  *if (bh_di <= bh_dice_count)
-    *temp bh_die 0
-    *rand bh_die 1 6
-    *set bh_total + bh_die
-    *if (bh_di = 1)
-      *set bh_dice_str "${bh_die}"
+    *set bh_dice_str "${bh_dice_str}+${bh_die}"
+  *set bh_di + 1
+  *goto resolve_cast_burning_hands_dice_loop
+*set combat_player_dmg_roll_banner "[b][🎲 Burning Hands: ${bh_dice_str} = ${bh_total} fire][/b]"
+*set combat_player_dmg_type "fire"
+*comment One-shot, cleared now -- everything in this cast that needed the level has already read it.
+*set combat_cast_at_level 1
+*set combat_mm_banner_1 ""
+*set combat_mm_banner_2 ""
+*set combat_mm_banner_3 ""
+*set combat_mm_banner_4 ""
+*set combat_mm_banner_5 ""
+*set combat_mm_banner_6 ""
+*temp bh_i 1
+*label resolve_cast_burning_hands_loop
+*if (bh_i <= combat_enemy_count)
+  *temp bh_p (("combat_enemy" & bh_i) & "_")
+  *temp bh_hp {(bh_p & "hp")}
+  *temp bh_range {(bh_p & "range")}
+  *if ((bh_hp > 0) and (bh_range <= 0))
+    *gosub_scene combat_dice resolve_save bh_p "dexterity" "Dexterity" spell_save_dc bh_i
+    *comment check_success is inverted here (resolve_save: true = the enemy FAILED the save).
+    *temp bh_failed check_success
+    *if (bh_failed)
+      *set combat_player_dmg_dealt bh_total
     *else
-      *set bh_dice_str "${bh_dice_str}+${bh_die}"
-    *set bh_di + 1
-    *goto resolve_cast_burning_hands_dice_loop
-  *set combat_player_dmg_roll_banner "[b][🎲 Burning Hands: ${bh_dice_str} = ${bh_total} fire][/b]"
-  *set combat_player_dmg_type "fire"
-  *comment One-shot, cleared now -- everything in this cast that needed the level has already read it.
-  *set combat_cast_at_level 1
-  *set combat_mm_banner_1 ""
-  *set combat_mm_banner_2 ""
-  *set combat_mm_banner_3 ""
-  *set combat_mm_banner_4 ""
-  *set combat_mm_banner_5 ""
-  *set combat_mm_banner_6 ""
-  *temp bh_i 1
-  *label resolve_cast_burning_hands_loop
-  *if (bh_i <= combat_enemy_count)
-    *temp bh_p (("combat_enemy" & bh_i) & "_")
-    *temp bh_hp {(bh_p & "hp")}
-    *temp bh_range {(bh_p & "range")}
-    *if ((bh_hp > 0) and (bh_range <= 0))
-      *gosub_scene combat_dice resolve_save bh_p "dexterity" "Dexterity" spell_save_dc bh_i
-      *comment check_success is inverted here (resolve_save: true = the enemy FAILED the save).
-      *temp bh_failed check_success
-      *if (bh_failed)
-        *set combat_player_dmg_dealt bh_total
-      *else
-        *set combat_player_dmg_dealt ((bh_total - (bh_total modulo 2)) / 2)
-      *set combat_active_target bh_i
-      *gosub_scene combat fight_sync_target_in
-      *gosub_scene combat_dice apply_outgoing_damage_resist_vuln
-      *set combat_enemy_hp - combat_player_dmg_dealt
-      *if (combat_enemy_hp < 0)
-        *set combat_enemy_hp 0
-      *gosub_scene combat fight_sync_target_out
-      *temp bh_line ""
-      *if (bh_failed)
-        *set bh_line "${combat_enemy_name}: ${combat_player_dmg_dealt} fire damage${combat_outgoing_dmg_suffix}"
-      *else
-        *set bh_line "${combat_enemy_name}: ${combat_player_dmg_dealt} fire damage${combat_outgoing_dmg_suffix} (braced, half)"
-      *if (combat_enemy_hp <= 0)
-        *set bh_line "${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} fire damage${combat_outgoing_dmg_suffix}"
-      *set {(("combat_mm_banner_" & bh_i))} "[b][🔥 ${bh_line}][/b]"
-    *set bh_i + 1
-    *goto resolve_cast_burning_hands_loop
-  *set combat_cast_locked true
-  *set locked_combat_cast_page_id page_id
+      *set combat_player_dmg_dealt ((bh_total - (bh_total modulo 2)) / 2)
+    *set combat_active_target bh_i
+    *gosub_scene combat fight_sync_target_in
+    *gosub_scene combat_dice apply_outgoing_damage_resist_vuln
+    *set combat_enemy_hp - combat_player_dmg_dealt
+    *if (combat_enemy_hp < 0)
+      *set combat_enemy_hp 0
+    *gosub_scene combat fight_sync_target_out
+    *temp bh_line ""
+    *if (bh_failed)
+      *set bh_line "${combat_enemy_name}: ${combat_player_dmg_dealt} fire damage${combat_outgoing_dmg_suffix}"
+    *else
+      *set bh_line "${combat_enemy_name}: ${combat_player_dmg_dealt} fire damage${combat_outgoing_dmg_suffix} (braced, half)"
+    *if (combat_enemy_hp <= 0)
+      *set bh_line "${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} fire damage${combat_outgoing_dmg_suffix}"
+    *set {(("combat_mm_banner_" & bh_i))} "[b][🔥 ${bh_line}][/b]"
+  *set bh_i + 1
+  *goto resolve_cast_burning_hands_loop
 ${combat_player_dmg_roll_banner}
 *line_break
 *temp bh_pi 1
@@ -1133,81 +1031,78 @@ ${combat_player_dmg_roll_banner}
 *comment printed after the lock. combat_active_target is deliberately left on the last enemy the wave reached, exactly as Arms of Hadar leaves it, because fight_check_enemy_hp reads it on the way out.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_cast_thunderwave
-*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
-  *if (not(combat_scroll_id = ""))
-    *gosub_scene equipment spend_consumable combat_scroll_id
+*if (not(combat_scroll_id = ""))
+  *gosub_scene equipment spend_consumable combat_scroll_id
+*else
+  *if (character_class = "warlock")
+    *gosub spend_pact_slot
   *else
-    *if (character_class = "warlock")
-      *gosub spend_pact_slot
+    *gosub spend_spell_slot combat_cast_at_level
+*temp tw_dice_count (combat_cast_at_level + 1)
+*temp tw_total 0
+*temp tw_dice_str ""
+*temp tw_di 1
+*label resolve_cast_thunderwave_dice_loop
+*if (tw_di <= tw_dice_count)
+  *temp tw_die 0
+  *rand tw_die 1 8
+  *set tw_total + tw_die
+  *if (tw_di = 1)
+    *set tw_dice_str "${tw_die}"
+  *else
+    *set tw_dice_str "${tw_dice_str}+${tw_die}"
+  *set tw_di + 1
+  *goto resolve_cast_thunderwave_dice_loop
+*set combat_player_dmg_roll_banner "[b][🎲 Thunderwave: ${tw_dice_str} = ${tw_total} thunder][/b]"
+*set combat_player_dmg_type "thunder"
+*comment One-shot, cleared now -- everything in this cast that needed the level has already read it.
+*set combat_cast_at_level 1
+*set combat_mm_banner_1 ""
+*set combat_mm_banner_2 ""
+*set combat_mm_banner_3 ""
+*set combat_mm_banner_4 ""
+*set combat_mm_banner_5 ""
+*set combat_mm_banner_6 ""
+*temp tw_i 1
+*label resolve_cast_thunderwave_loop
+*if (tw_i <= combat_enemy_count)
+  *temp tw_p (("combat_enemy" & tw_i) & "_")
+  *temp tw_hp {(tw_p & "hp")}
+  *temp tw_range {(tw_p & "range")}
+  *if ((tw_hp > 0) and (tw_range <= 0))
+    *gosub_scene combat_dice resolve_save tw_p "constitution" "Constitution" spell_save_dc tw_i
+    *comment check_success is inverted here (resolve_save: true = the enemy FAILED the save).
+    *temp tw_failed check_success
+    *if (tw_failed)
+      *set combat_player_dmg_dealt tw_total
     *else
-      *gosub spend_spell_slot combat_cast_at_level
-  *temp tw_dice_count (combat_cast_at_level + 1)
-  *temp tw_total 0
-  *temp tw_dice_str ""
-  *temp tw_di 1
-  *label resolve_cast_thunderwave_dice_loop
-  *if (tw_di <= tw_dice_count)
-    *temp tw_die 0
-    *rand tw_die 1 8
-    *set tw_total + tw_die
-    *if (tw_di = 1)
-      *set tw_dice_str "${tw_die}"
+      *set combat_player_dmg_dealt ((tw_total - (tw_total modulo 2)) / 2)
+    *set combat_active_target tw_i
+    *gosub_scene combat fight_sync_target_in
+    *gosub_scene combat_dice apply_outgoing_damage_resist_vuln
+    *set combat_enemy_hp - combat_player_dmg_dealt
+    *if (combat_enemy_hp < 0)
+      *set combat_enemy_hp 0
+    *gosub_scene combat fight_sync_target_out
+    *comment The push comes AFTER the damage is written back, so the sync-out never carries a stale range, and only a creature that both failed and is still standing is moved.
+    *temp tw_shove ""
+    *if ((tw_failed) and (combat_enemy_hp > 0))
+      *gosub_scene combat combat_size_rank combat_enemy_size
+      *if ((combat_size_rank_value <= 3) and (combat_enemy_range < combat_max_range))
+        *gosub_scene combat_movement combat_shift_target_range combat_active_target "away"
+        *gosub_scene combat fight_sync_target_in
+        *gosub_scene combat_movement combat_range_name combat_enemy_range
+        *set tw_shove ", thrown back to ${combat_range_display_name}"
+    *temp tw_line ""
+    *if (tw_failed)
+      *set tw_line "${combat_enemy_name}: ${combat_player_dmg_dealt} thunder damage${combat_outgoing_dmg_suffix}${tw_shove}"
     *else
-      *set tw_dice_str "${tw_dice_str}+${tw_die}"
-    *set tw_di + 1
-    *goto resolve_cast_thunderwave_dice_loop
-  *set combat_player_dmg_roll_banner "[b][🎲 Thunderwave: ${tw_dice_str} = ${tw_total} thunder][/b]"
-  *set combat_player_dmg_type "thunder"
-  *comment One-shot, cleared now -- everything in this cast that needed the level has already read it.
-  *set combat_cast_at_level 1
-  *set combat_mm_banner_1 ""
-  *set combat_mm_banner_2 ""
-  *set combat_mm_banner_3 ""
-  *set combat_mm_banner_4 ""
-  *set combat_mm_banner_5 ""
-  *set combat_mm_banner_6 ""
-  *temp tw_i 1
-  *label resolve_cast_thunderwave_loop
-  *if (tw_i <= combat_enemy_count)
-    *temp tw_p (("combat_enemy" & tw_i) & "_")
-    *temp tw_hp {(tw_p & "hp")}
-    *temp tw_range {(tw_p & "range")}
-    *if ((tw_hp > 0) and (tw_range <= 0))
-      *gosub_scene combat_dice resolve_save tw_p "constitution" "Constitution" spell_save_dc tw_i
-      *comment check_success is inverted here (resolve_save: true = the enemy FAILED the save).
-      *temp tw_failed check_success
-      *if (tw_failed)
-        *set combat_player_dmg_dealt tw_total
-      *else
-        *set combat_player_dmg_dealt ((tw_total - (tw_total modulo 2)) / 2)
-      *set combat_active_target tw_i
-      *gosub_scene combat fight_sync_target_in
-      *gosub_scene combat_dice apply_outgoing_damage_resist_vuln
-      *set combat_enemy_hp - combat_player_dmg_dealt
-      *if (combat_enemy_hp < 0)
-        *set combat_enemy_hp 0
-      *gosub_scene combat fight_sync_target_out
-      *comment The push comes AFTER the damage is written back, so the sync-out never carries a stale range, and only a creature that both failed and is still standing is moved.
-      *temp tw_shove ""
-      *if ((tw_failed) and (combat_enemy_hp > 0))
-        *gosub_scene combat combat_size_rank combat_enemy_size
-        *if ((combat_size_rank_value <= 3) and (combat_enemy_range < combat_max_range))
-          *gosub_scene combat_movement combat_shift_target_range combat_active_target "away"
-          *gosub_scene combat fight_sync_target_in
-          *gosub_scene combat_movement combat_range_name combat_enemy_range
-          *set tw_shove ", thrown back to ${combat_range_display_name}"
-      *temp tw_line ""
-      *if (tw_failed)
-        *set tw_line "${combat_enemy_name}: ${combat_player_dmg_dealt} thunder damage${combat_outgoing_dmg_suffix}${tw_shove}"
-      *else
-        *set tw_line "${combat_enemy_name}: ${combat_player_dmg_dealt} thunder damage${combat_outgoing_dmg_suffix} (braced, half)"
-      *if (combat_enemy_hp <= 0)
-        *set tw_line "${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} thunder damage${combat_outgoing_dmg_suffix}"
-      *set {(("combat_mm_banner_" & tw_i))} "[b][⚡ ${tw_line}][/b]"
-    *set tw_i + 1
-    *goto resolve_cast_thunderwave_loop
-  *set combat_cast_locked true
-  *set locked_combat_cast_page_id page_id
+      *set tw_line "${combat_enemy_name}: ${combat_player_dmg_dealt} thunder damage${combat_outgoing_dmg_suffix} (braced, half)"
+    *if (combat_enemy_hp <= 0)
+      *set tw_line "${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} thunder damage${combat_outgoing_dmg_suffix}"
+    *set {(("combat_mm_banner_" & tw_i))} "[b][⚡ ${tw_line}][/b]"
+  *set tw_i + 1
+  *goto resolve_cast_thunderwave_loop
 ${combat_player_dmg_roll_banner}
 *line_break
 *temp tw_pi 1
@@ -1229,29 +1124,26 @@ ${combat_player_dmg_roll_banner}
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_cast_cure_wounds
 *comment Heals the player when combat_friendly_target is 0, otherwise the ally in that slot (chosen in the sidebar, see fight_target_friendly_cure_wounds).
-*if (not(combat_cast_locked)) or (not(locked_combat_cast_page_id = page_id))
-  *if (character_class = "ranger")
-    *set spell_slots_1 - 1
-  *else
-    *set spell_slots_1 - 1
-  *temp cw_d1 0
-  *temp cw_d2 0
-  *rand cw_d1 1 8
-  *rand cw_d2 1 8
-  *set combat_cast_result (((cw_d1 + cw_d2)) + spell_damage_mod)
-  *if (combat_cast_result < 1)
-    *set combat_cast_result 1
-  *if (combat_friendly_target = 0)
-    *set hp_current + combat_cast_result
-    *if (hp_current > hp_max)
-      *set hp_current hp_max
-  *else
-    *temp cw_hp {(("combat_ally" & combat_friendly_target) & "_hp")}
-    *temp cw_max {(("combat_ally" & combat_friendly_target) & "_max_hp")}
-    *set cw_hp + combat_cast_result
-    *if (cw_hp > cw_max)
-      *set cw_hp cw_max
-    *set {(("combat_ally" & combat_friendly_target) & "_hp")} cw_hp
-  *set combat_cast_locked true
-  *set locked_combat_cast_page_id page_id
+*if (character_class = "ranger")
+  *set spell_slots_1 - 1
+*else
+  *set spell_slots_1 - 1
+*temp cw_d1 0
+*temp cw_d2 0
+*rand cw_d1 1 8
+*rand cw_d2 1 8
+*set combat_cast_result (((cw_d1 + cw_d2)) + spell_damage_mod)
+*if (combat_cast_result < 1)
+  *set combat_cast_result 1
+*if (combat_friendly_target = 0)
+  *set hp_current + combat_cast_result
+  *if (hp_current > hp_max)
+    *set hp_current hp_max
+*else
+  *temp cw_hp {(("combat_ally" & combat_friendly_target) & "_hp")}
+  *temp cw_max {(("combat_ally" & combat_friendly_target) & "_max_hp")}
+  *set cw_hp + combat_cast_result
+  *if (cw_hp > cw_max)
+    *set cw_hp cw_max
+  *set {(("combat_ally" & combat_friendly_target) & "_hp")} cw_hp
 *return

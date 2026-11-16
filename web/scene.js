@@ -1232,12 +1232,14 @@ function pageReplaySeed(seed) {
   G.__pageReplayRandom = function () { a = (a + 0x6D2B79F5) | 0; var t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
   Math.random = G.__pageReplayRandom;
 }
+var PAGE_REPLAY_CLICK_KEYS = ["combat_player_chosen_target"];
 function pageReplayKey(k) { return k !== "scene" && k !== "sceneName" && !/^page_replay_/.test(k) && !/^choice_/.test(k); }
 Scene.prototype.pageReplayGuard = function pageReplayGuard() {
   var S = this.stats;
   if (!S) return;
   if (this._pageFirstPass) {
     delete this._pageFirstPass;
+    delete S.page_replay_clicks;
     pageReplaySeed(null);
     if (S.combat_engaged === true || S.combat_engaged === "true") {
       S.page_replay_page = S.page_id;
@@ -1263,9 +1265,19 @@ Scene.prototype.pageReplayGuard = function pageReplayGuard() {
     delete this._pageResumed;
     var note = JSON.parse(S.page_replay_snap), start = note.start, end = note.end;
     if (note.at !== this.name + ":" + this.lineNum) return;
+    var clicks = {}, hasClicks = false;
+    for (var ci = 0; ci < PAGE_REPLAY_CLICK_KEYS.length; ci++) {
+      var ck = PAGE_REPLAY_CLICK_KEYS[ci];
+      if (end && end.hasOwnProperty(ck) && JSON.stringify(S[ck]) !== JSON.stringify(end[ck])) {
+        clicks[ck] = S[ck];
+        hasClicks = true;
+      }
+    }
+    if (hasClicks) S.page_replay_clicks = JSON.stringify(clicks);
+    else delete S.page_replay_clicks;
     for (var j in start) {
       if (!start.hasOwnProperty(j)) continue;
-      if (end && end.hasOwnProperty(j) && JSON.stringify(S[j]) !== JSON.stringify(end[j])) continue;
+      if (PAGE_REPLAY_CLICK_KEYS.indexOf(j) < 0 && end && end.hasOwnProperty(j) && JSON.stringify(S[j]) !== JSON.stringify(end[j])) continue;
       S[j] = start[j];
     }
     if (note.tstart && this.temps) {
@@ -1283,7 +1295,10 @@ function pageReplayTrim(S, scene) {
   if (note.end) return;
   var start = {}, end = {};
   for (var k in note.start) {
-    if (note.start.hasOwnProperty(k) && JSON.stringify(note.start[k]) !== JSON.stringify(S[k])) { start[k] = note.start[k]; end[k] = S[k]; }
+    if (note.start.hasOwnProperty(k) && (PAGE_REPLAY_CLICK_KEYS.indexOf(k) >= 0 || JSON.stringify(note.start[k]) !== JSON.stringify(S[k]))) {
+      start[k] = note.start[k];
+      end[k] = S[k];
+    }
   }
   var tstart = note.tstart || {}, tnew = [];
   if (scene && scene.temps && scene.name === S.choice_page_start_scene) {
@@ -1356,6 +1371,13 @@ Scene.prototype.refreshSavedProgress = function refreshSavedProgress() {
     // A label fallback inside a helper may render a page before its missing
     // *return. Keep older recovery snapshots until that return is resolved.
     pageReplayTrim(this.stats, this);
+    if (this.stats.page_replay_clicks) {
+      var replayClicks = JSON.parse(this.stats.page_replay_clicks);
+      for (var rck in replayClicks) {
+        if (replayClicks.hasOwnProperty(rck)) this.stats[rck] = replayClicks[rck];
+      }
+      delete this.stats.page_replay_clicks;
+    }
     var recoveryPending = !!this.temps.choice_resume_fell_back_to_label;
     if (!recoveryPending && typeof markSafeAutosaveRecoverySucceeded === "function") markSafeAutosaveRecoverySucceeded();
     var value = computeCookie(this.stats, this.temps, lineNum, indent);

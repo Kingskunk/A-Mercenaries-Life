@@ -274,6 +274,7 @@ function refreshCheck(sc, where) {
   var line = (typeof stats.choice_page_start_line === "number" && (!stats.choice_page_start_scene || stats.choice_page_start_scene === sc.name)) ? stats.choice_page_start_line : sc.lineNum;
   var indent = (typeof stats.choice_page_start_indent === "number" && (!stats.choice_page_start_scene || stats.choice_page_start_scene === sc.name)) ? stats.choice_page_start_indent : sc.indent;
   var replayStats = deep(snapStats);
+  if (typeof pageReplayTrim === "function") pageReplayTrim(replayStats, sc);
   D.sabotage.forEach(function (k) { replayStats[k] = false; });
   Object.keys(D.replaySet).forEach(function (k) { replayStats[k] = D.replaySet[k]; });
   var savedPrinted = printed.slice(), savedTimeout = timeout, savedMode = D.mode, savedStats = stats, savedSeed = SEEDED.a, savedRandom = Math.random;
