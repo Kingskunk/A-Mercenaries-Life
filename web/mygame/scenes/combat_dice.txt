@@ -210,6 +210,20 @@
   *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} [b][+ ${apr_roll} poison (Poisoner's Robes) = ${combat_packet_damage}${combat_packet_suffix}][/b]"
 *return
 
+*comment A damage cantrip's hit, from the spell data: the die, the damage type and the flat bonus come from tools/spell_book.json (spell_facts_load), then resolve_player_hit rolls it with its riders (Hex, the Poisoner's Robes, an item's extra packet). A new damage cantrip is a data entry plus its menu option, which calls this and prints its own banner.
+*comment Parameters: rsh_id (spell id), rsh_is_attack_roll (true after an attack roll that hit, so Hex can fire; false after a failed save).
+*comment Agonizing Blast is the one rider that lives here, since it belongs to one spell: a Warlock with the invocation adds the Charisma modifier to Eldritch Blast, which the data cannot say (its add_casting_mod is false for everyone else).
+*label resolve_spell_hit
+*params rsh_id rsh_is_attack_roll
+*gosub_scene combat_spells spell_facts_load rsh_id
+*set combat_player_dmg_type spell_fact_dmg_type
+*set combat_player_dmg_dice_sides spell_fact_dice_sides
+*set combat_player_dmg_bonus spell_fact_flat
+*if ((rsh_id = "eldritch_blast") and ((inv_agonizing_blast) and (cha_mod > 0)))
+  *set combat_player_dmg_bonus cha_mod
+*gosub resolve_player_hit rsh_is_attack_roll
+*return
+
 *label resolve_player_hit
 *params rph_is_attack_roll
 *if (not(combat_player_hit_locked)) or (not(locked_combat_player_hit_page_id = page_id))
@@ -842,11 +856,10 @@ ${combat_player_dmg_roll_banner}
       *gosub_scene combat_spells spend_pact_slot
       *set player_oa_used true
       *set combat_rebuke_triggered true
-      *temp rb_d1 0
-      *temp rb_d2 0
-      *rand rb_d1 1 10
-      *rand rb_d2 1 10
-      *temp rb_total (rb_d1 + rb_d2)
+      *comment The 2d10 is the shared roll (spell_book.json via roll_spell_damage). Its own banner is not printed here; the rebuke's banner below names the dice from spell_roll_dice_str.
+      *gosub_scene combat_spells roll_spell_damage "hellish_rebuke" true
+      *temp rb_total combat_player_dmg_dealt
+      *temp rb_dice spell_roll_dice_str
       *temp rb_prefix (("combat_enemy" & combat_active_target) & "_")
       *set combat_save_quiet true
       *comment Lock index 0, not the attacker's slot: the attacker may also make a repeat Wisdom save (Frightened) later on this very page, and a shared index would hand it this save back.
@@ -869,9 +882,9 @@ ${combat_player_dmg_roll_banner}
       *else
         *set rb_note " (saved, half)"
       *if (combat_enemy_hp <= 0)
-        *set combat_rebuke_banner "[b][🔥 Hellish Rebuke: ${rb_d1}+${rb_d2} = ${rb_total}, ${combat_player_dmg_dealt} fire damage${combat_outgoing_dmg_suffix}${rb_note} | 💀 ${combat_enemy_name} Defeated][/b]"
+        *set combat_rebuke_banner "[b][🔥 Hellish Rebuke: ${rb_dice} = ${rb_total}, ${combat_player_dmg_dealt} fire damage${combat_outgoing_dmg_suffix}${rb_note} | 💀 ${combat_enemy_name} Defeated][/b]"
       *else
-        *set combat_rebuke_banner "[b][🔥 Hellish Rebuke: ${rb_d1}+${rb_d2} = ${rb_total}, ${combat_player_dmg_dealt} fire damage${combat_outgoing_dmg_suffix}${rb_note}][/b]"
+        *set combat_rebuke_banner "[b][🔥 Hellish Rebuke: ${rb_dice} = ${rb_total}, ${combat_player_dmg_dealt} fire damage${combat_outgoing_dmg_suffix}${rb_note}][/b]"
   *set {cea_lockname} true
 *temp cea_atk_banner_text {(cea_atk_bannername)}
 *if (not(cea_atk_banner_text = ""))

@@ -103,17 +103,13 @@ All 1,649 scripts pass, and `node tools/play_all.js` exiting 0 is the whole chec
 
 Open: 42 scripts carry `"allowDeadSpace": true` (`grep -l allowDeadSpace tools/play_scripts/*.json`). Each is a doubled line break to fix and then drop the flag.
 
-### 3.1 Convert the spells that fit the shared roll as it stands
+### 3.1 Convert the spells that fit the shared roll as it stands (DONE 2026-11-16)
 
-Arms of Hadar, Thunderwave, Hellish Rebuke. Each keeps its own slot spend, area loop, push and banner; only the dice loop is replaced by `roll_spell_damage`.
+Arms of Hadar, Thunderwave and Hellish Rebuke now roll through `roll_spell_damage`. Each keeps its own slot spend, area loop, push and banner. The shared roll also leaves its dice as `spell_roll_dice_str`, for a banner that names each die (Hellish Rebuke's).
 
-Done when: the three hand-written dice loops are gone and every transcript in the folder is identical.
+### 3.2 Damage cantrips onto the shared roll (DONE 2026-11-16)
 
-### 3.2 Damage cantrips onto the shared roll
-
-Fire Bolt, Ray of Frost, Eldritch Blast, Chill Touch, Vicious Mockery, Poison Spray, Shocking Grasp. They roll inside `resolve_player_hit`, which also carries Hex, Agonizing Blast (Charisma added outside the data's `add_casting_mod`) and Poisoner's Robes. Pull out one shared "spell hit" helper that keeps those three riders, then convert.
-
-Done when: a new damage cantrip is a data entry plus an option, and every transcript is identical.
+Fire Bolt, Ray of Frost, Eldritch Blast, Chill Touch, Vicious Mockery, Poison Spray and Shocking Grasp now hit through `resolve_spell_hit` (`combat_dice.txt`), which takes the die, damage type and flat bonus from the spell data and then calls `resolve_player_hit`, so Hex and the Poisoner's Robes still ride on it. Agonizing Blast lives in `resolve_spell_hit`, because it belongs to one spell. A new damage cantrip is a data entry plus its menu option. Not done: dice that grow at character level 5 (`resolve_player_hit` still rolls one die; no character reaches 5).
 
 ### 3.3 Healing and temporary hit points
 
@@ -188,4 +184,5 @@ Older open questions:
 - The header comment above Magic Missile in `combat_spells.txt` still talks about a replay lock that no longer exists.
 - A refresh on a targeting prompt page (Magic Missile darts, a healing target) forgets the clicks. Nothing is rolled on those pages, so the player clicks again.
 - The opening page of a fight entered from another scene is not covered by the replay guard. A refresh resumes at the choice instead of re-running the page. The test tool skips those pages.
+- Quality of life, not urgent: a foe beaten into surrender in a non-lethal fight still gets the "💀 Defeated" banner, for every spell and weapon. The line above it reads as a surrender. A different banner for the non-lethal slot would finish the job.
 - Never checked in a real browser: the battlefield strip at the top of the frame, the delayed hover card, the Blinded and Concentrating markers on the tracker, and a target click followed by Stats and back.

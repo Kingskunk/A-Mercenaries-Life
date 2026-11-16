@@ -467,6 +467,7 @@
     *set rsd_dice_str "${rsd_dice_str}+${rsd_die}"
   *set rsd_di + 1
   *goto roll_spell_damage_loop
+*set spell_roll_dice_str rsd_dice_str
 *temp rsd_mod_part ""
 *if (spell_fact_add_mod)
   *if (spell_damage_mod >= 0)
@@ -719,13 +720,9 @@ ${fsh}
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_arms_of_hadar
 *gosub spend_pact_slot
-*temp aoh_d1 0
-*temp aoh_d2 0
-*rand aoh_d1 1 6
-*rand aoh_d2 1 6
-*temp aoh_total (aoh_d1 + aoh_d2)
-*set combat_player_dmg_roll_banner "[b][🎲 Arms of Hadar: ${aoh_d1}+${aoh_d2} = ${aoh_total} necrotic][/b]"
-*set combat_player_dmg_type "necrotic"
+*comment The 2d6 is the shared roll (spell_book.json via roll_spell_damage): one total for every target, no casting modifier. It also sets the roll banner and the damage type.
+*gosub roll_spell_damage "arms_of_hadar" true
+*temp aoh_total combat_player_dmg_dealt
 *set combat_mm_banner_1 ""
 *set combat_mm_banner_2 ""
 *set combat_mm_banner_3 ""
@@ -1379,23 +1376,9 @@ ${combat_blindness_banner}
     *gosub spend_pact_slot
   *else
     *gosub spend_spell_slot combat_cast_at_level
-*temp tw_dice_count (combat_cast_at_level + 1)
-*temp tw_total 0
-*temp tw_dice_str ""
-*temp tw_di 1
-*label resolve_cast_thunderwave_dice_loop
-*if (tw_di <= tw_dice_count)
-  *temp tw_die 0
-  *rand tw_die 1 8
-  *set tw_total + tw_die
-  *if (tw_di = 1)
-    *set tw_dice_str "${tw_die}"
-  *else
-    *set tw_dice_str "${tw_dice_str}+${tw_die}"
-  *set tw_di + 1
-  *goto resolve_cast_thunderwave_dice_loop
-*set combat_player_dmg_roll_banner "[b][🎲 Thunderwave: ${tw_dice_str} = ${tw_total} thunder][/b]"
-*set combat_player_dmg_type "thunder"
+*comment The dice are the shared roll (2d8, one more d8 per slot level above 1st, both from spell_book.json): one total for every target, no casting modifier. It also sets the roll banner and the damage type.
+*gosub roll_spell_damage "thunderwave" true
+*temp tw_total combat_player_dmg_dealt
 *comment One-shot, cleared now -- everything in this cast that needed the level has already read it.
 *set combat_cast_at_level 1
 *set combat_mm_banner_1 ""
