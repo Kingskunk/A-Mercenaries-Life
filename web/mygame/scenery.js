@@ -79,6 +79,7 @@
     "Langston/fallowmere/village_heads_hall": "generic_village_gathering_hall",
     "Langston/fallowmere/market": "fallowmere_market",
     "hartwell/oxworth/oxworth": "village_green",
+    "hartwell/palmcote/palmcote": "palmcote",
     "hartwell/oxworth/oxworth_market": "oxworth_market",
     "hartwell/oxworth/yoke_and_horn": "oxworth_yoke_and_horn",
     "hartwell/oxworth/village_heads_hall": "generic_village_gathering_hall",

@@ -111,6 +111,7 @@
     oxworth_yoke_and_horn: "tavern",      // the common room: a quiet tavern by day that fills as the day ends
     broadmead: "village",                 // the village hub and the overworld tile: a village by day, a hushed one at night
     barolo: "village",                    // the village hub and the overworld tile: a village by day, a hushed one at night
+    palmcote: "village",                  // the village hub and the overworld tile: a village by day, a hushed one at night
     barolo_market: "village",             // the paved market yard is open air
     barolo_vineyard_roads: "open_road",   // lanes between the vines: grassland by day, night nature after dark
     barolo_village_heads_hall: "langston_hall",   // an indoor government hall, the same soft room tone as Langston Hall
