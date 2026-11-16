@@ -160,8 +160,181 @@ function genReachFlags() {
   });
   return L;
 }
+// ---------------------------------------------------------------- combat facts lookup (combat_spells.txt)
+// Writes *label spell_facts_load <id> from every spell in cantrips/learnable that carries a "combat" block.
+// Strict parsing: any malformed dice string, mismatched upcast sides, or unknown combat field throws an Error.
+var VALID_COST = { action: true, bonus: true, reaction: true, minute: true };
+var VALID_RES = { attack: true, save: true, auto: true, heal: true, effect: true };
+var VALID_ABILITY = { strength: true, dexterity: true, constitution: true, intelligence: true, wisdom: true, charisma: true };
+var KNOWN_COMBAT_KEYS = {
+  cost: true, slot_level: true, resolution: true, duration: true, area: true, effect: true,
+  attack_kind: true, damage_dice: true, damage_type: true, add_casting_mod: true,
+  save_ability: true, half_on_save: true, cantrip_scale: true, base_move_dice: true,
+  upcast: true, temp_hp_flat: true, damage_flat: true, heal_dice: true,
+  temp_hp_dice: true, projectiles: true
+};
+var KNOWN_UPCAST_KEYS = { damage_dice: true, projectiles: true, targets: true, temp_hp_flat: true };
+
+function parseDice(expr, ctx) {
+  if (typeof expr !== "string") throw new Error(ctx + ": expected NdM dice string, got " + JSON.stringify(expr));
+  var m = /^(\d+)d(\d+)$/.exec(expr.trim());
+  if (!m) throw new Error(ctx + ": unreadable dice string " + JSON.stringify(expr));
+  var count = Number(m[1]), sides = Number(m[2]);
+  if (!Number.isInteger(count) || count < 1 || !Number.isInteger(sides) || sides < 1) {
+    throw new Error(ctx + ": invalid dice bounds in " + JSON.stringify(expr));
+  }
+  return { count: count, sides: sides };
+}
+function checkIntMin(val, min, ctx) {
+  if (typeof val !== "number" || !Number.isInteger(val) || val < min) {
+    throw new Error(ctx + ": expected integer >= " + min + ", got " + JSON.stringify(val));
+  }
+}
+
+var combatSpells = [];
+function collectCombatSpell(id, sp, expectedLevel) {
+  if (!sp || !sp.combat) return;
+  var c = sp.combat;
+  if (!sp.name) throw new Error("spell '" + id + "' is missing name");
+  if (typeof c !== "object" || Array.isArray(c)) throw new Error("spell '" + id + "' combat must be an object");
+  Object.keys(c).forEach(function (k) {
+    if (!KNOWN_COMBAT_KEYS[k]) throw new Error("spell '" + id + "' combat has unknown field '" + k + "'");
+  });
+  if (!VALID_COST[c.cost]) throw new Error("spell '" + id + "' has invalid combat.cost " + JSON.stringify(c.cost));
+  if (!VALID_RES[c.resolution]) throw new Error("spell '" + id + "' has invalid combat.resolution " + JSON.stringify(c.resolution));
+  checkIntMin(c.slot_level, 0, "spell '" + id + "' combat.slot_level");
+  if (c.slot_level !== expectedLevel) {
+    throw new Error("spell '" + id + "' combat.slot_level (" + c.slot_level + ") !== expected level (" + expectedLevel + ")");
+  }
+  if (c.save_ability !== undefined && !VALID_ABILITY[c.save_ability]) {
+    throw new Error("spell '" + id + "' has invalid combat.save_ability " + JSON.stringify(c.save_ability));
+  }
+  if (c.half_on_save !== undefined && typeof c.half_on_save !== "boolean") {
+    throw new Error("spell '" + id + "' combat.half_on_save must be boolean");
+  }
+  if (c.add_casting_mod !== undefined && typeof c.add_casting_mod !== "boolean") {
+    throw new Error("spell '" + id + "' combat.add_casting_mod must be boolean");
+  }
+  if (c.damage_type !== undefined && (typeof c.damage_type !== "string" || !c.damage_type)) {
+    throw new Error("spell '" + id + "' combat.damage_type must be a non-empty string");
+  }
+  if (c.damage_dice !== undefined && c.heal_dice !== undefined) {
+    throw new Error("spell '" + id + "' has both combat.damage_dice and combat.heal_dice");
+  }
+  var baseDice = { count: 0, sides: 0 };
+  if (c.damage_dice !== undefined) baseDice = parseDice(c.damage_dice, "spell '" + id + "' combat.damage_dice");
+  else if (c.heal_dice !== undefined) baseDice = parseDice(c.heal_dice, "spell '" + id + "' combat.heal_dice");
+  if (c.temp_hp_dice !== undefined) parseDice(c.temp_hp_dice, "spell '" + id + "' combat.temp_hp_dice");
+  if (c.base_move_dice !== undefined) parseDice(c.base_move_dice, "spell '" + id + "' combat.base_move_dice");
+  if (c.cantrip_scale !== undefined) {
+    if (typeof c.cantrip_scale !== "object" || Array.isArray(c.cantrip_scale)) {
+      throw new Error("spell '" + id + "' combat.cantrip_scale must be an object");
+    }
+    Object.keys(c.cantrip_scale).forEach(function (lvl) {
+      var tier = c.cantrip_scale[lvl];
+      if (!tier || typeof tier !== "object") throw new Error("spell '" + id + "' cantrip_scale[" + lvl + "] must be an object");
+      ["on_hit_dice", "on_move_dice", "extra_dice"].forEach(function (dk) {
+        if (tier[dk] !== undefined) parseDice(tier[dk], "spell '" + id + "' cantrip_scale." + lvl + "." + dk);
+      });
+    });
+  }
+  var flat = 0;
+  if (c.damage_flat !== undefined) {
+    checkIntMin(c.damage_flat, 0, "spell '" + id + "' combat.damage_flat");
+    flat = c.damage_flat;
+  }
+  if (c.temp_hp_flat !== undefined) checkIntMin(c.temp_hp_flat, 0, "spell '" + id + "' combat.temp_hp_flat");
+  var projectiles = 0;
+  if (c.projectiles !== undefined) {
+    checkIntMin(c.projectiles, 1, "spell '" + id + "' combat.projectiles");
+    projectiles = c.projectiles;
+  }
+  var upcastDice = 0, upcastProjectiles = 0;
+  if (c.upcast !== undefined) {
+    if (typeof c.upcast !== "object" || Array.isArray(c.upcast)) {
+      throw new Error("spell '" + id + "' combat.upcast must be an object");
+    }
+    Object.keys(c.upcast).forEach(function (uk) {
+      if (!KNOWN_UPCAST_KEYS[uk]) throw new Error("spell '" + id + "' combat.upcast has unknown field '" + uk + "'");
+    });
+    if (c.upcast.damage_dice !== undefined) {
+      var ud = parseDice(c.upcast.damage_dice, "spell '" + id + "' combat.upcast.damage_dice");
+      if (baseDice.sides > 0 && ud.sides !== baseDice.sides) {
+        throw new Error("spell '" + id + "' combat.upcast.damage_dice sides (" + ud.sides + ") !== base sides (" + baseDice.sides + ")");
+      }
+      upcastDice = ud.count;
+    }
+    if (c.upcast.projectiles !== undefined) {
+      checkIntMin(c.upcast.projectiles, 1, "spell '" + id + "' combat.upcast.projectiles");
+      upcastProjectiles = c.upcast.projectiles;
+    }
+    if (c.upcast.targets !== undefined) checkIntMin(c.upcast.targets, 1, "spell '" + id + "' combat.upcast.targets");
+    if (c.upcast.temp_hp_flat !== undefined) checkIntMin(c.upcast.temp_hp_flat, 0, "spell '" + id + "' combat.upcast.temp_hp_flat");
+  }
+  combatSpells.push({
+    id: id,
+    name: sp.name,
+    resolution: c.resolution,
+    save_ability: c.save_ability || "",
+    half_on_save: Boolean(c.half_on_save),
+    dice_count: baseDice.count,
+    dice_sides: baseDice.sides,
+    flat: flat,
+    dmg_type: c.damage_type || "",
+    add_mod: Boolean(c.add_casting_mod),
+    slot_level: c.slot_level,
+    upcast_dice: upcastDice,
+    projectiles: projectiles,
+    upcast_projectiles: upcastProjectiles
+  });
+}
+Object.keys(cantrips).forEach(function (id) { collectCombatSpell(id, cantrips[id], 0); });
+Object.keys(learnable).forEach(function (id) { collectCombatSpell(id, learnable[id], learnable[id].level); });
+
+function genFactsLookup() {
+  var L = [
+    "*comment Generated by tools/gen_spells.js from tools/spell_book.json -- do not edit inside this block.",
+    "*label spell_facts_load",
+    "*params sfl_id",
+    "*set spell_fact_found false",
+    "*set spell_fact_name \"\"",
+    "*set spell_fact_resolution \"\"",
+    "*set spell_fact_save_ability \"\"",
+    "*set spell_fact_half_on_save false",
+    "*set spell_fact_dice_count 0",
+    "*set spell_fact_dice_sides 0",
+    "*set spell_fact_flat 0",
+    "*set spell_fact_dmg_type \"\"",
+    "*set spell_fact_add_mod false",
+    "*set spell_fact_slot_level 0",
+    "*set spell_fact_upcast_dice 0",
+    "*set spell_fact_projectiles 0",
+    "*set spell_fact_upcast_projectiles 0"
+  ];
+  combatSpells.forEach(function (s) {
+    L.push("*if (sfl_id = " + q(s.id) + ")");
+    L.push("  *set spell_fact_found true");
+    L.push("  *set spell_fact_name " + q(s.name));
+    L.push("  *set spell_fact_resolution " + q(s.resolution));
+    if (s.save_ability) L.push("  *set spell_fact_save_ability " + q(s.save_ability));
+    if (s.half_on_save) L.push("  *set spell_fact_half_on_save true");
+    if (s.dice_count > 0) L.push("  *set spell_fact_dice_count " + s.dice_count);
+    if (s.dice_sides > 0) L.push("  *set spell_fact_dice_sides " + s.dice_sides);
+    if (s.flat > 0) L.push("  *set spell_fact_flat " + s.flat);
+    if (s.dmg_type) L.push("  *set spell_fact_dmg_type " + q(s.dmg_type));
+    if (s.add_mod) L.push("  *set spell_fact_add_mod true");
+    if (s.slot_level > 0) L.push("  *set spell_fact_slot_level " + s.slot_level);
+    if (s.upcast_dice > 0) L.push("  *set spell_fact_upcast_dice " + s.upcast_dice);
+    if (s.projectiles > 0) L.push("  *set spell_fact_projectiles " + s.projectiles);
+    if (s.upcast_projectiles > 0) L.push("  *set spell_fact_upcast_projectiles " + s.upcast_projectiles);
+  });
+  L.push("*return");
+  return L;
+}
+
 setRegion(path.join(SCENES, "combat.txt"), "spell_range_lookup", genLookup());
 setRegion(path.join(SCENES, "combat.txt"), "spell_reach_flags", genReachFlags());
+setRegion(path.join(SCENES, "combat_spells.txt"), "spell_facts_lookup", genFactsLookup());
 
 // The same reach classes for the page: the battle stage (index.html) tints the tiles a spell can reach while its HUD slot is hovered.
 // A whole generated file, keyed by the HUD's slot id (the spell's id is the slug of its display name).

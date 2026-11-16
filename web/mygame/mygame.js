@@ -4829,7 +4829,21 @@ stats = {
   "combat_ally4_cast_chance_1": "0",
   "combat_ally4_cast_chance_2": "0",
   "combat_ally4_cast_chance_3": "0",
-  "combat_ally4_cast_dc": "0"
+  "combat_ally4_cast_dc": "0",
+  "spell_fact_found": "false",
+  "spell_fact_name": "",
+  "spell_fact_resolution": "",
+  "spell_fact_save_ability": "",
+  "spell_fact_half_on_save": "false",
+  "spell_fact_dice_count": "0",
+  "spell_fact_dice_sides": "0",
+  "spell_fact_flat": "0",
+  "spell_fact_dmg_type": "",
+  "spell_fact_add_mod": "false",
+  "spell_fact_slot_level": "0",
+  "spell_fact_upcast_dice": "0",
+  "spell_fact_projectiles": "0",
+  "spell_fact_upcast_projectiles": "0"
 };
 purchases = {};
 achievements = [];
