@@ -9,8 +9,8 @@ This file only says where to look. The rules are in the files it names. Read the
 | Task | File |
 | --- | --- |
 | Any prose the player reads | `.agents/rules/narrative_guidelines.md` |
-| A quest, a place, a shop, a named character | `Resources & Quest/QUEST_DESIGN_RULES.md`. Record a new quest in `Resources & Quest/QUESTS.md`. |
-| Scene code, items, the interface, dungeons, the overworld, the test tools | `Resources & Quest/GAMEPLAY_MECHANICS_RULES.md` |
+| A quest, a place, a shop, a named character | `Resources & Quest/QUEST_DESIGN_RULES.md`. `Resources & Quest/QUESTS.md` is the index of every quest: add a row for a new one. Longer write-ups are in `Resources & Quest/quests/`. |
+| Scene code, items, the interface, dungeons, the overworld, the test tools | `Resources & Quest/GAMEPLAY_MECHANICS_RULES.md`. It is far too large to read whole: list its `## ` headings, then search inside the one section you need. |
 | The fight system: spells, enemies, conditions, subclasses, feats | `Resources & Quest/COMBAT_ENGINE_PLAN.md` |
 | What already exists: gear, spells, recipes | The `*_REFERENCE.md` files in `Resources & Quest/` |
 | A quest or region that has its own plan | The matching `*_PLAN.md` in `Resources & Quest/` |
