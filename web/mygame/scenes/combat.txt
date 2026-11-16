@@ -161,6 +161,34 @@
 *set true_strike_on false
 *set true_strike_radiant false
 *set combat_save_quiet false
+*set combat_roa_last_roll_banner ""
+*set combat_roa_last_dmg_roll_banner ""
+*set combat_roa_last_line ""
+*set combat_roa_last_banner ""
+*set combat_raa_last_atk_banner ""
+*set combat_raa_last_dmg_banner ""
+*set combat_fnaa_last_line ""
+*set combat_boom_last_text ""
+*set combat_boom_last_banner ""
+*set combat_dw_save_banner ""
+*set combat_dw_dmg_banner ""
+*set combat_dw_failed false
+*set combat_dw_dmg 0
+*set combat_dw_suffix ""
+*set combat_dw_killed false
+*set combat_dw_target_name ""
+*set combat_dw_target_epithet ""
+*set combat_dw_fort_banner ""
+*set combat_dw_oa_kind ""
+*set combat_dw_oa_roll_banner ""
+*set combat_dw_oa_dmg_roll_banner ""
+*set combat_dw_oa_line ""
+*set combat_dw_oa_banner ""
+*set combat_dw_moved false
+*set combat_dw_move_line ""
+*set combat_dw_move_banner ""
+*set combat_dw_boom_line ""
+*set combat_dw_boom_banner ""
 *set blade_ward_rounds 0
 *set blade_ward_just_cast false
 *set dodge_active false
@@ -783,6 +811,8 @@
 *comment replay-ok: the sheathed flag is cleared as it is spent, so a replay cannot take the damage twice (see the header).
 *label fight_booming_trigger
 *set combat_boom_killed false
+*set combat_boom_last_text ""
+*set combat_boom_last_banner ""
 *comment quicktest's coverage walk reaches this label with combat_active_target still 0, and there is no combat_enemy0_booming, so the slot indirection is guarded (the same fix fight_pick_enemy_move needed).
 *if (combat_active_target > 0)
   *temp fbt_name (("combat_enemy" & combat_active_target) & "_booming")
@@ -819,15 +849,17 @@
       *set combat_enemy_hp 0
     *gosub fight_sync_target_out
     *if (combat_enemy_hp <= 0)
-      $!{combat_enemy_epithet} moves, and the thunder along them breaks loose in a hammering crack that finishes the work.
-      *line_break
-      [b][⚡ Booming Blade: ${combat_player_dmg_dealt} Thunder damage${combat_outgoing_dmg_suffix} | 💀 ${combat_enemy_name} Defeated][/b]
+      *set combat_boom_last_text "$!{combat_enemy_epithet} moves, and the thunder along them breaks loose in a hammering crack that finishes the work."
+      *set combat_boom_last_banner "[b][⚡ Booming Blade: ${combat_player_dmg_dealt} Thunder damage${combat_outgoing_dmg_suffix} | 💀 ${combat_enemy_name} Defeated][/b]"
       *set combat_boom_killed true
     *else
-      $!{combat_enemy_epithet} moves, and the thunder along them breaks loose in a hammering crack.
+      *set combat_boom_last_text "$!{combat_enemy_epithet} moves, and the thunder along them breaks loose in a hammering crack."
+      *set combat_boom_last_banner "[b][⚡ Booming Blade: ${combat_player_dmg_dealt} Thunder damage${combat_outgoing_dmg_suffix}][/b]"
+    *if (not(combat_save_quiet))
+      ${combat_boom_last_text}
       *line_break
-      [b][⚡ Booming Blade: ${combat_player_dmg_dealt} Thunder damage${combat_outgoing_dmg_suffix}][/b]
-    *line_break
+      ${combat_boom_last_banner}
+      *line_break
 *return
 
 *comment EXTRA ATTACK (2026-10-11, for Captain Trent in Varren's Errand): the enemy in slot combat_multiattack_slot follows its first attack with a second, weaker one at the same attack bonus: a d4 and
@@ -2225,8 +2257,12 @@
 *if (condition_result)
   *set disadvantage true
   *set combat_atk_blinded true
+*if (combat_save_quiet)
+  *set check_silent true
 *gosub_scene dice_engine roll_d20_check
 *set check_flat_bonus 0
+*set combat_roa_last_roll_banner check_last_banner
+*set combat_roa_last_dmg_roll_banner ""
 *if (check_success)
   *set combat_player_dmg_type weapon_damage_type
   *if (weapon_type = "finesse")
@@ -2252,26 +2288,27 @@
       *set combat_player_dmg_bonus + barbarian_rage_damage_bonus
   *set combat_player_dmg_bonus + weapon_magic
   *gosub_scene combat_dice resolve_player_weapon_hit
+  *set combat_roa_last_dmg_roll_banner combat_player_dmg_roll_banner
   *if (combat_enemy_hp <= 0)
-    $!{combat_enemy_epithet} takes the opening and drops, cut down mid-retreat.
-    *line_break
-    [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
+    *set combat_roa_last_line "$!{combat_enemy_epithet} takes the opening and drops, cut down mid-retreat."
+    *set combat_roa_last_banner "[b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]"
   *elseif (combat_weapon_blocked)
-    You catch ${combat_enemy_epithet} pulling back, and your ${weapon} lands true, then skates off the hide as if it had struck stone.
-    *line_break
-    [b][🚫 ${combat_enemy_name} is immune to ${combat_weapon_defense_text} | ${combat_player_dmg_dealt} damage][/b]
+    *set combat_roa_last_line "You catch ${combat_enemy_epithet} pulling back, and your ${weapon} lands true, then skates off the hide as if it had struck stone."
+    *set combat_roa_last_banner "[b][🚫 ${combat_enemy_name} is immune to ${combat_weapon_defense_text} | ${combat_player_dmg_dealt} damage][/b]"
   *else
-    You catch ${combat_enemy_epithet} pulling back, and the opening costs it.
-    *line_break
-    [b][🩸 Opportunity Attack Hits: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
+    *set combat_roa_last_line "You catch ${combat_enemy_epithet} pulling back, and the opening costs it."
+    *set combat_roa_last_banner "[b][🩸 Opportunity Attack Hits: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]"
 *else
-  $!{combat_enemy_epithet} breaks away before you can make the opening count.
+  *set combat_roa_last_line "$!{combat_enemy_epithet} breaks away before you can make the opening count."
+  *set combat_roa_last_banner "[b][💨 Opportunity Attack Misses][/b]"
+*if (not(combat_save_quiet))
+  ${combat_roa_last_line}
   *line_break
-  [b][💨 Opportunity Attack Misses][/b]
+  ${combat_roa_last_banner}
 *comment Ends on a break unless the blow ended the fight (fight_victory opens with its own; a second would print an empty line). The caller repeats the sync and the check.
 *gosub fight_sync_target_out
 *gosub fight_check_all_dead
-*if (not(combat_all_enemies_dead))
+*if (not(combat_save_quiet)) and (not(combat_all_enemies_dead))
   *line_break
 *return
 
@@ -6102,6 +6139,18 @@ You unroll the pale sheet and read it aloud. A numb, leathery vitality spreads b
   *gosub_scene combat_movement fight_retarget_by_class "medium"
   *set combat_current_spell_id "dissonant_whispers"
   *gosub_scene combat_prose pick_spell_flavor
+  *set combat_dw_fort_banner ""
+  *set combat_dw_oa_kind ""
+  *set combat_dw_oa_roll_banner ""
+  *set combat_dw_oa_dmg_roll_banner ""
+  *set combat_dw_oa_line ""
+  *set combat_dw_oa_banner ""
+  *set combat_dw_moved false
+  *set combat_dw_move_line ""
+  *set combat_dw_move_banner ""
+  *set combat_dw_boom_line ""
+  *set combat_dw_boom_banner ""
+  *set combat_save_quiet true
   *comment Enemy saving throw against the player's own spell_save_dc -- Dissonant Whispers is a Wisdom save,
   *comment RAW. The target rolls here (resolve_save, combat_dice.txt), not the player.
   *gosub_scene combat_dice resolve_save "combat_enemy_" "wisdom" "Wisdom" spell_save_dc 0
@@ -6109,26 +6158,145 @@ You unroll the pale sheet and read it aloud. A numb, leathery vitality spreads b
   *comment spend_spell_slot (combat_spells.txt) picks the pool from combat_cast_at_level.
   *gosub_scene combat_spells spend_spell_slot combat_cast_at_level
   *gosub_scene combat_spells resolve_dissonant_whispers
+  *set combat_save_quiet false
+  *set combat_dw_save_banner combat_save_banner_0
+  *set combat_dw_dmg_banner combat_player_dmg_roll_banner
+  *set combat_dw_failed check_success
+  *set combat_dw_dmg combat_player_dmg_dealt
+  *set combat_dw_suffix combat_outgoing_dmg_suffix
+  *set combat_dw_target_name combat_enemy_name
+  *set combat_dw_target_epithet combat_enemy_epithet
+  *gosub fight_sync_target_out
   *if (combat_enemy_hp <= 0)
+    *gosub fight_undead_fortitude_roll
+    *if (not(combat_fort_banner = ""))
+      *set combat_fort_shown true
+      *set combat_dw_fort_banner combat_fort_banner
+    *gosub fight_sync_target_out
+    *if (combat_enemy_hp > 0)
+      *set combat_fort_locked false
+  *set combat_dw_killed (combat_enemy_hp <= 0)
+  *if (combat_dw_killed)
     *gosub_scene combat_prose pick_spell_death_flavor
+  *elseif (combat_dw_failed)
+    *comment 2024 Dissonant Whispers: a standing target that failed its Wisdom save spends its Reaction (if it has one) to move one step away, obeying the fight's movement stops and provoking opportunity attacks.
+    *gosub_scene combat_dice combat_can_react "enemy" combat_active_target
+    *if (combat_can_react_ok)
+      *set {(("combat_enemy" & combat_active_target) & "_oa_used")} true
+      *set combat_enemy_oa_used true
+      *temp dw_cur_range {(("combat_enemy" & combat_active_target) & "_range")}
+      *if (dw_cur_range < 0)
+        *set dw_cur_range 0
+      *if (dw_cur_range > combat_max_range)
+        *set dw_cur_range combat_max_range
+      *temp dw_side {(("combat_enemy" & combat_active_target) & "_side")}
+      *if (not(dw_side = (0 - 1)))
+        *set dw_side 1
+      *temp dw_from_pos (combat_lane_player_position + (dw_side * dw_cur_range))
+      *temp dw_dest_pos (dw_from_pos + dw_side)
+      *temp dw_restrained {(("combat_enemy" & combat_active_target) & "_restrained_until")}
+      *if ((dw_restrained > 0) and (combat_round > dw_restrained))
+        *set {(("combat_enemy" & combat_active_target) & "_restrained_until")} 0
+        *set dw_restrained 0
+      *temp dw_can_move false
+      *if ((dw_restrained <= 0) and (dw_cur_range < combat_max_range))
+        *gosub_scene combat_ai combat_ai_terrain_destination_is_legal "enemy" combat_active_target dw_dest_pos
+        *if (combat_ai_terrain_destination_legal)
+          *gosub_scene combat_movement combat_difficult_terrain_crossing_query dw_from_pos dw_dest_pos
+          *if (not(combat_difficult_terrain_blocks_dash))
+            *set dw_can_move true
+      *if (dw_can_move)
+        *set combat_save_quiet true
+        *gosub find_opportunity_attacker_against
+        *if (combat_oa_against_kind = "player")
+          *set combat_dw_oa_kind "player"
+          *set player_oa_used true
+          *gosub resolve_reverse_oa_player
+          *gosub fight_sync_target_out
+          *set combat_dw_oa_roll_banner combat_roa_last_roll_banner
+          *set combat_dw_oa_dmg_roll_banner combat_roa_last_dmg_roll_banner
+          *set combat_dw_oa_line combat_roa_last_line
+          *set combat_dw_oa_banner combat_roa_last_banner
+        *elseif (combat_oa_against_kind = "ally")
+          *set combat_dw_oa_kind "ally"
+          *set {(("combat_ally" & combat_oa_against_slot) & "_oa_used")} true
+          *gosub resolve_reverse_oa_ally combat_oa_against_slot
+          *gosub fight_sync_target_in
+          *set combat_dw_oa_roll_banner combat_raa_last_atk_banner
+          *set combat_dw_oa_dmg_roll_banner combat_raa_last_dmg_banner
+          *set combat_dw_oa_line combat_fnaa_last_line
+        *set combat_save_quiet false
+        *if (combat_enemy_hp > 0)
+          *gosub_scene combat_movement combat_lane_move_enemy_relative_to_player combat_active_target "away"
+          *gosub_scene combat_movement combat_range_name combat_enemy_range
+          *set combat_dw_moved true
+          *set combat_dw_move_line "$!{combat_dw_target_epithet} turns and scrambles back a step."
+          *set combat_dw_move_banner "[b][🏃 ${combat_dw_target_name} Flees to ${combat_range_display_name}][/b]"
+          *set combat_save_quiet true
+          *gosub fight_booming_trigger
+          *set combat_save_quiet false
+          *set combat_dw_boom_line combat_boom_last_text
+          *set combat_dw_boom_banner combat_boom_last_banner
+          *if (combat_boom_killed and (combat_enemy_hp <= 0))
+            *gosub fight_undead_fortitude_roll
+            *if (not(combat_fort_banner = ""))
+              *set combat_fort_shown true
+              *set combat_dw_boom_banner "${combat_dw_boom_banner} ${combat_fort_banner}"
   *comment Reset last -- resolve_dissonant_whispers has already read it by now. One-shot, cleared either way,
   *comment same idiom fight_cast_ray_of_sickness uses just below.
   *set combat_cast_at_level 1
   *set combat_dw_choice_locked true
   *set locked_combat_dw_choice_page_id page_id
-*if (combat_enemy_hp <= 0)
+${combat_dw_save_banner}
+*line_break
+${combat_dw_dmg_banner}
+*line_break
+*if (combat_dw_killed)
   ${fdh}
   *line_break
-  [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Psychic Damage${combat_outgoing_dmg_suffix}][/b]
-*elseif (check_success)
+  [b][💀 ${combat_dw_target_name} Defeated: ${combat_dw_dmg} Psychic Damage${combat_dw_suffix}][/b]
+*elseif (combat_dw_failed)
   ${fsh}
   *line_break
-  [b][🧠 Dissonant Whispers: Failed Save | ${combat_player_dmg_dealt} Psychic Damage${combat_outgoing_dmg_suffix}][/b]
+  [b][🧠 Dissonant Whispers: Failed Save | ${combat_dw_dmg} Psychic Damage${combat_dw_suffix}][/b]
 *else
   ${fsm}
   *line_break
-  [b][🧠 Dissonant Whispers: Saved | Half Damage: ${combat_player_dmg_dealt} Psychic Damage${combat_outgoing_dmg_suffix}][/b]
-*line_break
+  [b][🧠 Dissonant Whispers: Saved | Half Damage: ${combat_dw_dmg} Psychic Damage${combat_dw_suffix}][/b]
+*if (not(combat_dw_fort_banner = ""))
+  *line_break
+  ${combat_dw_fort_banner}
+*if (combat_dw_oa_kind = "player")
+  *line_break
+  ${combat_dw_oa_roll_banner}
+  *if (not(combat_dw_oa_dmg_roll_banner = ""))
+    *line_break
+    ${combat_dw_oa_dmg_roll_banner}
+  *line_break
+  ${combat_dw_oa_line}
+  *line_break
+  ${combat_dw_oa_banner}
+*elseif (combat_dw_oa_kind = "ally")
+  *line_break
+  ${combat_dw_oa_roll_banner}
+  *if (not(combat_dw_oa_dmg_roll_banner = ""))
+    *line_break
+    ${combat_dw_oa_dmg_roll_banner}
+  *line_break
+  ${combat_dw_oa_line}
+*if (combat_dw_moved)
+  *line_break
+  ${combat_dw_move_line}
+  *line_break
+  ${combat_dw_move_banner}
+*if (not(combat_dw_boom_line = ""))
+  *line_break
+  ${combat_dw_boom_line}
+  *line_break
+  ${combat_dw_boom_banner}
+*gosub fight_check_all_dead
+*if (not(combat_all_enemies_dead))
+  *line_break
 *goto fight_check_enemy_hp
 
 *comment Reached only via *goto, from either Ray of Sickness option above -- combat_cast_at_level is already set
@@ -8785,403 +8953,4 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *comment   touch spell (Shocking Grasp) -> OFFERED only while a target is Engaged. It must VANISH from the menu
 *comment     at Long Range rather than appear at a penalty -- that is the reach question, distinct from the
 *comment     disadvantage question, and confusing the two is the bug this probe exists to catch.
-*comment   melee weapon at Long Range -> not offered at all (the existing "needs range 0 to swing" gate)
-*comment KNOWN LIMIT, unchanged: a RANGED ALLY still takes no penalty at all. resolve_ally_attack has no
-*comment advantage/disadvantage concept yet (see its own header), and the per-pair distance an ally would need
-*comment does not exist in this model. That path is unwired on purpose, not forgotten -- see GAMEPLAY_MECHANICS_RULES.
-*set combat_is_nonlethal false
-*set combat_lib_1 "lacedon"
-*set combat_enemy_name_override "Silt-Lurker Lacedon"
-*set combat_lib_2 "lacedon"
-*set combat_enemy2_name_override "Second Silt-Lurker"
-*set combat_enemy_range 0
-*comment The probe needs this enemy Engaged from the first round, so it opts out of the opening-distance rule (combat_roll_initiative).
-*set combat_opens_engaged true
-*set combat_enemy2_range 3
-*goto fight_library
-
-*label fight_trent_test
-*comment Dev-hub only (dev_hub.txt dev_combat_test_hub): Captain Trent's fight from Varren's Errand (varren_errand.txt slasher_fight), with the same stats and the same random standard terrain, so his Multiattack and the layouts can be tried without playing the quest. Non-lethal for him; combat_player_can_die stays false here, as for every test fight, so a loss is a rescue and not the death screen.
-*set combat_is_nonlethal true
-*set combat_lib_1 "swordsman"
-*set combat_enemy_name_override "Bronner Trent"
-*set combat_enemy_epithet_override "Trent"
-*set combat_enemy_hp_override 22
-*set combat_enemy_ac_override 14
-*set combat_enemy_atk_override 5
-*set combat_terrain_layout "random_standard"
-*set combat_multiattack_slot 1
-*goto fight_library
-
-*comment WEAPON IMMUNITY TEST FOES (2026-10-31, dev hub only; no story scene calls these). Each is a library "beast" with a defense set by the override variables, short enough to finish in a few rounds. What to try with each is in Resources & Quest/GAMEPLAY_MECHANICS_RULES.md,
-*comment "Damage Defenses". The prep menu hands out the Scrapling Claw (a +1 magical club) as the magic weapon; silvered and adamantine weapons are tested by setting weapon_silvered / weapon_adamantine in a script.
-*comment Dev-hub only: a zombie (Undead Fortitude), to try the save, a natural 20 and radiant damage (the Warded Wolf's neighbour).
-*comment Dev-hub only (2026-11-01): a cursed beast to try the unique item uses on the Items button: the Silverstar's touch (combat_cure_kind) and the Philter of Remembrance (combat_philter_stuns). It is immune to nonmagical weapons unless silvered, like the Warded Wolf. The hub gives the Silverstar and three philters.
-*label fight_dev_curse_test
-*set combat_is_nonlethal false
-*set combat_no_flee true
-*set combat_lib_1 "beast"
-*set combat_enemy_name_override "Cursed Wolf"
-*set combat_enemy_epithet_override "the cursed wolf"
-*set combat_enemy_hp_override 40
-*set combat_enemy_nonmagic_override "immune silvered"
-*set combat_cure_kind "lycanthropy"
-*set combat_philter_stuns true
-*goto fight_library
-
-*label fight_dev_zombie_test
-*set combat_is_nonlethal false
-*set combat_no_flee true
-*set combat_lib_1 "zombie"
-*set combat_enemy_immune_override "poison"
-*goto fight_library
-
-*label fight_dev_warded_wolf_test
-*comment A werewolf's defense: immune to nonmagical weapons unless silvered (a magical weapon always works). Nothing else.
-*set combat_is_nonlethal false
-*set combat_no_flee true
-*set combat_lib_1 "beast"
-*set combat_enemy_name_override "Warded Wolf"
-*set combat_enemy_epithet_override "the warded wolf"
-*set combat_enemy_hp_override 24
-*set combat_enemy_nonmagic_override "immune silvered"
-*goto fight_library
-
-*label fight_dev_hollow_shade_test
-*comment A ghost's defense: RESISTS nonmagical weapons with no exception (even silver does not help), and is immune to poison and cold.
-*set combat_is_nonlethal false
-*set combat_no_flee true
-*set combat_lib_1 "beast"
-*set combat_enemy_name_override "Hollow Shade"
-*set combat_enemy_epithet_override "the hollow shade"
-*set combat_enemy_hp_override 24
-*set combat_enemy_nonmagic_override "resist"
-*set combat_enemy_immune_override "poison cold"
-*goto fight_library
-
-*label fight_dev_many_defenses_test
-*comment Many typed defenses at once: immune to five types, resistant to three, vulnerable to radiant. Cast something of each type and read the banner.
-*set combat_is_nonlethal false
-*set combat_no_flee true
-*set combat_lib_1 "beast"
-*set combat_enemy_name_override "Ember Colossus"
-*set combat_enemy_epithet_override "the ember colossus"
-*set combat_enemy_hp_override 40
-*set combat_enemy_immune_override "fire poison necrotic psychic cold"
-*set combat_enemy_resist_override "acid lightning thunder"
-*set combat_enemy_vulnerable_override "radiant"
-*goto fight_library
-
-*label fight_dev_fire_test
-*comment Dev-hub only (dev_hub.txt dev_combat_test_hub): the thrown items. A swordsman, an archer and a mire-rat (a beast, which never puts a fire out) with a random standard layout; dev_combat_test_run puts three grease flasks and three flasks of alchemist's fire in the satchel first.
-*set combat_is_nonlethal false
-*set combat_terrain_layout "random_standard"
-*set combat_lib_1 "swordsman"
-*set combat_enemy_name_override "Test Swordsman"
-*set combat_enemy_epithet_override "the test swordsman"
-*set combat_enemy_range 1
-*set combat_lib_2 "archer"
-*set combat_enemy2_name_override "Test Archer"
-*set combat_enemy2_epithet_override "the test archer"
-*set combat_enemy2_range 2
-*set combat_lib_3 "mire_rat"
-*set combat_enemy3_name_override "Test Mire-Rat"
-*set combat_enemy3_epithet_override "the test mire-rat"
-*set combat_enemy3_range 2
-*goto fight_library
-
-*label fight_dev_reach_class_test
-*comment Dev-hub only (dev_hub.txt dev_combat_test_hub): the reach classes. A slinger (medium reach) and an archer (long reach) both open at Long Range in the six-band lane, so the slinger has to close before it can shoot and the archer does not.
-*comment Your own short-reach spells (Ray of Frost and friends) and a sling or hand crossbow are held back until something is inside Mid-Range.
-*set combat_is_nonlethal false
-*set combat_range_mode "expanded6"
-*set combat_lib_1 "slinger"
-*set combat_enemy_name_override "Test Slinger"
-*set combat_enemy_epithet_override "the test slinger"
-*set combat_enemy_range 5
-*set combat_lib_2 "archer"
-*set combat_enemy2_name_override "Test Archer"
-*set combat_enemy2_epithet_override "the test archer"
-*set combat_enemy2_range 5
-*goto fight_library
-
-*label fight_dev_squad_test
-*comment Dev-hub only (dev_hub.txt dev_combat_test_hub) -- no story scene calls this. The player and two allies face
-*comment three enemies, each opened across two formation lines, to play-test the nearest-enemy movement targeting
-*comment (fight_pick_nearest_target), kill-priority attack targeting (fight_pick_target), free movement/Dash, and
-*comment ally AI all at once instead of in isolation. The Vanguard Swordsman and Center Guard begin Close (1), while
-*comment the Rearguard Archer begins Long Range (5). A randomized standard layout makes each run tactically distinct
-*comment without placing terrain underneath that opening formation. Rook (melee ally, Mid-Range, 2) has to close on
-*comment its own target over a couple of rounds; Kess (ranged ally) attacks every turn regardless of range.
-*set combat_is_nonlethal false
-*set combat_range_mode "expanded6"
-*set combat_terrain_layout "random_standard"
-*set combat_lib_1 "swordsman"
-*set combat_enemy_name_override "Vanguard Swordsman"
-*set combat_enemy_range 1
-*set combat_lib_2 "guard"
-*set combat_enemy2_name_override "Center Guard"
-*set combat_enemy2_epithet_override "the center guard"
-*set combat_enemy2_range 1
-*set combat_lib_3 "archer"
-*set combat_enemy3_name_override "Rearguard Archer"
-*set combat_enemy3_epithet_override "the rearguard archer"
-*set combat_enemy3_range 5
-*set combat_ally_lib_1 "guard"
-*set combat_ally1_name_override "Rook"
-*set combat_ally1_epithet_override "Rook"
-*set combat_ally1_range 2
-*set combat_ally_lib_2 "archer"
-*set combat_ally2_name_override "Kess"
-*set combat_ally2_epithet_override "Kess"
-*comment Range: explicitly Close (1), same reason as fight_dev_ally_ranged_test's own comment -- left at the
-*comment default 0 here would show Kess fighting at the new close-range disadvantage for no in-fiction reason.
-*set combat_ally2_range 1
-*goto fight_library
-
-*label fight_dev_layout_preview
-*comment The Dev Hub sets combat_terrain_layout_preview to a named blueprint, then routes here. Reusing the Squad
-*comment Test gives every preview the same three-versus-three formation and expanded tactical lane.
-*goto fight_dev_squad_test
-
-*label fight_dev_expanded_range_test
-*comment A deterministic six-band probe: the player starts five steps from a durable melee enemy, then the test
-*comment driver Pushes once and must see the live Long Range -> Far projection before the fight continues.
-*set combat_is_nonlethal false
-*set combat_range_mode "expanded6"
-*set combat_lib_1 "lacedon"
-*set combat_enemy_name_override "Far Lacedon"
-*set combat_enemy_epithet_override "the far lacedon"
-*set combat_enemy_hp_override 30
-*set combat_enemy_range 5
-*goto fight_library
-
-*label fight_dev_high_ground_test
-*comment Dev-hub fixture for the generic elevation rule. The player begins on lane coordinate 3's high-ground
-*comment slot and the archer begins one step away at 4. Player ranged weapon/spell attacks show +2 (High Ground);
-*comment the archer's ranged attacks show -2 (Target on High Ground) until either side changes position.
-*set combat_is_nonlethal false
-*set combat_terrain1_type "high_ground"
-*set combat_terrain1_position 3
-*set combat_lib_1 "archer"
-*set combat_enemy_name_override "Lowland Archer"
-*set combat_enemy_epithet_override "the lowland archer"
-*set combat_enemy_range 1
-*goto fight_library
-
-*label fight_dev_cover_test
-*comment Dev-hub fixture for defender-side Cover. Both combatants start one step apart on their own Cover slots,
-*comment so the player's ranged attack must beat the archer's AC +2 and the archer's reply must beat the player's
-*comment AC +2. Moving either combatant off its coordinate immediately removes only that defender's bonus.
-*set combat_is_nonlethal false
-*set combat_terrain1_type "cover"
-*set combat_terrain1_position 3
-*set combat_terrain2_type "cover"
-*set combat_terrain2_position 4
-*set combat_lib_1 "archer"
-*set combat_enemy_name_override "Covered Archer"
-*set combat_enemy_epithet_override "the covered archer"
-*set combat_enemy_range 1
-*goto fight_library
-
-*label fight_dev_difficult_terrain_test
-*comment Dev-hub fixture for the compact half-speed rule. The player begins beside Difficult Terrain and the
-*comment swordsman begins beyond it at Long Range. A player Dash can reach the difficult coordinate but cannot
-*comment supply a second move; the swordsman likewise closes only one tier when its Dash path touches the terrain.
-*set combat_is_nonlethal false
-*set combat_terrain1_type "difficult_terrain"
-*set combat_terrain1_position 4
-*set combat_lib_1 "swordsman"
-*set combat_enemy_name_override "Mired Swordsman"
-*set combat_enemy_epithet_override "the mired swordsman"
-*set combat_enemy_range 3
-*goto fight_library
-
-*label fight_dev_terrain_ai_test
-*comment Dev-hub fixture for Phase 2 terrain intent. The enemy archer starts with adjacent Cover behind it; Kess
-*comment starts with adjacent High Ground behind her. On their first eligible turns they should each step onto the
-*comment preferred terrain and still take their ordinary ranged attack, proving this is live turn behavior rather
-*comment than a score-only policy.
-*set combat_is_nonlethal false
-*set combat_terrain1_type "cover"
-*set combat_terrain1_position 6
-*set combat_terrain2_type "high_ground"
-*set combat_terrain2_position 3
-*set combat_lib_1 "archer"
-*set combat_enemy_name_override "Terrain Archer"
-*set combat_enemy_epithet_override "the terrain archer"
-*comment Keep the fixture's target alive through the automated player's opening attack so both terrain-aware turns
-*comment are always observed; this is a test-only durability override, not a balance change to real archers.
-*set combat_enemy_hp_override 30
-*set combat_enemy_range 2
-*set combat_ally_lib_1 "archer"
-*set combat_ally1_name_override "Kess"
-*set combat_ally1_epithet_override "Kess"
-*set combat_ally1_range 1
-*goto fight_library
-
-*label fight_dev_random_terrain_test
-*comment Dev-hub fixture for generated layouts. The archer opens at Mid-Range, leaving the central lane eligible;
-*comment random_standard must add one or two safe, distinct terrain slots before either side takes a turn.
-*set combat_is_nonlethal false
-*set combat_terrain_layout "random_standard"
-*set combat_lib_1 "archer"
-*set combat_enemy_name_override "Layout Archer"
-*set combat_enemy_epithet_override "the layout archer"
-*set combat_enemy_range 2
-*goto fight_library
-
-*label fight_dev_chokepoint_test
-*comment Dev-hub fixture for the compact single-file rule: Rook begins in the Test Stair's opening while the
-*comment player stands immediately behind. Push Forward must be absent; Trade Places moves the player into the
-*comment opening, Call Rook Back yields it, and the existing Shove is the way to force the enemy out once engaged.
-*set combat_is_nonlethal false
-*set combat_terrain1_type "chokepoint"
-*set combat_terrain1_position 4
-*set combat_terrain1_capacity 1
-*set combat_terrain1_blocks_los true
-*set combat_lib_1 "swordsman"
-*set combat_enemy_name_override "Stair Guard"
-*set combat_enemy_epithet_override "the stair guard"
-*set combat_enemy_range 1
-*set combat_ally_lib_1 "guard"
-*set combat_ally1_name_override "Rook"
-*set combat_ally1_epithet_override "Rook"
-*set combat_ally1_range 0
-*goto fight_library
-
-*label fight_silt_lurker
-*comment Used by alderford.txt's Maura cellar-nuisance quest: one lacedon.
-*set combat_is_nonlethal false
-*set combat_lib_1 "lacedon"
-*set combat_enemy_name_override "Silt-Lurker Lacedon"
-*goto fight_library
-
-*label fight_rennick_guards
-*comment Used by alderford.txt's curing-shed standoff (defending Talia from Rennick), when a physical or
-*comment intimidation approach fails and his two dock-guards close in. Hired muscle looking to rough someone up and
-*comment drag them to the toll-post, not to murder anyone, so the fight is non-lethal whatever the player carries.
-*comment Two guards renamed Left and Right for the banners.
-*set combat_is_nonlethal true
-*set combat_lib_1 "guard"
-*set combat_enemy_name_override "Rennick's Dock-Guard (Left)"
-*set combat_enemy_epithet_override "the left guard"
-*set combat_lib_2 "guard"
-*set combat_enemy2_name_override "Rennick's Dock-Guard (Right)"
-*set combat_enemy2_epithet_override "the right guard"
-*goto fight_library
-
-*label fight_granary_rats
-*label fight_archive_rats
-*comment Used by alderford.txt's Upper Weir Granary bounty quest ("Vermin in the Granary Undercroft"): three mire-rats,
-*comment the weakest multi-enemy encounter in the game and the exerciser of the full 3-slot engine.
-*set combat_is_nonlethal false
-*set combat_lib_1 "mire_rat"
-*set combat_enemy_name_override "Black Mire-Rat (Lead)"
-*set combat_enemy_epithet_override "the lead mire-rat"
-*set combat_lib_2 "mire_rat"
-*set combat_enemy2_name_override "Black Mire-Rat (Flank)"
-*set combat_enemy2_epithet_override "the flanking mire-rat"
-*set combat_lib_3 "mire_rat"
-*set combat_enemy3_name_override "Black Mire-Rat (Rear)"
-*set combat_enemy3_epithet_override "the third mire-rat"
-*comment Formation: the lead and flank rats begin at the ordinary Close tier; the rear rat starts at Mid-Range.
-*comment Advancing once engages the front pair while leaving the rear rat Close, so the three-slot tutorial now
-*comment demonstrates a staggered line without changing any rat stats or AI.
-*set combat_enemy3_range 2
-*goto fight_library
-
-*label fight_dredge_ambush
-*comment Night ambush in Dredge-End: one bruiser (weapon picked at random so repeat ambushes do not all read as the
-*comment same mace swing) plus a weak slinger. Balance-simmed at level 1 against the ten stock builds: ~64% overall win
-*comment rate, on par with the Silt-Lurker -- casters are the ones at risk, which is why the calling scene offers a
-*comment toll / slip-away route instead of forcing this fight. Lethal fight, reports combat_outcome like any other;
-*comment the CALLER handles "rescued" (robbed, 1 HP) and "player_died" per the fight_player_died contract.
-*set combat_is_nonlethal false
-*comment Shares combat_roll_initiative's own whole-fight lock (combat_init_locked/locked_combat_init_page_id,
-*comment this file, 2026-09-30) -- this roll happens before *goto fight_library even reaches fight_setup, but on
-*comment the same first page as everything fight_setup itself locks with that flag, so the same guard covers it.
-*comment Unlocked, a same-page refresh picked a DIFFERENT bruiser weapon type entirely (not just a different roll
-*comment of the SAME type's ability scores, which apply_ability_score_range's own lock already covers) -- each
-*comment type carries its own atk_bonus/dmg_bonus, so this alone reproduced as a drifting combat_enemy_atk_bonus/
-*comment dmg_bonus even after that fix.
-*if (not(combat_init_locked)) or (not(locked_combat_init_page_id = page_id))
-  *temp da_pick 0
-  *rand da_pick 1 4
-  *if (da_pick = 1)
-    *set combat_lib_1 "maceman"
-  *if (da_pick = 2)
-    *set combat_lib_1 "knifeman"
-  *if (da_pick = 3)
-    *set combat_lib_1 "hookman"
-  *if (da_pick = 4)
-    *set combat_lib_1 "axeman"
-  *comment Remembered for the caller: the slots shift as foes fall, so the bruiser cannot be read back afterwards.
-  *comment MUST be captured here, inside the lock, not as a later unconditional line -- combat_lib_1 itself is a
-  *comment transient, CONSUMED value (fight_library/apply_enemy_type clear it once read), so a locked replay that
-  *comment skips the roll above would otherwise copy whatever combat_lib_1 had already been reset to by the END of
-  *comment the original run (empty), not the type it actually rolled (found live: dredge_ambush_bruiser came back
-  *comment "" on refresh instead of the real pick).
-  *set dredge_ambush_bruiser combat_lib_1
-*set combat_lib_2 "slinger"
-*comment Formation: the bruiser keeps the encounter's normal front-line tier (Close normally, Engaged when the
-*comment caller marks a true ambush) while the slinger hangs back at Mid-Range. Advancing one tier closes on both;
-*comment reaching the backliner itself still takes a deliberate Dash or another round.
-*set combat_enemy2_range 2
-*goto fight_library
-
-*label fight_wreckers
-*comment The Muffled Bell (port_valen.txt, bell_b3): two wreckers come up the pier ladder, an axeman and a slinger.
-*comment Same weight as the Dredge-End ambush (about 64% overall win at level 1); the caller only starts it after a
-*comment failed Beat 3 roll and sets combat_enemy_advantage / disadvantage for that failure first. Lethal by design:
-*comment they came up to kill the bell-ringer, and survivors would talk to the Watch. Reports combat_outcome like any
-*comment other; the CALLER handles "rescued" (the Watch arrives, hp floored at 1) and "player_died" per the
-*comment fight_player_died contract.
-*set combat_is_nonlethal false
-*set combat_lib_1 "axeman"
-*set combat_lib_2 "slinger"
-*comment Formation: front-line axeman at Close, slinger at Mid-Range; see fight_dredge_ambush.
-*set combat_enemy2_range 2
-*goto fight_library
-
-*label fight_shroud_thieves
-*comment The Stolen Shroud (port_valen_dredge_end.txt, shroud_b3): the scarred thief and his accomplice, a knifeman and a
-*comment slinger. Only started after a failed Beat 3 roll, with combat_enemy_advantage / disadvantage already set for that
-*comment failure. Same weight as the ambush (about 64% overall win at level 1). NON-LETHAL: victory leaves both beaten
-*comment senseless, using the default non-lethal finishing blows. Reports combat_outcome like any other; the CALLER handles
-*comment "rescued" (the thieves take the purse and run) and "player_died".
-*set combat_is_nonlethal true
-*set combat_lib_1 "knifeman"
-*set combat_lib_2 "slinger"
-*comment Formation: front-line knifeman at Close, slinger at Mid-Range; see fight_dredge_ambush.
-*set combat_enemy2_range 2
-*goto fight_library
-
-*label fight_night_list_thugs
-*comment Black Oath: The Night List (black_oath_night_list.txt, night_list_fight). The two who step out of the
-*comment lane to take the takings -- a knifeman and a slinger, the same pairing as the Stolen Shroud's pair, so
-*comment it inherits that fight's balance-simmed ~64% level-1 win rate. Only ever started after a failed
-*comment approach roll, and the caller sets combat_enemy_advantage first, so the real number is worse than that.
-*comment NON-LETHAL. The errand's worst case is a stolen purse and a line crossed with Hask's people, not a
-*comment corpse on a courier run, and these are street thugs in a scene about carrying a bag -- the same reason
-*comment fight_shroud_thieves is non-lethal. Reports combat_outcome like any other; the CALLER handles "rescued"
-*comment and "fled" (the existing robbery prose) and "player_died" per the fight_player_died contract.
-*set combat_is_nonlethal true
-*set combat_lib_1 "knifeman"
-*set combat_lib_2 "slinger"
-*comment Formation: front-line knifeman at Close, slinger at Mid-Range; see fight_dredge_ambush.
-*set combat_enemy2_range 2
-*goto fight_library
-
-*label fight_orren_guards
-*comment Black Oath: The Short Purse (black_oath_short_purse.txt, orren_confront_brawl). Confronting Orren at his toll-post when
-*comment the player forces past his two hired dock-guards. NON-LETHAL: hired dock bouncers armed with maces
-*comment looking to rough someone up, not to commit murder on the boundary ramp. Reports combat_outcome like any other.
-*set combat_is_nonlethal true
-*set combat_lib_1 "guard"
-*set combat_enemy_name_override "Orren's Toll-Guard (Left)"
-*set combat_enemy_epithet_override "the left toll-guard"
-*set combat_lib_2 "guard"
-*set combat_enemy2_name_override "Orren's Toll-Guard (Right)"
-*set combat_enemy2_epithet_override "the right toll-guard"
-*goto fight_library
+... [truncated for diff preview]
