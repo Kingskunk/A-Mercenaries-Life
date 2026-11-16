@@ -115,9 +115,9 @@ Fire Bolt, Ray of Frost, Eldritch Blast, Chill Touch, Vicious Mockery, Poison Sp
 
 Cure Wounds and Healing Word heal through `resolve_spell_heal`, which rolls from the data, floors at 1 and applies to the caster or an ally. False Life and Armor of Agathys read their temporary hit points through `roll_spell_temp_hp`, and the generator now loads the temp-HP fields (`spell_fact_temp_hp_*`, `spell_fact_upcast_temp_hp`). Armor of Agathys's 5 cold retaliation comes from its `damage_flat`. All of `roll_spell_damage`, the heals and the temp-HP roll share one dice loop, `roll_spell_dice`. Not done: Cure Wounds has no upcast in the data, so it still heals the same at every slot level.
 
-### 3.4 Weapon cantrips that scale with level
+### 3.4 Weapon cantrips that scale with level (DONE 2026-11-16)
 
-Booming Blade, True Strike. The data has `cantrip_scale` (levels 5, 11, 17) and `base_move_dice`; they are validated but not loaded. Only worth doing when characters can reach level 5.
+Booming Blade and True Strike read their dice from `cantrip_scale` and `base_move_dice`. `spell_facts_load` works out the counts for the caster's `character_level` (`spell_fact_hit_*`, `spell_fact_move_*`, `spell_fact_extra_*`), and the hit riders and `fight_booming_trigger` roll them through `roll_spell_dice`. No level number is typed in the scene code any more. A new scaling cantrip is a data entry; a tier that changes the die size is refused by the generator.
 
 ### 3.5 Spells that stay hand-written
 

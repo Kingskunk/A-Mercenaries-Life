@@ -819,30 +819,11 @@
   *temp fbt_on {(fbt_name)}
   *if (fbt_on)
     *set {(fbt_name)} false
-    *comment The move-damage dice by character level (5e): 1d8, 2d8 from level 5, 3d8 from level 11, 4d8 from level 17.
-    *temp fbt_dice 1
-    *if (character_level >= 5)
-      *set fbt_dice 2
-    *if (character_level >= 11)
-      *set fbt_dice 3
-    *if (character_level >= 17)
-      *set fbt_dice 4
-    *temp fbt_roll 1
-    *rand fbt_roll 1 8
-    *temp fbt_r2 1
-    *rand fbt_r2 1 8
-    *temp fbt_r3 1
-    *rand fbt_r3 1 8
-    *temp fbt_r4 1
-    *rand fbt_r4 1 8
+    *comment The move-damage dice by character level come from the spell data (cantrip_scale and base_move_dice in tools/spell_book.json, worked out by spell_facts_load): 1d8, 2d8 from level 5, 3d8 from 11, 4d8 from 17.
+    *gosub_scene combat_spells spell_facts_load "booming_blade"
+    *gosub_scene combat_spells roll_spell_dice spell_fact_move_count spell_fact_move_sides
     *set combat_player_dmg_type "thunder"
-    *set combat_player_dmg_dealt fbt_roll
-    *if (fbt_dice >= 2)
-      *set combat_player_dmg_dealt + fbt_r2
-    *if (fbt_dice >= 3)
-      *set combat_player_dmg_dealt + fbt_r3
-    *if (fbt_dice >= 4)
-      *set combat_player_dmg_dealt + fbt_r4
+    *set combat_player_dmg_dealt spell_roll_total
     *gosub_scene combat_dice apply_outgoing_damage_resist_vuln
     *set combat_enemy_hp - combat_player_dmg_dealt
     *if (combat_enemy_hp < 0)

@@ -226,7 +226,15 @@ function collectCombatSpell(id, sp, expectedLevel) {
   else if (c.heal_dice !== undefined) baseDice = parseDice(c.heal_dice, "spell '" + id + "' combat.heal_dice");
   var tempHpDice = { count: 0, sides: 0 };
   if (c.temp_hp_dice !== undefined) tempHpDice = parseDice(c.temp_hp_dice, "spell '" + id + "' combat.temp_hp_dice");
-  if (c.base_move_dice !== undefined) parseDice(c.base_move_dice, "spell '" + id + "' combat.base_move_dice");
+  // A cantrip that grows with character level: the dice it rolls at level 1 and a list of tiers, each a level and the dice that replace them from then on.
+  // kinds: hit = a rider on the weapon hit, move = damage when the sheathed target moves, extra = extra dice added to the hit.
+  var scale = { sides: { hit: 0, move: 0, extra: 0 }, base: { hit: 0, move: 0, extra: 0 }, tiers: [] };
+  var SCALE_KEYS = { hit: "on_hit_dice", move: "on_move_dice", extra: "extra_dice" };
+  if (c.base_move_dice !== undefined) {
+    var bm = parseDice(c.base_move_dice, "spell '" + id + "' combat.base_move_dice");
+    scale.base.move = bm.count;
+    scale.sides.move = bm.sides;
+  }
   if (c.cantrip_scale !== undefined) {
     if (typeof c.cantrip_scale !== "object" || Array.isArray(c.cantrip_scale)) {
       throw new Error("spell '" + id + "' combat.cantrip_scale must be an object");
@@ -234,10 +242,21 @@ function collectCombatSpell(id, sp, expectedLevel) {
     Object.keys(c.cantrip_scale).forEach(function (lvl) {
       var tier = c.cantrip_scale[lvl];
       if (!tier || typeof tier !== "object") throw new Error("spell '" + id + "' cantrip_scale[" + lvl + "] must be an object");
-      ["on_hit_dice", "on_move_dice", "extra_dice"].forEach(function (dk) {
-        if (tier[dk] !== undefined) parseDice(tier[dk], "spell '" + id + "' cantrip_scale." + lvl + "." + dk);
+      if (!/^[1-9][0-9]*$/.test(lvl)) throw new Error("spell '" + id + "' cantrip_scale level '" + lvl + "' must be a whole number");
+      var entry = { level: Number(lvl), count: {} };
+      Object.keys(SCALE_KEYS).forEach(function (kind) {
+        var dk = SCALE_KEYS[kind];
+        if (tier[dk] === undefined) return;
+        var d = parseDice(tier[dk], "spell '" + id + "' cantrip_scale." + lvl + "." + dk);
+        if (scale.sides[kind] > 0 && scale.sides[kind] !== d.sides) {
+          throw new Error("spell '" + id + "' cantrip_scale." + dk + " changes die size between tiers");
+        }
+        scale.sides[kind] = d.sides;
+        entry.count[kind] = d.count;
       });
+      scale.tiers.push(entry);
     });
+    scale.tiers.sort(function (a, b) { return a.level - b.level; });
   }
   var flat = 0;
   if (c.damage_flat !== undefined) {
@@ -293,7 +312,8 @@ function collectCombatSpell(id, sp, expectedLevel) {
     temp_hp_count: tempHpDice.count,
     temp_hp_sides: tempHpDice.sides,
     temp_hp_flat: c.temp_hp_flat || 0,
-    upcast_temp_hp: upcastTempHp
+    upcast_temp_hp: upcastTempHp,
+    scale: scale
   });
 }
 Object.keys(cantrips).forEach(function (id) { collectCombatSpell(id, cantrips[id], 0); });
@@ -321,7 +341,13 @@ function genFactsLookup() {
     "*set spell_fact_temp_hp_count 0",
     "*set spell_fact_temp_hp_sides 0",
     "*set spell_fact_temp_hp_flat 0",
-    "*set spell_fact_upcast_temp_hp 0"
+    "*set spell_fact_upcast_temp_hp 0",
+    "*set spell_fact_hit_count 0",
+    "*set spell_fact_hit_sides 0",
+    "*set spell_fact_move_count 0",
+    "*set spell_fact_move_sides 0",
+    "*set spell_fact_extra_count 0",
+    "*set spell_fact_extra_sides 0"
   ];
   combatSpells.forEach(function (s) {
     L.push("*if (sfl_id = " + q(s.id) + ")");
@@ -343,6 +369,17 @@ function genFactsLookup() {
     if (s.temp_hp_sides > 0) L.push("  *set spell_fact_temp_hp_sides " + s.temp_hp_sides);
     if (s.temp_hp_flat > 0) L.push("  *set spell_fact_temp_hp_flat " + s.temp_hp_flat);
     if (s.upcast_temp_hp > 0) L.push("  *set spell_fact_upcast_temp_hp " + s.upcast_temp_hp);
+    // Cantrip scaling: the counts that hold at the caster's character level, worked out here from the tiers.
+    ["hit", "move", "extra"].forEach(function (kind) {
+      if (s.scale.sides[kind] > 0) L.push("  *set spell_fact_" + kind + "_sides " + s.scale.sides[kind]);
+      if (s.scale.base[kind] > 0) L.push("  *set spell_fact_" + kind + "_count " + s.scale.base[kind]);
+    });
+    s.scale.tiers.forEach(function (t) {
+      var kinds = Object.keys(t.count);
+      if (!kinds.length) return;
+      L.push("  *if (character_level >= " + t.level + ")");
+      kinds.forEach(function (kind) { L.push("    *set spell_fact_" + kind + "_count " + t.count[kind]); });
+    });
   });
   L.push("*return");
   return L;
