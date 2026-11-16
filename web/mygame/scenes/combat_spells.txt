@@ -514,16 +514,27 @@
 *comment time this label runs, same as every other spell (a page replay may show a different random variant) --
 *comment only the damage numbers below are protected by the replay lock, via the per-slot combat_mm_banner_N
 *comment durable strings (startup.txt), same shape combat_player_dmg_roll_banner used before the split.
+*comment How many darts a cast fires: the spell's base count plus one for every slot level above the first, both read
+*comment from the spell data (spell_facts_load), so a new slot level needs no typed number. The arming options in
+*comment combat.txt call this to set combat_mm_darts_max, and the option text names the same number.
+*label mm_darts_for_level
+*params mmdl_level
+*gosub spell_facts_load "magic_missile"
+*set combat_mm_darts_max (spell_fact_projectiles + (spell_fact_upcast_projectiles * (mmdl_level - 1)))
+*return
+
 *label resolve_magic_missile
-*comment How many DISTINCT enemies have at least one dart -- decides which flavor line prints, not the total
-*comment dart count (1-3 either way).
+*comment How many DISTINCT enemies have at least one dart -- decides which flavor line prints -- and how many darts
+*comment in all, which the flavor and finishing-blow prose name (combat_mm_darts_total).
 *temp mm_targets 0
 *temp mm_ci 1
+*set combat_mm_darts_total 0
 *label resolve_magic_missile_count_loop
 *if (mm_ci <= combat_enemy_slot_cap)
   *temp mm_cn {(("combat_mm_darts_" & mm_ci))}
   *if (mm_cn > 0)
     *set mm_targets + 1
+    *set combat_mm_darts_total + mm_cn
   *set mm_ci + 1
   *goto resolve_magic_missile_count_loop
 *if (mm_targets <= 1)

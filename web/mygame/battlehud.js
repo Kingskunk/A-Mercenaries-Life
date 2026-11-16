@@ -108,6 +108,15 @@
   var HUB_RANK = {};
   HUB_ORDER.forEach(function (id, idx) { HUB_RANK[id] = idx; });
 
+  // Magic Missile's darts at a slot level, from the spell data (spell-data.js SPELL_FACTS): the base count plus
+  // one per level above the first. The two blurbs below use it so a new level never needs a typed number.
+  var NUM_WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
+  function dartWord(level) {
+    var f = window.SPELL_FACTS && window.SPELL_FACTS.magic_missile && window.SPELL_FACTS.magic_missile.combat;
+    var n = f ? num(f.projectiles) + num(f.upcast && f.upcast.projectiles) * (level - 1) : 0;
+    return n > 0 && n < NUM_WORDS.length ? NUM_WORDS[n] : String(n);
+  }
+
   // Spells seeded from turn 1 when their combat_why_* scene temp is present and not "unowned".
   var SEED_SPELLS = [
     {
@@ -151,8 +160,8 @@
     {
       id: "magic_missile", group: "action", name: "Magic Missile", blurb: "Loose darts of force at targets you choose.",
       variants: [
-        { id: "magic_missile_1st_level", label: "1st level", whyKey: "combat_why_magic_missile", blurb: "Loose three darts of force at targets you choose in the sidebar." },
-        { id: "magic_missile_2nd_level", label: "2nd level", whyKey: "combat_why_magic_missile_2", blurb: "Loose four darts of force, spending a 2nd-level slot." }
+        { id: "magic_missile_1st_level", label: "1st level", whyKey: "combat_why_magic_missile", blurb: "Loose " + dartWord(1) + " darts of force at targets you choose in the sidebar." },
+        { id: "magic_missile_2nd_level", label: "2nd level", whyKey: "combat_why_magic_missile_2", blurb: "Loose " + dartWord(2) + " darts of force, spending a 2nd-level slot." }
       ]
     },
     { id: "hex", group: "bonus", name: "Hex", whyKey: "combat_why_hex", blurb: "Lay a baleful eldritch curse upon a foe." },

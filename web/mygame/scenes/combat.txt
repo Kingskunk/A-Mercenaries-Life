@@ -3882,7 +3882,18 @@
 *gosub combat_hadar_check
 *temp combat_why_magic_missile "unowned"
 *temp combat_why_magic_missile_2 "unowned"
+*comment The darts each Magic Missile option fires, as words for the option text. Read from the spell data
+*comment (mm_darts_for_level), so a level that adds a dart never needs a typed number here.
+*temp mm_hub_word_1 ""
+*temp mm_hub_word_2 ""
 *if (((((held_magic_missile) or (race_cantrip = "magic_missile")) or (race_cantrip_2 = "magic_missile")) and ((not(class_prepares)) or (prepared_magic_missile))) or (known_magic_missile))
+  *gosub_scene combat_spells mm_darts_for_level 1
+  *gosub_scene combat_prose mm_number_word combat_mm_darts_max
+  *set mm_hub_word_1 combat_mm_count_word
+  *gosub_scene combat_spells mm_darts_for_level 2
+  *gosub_scene combat_prose mm_number_word combat_mm_darts_max
+  *set mm_hub_word_2 combat_mm_count_word
+  *set combat_mm_darts_max 0
   *if ((combat_has_pool_1) or (pact_slots_max = 0))
     *gosub combat_eval_spell_why "action" cw_slot_1 true "" true
     *set combat_why_magic_missile combat_why_res
@@ -4910,13 +4921,13 @@
       *goto fight_check_enemy_hp
 
   *if (combat_why_magic_missile = "")
-    # [b][ACTION][/b] [b][Magic Missile: 1st level][/b] Loose three darts of force at targets you choose in the sidebar.
+    # [b][ACTION][/b] [b][Magic Missile: 1st level][/b] Loose ${mm_hub_word_1} darts of force at targets you choose in the sidebar.
       *comment Arms targeting mode instead of casting immediately (2026-09-28) -- RAW lets the three darts be
       *comment split across up to three targets, not forced onto whichever single enemy fight_pick_target's
       *comment kill-priority happens to favor. See fight_target_magic_missile's own header for the full shape;
       *comment this option's only job is to enter it with a clean slate.
       *set combat_mm_targeting_active true
-      *set combat_mm_darts_max 3
+      *gosub_scene combat_spells mm_darts_for_level 1
       *set combat_cast_at_level 1
       *set combat_mm_darts_1 0
       *set combat_mm_darts_2 0
@@ -4927,7 +4938,7 @@
       *goto fight_target_magic_missile
 
   *if (combat_why_magic_missile_2 = "")
-    # [b][ACTION][/b] [b][Magic Missile: 2nd level][/b] Loose four darts of force, spending a 2nd-level slot.
+    # [b][ACTION][/b] [b][Magic Missile: 2nd level][/b] Loose ${mm_hub_word_2} darts of force, spending a 2nd-level slot.
       *comment UPCASTING PILOT (2026-11-08): Magic Missile's whole upcast, RAW, is "+1 dart per slot level above
       *comment 1st" -- no change to the per-dart damage math (still 1d4+1 each, resolve_magic_missile,
       *comment combat_spells.txt), so proving the slot-pool model end to end needed only a second entry point that
@@ -4936,7 +4947,7 @@
       *comment that will replace this is explicitly a later piece (see the model-scoping discussion) -- this just
       *comment needs to be castable and correct in the meantime, not the final UI.
       *set combat_mm_targeting_active true
-      *set combat_mm_darts_max 4
+      *gosub_scene combat_spells mm_darts_for_level 2
       *set combat_cast_at_level 2
       *set combat_mm_darts_1 0
       *set combat_mm_darts_2 0
@@ -5976,7 +5987,7 @@ ${use_text}
 *comment Same targeting mode as the spell: fight_target_magic_missile spends the scroll when the darts are loosed, never when the targeting is cancelled.
 *label fight_read_magic_missile
 *set combat_mm_targeting_active true
-*set combat_mm_darts_max 3
+*gosub_scene combat_spells mm_darts_for_level 1
 *comment A scroll is always written at its base level -- RAW, you can't upcast from a scroll unless it says so, and none here do.
 *set combat_cast_at_level 1
 *set combat_mm_darts_1 0

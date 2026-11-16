@@ -1028,26 +1028,61 @@
   *set fsm "Your jibe finds only a hard, indifferent calm, and slides off."
 *return
 
+*label mm_number_word
+*params mnw_n
+*comment Sets combat_mm_count_word to the number as a word, one to nine, and to the digits above that. Magic Missile's
+*comment prose and option text use it so the count follows the darts fired (3 at 1st level, one more for each level above).
+*if (mnw_n = 1)
+  *set combat_mm_count_word "one"
+*elseif (mnw_n = 2)
+  *set combat_mm_count_word "two"
+*elseif (mnw_n = 3)
+  *set combat_mm_count_word "three"
+*elseif (mnw_n = 4)
+  *set combat_mm_count_word "four"
+*elseif (mnw_n = 5)
+  *set combat_mm_count_word "five"
+*elseif (mnw_n = 6)
+  *set combat_mm_count_word "six"
+*elseif (mnw_n = 7)
+  *set combat_mm_count_word "seven"
+*elseif (mnw_n = 8)
+  *set combat_mm_count_word "eight"
+*elseif (mnw_n = 9)
+  *set combat_mm_count_word "nine"
+*else
+  *set combat_mm_count_word "${mnw_n}"
+*return
+
 *label flavor_spell_magic_missile
-*comment Magic Missile (never misses).
+*comment Magic Missile (never misses). Names the darts fired, read from combat_mm_darts_total, so a 2nd-level cast
+*comment says four and a 3rd-level cast will say five with no change here. A lone dart gets its own two lines.
+*gosub mm_number_word combat_mm_darts_total
 *temp fsp_v 1
+*if (combat_mm_darts_total = 1)
+  *rand fsp_v 1 2
+  *if (fsp_v = 1)
+    *set fsh "You speak a crisp syllable and snap your fingers forward. A single glowing, pale-blue dart of crackling arcane force bursts from your fingertips, curving unerringly through the air to slam into ${combat_enemy_epithet}."
+  *if (fsp_v = 2)
+    *set fsh "One dart of pale light leaves your fingers in a hiss, bends around the last attempt to dodge it and strikes ${combat_enemy_epithet} with a dull, solid thump."
+  *return
 *rand fsp_v 1 8
 *if (fsp_v = 1)
-  *set fsh "You speak three crisp syllables and snap your fingers forward. Three glowing, pale-blue darts of crackling arcane force burst from your fingertips, curving unerringly through the air to slam into ${combat_enemy_epithet}."
+  *set fsh "You speak three crisp syllables and snap your fingers forward. $!{combat_mm_count_word} glowing, pale-blue darts of crackling arcane force burst from your fingertips, curving unerringly through the air to slam into ${combat_enemy_epithet}."
 *if (fsp_v = 2)
-  *set fsh "Three darts of pale light leave your fingers in a hissing fan, and each curves in to strike ${combat_enemy_epithet} from a different angle, the impacts landing like three thrown stones."
+  *set fsh "$!{combat_mm_count_word} darts of pale light leave your fingers in a hissing fan, and each curves in to strike ${combat_enemy_epithet} from a different angle, the impacts landing like thrown stones."
 *if (fsp_v = 3)
-  *set fsh "You point, and the missiles peel away from your hand in a shimmering spiral, and the missiles strike ${combat_enemy_epithet} in the chest, the shoulder and the flank, one after another."
+  *set fsh "You point, and the missiles peel away from your hand in a shimmering spiral, and the missiles strike ${combat_enemy_epithet} one after another, wherever the last one left a gap."
 *if (fsp_v = 4)
-  *set fsh "Blue-white darts streak from your hand and bend around every attempt to dodge, and all three sting into ${combat_enemy_epithet} in a rapid, thudding rhythm."
+  *set fsh "Blue-white darts streak from your hand and bend around every attempt to dodge, and every one of the ${combat_mm_count_word} stings into ${combat_enemy_epithet} in a rapid, thudding rhythm."
 *if (fsp_v = 5)
-  *set fsh "You murmur the word, and three needles of force hum across the distance and stitch a line of hammer-blows up ${combat_enemy_epithet}'s side."
+  *set fsh "You murmur the word, and ${combat_mm_count_word} needles of force hum across the distance and stitch a line of hammer-blows up ${combat_enemy_epithet}'s side."
 *if (fsp_v = 6)
   *set fsh "The darts flicker from your fingertips and hit ${combat_enemy_epithet} in a tight cluster over the ribs, each with a dull thump, and they fold around the impact."
 *if (fsp_v = 7)
-  *set fsh "Three bright motes chase ${combat_enemy_epithet} through a twisting turn and strike as one, and the crack of the impact rocks ${combat_enemy_epithet} back."
+  *set fsh "$!{combat_mm_count_word} bright motes chase ${combat_enemy_epithet} through a twisting turn and strike as one, and the crack of the impact rocks ${combat_enemy_epithet} back."
 *if (fsp_v = 8)
-  *set fsh "A spray of glowing force leaves your hand, and the darts slam home one, two, three, and ${combat_enemy_epithet} staggers under the succession of blows."
+  *set fsh "A spray of glowing force leaves your hand, and the darts slam home one after another, and ${combat_enemy_epithet} staggers under the succession of blows."
 *return
 
 *label flavor_spell_magic_missile_split
@@ -1056,12 +1091,13 @@
 *comment ${combat_enemy_epithet} taking every dart. Three variants, not eight, and none name an epithet: this
 *comment is the "how the spell was cast" line, not a per-target hit line -- which enemy took how much is the
 *comment per-target banner that follows in resolve_magic_missile (combat_spells.txt), not this sentence's job.
+*gosub mm_number_word combat_mm_darts_total
 *temp fspms_v 1
 *rand fspms_v 1 3
 *if (fspms_v = 1)
-  *set fsh "You speak the words and snap your fingers forward, and the three darts of force peel apart in flight, each one curving toward a different mark."
+  *set fsh "You speak the words and snap your fingers forward, and the ${combat_mm_count_word} darts of force peel apart in flight, each one curving toward a different mark."
 *if (fspms_v = 2)
-  *set fsh "Three motes of pale, crackling light burst from your hand and fan out at once, breaking toward more than one foe before any of them land."
+  *set fsh "$!{combat_mm_count_word} motes of pale, crackling light burst from your hand and fan out at once, breaking toward more than one foe before any of them land."
 *if (fspms_v = 3)
   *set fsh "You point, and the missiles scatter the instant they leave your hand, each one finding its own separate target."
 *return
@@ -1351,12 +1387,27 @@
 *return
 
 *label flavor_spell_end_magic_missile
-*comment Finishing blow of magic missile: five lethal lines, five for a foe beaten into surrender.
+*comment Finishing blow of magic missile: five lethal lines, five for a foe beaten into surrender. Names the darts
+*comment fired (combat_mm_darts_total); a lone dart gets two lines of its own.
+*gosub mm_number_word combat_mm_darts_total
 *temp fse_v 1
+*if (combat_mm_darts_total = 1)
+  *rand fse_v 1 2
+  *if (combat_is_nonlethal)
+    *if (fse_v = 1)
+      *set fdh "The dart of force strikes ${combat_enemy_epithet}'s chest with a concussive thud, knocking ${combat_enemy_epithet} flat on the back, stunned and breathless."
+    *if (fse_v = 2)
+      *set fdh "The dart stings into ${combat_enemy_epithet}'s weapon arm, and the weapon spins away as ${combat_enemy_epithet} sinks down, cradling the arm, beaten."
+  *else
+    *if (fse_v = 1)
+      *set fdh "The glowing force-dart strikes the one vital point, punching through and dropping ${combat_enemy_epithet} dead."
+    *if (fse_v = 2)
+      *set fdh "The dart of force hits in the space of a heartbeat, and ${combat_enemy_epithet} takes two steps, looks down, and falls."
+  *return
 *rand fse_v 1 5
 *if (combat_is_nonlethal)
   *if (fse_v = 1)
-    *set fdh "Three glowing darts of force strike ${combat_enemy_epithet}'s chest with concussive thuds, knocking ${combat_enemy_epithet} flat on the back, stunned and breathless."
+    *set fdh "$!{combat_mm_count_word} glowing darts of force strike ${combat_enemy_epithet}'s chest with concussive thuds, knocking ${combat_enemy_epithet} flat on the back, stunned and breathless."
   *if (fse_v = 2)
     *set fdh "The force missiles impact in rapid succession, bowling ${combat_enemy_epithet} backward and knocking ${combat_enemy_epithet} cold."
   *if (fse_v = 3)
@@ -1364,16 +1415,16 @@
   *if (fse_v = 4)
     *set fdh "The darts sting into ${combat_enemy_epithet}'s weapon arm and hand, and the weapon spins away as ${combat_enemy_epithet} sinks down, cradling the arm, beaten."
   *if (fse_v = 5)
-    *set fdh "You aim low, and the three darts take the legs out from under ${combat_enemy_epithet} in thumping strikes, and ${combat_enemy_epithet} sits down hard, dazed."
+    *set fdh "You aim low, and the ${combat_mm_count_word} darts take the legs out from under ${combat_enemy_epithet} in thumping strikes, and ${combat_enemy_epithet} sits down hard, dazed."
 *else
   *if (fse_v = 1)
-    *set fdh "All three glowing force-darts strike the same vital point in rapid succession, punching through and dropping ${combat_enemy_epithet} dead."
+    *set fdh "Every glowing force-dart strikes the same vital point in rapid succession, punching through and dropping ${combat_enemy_epithet} dead."
   *if (fse_v = 2)
     *set fdh "The arcane missiles curve unerringly through the air and slam home with dull thuds, snuffing out the life of ${combat_enemy_epithet} in an instant."
   *if (fse_v = 3)
     *set fdh "The force darts bore clean through ${combat_enemy_epithet}'s defenses, leaving smoking blue punctures as ${combat_enemy_epithet} collapses limp."
   *if (fse_v = 4)
-    *set fdh "Three darts of force hit in the space of a heartbeat, and ${combat_enemy_epithet} takes two steps, looks down, and falls."
+    *set fdh "$!{combat_mm_count_word} darts of force hit in the space of a heartbeat, and ${combat_enemy_epithet} takes two steps, looks down, and falls."
   *if (fse_v = 5)
     *set fdh "You hold the last syllable, and the darts stack into a single blow at the chest, and ${combat_enemy_epithet} drops as if cut from a rope."
 *return
