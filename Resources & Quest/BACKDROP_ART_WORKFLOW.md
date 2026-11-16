@@ -11,14 +11,14 @@ Nothing here is canon until the designer approves it.
 Sources studied: `Wallpaper/Oxworth_Salting_Yard_Day.jpg` and `_Night.jpg`, `Village_Green_Day.png`, `Fallowmere_Pond_Green_Day.png`.
 
 - **Look:** realistic and detailed, like a still from a gritty historical drama. It is a photo-real painting with no cartoon outlines and no fantasy glow.
-- **Setting:** a pre-industrial English-style countryside. Stone, timber and wattle, thatch or moss-grown tile, rutted dirt lanes, drystone and wicker fences.
-- **Wear:** everything is used. Mud ruts, puddles, moss on roofs, leaning posts, mismatched wood, scattered everyday objects (barrels, hides on frames, baskets, a cart, a well).
+- **Setting:** a pre-industrial English-style countryside. Stone, timber and wattle, thatch or moss-grown tile, packed-earth lanes, drystone and wicker fences.
+- **Wear:** everything is used: moss on roofs, leaning posts, mismatched wood, scattered everyday objects (barrels, hides on frames, baskets, a cart, a well). **The ground is dry and neutral.** No wet mud, no puddles, no standing water, and above all no cart-wheel or tyre-like ruts, double parallel tracks or tread marks. The game draws weather itself (a greyer, dimmer picture, with sound), and the ground's wetness comes from the scene prose, so a picture that shows recent rain or a wet season dates itself and contradicts every other weather. A lane is packed earth or gravel with scattered stones, a few faint footpath lines, tufts of grass at the edges, and worn patches, never a rutted road.
 - **Palette and light:** muted and natural. Soft overcast daylight is the default, with grey-white sky, olive and ochre greens, brown earth and grey stone. The Village Green and Fallowmere pictures have a little warm sun. Colours are never saturated.
 - **Camera:** a wide, slightly raised, three-quarter view at human eye height or a little above. It has depth: a foreground (fence, trough, path), a middle (the place itself) and far rolling land or hills. The lane or path leads the eye in.
 - **People:** none. No figures, no animals as the subject (a few geese in the distance are fine). Life is shown by smoke from chimneys, laundry, carts and tools.
 - **No text:** no signs with legible words, no logos, no watermark, no border.
 - **Format:** 16:9 landscape. Existing files are 1376x768 (jpg) or about 1672x941 (png). Make new ones at least 1672x941. PNG preferred.
-- **Day and night pair:** the same view. The night picture is the day picture with the light changed, so the two blend into each other as the clock moves. Night is a blue-grey moonlit scene with a few stars, a pale moon haze, wet ruts catching light, and warm lamplit windows.
+- **Day and night pair:** the same view. The night picture is the day picture with the light changed, so the two blend into each other as the clock moves. Night is a blue-grey moonlit scene with a few stars, a pale moon haze and warm lamplit windows. The ground stays dry.
 
 Interior places (an inn room, a hall) may be a **single** picture with no night partner. The page darkens it at night.
 
@@ -40,7 +40,7 @@ Name files `<Name>_Day.png` and `<Name>_Night.png` (or a single `<Name>.png`) in
 
 1. **Write the day prompt** from the template in section 5, filled in from the place's scene prose. Quote the prose details that must appear.
 2. **Generate the day picture** at 16:9. Make 2 to 4 candidates.
-3. **Check each candidate against the style list** in section 1 before showing anything. Reject any with people, text, bright saturated colour, fantasy glow, a cartoon look, or objects the prose contradicts.
+3. **Check each candidate against the style list** in section 1 before showing anything. Reject any with people, text, bright saturated colour, fantasy glow, a cartoon look, wet mud, puddles or any rut or tyre-like track, or objects the prose contradicts.
 4. **Show the designer the best one or two.** Do not continue until one is picked.
 5. **Make the night picture by editing the chosen day image**, not by generating a new scene. Give the tool the day image and the night edit prompt from section 5. Reject any night picture where the buildings, trees or the lane have moved.
 6. **Save** both to `Wallpaper/` with the names above. Ask before overwriting an existing file.
@@ -67,16 +67,16 @@ If the tool cannot take an input image for the night edit, use Path B for the ni
 ```
 A wide 16:9 cinematic landscape of [PLACE]. Realistic, detailed, gritty historical-drama still, photo-real painting, no cartoon outlines, no fantasy glow.
 Setting: a pre-industrial English-style countryside village. [KEY DETAILS FROM THE SCENE PROSE: buildings, materials, objects].
-Camera: slightly raised three-quarter view at eye level, wide angle, with a foreground ([FOREGROUND]), a middle ground ([THE PLACE ITSELF]) and far [LAND/HILLS] under [SKY]. A rutted dirt lane leads the eye into the scene.
+Camera: slightly raised three-quarter view at eye level, wide angle, with a foreground ([FOREGROUND]), a middle ground ([THE PLACE ITSELF]) and far [LAND/HILLS] under [SKY]. A dry earth lane leads the eye into the scene.
 Light and colour: soft natural daylight, muted palette of olive and ochre greens, brown earth, grey stone and weathered wood. Nothing saturated.
-Everything is worn and used: mud, moss, leaning posts, scattered everyday objects. Smoke from a chimney.
+Everything is worn and used: moss, leaning posts, scattered everyday objects. Smoke from a chimney. The ground is dry packed earth with a few scattered stones and tufts of grass: no mud, no puddles, no wheel ruts, no tyre or tread tracks, no parallel tracks.
 No people. No text, no readable signs, no logo, no watermark, no border.
 ```
 
 ### 5.2 Night picture (edit of the day picture)
 
 ```
-Use the attached image as the exact scene. Keep the camera, composition, buildings, trees, lane and every object in exactly the same place and shape. Change only the lighting to night: a deep blue-grey moonlit night with a few faint stars, a pale moon haze in the sky, dark hills, cool shadows, and wet ground catching small reflections of the sky. Windows and doorways glow with warm lamplight. No people, no text, no watermark.
+Use the attached image as the exact scene. Keep the camera, composition, buildings, trees, lane and every object in exactly the same place and shape. Change only the lighting to night: a deep blue-grey moonlit night with a few faint stars, a pale moon haze in the sky, dark hills, cool shadows. The ground stays dry, with no puddles or reflections. Windows and doorways glow with warm lamplight. No people, no text, no watermark.
 ```
 
 ### 5.3 One-line style anchor (to paste ahead of any prompt)
@@ -112,9 +112,9 @@ Place details come from `palmcote.txt` (place layer). The tile is `pc`, so it ge
 ```
 A wide 16:9 cinematic landscape of a small hillside olive-grove village. Realistic, detailed, gritty historical-drama still, photo-real painting, no cartoon outlines, no fantasy glow.
 Setting: a pre-industrial English-style countryside village on a steep south-facing slope. A single steep dirt lane climbs the hill between houses of pale stone with red clay tile roofs, stepping up one above another, each with a bench by the door and a wall of drying baskets. Low drystone terrace walls hold the hillside in terraces, every terrace planted with old olive trees with thick knotted trunks and grey-green leaves. Near the foot of the lane, a long building with a wide porch with a plain notice board beside its door. Just above it, a low inn with a green leafy branch hung over the door. Where the lane bends, a round stone well under a small tiled roof with a rope and wooden bucket. A flat yard of beaten earth with stacked wicker baskets, a row of wooden carts and a small stall with clay jars. At the very top of the hill, behind a high stone wall and a line of dark cypress-like trees, a large grey stone manor house with many windows, seen small and far away.
-Camera: slightly raised three-quarter view at eye level, wide angle, foreground of a rutted lane edge and a stone wall, middle ground of the lane and the village, far background of the manor above the terraces under a soft overcast sky. The lane leads the eye up the hill.
+Camera: slightly raised three-quarter view at eye level, wide angle, foreground of a dry lane edge and a stone wall, middle ground of the lane and the village, far background of the manor above the terraces under a soft overcast sky. The lane leads the eye up the hill.
 Light and colour: soft natural daylight with a little warm sun breaking through, muted palette of silver-green olive leaves, ochre earth, grey and cream stone and weathered wood. Nothing saturated.
-Everything is worn and used: dust and mud in the ruts, moss on the walls, leaning posts, scattered baskets. Thin smoke from a chimney.
+Everything is worn and used: moss on the walls, leaning posts, scattered baskets. Thin smoke from a chimney. The lane is dry packed earth and gravel with scattered stones, tufts of grass at its edges and a few faint footpath lines: no mud, no puddles, no wheel ruts, no tyre or tread tracks, no parallel tracks.
 No people. No text, no readable signs, no logo, no watermark, no border.
 ```
 
@@ -129,3 +129,4 @@ Attach `Palmcote_Day.png` and use the night edit prompt from 5.2. Add this line 
 - Palmcote reads muted and English-looking, like the other villages. The olive terraces and clay tile stay, but the colours do not.
 - The manor is in view on the hub picture, small and far away.
 - The designer approves every candidate before it is used.
+- **Rut and wet-ground ban (designer, 2026-11-16).** Existing backdrops show wet tyre-like ruts in nearly every village. New pictures must not, and the ones that do are a separate clean-up the designer has not asked for yet.
