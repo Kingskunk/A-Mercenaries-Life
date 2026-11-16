@@ -148,7 +148,7 @@
     port_valen_wreck_bell_pier: "harbor",
     grey_river_barge: "boat_travel",
     port_valen_weigh_house: "civic_indoor",
-    alderford: "village", whitefold: "village", redvein: "village", marlcross: "village", brinewick: "village", barleycross: "village", oxworth: "village", oxworth_market: "village", village: "village",
+    alderford: "village", whitefold: "village", redvein: "village", marlcross: "village", brinewick: "village", barleycross: "village", oxworth: "village", oxworth_market: "village", oxworth_salting_yard: "village", village: "village",
     village_green: "village",
     village_stable_yard: "village",
     town_market: "village",

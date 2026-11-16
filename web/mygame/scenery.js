@@ -82,6 +82,7 @@
     "hartwell/oxworth/oxworth_market": "oxworth_market",
     "hartwell/oxworth/yoke_and_horn": "oxworth_yoke_and_horn",
     "hartwell/oxworth/village_heads_hall": "generic_village_gathering_hall",
+    "hartwell/oxworth/salting_yard": "oxworth_salting_yard",
     // Only a fallback: the dg_in_run RULES entry above (each dungeon's own rooms) matches first and wins
     // whenever a run is actually under way. This is what shows during the walk-in/out line, before dg_run_begin
     // has set dg_in_run (every entry calls dg_time -- a time advance, which can itself trigger the hub-condition

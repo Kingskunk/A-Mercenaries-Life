@@ -91,7 +91,7 @@ const SETTLEMENTS = {
   // Oxworth (2026-11-16): the Contract Board is in the Village Head's Hall, the inn is The Yoke & Horn, and the way out is the roads out of the village.
   oxworth: {
     name: "Oxworth", start: "oxworth", startScene: "hartwell/oxworth/oxworth", hubFile: "hartwell/oxworth/oxworth.txt", hubLabels: ["oxworth", "ox_menu", "ox_return"],
-    files: ["hartwell/oxworth/yoke_and_horn.txt", "hartwell/oxworth/village_heads_hall.txt", "hartwell/oxworth/oxworth_market.txt"],
+    files: ["hartwell/oxworth/yoke_and_horn.txt", "hartwell/oxworth/village_heads_hall.txt", "hartwell/oxworth/oxworth_market.txt", "hartwell/oxworth/salting_yard.txt"],
     services: {
       board: { name: "Contract Board", seen: "ox_hall_seen", steps: [S("ox_menu", "ox_hall", "hartwell/oxworth/oxworth.txt"), S("ox_hall_front", "ox_hall_board", "hartwell/oxworth/village_heads_hall.txt")], done: "You are at the Contract Board." },
       inn: { name: "The Yoke & Horn", seen: "ox_yh_seen", steps: [S("ox_menu", "ox_yh", "hartwell/oxworth/oxworth.txt")], done: "You are at the Yoke & Horn." },
