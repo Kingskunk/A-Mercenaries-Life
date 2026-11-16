@@ -48,6 +48,7 @@
  *             A step may instead be { "absent": "text" | ["text", ...] }: it picks nothing, and fails the run if the menu on screen offers an option
  *             containing any of those texts (a spell that must be unavailable). The next step then acts on the same menu.
  *   picks     the same steps as one string: "text@high;other text*"  (@word sets rand, a trailing * = whileAvail)
+ *   gosub     true: start the label as if a *gosub_scene had called it, so a subroutine label that ends in *return finishes cleanly (see "simend" below)
  *   watch     variable names (globals, or *temps on the active scene) whose final values are reported
  *   requireNoDeadSpace  true: fail this scenario if a *line_break prints an empty line
  *   refresh   true: after every page, replay it on a copy (what opening Stats and returning does) and
@@ -112,6 +113,7 @@ Scene.prototype.loadScene = function () {
     var file = this.name === "simflags" ? "*gosub_scene calendar update_hub_condition\n*finish"
       : this.name === "simfeatures" ? "*gosub_scene character_progression refresh_features\n*finish"
       : this.name === "simfight" ? "*gosub_scene combat fight_library\nFight over: ${combat_outcome}.\n*ending"
+      : this.name === "simend" ? "*finish"
       : slurpFile(ROOT + "/web/" + GAME + "/scenes/" + this.name + ".txt");
     this.loadLines(file);
     if (!process.env.SCENE_CACHE_OFF) SCENE_CACHE[GAME + "/" + this.name] = { crc: this.crc, lines: this.lines, labels: this.labels };
@@ -395,6 +397,10 @@ function play(scn) {
   D.refreshAll = !!scn.refresh; D.refreshText = !!scn.refreshText; D.sabotage = scn.sabotage || []; D.replaySet = scn.replaySet || {};
   if (scn.seed !== undefined) { SEEDED.a = Number(scn.seed) >>> 0; Math.random = seededRandom; globalThis.__combatFixedRandom = false; }
   else { Math.random = forcedRandom; globalThis.__combatFixedRandom = true; }
+  // "gosub": true starts the label as a story scene's *gosub_scene would call it: one return address already on the stack, pointing at the virtual scene
+  // "simend" (a lone *finish). A label that ends in *return (a subroutine such as calendar check_calendar_month) then has somewhere to go instead of
+  // throwing "invalid return". The script's own scene stays the page's start scene, so the refresh check still replays its pages.
+  if (scn.gosub) stats.choice_subscene_stack = [{ name: "simend", lineNum: 0, indent: 0, temps: {} }];
   var sc = new Scene(scn.scene || "port_valen/port_valen", stats, nav, { debugMode: false });
   if (scn.label) sc.targetLabel = { label: scn.label, origin: "startup", originLine: 0 };
   runLoop(sc);
