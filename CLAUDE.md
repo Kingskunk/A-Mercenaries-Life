@@ -18,7 +18,7 @@ This file only says where to look. The rules are in the files it names. Read the
 
 ## Rules for every task
 
-- Work in small pieces. Agree on the piece, do it, then stop. Do nothing beyond what was asked.
+- Work in small pieces. Agree on the piece, do it, then stop. Do nothing beyond what was asked, though you can provide recomendations.
 - Edit `web/mygame/scenes/startup_parts/`, never the built `startup.txt`. Rebuild with `node tools/build_startup.js`.
 - A `.generated.` file, or a generated block inside a scene file, comes from a `tools/gen_*.js` tool. Change the source data and run the tool. Never edit the output by hand.
 - Never write tool output or a shortened copy of a file back to disk. After a large edit, run `git diff --numstat` and account for every deleted line.
