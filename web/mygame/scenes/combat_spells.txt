@@ -534,6 +534,7 @@
   *temp mm_cn {(("combat_mm_darts_" & mm_ci))}
   *if (mm_cn > 0)
     *set mm_targets + 1
+    *comment replay-ok: resolve_magic_missile zeroes combat_mm_darts_total before this loop, so the total is rebuilt on every call.
     *set combat_mm_darts_total + mm_cn
   *set mm_ci + 1
   *goto resolve_magic_missile_count_loop
@@ -610,15 +611,44 @@ ${fsh}
     *set {(("combat_mm_banner_" & mm_i))} mm_banner_val
   *set mm_i + 1
   *goto resolve_magic_missile_dmg_loop
+*comment A foe the darts killed (or beat into surrender, when the fight is non-lethal) gets a finishing line before its
+*comment banner, the way every other spell's kill does. The line names the darts that foe took, not the whole cast, and
+*comment it is read through that slot, so the active target and the dart total are put back once the loop is done.
+*temp mm_keep_target combat_active_target
+*temp mm_keep_total combat_mm_darts_total
 *temp mm_pi 1
+*temp mm_pany false
 *label resolve_magic_missile_print_loop
 *if (mm_pi <= combat_enemy_slot_cap)
   *temp mm_pval {(("combat_mm_banner_" & mm_pi))}
   *if (not(mm_pval = ""))
+    *comment A break ends the banner before this one. The last banner's break comes below, only if the fight goes on.
+    *if (mm_pany)
+      *line_break
+    *set mm_pany true
+    *temp mm_php {(("combat_enemy" & mm_pi) & "_hp")}
+    *if (mm_php <= 0)
+      *set combat_active_target mm_pi
+      *gosub_scene combat fight_sync_target_in
+      *set combat_mm_darts_total {(("combat_mm_darts_" & mm_pi))}
+      *set combat_current_spell_id "magic_missile"
+      *gosub_scene combat_prose pick_spell_death_flavor
+      ${fdh}
+      *line_break
     ${mm_pval}
-    *line_break
   *set mm_pi + 1
   *goto resolve_magic_missile_print_loop
+*if (not(combat_active_target = mm_keep_target))
+  *set combat_active_target mm_keep_target
+  *gosub_scene combat fight_sync_target_in
+*set combat_mm_darts_total mm_keep_total
+*comment The last banner's break, unless this cast ended the fight: fight_victory opens with its own break, so a second
+*comment one would print an empty line (the same rule the weapon attack's tail follows). The sync and the dead check are
+*comment repeated by fight_check_enemy_hp after this returns and change nothing a second time.
+*gosub_scene combat fight_sync_target_out
+*gosub_scene combat fight_check_all_dead
+*if (not(combat_all_enemies_dead))
+  *line_break
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
