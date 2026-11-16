@@ -886,6 +886,61 @@ window.CITY_SETTLEMENTS = {
    }
   ]
  },
+ "oxworth": {
+  "name": "Oxworth",
+  "keys": [
+   "ox_menu:ox_hall",
+   "ox_hall_front:ox_hall_board",
+   "ox_menu:ox_yh",
+   "ox_menu:ow_here"
+  ],
+  "services": [
+   {
+    "id": "board",
+    "name": "Contract Board",
+    "seen": "ox_hall_seen",
+    "lock": "",
+    "lockReason": "",
+    "done": "You are at the Contract Board.",
+    "steps": [
+     "ox_menu:ox_hall",
+     "ox_hall_front:ox_hall_board"
+    ],
+    "stepMin": [
+     5,
+     5
+    ]
+   },
+   {
+    "id": "inn",
+    "name": "The Yoke & Horn",
+    "seen": "ox_yh_seen",
+    "lock": "",
+    "lockReason": "",
+    "done": "You are at the Yoke & Horn.",
+    "steps": [
+     "ox_menu:ox_yh"
+    ],
+    "stepMin": [
+     5
+    ]
+   },
+   {
+    "id": "leave",
+    "name": "Leave Oxworth",
+    "seen": "",
+    "lock": "",
+    "lockReason": "",
+    "done": "You take the road out of Oxworth.",
+    "steps": [
+     "ox_menu:ow_here"
+    ],
+    "stepMin": [
+     0
+    ]
+   }
+  ]
+ },
  "brinewick": {
   "name": "Brinewick",
   "keys": [
