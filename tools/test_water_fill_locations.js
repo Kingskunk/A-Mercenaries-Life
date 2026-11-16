@@ -96,6 +96,9 @@ const expectedScenes = [
   // Fallowmere
   { file: 'web/mygame/scenes/Langston/fallowmere/fallowmere.txt', label: 'Fallowmere green well' },
   { file: 'web/mygame/scenes/Langston/fallowmere/grey_gander.txt', label: 'Grey Gander yard & room' },
+  // Oxworth
+  { file: 'web/mygame/scenes/hartwell/oxworth/oxworth.txt', label: 'Oxworth crossroads well' },
+  { file: 'web/mygame/scenes/hartwell/oxworth/yoke_and_horn.txt', label: 'Yoke & Horn yard & room' },
   // Longshade Forest
   { file: 'web/mygame/scenes/longshade/longshade_forest.txt', label: 'Longshade Hidden Spring & Clear Pool' }
 ];
