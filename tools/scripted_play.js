@@ -401,6 +401,10 @@ function play(scn) {
   // "simend" (a lone *finish). A label that ends in *return (a subroutine such as calendar check_calendar_month) then has somewhere to go instead of
   // throwing "invalid return". The script's own scene stays the page's start scene, so the refresh check still replays its pages.
   if (scn.gosub) stats.choice_subscene_stack = [{ name: "simend", lineNum: 0, indent: 0, temps: {} }];
+  // The preset was chosen by clicking through dev_hub, which leaves choice_page_start_* pointing at that preset menu line. A script that starts
+  // at another label of the SAME scene (dev_hub, say) would inherit it, and the refresh check would replay the preset instead of the page. A
+  // player always arrives by a choice or page break, which sets these anew; clearing them lets the engine record this page's real start.
+  delete stats.choice_page_start_scene; delete stats.choice_page_start_line; delete stats.choice_page_start_indent;
   var sc = new Scene(scn.scene || "port_valen/port_valen", stats, nav, { debugMode: false });
   if (scn.label) sc.targetLabel = { label: scn.label, origin: "startup", originLine: 0 };
   runLoop(sc);
@@ -447,7 +451,9 @@ function rollsIn(text) {
   while ((m = re.exec(text))) rolls.push(m[1]);
   return rolls;
 }
-var KNOWN_ENGINE_DIFF = /^page_break @ combat:\d+: check_dc "11" -> "10"$/;
+// spell_learn_result is learn_spell's output. A replayed pick page calls it again, finds the spell already in the book and reports "known"
+// where the first pass said "learned"; character_progression.txt documents that repeating a call changes nothing, so this is expected.
+var KNOWN_ENGINE_DIFF = /^page_break @ combat:\d+: check_dc "11" -> "10"$|^(choice|page_break) @ \S+: spell_learn_result "learned" -> "known"$/;
 
 function errorHints(errors) {
   var hints = [];

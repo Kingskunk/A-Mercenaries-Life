@@ -1746,7 +1746,9 @@ HP and every class resource are refilled to full before each one, so every fight
 *set scenery_suppressed false
 *set hp_current hp_max
 *gosub_scene character_progression restore_class_resources
-*line_break
+*comment fight_victory already prints its own line break; the other endings print none, so only they need this one (two in a row is dead space).
+*if (not(combat_outcome = "victory"))
+  *line_break
 [b]Result: ${combat_outcome}[/b] | Ended the fight at ${dctest_hp_after}/${hp_max} HP — healed to full
 *line_break
 [b]Enemies: ${combat_result_down} down, ${combat_result_fled} fled, ${combat_result_surrendered} surrendered, ${combat_result_standing} still standing[/b]
@@ -2257,8 +2259,12 @@ Food: @{food_buff_active ${food_buff_name} (${food_buff_desc}, ${food_buff_minut
     *page_break Back to the preparations...
     *goto dev_combat_prep
   # Take three fire arrows and three ice arrows
-    *gosub_scene equipment grant_gear "fire_arrow" 3
-    *gosub_scene equipment grant_gear "ice_arrow" 3
+    *comment Locked per page like the scroll and potion entries below, so a refresh (the Stats screen, then Return) cannot grant them twice.
+    *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+      *gosub_scene equipment grant_gear "fire_arrow" 3
+      *gosub_scene equipment grant_gear "ice_arrow" 3
+      *set stat_bump_locked true
+      *set locked_stat_bump_page_id page_id
     You tuck three black-corded arrows and three moss-packed arrows into your quiver.
     *line_break
     *page_break Back to the preparations...
