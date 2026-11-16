@@ -146,6 +146,10 @@
 *set spell_fact_upcast_dice 0
 *set spell_fact_projectiles 0
 *set spell_fact_upcast_projectiles 0
+*set spell_fact_temp_hp_count 0
+*set spell_fact_temp_hp_sides 0
+*set spell_fact_temp_hp_flat 0
+*set spell_fact_upcast_temp_hp 0
 *if (sfl_id = "blade_ward")
   *set spell_fact_found true
   *set spell_fact_name "Blade Ward"
@@ -269,6 +273,7 @@
   *set spell_fact_flat 5
   *set spell_fact_dmg_type "cold"
   *set spell_fact_slot_level 1
+  *set spell_fact_temp_hp_flat 5
 *if (sfl_id = "bane")
   *set spell_fact_found true
   *set spell_fact_name "Bane"
@@ -321,6 +326,10 @@
   *set spell_fact_name "False Life"
   *set spell_fact_resolution "effect"
   *set spell_fact_slot_level 1
+  *set spell_fact_temp_hp_count 1
+  *set spell_fact_temp_hp_sides 4
+  *set spell_fact_temp_hp_flat 4
+  *set spell_fact_upcast_temp_hp 5
 *if (sfl_id = "feather_fall")
   *set spell_fact_found true
   *set spell_fact_name "Feather Fall"
@@ -437,6 +446,72 @@
 *return
 *comment GEN:END spell_facts_lookup
 
+*comment The one dice loop every shared spell roll uses: rsdc_count dice of rsdc_sides, summed into spell_roll_total, with the dice as "3+5" in spell_roll_dice_str. No dice (a count of 0) leaves a sum of 0.
+*label roll_spell_dice
+*params rsdc_count rsdc_sides
+*set spell_roll_total 0
+*set spell_roll_dice_str ""
+*comment Quicktest walks loop bodies even when an inactive/cold branch leaves sides at 0; clamp max to at least 2 for *rand.
+*temp rsdc_s rsdc_sides
+*if (rsdc_s < 2)
+  *set rsdc_s 2
+*temp rsdc_i 1
+*label roll_spell_dice_loop
+*if (rsdc_i <= rsdc_count)
+  *temp rsdc_die 0
+  *rand rsdc_die 1 rsdc_s
+  *comment replay-ok: roll_spell_dice zeroes spell_roll_total before this loop, so the sum is rebuilt on every call.
+  *set spell_roll_total + rsdc_die
+  *if (rsdc_i = 1)
+    *set spell_roll_dice_str "${rsdc_die}"
+  *else
+    *set spell_roll_dice_str "${spell_roll_dice_str}+${rsdc_die}"
+  *set rsdc_i + 1
+  *goto roll_spell_dice_loop
+*return
+
+*comment The shared heal: rolls a healing spell from its data (the heal dice, a flat part, the casting modifier when the data says so), never less than 1, into combat_cast_result, and gives it to the caster or, when combat_friendly_target is an ally slot, to that ally. The slot or scroll spend stays with the caller.
+*comment Parameters: rshl_id (spell id in tools/spell_book.json).
+*label resolve_spell_heal
+*params rshl_id
+*gosub spell_facts_load rshl_id
+*temp rshl_upcast 0
+*if (spell_fact_slot_level > 0)
+  *set rshl_upcast (combat_cast_at_level - spell_fact_slot_level)
+  *if (rshl_upcast < 0)
+    *set rshl_upcast 0
+*gosub roll_spell_dice (spell_fact_dice_count + (spell_fact_upcast_dice * rshl_upcast)) spell_fact_dice_sides
+*set combat_cast_result (spell_roll_total + spell_fact_flat)
+*if (spell_fact_add_mod)
+  *set combat_cast_result + spell_damage_mod
+*if (combat_cast_result < 1)
+  *set combat_cast_result 1
+*if (combat_friendly_target = 0)
+  *set hp_current + combat_cast_result
+  *if (hp_current > hp_max)
+    *set hp_current hp_max
+*else
+  *temp rshl_hp {(("combat_ally" & combat_friendly_target) & "_hp")}
+  *temp rshl_max {(("combat_ally" & combat_friendly_target) & "_max_hp")}
+  *set rshl_hp + combat_cast_result
+  *if (rshl_hp > rshl_max)
+    *set rshl_hp rshl_max
+  *set {(("combat_ally" & combat_friendly_target) & "_hp")} rshl_hp
+*return
+
+*comment The shared temporary hit points roll: what a cast of rtp_id gives, from its data (temp_hp_dice, temp_hp_flat, and temp_hp_flat more for each slot level above the spell's own), into spell_roll_temp_hp. The caller decides whether it replaces the temporary hit points already held (they never stack).
+*label roll_spell_temp_hp
+*params rtp_id
+*gosub spell_facts_load rtp_id
+*temp rtp_upcast 0
+*if (spell_fact_slot_level > 0)
+  *set rtp_upcast (combat_cast_at_level - spell_fact_slot_level)
+  *if (rtp_upcast < 0)
+    *set rtp_upcast 0
+*gosub roll_spell_dice spell_fact_temp_hp_count spell_fact_temp_hp_sides
+*set spell_roll_temp_hp ((spell_roll_total + spell_fact_temp_hp_flat) + (spell_fact_upcast_temp_hp * rtp_upcast))
+*return
+
 *comment Shared spell damage roll reading spell_fact_* populated by spell_facts_load.
 *comment Parameters: rsd_id (spell id in tools/spell_book.json), rsd_is_area (boolean: area spells defer per-target saves and include dmg_type in the roll banner).
 *label roll_spell_damage
@@ -449,25 +524,9 @@
   *if (rsd_upcast < 0)
     *set rsd_upcast 0
 *temp rsd_dice_count (spell_fact_dice_count + (spell_fact_upcast_dice * rsd_upcast))
-*temp rsd_sides spell_fact_dice_sides
-*comment Quicktest walks loop bodies even when an inactive/cold branch leaves sides at 0; clamp max to at least 2 for *rand.
-*if (rsd_sides < 2)
-  *set rsd_sides 2
-*temp rsd_total spell_fact_flat
-*temp rsd_dice_str ""
-*temp rsd_di 1
-*label roll_spell_damage_loop
-*if (rsd_di <= rsd_dice_count)
-  *temp rsd_die 0
-  *rand rsd_die 1 rsd_sides
-  *set rsd_total + rsd_die
-  *if (rsd_di = 1)
-    *set rsd_dice_str "${rsd_die}"
-  *else
-    *set rsd_dice_str "${rsd_dice_str}+${rsd_die}"
-  *set rsd_di + 1
-  *goto roll_spell_damage_loop
-*set spell_roll_dice_str rsd_dice_str
+*gosub roll_spell_dice rsd_dice_count spell_fact_dice_sides
+*temp rsd_total (spell_fact_flat + spell_roll_total)
+*temp rsd_dice_str spell_roll_dice_str
 *temp rsd_mod_part ""
 *if (spell_fact_add_mod)
   *if (spell_damage_mod >= 0)
@@ -1062,9 +1121,10 @@ ${combat_blindness_banner}
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_cast_agathys
 *gosub spend_pact_slot
-*comment Temporary hit points never stack (5e): the ward gives 5 unless more are already held.
-*if (temp_hp < 5)
-  *set temp_hp 5
+*comment Temporary hit points never stack (5e): the ward gives what its data says (5) unless more are already held.
+*gosub roll_spell_temp_hp "armor_of_agathys"
+*if (temp_hp < spell_roll_temp_hp)
+  *set temp_hp spell_roll_temp_hp
 *set agathys_active true
 *return
 
@@ -1125,14 +1185,12 @@ ${combat_blindness_banner}
         *gosub spend_spell_slot combat_cast_at_level
     *if (false_life_cost = "scroll")
       *gosub_scene equipment spend_consumable combat_scroll_id
-    *temp fl_roll 0
-    *rand fl_roll 1 4
-    *set combat_cast_result (fl_roll + 4)
-    *comment UPCASTING (2026-11-08, RAW): +5 temporary hit points per slot level above 1st. Harmless to apply
-    *comment unconditionally rather than only inside the "slot" branch above -- combat_cast_at_level is only ever
-    *comment 2 when that branch actually ran (every other entry point, free/scroll/out-of-combat, forces it to 1
-    *comment first), so this is 0 for all of them.
-    *set combat_cast_result + ((combat_cast_at_level - 1) * 5)
+    *comment 1d4 + 4, and (RAW upcast, 2026-11-08) 5 more for each slot level above 1st: all from the spell's data
+    *comment (roll_spell_temp_hp). Applied unconditionally rather than only inside the "slot" branch above --
+    *comment combat_cast_at_level is only ever 2 when that branch actually ran (every other entry point,
+    *comment free/scroll/out-of-combat, forces it to 1 first), so the extra is 0 for all of them.
+    *gosub roll_spell_temp_hp "false_life"
+    *set combat_cast_result spell_roll_temp_hp
     *comment Temporary hit points never stack (5e): False Life gives its roll unless more are already held.
     *if (combat_cast_result > temp_hp)
       *set temp_hp combat_cast_result
@@ -1158,23 +1216,8 @@ ${combat_blindness_banner}
   *set spell_slots_1 - 1
 *else
   *gosub_scene equipment spend_consumable combat_scroll_id
-*temp hw_roll 0
-*rand hw_roll 1 4
-*comment The casting modifier (spell_damage_mod): a Bard's Charisma as always, and for a scroll read by anyone, the reader's own (Intelligence for a Fighter or Rogue, Charisma for a Barbarian).
-*set combat_cast_result (hw_roll + spell_damage_mod)
-*if (combat_cast_result < 1)
-  *set combat_cast_result 1
-*if (combat_friendly_target = 0)
-  *set hp_current + combat_cast_result
-  *if (hp_current > hp_max)
-    *set hp_current hp_max
-*else
-  *temp hw_hp {(("combat_ally" & combat_friendly_target) & "_hp")}
-  *temp hw_max {(("combat_ally" & combat_friendly_target) & "_max_hp")}
-  *set hw_hp + combat_cast_result
-  *if (hw_hp > hw_max)
-    *set hw_hp hw_max
-  *set {(("combat_ally" & combat_friendly_target) & "_hp")} hw_hp
+*comment 1d4 plus the casting modifier (spell_damage_mod): a Bard's Charisma as always, and for a scroll read by anyone, the reader's own (Intelligence for a Fighter or Rogue, Charisma for a Barbarian). The shared heal rolls it, floors it at 1 and applies it.
+*gosub resolve_spell_heal "healing_word"
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1452,22 +1495,6 @@ ${combat_player_dmg_roll_banner}
   *set spell_slots_1 - 1
 *else
   *set spell_slots_1 - 1
-*temp cw_d1 0
-*temp cw_d2 0
-*rand cw_d1 1 8
-*rand cw_d2 1 8
-*set combat_cast_result (((cw_d1 + cw_d2)) + spell_damage_mod)
-*if (combat_cast_result < 1)
-  *set combat_cast_result 1
-*if (combat_friendly_target = 0)
-  *set hp_current + combat_cast_result
-  *if (hp_current > hp_max)
-    *set hp_current hp_max
-*else
-  *temp cw_hp {(("combat_ally" & combat_friendly_target) & "_hp")}
-  *temp cw_max {(("combat_ally" & combat_friendly_target) & "_max_hp")}
-  *set cw_hp + combat_cast_result
-  *if (cw_hp > cw_max)
-    *set cw_hp cw_max
-  *set {(("combat_ally" & combat_friendly_target) & "_hp")} cw_hp
+*comment 2d8 plus the casting modifier: the shared heal rolls it, floors it at 1 and applies it.
+*gosub resolve_spell_heal "cure_wounds"
 *return

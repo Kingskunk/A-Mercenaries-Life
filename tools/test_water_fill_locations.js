@@ -99,6 +99,8 @@ const expectedScenes = [
   // Oxworth
   { file: 'web/mygame/scenes/hartwell/oxworth/oxworth.txt', label: 'Oxworth crossroads well' },
   { file: 'web/mygame/scenes/hartwell/oxworth/yoke_and_horn.txt', label: 'Yoke & Horn yard & room' },
+  // Palmcote
+  { file: 'web/mygame/scenes/hartwell/palmcote/palmcote.txt', label: 'Palmcote village well' },
   // Longshade Forest
   { file: 'web/mygame/scenes/longshade/longshade_forest.txt', label: 'Longshade Hidden Spring & Clear Pool' }
 ];

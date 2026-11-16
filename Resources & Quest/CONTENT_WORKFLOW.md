@@ -94,7 +94,7 @@ A place can pass every check and still be missing one of these, because no tool 
 | Notice board | The board's tile entry in `COURIER_TILES` in `web/mygame/overworld-data.js` | When the place holds the settlement's board |
 | Water audit | The list of scenes in `tools/test_water_fill_locations.js` | When the place has water |
 
-No fitting picture or icon: stop and ask the designer. Never reuse an item or action icon. Backdrops do have generic pictures meant for sharing (`generic_village_gathering_hall`, `generic_tavern_inn`).
+No fitting picture or icon: stop and ask the designer. Never reuse an item or action icon. Backdrops do have generic pictures meant for sharing (`generic_village_gathering_hall`, `generic_tavern_inn`). To make a new backdrop, follow `BACKDROP_ART_WORKFLOW.md` (house style, image-tool path, and the prompt to hand the designer).
 
 ### 1.5 Run the generators
 

@@ -1,0 +1,195 @@
+*comment ====================================================================================
+*comment PALMCOTE: an olive-grove village on a sheltered, sun-facing slope under the Viscounty of Hartwell (overworld tile "pc"). Plan: Resources & Quest/PALMCOTE_SETTLEMENT_PLAN.md.
+*comment Built so far: the hub with its three description layers (place, sky, street), rotating vignettes, arrival from overworld tile "pc" (pc_arrive), and the road back out.
+*comment Planned stops (each gets its hours routine and its two hub buttons when its file is built, CONTENT_WORKFLOW.md 1.3):
+*comment   - gathering_hall.txt (gathering hall + notice board)
+*comment   - inn (name and keeper still to decide)
+*comment   - olive_yard.txt (olive yard: once-daily paid shift, small olive and honey counter)
+*comment House Ferrand's manor is visible from the village and never named in prose (plan, section 2).
+*comment Backdrop and sound are not registered yet (scenery.js SCENE_PLACES, ambience.js ALIAS).
+*comment ====================================================================================
+
+*label palmcote
+*gosub pc_enter
+*gosub pc_header
+*gosub pc_layers
+*goto pc_menu
+
+*comment Shared setup so a direct visit and a later return land in the same state. pc_first_hub is true only on the first visit.
+*label pc_enter
+*temp pc_first_hub false
+*if (not(pc_seen))
+  *set pc_first_hub true
+*set current_district "palmcote"
+*set pc_seen true
+*gosub_scene calendar update_hub_condition
+*return
+
+*comment The overworld's Palmcote tile (pc) enters here. The last stretch of slope track costs five minutes once per arrival.
+*label pc_arrive
+*set minutes_to_pass 5
+*set time_advance_call_id "pc_arrive_1"
+*gosub pc_walk_time
+*temp pc_first_arrival false
+*if (not(pc_arrival_seen))
+  *set pc_first_arrival true
+*set pc_arrival_seen true
+*gosub pc_enter
+*gosub pc_header
+*if (pc_first_arrival)
+  *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+    The road tilts upward in the dark between rows of low, twisted trees. Ahead, a few lamps show on the slope, and a big house stands black against the stars above them.
+  *elseif (time_period = "Dusk")
+    The road climbs a gentle slope between rows of low, twisted trees as the light fails, toward roofs bunched on the hillside and one large house set above them.
+  *else
+    The road climbs a gentle slope between rows of low, twisted trees with grey-green leaves. Roofs bunch on the hillside ahead, and one large house sits above them all.
+*else
+  *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+    You climb the dark slope between the tree rows toward the village lamps.
+  *elseif (time_period = "Dusk")
+    You climb the slope between the tree rows as the village lights come on above you.
+  *else
+    You climb the slope between the tree rows into Palmcote.
+*gosub pc_layers
+*goto pc_menu
+
+*label pc_walk_time
+*set hours_to_pass 0
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return
+
+*label pc_header
+[b]◈ PALMCOTE[/b]
+*line_break
+*return
+
+*label pc_layers
+*gosub pc_place
+*gosub pc_sky
+*gosub pc_street
+*return
+
+*comment Places return here without repeating the full village description.
+*label pc_return
+*gosub pc_enter
+*gosub pc_header
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  You come back out onto the slope, and the village lies quiet among the trees.
+*elseif (time_period = "Dusk")
+  You step back out onto the slope as the evening settles over the tree rows.
+*else
+  You come back out onto Palmcote's sloping lane.
+*goto pc_menu
+
+*label pc_menu
+*comment Open-world free time: the sidebar's Wait and Rest work on this page. The village well in the lane gives fresh water (designer, 2026-11-16: any source will do, a well chosen).
+*set wait_ok_page page_id
+*set fresh_water_page page_id
+*choice
+  # [b]The road out of the village[/b]: leave Palmcote.
+    *set ow_pos "pc"
+    *goto_scene overworld/overworld ow_here
+
+*comment ── LAYER 1: PLACE ── Fixed geography only. The long description prints once. Nothing here changes with the season or the hour.
+*label pc_place
+*if (pc_first_hub)
+  Palmcote climbs a south-facing hillside on a single steep lane, with the houses stepping up one above another. Low stone walls hold the earth in terraces around it, and every terrace is planted with olive trees, their trunks thick and knotted and their leaves grey-green on top and pale underneath. Houses of pale stone sit close to the lane under roofs of red clay tile, each with a bench by the door and a wall of drying baskets.
+
+  Near the foot of the lane, a long building with a wide porch has a notice board nailed up beside its door. A low inn sits just above it with a green branch hung over the doorway. Where the lane bends, a round stone well stands under a small tiled roof, with a rope and wooden bucket hanging from its beam. Past them, a flat yard of beaten earth holds stacked baskets, a row of wooden carts and a small stall with jars on it. At the top of the hill, behind a high wall and a line of dark trees, stands a large house of grey stone with a great many windows. The air smells of dust, warm leaves and crushed fruit.
+*else
+  Palmcote climbs its single steep lane up the hillside through the olive terraces, with the long hall and its notice board near the foot, the inn with its green branch just above, the roofed well at the bend, the basket-stacked yard beyond, and the great grey house high behind its wall.
+*return
+
+*comment ── LAYER 2: SKY ── Weather and light only, followed by the ground's recent-weather state. No people here.
+*label pc_sky
+*temp pc_dark false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set pc_dark true
+*if (weather = "Rain")
+  Rain patters on the clay tiles and the leaves, and runs down the lane in a thin brown stream between the terrace walls.
+*elseif (weather = "Storm")
+  Wind rips up the hillside and flips the pale undersides of the leaves in long ripples. Rain hammers the tiles, and the lane runs like a ditch.
+*elseif (weather = "Fog")
+  Low cloud sits on the slope, and the trees a few rows up fade into grey. The lane vanishes into white a short way above you.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Wet snow clings to the terrace walls and weighs down the olive branches, and the clay roofs show white against the dark trunks.
+*elseif (weather = "Blizzard")
+  Blowing snow fills the lane and buries the lower terraces. The upper hill is lost behind a wall of white.
+*elseif (weather = "Clear")
+  *if (pc_dark)
+    Stars crowd the sky over the hill, and the pale walls show clearly along the lane.
+  *elseif (time_period = "Dusk")
+    The low sun lights the slope orange, and the long shadows of the tree rows stretch across the terraces.
+  *else
+    Strong light fills the hillside, hot on the stone and sharp on the silver-green leaves.
+*else
+  *if (pc_dark)
+    A thick, dark overcast hides the stars, and the lamps in the windows are the only light on the slope.
+  *else
+    Flat grey cloud sits over the hill and turns the leaves a dull green.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Water still runs down the lane in the gaps between the stones, and the terrace soil is heavy and dark.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The lane is damp and dark from recent rain, with a few puddles in its low spots.
+*return
+
+*comment ── LAYER 3: STREET ── Current village activity. Daytime work follows the season; the rotating vignette follows the clock.
+*label pc_street
+*temp pc_vignette (((campaign_day * 24) + clock_hour) modulo 6) + 1
+*temp pc_night false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set pc_night true
+*if ((street_life = "empty") and (not(pc_night)))
+  The lane is empty. Shutters are closed, the carts stand covered in the yard, and nobody is out among the trees.
+  *return
+*if (pc_night)
+  *if (pc_vignette = 1)
+    A shuttered lantern moves slowly along the lower terrace wall, then stops and goes back the way it came.
+  *elseif (pc_vignette = 2)
+    A dog barks twice somewhere up the hill and then settles.
+  *elseif (pc_vignette = 3)
+    Voices carry out of the inn, low and tired, and a door thuds shut.
+  *elseif (pc_vignette = 4)
+    A cart creaks in the dark yard as the wood settles.
+  *elseif (pc_vignette = 5)
+    Leaves hiss in the night air all along the slope.
+  *else
+    A shutter bangs once on a loose catch, and the lane goes quiet again.
+  *return
+*if (time_period = "Dusk")
+  Baskets are being carried down off the terraces, and shutters are pulled to along the lane as lamps are lit.
+  *return
+*if (day_of_week = "Hallowday")
+  The baskets stand empty by the doors and the carts are still. People in clean clothes sit on the house benches along the lane, talking in low voices, while children chase each other between the trunks.
+  *return
+*if (day_of_week = "Marketday")
+  Extra carts stand along the lane, and strangers walk the terraces looking at the trees and asking after prices, while baskets are weighed and stacked by the yard.
+  *return
+*if (current_season = "Spring")
+  Pale blossom dusts the branches, and people on ladders and ground cut away dead wood and old shoots.
+*elseif (current_season = "Summer")
+  The small green fruit hangs hard on the branches. The terraces are quiet in the heat, and people work in the shade of the walls.
+*elseif (current_season = "Autumn")
+  Pickers work the branches from ladders with baskets on their hips, and heaped baskets are carried down the lane to the carts waiting in the yard.
+*else
+  Late fruit still hangs in the upper rows, and people beat the last branches with long poles over nets spread on the ground.
+*if (pc_vignette = 1)
+  A woman on a ladder calls down to someone below, and a basket is passed up to her on a rope.
+*elseif (pc_vignette = 2)
+  A man leads a mule down the lane with a basket slung on each side of its saddle.
+*elseif (pc_vignette = 3)
+  Two children carry a single full basket between them, stopping often to switch hands.
+*elseif (pc_vignette = 4)
+  An old man sits on a bench with a bowl on his knees, sorting fruit and flicking the bruised ones into the dust.
+*elseif (pc_vignette = 5)
+  A cart rolls slowly down toward the road, its driver walking beside the wheel with a hand on the load.
+*else
+  A woman scrubs her doorstep and then shakes a cloth out over the terrace wall.
+*return

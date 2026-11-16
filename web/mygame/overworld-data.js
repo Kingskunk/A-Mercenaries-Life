@@ -88,7 +88,7 @@
   };
   var DEFAULT_WEATHER_ZONE = "reach";
   // A district (stats.current_district) the player is in while NOT on the overworld, where it is not the default zone. Langston is a town, not a tile; a Vale dungeon or farm would be listed here too.
-  var DISTRICT_ZONE = { langston: "vale", barolo: "vale", broadmead: "vale", fallowmere: "vale", oxworth: "vale" };
+  var DISTRICT_ZONE = { langston: "vale", barolo: "vale", broadmead: "vale", fallowmere: "vale", oxworth: "vale", palmcote: "vale" };
   // The fields a zone owns: its key in a parked slot -> the stat it is swapped with. day/dayWet is the zone's actual rolled condition for today (calendar.txt weather_day/weather_day_wet); weather itself
   // is the live value calendar.txt's weather_now derives from day/winStart/winLen/winFiller and the clock, re-derived right after a swap, so parking it here is only a belt-and-braces copy.
   var WEATHER_FIELDS = { weather: "weather", day: "weather_day", dayWet: "weather_day_wet", tomorrow: "weather_tomorrow", missed: "forecast_missed", rain: "rain_streak", dry: "dry_streak", winStart: "wx_window_start", winLen: "wx_window_len", winFiller: "wx_window_filler" };

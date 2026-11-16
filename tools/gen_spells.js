@@ -224,7 +224,8 @@ function collectCombatSpell(id, sp, expectedLevel) {
   var baseDice = { count: 0, sides: 0 };
   if (c.damage_dice !== undefined) baseDice = parseDice(c.damage_dice, "spell '" + id + "' combat.damage_dice");
   else if (c.heal_dice !== undefined) baseDice = parseDice(c.heal_dice, "spell '" + id + "' combat.heal_dice");
-  if (c.temp_hp_dice !== undefined) parseDice(c.temp_hp_dice, "spell '" + id + "' combat.temp_hp_dice");
+  var tempHpDice = { count: 0, sides: 0 };
+  if (c.temp_hp_dice !== undefined) tempHpDice = parseDice(c.temp_hp_dice, "spell '" + id + "' combat.temp_hp_dice");
   if (c.base_move_dice !== undefined) parseDice(c.base_move_dice, "spell '" + id + "' combat.base_move_dice");
   if (c.cantrip_scale !== undefined) {
     if (typeof c.cantrip_scale !== "object" || Array.isArray(c.cantrip_scale)) {
@@ -249,7 +250,7 @@ function collectCombatSpell(id, sp, expectedLevel) {
     checkIntMin(c.projectiles, 1, "spell '" + id + "' combat.projectiles");
     projectiles = c.projectiles;
   }
-  var upcastDice = 0, upcastProjectiles = 0;
+  var upcastDice = 0, upcastProjectiles = 0, upcastTempHp = 0;
   if (c.upcast !== undefined) {
     if (typeof c.upcast !== "object" || Array.isArray(c.upcast)) {
       throw new Error("spell '" + id + "' combat.upcast must be an object");
@@ -269,7 +270,10 @@ function collectCombatSpell(id, sp, expectedLevel) {
       upcastProjectiles = c.upcast.projectiles;
     }
     if (c.upcast.targets !== undefined) checkIntMin(c.upcast.targets, 1, "spell '" + id + "' combat.upcast.targets");
-    if (c.upcast.temp_hp_flat !== undefined) checkIntMin(c.upcast.temp_hp_flat, 0, "spell '" + id + "' combat.upcast.temp_hp_flat");
+    if (c.upcast.temp_hp_flat !== undefined) {
+      checkIntMin(c.upcast.temp_hp_flat, 0, "spell '" + id + "' combat.upcast.temp_hp_flat");
+      upcastTempHp = c.upcast.temp_hp_flat;
+    }
   }
   combatSpells.push({
     id: id,
@@ -285,7 +289,11 @@ function collectCombatSpell(id, sp, expectedLevel) {
     slot_level: c.slot_level,
     upcast_dice: upcastDice,
     projectiles: projectiles,
-    upcast_projectiles: upcastProjectiles
+    upcast_projectiles: upcastProjectiles,
+    temp_hp_count: tempHpDice.count,
+    temp_hp_sides: tempHpDice.sides,
+    temp_hp_flat: c.temp_hp_flat || 0,
+    upcast_temp_hp: upcastTempHp
   });
 }
 Object.keys(cantrips).forEach(function (id) { collectCombatSpell(id, cantrips[id], 0); });
@@ -309,7 +317,11 @@ function genFactsLookup() {
     "*set spell_fact_slot_level 0",
     "*set spell_fact_upcast_dice 0",
     "*set spell_fact_projectiles 0",
-    "*set spell_fact_upcast_projectiles 0"
+    "*set spell_fact_upcast_projectiles 0",
+    "*set spell_fact_temp_hp_count 0",
+    "*set spell_fact_temp_hp_sides 0",
+    "*set spell_fact_temp_hp_flat 0",
+    "*set spell_fact_upcast_temp_hp 0"
   ];
   combatSpells.forEach(function (s) {
     L.push("*if (sfl_id = " + q(s.id) + ")");
@@ -327,6 +339,10 @@ function genFactsLookup() {
     if (s.upcast_dice > 0) L.push("  *set spell_fact_upcast_dice " + s.upcast_dice);
     if (s.projectiles > 0) L.push("  *set spell_fact_projectiles " + s.projectiles);
     if (s.upcast_projectiles > 0) L.push("  *set spell_fact_upcast_projectiles " + s.upcast_projectiles);
+    if (s.temp_hp_count > 0) L.push("  *set spell_fact_temp_hp_count " + s.temp_hp_count);
+    if (s.temp_hp_sides > 0) L.push("  *set spell_fact_temp_hp_sides " + s.temp_hp_sides);
+    if (s.temp_hp_flat > 0) L.push("  *set spell_fact_temp_hp_flat " + s.temp_hp_flat);
+    if (s.upcast_temp_hp > 0) L.push("  *set spell_fact_upcast_temp_hp " + s.upcast_temp_hp);
   });
   L.push("*return");
   return L;

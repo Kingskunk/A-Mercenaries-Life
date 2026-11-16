@@ -45,6 +45,7 @@
  *   steps     [{ "pick": "text in the option" | number (1 = first option), "rand": "low"|"mid"|"high"|0..1,
  *               "whileAvail": true, "optional": true }]  whileAvail repeats the step until its option is gone (attack rounds); optional skips the step
  *               when its option is not on offer, instead of stopping with "pick not found" (one move list can then run through many different fights)
+ *             A step may carry "set": {"var": value} to write stats just before its pick, as a sidebar click does (e.g. {"set": {"combat_mm_darts_1": 1, "combat_mm_darts_2": 1}} before "Cast Cause Fear").
  *             A step may instead be { "absent": "text" | ["text", ...] }: it picks nothing, and fails the run if the menu on screen offers an option
  *             containing any of those texts (a spell that must be unavailable). The next step then acts on the same menu.
  *   picks     the same steps as one string: "text@high;other text*"  (@word sets rand, a trailing * = whileAvail)
@@ -226,6 +227,8 @@ Scene.prototype.choice = function (data, isFakeChoice) {
     return;
   }
   if (step.rand !== undefined) D.rand = parseRand(step.rand);
+  // "set": stats written just before this pick, as the sidebar writes them before a click (Magic Missile darts, Cause Fear targets).
+  if (step.set) Object.keys(step.set).forEach(function (k) { self.stats[k] = step.set[k]; });
   if (!step.whileAvail) D.stepIdx++;
   D.log.push(names[idx]);
   D.events.push({ type: "menu", options: names, picked: idx });

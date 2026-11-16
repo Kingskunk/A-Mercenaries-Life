@@ -331,6 +331,7 @@ function compile(){
   verifyFileName("hartwell/oxworth/yoke_and_horn.txt");
   verifyFileName("hartwell/oxworth/village_heads_hall.txt");
   verifyFileName("hartwell/oxworth/salting_yard.txt");
+  verifyFileName("hartwell/palmcote/palmcote.txt");
   verifyFileName("Langston/market.txt");
   verifyFileName("Langston/cord_and_kettle.txt");
   verifyFileName("Langston/pickled_hen.txt");

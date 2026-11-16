@@ -111,10 +111,9 @@ Arms of Hadar, Thunderwave and Hellish Rebuke now roll through `roll_spell_damag
 
 Fire Bolt, Ray of Frost, Eldritch Blast, Chill Touch, Vicious Mockery, Poison Spray and Shocking Grasp now hit through `resolve_spell_hit` (`combat_dice.txt`), which takes the die, damage type and flat bonus from the spell data and then calls `resolve_player_hit`, so Hex and the Poisoner's Robes still ride on it. Agonizing Blast lives in `resolve_spell_hit`, because it belongs to one spell. A new damage cantrip is a data entry plus its menu option. Not done: dice that grow at character level 5 (`resolve_player_hit` still rolls one die; no character reaches 5).
 
-### 3.3 Healing and temporary hit points
+### 3.3 Healing and temporary hit points (DONE 2026-11-16)
 
-- Cure Wounds, Healing Word: the data already loads `heal_dice`. Needs a small heal wrapper (target, minimum of 1).
-- False Life, Armor of Agathys: the generator validates the temporary hit point fields but does not yet load them into `spell_fact_*`. Add the fields, then convert.
+Cure Wounds and Healing Word heal through `resolve_spell_heal`, which rolls from the data, floors at 1 and applies to the caster or an ally. False Life and Armor of Agathys read their temporary hit points through `roll_spell_temp_hp`, and the generator now loads the temp-HP fields (`spell_fact_temp_hp_*`, `spell_fact_upcast_temp_hp`). Armor of Agathys's 5 cold retaliation comes from its `damage_flat`. All of `roll_spell_damage`, the heals and the temp-HP roll share one dice loop, `roll_spell_dice`. Not done: Cure Wounds has no upcast in the data, so it still heals the same at every slot level.
 
 ### 3.4 Weapon cantrips that scale with level
 
