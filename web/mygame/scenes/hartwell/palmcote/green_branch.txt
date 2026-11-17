@@ -65,6 +65,8 @@
 
       @{(met_odda) Odda|The stout woman} sweeps them into her apron pocket and hands over an iron key. "Stair's in the corner, second door on the right. Key's yours till this hour tomorrow."
       *goto pc_gb_bunk
+  # Take a stool at the dice game.
+    *goto pc_gb_dice
   # Step back out onto the lane.
     *goto_scene hartwell/palmcote/palmcote pc_return
 
@@ -192,6 +194,22 @@
   *if (pc_gb_bunk_active)
     # Climb the stair to your room.
       *goto pc_gb_bunk
+  *if ((not(pc_gb_bunk_active)) and ((((gold * 100) + (silver * 10)) + copper) >= pc_gb_rate_copper))
+    # [${pc_gb_rate_copper} Copper Bits] Take a room upstairs for 24 hours.
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+        *set currency_add_amount (0 - pc_gb_rate_copper)
+        *gosub_scene economy currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id page_id
+      *set pc_gb_bunk_active true
+      *set gb_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+      *set pc_gb_bunk_until (gb_now + 1440)
+      You set the coins on the counter. "A room, please."
+
+      @{(met_odda) Odda|The stout woman} sweeps them into her apron pocket and hands over an iron key. "Stair's in the corner, second door on the right. Key's yours till this hour tomorrow."
+      *goto pc_gb_bunk
+  # Take a stool at the dice game.
+    *goto pc_gb_dice
   # Step back out onto the lane.
     *goto_scene hartwell/palmcote/palmcote pc_return
 
@@ -320,3 +338,36 @@ Odda's eyes flick toward the small front window, then back to you. She picks up 
 
 She tosses the rag onto the board behind her and folds her arms. "They don't come down here to drink, and I don't climb the hill to ask their business. If you're looking for picking work, the yard's down the lane. They pay by the basket when the weather holds."
 *goto pc_gb_hall
+
+*comment ── THE DICE TABLE ── Up only at night, when the pickers and carters are back from the terraces.
+*label pc_gb_dice
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  A few villagers have a game going at the far plank table, passing a scuffed wooden die-cup hand to hand over a chalked circle.
+*else
+  The far plank table sits bare. The pickers and carters who run the game are out working at this hour.
+
+*label pc_gb_dice_menu
+*choice
+  *if ((((time_period = "Night") or (time_period = "Pre-Dawn")) and ((branch_dice_bankroll > 0) and ((((gold * 100) + (silver * 10)) + copper) >= 4))))
+    # Settle in for a round at the dice table. [DC 10]
+      *set wager_bankroll_var "branch_dice_bankroll"
+      *set wager_ante_copper 4
+      *set wager_win_copper 8
+      *set check_dc 10
+      *gosub_scene economy resolve_wager
+      *set hours_to_pass 0
+      *set minutes_to_pass 15
+      *set time_advance_call_id "pc_gb_dice"
+      *gosub_scene calendar advance_time
+      *gosub_scene calendar recalc_hp_from_neglect
+      *if (hp_current <= 0)
+        *set death_cause "exhaustion"
+        *goto_scene death death_screen
+      *if (check_success)
+        You trade the cup back and forth with the table for the better part of a quarter hour, reading each throw before anyone calls it, until the dice finally settle your way. A few coins slide across to you.
+        [b][🎲 Dice Wager Won: +8 Copper Bits][/b]
+      *else
+        You stay in the game a good quarter hour, but the run of throws never turns your way. The dice skid wide of the mark, and someone else's hand closes over the pot first.
+      *goto pc_gb_dice_menu
+  # Go back to the counter.
+    *goto pc_gb_hall
