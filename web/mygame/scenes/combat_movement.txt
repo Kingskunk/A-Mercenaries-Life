@@ -263,6 +263,21 @@
   *goto combat_get_cover_ranged_defense_bonus_loop
 *return
 
+*comment Whether a Web patch (the spell) lies on one lane coordinate, into combat_web_here. Read-only.
+*label combat_web_at
+*params cwa_position
+*set combat_web_here false
+*temp cwa_i 1
+*label combat_web_at_loop
+*if (cwa_i <= combat_terrain_slot_cap)
+  *temp cwa_type {("combat_terrain" & cwa_i) & "_type"}
+  *temp cwa_pos {("combat_terrain" & cwa_i) & "_position"}
+  *if ((cwa_type = "web") and (cwa_pos = cwa_position))
+    *set combat_web_here true
+  *set cwa_i + 1
+  *goto combat_web_at_loop
+*return
+
 *label combat_difficult_terrain_crossing_query
 *comment Shared movement query for an adjacent lane step. Difficult Terrain is a compact half-speed rule: an actor
 *comment may make the ordinary step into, out of, or across the terrain, but that step uses all movement and cannot
@@ -274,7 +289,8 @@
 *if (cdtcq_i <= combat_terrain_slot_cap)
   *temp cdtcq_type {("combat_terrain" & cdtcq_i) & "_type"}
   *temp cdtcq_position {("combat_terrain" & cdtcq_i) & "_position"}
-  *if (cdtcq_type = "difficult_terrain")
+  *comment A Web patch (the spell) is difficult terrain too.
+  *if ((cdtcq_type = "difficult_terrain") or (cdtcq_type = "web"))
     *if ((cdtcq_position = cdtcq_from) or (cdtcq_position = cdtcq_to))
       *set combat_difficult_terrain_blocks_dash true
   *set cdtcq_i + 1

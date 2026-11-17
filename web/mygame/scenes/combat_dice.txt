@@ -1705,6 +1705,8 @@ ${combat_player_dmg_roll_banner}
   *temp ct_fr_name {(ct_prefix & "name")}
   *temp ct_fr_holds true
   *if (ct_fr_dc > 0)
+    *comment Opened first: a Web save at the start of this turn may already have used this slot's lock on the page.
+    *set {("combat_save_locked_" & ct_lock)} false
     *gosub resolve_save ct_prefix "wisdom" "Wisdom" ct_fr_dc ct_lock
     *comment check_success is inverted: true = the bearer FAILED, so the fear holds.
     *set ct_fr_holds check_success
@@ -1884,6 +1886,25 @@ ${combat_player_dmg_roll_banner}
 *if (ce_id = "cause_fear")
   *gosub condition_end_by_source "frightened" (ce_prefix & "cause_fear")
   *return
+*comment Web: every restraint this caster's Web made ends, and the patch is cleared from the lane.
+*if (ce_id = "web")
+  *comment Held in its own temp: condition_end (called inside condition_end_by_source) takes ce_prefix as its own parameter and overwrites it.
+  *temp ce_web_caster ce_prefix
+  *gosub condition_end_by_source "restrained" (ce_prefix & "web")
+  *if (ce_web_caster = "combat_player_")
+    *if (combat_terrain1_type = "web")
+      *set combat_terrain1_type "none"
+      *set combat_terrain1_position 0
+    *if (combat_terrain2_type = "web")
+      *set combat_terrain2_type "none"
+      *set combat_terrain2_position 0
+    *if (combat_terrain3_type = "web")
+      *set combat_terrain3_type "none"
+      *set combat_terrain3_position 0
+    *if (combat_terrain4_type = "web")
+      *set combat_terrain4_type "none"
+      *set combat_terrain4_position 0
+  *return
 *comment Only the hold this caster's Hold Person put on.
 *if (ce_id = "hold_person")
   *gosub condition_end_by_source "paralyzed" (ce_prefix & "hold_person")
@@ -1910,6 +1931,8 @@ ${combat_player_dmg_roll_banner}
   *set cf_name "Cause Fear"
 *if (cf_spell_id = "hold_person")
   *set cf_name "Hold Person"
+*if (cf_spell_id = "web")
+  *set cf_name "Web"
 *if (cf_spell_id = "blade_ward")
   *set cf_name "Blade Ward"
 *if (cf_prefix = "combat_player_")

@@ -1736,6 +1736,8 @@
   *set spell_range_tag "ranged"
 *if (check_skill = "Hold Person")
   *set spell_range_tag "ranged"
+*if (check_skill = "Web")
+  *set spell_range_tag "ranged"
 *if (check_skill = "Shatter")
   *set spell_range_tag "ranged"
 *if (check_skill = "Scorching Ray")
@@ -1774,6 +1776,9 @@
   *if (spell_range_at > combat_reach_medium)
     *set spell_in_range false
 *if (check_skill = "Hold Person")
+  *if (spell_range_at > combat_reach_medium)
+    *set spell_in_range false
+*if (check_skill = "Web")
   *if (spell_range_at > combat_reach_medium)
     *set spell_in_range false
 *if (check_skill = "Shatter")
@@ -3740,6 +3745,7 @@
 *temp spell_reach_ok_magic_missile combat_in_long
 *temp spell_reach_ok_blindness combat_in_long
 *temp spell_reach_ok_hold_person combat_in_medium
+*temp spell_reach_ok_web combat_in_medium
 *temp spell_reach_ok_shatter combat_in_medium
 *temp spell_reach_ok_scorching_ray combat_in_long
 *comment GEN:END spell_reach_flags
@@ -3987,6 +3993,11 @@
   *set combat_mm_darts_max 0
   *gosub combat_eval_spell_why "action" cw_slot_2 false "" spell_reach_ok_scorching_ray
   *set combat_why_scorching_ray combat_why_res
+*temp combat_why_web "unowned"
+*if (((((held_web) or (race_cantrip = "web")) or (race_cantrip_2 = "web")) and ((not(class_prepares)) or (prepared_web))) or (known_web))
+  *comment Web fills a point in range, not a creature you must see: no Sight gate.
+  *gosub combat_eval_spell_why "action" cw_slot_2 false "" spell_reach_ok_web
+  *set combat_why_web combat_why_res
 *temp combat_why_hold_person "unowned"
 *temp hold_person_slot 0
 *temp hold_person_epithet combat_enemy_epithet
@@ -5145,6 +5156,15 @@
     # [b][ACTION][/b] [b][Blindness][/b] Strike ${combat_enemy_epithet} blind.@{show_stat_hints  [Constitution Save]|}
       *gosub_scene combat_movement fight_pick_target
       *gosub_scene combat_spells resolve_cast_blindness
+      *goto fight_action_spent
+
+  *if (combat_why_web = "")
+    # [b][ACTION][/b] [b][Web][/b] Cast sticky webbing over ${combat_med_epithet} and the ground they stand on.@{show_stat_hints  [Dexterity Save, Restrained; the webbing slows movement]|}
+      *gosub_scene combat_movement fight_pick_target
+      *gosub_scene combat_movement fight_retarget_by_class "medium"
+      *gosub_scene combat_prose flavor_web
+      *line_break
+      *gosub_scene combat_spells resolve_cast_web
       *goto fight_action_spent
 
   *if (combat_why_hold_person = "")
@@ -7129,15 +7149,19 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *temp crt_roll 0
 *temp crt_v 1
 *temp crt_dc 0
+*comment Held by a Web (the spell) rather than Ensnaring's vines: no thorns, and its own lines. Cached with the tick, since tearing free clears the source.
+*temp crt_web false
 *if (crt_page = page_id)
   *set crt_dc {(crt_p & "restrain_dc")}
   *set crt_res {(crt_p & "restrain_res")}
   *set crt_dealt {(crt_p & "restrain_dealt")}
   *set crt_roll {(crt_p & "restrain_roll")}
   *set crt_v {(crt_p & "restrain_v")}
+  *set crt_web {(crt_p & "restrain_web")}
 *else
   *comment The escape DC was stored when the restraint landed. Cached with the tick's other results, since tearing free clears the condition (and its DC) before the banner prints.
   *set crt_dc {(crt_p & "restrained_dc")}
+  *set crt_web ({(crt_p & "restrained_src")} = "combat_player_web")
   *rand crt_v 1 3
   *comment The thorns' die and damage type come from the Ensnaring Strike data (tools/spell_book.json).
   *gosub_scene combat_spells spell_facts_load "ensnaring_strike"
@@ -7151,6 +7175,8 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *set combat_player_dmg_dealt crt_die
   *gosub_scene combat_dice apply_outgoing_damage_resist_vuln
   *set crt_dealt combat_player_dmg_dealt
+  *if (crt_web)
+    *set crt_dealt 0
   *set combat_enemy_hp - crt_dealt
   *if (combat_enemy_hp < 0)
     *set combat_enemy_hp 0
@@ -7172,9 +7198,36 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *set {(crt_p & "restrain_dealt")} crt_dealt
   *set {(crt_p & "restrain_roll")} crt_roll
   *set {(crt_p & "restrain_v")} crt_v
+  *set {(crt_p & "restrain_web")} crt_web
   *set {(crt_p & "restrain_dc")} crt_dc
   *set {(crt_p & "restrain_page")} page_id
-*if (combat_enemy_hp <= 0)
+*if (crt_web)
+  *if (crt_res = 1)
+    *if (crt_v = 1)
+      $!{combat_enemy_epithet} hauls against the webbing, and the strands stretch and hold.
+    *if (crt_v = 2)
+      $!{combat_enemy_epithet} claws at the sticky strands, and fresh threads catch at every pull.
+    *if (crt_v = 3)
+      The web clings tight, and ${combat_enemy_epithet} spends the turn twisting against it.
+    *line_break
+    [b][🕸️ ${combat_enemy_name} fails to break free (Strength check ${crt_roll} vs DC ${crt_dc}) — turn spent][/b]
+    *line_break
+    *set combat_restrain_stop true
+  *elseif (crt_res = 2)
+    *if (crt_v = 1)
+      $!{combat_enemy_epithet} rips loose with a wet tearing sound, trailing strands.
+    *if (crt_v = 2)
+      With one hard wrench, ${combat_enemy_epithet} tears through the webbing.
+    *if (crt_v = 3)
+      The strands snap one after another, and ${combat_enemy_epithet} staggers free.
+    *line_break
+    [b][🕸️ ${combat_enemy_name} breaks free of the web (Strength check ${crt_roll} vs DC ${crt_dc}) — turn spent][/b]
+    *line_break
+    *set combat_restrain_stop true
+  *else
+    The web holds ${combat_enemy_epithet} where they stand, and they fight from the spot.
+    *line_break
+*elseif (combat_enemy_hp <= 0)
   The thorns close tight, and ${combat_enemy_epithet} goes still in the vines.
   *line_break
   [b][🌿 ${combat_enemy_name} takes ${crt_dealt} piercing damage from the thorns${combat_outgoing_dmg_suffix} | 💀 Defeated][/b]
@@ -8114,6 +8167,8 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *temp cnt_slowed {(("combat_enemy" & cnt_slot) & "_slowed")}
     *temp cnt_wet {(("combat_enemy" & cnt_slot) & "_wet")}
     *temp cnt_frightened {(("combat_enemy" & cnt_slot) & "_frightened")}
+    *comment Where this enemy began its turn, for Web's "walked into the webs" save at the end of it.
+    *temp cnt_web_from {(("combat_enemy" & cnt_slot) & "_position")}
     *set {("combat_turn_first_pass_" & combat_current_turn_index)} false
     *comment cnt_rv: shared by both branches below that roll a 3-way flavor variant, declared once here instead
     *comment of once per branch.
@@ -8199,6 +8254,12 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *temp cnt_restrain_stop false
     *comment Ensnaring Strike's 10-round ceiling ends its concentration, and that clears the restraint (concentration_reconcile), so it runs before the read.
     *gosub_scene combat_dice concentration_reconcile
+    *comment WEB: a foe that starts its turn in the webs and is not already stuck makes its Dexterity save; a failure restrains it, and the tear-free below runs this same turn.
+    *if (not((combat_player_surprise) and (cnt_first_pass)))
+      *gosub_scene combat_movement combat_web_at cnt_web_from
+      *temp cnt_web_held {(("combat_enemy" & cnt_slot) & "_restrained")}
+      *if ((combat_web_here) and (cnt_web_held <= 0))
+        *gosub_scene combat_spells web_catch cnt_slot
     *temp cnt_restrained {(("combat_enemy" & cnt_slot) & "_restrained")}
     *if (((cnt_restrained > 0) and (not(cnt_stun_stop))) and (not((combat_player_surprise) and (cnt_first_pass))))
       *gosub combat_restrain_tick cnt_slot cnt_wants_move
@@ -8623,6 +8684,13 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *comment Frightened's end-of-turn Wisdom save, Blinded's Constitution save and Slowed's countdown all run in condition_tick (combat_dice.txt), which reads the live fields, so a Cause Fear whose concentration broke during this turn is already gone. If it died during its own turn (a Rebuke, Armor of Agathys) there is nothing to roll for.
     *if (combat_enemy_hp > 0)
       *temp cnt_cp (("combat_enemy" & cnt_slot) & "_")
+      *comment WEB: a foe that moved into the webs this turn makes its Dexterity save once it stops there (difficult terrain ends the move on the patch).
+      *temp cnt_web_to {(cnt_cp & "position")}
+      *temp cnt_web_held2 {(cnt_cp & "restrained")}
+      *if ((not(cnt_web_to = cnt_web_from)) and (cnt_web_held2 <= 0))
+        *gosub_scene combat_movement combat_web_at cnt_web_to
+        *if (combat_web_here)
+          *gosub_scene combat_spells web_catch cnt_slot
       *gosub_scene combat_dice condition_tick cnt_cp cnt_slot
     *gosub_scene combat_dice concentration_reconcile
 *if (cnt_kind = "ally")

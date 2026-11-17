@@ -46,6 +46,9 @@
     # [1 Copper Bit] Buy a cup of watered red wine. [~10 min]@{show_stat_hints  [+1 CHA for 4h]|}
       *set tavern_item_cost_copper 1
       *goto pc_gb_wine
+  *if ((not(pc_gb_asked_village)) or (not(pc_gb_asked_house)))
+    # Sit at the counter and talk with Odda.
+      *goto pc_gb_talk
   *if (pc_gb_bunk_active)
     # Climb the stair to your room.
       *goto pc_gb_bunk
@@ -109,7 +112,7 @@
 *label pc_gb_street
 *if (gb_first)
   *set met_odda true
-  A stout woman with a long grey braid over one shoulder stands behind the counter. Flour is dried pale on her forearms, and a cloth is tucked into her belt. She looks you over from boots to face.
+  A stout, broad-shouldered woman in her sixties stands behind the counter, her grey braid over one shoulder and a heavy linen apron tied high over a plain brown woollen kirtle. Flour is dried pale on her rolled sleeves and forearms, and her sun-creased face holds a steady, unhurried look as she sizes you up from boots to face.
 
   "Odda Pellam," she says, her voice rough and warm. "Sit anywhere there's room. Bread's out of the oven, stew's hot."
 *else
@@ -183,6 +186,9 @@
 *choice
   # Order something else.
     *goto pc_gb_hall
+  *if ((not(pc_gb_asked_village)) or (not(pc_gb_asked_house)))
+    # Sit at the counter and talk with Odda.
+      *goto pc_gb_talk
   *if (pc_gb_bunk_active)
     # Climb the stair to your room.
       *goto pc_gb_bunk
@@ -275,3 +281,42 @@ You pour cold water into the basin and scrub the dust off your face, neck and ha
 *line_break
 [b][🧼 Washed Up: Hygiene Restored to Clean][/b]
 *goto pc_gb_bunk
+
+*comment ── TALKING WITH ODDA ── One-time conversation from the roleplay pass.
+*label pc_gb_talk
+*if (not(pc_gb_asked_village))
+  *set pc_gb_asked_village true
+  *set minutes_to_pass 5
+  *set time_advance_call_id "pc_gb_talk_village"
+  *gosub_scene calendar advance_time
+  You pull out a stool at the counter and sit. "${name}," you say in greeting. "What can you tell me about the village?"
+
+  Odda wipes her hands on the cloth at her belt and leans an elbow on the wood, giving you a steady look back. "${name}, then. Well met."
+
+  She jerks her chin toward the door. "Palmcote's small, quiet, and mostly up to its elbows in olives or honey. The groves sit on the slopes, the hives sit behind the walls, and half the village spends its days filling baskets so the carts can haul them down to Hartwell." She slides a small dish of dark olives across the counter toward you. "First handful's free. Don't spit the stones on my floor. Looking for work, or just passing through?"
+  *if (not(pc_gb_asked_house))
+    *choice
+      # "Could be both, depending. What can you tell me about that house on the hill?"
+        *goto pc_gb_talk_house
+      # "Just passing through for now."
+        "Just passing through for now," you say.
+
+        Odda nods once and goes back to her dough.
+        *goto pc_gb_hall
+  *goto pc_gb_hall
+*elseif (not(pc_gb_asked_house))
+  *goto pc_gb_talk_house
+*else
+  *goto pc_gb_hall
+
+*label pc_gb_talk_house
+*set pc_gb_asked_house true
+*set minutes_to_pass 5
+*set time_advance_call_id "pc_gb_talk_house"
+*gosub_scene calendar advance_time
+"Could be both, depending," you say. "What can you tell me about that house on the hill?"
+
+Odda's eyes flick toward the small front window, then back to you. She picks up a rag and wipes a dry ring off the counter. "The big house," she says, her voice dropping just a notch. "The people with the money live up there. Their mark's burned into the side of every cart that leaves the yard, and their bailiff's the one who weighs the baskets at the end of the day."
+
+She tosses the rag onto the board behind her and folds her arms. "They don't come down here to drink, and I don't climb the hill to ask their business. If you're looking for picking work, the yard's down the lane. They pay by the basket when the weather holds."
+*goto pc_gb_hall

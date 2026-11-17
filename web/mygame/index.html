@@ -887,12 +887,13 @@ button#statSidebar .turnRow,
     return h + "</span>";
   }
   var SB_CLASSES = { fighter: 1, barbarian: 1, bard: 1, ranger: 1, rogue: 1, warlock: 1, wizard: 1 };
-  // Terrain remains data-driven: the same three terrain slots that drive combat mechanics are read here, so no
+  // Terrain remains data-driven: the same terrain slots that drive combat mechanics are read here, so no
   // card needs a terrain-specific branch. A future type without supplied art is still visible as a brass diamond.
   var TERRAIN_LABELS = {
     chokepoint: "Chokepoint",
     cover: "Cover",
     difficult_terrain: "Difficult Terrain",
+    web: "Web",
     high_ground: "High Ground",
     open_ground: "Open Ground"
   };
@@ -946,6 +947,7 @@ button#statSidebar .turnRow,
     cover: "+2 AC against ranged weapon and spell attacks for whoever stands here.",
     high_ground: "A ranged attack from here gets +2 against a target not on high ground, and -2 against one that is.",
     difficult_terrain: "One ordinary step only. Entering, leaving or standing in it uses all your movement for the turn, so no Dash.",
+    web: "Sticky webbing. A foe caught here may be Restrained until it tears free, and it slows movement like difficult terrain, so no Dash.",
     chokepoint: "Single file: one fighter holds the crossing, and a holder blocks the way past it.",
     open_ground: "Nothing special."
   };
@@ -1097,9 +1099,10 @@ button#statSidebar .turnRow,
     // conditions and effects as a row of small icons on the token's lower edge (on a crowded tile, the first two and a count); the hover card names them
     var pips = "", sts = o.down ? [] : statusesOf(s, o.kind, o.slot);
     if (sts.length) {
-      pips = "<span class=\"stagePips\" aria-label=\"" + esc(sts.map(function (c) { return c.label; }).join(", ")) + "\">" +
-        sts.map(function (c, i) { return "<i class=\"stagePip t-" + c.tone + (i > 1 ? " more" : "") + "\" title=\"" + esc(c.tip) + "\">" + c.glyph + "</i>"; }).join("") +
-        (sts.length > 2 ? "<i class=\"stagePip t-grey count\" title=\"" + esc(sts.slice(2).map(function (c) { return c.label; }).join(", ")) + "\">+" + (sts.length - 2) + "</i>" : "") + "</span>";
+      // No native title tooltip: a pip opens the themed card (paintPipCard) after a short hover, in place of the token's card.
+      pips = "<span class=\"stagePips\" data-pipof=\"" + esc(o.kind + ":" + (o.kind === "player" ? 0 : o.slot)) + "\" aria-label=\"" + esc(sts.map(function (c) { return c.label; }).join(", ")) + "\">" +
+        sts.map(function (c, i) { return "<i class=\"stagePip t-" + c.tone + (i > 1 ? " more" : "") + "\" data-pip=\"" + i + "\">" + c.glyph + "</i>"; }).join("") +
+        (sts.length > 2 ? "<i class=\"stagePip t-grey count\" data-pip=\"more\">+" + (sts.length - 2) + "</i>" : "") + "</span>";
       cls += " hasPips";
     }
     return "<div class=\"" + cls + "\" style=\"--hp:" + pct + "\"" + attrs + ">" + pips +
@@ -1385,8 +1388,31 @@ button#statSidebar .turnRow,
   });
   // Hover plumbing, the same as the sidebar's: a token opens its combatant card, a bare tile its lane card, and a token and its turn-order
   // card light each other. Clicks need nothing here: the document-wide data-target / data-friendly handlers already serve the stage.
+  // A condition pip: after PIP_DWELL ms on the same pip, its own card replaces the token's card (never two at once). The stage is rebuilt
+  // under a still pointer, which fires mouseover again, so the key is compared rather than the element.
+  var PIP_DWELL = 450, pipTimer = null, pipPending = null, pipX = 0, pipY = 0;
+  function pipKeyAt(t) {
+    var pip = t && t.closest ? t.closest(".stagePip[data-pip]") : null, of = pip && pip.parentNode ? pip.parentNode.getAttribute("data-pipof") : null;
+    return pip && of ? "pip:" + of + ":" + pip.getAttribute("data-pip") : null;
+  }
+  function disarmPip() { if (pipTimer) clearTimeout(pipTimer); pipTimer = null; pipPending = null; }
+  function armPip(key) {
+    if (pipPending === key) return;
+    disarmPip();
+    pipPending = key;
+    pipTimer = setTimeout(function () {
+      pipTimer = null;
+      var still = pipKeyAt(document.elementFromPoint(pipX, pipY)) === key;
+      pipPending = null;
+      if (still) showTip(key, pipX, pipY);
+    }, PIP_DWELL);
+  }
   function bindStage(el) {
     el.addEventListener("mouseover", function (ev) {
+      var pk = pipKeyAt(ev.target);
+      pipX = ev.clientX; pipY = ev.clientY;
+      if (pk && tipKey === pk) return;   // its card is already up
+      if (pk) armPip(pk); else disarmPip();
       var t = ev.target, tok = t && t.closest ? t.closest(".stageToken[data-combatant]") : null;
       var tile = t && t.closest ? t.closest(".stageTile[data-node]") : null, linked = t && t.closest ? t.closest("[data-link]") : null;
       if (tok) showTip(tok.getAttribute("data-combatant"), ev.clientX, ev.clientY);
@@ -1395,10 +1421,11 @@ button#statSidebar .turnRow,
       setLink(linked ? linked.getAttribute("data-link") : null);
     });
     el.addEventListener("mousemove", function (ev) {
+      pipX = ev.clientX; pipY = ev.clientY;
       if (!tipKey) return;
       tipX = ev.clientX; tipY = ev.clientY; placeTip();
     });
-    el.addEventListener("mouseleave", function () { hideTip(); setLink(null); });
+    el.addEventListener("mouseleave", function () { disarmPip(); hideTip(); setLink(null); });
   }
 
   // Ally orders are a sidebar surface, not player actions. The ChoiceScript option remains the authority for
@@ -1995,9 +2022,9 @@ button#statSidebar .turnRow,
     if (!isFinite(enemyPos) || !isFinite(playerPos) || enemyPos === playerPos) return false;
     var step = enemyPos + (playerPos > enemyPos ? 1 : -1);
     var dashStep = step + (playerPos > enemyPos ? 1 : -1);
-    return terrainTypesAt(s, enemyPos).indexOf("difficult_terrain") >= 0 ||
-      terrainTypesAt(s, step).indexOf("difficult_terrain") >= 0 ||
-      terrainTypesAt(s, dashStep).indexOf("difficult_terrain") >= 0;
+    // A Web patch (the spell) slows movement the same way.
+    function slow(pos) { var t = terrainTypesAt(s, pos); return t.indexOf("difficult_terrain") >= 0 || t.indexOf("web") >= 0; }
+    return slow(enemyPos) || slow(step) || slow(dashStep);
   }
 
   // Read-only forecast of what the enemy's existing turn logic can do from its current band. This intentionally
@@ -2447,6 +2474,24 @@ button#statSidebar .turnRow,
     tipNode().innerHTML = "<div class=\"tHd\">" + esc(qVal(q.title, s)) + "</div>" + (who.length ? "<div class=\"tMeta\">" + who.join(" \u00b7 ") + "</div>" : "") + "<div class=\"tText\">" + lines.join("") + "</div><div class=\"tMore\">Click for full quest details</div>";
     return true;
   }
+  // The card for one condition pip on a battle-stage token ("pip:<kind>:<slot>:<index>", or ":more" for the "+N" pip): its name and what it
+  // does, from the same statusesOf list the pips are drawn from, so the two never disagree.
+  function paintPipCard(key) {
+    var s = window.stats, bits = key.split(":");
+    if (!s || bits.length < 4) return false;
+    var sts = statusesOf(s, bits[1], Number(bits[2])), pick = bits[3] === "more" ? sts.slice(2) : [sts[Number(bits[3])]];
+    pick = pick.filter(Boolean);
+    if (!pick.length) return false;
+    function split(c) { var i = c.tip.indexOf(": "); return i > 0 ? { hd: c.tip.slice(0, i), body: c.tip.slice(i + 2) } : { hd: c.label, body: c.tip }; }
+    if (pick.length === 1) {
+      var one = split(pick[0]);
+      tipNode().innerHTML = "<div class=\"tHd\">" + esc(one.hd) + "</div><div class=\"tText\"><p>" + esc(one.body) + "</p></div>";
+    } else {
+      tipNode().innerHTML = "<div class=\"tHd\">More conditions</div><div class=\"tText\">" +
+        pick.map(function (c) { var x = split(c); return "<p><b>" + esc(x.hd) + "</b> " + esc(x.body) + "</p>"; }).join("") + "</div>";
+    }
+    return true;
+  }
   function showTip(key, x, y) {
     var t = tipNode();
     if (tipHideTimer) { clearTimeout(tipHideTimer); tipHideTimer = null; }
@@ -2463,6 +2508,13 @@ button#statSidebar .turnRow,
     if (key.indexOf("cond:") === 0) {
       tipKey = key; tipX = x; tipY = y;
       if (!paintCondCard(key.slice(5))) return hideTip();
+      placeTip();
+      t.classList.add("on");
+      return;
+    }
+    if (key.indexOf("pip:") === 0) {
+      tipKey = key; tipX = x; tipY = y;
+      if (!paintPipCard(key)) return hideTip();
       placeTip();
       t.classList.add("on");
       return;
@@ -2529,6 +2581,14 @@ button#statSidebar .turnRow,
       tipKey = "cond:" + cchip.getAttribute("data-cond");
       if (!paintCondCard(tipKey.slice(5))) return hideTip();
       return placeTip();
+    }
+    if (tipKey.indexOf("pip:") === 0) {
+      // A condition pip: the stage is rebuilt under the pointer, so find the pip again; off it, hand back to the token's own card.
+      var pel = document.elementFromPoint(tipX, tipY);
+      if (pipKeyAt(pel) === tipKey) { if (!paintPipCard(tipKey)) return hideTip(); return placeTip(); }
+      var ptok = pel && pel.closest ? pel.closest("#battleStage .stageToken[data-combatant]") : null;
+      if (ptok) return showTip(ptok.getAttribute("data-combatant"), tipX, tipY);
+      return hideTip();
     }
     if (tipKey.indexOf("node:") === 0) {
       // A lane node: re-resolve under the pointer, repaint (the lane may have moved), or drop the card.

@@ -187,6 +187,9 @@
     { id: "blindness", name: "Blindness", level: 2, schools: "Transmutation",
       time: "Action", components: "V", duration: "A minute",
       text: "A sudden dark that drops over one foe's eyes. While it lasts, their blows swing blind with disadvantage and every strike against them comes easier, until their body fights the working off." },
+    { id: "web", name: "Web", level: 2, schools: "Conjuration",
+      time: "Action", components: "V, S, M", duration: "Concentration, up to an hour",
+      text: "A mass of thick, sticky strands that spills over one spot and clings to everything standing there. Anything caught is stuck fast until it tears free, and the webbing slows whoever walks through it for as long as you hold the spell." },
     { id: "hold_person", name: "Hold Person", level: 2, schools: "Enchantment",
       time: "Action", components: "V, S, M", duration: "Concentration, a minute",
       text: "A binding word that seizes every muscle of one person and locks them in place. While the hold lasts they lose their turns and every blow against them comes easier, until their will breaks it. It takes hold only of people, never beasts or the dead." },
@@ -265,6 +268,7 @@
     "unseen_servant": ["warlock"],
     "blindness": ["bard","wizard"],
     "hold_person": ["wizard","bard","warlock"],
+    "web": ["wizard"],
     "shatter": ["wizard","bard","warlock"],
     "scorching_ray": ["wizard"]
     };
@@ -301,6 +305,7 @@
     "unseen_servant": 1,
     "blindness": 2,
     "hold_person": 2,
+    "web": 2,
     "shatter": 2,
     "scorching_ray": 2
     };
@@ -311,7 +316,8 @@
     "hex": true,
     "ensnaring_strike": true,
     "hunters_mark": true,
-    "hold_person": true
+    "hold_person": true,
+    "web": true
     };
   // Combat facts and schools generated from tools/spell_book.json (cantrips + learnable).
   var SPELL_FACTS = {
@@ -358,6 +364,7 @@
     "unseen_servant": {"name":"Unseen Servant","level":1,"school":"Conjuration","combat":{"cost":"action","slot_level":1,"resolution":"effect","duration":"1 hour","area":"Far","effect":"Invisible mindless force for simple tasks"}},
     "blindness": {"name":"Blindness","level":2,"school":"Necromancy","range":"ranged","reach":"long","combat":{"cost":"action","slot_level":2,"resolution":"save","save_ability":"constitution","duration":"Up to 10 rounds","effect":"Blinded: disadvantage on attacks, attacks against have advantage; repeats save end of turn"}},
     "hold_person": {"name":"Hold Person","level":2,"school":"Enchantment","concentration":true,"range":"ranged","reach":"medium","combat":{"cost":"action","slot_level":2,"resolution":"save","save_ability":"wisdom","upcast":{"targets":1},"duration":"Up to 10 rounds","effect":"Paralyzed: loses its turns, attacks against it have advantage, fails Strength and Dexterity saves; humanoids only"}},
+    "web": {"name":"Web","level":2,"school":"Conjuration","concentration":true,"range":"ranged","reach":"medium","combat":{"cost":"action","slot_level":2,"resolution":"save","save_ability":"dexterity","duration":"While you concentrate","area":"The target's spot, as a lasting patch of difficult terrain","effect":"Restrained on a failed Dexterity save, when cast and when a foe starts its turn in the webs or walks into them; a Strength check against your spell DC tears free"}},
     "shatter": {"name":"Shatter","level":2,"school":"Evocation","range":"ranged","reach":"medium","combat":{"cost":"action","slot_level":2,"resolution":"save","save_ability":"constitution","half_on_save":true,"damage_dice":"3d8","damage_type":"thunder","add_casting_mod":false,"upcast":{"damage_dice":"1d8"},"duration":"Instantaneous","area":"The target and every foe at its spot","effect":"Constructs have disadvantage on the save"}},
     "scorching_ray": {"name":"Scorching Ray","level":2,"school":"Evocation","range":"ranged","reach":"long","combat":{"cost":"action","slot_level":2,"resolution":"attack","attack_kind":"ranged_spell","damage_dice":"2d6","damage_type":"fire","add_casting_mod":false,"projectiles":3,"upcast":{"projectiles":1},"duration":"Instantaneous"}}
     };

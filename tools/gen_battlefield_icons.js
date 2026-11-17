@@ -20,7 +20,8 @@ const MAP = {
   cover: "Battlefield/Cover.png",
   difficult_terrain: "Battlefield/Difficult_terrain.png",
   high_ground: "Battlefield/High_Ground.png",
-  open_ground: "Battlefield/Open_Ground.png"
+  open_ground: "Battlefield/Open_Ground.png",
+  web: "Battlefield/Web.png"
 };
 const MIME = { ".png": "image/png", ".webp": "image/webp", ".jpg": "image/jpeg", ".svg": "image/svg+xml" };
 
