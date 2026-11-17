@@ -287,6 +287,16 @@
       }).join("");
       // The written entry is preferred over the one-line _desc stat: it is the one that fills a page.
       var prose = pick.meta.text || body || pick.meta.name;
+      // A damage cantrip's dice grow with character level (cantrip_scale in tools/spell_book.json): the entry names the level-1 dice, so
+      // the page shows the dice for the reader's level in their place.
+      var pf = (window.SPELL_FACTS || {})[pick.id], pc = pf && pf.combat;
+      if (pc && pc.damage_dice && pc.cantrip_scale) {
+        var plvl = Number(s.character_level) || 1, pdice = pc.damage_dice;
+        Object.keys(pc.cantrip_scale).map(Number).sort(function (a, b) { return a - b; }).forEach(function (t) {
+          if (plvl >= t && pc.cantrip_scale[t].damage_dice) pdice = pc.cantrip_scale[t].damage_dice;
+        });
+        if (pdice !== pc.damage_dice) prose = prose.replace(pc.damage_dice, pdice);
+      }
       // A spell that is not the character's own says so, under the entry: it is the item's, and it leaves with the item.
       var origin = pick.source === "item" ? "<div class=\"sb-origin sb-clipped\">Clipped in, not written: this working is the item's, and goes with it.</div>"
                  : pick.source === "pact" ? "<div class=\"sb-origin\">Granted by your pact. It costs you no spell slot.</div>" : "";

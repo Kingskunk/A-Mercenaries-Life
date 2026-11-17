@@ -89,10 +89,6 @@ RULES FOR THIS SESSION
 
 Roughly in the order I would take it. Each item is one hand-off, sized to review in one sitting.
 
-### 3.1 Damage cantrips that grow with level
-
-Fire Bolt, Ray of Frost, Chill Touch, Vicious Mockery, Poison Spray and Shocking Grasp roll one die at every level (Eldritch Blast grows in beams instead: see 3.2). Booming Blade and True Strike already read `cantrip_scale` from the data, and `resolve_player_hit` rolls `combat_player_dmg_dice_count` dice, so the damage cantrips need their `cantrip_scale` entries and the count passed through `resolve_spell_hit`. No character reaches level 5 yet.
-
 ### 3.2 Shared multi-target attacks, then Eldritch Blast's beams
 
 What is shared today: the sidebar allocation (`assignMultiTargetDart` in `index.html`, writing `combat_mm_darts_1..6` up to `combat_mm_darts_max`) and the count from the data (`projectiles_for_level`: `projectiles` plus `upcast.projectiles` per slot level). What is written per spell: the hub option, the Cast/Cancel targeting page (`fight_target_magic_missile`, `fight_target_scorching_ray`, `fight_target_cause_fear`, near copies) and the resolver loop. Make one targeting page and one "an attack roll per projectile" resolver keyed by spell id, and move Scorching Ray onto it (Magic Missile stays its own: it never rolls to hit). Then Eldritch Blast is data: beams from `cantrip_scale` (2 at level 5, 3 at 11, 4 at 17; `projectiles_for_level` reads the tier), with Agonizing Blast and Repelling Blast applied per beam. Until a character reaches level 5 it stays one target.

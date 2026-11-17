@@ -770,6 +770,8 @@
       }
     } else if (c.resolution === "attack") {
       var atkDice = c.damage_dice || "";
+      var atkStep = c.cantrip_scale ? cantripStep(c.cantrip_scale, lvl) : null;
+      if (atkStep && atkStep.damage_dice) atkDice = atkStep.damage_dice;
       if (up > 0 && c.upcast && c.upcast.damage_dice) atkDice = scaleDice(atkDice, c.upcast.damage_dice, up);
       var atkFlat = (c.add_casting_mod ? cmod : 0) + (id === "eldritch_blast" && truthy(s.inv_agonizing_blast) && num(s.cha_mod) > 0 ? num(s.cha_mod) : 0);
       if (atkDice) {
@@ -781,6 +783,8 @@
       if (id === "eldritch_blast" && truthy(s.inv_repelling_blast)) extraNotes.push("Repelling Blast: pushes Large or smaller 1 step back");
     } else if (c.resolution === "save") {
       var svDice = c.damage_dice || "";
+      var svStep = c.cantrip_scale ? cantripStep(c.cantrip_scale, lvl) : null;
+      if (svStep && svStep.damage_dice) svDice = svStep.damage_dice;
       if (up > 0 && c.upcast && c.upcast.damage_dice) svDice = scaleDice(svDice, c.upcast.damage_dice, up);
       var svFlat = c.add_casting_mod ? cmod : 0;
       if (svDice) mainBits.push(formatDiceAndMod(svDice, svFlat) + (c.damage_type ? " " + c.damage_type : ""));

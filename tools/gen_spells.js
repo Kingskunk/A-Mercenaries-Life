@@ -228,6 +228,7 @@ function collectCombatSpell(id, sp, expectedLevel) {
   if (c.temp_hp_dice !== undefined) tempHpDice = parseDice(c.temp_hp_dice, "spell '" + id + "' combat.temp_hp_dice");
   // A cantrip that grows with character level: the dice it rolls at level 1 and a list of tiers, each a level and the dice that replace them from then on.
   // kinds: hit = a rider on the weapon hit, move = damage when the sheathed target moves, extra = extra dice added to the hit.
+  // A tier's damage_dice replaces the spell's own damage_dice (Fire Bolt's 1d10 becomes 2d10 at level 5), so it must keep its die size.
   var scale = { sides: { hit: 0, move: 0, extra: 0 }, base: { hit: 0, move: 0, extra: 0 }, tiers: [] };
   var SCALE_KEYS = { hit: "on_hit_dice", move: "on_move_dice", extra: "extra_dice" };
   if (c.base_move_dice !== undefined) {
@@ -243,7 +244,20 @@ function collectCombatSpell(id, sp, expectedLevel) {
       var tier = c.cantrip_scale[lvl];
       if (!tier || typeof tier !== "object") throw new Error("spell '" + id + "' cantrip_scale[" + lvl + "] must be an object");
       if (!/^[1-9][0-9]*$/.test(lvl)) throw new Error("spell '" + id + "' cantrip_scale level '" + lvl + "' must be a whole number");
-      var entry = { level: Number(lvl), count: {} };
+      var entry = { level: Number(lvl), count: {}, dice: 0 };
+      Object.keys(tier).forEach(function (tk) {
+        if (tk !== "damage_dice" && !Object.keys(SCALE_KEYS).some(function (kind) { return SCALE_KEYS[kind] === tk; })) {
+          throw new Error("spell '" + id + "' cantrip_scale." + lvl + " has unknown field '" + tk + "'");
+        }
+      });
+      if (tier.damage_dice !== undefined) {
+        var td = parseDice(tier.damage_dice, "spell '" + id + "' cantrip_scale." + lvl + ".damage_dice");
+        if (c.damage_dice === undefined) throw new Error("spell '" + id + "' cantrip_scale." + lvl + ".damage_dice needs combat.damage_dice");
+        if (td.sides !== baseDice.sides) {
+          throw new Error("spell '" + id + "' cantrip_scale." + lvl + ".damage_dice sides (" + td.sides + ") !== base sides (" + baseDice.sides + ")");
+        }
+        entry.dice = td.count;
+      }
       Object.keys(SCALE_KEYS).forEach(function (kind) {
         var dk = SCALE_KEYS[kind];
         if (tier[dk] === undefined) return;
@@ -376,8 +390,9 @@ function genFactsLookup() {
     });
     s.scale.tiers.forEach(function (t) {
       var kinds = Object.keys(t.count);
-      if (!kinds.length) return;
+      if (!kinds.length && !t.dice) return;
       L.push("  *if (character_level >= " + t.level + ")");
+      if (t.dice) L.push("    *set spell_fact_dice_count " + t.dice);
       kinds.forEach(function (kind) { L.push("    *set spell_fact_" + kind + "_count " + t.count[kind]); });
     });
   });
