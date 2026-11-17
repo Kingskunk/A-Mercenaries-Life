@@ -121,7 +121,7 @@ No scroll exists for Shatter (`ICONS/Item/Consumable/Scroll/Scroll_of_Shatter_Un
 
 ### 3.7 Clear the dead-space flags
 
-24 scripts carry `"allowDeadSpace": true` (`grep -l allowDeadSpace tools/play_scripts/*.json`). Each is a doubled line break to fix, then drop the flag; a script's transcript names the scene and line ("!! DEAD SPACE"; its line number counts from 0, so it is one less than the editor's). The biggest left: `dungeon.txt` `dg_status_line` (4 scripts), `combat.txt` (lines 3106 and 2788 in the transcripts, 6), `longshade_forest` and `longshade_dryad` (3 each). One known cause: a spell that kills the last foe prints its kill banner with a line break, and `fight_victory` opens with another (seen on Ray of Sickness and Eldritch Blast kills).
+18 scripts carry `"allowDeadSpace": true` (`grep -l allowDeadSpace tools/play_scripts/*.json`). Each is a doubled line break to fix, then drop the flag; a script's transcript names the scene and line ("!! DEAD SPACE"; its line number counts from 0, so it is one less than the editor's). The biggest left: `longshade_forest` and `longshade_dryad` (3 each), and the three bark-fruit scripts (`dungeon.txt` `dg_status_line`). The bark-fruit cause is `calendar.txt` `advance_time`: its blank lines between commands end the caller's paragraph, so a page that passes time (`dg_time`) and then prints a `*line_break` (as `dg_status_line` does first) shows an empty line. Other dungeon pages that run `dg_time` straight before their menu likely have it too (not yet checked). Removing those blank lines fixes it everywhere, but text printed before and after a time skip may then join into one paragraph, so it needs a full transcript comparison.
 
 ### 3.8 Ally casters
 

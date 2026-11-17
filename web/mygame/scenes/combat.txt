@@ -4731,7 +4731,7 @@
         ${fsm}
         *line_break
         [b][💨 Miss][/b]
-      *line_break
+      *gosub fight_tail_break
       *goto fight_check_enemy_hp
 
   *if (combat_why_ray_of_frost = "")
@@ -4772,7 +4772,7 @@
         ${fsm}
         *line_break
         [b][💨 Miss][/b]
-      *line_break
+      *gosub fight_tail_break
       *goto fight_check_enemy_hp
 
   *if (combat_why_ray_of_sickness = "")
@@ -4853,7 +4853,7 @@
         ${fsm}
         *line_break
         [b][💨 Miss][/b]
-      *line_break
+      *gosub fight_tail_break
       *goto fight_check_enemy_hp
 
   *if (combat_why_eldritch_blast = "")
@@ -4907,7 +4907,7 @@
         ${fsm}
         *line_break
         [b][💨 Miss][/b]
-      *line_break
+      *gosub fight_tail_break
       *goto fight_check_enemy_hp
 
   *if (combat_why_chill_touch = "")
@@ -4946,7 +4946,7 @@
         ${fsm}
         *line_break
         [b][💨 Miss][/b]
-      *line_break
+      *gosub fight_tail_break
       *goto fight_check_enemy_hp
 
   *if (combat_why_vicious_mockery = "")
@@ -4991,7 +4991,7 @@
         ${fsm}
         *line_break
         [b][💨 Resisted][/b]
-      *line_break
+      *gosub fight_tail_break
       *goto fight_check_enemy_hp
 
   *if (combat_why_poison_spray = "")
@@ -5019,7 +5019,7 @@
         ${fsm}
         *line_break
         [b][💨 Resisted][/b]
-      *line_break
+      *gosub fight_tail_break
       *goto fight_check_enemy_hp
 
   *if (combat_why_magic_missile = "")
@@ -5908,7 +5908,7 @@ You pull the stopper and hurl the philter at ${combat_enemy_epithet}.
     The glass breaks short, and a puddle of flame spits and dies at ${combat_throw_epithet}'s feet.
   *line_break
   [b][💨 Miss][/b]
-*line_break
+*gosub fight_tail_break
 *goto fight_check_enemy_hp
 
 *comment THE WATER JUG, THROWN (2026-10-19, the user's design, copying Alchemist's Fire's hit rule): a ranged attack, Dexterity + proficiency against AC, at Mid-Range, the whole jug's water flung at the target. No damage. A hit leaves the enemy Wet for three of its turns
@@ -6470,7 +6470,7 @@ ${combat_dw_dmg_banner}
   ${fsm}
   *line_break
   [b][💨 Miss][/b]
-*line_break
+*gosub fight_tail_break
 *goto fight_check_enemy_hp
 
 *label fight_target_magic_missile
@@ -6990,6 +6990,17 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *set combat_arrow_kind ""
 *set combat_pending_spend_is_attack true
 *goto fight_check_enemy_hp
+
+*comment The break under a damage option's last banner, unless the blow ended the fight: fight_victory opens with its own break,
+*comment so a second one would print an empty line. Undead Fortitude rolls first (it is locked to the page, so fight_check_enemy_hp's
+*comment own call reuses the result), and the sync and the dead check are repeated there and change nothing a second time.
+*label fight_tail_break
+*gosub fight_undead_fortitude_roll
+*gosub fight_sync_target_out
+*gosub fight_check_all_dead
+*if (not(combat_all_enemies_dead))
+  *line_break
+*return
 
 *label fight_check_enemy_hp
 *comment Shared tail for every damage-dealing option (weapon/sidearm attacks AND every damage spell/cantrip).
