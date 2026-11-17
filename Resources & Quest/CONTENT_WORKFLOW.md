@@ -316,7 +316,7 @@ The example is Bramwell Tallow in `hartwell/oxworth/village_heads_hall.txt`.
 ### 4.1 Decide before writing
 
 - Does this person need a name? Guards, clerks and passers-by stay unnamed. A keeper or head gives their name once.
-- Race, physical description, detailed enough to be worth a lore entry, two or three things the player sees first.
+- Race, physical description, detailed enough to be worth a lore entry? Face, hair, skin color, guessed age, body shape, clothing and two or three things the player sees first.
 - Background, a resonable background, these backgrounds may not always make it into the game, but in a plan it helps shape and reinforce personality and behavior.
 - How they talk: sentence length, word choice, personality. 
 - The name is unused. Check `RESERVED` in `web/mygame/names-data.js` and search the scenes.
