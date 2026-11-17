@@ -218,6 +218,9 @@
 *gosub_scene combat_spells spell_facts_load rsh_id
 *set combat_player_dmg_type spell_fact_dmg_type
 *set combat_player_dmg_dice_sides spell_fact_dice_sides
+*set combat_player_dmg_dice_count spell_fact_dice_count
+*if (combat_player_dmg_dice_count < 1)
+  *set combat_player_dmg_dice_count 1
 *set combat_player_dmg_bonus spell_fact_flat
 *if ((rsh_id = "eldritch_blast") and ((inv_agonizing_blast) and (cha_mod > 0)))
   *set combat_player_dmg_bonus cha_mod
@@ -229,7 +232,15 @@
 *if (not(combat_player_hit_locked)) or (not(locked_combat_player_hit_page_id = page_id))
   *set combat_hit_nat20 ((rph_is_attack_roll) and (is_nat_20))
   *temp cph_roll 0
-  *rand cph_roll 1 combat_player_dmg_dice_sides
+  *temp cph_roll_str ""
+  *comment One die unless the spell data gives more (combat_player_dmg_dice_count, set by resolve_spell_hit and put back to 1 here). A single die keeps its own *rand, so every one-die roll is unchanged.
+  *if (combat_player_dmg_dice_count > 1)
+    *gosub_scene combat_spells roll_spell_dice combat_player_dmg_dice_count combat_player_dmg_dice_sides
+    *set cph_roll spell_roll_total
+    *set cph_roll_str spell_roll_dice_str
+  *else
+    *rand cph_roll 1 combat_player_dmg_dice_sides
+    *set cph_roll_str "${cph_roll}"
   *set combat_player_dmg_dealt (cph_roll + combat_player_dmg_bonus)
   *temp cph_bonus_str ""
   *if (combat_player_dmg_bonus >= 0)
@@ -238,7 +249,7 @@
     *set cph_bonus_str "${combat_player_dmg_bonus}"
   *temp cph_extra_str ""
   *temp cph_running (cph_roll + combat_player_dmg_bonus)
-  *set combat_player_dmg_roll_banner "[b][🎲 Damage: ${cph_roll} ${cph_bonus_str}${cph_extra_str} = ${cph_running}][/b]"
+  *set combat_player_dmg_roll_banner "[b][🎲 Damage: ${cph_roll_str} ${cph_bonus_str}${cph_extra_str} = ${cph_running}][/b]"
   *gosub apply_outgoing_damage_resist_vuln
   *comment Hex only enhances an attack roll that hit its marked creature. Save-based spells pass false here, so they cannot trigger it. It is its own necrotic packet, so a defense against the spell's own type leaves it standing.
   *if (((hex_active) and (rph_is_attack_roll)) and ((hex_target_slot > 0) and (hex_target_slot = combat_active_target)))
@@ -279,6 +290,8 @@
     *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} ${combat_fort_banner}"
   *set combat_player_hit_locked true
   *set locked_combat_player_hit_page_id page_id
+*comment Back to one die, outside the lock, so a replayed page that skips the roll still clears what resolve_spell_hit set.
+*set combat_player_dmg_dice_count 1
 ${combat_player_dmg_roll_banner}
 *line_break
 *return

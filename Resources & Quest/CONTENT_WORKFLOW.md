@@ -270,7 +270,7 @@ Read first, in `QUEST_DESIGN_RULES.md`: "Organic Discovery & Table-Facing Delive
 
 ### 3.2 Build it
 
-1. **Its own scene file**, in the folder of the place it starts in. The district or hub file holds only the short hook that sends the player there.
+1. **Its own scene file**, in the folder of the place it starts in. The district or hub file holds only the short hook that sends the player there.Keep file names unique and not generic, ensure no file name shares another.
 2. **Its own file in `startup_parts/`**: a stage variable, a resolution variable, one flag per clue, and one success flag.
 3. **Rewards are guarded.** Outside a fight nothing protects a page from being replayed, so every grant of coin, items or standing sits behind a once-only flag. Coin goes through `economy currency_add`.
 4. **One clock advance per page.** Put a page break between two.
@@ -311,8 +311,9 @@ The example is Bramwell Tallow in `hartwell/oxworth/village_heads_hall.txt`.
 ### 4.1 Decide before writing
 
 - Does this person need a name? Guards, clerks and passers-by stay unnamed. A keeper or head gives their name once.
-- Race, and two or three things the player sees first.
-- How they talk: sentence length, word choice, what they leave unsaid.
+- Race, physical description, detailed enough to be worth a lore entry, two or three things the player sees first.
+- Background, a resonable background, these backgrounds may not always make it into the game, but in a plan it helps shape and reinforce personality and behavior.
+- How they talk: sentence length, word choice, personality. 
 - The name is unused. Check `RESERVED` in `web/mygame/names-data.js` and search the scenes.
 
 Read first, in the narrative guidelines: "Describe NPCs on Introduction" and "Natural Dialogue & Distinct NPC Voice".

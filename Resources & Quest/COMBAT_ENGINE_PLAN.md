@@ -137,7 +137,7 @@ Restrained too: Ensnaring Strike applies `restrained` 1 with its escape DC and i
 Suggested order, easiest first:
 
 1. Shatter (DONE 2026-11-17): Wizard, Bard and Warlock. `resolve_cast_shatter` (`combat_spells.txt`) reads its dice, type, save and half rule from the data; the sphere is the chosen enemy's lane position, so every living enemy standing at that position saves (enemies only, like the other bursts), and a Construct saves with disadvantage. Medium reach, no Sight gate (it targets a point). Learned from the generated level-3 menus; icon from `ICONS/Spell/Shatter_Icon.webp`. No scroll yet (`ICONS/Item/Consumable/Scroll/Scroll_of_Shatter_Unfaded_Icon.png` exists for one), and no enemy casts it.
-2. Scorching Ray: several attack rolls from one cast. Needs a "repeat the attack" loop; decide whether each ray picks its own target.
+2. Scorching Ray (DONE 2026-11-17): Wizard. Each ray picks its own target through Magic Missile's dart sidebar (`fight_target_scorching_ray`; the count comes from the data through `projectiles_for_level`). `fight_resolve_scorching_ray` (`combat.txt`) rolls every ray as its own ranged spell attack, with the same reach, terrain and hidden-attack calls Fire Bolt makes, opening the page's dice locks before each one (the page replay guard covers a refresh). A hit goes through `resolve_spell_hit`, so Hex rides on every ray; `resolve_player_hit` now rolls `combat_player_dmg_dice_count` dice (set from the data, 1 for every one-die spell). A ray aimed at a foe already dropped is spent.
 3. After 3.6: Hold Person, Web.
 
 Each new spell needs the Sight rule checked (does it name "a creature you can see"?), a concentration flag in the data if it has one, and a seeded refresh script.

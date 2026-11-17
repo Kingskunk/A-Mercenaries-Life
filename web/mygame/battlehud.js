@@ -98,7 +98,7 @@
     "control_flames", "blade_ward", "fire_bolt", "ray_of_frost", "ray_of_sickness",
     "shocking_grasp", "eldritch_blast", "chill_touch", "vicious_mockery", "poison_spray",
     "magic_missile", "hex", "armor_of_agathys", "mage_armor", "false_life",
-    "dissonant_whispers", "cause_fear", "blindness", "shatter", "grease", "burning_hands",
+    "dissonant_whispers", "cause_fear", "blindness", "shatter", "scorching_ray", "grease", "burning_hands",
     "thunderwave", "arms_of_hadar", "bane", "healing_word", "cure_wounds",
     "read", "dodge", "intimidate", "hide",
     "shield", "hellish_rebuke", "absorb_elements", "second_wind", "hunters_mark",
@@ -189,6 +189,7 @@
       ]
     },
     { id: "blindness", group: "action", name: "Blindness", whyKey: "combat_why_blindness", blurb: "Strike a foe blind." },
+    { id: "scorching_ray", group: "action", name: "Scorching Ray", whyKey: "combat_why_scorching_ray", blurb: "Fling rays of fire, each at a foe you choose." },
     { id: "shatter", group: "action", name: "Shatter", whyKey: "combat_why_shatter", blurb: "Burst a crack of sound over a foe and every foe beside them." },
     { id: "grease", group: "action", name: "Grease", whyKey: "combat_why_grease", blurb: "Slick the ground under a foe and whatever is standing with it." },
     {

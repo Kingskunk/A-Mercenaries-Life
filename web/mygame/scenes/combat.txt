@@ -1721,6 +1721,8 @@
   *set spell_range_tag "ranged"
 *if (check_skill = "Shatter")
   *set spell_range_tag "ranged"
+*if (check_skill = "Scorching Ray")
+  *set spell_range_tag "ranged"
 *if (check_skill = "Ray of Frost")
   *if (spell_range_at > combat_reach_medium)
     *set spell_in_range false
@@ -3718,6 +3720,7 @@
 *temp spell_reach_ok_magic_missile combat_in_long
 *temp spell_reach_ok_blindness combat_in_long
 *temp spell_reach_ok_shatter combat_in_medium
+*temp spell_reach_ok_scorching_ray combat_in_long
 *comment GEN:END spell_reach_flags
 *comment Tell the player why a short-reach spell or weapon has gone from the menu, instead of letting it vanish without a word.
 *if ((combat_in_long) and (not(combat_in_medium)))
@@ -3953,6 +3956,16 @@
   *gosub combat_eval_spell_why "action" cw_slot_2 true "" spell_reach_ok_blindness
   *set combat_why_blindness combat_why_res
 *comment Shatter targets a point, not "a creature you can see", so it carries no Sight gate (the third argument is false).
+*comment Scorching Ray is an attack-roll spell, so it has no Sight gate either: a Blinded caster rolls each ray with disadvantage instead.
+*temp combat_why_scorching_ray "unowned"
+*temp sr_hub_word ""
+*if (((((held_scorching_ray) or (race_cantrip = "scorching_ray")) or (race_cantrip_2 = "scorching_ray")) and ((not(class_prepares)) or (prepared_scorching_ray))) or (known_scorching_ray))
+  *gosub_scene combat_spells projectiles_for_level "scorching_ray" 2
+  *gosub_scene combat_prose mm_number_word combat_mm_darts_max
+  *set sr_hub_word combat_mm_count_word
+  *set combat_mm_darts_max 0
+  *gosub combat_eval_spell_why "action" cw_slot_2 false "" spell_reach_ok_scorching_ray
+  *set combat_why_scorching_ray combat_why_res
 *temp combat_why_shatter "unowned"
 *if (((((held_shatter) or (race_cantrip = "shatter")) or (race_cantrip_2 = "shatter")) and ((not(class_prepares)) or (prepared_shatter))) or (known_shatter))
   *gosub combat_eval_spell_why "action" cw_slot_2 false "" spell_reach_ok_shatter
@@ -5080,6 +5093,20 @@
       *line_break
       *gosub_scene combat_spells resolve_cast_shatter
       *goto fight_check_enemy_hp
+
+  *if (combat_why_scorching_ray = "")
+    # [b][ACTION][/b] [b][Scorching Ray][/b] Fling ${sr_hub_word} rays of fire, each at a foe you choose.@{show_stat_hints  [Ranged Spell Attack per ray, 2d6 Fire each]|}
+      *comment Arms the same dart allocation Magic Missile uses (fight_target_scorching_ray): each ray is one "dart" on the enemy it is aimed at.
+      *set combat_mm_targeting_active true
+      *gosub_scene combat_spells projectiles_for_level "scorching_ray" 2
+      *set combat_cast_at_level 2
+      *set combat_mm_darts_1 0
+      *set combat_mm_darts_2 0
+      *set combat_mm_darts_3 0
+      *set combat_mm_darts_4 0
+      *set combat_mm_darts_5 0
+      *set combat_mm_darts_6 0
+      *goto fight_target_scorching_ray
 
   *if (combat_why_grease = "")
     # [b][ACTION][/b] [b][Grease][/b] Slick the ground under ${combat_med_epithet} and whatever is standing with it.@{show_stat_hints  [Dexterity Save, Prone]|}
@@ -6390,6 +6417,107 @@ ${combat_dw_dmg_banner}
     You let the working dissolve, unspent.
     *line_break
     *goto fight_round_hub
+
+*comment SCORCHING RAY (2026-11-17): the targeting menu, reached only from the Scorching Ray option. The same shape as
+*comment fight_target_magic_missile and its dart sidebar: each ray is a dart on the enemy it is aimed at, and the rays can be
+*comment split or stacked. Cancelling costs nothing; the slot is spent when the rays are loosed (fight_resolve_scorching_ray).
+*label fight_target_scorching_ray
+*choice
+  # Cast Scorching Ray.
+    *gosub combat_mm_recount_darts
+    *if (combat_mm_darts_total <= 0)
+      None of the rays has a target yet.
+      *line_break
+      *goto fight_target_scorching_ray
+    *set combat_mm_targeting_active false
+    *gosub fight_resolve_scorching_ray
+    *set combat_mm_darts_1 0
+    *set combat_mm_darts_2 0
+    *set combat_mm_darts_3 0
+    *set combat_mm_darts_4 0
+    *set combat_mm_darts_5 0
+    *set combat_mm_darts_6 0
+    *goto fight_check_enemy_hp
+  # Cancel targeting.
+    *set combat_mm_targeting_active false
+    *set combat_mm_darts_1 0
+    *set combat_mm_darts_2 0
+    *set combat_mm_darts_3 0
+    *set combat_mm_darts_4 0
+    *set combat_mm_darts_5 0
+    *set combat_mm_darts_6 0
+    You let the working dissolve, unspent.
+    *line_break
+    *goto fight_round_hub
+
+*comment SCORCHING RAY (Wizard, 2nd level, 2026-11-17): every ray is its own ranged spell attack and its own hit, in slot order.
+*comment A hit goes through resolve_spell_hit, which reads the 2d6 fire from the spell data, so Hex and the other riders land on
+*comment each ray that hits (RAW). The ranged penalty, terrain, cover and a hidden caster's advantage are worked out per ray, the
+*comment same calls Fire Bolt makes. The page's attack and damage locks are opened before each ray so every ray rolls its own
+*comment dice; inside a fight the page replay guard (pageReplayGuard, web/scene.js) is what keeps a refresh from rolling again.
+*comment A ray aimed at a foe an earlier ray already dropped is spent. The last banner's line break is printed only if the fight
+*comment goes on (fight_victory opens with its own).
+*label fight_resolve_scorching_ray
+*gosub_scene combat_spells spend_spell_slot combat_cast_at_level
+*set combat_cast_at_level 1
+*gosub_scene combat_prose flavor_scorching_ray
+${fsh}
+*line_break
+*temp fsr_keep combat_active_target
+*temp fsr_any false
+*temp fsr_i 1
+*label fight_resolve_scorching_ray_slot_loop
+*if (fsr_i <= combat_enemy_slot_cap)
+  *temp fsr_n {(("combat_mm_darts_" & fsr_i))}
+  *temp fsr_j 1
+  *label fight_resolve_scorching_ray_ray_loop
+  *if (fsr_j <= fsr_n)
+    *set combat_active_target fsr_i
+    *gosub fight_sync_target_in
+    *if (fsr_any)
+      *line_break
+    *set fsr_any true
+    *if (combat_enemy_hp <= 0)
+      [b][💨 Ray at ${combat_enemy_name}: already down][/b]
+    *else
+      *set roll_locked false
+      *set combat_player_hit_locked false
+      *set check_stat casting_stat
+      *set check_dc combat_enemy_ac
+      *set check_skill "Scorching Ray"
+      *set check_add_prof_bonus true
+      *gosub spell_range_of
+      *gosub combat_apply_player_ranged_terrain
+      *if (spell_penalty_result)
+        *set disadvantage true
+        *set combat_reach_pinned true
+      *set combat_attack_tag "fire"
+      *gosub combat_hidden_attack_roll
+      *gosub_scene dice_engine roll_d20_check
+      *if (check_success)
+        *gosub_scene combat_dice resolve_spell_hit "scorching_ray" true
+        *gosub fight_sync_target_out
+        *if (combat_enemy_hp <= 0)
+          *set combat_current_spell_id "scorching_ray"
+          *gosub_scene combat_prose pick_spell_death_flavor
+          ${fdh}
+          *line_break
+          [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Fire damage${combat_outgoing_dmg_suffix}][/b]
+        *else
+          [b][🔥 Ray at ${combat_enemy_name}: Hit | ${combat_player_dmg_dealt} Fire damage${combat_outgoing_dmg_suffix}][/b]
+      *else
+        [b][💨 Ray at ${combat_enemy_name}: Miss][/b]
+    *set fsr_j + 1
+    *goto fight_resolve_scorching_ray_ray_loop
+  *set fsr_i + 1
+  *goto fight_resolve_scorching_ray_slot_loop
+*if (fsr_keep > 0)
+  *set combat_active_target fsr_keep
+  *gosub fight_sync_target_in
+*gosub fight_check_all_dead
+*if (not(combat_all_enemies_dead))
+  *line_break
+*return
 
 *comment UPCASTING (2026-11-08): Cause Fear's 2nd-level targeting menu, reached only via *goto from the
 *comment "Cause Fear: 2nd level" option above. Same shape as fight_target_magic_missile, reusing its dart

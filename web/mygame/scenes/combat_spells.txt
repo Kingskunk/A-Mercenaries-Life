@@ -479,6 +479,16 @@
   *set spell_fact_dmg_type "thunder"
   *set spell_fact_slot_level 2
   *set spell_fact_upcast_dice 1
+*if (sfl_id = "scorching_ray")
+  *set spell_fact_found true
+  *set spell_fact_name "Scorching Ray"
+  *set spell_fact_resolution "attack"
+  *set spell_fact_dice_count 2
+  *set spell_fact_dice_sides 6
+  *set spell_fact_dmg_type "fire"
+  *set spell_fact_slot_level 2
+  *set spell_fact_projectiles 3
+  *set spell_fact_upcast_projectiles 1
 *return
 *comment GEN:END spell_facts_lookup
 
@@ -613,6 +623,18 @@
 *comment How many darts a cast fires: the spell's base count plus one for every slot level above the first, both read
 *comment from the spell data (spell_facts_load), so a new slot level needs no typed number. The arming options in
 *comment combat.txt call this to set combat_mm_darts_max, and the option text names the same number.
+*comment How many projectiles a spell looses when cast at a slot level, from its data: the base count, plus its upcast count for every
+*comment level above its own (Scorching Ray: three rays at 2nd level, one more per level above). Into combat_mm_darts_max, the pool
+*comment the sidebar's dart allocation reads.
+*label projectiles_for_level
+*params pfl_id pfl_level
+*gosub spell_facts_load pfl_id
+*temp pfl_above (pfl_level - spell_fact_slot_level)
+*if (pfl_above < 0)
+  *set pfl_above 0
+*set combat_mm_darts_max (spell_fact_projectiles + (spell_fact_upcast_projectiles * pfl_above))
+*return
+
 *label mm_darts_for_level
 *params mmdl_level
 *gosub spell_facts_load "magic_missile"
