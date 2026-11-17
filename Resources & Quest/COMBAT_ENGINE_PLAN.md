@@ -91,7 +91,14 @@ Roughly in the order I would take it. Each item is one hand-off, sized to review
 
 ### 3.1 Critical hits
 
-The engine has no critical-hit damage. A natural 20 only matters to a zombie's Undead Fortitude (`combat_hit_nat20`). Needs: doubled damage dice on a natural 20, for the player, allies and enemies, through the shared hit routines. Then Paralyzed's rule: a hit from within reach on a paralyzed creature is a critical hit.
+The engine has no critical-hit damage. A natural 20 only matters to a zombie's Undead Fortitude (`combat_hit_nat20`). Decided (2026-11-17):
+
+- A natural 20 on any attack roll, weapon or spell, is a critical hit, for the player, allies and enemies. A saving-throw spell never crits.
+- A crit rolls every damage die twice and adds the modifiers once (1d8+3 becomes 2d8+3).
+- Every die that comes with the hit doubles: the weapon or spell dice and the riders on the hit (Sneak Attack, Hex, Hunter's Mark, Booming Blade's on-hit thunder, the Poisoner's Robes). Damage that comes later and not from the hit (Booming Blade's move damage, Ensnaring's thorns) does not.
+- Paralyzed, in the same piece: any hit on a paralyzed creature by an attacker Engaged with it is a critical hit.
+
+Suggested split: (a) the player's hits, through `resolve_player_hit` and its riders, plus Paralyzed's rule; (b) enemy and ally hits (`resolve_enemy_attack`, `resolve_ally_attack`).
 
 ### 3.2 Damage cantrips that grow with level
 
@@ -168,11 +175,10 @@ Older open questions:
 
 ## 5. Known small things
 
-- The header comment above Magic Missile in `combat_spells.txt` still talks about a replay lock that no longer exists.
 - A refresh on a targeting prompt page (Magic Missile darts, a healing target) forgets the clicks. Nothing is rolled on those pages, so the player clicks again.
 - The opening page of a fight entered from another scene is not covered by the replay guard. A refresh resumes at the choice instead of re-running the page. The test tool skips those pages.
 - Quality of life, not urgent: a foe beaten into surrender in a non-lethal fight still gets the "💀 Defeated" banner, for every spell and weapon. The line above it reads as a surrender. A different banner for the non-lethal slot would finish the job.
 - A library fight with a beast and a swordsman, or with enemy slot 2 clicked, gives the enemies different ability scores when its first page is refreshed (true at commit `2a3efe1b`, before any spell). Scripts on those fights run without `"refresh"`.
 - Hunter's Mark's damage type ("force") is still typed in `combat_dice.txt`; its die is the ranger's `favored_foe_die_sides`, not data.
-- Never checked in a real browser: a condition pip's own card replacing the token's card after a short hover (`paintPipCard`, `PIP_DWELL`), the Web badge art on the lane, and a target click followed by Stats and back. The designer has checked the battlefield strip, the delayed hover card, the concentration markers, the Scorching Ray ray clicks and every spell so far (2026-11-17).
+- Never checked in a real browser: the Web badge art on the lane, and a target click followed by Stats and back.
 - Other surfaces still use the browser's own `title` tooltip beside the themed card: the sidebar's condition chips (Restless, Poisoned, Wounds dressed), the boons (Mage Armor, Shield, False Life), the darts badge and the range tags.

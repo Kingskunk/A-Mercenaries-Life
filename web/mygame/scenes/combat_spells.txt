@@ -614,27 +614,14 @@
 *comment SPELL: MAGIC MISSILE (3 darts, each 1d4 + 1 -- a flat bonus, NOT the caster's spellcasting modifier --
 *comment split across up to 3 targets via the sidebar, see fight_target_magic_missile in combat.txt)
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment The +1-per-dart fix (2026-09-28, designer catch): RAW Magic Missile is "each dart deals 1d4 + 1 force
-*comment damage", a flat +1 per dart that is the SAME for every caster regardless of ability score, because the
-*comment spell has no attack roll for a modifier to apply to (an automatic hit). Never spell_damage_mod.
-*comment The split-targeting rewrite (2026-09-28, same day): reads the per-slot combat_mm_darts_N counts the
-*comment player assigned via the sidebar instead of always firing all three at fight_pick_target's single
-*comment kill-priority pick. Each dart is still its own 1d4+1, but summed once PER TARGET before applying
-*comment resist/vuln and subtracting HP -- not dart-by-dart -- which sidesteps a genuine RAW ambiguity (does a
-*comment second dart on a target the first dart already killed still "count") by making the question moot: the
-*comment whole allocation to one target lands as a single combined hit.
-*comment Owns its full narration now (flavor line, then one banner per hit target) rather than splitting it with
-*comment the caller the way the single-target version did, since a caller can no longer print one flavor line
-*comment and one hit banner when there may be up to three targets. A single target still gets the existing,
-*comment richer flavor_spell_magic_missile (all eight variants assume one epithet takes every dart, true only
-*comment here); two or three targets get flavor_spell_magic_missile_split instead (combat_prose.txt), since none
-*comment of the single-target lines can honestly describe a scattered cast. Flavor text is picked fresh every
-*comment time this label runs, same as every other spell (a page replay may show a different random variant) --
-*comment only the damage numbers below are protected by the replay lock, via the per-slot combat_mm_banner_N
-*comment durable strings (startup.txt), same shape combat_player_dmg_roll_banner used before the split.
-*comment How many darts a cast fires: the spell's base count plus one for every slot level above the first, both read
-*comment from the spell data (spell_facts_load), so a new slot level needs no typed number. The arming options in
-*comment combat.txt call this to set combat_mm_darts_max, and the option text names the same number.
+*comment Each dart is the spell's die plus a flat part (1d4 + 1 force), the same for every caster: the spell never rolls to hit, so no
+*comment ability modifier applies (never spell_damage_mod). The die, the flat part and the type come from the spell data.
+*comment The player shares the darts out in the sidebar (combat_mm_darts_N, armed by fight_target_magic_missile in combat.txt).
+*comment The darts on one target are rolled and summed into a single hit before resistances and HP, so a second dart on a target the
+*comment first one dropped is never a question. The spell prints its own narration: one flavor line, then one banner per target hit.
+*comment One target gets flavor_spell_magic_missile (its lines assume one foe takes every dart); two or more get
+*comment flavor_spell_magic_missile_split. Inside a fight the page replay guard covers a refresh; the spell writes no replay lock.
+
 *comment How many projectiles a spell looses when cast at a slot level, from its data: the base count, plus its upcast count for every
 *comment level above its own (Scorching Ray: three rays at 2nd level, one more per level above). Into combat_mm_darts_max, the pool
 *comment the sidebar's dart allocation reads.
@@ -647,6 +634,8 @@
 *set combat_mm_darts_max (spell_fact_projectiles + (spell_fact_upcast_projectiles * pfl_above))
 *return
 
+*comment How many darts Magic Missile fires at a slot level: the base count plus one for every slot level above the first, both from the
+*comment spell data. The arming options in combat.txt call this to set combat_mm_darts_max, and the option text names the same number.
 *label mm_darts_for_level
 *params mmdl_level
 *gosub spell_facts_load "magic_missile"
