@@ -44,7 +44,7 @@ Answer these with the designer. Each answer becomes a line of code in 1.3 or 1.4
 
 Read first:
 
-- `.agents/rules/narrative_guidelines.md`, "Place Descriptions: Weather, Time & Crowds Stay in Their Own Layers".
+- `Resources & Quest/NARRATIVE_GUIDELINES.md`, "Place Descriptions: Weather, Time & Crowds Stay in Their Own Layers".
 - `Resources & Quest/QUEST_DESIGN_RULES.md`, "Settlements Outside Port Valen: Scale, Template & Shelter" and "Choice Design & Hub Presentation".
 
 ### 1.2 Create the scene file
@@ -57,7 +57,7 @@ The file holds, in this order:
 2. **Menu label.** The choices, with one plain exit: an option whose only statements are an optional `*set shop_open ""` and a `*goto_scene` to the hub's return label (`ox_return`). The sidebar's Town card needs that plain exit.
 3. **Closed label** (`ox_hall_closed`). The heading, a short description of the shut place, then straight back to the hub. It costs no time, sets no `_seen` flag and offers no choices.
 4. **Layers.** Place (fixed, printed in full once), sky, street. No people in the sky layer.
-5. **Talk labels**, if someone here speaks. A name is hidden behind a `met_` flag until it is given. A line that would repeat on a later visit is described, not quoted again.
+5. **Talk labels**, if someone here speaks. A name is hidden behind a `met_` flag until it is given. A line that would repeat on a later visit is described, not quoted again. Before writing dialogue choices for a character, run a quick roleplay pass with the designer—the AI plays the NPC(s) and the designer plays the protagonist (one short pass for a brief exchange, or a few turns for a larger conversation)—to find the most natural player responses and choices.
 
 On the menu page, from the answers in 1.1:
 
@@ -94,7 +94,12 @@ A place can pass every check and still be missing one of these, because no tool 
 | Notice board | The board's tile entry in `COURIER_TILES` in `web/mygame/overworld-data.js` | When the place holds the settlement's board |
 | Water audit | The list of scenes in `tools/test_water_fill_locations.js` | When the place has water |
 
-No fitting picture or icon: stop and ask the designer. Never reuse an item or action icon. Backdrops do have generic pictures meant for sharing (`generic_village_gathering_hall`, `generic_tavern_inn`). To make a new backdrop, follow `BACKDROP_ART_WORKFLOW.md` (house style, image-tool path, and the prompt to hand the designer).
+No fitting picture or icon: stop and ask the designer. Never reuse an item or action icon. Backdrops do have generic pictures meant for sharing (`generic_village_gathering_hall`, `generic_tavern_inn`, `generic_village_inn_room`).
+
+**Background scenery & ambience workflow:**
+1. **Check the picture before writing prose.** Open the backdrop image in `Wallpaper/` for any shared or dedicated key so the scene's fixtures (stair vs. ladder, private room vs. shared loft, shutters, tables) match what the player sees.
+2. **Making a new backdrop.** Follow `Resources & Quest/BACKDROP_ART_WORKFLOW.md` (first-person POV camera, muted palette, dry packed-earth ground with no tyre tracks, candidate review, and saving to `Wallpaper/`).
+3. **Register scenery and sound.** Add the key to `web/mygame/scenery-data.js` and `web/mygame/scenery.js` (and `scenery_subplace` rules if the scene has multiple rooms), hook up or verify its sound in `web/mygame/ambience.js` (`ALIAS`), and tell the user which ambience sound is used.
 
 ### 1.5 Run the generators
 

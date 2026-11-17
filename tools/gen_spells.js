@@ -114,7 +114,7 @@ function genLookup() {
   L.push("    *set spell_in_range false");
   L.push("*if (spell_range_tag = \"ranged\")");
   L.push("  *gosub_scene combat_movement combat_check_engaged");
-  L.push("  *if ((spell_range_at <= 0) or (combat_any_engaged))");
+  L.push("  *if (combat_any_engaged)");
   L.push("    *set spell_disadv true");
   L.push("*set spell_reach_result spell_in_range");
   L.push("*set spell_penalty_result spell_disadv");

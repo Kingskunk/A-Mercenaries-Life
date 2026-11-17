@@ -4,7 +4,7 @@ trigger: always_on
 
 # Gameplay Mechanics Rules
 
-Shared implementation, combat, equipment, economy, UI, state-safety, and verification rules for *A Mercenary's Path*. Prose and voice live in `.agents/rules/narrative_guidelines.md`; quest design guidelines live in `Resources & Quest/QUEST_DESIGN_RULES.md`; step-by-step checklists live in `Resources & Quest/CONTENT_WORKFLOW.md`.
+Shared implementation, combat, equipment, economy, UI, state-safety, and verification rules for *A Mercenary's Path*. Prose and voice live in `Resources & Quest/NARRATIVE_GUIDELINES.md`; quest design guidelines live in `Resources & Quest/QUEST_DESIGN_RULES.md`; step-by-step checklists live in `Resources & Quest/CONTENT_WORKFLOW.md`.
 
 This file records current mechanics, variables, subroutines, and architectural constraints—not a changelog.
 

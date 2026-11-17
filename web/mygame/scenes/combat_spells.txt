@@ -468,6 +468,12 @@
   *set spell_fact_resolution "save"
   *set spell_fact_save_ability "constitution"
   *set spell_fact_slot_level 2
+*if (sfl_id = "hold_person")
+  *set spell_fact_found true
+  *set spell_fact_name "Hold Person"
+  *set spell_fact_resolution "save"
+  *set spell_fact_save_ability "wisdom"
+  *set spell_fact_slot_level 2
 *if (sfl_id = "shatter")
   *set spell_fact_found true
   *set spell_fact_name "Shatter"
@@ -1037,6 +1043,40 @@ ${combat_blindness_banner}
 *comment standing at that same position make a Constitution save (Constructs with disadvantage), and take the one shared roll, half on a save.
 *comment The dice, type, save and half rule come from spell_book.json (3d8 thunder, +1d8 per slot level above 2nd). Not "a creature you can
 *comment see", so no Sight gate. The caller (combat.txt) sets combat_cast_at_level and prints the casting prose. Enemies only, like the other bursts here.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SPELL: HOLD PERSON (Wizard, Bard or Warlock, 2nd level): Action, concentration up to 10 rounds, one humanoid,
+*comment Wisdom save vs spell_save_dc. A failure leaves it Paralyzed (combat_enemyN_paralyzed, src "combat_player_hold_person"):
+*comment it loses its turns (combat.txt combat_next_turn), takes no reactions (combat_can_react), is easy to hit (combat_attack_edge)
+*comment and fails Strength and Dexterity saves (resolve_save). It repeats the Wisdom save at the end of each of its turns
+*comment (condition_tick). No critical hits: the engine has none yet. Upcasting is in the data but not built (one target only).
+*label resolve_cast_hold_person
+*if (character_class = "warlock")
+  *gosub spend_pact_slot
+*else
+  *gosub spend_spell_slot 2
+*gosub_scene combat_dice concentration_begin "combat_player_" "hold_person"
+*temp rhp_p (("combat_enemy" & combat_active_target) & "_")
+*gosub_scene combat_dice resolve_save rhp_p "wisdom" "Wisdom" spell_save_dc combat_active_target
+*comment check_success is inverted here (resolve_save: true = the enemy FAILED the save).
+*if (check_success)
+  *gosub_scene combat_dice condition_apply rhp_p "paralyzed" 10 spell_save_dc "combat_player_hold_person"
+  [b][🧍 ${combat_enemy_name} is Paralyzed][/b]
+  *line_break
+  *comment A held creature is incapacitated, so a spell it was concentrating on ends. Its banner prints here; the player's own (a spell this cast replaced) is kept for the end.
+  *temp rhp_conc {(rhp_p & "concentrating")}
+  *if (not(rhp_conc = "none"))
+    *temp rhp_keep combat_conc_ended_banner
+    *gosub_scene combat_dice concentration_end_incapacitated rhp_p
+    ${combat_conc_ended_banner}
+    *line_break
+    *set combat_conc_ended_banner rhp_keep
+*else
+  [b][💨 ${combat_enemy_name} shrugs off the hold][/b]
+  *line_break
+  *gosub_scene combat_dice concentration_end "combat_player_"
+*gosub_scene combat_prose print_concentration_ended_banner
+*return
+
 *label resolve_cast_shatter
 *if (character_class = "warlock")
   *gosub spend_pact_slot

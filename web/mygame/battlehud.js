@@ -73,6 +73,8 @@
     already_armed: "Already armed",
     already_marked: "Target is already marked",
     already_frightened: "Target is already Frightened",
+    already_paralyzed: "Every foe it can hold is already Paralyzed",
+    not_humanoid: "No humanoid foe to hold",
     already_greased: "Target's ground is already greased",
     already_temp_hp: "Already have temporary hit points",
     nothing_burning: "No fire to spread",
@@ -87,7 +89,7 @@
   var WHY_RANK = [
     "armor", "no_slot_1", "no_slot_2", "no_slot", "no_hm_resource", "no_favored_use", "no_free_use",
     "cannot_see", "no_engaged_foe", "already_active", "already_armed", "already_marked",
-    "already_frightened", "already_greased", "already_temp_hp", "nothing_burning", "wearing_armor", "no_hurt_target",
+    "already_frightened", "not_humanoid", "already_paralyzed", "already_greased", "already_temp_hp", "nothing_burning", "wearing_armor", "no_hurt_target",
     "no_valid_weapon", "out_of_reach", "no_action", "no_bonus", "no_reaction"
   ];
   // Canonical fight_round_hub option order so seeded unoffered spells land where the hub places them once offered.
@@ -98,7 +100,7 @@
     "control_flames", "blade_ward", "fire_bolt", "ray_of_frost", "ray_of_sickness",
     "shocking_grasp", "eldritch_blast", "chill_touch", "vicious_mockery", "poison_spray",
     "magic_missile", "hex", "armor_of_agathys", "mage_armor", "false_life",
-    "dissonant_whispers", "cause_fear", "blindness", "shatter", "scorching_ray", "grease", "burning_hands",
+    "dissonant_whispers", "cause_fear", "blindness", "hold_person", "shatter", "scorching_ray", "grease", "burning_hands",
     "thunderwave", "arms_of_hadar", "bane", "healing_word", "cure_wounds",
     "read", "dodge", "intimidate", "hide",
     "shield", "hellish_rebuke", "absorb_elements", "second_wind", "hunters_mark",
@@ -190,6 +192,7 @@
     },
     { id: "blindness", group: "action", name: "Blindness", whyKey: "combat_why_blindness", blurb: "Strike a foe blind." },
     { id: "scorching_ray", group: "action", name: "Scorching Ray", whyKey: "combat_why_scorching_ray", blurb: "Fling rays of fire, each at a foe you choose." },
+    { id: "hold_person", group: "action", name: "Hold Person", whyKey: "combat_why_hold_person", blurb: "Lock one person rigid where they stand." },
     { id: "shatter", group: "action", name: "Shatter", whyKey: "combat_why_shatter", blurb: "Burst a crack of sound over a foe and every foe beside them." },
     { id: "grease", group: "action", name: "Grease", whyKey: "combat_why_grease", blurb: "Slick the ground under a foe and whatever is standing with it." },
     {

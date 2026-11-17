@@ -352,7 +352,7 @@ function flattenOptions(list, options, flattenedOption) {
 // module, not on any one Scene instance, specifically so it's still in
 // effect after *gosub_scene/*return reconstructs a brand-new Scene object
 // mid-page (web/scene.js does this for every cross-scene subroutine call --
-// see .agents/rules/narrative_guidelines.md section 13).
+// see Resources & Quest/NARRATIVE_GUIDELINES.md section 13).
 var inShadowProbe = false;
 var probeResult = null;
 

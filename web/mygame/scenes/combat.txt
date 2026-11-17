@@ -111,6 +111,9 @@
     *set {(("combat_enemy" & fss_i) & "_restrained")} 0
     *set {(("combat_enemy" & fss_i) & "_restrained_dc")} 0
     *set {(("combat_enemy" & fss_i) & "_restrained_src")} ""
+    *set {(("combat_enemy" & fss_i) & "_paralyzed")} 0
+    *set {(("combat_enemy" & fss_i) & "_paralyzed_dc")} 0
+    *set {(("combat_enemy" & fss_i) & "_paralyzed_src")} ""
     *set {(("combat_enemy" & fss_i) & "_cast_spell_1")} ""
     *set {(("combat_enemy" & fss_i) & "_cast_spell_2")} ""
     *set {(("combat_enemy" & fss_i) & "_cast_spell_3")} ""
@@ -145,6 +148,9 @@
     *set {(("combat_ally" & fss_i) & "_restrained")} 0
     *set {(("combat_ally" & fss_i) & "_restrained_dc")} 0
     *set {(("combat_ally" & fss_i) & "_restrained_src")} ""
+    *set {(("combat_ally" & fss_i) & "_paralyzed")} 0
+    *set {(("combat_ally" & fss_i) & "_paralyzed_dc")} 0
+    *set {(("combat_ally" & fss_i) & "_paralyzed_src")} ""
     *set {(("combat_ally" & fss_i) & "_cast_spell_1")} ""
     *set {(("combat_ally" & fss_i) & "_cast_spell_2")} ""
     *set {(("combat_ally" & fss_i) & "_cast_spell_3")} ""
@@ -1181,6 +1187,9 @@
   *set {(fc_p & "restrained")} 0
   *set {(fc_p & "restrained_dc")} 0
   *set {(fc_p & "restrained_src")} ""
+  *set {(fc_p & "paralyzed")} 0
+  *set {(fc_p & "paralyzed_dc")} 0
+  *set {(fc_p & "paralyzed_src")} ""
   *set {(fc_p & "restrain_page")} 0
   *set {(fc_p & "restrain_res")} 0
   *set {(fc_p & "reach")} "long"
@@ -1352,6 +1361,9 @@
   *set {(("combat_ally" & fc_a_i) & "_restrained")} 0
   *set {(("combat_ally" & fc_a_i) & "_restrained_dc")} 0
   *set {(("combat_ally" & fc_a_i) & "_restrained_src")} ""
+  *set {(("combat_ally" & fc_a_i) & "_paralyzed")} 0
+  *set {(("combat_ally" & fc_a_i) & "_paralyzed_dc")} 0
+  *set {(("combat_ally" & fc_a_i) & "_paralyzed_src")} ""
   *set {(("combat_ally" & fc_a_i) & "_concentrating")} "none"
   *set {(("combat_ally" & fc_a_i) & "_cast_spell_1")} ""
   *set {(("combat_ally" & fc_a_i) & "_cast_spell_2")} ""
@@ -1378,6 +1390,9 @@
 *set combat_player_restrained 0
 *set combat_player_restrained_dc 0
 *set combat_player_restrained_src ""
+*set combat_player_paralyzed 0
+*set combat_player_paralyzed_dc 0
+*set combat_player_paralyzed_src ""
 *set combat_player_concentrating "none"
 *set combat_conc_result false
 *set combat_conc_save_triggered false
@@ -1719,6 +1734,8 @@
   *set spell_range_tag "ranged"
 *if (check_skill = "Blindness")
   *set spell_range_tag "ranged"
+*if (check_skill = "Hold Person")
+  *set spell_range_tag "ranged"
 *if (check_skill = "Shatter")
   *set spell_range_tag "ranged"
 *if (check_skill = "Scorching Ray")
@@ -1756,6 +1773,9 @@
 *if (check_skill = "Hunter's Mark")
   *if (spell_range_at > combat_reach_medium)
     *set spell_in_range false
+*if (check_skill = "Hold Person")
+  *if (spell_range_at > combat_reach_medium)
+    *set spell_in_range false
 *if (check_skill = "Shatter")
   *if (spell_range_at > combat_reach_medium)
     *set spell_in_range false
@@ -1767,7 +1787,7 @@
     *set spell_in_range false
 *if (spell_range_tag = "ranged")
   *gosub_scene combat_movement combat_check_engaged
-  *if ((spell_range_at <= 0) or (combat_any_engaged))
+  *if (combat_any_engaged)
     *set spell_disadv true
 *set spell_reach_result spell_in_range
 *set spell_penalty_result spell_disadv
@@ -3719,6 +3739,7 @@
 *temp spell_reach_ok_hunters_mark combat_in_medium
 *temp spell_reach_ok_magic_missile combat_in_long
 *temp spell_reach_ok_blindness combat_in_long
+*temp spell_reach_ok_hold_person combat_in_medium
 *temp spell_reach_ok_shatter combat_in_medium
 *temp spell_reach_ok_scorching_ray combat_in_long
 *comment GEN:END spell_reach_flags
@@ -3966,6 +3987,47 @@
   *set combat_mm_darts_max 0
   *gosub combat_eval_spell_why "action" cw_slot_2 false "" spell_reach_ok_scorching_ray
   *set combat_why_scorching_ray combat_why_res
+*temp combat_why_hold_person "unowned"
+*temp hold_person_slot 0
+*temp hold_person_epithet combat_enemy_epithet
+*if (((((held_hold_person) or (race_cantrip = "hold_person")) or (race_cantrip_2 = "hold_person")) and ((not(class_prepares)) or (prepared_hold_person))) or (known_hold_person))
+  *comment Hold Person names "a humanoid that you can see": a foe of any other type, or one with no type set, cannot be held. The target (hold_person_slot) is the clicked foe when it is a
+  *comment living, unheld humanoid within medium reach, otherwise the weakest one that is. No living humanoid at all is "not_humanoid"; every one already held is "already_paralyzed".
+  *temp cw_hp_best_hp 0
+  *temp cw_hp_any false
+  *temp cw_hp_free false
+  *temp cw_hp_chosen false
+  *temp cw_hp_i 1
+  *label cw_hold_person_scan
+  *if (cw_hp_i <= combat_enemy_count)
+    *temp cw_hp_p (("combat_enemy" & cw_hp_i) & "_")
+    *temp cw_hp_hp {(cw_hp_p & "hp")}
+    *temp cw_hp_kind {(cw_hp_p & "creature_type")}
+    *if ((cw_hp_hp > 0) and (cw_hp_kind = "humanoid"))
+      *set cw_hp_any true
+      *temp cw_hp_now {(cw_hp_p & "paralyzed")}
+      *if (cw_hp_now <= 0)
+        *set cw_hp_free true
+        *temp cw_hp_rng {(cw_hp_p & "range")}
+        *if (cw_hp_rng <= combat_reach_medium)
+          *if (cw_hp_i = combat_player_chosen_target)
+            *set hold_person_slot cw_hp_i
+            *set cw_hp_chosen true
+          *elseif ((not(cw_hp_chosen)) and ((hold_person_slot = 0) or (cw_hp_hp < cw_hp_best_hp)))
+            *set hold_person_slot cw_hp_i
+            *set cw_hp_best_hp cw_hp_hp
+    *set cw_hp_i + 1
+    *goto cw_hold_person_scan
+  *temp cw_hp_spec ""
+  *if (not(cw_hp_any))
+    *set cw_hp_spec "not_humanoid"
+  *elseif (not(cw_hp_free))
+    *set cw_hp_spec "already_paralyzed"
+  *if (hold_person_slot > 0)
+    *set hold_person_epithet {(("combat_enemy" & hold_person_slot) & "_epithet")}
+  *temp cw_hp_reach (hold_person_slot > 0)
+  *gosub combat_eval_spell_why "action" cw_slot_2 true cw_hp_spec cw_hp_reach
+  *set combat_why_hold_person combat_why_res
 *temp combat_why_shatter "unowned"
 *if (((((held_shatter) or (race_cantrip = "shatter")) or (race_cantrip_2 = "shatter")) and ((not(class_prepares)) or (prepared_shatter))) or (known_shatter))
   *gosub combat_eval_spell_why "action" cw_slot_2 false "" spell_reach_ok_shatter
@@ -5083,6 +5145,15 @@
     # [b][ACTION][/b] [b][Blindness][/b] Strike ${combat_enemy_epithet} blind.@{show_stat_hints  [Constitution Save]|}
       *gosub_scene combat_movement fight_pick_target
       *gosub_scene combat_spells resolve_cast_blindness
+      *goto fight_action_spent
+
+  *if (combat_why_hold_person = "")
+    # [b][ACTION][/b] [b][Hold Person][/b] Bind ${hold_person_epithet} rigid where they stand.@{show_stat_hints  [Wisdom Save]|}
+      *set combat_active_target hold_person_slot
+      *gosub fight_sync_target_in
+      *gosub_scene combat_prose flavor_hold_person
+      *line_break
+      *gosub_scene combat_spells resolve_cast_hold_person
       *goto fight_action_spent
 
   *if (combat_why_shatter = "")
@@ -6225,8 +6296,10 @@ You unroll the pale sheet and read it aloud. A numb, leathery vitality spreads b
     *comment Ensnaring Strike's 10-round ceiling ends its concentration, and that clears the restraint (concentration_reconcile), so it runs before the read.
     *gosub_scene combat_dice concentration_reconcile
     *temp dw_restrained {(("combat_enemy" & combat_active_target) & "_restrained")}
+    *comment A paralyzed foe (Hold Person) has no reaction to flee with.
+    *temp dw_paralyzed {(("combat_enemy" & combat_active_target) & "_paralyzed")}
     *temp dw_can_move false
-    *if ((dw_restrained <= 0) and (dw_cur_range < combat_max_range))
+    *if (((dw_restrained <= 0) and (dw_paralyzed <= 0)) and (dw_cur_range < combat_max_range))
       *gosub_scene combat_ai combat_ai_terrain_destination_is_legal "enemy" combat_active_target dw_dest_pos
       *if (combat_ai_terrain_destination_legal)
         *gosub_scene combat_movement combat_difficult_terrain_crossing_query dw_from_pos dw_dest_pos
@@ -6675,7 +6748,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
       *set check_flat_bonus 2
     *gosub combat_apply_player_ranged_terrain
     *gosub_scene combat_movement combat_check_engaged
-    *if (((combat_target_range <= 0) or (combat_any_engaged)) and (not(fighting_style = "close_combat")))
+    *if ((combat_any_engaged) and (not(fighting_style = "close_combat")))
       *set disadvantage true
       *comment dice_engine.txt reads this to print " (Disadvantage - in reach)" rather than a bare
       *comment "(Disadvantage)", so the player is told WHY. Cleared inside roll_d20_check on every call.
@@ -8113,6 +8186,16 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *if (not((combat_player_surprise) and (cnt_first_pass)))
       *gosub combat_stun_gate "enemy" cnt_slot
       *set cnt_stun_stop combat_stun_stop
+    *comment PARALYZED (Hold Person): a held enemy loses the whole turn, the way a stunned one does. Its end-of-turn Wisdom save still runs in condition_tick below.
+    *if ((not(cnt_stun_stop)) and (not((combat_player_surprise) and (cnt_first_pass))))
+      *temp cnt_paralyzed {(("combat_enemy" & cnt_slot) & "_paralyzed")}
+      *if (cnt_paralyzed > 0)
+        *gosub_scene combat_prose flavor_hold_person_turn
+        *line_break
+        [b][🧍 ${combat_enemy_name} is Paralyzed — turn lost][/b]
+        *line_break
+        *set combat_turn_advanced_this_page true
+        *set cnt_stun_stop true
     *temp cnt_restrain_stop false
     *comment Ensnaring Strike's 10-round ceiling ends its concentration, and that clears the restraint (concentration_reconcile), so it runs before the read.
     *gosub_scene combat_dice concentration_reconcile

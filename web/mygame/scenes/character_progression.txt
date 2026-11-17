@@ -730,6 +730,7 @@
 *set held_thunderwave false
 *set held_unseen_servant false
 *set held_blindness false
+*set held_hold_person false
 *set held_shatter false
 *set held_scorching_ray false
 *gosub book_scan "wizard_spell" 12
@@ -768,6 +769,7 @@
 *set known_thunderwave (((((held_thunderwave) or (race_cantrip = "thunderwave")) or (race_cantrip_2 = "thunderwave")) and ((not(class_prepares)) or (prepared_thunderwave))) and (not(spells_blocked)))
 *set known_unseen_servant (((((held_unseen_servant) or (race_cantrip = "unseen_servant")) or (race_cantrip_2 = "unseen_servant")) and ((not(class_prepares)) or (prepared_unseen_servant))) and (not(spells_blocked)))
 *set known_blindness (((((held_blindness) or (race_cantrip = "blindness")) or (race_cantrip_2 = "blindness")) and ((not(class_prepares)) or (prepared_blindness))) and (not(spells_blocked)))
+*set known_hold_person (((((held_hold_person) or (race_cantrip = "hold_person")) or (race_cantrip_2 = "hold_person")) and ((not(class_prepares)) or (prepared_hold_person))) and (not(spells_blocked)))
 *set known_shatter (((((held_shatter) or (race_cantrip = "shatter")) or (race_cantrip_2 = "shatter")) and ((not(class_prepares)) or (prepared_shatter))) and (not(spells_blocked)))
 *set known_scorching_ray (((((held_scorching_ray) or (race_cantrip = "scorching_ray")) or (race_cantrip_2 = "scorching_ray")) and ((not(class_prepares)) or (prepared_scorching_ray))) and (not(spells_blocked)))
 *comment GEN:END spell_book_refresh
@@ -868,6 +870,8 @@
   *set held_unseen_servant true
 *if (hm_id = "blindness")
   *set held_blindness true
+*if (hm_id = "hold_person")
+  *set held_hold_person true
 *if (hm_id = "shatter")
   *set held_shatter true
 *if (hm_id = "scorching_ray")
@@ -958,6 +962,7 @@
 *set prepared_thunderwave false
 *set prepared_unseen_servant false
 *set prepared_blindness false
+*set prepared_hold_person false
 *set prepared_shatter false
 *set prepared_scorching_ray false
 *set prepared_count 0
@@ -1124,6 +1129,11 @@
     *set prepared_count + 1
   *else
     *set prepared_blindness false
+*if (prepared_hold_person)
+  *if (held_hold_person)
+    *set prepared_count + 1
+  *else
+    *set prepared_hold_person false
 *if (prepared_shatter)
   *if (held_shatter)
     *set prepared_count + 1
@@ -1485,6 +1495,17 @@
       *else
         *set prepared_blindness false
         *set prepare_result "cleared"
+  *if (ps_id = "hold_person")
+    *if (held_hold_person)
+      *if (ps_on)
+        *if ((prepared_hold_person) or (prepared_count < prepared_max))
+          *set prepared_hold_person true
+          *set prepare_result "set"
+        *else
+          *set prepare_result "full"
+      *else
+        *set prepared_hold_person false
+        *set prepare_result "cleared"
   *if (ps_id = "shatter")
     *if (held_shatter)
       *if (ps_on)
@@ -1616,6 +1637,9 @@
   *if (((not(prepared_blindness)) and (held_blindness)) and (prepared_count < prepared_max))
     *set prepared_blindness true
     *set prepared_count + 1
+  *if (((not(prepared_hold_person)) and (held_hold_person)) and (prepared_count < prepared_max))
+    *set prepared_hold_person true
+    *set prepared_count + 1
   *if (((not(prepared_shatter)) and (held_shatter)) and (prepared_count < prepared_max))
     *set prepared_shatter true
     *set prepared_count + 1
@@ -1693,6 +1717,8 @@
   *set spell_desc_text "Thunderwave—a wave of thunderous force that rolls out from you in every direction, hard enough to lift what it catches off its feet. Those that fail to brace take the full weight of it and are thrown back a step; those that brace take the noise and keep their ground."
 *if (sd_id = "blindness")
   *set spell_desc_text "Blindness—a sharp pinch of power across one foe's eyes that drops their world to dark. They swing blind and leave themselves open until they manage to force their sight back."
+*if (sd_id = "hold_person")
+  *set spell_desc_text "Hold Person—a binding word that seizes every muscle of one person and locks them in place. While the hold lasts they lose their turns and every blow against them comes easier, until their will breaks it."
 *if (sd_id = "shatter")
   *set spell_desc_text "Shatter—a sudden, painfully loud crack of sound that bursts around one spot and rattles everything standing there. What braces against it takes the edge of the noise; what fails takes the full force. Things built rather than born, stone and metal given motion, take it worst."
 *if (sd_id = "scorching_ray")
@@ -1719,7 +1745,7 @@
   *if ((cc_id = "absorb_elements") or ((cc_id = "ray_of_sickness") or ((cc_id = "alarm") or ((cc_id = "cause_fear") or ((cc_id = "comprehend_languages") or ((cc_id = "detect_magic") or ((cc_id = "false_life") or ((cc_id = "feather_fall") or ((cc_id = "grease") or ((cc_id = "identify") or ((cc_id = "jump") or ((cc_id = "mage_armor") or ((cc_id = "magic_missile") or ((cc_id = "shield") or ((cc_id = "burning_hands") or (cc_id = "thunderwave"))))))))))))))))
     *set copy_cost 10
     *set copy_result "ok"
-  *if ((cc_id = "blindness") or ((cc_id = "shatter") or (cc_id = "scorching_ray")))
+  *if ((cc_id = "blindness") or ((cc_id = "hold_person") or ((cc_id = "shatter") or (cc_id = "scorching_ray"))))
     *set copy_cost 20
     *set copy_result "ok"
 *if (copy_result = "ok")
@@ -1773,6 +1799,9 @@
       *set copy_result "already_known"
   *if (cc_id = "blindness")
     *if (held_blindness)
+      *set copy_result "already_known"
+  *if (cc_id = "hold_person")
+    *if (held_hold_person)
       *set copy_result "already_known"
   *if (cc_id = "shatter")
     *if (held_shatter)
@@ -2056,11 +2085,15 @@ And the second.
     # Unseen Servant. An invisible servant that fetches and carries.@{show_stat_hints  [Spell: Unseen Servant]|}
       *gosub_scene character_progression learn_spell "warlock" "unseen_servant" "Unseen Servant—an invisible, mindless force you can summon to fetch, carry, clean, or open things at your spoken command."
       *goto level_up_warlock_3_done
+  *if (not(held_hold_person))
+    # Hold Person. Lock one person rigid where they stand.@{show_stat_hints  [Spell: Hold Person]|}
+      *gosub_scene character_progression learn_spell "warlock" "hold_person" "Hold Person—a binding word that seizes every muscle of one person and locks them in place. While the hold lasts they lose their turns and every blow against them comes easier, until their will breaks it."
+      *goto level_up_warlock_3_done
   *if (not(held_shatter))
     # Shatter. Burst a ringing crack of sound over one foe and everything beside them.@{show_stat_hints  [Spell: Shatter]|}
       *gosub_scene character_progression learn_spell "warlock" "shatter" "Shatter—a sudden, painfully loud crack of sound that bursts around one spot and rattles everything standing there. What braces against it takes the edge of the noise; what fails takes the full force. Things built rather than born, stone and metal given motion, take it worst."
       *goto level_up_warlock_3_done
-  *if ((held_arms_of_hadar and (held_hellish_rebuke and (held_cause_fear and (held_armor_of_agathys and (held_comprehend_languages and (held_false_life and ((held_hex or (race = "hexblood")) and (held_unseen_servant and held_shatter)))))))))
+  *if ((held_arms_of_hadar and (held_hellish_rebuke and (held_cause_fear and (held_armor_of_agathys and (held_comprehend_languages and (held_false_life and ((held_hex or (race = "hexblood")) and (held_unseen_servant and (held_hold_person and held_shatter))))))))))
     # You have learned all you can for now.
       *goto level_up_warlock_3_done
   *comment GEN:END warlock_lvl3_pick
@@ -2598,11 +2631,15 @@ And a second.
     # Blindness. Strike one foe blind until they shake it off.@{show_stat_hints  [Spell: Blindness]|}
       *gosub_scene character_progression learn_spell "bard" "blindness" "Blindness—a sharp pinch of power across one foe's eyes that drops their world to dark. They swing blind and leave themselves open until they manage to force their sight back."
       *goto level_up_bard_3_done
+  *if (not(held_hold_person))
+    # Hold Person. Lock one person rigid where they stand.@{show_stat_hints  [Spell: Hold Person]|}
+      *gosub_scene character_progression learn_spell "bard" "hold_person" "Hold Person—a binding word that seizes every muscle of one person and locks them in place. While the hold lasts they lose their turns and every blow against them comes easier, until their will breaks it."
+      *goto level_up_bard_3_done
   *if (not(held_shatter))
     # Shatter. Burst a ringing crack of sound over one foe and everything beside them.@{show_stat_hints  [Spell: Shatter]|}
       *gosub_scene character_progression learn_spell "bard" "shatter" "Shatter—a sudden, painfully loud crack of sound that bursts around one spot and rattles everything standing there. What braces against it takes the edge of the noise; what fails takes the full force. Things built rather than born, stone and metal given motion, take it worst."
       *goto level_up_bard_3_done
-  *if ((held_bane and (held_charm_person and (held_comprehend_languages and (held_cure_wounds and (held_detect_magic and ((held_disguise_self or (race = "hexblood")) and (held_dissonant_whispers and (held_healing_word and (held_speak_with_animals and (held_thunderwave and (held_blindness and held_shatter))))))))))))
+  *if ((held_bane and (held_charm_person and (held_comprehend_languages and (held_cure_wounds and (held_detect_magic and ((held_disguise_self or (race = "hexblood")) and (held_dissonant_whispers and (held_healing_word and (held_speak_with_animals and (held_thunderwave and (held_blindness and (held_hold_person and held_shatter)))))))))))))
     # You have learned all you can for now.
       *goto level_up_bard_3_done
   *comment GEN:END bard_lvl3_pick
@@ -2888,6 +2925,10 @@ And a second.
     # Blindness. Strike one foe blind until they shake it off.@{show_stat_hints  [Spell: Blindness]|}
       *gosub_scene character_progression learn_spell "wizard" "blindness" "Blindness—a sharp pinch of power across one foe's eyes that drops their world to dark. They swing blind and leave themselves open until they manage to force their sight back."
       *goto level_up_wizard_3_second
+  *if (not(held_hold_person))
+    # Hold Person. Lock one person rigid where they stand.@{show_stat_hints  [Spell: Hold Person]|}
+      *gosub_scene character_progression learn_spell "wizard" "hold_person" "Hold Person—a binding word that seizes every muscle of one person and locks them in place. While the hold lasts they lose their turns and every blow against them comes easier, until their will breaks it."
+      *goto level_up_wizard_3_second
   *if (not(held_shatter))
     # Shatter. Burst a ringing crack of sound over one foe and everything beside them.@{show_stat_hints  [Spell: Shatter]|}
       *gosub_scene character_progression learn_spell "wizard" "shatter" "Shatter—a sudden, painfully loud crack of sound that bursts around one spot and rattles everything standing there. What braces against it takes the edge of the noise; what fails takes the full force. Things built rather than born, stone and metal given motion, take it worst."
@@ -2896,7 +2937,7 @@ And a second.
     # Scorching Ray. Fling three rays of fire, each at a foe you choose.@{show_stat_hints  [Spell: Scorching Ray]|}
       *gosub_scene character_progression learn_spell "wizard" "scorching_ray" "Scorching Ray—three thin lines of fire that leave your hand together and split in the air, each one aimed on its own. You can pour all of them into one foe or spread them across several, and each ray hits or misses by itself."
       *goto level_up_wizard_3_second
-  *if ((held_absorb_elements and (held_ray_of_sickness and (held_alarm and (held_cause_fear and (held_comprehend_languages and (held_detect_magic and (held_false_life and (held_feather_fall and (held_grease and (held_identify and (held_jump and (held_mage_armor and (held_magic_missile and (held_shield and (held_burning_hands and (held_thunderwave and (held_blindness and (held_shatter and held_scorching_ray)))))))))))))))))))
+  *if ((held_absorb_elements and (held_ray_of_sickness and (held_alarm and (held_cause_fear and (held_comprehend_languages and (held_detect_magic and (held_false_life and (held_feather_fall and (held_grease and (held_identify and (held_jump and (held_mage_armor and (held_magic_missile and (held_shield and (held_burning_hands and (held_thunderwave and (held_blindness and (held_hold_person and (held_shatter and held_scorching_ray))))))))))))))))))))
     # You have learned all you can for now.
       *goto level_up_wizard_3_second
   *comment GEN:END wizard_lvl3_pick_1
@@ -2975,6 +3016,10 @@ And a second.
     # Blindness. Strike one foe blind until they shake it off.@{show_stat_hints  [Spell: Blindness]|}
       *gosub_scene character_progression learn_spell "wizard" "blindness" "Blindness—a sharp pinch of power across one foe's eyes that drops their world to dark. They swing blind and leave themselves open until they manage to force their sight back."
       *goto level_up_wizard_3_done
+  *if (not(held_hold_person))
+    # Hold Person. Lock one person rigid where they stand.@{show_stat_hints  [Spell: Hold Person]|}
+      *gosub_scene character_progression learn_spell "wizard" "hold_person" "Hold Person—a binding word that seizes every muscle of one person and locks them in place. While the hold lasts they lose their turns and every blow against them comes easier, until their will breaks it."
+      *goto level_up_wizard_3_done
   *if (not(held_shatter))
     # Shatter. Burst a ringing crack of sound over one foe and everything beside them.@{show_stat_hints  [Spell: Shatter]|}
       *gosub_scene character_progression learn_spell "wizard" "shatter" "Shatter—a sudden, painfully loud crack of sound that bursts around one spot and rattles everything standing there. What braces against it takes the edge of the noise; what fails takes the full force. Things built rather than born, stone and metal given motion, take it worst."
@@ -2983,7 +3028,7 @@ And a second.
     # Scorching Ray. Fling three rays of fire, each at a foe you choose.@{show_stat_hints  [Spell: Scorching Ray]|}
       *gosub_scene character_progression learn_spell "wizard" "scorching_ray" "Scorching Ray—three thin lines of fire that leave your hand together and split in the air, each one aimed on its own. You can pour all of them into one foe or spread them across several, and each ray hits or misses by itself."
       *goto level_up_wizard_3_done
-  *if ((held_absorb_elements and (held_ray_of_sickness and (held_alarm and (held_cause_fear and (held_comprehend_languages and (held_detect_magic and (held_false_life and (held_feather_fall and (held_grease and (held_identify and (held_jump and (held_mage_armor and (held_magic_missile and (held_shield and (held_burning_hands and (held_thunderwave and (held_blindness and (held_shatter and held_scorching_ray)))))))))))))))))))
+  *if ((held_absorb_elements and (held_ray_of_sickness and (held_alarm and (held_cause_fear and (held_comprehend_languages and (held_detect_magic and (held_false_life and (held_feather_fall and (held_grease and (held_identify and (held_jump and (held_mage_armor and (held_magic_missile and (held_shield and (held_burning_hands and (held_thunderwave and (held_blindness and (held_hold_person and (held_shatter and held_scorching_ray))))))))))))))))))))
     # You have learned all you can for now.
       *goto level_up_wizard_3_done
   *comment GEN:END wizard_lvl3_pick_2

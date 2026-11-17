@@ -1157,7 +1157,8 @@ ${combat_player_dmg_roll_banner}
   *temp ccr_hp {(ccr_p & "hp")}
   *temp ccr_used {(ccr_p & "oa_used")}
   *temp ccr_stun {(ccr_p & "stunned")}
-  *if (((ccr_hp > 0) and (not(ccr_used))) and (ccr_stun <= 0))
+  *temp ccr_para {(ccr_p & "paralyzed")}
+  *if ((((ccr_hp > 0) and (not(ccr_used))) and (ccr_stun <= 0)) and (ccr_para <= 0))
     *set combat_can_react_ok true
 *return
 
@@ -1183,6 +1184,11 @@ ${combat_player_dmg_roll_banner}
 *if (cae_restrained > 0)
   *set combat_edge_adv true
   *set combat_edge_label "Restrained"
+*comment A paralyzed target (Hold Person) is easy to hit from anywhere while the hold lasts.
+*temp cae_paralyzed {(("combat_enemy" & cae_slot) & "_paralyzed")}
+*if (cae_paralyzed > 0)
+  *set combat_edge_adv true
+  *set combat_edge_label "Paralyzed"
 *comment Grease is fuel: a fire attack (tag "fire": Fire Bolt, Alchemist's Fire) on a creature still slick with it has advantage at any distance.
 *temp cae_greased {(("combat_enemy" & cae_slot) & "_greased")}
 *if ((cae_tag = "fire") and (cae_greased > 0))
@@ -1529,6 +1535,15 @@ ${combat_player_dmg_roll_banner}
   *if (check_success)
     *set res_verdict "FAILED"
   *set res_banner "[b][🎲 ${res_name} Saving Throw: ${res_stat_label} (DC ${res_dc}) | Roll: ${res_roll}${res_dis_note} ${res_mod_str}${res_bane_str} = ${res_total} — ${res_verdict}][/b]"
+  *comment Paralyzed (Hold Person): a held creature fails every Strength and Dexterity save without a roll.
+  *comment Some callers pass the shared combat_enemy_ prefix for the active target; its condition fields live on the slot.
+  *temp res_cond_p res_prefix
+  *if (res_prefix = "combat_enemy_")
+    *set res_cond_p (("combat_enemy" & combat_active_target) & "_")
+  *temp res_paralyzed {(res_cond_p & "paralyzed")}
+  *if ((res_paralyzed > 0) and ((res_stat = "strength") or (res_stat = "dexterity")))
+    *set check_success true
+    *set res_banner "[b][🎲 ${res_name} Saving Throw: ${res_stat_label} (DC ${res_dc}) | Paralyzed — FAILED][/b]"
   *set {(res_successname)} check_success
   *set {(res_bannername)} res_banner
   *set {(res_lockname)} true
@@ -1706,6 +1721,31 @@ ${combat_player_dmg_roll_banner}
     *else
       [b][😌 ${ct_fr_name} shakes off the fear][/b]
     *line_break
+*comment PARALYZED (Hold Person): the same shape as Frightened. The bearer repeats its Wisdom save at the end of each of its turns and a success breaks the hold; a failure runs it one round down, and it ends silently when the rounds run out (the spell's 10-round ceiling).
+*gosub condition_has ct_prefix "paralyzed"
+*if (condition_result)
+  *temp ct_pa_rounds {(ct_prefix & "paralyzed")}
+  *temp ct_pa_dc {(ct_prefix & "paralyzed_dc")}
+  *temp ct_pa_name {(ct_prefix & "name")}
+  *temp ct_pa_holds true
+  *if (ct_pa_dc > 0)
+    *set {("combat_save_locked_" & ct_lock)} false
+    *gosub resolve_save ct_prefix "wisdom" "Wisdom" ct_pa_dc ct_lock
+    *comment check_success is inverted: true = the bearer FAILED, so the hold stays.
+    *set ct_pa_holds check_success
+  *if (ct_pa_holds)
+    *temp ct_pa_left (ct_pa_rounds - 1)
+    *if (ct_pa_left <= 0)
+      *gosub condition_end ct_prefix "paralyzed"
+    *else
+      *set {(ct_prefix & "paralyzed")} ct_pa_left
+  *else
+    *gosub condition_end ct_prefix "paralyzed"
+    *if (ct_prefix = "combat_player_")
+      [b][🧍 You break the hold][/b]
+    *else
+      [b][🧍 ${ct_pa_name} breaks the hold][/b]
+    *line_break
 *gosub condition_has ct_prefix "blinded"
 *if (condition_result)
   *temp ct_rounds {(ct_prefix & "blinded")}
@@ -1844,6 +1884,10 @@ ${combat_player_dmg_roll_banner}
 *if (ce_id = "cause_fear")
   *gosub condition_end_by_source "frightened" (ce_prefix & "cause_fear")
   *return
+*comment Only the hold this caster's Hold Person put on.
+*if (ce_id = "hold_person")
+  *gosub condition_end_by_source "paralyzed" (ce_prefix & "hold_person")
+  *return
 *if (ce_id = "blade_ward")
   *if (ce_prefix = "combat_player_")
     *set blade_ward_rounds 0
@@ -1864,6 +1908,8 @@ ${combat_player_dmg_roll_banner}
   *set cf_name "Bane"
 *if (cf_spell_id = "cause_fear")
   *set cf_name "Cause Fear"
+*if (cf_spell_id = "hold_person")
+  *set cf_name "Hold Person"
 *if (cf_spell_id = "blade_ward")
   *set cf_name "Blade Ward"
 *if (cf_prefix = "combat_player_")
@@ -1978,6 +2024,20 @@ ${combat_player_dmg_roll_banner}
       *return
     *set crf_i + 1
     *goto crf_fear_loop
+  *gosub concentration_end "combat_player_"
+  *return
+*comment Hold Person ends once no living foe is still held by it: the hold broken by a save, its 10 rounds run out, or the held foe dead.
+*if (combat_player_concentrating = "hold_person")
+  *temp crh_i 1
+  *label crh_hold_loop
+  *if (crh_i <= combat_enemy_count)
+    *temp crh_hp {(("combat_enemy" & crh_i) & "_hp")}
+    *temp crh_pa {(("combat_enemy" & crh_i) & "_paralyzed")}
+    *temp crh_src {(("combat_enemy" & crh_i) & "_paralyzed_src")}
+    *if (((crh_hp > 0) and (crh_pa > 0)) and (crh_src = "combat_player_hold_person"))
+      *return
+    *set crh_i + 1
+    *goto crh_hold_loop
   *gosub concentration_end "combat_player_"
   *return
 *return
