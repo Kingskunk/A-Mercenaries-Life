@@ -1801,7 +1801,7 @@
 
 *label combat_mm_recount_darts
 *comment Sums every enemy slot's combat_mm_darts_N into the durable combat_mm_darts_total (startup.txt
-*comment *create), read by fight_target_magic_missile's Cast option. The sidebar (web/mygame/index.html) writes
+*comment *create), read by the shared targeting page's Cast option (fight_target_multi). The sidebar (web/mygame/index.html) writes
 *comment the per-slot fields directly via window.stats and never touches this total itself -- it's a
 *comment ChoiceScript-side convenience so callers don't each write their own bounded loop.
 *set combat_mm_darts_total 0
@@ -5026,7 +5026,7 @@
     # [b][ACTION][/b] [b][Magic Missile: 1st level][/b] Loose ${mm_hub_word_1} darts of force at targets you choose in the sidebar.
       *comment Arms targeting mode instead of casting immediately (2026-09-28) -- RAW lets the three darts be
       *comment split across up to three targets, not forced onto whichever single enemy fight_pick_target's
-      *comment kill-priority happens to favor. See fight_target_magic_missile's own header for the full shape;
+      *comment kill-priority happens to favor. See fight_target_multi's header for the full shape;
       *comment this option's only job is to enter it with a clean slate.
       *set combat_mm_targeting_active true
       *gosub_scene combat_spells mm_darts_for_level 1
@@ -6473,179 +6473,156 @@ ${combat_dw_dmg_banner}
 *gosub fight_tail_break
 *goto fight_check_enemy_hp
 
+*comment THE MULTI-TARGET PAGE (2026-11-17): the Cast/Cancel page shared by every spell that shares itself out in the sidebar
+*comment (combat_mm_darts_1..6, assignMultiTargetDart in index.html). Each spell keeps its own entry label, which names the spell
+*comment in combat_mm_spell and comes here. Cancelling costs nothing: arming and allocating spend no slot, action or scroll; the
+*comment cast itself does (a slot in the spell's own resolver, a scroll in resolve_magic_missile). Cause Fear changes nobody's HP,
+*comment so it ends at fight_action_spent; the others check for a kill. Scorching Ray: each ray is a dart on the enemy it is
+*comment aimed at, and the rays can be split or stacked (fight_resolve_scorching_ray). Cause Fear's 2nd level: a dart only marks
+*comment "frighten this one", so resolve_cast_cause_fear checks each slot for more than 0, never how many.
 *label fight_target_magic_missile
-*choice
-  # Cast Magic Missile.
-    *gosub combat_mm_recount_darts
-    *if (combat_mm_darts_total <= 0)
-      No darts are assigned yet. Click an enemy in the sidebar to place one, then cast.
-      *line_break
-      *goto fight_target_magic_missile
-    *comment resolve_magic_missile now owns its full narration (flavor line, then one banner per hit target),
-    *comment reading the per-slot combat_mm_darts_N allocation directly -- nothing left for this option to print.
-    *set combat_mm_targeting_active false
-    *if (not(combat_scroll_id = ""))
-      You read the scroll aloud, and the ink flares white along its lines.
-      *line_break
-    *gosub_scene combat_spells resolve_magic_missile
-    *comment Clear every slot's allocation now that the cast has resolved -- the sidebar's (N) tags must not
-    *comment linger once targeting mode is off; only a fresh arm should ever show them again.
-    *set combat_mm_darts_1 0
-    *set combat_mm_darts_2 0
-    *set combat_mm_darts_3 0
-    *set combat_mm_darts_4 0
-    *set combat_mm_darts_5 0
-    *set combat_mm_darts_6 0
-    *goto fight_check_enemy_hp
-  # Cancel targeting.
-    *comment Free -- arming and allocating cost nothing; only an actual cast does (fight_pick_target above
-    *comment hasn't run yet, spell_slots_1 hasn't been spent, no action or bonus action was touched).
-    *set combat_mm_targeting_active false
-    *set combat_mm_darts_1 0
-    *set combat_mm_darts_2 0
-    *set combat_mm_darts_3 0
-    *set combat_mm_darts_4 0
-    *set combat_mm_darts_5 0
-    *set combat_mm_darts_6 0
-    You let the working dissolve, unspent.
-    *line_break
-    *goto fight_round_hub
+*set combat_mm_spell "magic_missile"
+*goto fight_target_multi
 
-*comment SCORCHING RAY (2026-11-17): the targeting menu, reached only from the Scorching Ray option. The same shape as
-*comment fight_target_magic_missile and its dart sidebar: each ray is a dart on the enemy it is aimed at, and the rays can be
-*comment split or stacked. Cancelling costs nothing; the slot is spent when the rays are loosed (fight_resolve_scorching_ray).
 *label fight_target_scorching_ray
+*set combat_mm_spell "scorching_ray"
+*goto fight_target_multi
+
+*label fight_target_cause_fear
+*set combat_mm_spell "cause_fear"
+*goto fight_target_multi
+
+*label fight_target_multi
+*temp ftm_name "Magic Missile"
+*if (combat_mm_spell = "scorching_ray")
+  *set ftm_name "Scorching Ray"
+*elseif (combat_mm_spell = "cause_fear")
+  *set ftm_name "Cause Fear"
 *choice
-  # Cast Scorching Ray.
+  # Cast ${ftm_name}.
     *gosub combat_mm_recount_darts
     *if (combat_mm_darts_total <= 0)
-      None of the rays has a target yet.
+      *if (combat_mm_spell = "scorching_ray")
+        None of the rays has a target yet.
+      *elseif (combat_mm_spell = "cause_fear")
+        No targets are chosen yet. Click an enemy in the sidebar to mark it, then cast.
+      *else
+        No darts are assigned yet. Click an enemy in the sidebar to place one, then cast.
       *line_break
-      *goto fight_target_scorching_ray
+      *goto fight_target_multi
     *set combat_mm_targeting_active false
-    *gosub fight_resolve_scorching_ray
-    *set combat_mm_darts_1 0
-    *set combat_mm_darts_2 0
-    *set combat_mm_darts_3 0
-    *set combat_mm_darts_4 0
-    *set combat_mm_darts_5 0
-    *set combat_mm_darts_6 0
+    *if (combat_mm_spell = "scorching_ray")
+      *gosub fight_resolve_scorching_ray
+    *elseif (combat_mm_spell = "cause_fear")
+      *gosub_scene combat_spells resolve_cast_cause_fear
+    *else
+      *if (not(combat_scroll_id = ""))
+        You read the scroll aloud, and the ink flares white along its lines.
+        *line_break
+      *gosub_scene combat_spells resolve_magic_missile
+    *comment Clear every slot's allocation now that the cast has resolved: the sidebar's (N) tags must not linger once targeting is off.
+    *gosub fight_target_multi_clear
+    *if (combat_mm_spell = "cause_fear")
+      *goto fight_action_spent
     *goto fight_check_enemy_hp
   # Cancel targeting.
     *set combat_mm_targeting_active false
-    *set combat_mm_darts_1 0
-    *set combat_mm_darts_2 0
-    *set combat_mm_darts_3 0
-    *set combat_mm_darts_4 0
-    *set combat_mm_darts_5 0
-    *set combat_mm_darts_6 0
+    *gosub fight_target_multi_clear
     You let the working dissolve, unspent.
     *line_break
     *goto fight_round_hub
 
-*comment SCORCHING RAY (Wizard, 2nd level, 2026-11-17): every ray is its own ranged spell attack and its own hit, in slot order.
-*comment A hit goes through resolve_spell_hit, which reads the 2d6 fire from the spell data, so Hex and the other riders land on
-*comment each ray that hits (RAW). The ranged penalty, terrain, cover and a hidden caster's advantage are worked out per ray, the
-*comment same calls Fire Bolt makes. The page's attack and damage locks are opened before each ray so every ray rolls its own
-*comment dice; inside a fight the page replay guard (pageReplayGuard, web/scene.js) is what keeps a refresh from rolling again.
-*comment A ray aimed at a foe an earlier ray already dropped is spent. The last banner's line break is printed only if the fight
-*comment goes on (fight_victory opens with its own).
+*label fight_target_multi_clear
+*set combat_mm_darts_1 0
+*set combat_mm_darts_2 0
+*set combat_mm_darts_3 0
+*set combat_mm_darts_4 0
+*set combat_mm_darts_5 0
+*set combat_mm_darts_6 0
+*return
+
+*comment SCORCHING RAY (Wizard, 2nd level, 2026-11-17): spends its slot and prints its opening, then looses its rays through the
+*comment shared projectile loop below.
 *label fight_resolve_scorching_ray
 *gosub_scene combat_spells spend_spell_slot combat_cast_at_level
 *set combat_cast_at_level 1
 *gosub_scene combat_prose flavor_scorching_ray
 ${fsh}
 *line_break
-*temp fsr_keep combat_active_target
-*temp fsr_any false
-*temp fsr_i 1
-*label fight_resolve_scorching_ray_slot_loop
-*if (fsr_i <= combat_enemy_slot_cap)
-  *temp fsr_n {(("combat_mm_darts_" & fsr_i))}
-  *temp fsr_j 1
-  *label fight_resolve_scorching_ray_ray_loop
-  *if (fsr_j <= fsr_n)
-    *set combat_active_target fsr_i
+*gosub fight_resolve_projectile_attacks "scorching_ray"
+*return
+
+*comment AN ATTACK ROLL PER PROJECTILE (2026-11-17), for a spell whose projectiles the player shares out on the targeting page
+*comment (fight_target_multi, combat_mm_darts_1..6). Parameter: the spell id. Every projectile is its own ranged spell attack and
+*comment its own hit, in slot order. The name and damage type come from the spell data (spell_facts_load); a hit goes through
+*comment resolve_spell_hit, so Hex and the other riders land on each projectile that hits (RAW). The ranged penalty, terrain,
+*comment cover and a hidden caster's advantage are worked out per projectile, the same calls Fire Bolt makes. The page's attack
+*comment and damage locks are opened before each one so each rolls its own dice; inside a fight the page replay guard
+*comment (pageReplayGuard, web/scene.js) is what keeps a refresh from rolling again. A projectile aimed at a foe an earlier one
+*comment already dropped is spent. The last banner's line break is printed only if the fight goes on (fight_victory opens with
+*comment its own). The caller spends the slot and prints the opening; a new spell here adds its banner word and icon below.
+*label fight_resolve_projectile_attacks
+*params frpa_id
+*gosub_scene combat_spells spell_facts_load frpa_id
+*temp frpa_name spell_fact_name
+*temp frpa_type spell_fact_dmg_type
+*temp frpa_word "Ray"
+*temp frpa_icon "🔥"
+*temp frpa_keep combat_active_target
+*temp frpa_any false
+*temp frpa_i 1
+*label fight_resolve_projectile_attacks_slot_loop
+*if (frpa_i <= combat_enemy_slot_cap)
+  *temp frpa_n {(("combat_mm_darts_" & frpa_i))}
+  *temp frpa_j 1
+  *label fight_resolve_projectile_attacks_one_loop
+  *if (frpa_j <= frpa_n)
+    *set combat_active_target frpa_i
     *gosub fight_sync_target_in
-    *if (fsr_any)
+    *if (frpa_any)
       *line_break
-    *set fsr_any true
+    *set frpa_any true
     *if (combat_enemy_hp <= 0)
-      [b][💨 Ray at ${combat_enemy_name}: already down][/b]
+      [b][💨 ${frpa_word} at ${combat_enemy_name}: already down][/b]
     *else
       *set roll_locked false
       *set combat_player_hit_locked false
       *set check_stat casting_stat
       *set check_dc combat_enemy_ac
-      *set check_skill "Scorching Ray"
+      *set check_skill frpa_name
       *set check_add_prof_bonus true
       *gosub spell_range_of
       *gosub combat_apply_player_ranged_terrain
       *if (spell_penalty_result)
         *set disadvantage true
         *set combat_reach_pinned true
-      *set combat_attack_tag "fire"
+      *set combat_attack_tag frpa_type
       *gosub combat_hidden_attack_roll
       *gosub_scene dice_engine roll_d20_check
       *if (check_success)
-        *gosub_scene combat_dice resolve_spell_hit "scorching_ray" true
+        *gosub_scene combat_dice resolve_spell_hit frpa_id true
         *gosub fight_sync_target_out
         *if (combat_enemy_hp <= 0)
-          *set combat_current_spell_id "scorching_ray"
+          *set combat_current_spell_id frpa_id
           *gosub_scene combat_prose pick_spell_death_flavor
           ${fdh}
           *line_break
-          [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Fire damage${combat_outgoing_dmg_suffix}][/b]
+          [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} $!{frpa_type} damage${combat_outgoing_dmg_suffix}][/b]
         *else
-          [b][🔥 Ray at ${combat_enemy_name}: Hit | ${combat_player_dmg_dealt} Fire damage${combat_outgoing_dmg_suffix}][/b]
+          [b][${frpa_icon} ${frpa_word} at ${combat_enemy_name}: Hit | ${combat_player_dmg_dealt} $!{frpa_type} damage${combat_outgoing_dmg_suffix}][/b]
       *else
-        [b][💨 Ray at ${combat_enemy_name}: Miss][/b]
-    *set fsr_j + 1
-    *goto fight_resolve_scorching_ray_ray_loop
-  *set fsr_i + 1
-  *goto fight_resolve_scorching_ray_slot_loop
-*if (fsr_keep > 0)
-  *set combat_active_target fsr_keep
+        [b][💨 ${frpa_word} at ${combat_enemy_name}: Miss][/b]
+    *set frpa_j + 1
+    *goto fight_resolve_projectile_attacks_one_loop
+  *set frpa_i + 1
+  *goto fight_resolve_projectile_attacks_slot_loop
+*if (frpa_keep > 0)
+  *set combat_active_target frpa_keep
   *gosub fight_sync_target_in
 *gosub fight_check_all_dead
 *if (not(combat_all_enemies_dead))
   *line_break
 *return
-
-*comment UPCASTING (2026-11-08): Cause Fear's 2nd-level targeting menu, reached only via *goto from the
-*comment "Cause Fear: 2nd level" option above. Same shape as fight_target_magic_missile, reusing its dart
-*comment sidebar and combat_mm_recount_darts, but a "dart" here just marks "frighten this one" -- there is no
-*comment damage to sum, so resolve_cast_cause_fear only checks each slot for >0, never how many. Ends at
-*comment fight_action_spent, not fight_check_enemy_hp, matching the 1st-level option -- nobody's HP ever changes.
-*label fight_target_cause_fear
-*choice
-  # Cast Cause Fear.
-    *gosub combat_mm_recount_darts
-    *if (combat_mm_darts_total <= 0)
-      No targets are chosen yet. Click an enemy in the sidebar to mark it, then cast.
-      *line_break
-      *goto fight_target_cause_fear
-    *set combat_mm_targeting_active false
-    *gosub_scene combat_spells resolve_cast_cause_fear
-    *set combat_mm_darts_1 0
-    *set combat_mm_darts_2 0
-    *set combat_mm_darts_3 0
-    *set combat_mm_darts_4 0
-    *set combat_mm_darts_5 0
-    *set combat_mm_darts_6 0
-    *goto fight_action_spent
-  # Cancel targeting.
-    *comment Free -- arming and marking targets cost nothing; only an actual cast does.
-    *set combat_mm_targeting_active false
-    *set combat_mm_darts_1 0
-    *set combat_mm_darts_2 0
-    *set combat_mm_darts_3 0
-    *set combat_mm_darts_4 0
-    *set combat_mm_darts_5 0
-    *set combat_mm_darts_6 0
-    You let the working dissolve, unspent.
-    *line_break
-    *goto fight_round_hub
 
 *comment Shared by both "Attack with your ${weapon}" and "Attack with your ${sidearm}" -- reads the same bare
 *comment weapon_type/weapon_hands/weapon_damage_type/weapon fields either way, so it needs no parameterization:

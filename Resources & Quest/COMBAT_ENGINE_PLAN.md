@@ -91,7 +91,7 @@ Roughly in the order I would take it. Each item is one hand-off, sized to review
 
 ### 3.2 Shared multi-target attacks, then Eldritch Blast's beams
 
-What is shared today: the sidebar allocation (`assignMultiTargetDart` in `index.html`, writing `combat_mm_darts_1..6` up to `combat_mm_darts_max`) and the count from the data (`projectiles_for_level`: `projectiles` plus `upcast.projectiles` per slot level). What is written per spell: the hub option, the Cast/Cancel targeting page (`fight_target_magic_missile`, `fight_target_scorching_ray`, `fight_target_cause_fear`, near copies) and the resolver loop. Make one targeting page and one "an attack roll per projectile" resolver keyed by spell id, and move Scorching Ray onto it (Magic Missile stays its own: it never rolls to hit). Then Eldritch Blast is data: beams from `cantrip_scale` (2 at level 5, 3 at 11, 4 at 17; `projectiles_for_level` reads the tier), with Agonizing Blast and Repelling Blast applied per beam. Until a character reaches level 5 it stays one target.
+What is shared today: the sidebar allocation (`assignMultiTargetDart` in `index.html`, writing `combat_mm_darts_1..6` up to `combat_mm_darts_max`), the count from the data (`projectiles_for_level`: `projectiles` plus `upcast.projectiles` per slot level) and the Cast/Cancel targeting page (`fight_target_multi`, keyed by `combat_mm_spell`; each spell's `fight_target_<id>` entry label names it). A new spell on the page adds an entry label, its name, its empty-page line and its resolver call there. The "an attack roll per projectile" loop is shared too (`fight_resolve_projectile_attacks <id>`, name and damage type from the data, banner word and icon per spell); Scorching Ray's resolver only spends its slot and prints its opening before calling it. Magic Missile keeps its own loop, since it never rolls to hit. What is written per spell: the hub option. Next, Eldritch Blast is data: beams from `cantrip_scale` (2 at level 5, 3 at 11, 4 at 17; `projectiles_for_level` reads the tier), with Agonizing Blast and Repelling Blast applied per beam. Until a character reaches level 5 it stays one target.
 
 ### 3.3 Upcasting gaps
 
@@ -99,6 +99,10 @@ What is shared today: the sidebar allocation (`assignMultiTargetDart` in `index.
 - Cure Wounds has no `upcast` in the data, so it heals the same at every slot level.
 - Decision 3 in section 4 (a Warlock's 2nd-level pact slot on 1st-level spells).
 - A 3rd-level Scorching Ray (four rays) and Magic Missile need their own hub option once a character has 3rd-level slots (level 5). The ray and dart counts and the prose already follow the cast level.
+
+### 3.3a Spell slots of 3rd level and up
+
+Needed before any caster reaches level 5. Wizard, bard and ranger have only the 1st- and 2nd-level pools (`spell_slots_1` / `_2`), and `refresh_slot_left` (`combat_spells.txt`) maps a Warlock's pact slots to `slot_left_1` / `_2` only for `pact_slot_level` 1 and 2, so a level 5 Warlock's 3rd-level pact slots would count as none and no leveled spell would be offered. Needs: the pools from 3rd level up, `slot_left_N` and the hub's slot reasons for them, `spend_spell_slot` / `spend_lowest_slot` for them, and the rest and level-up refills.
 
 ### 3.4 Web and Restrained, the rest of the rules
 

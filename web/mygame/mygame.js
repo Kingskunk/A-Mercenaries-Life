@@ -3954,6 +3954,7 @@ stats = {
   "shield_active": "false",
   "combat_shield_triggered": "false",
   "combat_mm_targeting_active": "false",
+  "combat_mm_spell": "",
   "combat_mm_darts_max": "0",
   "combat_mm_darts_total": "0",
   "combat_mm_darts_1": "0",
