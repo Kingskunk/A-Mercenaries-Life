@@ -1,0 +1,64 @@
+---
+name: delegate
+description: Hand a well-specified job to a cheaper helper agent - the read-only Haiku `runner` or the Sonnet `worker` - and check what comes back. Use when the user runs /delegate, and on your own initiative during normal work for running test suites, sorting transcript diffs, writing play scripts from a spec, mechanical multi-file edits and broad searches.
+---
+
+# Delegating to the runner and the worker
+
+You are the orchestrator. You decide, brief, check and report. Two helpers do the legwork:
+
+- `runner` (`.claude/agents/runner.md`): Haiku, effort low by default, read-only tools. For jobs that are mostly running a command or searching and condensing the output.
+- `worker` (`.claude/agents/worker.md`): Sonnet, effort medium by default. For anything that changes files.
+
+The point is to save tokens, so a delegation must cost less than doing the job yourself.
+
+## Which helper, at which effort
+
+Pass `effort` on the Agent call as this table says (this skill is the instruction that allows it). Leave it out when it matches the helper's default.
+
+| Job | Helper | Effort |
+| --- | --- | --- |
+| Run a check (`play_all`, quicktest, lint) and report the failures | runner | low |
+| Broad search, or listing where something is used | runner | low |
+| Sort transcript diffs by a clear rule | runner | low; medium if the rule needs judgment |
+| Mechanical edits from exact instructions | worker | low |
+| Write a play script from a spec | worker | medium |
+| Diagnose why a script fails | worker | high |
+
+If a runner comes back BLOCKED or its result looks wrong, rerun the job once on the worker before taking it yourself.
+
+## Do it yourself
+
+- Engine design, conditions, locks and anything where a subtle mistake is easy (for example `condition_end` overwriting `ce_prefix`).
+- Player-facing prose (`Resources & Quest/NARRATIVE_GUIDELINES.md` applies).
+- Anything the user must decide.
+- Tiny jobs, where the brief would be as long as the job itself.
+
+## The brief
+
+Call the Agent tool with `subagent_type: "runner"` or `"worker"`. The helper starts cold, so the brief must stand on its own:
+
+```
+Goal: <one sentence>
+Context: <only the facts it needs: labels, variable names, why>
+Files: <exact paths; for the worker, which it may edit and which it must not touch>
+Steps: <numbered, concrete>
+Checks: <exact commands to run>
+Scratchpad: <absolute scratchpad path for temp files>
+Report: the standard report from your instructions<, plus anything extra>
+```
+
+Give exact paths and names you already know, so it does not spend tokens rediscovering them. Independent jobs can go to several helpers in one message, but run suite jobs one at a time so they do not compete for Chrome and CPU.
+
+## When it comes back
+
+1. Read the report. A BLOCKED or "Unsure" item is yours to resolve.
+2. If it edited files: run `git diff --numstat` yourself and account for every deletion, then read the diff.
+3. Rerun at least one of its checks yourself, or a narrower one (a single `play_all` script), before calling the work done.
+4. Tell the user plainly what the helper did, what you checked, and what was not run.
+
+Neither helper commits. Neither do you, unless the user asks.
+
+## Measuring the saving
+
+Each Agent result reports the helper's total tokens. Keep a line for the session: job, helper, effort, tokens. When the user wants a comparison, run the same brief through `runner`, `worker` and `general-purpose` with `model: "opus"`, one after another, then compare tokens, cost (tokens times each model's price) and whether each found the same thing. Use a read-only job whose answer you can check, so the runs do not collide.
