@@ -7821,6 +7821,472 @@ window.MARKET_DEFS = {
   "tile": "rn2",
   "rumorDc": 10
  },
+ "pc_market": {
+  "id": "pc_market",
+  "title": "Palmcote Market",
+  "tier": "village market",
+  "purseTarget": 1000,
+  "regen": {
+   "stock": 0.2,
+   "purse": 0.1
+  },
+  "goods": {
+   "honey": {
+    "base": 4,
+    "target": 56,
+    "stock0": 56,
+    "buyPct": 0.8,
+    "mult": 1,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.2
+   },
+   "boar_meat": {
+    "base": 6,
+    "target": 63,
+    "stock0": 63,
+    "buyPct": 0.8,
+    "mult": 1.16,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.5
+   },
+   "venison": {
+    "base": 7,
+    "target": 41,
+    "stock0": 41,
+    "buyPct": 0.8,
+    "mult": 1.19,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.4
+   },
+   "beef": {
+    "base": 7,
+    "target": 63,
+    "stock0": 63,
+    "buyPct": 0.8,
+    "mult": 0.965,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.4
+   },
+   "barley_loaf": {
+    "base": 2,
+    "target": 96,
+    "stock0": 96,
+    "buyPct": 0.8,
+    "mult": 0.97,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 1
+   },
+   "grain": {
+    "base": 2,
+    "target": 144,
+    "stock0": 144,
+    "buyPct": 0.8,
+    "mult": 0.97,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 1
+   },
+   "cheese": {
+    "base": 3,
+    "target": 96,
+    "stock0": 96,
+    "buyPct": 0.8,
+    "mult": 1,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.6
+   },
+   "butter": {
+    "base": 5,
+    "target": 90,
+    "stock0": 90,
+    "buyPct": 0.8,
+    "mult": 1,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.6
+   },
+   "animal_fat": {
+    "base": 3,
+    "target": 115,
+    "stock0": 115,
+    "buyPct": 0.8,
+    "mult": 1.065,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.5
+   },
+   "orchard_apple": {
+    "base": 1,
+    "target": 88,
+    "stock0": 88,
+    "buyPct": 0.8,
+    "mult": 1.075,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.4
+   },
+   "grapes": {
+    "base": 2,
+    "target": 44,
+    "stock0": 44,
+    "buyPct": 0.8,
+    "mult": 1.075,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.4
+   },
+   "wine": {
+    "base": 30,
+    "target": 25,
+    "stock0": 25,
+    "buyPct": 0.8,
+    "mult": 1.075,
+    "hi": 1.588,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.3
+   },
+   "olives": {
+    "base": 2,
+    "target": 96,
+    "stock0": 96,
+    "buyPct": 0.8,
+    "mult": 0.9,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.4
+   },
+   "oil": {
+    "base": 18,
+    "target": 44,
+    "stock0": 44,
+    "buyPct": 0.8,
+    "mult": 0.935,
+    "hi": 1.518,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.3
+   },
+   "flax": {
+    "base": 5,
+    "target": 60,
+    "stock0": 60,
+    "buyPct": 0.8,
+    "mult": 0.975,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.5
+   },
+   "linen": {
+    "base": 18,
+    "target": 32,
+    "stock0": 32,
+    "buyPct": 0.8,
+    "mult": 1,
+    "hi": 1.55,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.5
+   },
+   "root_vegetable_bundle": {
+    "base": 2,
+    "target": 144,
+    "stock0": 144,
+    "buyPct": 0.8,
+    "mult": 1.04,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.9
+   },
+   "farm_eggs": {
+    "base": 3,
+    "target": 144,
+    "stock0": 144,
+    "buyPct": 0.8,
+    "mult": 1.065,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.7
+   },
+   "onions": {
+    "base": 2,
+    "target": 144,
+    "stock0": 144,
+    "buyPct": 0.8,
+    "mult": 1.04,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.8
+   },
+   "potatoes": {
+    "base": 1,
+    "target": 144,
+    "stock0": 144,
+    "buyPct": 0.8,
+    "mult": 1.04,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.9
+   },
+   "tomatoes": {
+    "base": 3,
+    "target": 48,
+    "stock0": 48,
+    "buyPct": 0.8,
+    "mult": 1.28,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.3
+   },
+   "dressed_chicken": {
+    "base": 7,
+    "target": 64,
+    "stock0": 64,
+    "buyPct": 0.8,
+    "mult": 1.095,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.6
+   },
+   "fish": {
+    "base": 4,
+    "target": 85,
+    "stock0": 85,
+    "buyPct": 0.8,
+    "mult": 1.075,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.8
+   },
+   "cabbage": {
+    "base": 2,
+    "target": 144,
+    "stock0": 144,
+    "buyPct": 0.8,
+    "mult": 1.04,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.8
+   },
+   "pumpkin": {
+    "base": 3,
+    "target": 48,
+    "stock0": 48,
+    "buyPct": 0.8,
+    "mult": 1.28,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.4
+   },
+   "iron_ore": {
+    "base": 3,
+    "target": 40,
+    "stock0": 40,
+    "buyPct": 0.8,
+    "mult": 1.41,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.1
+   },
+   "limestone": {
+    "base": 2,
+    "target": 50,
+    "stock0": 50,
+    "buyPct": 0.8,
+    "mult": 1.13,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.4
+   },
+   "iron_bar": {
+    "base": 8,
+    "target": 22,
+    "stock0": 22,
+    "buyPct": 0.8,
+    "mult": 1.37,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.5
+   },
+   "longshade_timber": {
+    "base": 6,
+    "target": 64,
+    "stock0": 64,
+    "buyPct": 0.8,
+    "mult": 1.16,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.4
+   },
+   "charcoal": {
+    "base": 3,
+    "target": 109,
+    "stock0": 109,
+    "buyPct": 0.8,
+    "mult": 1.16,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.8
+   },
+   "salt": {
+    "base": 6,
+    "target": 25,
+    "stock0": 25,
+    "buyPct": 0.8,
+    "mult": 1.43,
+    "hi": 1.765,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.8
+   },
+   "beeswax": {
+    "base": 8,
+    "target": 32,
+    "stock0": 32,
+    "buyPct": 0.8,
+    "mult": 1.28,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.5
+   },
+   "furs": {
+    "base": 14,
+    "target": 40,
+    "stock0": 40,
+    "buyPct": 0.8,
+    "mult": 1.16,
+    "hi": 1.58,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.3
+   },
+   "leather": {
+    "base": 12,
+    "target": 52,
+    "stock0": 52,
+    "buyPct": 0.8,
+    "mult": 1.025,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.4
+   },
+   "wool": {
+    "base": 4,
+    "target": 90,
+    "stock0": 90,
+    "buyPct": 0.8,
+    "mult": 1,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.4
+   },
+   "hemp": {
+    "base": 5,
+    "target": 12,
+    "stock0": 12,
+    "buyPct": 0.8,
+    "mult": 1.14,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.5
+   },
+   "wool_cloth": {
+    "base": 15,
+    "target": 49,
+    "stock0": 49,
+    "buyPct": 0.8,
+    "mult": 1.025,
+    "hi": 1.563,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.5
+   },
+   "raw_hide": {
+    "base": 8,
+    "target": 90,
+    "stock0": 90,
+    "buyPct": 0.8,
+    "mult": 1.065,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.2
+   },
+   "boar_tusk": {
+    "base": 10,
+    "target": 41,
+    "stock0": 41,
+    "buyPct": 0.8,
+    "mult": 1.19,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.1
+   },
+   "elk_antler": {
+    "base": 7,
+    "target": 41,
+    "stock0": 41,
+    "buyPct": 0.8,
+    "mult": 1.19,
+    "world": {
+     "tile": "pc"
+    },
+    "need": 0.1
+   }
+  },
+  "commodities": true,
+  "appetite": {
+   "_readme": "A commodity market spends at most this share of its purse (its target) on ONE good a day (2026-10-24, the user: a hill village would not throw all its gold at wool or timber it has lived without). stocked: a good the market holds; unstocked: a good with no maker in its reach.",
+   "stocked": 0.1,
+   "unstocked": 0.03
+  },
+  "tile": "pc",
+  "rumorDc": 10
+ },
  "bm_fair": {
   "id": "bm_fair",
   "title": "Longfold Fair",

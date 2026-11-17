@@ -333,6 +333,7 @@ function compile(){
   verifyFileName("hartwell/oxworth/salting_yard.txt");
   verifyFileName("hartwell/palmcote/palmcote.txt");
   verifyFileName("hartwell/palmcote/green_branch.txt");
+  verifyFileName("hartwell/palmcote/palmcote_market.txt");
   verifyFileName("Langston/market.txt");
   verifyFileName("Langston/cord_and_kettle.txt");
   verifyFileName("Langston/pickled_hen.txt");

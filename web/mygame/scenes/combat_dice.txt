@@ -202,12 +202,29 @@
 *label apply_poison_rider
 *if ((combat_player_dmg_type = "poison") and (equipped_armor_id = "poisoners_robes"))
   *temp apr_roll 0
-  *rand apr_roll 1 4
+  *if (combat_player_crit)
+    *gosub_scene combat_spells roll_spell_dice 2 4
+    *set apr_roll spell_roll_total
+  *else
+    *rand apr_roll 1 4
   *temp apr_raw apr_roll
   *gosub adjust_outgoing_damage_packet apr_raw "poison"
   *comment replay-ok: called only from inside a spell hit's once-per-page lock (resolve_player_hit), which halves a roll made in that same lock.
   *set combat_player_dmg_dealt + combat_packet_damage
   *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} [b][+ ${apr_roll} poison (Poisoner's Robes) = ${combat_packet_damage}${combat_packet_suffix}][/b]"
+*return
+
+*comment CRITICAL HIT for the player's attack that just hit the active target, into combat_player_crit, with combat_crit_tag for the damage banner.
+*comment A natural 20 on the attack roll (is_nat_20, from roll_d20_check), or any hit on a paralyzed creature by an attacker Engaged with it (5e: within 5 feet).
+*comment Called inside the hit's once-per-page lock. A critical hit rolls every die of the hit twice and adds the modifiers once.
+*label crit_check
+*set combat_player_crit is_nat_20
+*temp cc_para {(("combat_enemy" & combat_active_target) & "_paralyzed")}
+*if ((cc_para > 0) and (combat_enemy_range <= 0))
+  *set combat_player_crit true
+*set combat_crit_tag ""
+*if (combat_player_crit)
+  *set combat_crit_tag " (Critical)"
 *return
 
 *comment A damage cantrip's hit, from the spell data: the die, the damage type and the flat bonus come from tools/spell_book.json (spell_facts_load), then resolve_player_hit rolls it with its riders (Hex, the Poisoner's Robes, an item's extra packet). A new damage cantrip is a data entry plus its menu option, which calls this and prints its own banner.
@@ -230,12 +247,20 @@
 *label resolve_player_hit
 *params rph_is_attack_roll
 *if (not(combat_player_hit_locked)) or (not(locked_combat_player_hit_page_id = page_id))
-  *set combat_hit_nat20 ((rph_is_attack_roll) and (is_nat_20))
+  *comment CRITICAL HIT: only an attack roll can crit (a save spell passes false). crit_check decides it: a natural 20, or a paralyzed target the player is Engaged with.
+  *set combat_player_crit false
+  *set combat_crit_tag ""
+  *if (rph_is_attack_roll)
+    *gosub crit_check
+  *set combat_hit_nat20 combat_player_crit
   *temp cph_roll 0
   *temp cph_roll_str ""
-  *comment One die unless the spell data gives more (combat_player_dmg_dice_count, set by resolve_spell_hit and put back to 1 here). A single die keeps its own *rand, so every one-die roll is unchanged.
-  *if (combat_player_dmg_dice_count > 1)
-    *gosub_scene combat_spells roll_spell_dice combat_player_dmg_dice_count combat_player_dmg_dice_sides
+  *comment One die unless the spell data gives more (combat_player_dmg_dice_count, set by resolve_spell_hit and put back to 1 here); a critical hit rolls twice as many. A single die keeps its own *rand, so every one-die roll is unchanged.
+  *temp cph_n combat_player_dmg_dice_count
+  *if (combat_player_crit)
+    *set cph_n (cph_n * 2)
+  *if (cph_n > 1)
+    *gosub_scene combat_spells roll_spell_dice cph_n combat_player_dmg_dice_sides
     *set cph_roll spell_roll_total
     *set cph_roll_str spell_roll_dice_str
   *else
@@ -249,7 +274,7 @@
     *set cph_bonus_str "${combat_player_dmg_bonus}"
   *temp cph_extra_str ""
   *temp cph_running (cph_roll + combat_player_dmg_bonus)
-  *set combat_player_dmg_roll_banner "[b][🎲 Damage: ${cph_roll_str} ${cph_bonus_str}${cph_extra_str} = ${cph_running}][/b]"
+  *set combat_player_dmg_roll_banner "[b][🎲 Damage${combat_crit_tag}: ${cph_roll_str} ${cph_bonus_str}${cph_extra_str} = ${cph_running}][/b]"
   *gosub apply_outgoing_damage_resist_vuln
   *comment Hex only enhances an attack roll that hit its marked creature. Save-based spells pass false here, so they cannot trigger it. It is its own necrotic packet, so a defense against the spell's own type leaves it standing.
   *if (((hex_active) and (rph_is_attack_roll)) and ((hex_target_slot > 0) and (hex_target_slot = combat_active_target)))
@@ -259,7 +284,11 @@
     *if (cph_hex_sides < 2)
       *set cph_hex_sides 2
     *temp cph_hex_die 0
-    *rand cph_hex_die 1 cph_hex_sides
+    *if (combat_player_crit)
+      *gosub_scene combat_spells roll_spell_dice 2 cph_hex_sides
+      *set cph_hex_die spell_roll_total
+    *else
+      *rand cph_hex_die 1 cph_hex_sides
     *gosub adjust_outgoing_damage_packet cph_hex_die spell_fact_dmg_type
     *set combat_player_dmg_dealt + combat_packet_damage
     *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} [b][+ ${cph_hex_die} ${spell_fact_dmg_type} (Hex) = ${combat_packet_damage}${combat_packet_suffix}][/b]"
@@ -269,7 +298,11 @@
     *temp cph_xs combat_player_extra_dmg_dice_sides
     *if (cph_xs < 2)
       *set cph_xs 2
-    *rand cph_packet_roll 1 cph_xs
+    *if (combat_player_crit)
+      *gosub_scene combat_spells roll_spell_dice 2 cph_xs
+      *set cph_packet_roll spell_roll_total
+    *else
+      *rand cph_packet_roll 1 cph_xs
     *temp cph_packet_raw (cph_packet_roll + combat_player_extra_dmg_bonus)
     *temp cph_packet_bonus_str ""
     *if (combat_player_extra_dmg_bonus >= 0)
@@ -303,7 +336,9 @@ ${combat_player_dmg_roll_banner}
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_player_weapon_hit
 *if (not(combat_weapon_hit_locked)) or (not(locked_combat_weapon_hit_page_id = page_id))
-  *set combat_hit_nat20 is_nat_20
+  *comment CRITICAL HIT (crit_check): a natural 20, or a paralyzed target the player is Engaged with. Every die of the hit is rolled twice: the weapon's, Sneak Attack, Hex, Hunter's Mark, an item's extra packet, True Strike's and Booming Blade's on-hit dice.
+  *gosub crit_check
+  *set combat_hit_nat20 combat_player_crit
   *set combat_weapon_blocked false
   *set combat_weapon_defense_text ""
   *temp cwh_roll 0
@@ -311,6 +346,16 @@ ${combat_player_dmg_roll_banner}
   *if (((fighting_style = "great_weapon") and (weapon_hands = "two_handed")) and (not(weapon_type = "ranged")))
     *if (cwh_roll <= 2)
       *rand cwh_roll 1 combat_player_dmg_dice_sides
+  *temp cwh_roll_str "${cwh_roll}"
+  *if (combat_player_crit)
+    *comment The second weapon die, with Great Weapon Fighting's reroll of a 1 or 2 like the first.
+    *temp cwh_roll2 0
+    *rand cwh_roll2 1 combat_player_dmg_dice_sides
+    *if (((fighting_style = "great_weapon") and (weapon_hands = "two_handed")) and (not(weapon_type = "ranged")))
+      *if (cwh_roll2 <= 2)
+        *rand cwh_roll2 1 combat_player_dmg_dice_sides
+    *set cwh_roll_str "${cwh_roll}+${cwh_roll2}"
+    *set cwh_roll + cwh_roll2
   *set combat_player_dmg_dealt (cwh_roll + combat_player_dmg_bonus)
   *comment Damage-roll banner (2026-09-27): built here, before Sneak/Hex are known, then extended below as each
   *comment one fires -- see the create comment (startup.txt) for why this prints unconditionally after the gate
@@ -346,8 +391,11 @@ ${combat_player_dmg_roll_banner}
     *temp cwh_sneak_label "Sneak Attack"
     *if (rogue_sneak_dice > 1)
       *set cwh_sneak_label ("Sneak Attack " & rogue_sneak_attack_die)
+    *temp cwh_sneak_n rogue_sneak_dice
+    *if (combat_player_crit)
+      *set cwh_sneak_n (cwh_sneak_n * 2)
     *label cwh_sneak_loop
-    *if (cwh_sneak_i < rogue_sneak_dice)
+    *if (cwh_sneak_i < cwh_sneak_n)
       *rand cwh_sneak_die 1 6
       *set cwh_sneak_sum + cwh_sneak_die
       *set cwh_sneak_i + 1
@@ -357,7 +405,7 @@ ${combat_player_dmg_roll_banner}
     *set cwh_running + cwh_sneak_sum
   *comment HEX AND HUNTER'S MARK are not part of the weapon's damage (the user approved the split, 2026-10-31, RAW): each is its own packet, rolled below after the weapon's, with its own type (Hex necrotic, Hunter's Mark force in the 2024 rules this game follows), so a target that is immune to
   *comment the weapon's damage still takes them. Sneak Attack IS the weapon's damage type and stays in its packet.
-  *set combat_player_dmg_roll_banner "[b][🎲 Weapon Damage: ${cwh_roll} ${cwh_bonus_str}${cwh_extra_str} = ${cwh_running}][/b]"
+  *set combat_player_dmg_roll_banner "[b][🎲 Weapon Damage${combat_crit_tag}: ${cwh_roll_str} ${cwh_bonus_str}${cwh_extra_str} = ${cwh_running}][/b]"
   *set combat_atk_magical weapon_magical
   *set combat_atk_silvered weapon_silvered
   *set combat_atk_adamantine weapon_adamantine
@@ -377,7 +425,11 @@ ${combat_player_dmg_roll_banner}
     *if (cwh_hex_sides < 2)
       *set cwh_hex_sides 2
     *temp cwh_hex_die 0
-    *rand cwh_hex_die 1 cwh_hex_sides
+    *if (combat_player_crit)
+      *gosub_scene combat_spells roll_spell_dice 2 cwh_hex_sides
+      *set cwh_hex_die spell_roll_total
+    *else
+      *rand cwh_hex_die 1 cwh_hex_sides
     *gosub adjust_outgoing_damage_packet cwh_hex_die spell_fact_dmg_type
     *set combat_player_dmg_dealt + combat_packet_damage
     *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} [b][+ ${cwh_hex_die} ${spell_fact_dmg_type} (Hex) = ${combat_packet_damage}${combat_packet_suffix}][/b]"
@@ -385,7 +437,11 @@ ${combat_player_dmg_roll_banner}
   *comment default (slot 0 never exists); expires_round >= combat_round is the 10-round maximum ceiling (concentration can end it earlier). The mark is cast as its own bonus action, so it is already live when the first weapon hit lands.
   *if (((favored_foe_target_slot > 0) and (favored_foe_target_slot = combat_active_target)) and (favored_foe_expires_round >= combat_round))
     *temp cwh_ff_die 0
-    *rand cwh_ff_die 1 favored_foe_die_sides
+    *if (combat_player_crit)
+      *gosub_scene combat_spells roll_spell_dice 2 favored_foe_die_sides
+      *set cwh_ff_die spell_roll_total
+    *else
+      *rand cwh_ff_die 1 favored_foe_die_sides
     *gosub adjust_outgoing_damage_packet cwh_ff_die "force"
     *set combat_player_dmg_dealt + combat_packet_damage
     *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} [b][+ ${cwh_ff_die} force (Hunter's Mark) = ${combat_packet_damage}${combat_packet_suffix}][/b]"
@@ -398,7 +454,11 @@ ${combat_player_dmg_roll_banner}
     *temp cwh_xs combat_player_extra_dmg_dice_sides
     *if (cwh_xs < 2)
       *set cwh_xs 2
-    *rand cwh_packet_roll 1 cwh_xs
+    *if (combat_player_crit)
+      *gosub_scene combat_spells roll_spell_dice 2 cwh_xs
+      *set cwh_packet_roll spell_roll_total
+    *else
+      *rand cwh_packet_roll 1 cwh_xs
     *temp cwh_packet_raw (cwh_packet_roll + combat_player_extra_dmg_bonus)
     *temp cwh_packet_bonus_str ""
     *if (combat_player_extra_dmg_bonus >= 0)
@@ -415,6 +475,8 @@ ${combat_player_dmg_roll_banner}
     *gosub_scene combat_spells spell_facts_load "true_strike"
     *temp cwh_ts_n spell_fact_extra_count
     *temp cwh_ts_sides spell_fact_extra_sides
+    *if (combat_player_crit)
+      *set cwh_ts_n (cwh_ts_n * 2)
     *if (cwh_ts_n > 0)
       *gosub_scene combat_spells roll_spell_dice cwh_ts_n cwh_ts_sides
       *gosub adjust_outgoing_damage_packet spell_roll_total "radiant"
@@ -433,6 +495,9 @@ ${combat_player_dmg_roll_banner}
     *gosub_scene combat_spells spell_facts_load "booming_blade"
     *temp cwh_boom_n spell_fact_hit_count
     *temp cwh_boom_sides spell_fact_hit_sides
+    *comment The on-hit thunder is part of the hit, so a crit doubles it; the damage when the foe later moves (fight_booming_trigger) is not.
+    *if (combat_player_crit)
+      *set cwh_boom_n (cwh_boom_n * 2)
     *if (cwh_boom_n > 0)
       *gosub_scene combat_spells roll_spell_dice cwh_boom_n cwh_boom_sides
       *gosub adjust_outgoing_damage_packet spell_roll_total "thunder"

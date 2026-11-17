@@ -19,7 +19,7 @@ Sources studied: `Wallpaper/Oxworth_Salting_Yard_Day.jpg` and `_Night.jpg`, `Vil
 - **Markets and settlement specialties:** A settlement's specialty shapes the scenery, but must not define or monopolize it. A market in a salt, olive, wool, or timber settlement still shows ordinary everyday trade — vegetables, grain, bread, stone, wood, metal, cloth, and provisions — with the local specialty mixed in as one part of the stalls and crates rather than every stall selling the same single commodity.
 - **No text:** no signs with legible words, no logos, no watermark, no border.
 - **Format:** 16:9 landscape. Existing files are 1376x768 (jpg) or about 1672x941 (png). Make new ones at least 1672x941. PNG preferred.
-- **Day and night pair:** the same view. The night picture is the day picture with the light changed, so the two blend into each other as the clock moves. Night is a blue-grey moonlit scene with a few stars, a pale moon haze and warm lamplit windows. The ground stays dry.
+- **Day and night pair:** the same view. The night picture is the day picture with the light changed, so the two blend into each other as the clock moves. Night is a blue-grey moonlit scene with a few stars, a pale moon haze and warm lamplit windows. The ground stays dry. **Also ask what changes at night besides the sky:** keep the camera, buildings, trees, lane, and permanent fixtures in the exact same place, but clear away daytime-only activity—for example, in a market, clear all food, produce, cloth, jars, baskets, and scales off the trestles and fold or tie down the canvas awnings so goods are not left sitting out overnight.
 
 Interior places (an inn room, a hall) may be a **single** picture with no night partner. The page darkens it at night.
 
@@ -44,7 +44,7 @@ Name files `<Name>_Day.png` and `<Name>_Night.png` (or a single `<Name>.png`) in
 2. **Generate the day picture** at 16:9. Make 2 to 4 candidates.
 3. **Check each candidate against the style list** in section 1 before showing anything. Reject any shot from above or from a hilltop overlook, with the horizon high or low in the frame, or with rooftops seen from above, as well as any with people, text, bright saturated colour, fantasy glow, a cartoon look, wet mud, puddles or any rut or tyre-like track, single-commodity markets that omit everyday goods, or objects the prose contradicts.
 4. **Show the designer the best one or two.** Do not continue until one is picked.
-5. **Make the night picture by editing the chosen day image**, not by generating a new scene. Give the tool the day image and the night edit prompt from section 5. Reject any night picture where the buildings, trees or the lane have moved.
+5. **Make the night picture by editing the chosen day image**, not by generating a new scene. Give the tool the day image and the night edit prompt from section 5, and explicitly specify anything that packs up or shuts at night (e.g., cleared market stalls with no goods left out). Reject any night picture where the buildings, trees or the lane have moved.
 6. **Save** both to `Wallpaper/` with the names above. Ask before overwriting an existing file.
 7. **Register and build** (section 4).
 
@@ -79,7 +79,7 @@ No people. No text, no readable signs, no logo, no watermark, no border.
 ### 5.2 Night picture (edit of the day picture)
 
 ```
-Use the attached image as the exact scene. Keep the camera, composition, buildings, trees, lane and every object in exactly the same place and shape. Change only the lighting to night: a deep blue-grey moonlit night with a few faint stars, a pale moon haze in the sky, dark hills, cool shadows. The ground stays dry, with no puddles or reflections. Windows and doorways glow with warm lamplight. No people, no text, no watermark.
+Use the attached image as the exact scene. Keep the camera, composition, buildings, trees, lane and permanent fixtures in exactly the same place and shape. Change the lighting to night: a deep blue-grey moonlit night with a few faint stars, a pale moon haze in the sky, dark hills, cool shadows. The ground stays dry, with no puddles or reflections. Windows and doorways glow with warm lamplight. [IF APPLICABLE FOR THIS PLACE, STATE WHAT PACKS UP AT NIGHT: e.g., For a market, clear all food, produce, cloth, jars, baskets and scales off the trestle tables so the stalls stand bare or folded/sheeted for the night, leaving only empty tables, stacked empty crates and barrels.] No people, no text, no watermark.
 ```
 
 ### 5.3 One-line style anchor (to paste ahead of any prompt)

@@ -582,6 +582,13 @@
   *if (rsd_upcast < 0)
     *set rsd_upcast 0
 *temp rsd_dice_count (spell_fact_dice_count + (spell_fact_upcast_dice * rsd_upcast))
+*comment CRITICAL HIT: an attack-roll spell (Ray of Sickness) that hit crits like any attack (combat_dice.txt crit_check), rolling its dice twice. A save or area spell never crits, and clears the flag so a rider (the Poisoner's Robes) cannot read a stale one.
+*set combat_player_crit false
+*set combat_crit_tag ""
+*if (spell_fact_resolution = "attack")
+  *gosub_scene combat_dice crit_check
+  *if (combat_player_crit)
+    *set rsd_dice_count (rsd_dice_count * 2)
 *gosub roll_spell_dice rsd_dice_count spell_fact_dice_sides
 *temp rsd_total (spell_fact_flat + spell_roll_total)
 *temp rsd_dice_str spell_roll_dice_str
@@ -604,7 +611,7 @@
     *set combat_player_dmg_roll_banner "[b][🎲 ${spell_fact_name}: ${rsd_dice_str}${rsd_mod_part}${rsd_flat_part} = ${rsd_total} — Halved (Saved): ${combat_player_dmg_dealt}][/b]"
   *else
     *set combat_player_dmg_dealt rsd_total
-    *set combat_player_dmg_roll_banner "[b][🎲 ${spell_fact_name}: ${rsd_dice_str}${rsd_mod_part}${rsd_flat_part} = ${combat_player_dmg_dealt}][/b]"
+    *set combat_player_dmg_roll_banner "[b][🎲 ${spell_fact_name}${combat_crit_tag}: ${rsd_dice_str}${rsd_mod_part}${rsd_flat_part} = ${combat_player_dmg_dealt}][/b]"
   *if (not(combat_save_quiet))
     ${combat_player_dmg_roll_banner}
     *line_break

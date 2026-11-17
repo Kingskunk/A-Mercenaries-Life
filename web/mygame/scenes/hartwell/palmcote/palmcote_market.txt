@@ -1,0 +1,188 @@
+*comment ====================================================================================
+*comment PALMCOTE MARKET (Palmcote): canvas-awning stalls along a widening of the hillside lane, between drystone terrace walls and pale stone houses.
+*comment Open trade hub "pc_market" (tile "pc", trade.js PILOT, market_defs.json, startup_parts/48_market.txt).
+*comment Closed on the rest day (Hallowday), at night and while dangerous weather has emptied the lane.
+*comment Backdrop: Wallpaper/Palmcote_Market_Day.jpg and _Night.jpg (scenery.js SCENE_PLACES); ambience "village" (ambience.js ALIAS).
+*comment ====================================================================================
+
+*label pc_market
+*set minutes_to_pass 5
+*set time_advance_call_id "pc_market_walk_1"
+*gosub_scene hartwell/palmcote/palmcote pc_walk_time
+*gosub_scene hartwell/palmcote/palmcote pc_hours
+*if (not(pc_ok_market))
+  *set shop_open ""
+  *goto pc_market_closed
+*goto pc_market_ground
+
+*label pc_market_ground
+*gosub_scene hartwell/palmcote/palmcote pc_hours
+*if (not(pc_ok_market))
+  *set shop_open ""
+  *goto pc_market_closed
+*temp mk_first false
+*if (not(pc_market_seen))
+  *set mk_first true
+*set pc_market_seen true
+*temp mk_vignette (((campaign_day * 24) + clock_hour) modulo 4) + 1
+
+[b]◈ PALMCOTE MARKET[/b]
+*line_break
+*gosub pc_mk_layers
+*gosub pc_market_open_panel
+
+*comment Open-world free time: the sidebar's Wait and Rest work on this page.
+*set wait_ok_page page_id
+*choice
+  # ⚖ Settle up with the sellers.
+    *goto pc_market_settle
+  # Walk back to the village lane.
+    *set shop_open ""
+    *goto_scene hartwell/palmcote/palmcote pc_return
+
+*comment The trade panel's home: one open market for the whole lane, every commodity bought and the shelf sold from what it holds. Settling takes the panel's agreed totals (equipment.txt shop_check).
+*label pc_market_open_panel
+*set shop_open "pc_market"
+*set shop_rows ""
+*comment GEN:BEGIN pc_market_panel_rows
+*gosub_scene equipment market_rumor_check "pc_market"
+*comment GEN:END pc_market_panel_rows
+*return
+
+*label pc_market_cart_pass
+*comment GEN:BEGIN pc_market_cart_pass
+*gosub_scene equipment shop_cart_run "market" "pc_market_sell" "pc_market"
+*comment GEN:END pc_market_cart_pass
+*return
+
+*label pc_market_settle
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *gosub_scene equipment shop_begin
+  *gosub pc_market_cart_pass
+  *gosub_scene equipment shop_check
+  *if (shop_verdict = "ok")
+    *set shop_mode "apply"
+    *gosub pc_market_cart_pass
+    *set currency_add_amount (shop_tot_credit - shop_tot_cost)
+    *gosub_scene economy currency_add
+  *else
+    *set shop_mode "clear"
+    *gosub pc_market_cart_pass
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*if (shop_verdict = "empty")
+  You stand a moment by the stalls with nothing set aside, and the market goes on around you.
+  *page_break Back to the market…
+  *goto pc_market_ground
+*if (shop_verdict = "short")
+  You count your coin against the sums chalked beside the scales and come up short. The goods stay where they are.
+  *page_break Back to the market…
+  *goto pc_market_ground
+*if ((shop_tot_bought > 0) and (shop_tot_sold > 0))
+  You go from stall to stall, setting your goods on the counter scale and taking others up, while the sellers chalk each weight until what is owed comes out square.
+*elseif (shop_tot_bought > 0)
+  You go from stall to stall, having each lot weighed on the scale and counting out the coin, and a carrier helps haul your purchases to the edge of the lane.
+*else
+  At one trestle after another you set your goods on the scale, and each seller counts out coin from a worn leather purse.
+*if (not(shop_quote_line = ""))
+  *line_break
+  ${shop_quote_line}
+*if (not(shop_note_line = ""))
+  *line_break
+  ${shop_note_line}
+*if (shop_tot_sold > 0)
+  *line_break
+  [b][💰 Sold: ${shop_sold_list} for ${shop_credit_desc}][/b]
+*if (shop_tot_bought > 0)
+  *line_break
+  [b][🛒 Bought: ${shop_recv} for ${shop_cost_desc}][/b]
+*set hours_to_pass 0
+*set minutes_to_pass shop_tot_minutes
+*if (shop_tot_sold > 0)
+  *set minutes_to_pass (minutes_to_pass + 5)
+*set time_advance_call_id "pc_market_trade"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*page_break Back to the market…
+*goto pc_market_ground
+
+*label pc_market_closed
+[b]◈ PALMCOTE MARKET[/b]
+*line_break
+*if (day_of_week = "Hallowday")
+  The timber trestles are folded against the stone walls and the canvas awnings tied down for the rest day. Only a few empty crates and stacked barrels sit along the quiet lane.
+*elseif (street_life = "empty")
+  The canvas awnings are lashed flat and the crates hauled under the eaves of the stone houses. Wind and weather sweep up the empty lane.
+*else
+  The stalls are cleared and sheeted for the night, with the trestles tucked under the awnings and warm lamplight showing behind the shutters of the stone houses.
+*choice
+  # Walk back to the village lane.
+    *goto_scene hartwell/palmcote/palmcote pc_return
+  # Wait by the stone wall a while. [~5 min]
+    *set minutes_to_pass 5
+    *set time_advance_call_id "pc_market_closed_wait"
+    *gosub_scene hartwell/palmcote/palmcote pc_walk_time
+    *goto_scene hartwell/palmcote/palmcote pc_return
+
+*comment ── LAYERS ── Open hillside lane with canvas awnings over the trestles.
+*label pc_mk_layers
+*gosub pc_mk_place
+*gosub pc_mk_sky
+*gosub pc_mk_street
+*return
+
+*comment ── LAYER 1: PLACE ── Fixed geography only.
+*label pc_mk_place
+*if (mk_first)
+  The market lines a widening of Palmcote's packed-earth lane between low drystone terrace walls and pale stone houses under red clay tile roofs, with grey-green olive trees rising up the slope behind. Rough timber stalls roofed with weathered canvas awnings face each other across the dirt. On the trestles sit sacks of grain, crates of carrots and cabbages, loaves of bread, bundles of split firewood, folded bolts of coarse cloth and a counter scale, beside wicker baskets of green and black olives and lidded clay jars of honey. The air smells of warm dust, baked crust, split wood and crushed leaves.
+*else
+  The market lines the widening of the lane between the drystone walls and the stone houses: canvas-awning stalls of grain, vegetables, bread, firewood, cloth, olives and honey, with the olive terraces rising behind.
+*return
+
+*comment ── LAYER 2: SKY ── Weather and light only, then ground state.
+*label pc_mk_sky
+*if (weather = "Rain")
+  Rain patters on the stretched canvas awnings and runs in thin brown threads down the sloping lane.
+*elseif (weather = "Fog")
+  Grey mist settles across the olive terraces and blurs the upper cottages into pale shapes.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Wet snow slides off the canvas awnings and collects in the stones along the terrace walls.
+*elseif (weather = "Clear")
+  *if (time_period = "Dusk")
+    Low light slants across the hillside, turning the stone walls and canvas awnings warm gold.
+  *else
+    Bright sun pours down the slope and picks out every pale stone in the terrace walls.
+*else
+  Flat grey light sits over the canvas awnings and the grey-green trees behind them.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  The packed earth between the stalls is dark and churned soft, with water pooled between the stones.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  Damp patches darken the earth between the trestles from the last rain.
+*return
+
+*comment ── LAYER 3: STREET ── Current market activity.
+*label pc_mk_street
+*if (time_period = "Dusk")
+  Sellers pack their remaining loaves and jars into crates and lash the canvas edges down while lamps come on in the stone houses.
+  *return
+*if (day_of_week = "Marketday")
+  The lane is busy. Villagers and road carters crowd between the awnings, testing the weight of grain sacks, counting out bread and haggling over baskets of olives.
+  *return
+*if (time_period = "Morning")
+  Stallholders are still setting out crates of carrots and cabbages beside the grain sacks and checking the counter scale before the sun climbs.
+  *return
+*if (mk_vignette = 1)
+  A seller in a dusty apron weighs a basket of black olives on the counter scale and chalks the tally on a board.
+*elseif (mk_vignette = 2)
+  A woman stacks split firewood beside a trestle and trades two loaves of bread for a bundle of greens.
+*elseif (mk_vignette = 3)
+  A carter ties a lidded clay honey jar into a wicker hamper while a stallholder counts out copper bits.
+*else
+  A villager runs a thumb along a folded bolt of coarse cloth, shakes her head once, and moves on to the vegetable crates.
+*return

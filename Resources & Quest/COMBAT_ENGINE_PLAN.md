@@ -89,16 +89,9 @@ RULES FOR THIS SESSION
 
 Roughly in the order I would take it. Each item is one hand-off, sized to review in one sitting.
 
-### 3.1 Critical hits
+### 3.1 Critical hits for enemies and allies
 
-The engine has no critical-hit damage. A natural 20 only matters to a zombie's Undead Fortitude (`combat_hit_nat20`). Decided (2026-11-17):
-
-- A natural 20 on any attack roll, weapon or spell, is a critical hit, for the player, allies and enemies. A saving-throw spell never crits.
-- A crit rolls every damage die twice and adds the modifiers once (1d8+3 becomes 2d8+3).
-- Every die that comes with the hit doubles: the weapon or spell dice and the riders on the hit (Sneak Attack, Hex, Hunter's Mark, Booming Blade's on-hit thunder, the Poisoner's Robes). Damage that comes later and not from the hit (Booming Blade's move damage, Ensnaring's thorns) does not.
-- Paralyzed, in the same piece: any hit on a paralyzed creature by an attacker Engaged with it is a critical hit.
-
-Suggested split: (a) the player's hits, through `resolve_player_hit` and its riders, plus Paralyzed's rule; (b) enemy and ally hits (`resolve_enemy_attack`, `resolve_ally_attack`).
+The player's critical hits are built (the rule is in `GAMEPLAY_MECHANICS_RULES.md`, section 6). Left: the same rule for enemy and ally attacks (`resolve_enemy_attack`, `resolve_enemy_attack_on_ally`, `resolve_ally_attack`): a natural 20 rolls the damage dice twice, the attacker's riders on the hit double too, and a hit on a paralyzed creature by an attacker Engaged with it is a critical hit.
 
 ### 3.2 Damage cantrips that grow with level
 
