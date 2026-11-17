@@ -121,7 +121,7 @@ No scroll exists for Shatter (`ICONS/Item/Consumable/Scroll/Scroll_of_Shatter_Un
 
 ### 3.7 Clear the dead-space flags
 
-42 scripts carry `"allowDeadSpace": true` (`grep -l allowDeadSpace tools/play_scripts/*.json`). Each is a doubled line break to fix, then drop the flag. One known cause: a spell that kills the last foe prints its kill banner with a line break, and `fight_victory` opens with another (seen on Ray of Sickness and Eldritch Blast kills).
+24 scripts carry `"allowDeadSpace": true` (`grep -l allowDeadSpace tools/play_scripts/*.json`). Each is a doubled line break to fix, then drop the flag; a script's transcript names the scene and line ("!! DEAD SPACE"; its line number counts from 0, so it is one less than the editor's). The biggest left: `dungeon.txt` `dg_status_line` (4 scripts), `combat.txt` (lines 3106 and 2788 in the transcripts, 6), `longshade_forest` and `longshade_dryad` (3 each). One known cause: a spell that kills the last foe prints its kill banner with a line break, and `fight_victory` opens with another (seen on Ray of Sickness and Eldritch Blast kills).
 
 ### 3.8 Ally casters
 
