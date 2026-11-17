@@ -89,58 +89,54 @@ RULES FOR THIS SESSION
 
 Roughly in the order I would take it. Each item is one hand-off, sized to review in one sitting.
 
-### 3.1 Critical hits for enemies and allies
+### 3.1 Damage cantrips that grow with level
 
-The player's critical hits are built (the rule is in `GAMEPLAY_MECHANICS_RULES.md`, section 6). Left: the same rule for enemy and ally attacks (`resolve_enemy_attack`, `resolve_enemy_attack_on_ally`, `resolve_ally_attack`): a natural 20 rolls the damage dice twice, the attacker's riders on the hit double too, and a hit on a paralyzed creature by an attacker Engaged with it is a critical hit.
+Fire Bolt, Ray of Frost, Chill Touch, Vicious Mockery, Poison Spray and Shocking Grasp roll one die at every level (Eldritch Blast grows in beams instead: see 3.2). Booming Blade and True Strike already read `cantrip_scale` from the data, and `resolve_player_hit` rolls `combat_player_dmg_dice_count` dice, so the damage cantrips need their `cantrip_scale` entries and the count passed through `resolve_spell_hit`. No character reaches level 5 yet.
 
-### 3.2 Damage cantrips that grow with level
-
-Fire Bolt, Ray of Frost, Chill Touch, Vicious Mockery, Poison Spray and Shocking Grasp roll one die at every level (Eldritch Blast grows in beams instead: see 3.3). Booming Blade and True Strike already read `cantrip_scale` from the data, and `resolve_player_hit` rolls `combat_player_dmg_dice_count` dice, so the damage cantrips need their `cantrip_scale` entries and the count passed through `resolve_spell_hit`. No character reaches level 5 yet.
-
-### 3.3 Shared multi-target attacks, then Eldritch Blast's beams
+### 3.2 Shared multi-target attacks, then Eldritch Blast's beams
 
 What is shared today: the sidebar allocation (`assignMultiTargetDart` in `index.html`, writing `combat_mm_darts_1..6` up to `combat_mm_darts_max`) and the count from the data (`projectiles_for_level`: `projectiles` plus `upcast.projectiles` per slot level). What is written per spell: the hub option, the Cast/Cancel targeting page (`fight_target_magic_missile`, `fight_target_scorching_ray`, `fight_target_cause_fear`, near copies) and the resolver loop. Make one targeting page and one "an attack roll per projectile" resolver keyed by spell id, and move Scorching Ray onto it (Magic Missile stays its own: it never rolls to hit). Then Eldritch Blast is data: beams from `cantrip_scale` (2 at level 5, 3 at 11, 4 at 17; `projectiles_for_level` reads the tier), with Agonizing Blast and Repelling Blast applied per beam. Until a character reaches level 5 it stays one target.
 
-### 3.4 Upcasting gaps
+### 3.3 Upcasting gaps
 
 - Hold Person: one extra humanoid per slot level above 2nd. In the data (`upcast.targets`), not built; it would use the target sidebar that Cause Fear's 2nd-level cast uses.
 - Cure Wounds has no `upcast` in the data, so it heals the same at every slot level.
 - Decision 3 in section 4 (a Warlock's 2nd-level pact slot on 1st-level spells).
 - A 3rd-level Scorching Ray (four rays) and Magic Missile need their own hub option once a character has 3rd-level slots (level 5). The ray and dart counts and the prose already follow the cast level.
 
-### 3.5 Web and Restrained, the rest of the rules
+### 3.4 Web and Restrained, the rest of the rules
 
 - Fire burns the webs away: any fire damage to a creature in the patch clears it, frees everyone in it, and deals 2d4 fire to each.
 - The player and allies are never caught; the patch only slows them. Catching them needs Restrained effects on the player side (no move, attacks against them with advantage, their own attacks with disadvantage) and a tear-free action on the player's menu.
 - A restrained creature should make Dexterity saves with disadvantage. Not built for any restraint.
 - AI: an optional step already avoids a web, but the closing route still walks a melee enemy into it. Decide which profiles refuse and fight from range or wait instead (a caster or sharpshooter holds back, a bruiser pushes through).
 
-### 3.6 Paralyzed and other conditions on the player and allies
+### 3.5 Paralyzed and other conditions on the player and allies
 
 Paralyzed has its fields on every combatant, but its effects (lost turn, no reactions, advantage against, failed Strength and Dexterity saves) are wired for enemies only, since only the player casts Hold Person. An enemy caster with Hold Person needs the player and ally side. Related: a stunned creature is also incapacitated, so it should not spoil a ranged shot either (`combat_check_engaged` skips only paralyzed ones).
 
-### 3.7 Scrolls and enemy use of the 2nd-level spells
+### 3.6 Scrolls and enemy use of the 2nd-level spells
 
 No scroll exists for Shatter (`ICONS/Item/Consumable/Scroll/Scroll_of_Shatter_Unfaded_Icon.png` is ready), Scorching Ray, Hold Person or Web, and no enemy casts any of them (each needs its non-player effect routine).
 
-### 3.8 Clear the dead-space flags
+### 3.7 Clear the dead-space flags
 
-42 scripts carry `"allowDeadSpace": true` (`grep -l allowDeadSpace tools/play_scripts/*.json`). Each is a doubled line break to fix, then drop the flag.
+42 scripts carry `"allowDeadSpace": true` (`grep -l allowDeadSpace tools/play_scripts/*.json`). Each is a doubled line break to fix, then drop the flag. One known cause: a spell that kills the last foe prints its kill banner with a line break, and `fight_victory` opens with another (seen on Ray of Sickness and Eldritch Blast kills).
 
-### 3.9 Ally casters
+### 3.8 Ally casters
 
 An ally has the spell fields (`combat_ally<N>_cast_*`) but no turn step that uses them. Needs: the cast step in the ally's turn, a choice of target among enemies, and prose that does not address "you". `flavor_npc_blindness` reads the same whether the target fails or saves and speaks to the player; an ally caster needs its own lines for both outcomes.
 
-### 3.10 Enemy casting gaps
+### 3.9 Enemy casting gaps
 
 - An enemy only casts when it is within weapon reach. A caster standing back never uses its ranged spells.
 - Enemies and allies make no concentration save when damaged. Only the player does.
 
-### 3.11 Subclasses and feats
+### 3.10 Subclasses and feats
 
 Not yet built or tested end to end. The fight has places meant for them (for example the comment in `concentration_damage_check` where War Caster would add advantage), but nobody has proved the route. Take one subclass and one feat as pilots, and write down every place that needed a hand edit. That list is the real plan for the rest.
 
-### 3.12 Optional: the remaining replay locks
+### 3.11 Optional: the remaining replay locks
 
 Step 6a removed only the spell-layer locks. Still in place: dice, save, attack and last-hit locks; budget spend and grant locks; manoeuvre locks; the banner caches that exist only for replay. A new spell never writes these, so removing them makes nothing cheaper. Do it only as clean-up, one family at a time, and keep every lock that a scene outside a fight can reach (`roll_locked`, `false_life_cast_locked`, anything `choicescript_stats`, `equipment`, `dungeon` or `character_stats` calls).
 
@@ -172,6 +168,7 @@ Older open questions:
 - The opening page of a fight entered from another scene is not covered by the replay guard. A refresh resumes at the choice instead of re-running the page. The test tool skips those pages.
 - Quality of life, not urgent: a foe beaten into surrender in a non-lethal fight still gets the "💀 Defeated" banner, for every spell and weapon. The line above it reads as a surrender. A different banner for the non-lethal slot would finish the job.
 - A library fight with a beast and a swordsman, or with enemy slot 2 clicked, gives the enemies different ability scores when its first page is refreshed (true at commit `2a3efe1b`, before any spell). Scripts on those fights run without `"refresh"`.
+- A natural 1 is an automatic miss for the player's attack rolls but not for enemy or ally attacks (a natural 20 always hits for everyone). Decide whether enemies and allies should miss on a 1 too.
 - Hunter's Mark's damage type ("force") is still typed in `combat_dice.txt`; its die is the ranger's `favored_foe_die_sides`, not data.
 - Never checked in a real browser: the Web badge art on the lane, and a target click followed by Stats and back.
 - Other surfaces still use the browser's own `title` tooltip beside the themed card: the sidebar's condition chips (Restless, Poisoned, Wounds dressed), the boons (Mage Armor, Shield, False Life), the darts badge and the range tags.

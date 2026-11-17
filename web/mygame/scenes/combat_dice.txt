@@ -546,6 +546,9 @@ ${combat_player_dmg_roll_banner}
 *if (not(cea_already_locked))
   *set combat_shield_triggered false
   *set combat_enemy_save_halved false
+  *comment CRITICAL HIT (set below from the attack roll; a save attack never crits): read by roll_enemy_base_dmg and the rider packet.
+  *set combat_enemy_crit false
+  *set combat_enemy_crit_tag ""
   *temp cea_is_save (not(combat_enemy_atk_save_stat = ""))
   *temp cea_save_failed true
   *if (cea_is_save)
@@ -696,7 +699,9 @@ ${combat_player_dmg_roll_banner}
     *comment A Shield that already fired this round (shield_active) is simply +5 AC for this attack too (RAW: until the start of the caster's next turn).
     *if (shield_active)
       *set cea_dc (cea_dc + 5)
-    *set combat_enemy_hit_success (combat_enemy_atk_total >= cea_dc)
+    *comment A natural 20 always hits, and is a critical hit. So is any hit on a paralyzed player by an enemy Engaged with them.
+    *temp cea_nat20 (cea_roll = 20)
+    *set combat_enemy_hit_success ((combat_enemy_atk_total >= cea_dc) or (cea_nat20))
     *comment Arming reserves neither resource. If the wizard spent their last slot on another spell or used their
     *comment reaction on an opportunity attack after arming, the held Shield is no longer executable.
     *if (shield_armed)
@@ -730,7 +735,11 @@ ${combat_player_dmg_roll_banner}
       *set player_oa_used true
       *set combat_shield_triggered true
       *set cea_dc (cea_dc + 5)
-      *set combat_enemy_hit_success (combat_enemy_atk_total >= cea_dc)
+      *set combat_enemy_hit_success ((combat_enemy_atk_total >= cea_dc) or (cea_nat20))
+    *if (combat_enemy_hit_success)
+      *if ((cea_nat20) or ((combat_player_paralyzed > 0) and (combat_enemy_range <= 0)))
+        *set combat_enemy_crit true
+        *set combat_enemy_crit_tag " (Critical)"
     *comment Banner (2026-09-27): built here, now that combat_enemy_hit_success has its FINAL value. The DC
     *comment printed is cea_dc itself, the number the roll was actually compared against -- before the Shield
     *comment fix this printed a bare armor_class even when the roll had just been re-tested at AC+5, so a
@@ -831,7 +840,11 @@ ${combat_player_dmg_roll_banner}
       *temp cea_xs combat_enemy_extra_dmg_dice_sides
       *if (cea_xs < 2)
         *set cea_xs 2
-      *rand cea_extra_roll 1 cea_xs
+      *if (combat_enemy_crit)
+        *gosub_scene combat_spells roll_spell_dice 2 cea_xs
+        *set cea_extra_roll spell_roll_total
+      *else
+        *rand cea_extra_roll 1 cea_xs
       *temp cea_extra_raw (cea_extra_roll + combat_enemy_extra_dmg_bonus)
       *temp cea_extra_bonus_str ""
       *if (combat_enemy_extra_dmg_bonus >= 0)
@@ -846,7 +859,7 @@ ${combat_player_dmg_roll_banner}
         *set cea_bonus_str "+${combat_enemy_dmg_bonus}"
       *else
         *set cea_bonus_str "${combat_enemy_dmg_bonus}"
-      *set {(cea_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${cea_dmg} ${cea_bonus_str} = ${cea_primary_after}${combat_incoming_dmg_suffix} + ${cea_extra_roll} ${cea_extra_bonus_str} ${combat_enemy_extra_dmg_type} = ${combat_packet_damage}${combat_packet_suffix} | Total ${combat_enemy_dmg_dealt}][/b]"
+      *set {(cea_bannername)} "[b][🎲 ${combat_enemy_name} Damage${combat_enemy_crit_tag}: ${cea_dmg} ${cea_bonus_str} = ${cea_primary_after}${combat_incoming_dmg_suffix} + ${cea_extra_roll} ${cea_extra_bonus_str} ${combat_enemy_extra_dmg_type} = ${combat_packet_damage}${combat_packet_suffix} | Total ${combat_enemy_dmg_dealt}][/b]"
     *if ((agathys_active) and (temp_hp > 0))
       *set combat_agathys_triggered true
       *comment Agathys retaliation is the PLAYER's own damage output (5 Cold),
@@ -1000,6 +1013,8 @@ ${combat_player_dmg_roll_banner}
 *temp reao_already_locked {reao_lockname}
 *if (not(reao_already_locked))
   *set combat_enemy_save_halved false
+  *set combat_enemy_crit false
+  *set combat_enemy_crit_tag ""
   *temp reao_is_save (not(combat_enemy_atk_save_stat = ""))
   *temp reao_save_failed true
   *if (reao_is_save)
@@ -1088,7 +1103,11 @@ ${combat_player_dmg_roll_banner}
       *rand reao_bane_die 1 4
       *set reao_total - reao_bane_die
       *set reao_bane_str " -${reao_bane_die} (Bane)"
-    *set combat_enemy_atk_on_ally_hit (reao_total >= reao_target_ac)
+    *comment A natural 20 always hits, and is a critical hit.
+    *set combat_enemy_atk_on_ally_hit ((reao_total >= reao_target_ac) or (reao_roll = 20))
+    *if (reao_roll = 20)
+      *set combat_enemy_crit true
+      *set combat_enemy_crit_tag " (Critical)"
     *temp reao_verdict "MISS"
     *if (combat_enemy_atk_on_ally_hit)
       *set reao_verdict "HIT"
@@ -1116,17 +1135,17 @@ ${combat_player_dmg_roll_banner}
       *set reao_dmg_bonus_str "${combat_enemy_dmg_bonus}"
     *if ((not(reao_tag = "")) or (not(reao_dmg_total = reao_dmg_pre)))
       *if ((combat_enemy_atk_dmg_dice = 1) and (not(combat_enemy_save_halved)))
-        *set {(reao_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${reao_dmg} ${reao_dmg_bonus_str} = ${reao_dmg_total}${reao_tag}][/b]"
+        *set {(reao_bannername)} "[b][🎲 ${combat_enemy_name} Damage${combat_enemy_crit_tag}: ${reao_dmg} ${reao_dmg_bonus_str} = ${reao_dmg_total}${reao_tag}][/b]"
       *else
-        *set {(reao_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${reao_dmg_pre} -> ${reao_dmg_total}${reao_tag}][/b]"
+        *set {(reao_bannername)} "[b][🎲 ${combat_enemy_name} Damage${combat_enemy_crit_tag}: ${reao_dmg_pre} -> ${reao_dmg_total}${reao_tag}][/b]"
     *comment A stunning blow (2026-11-03) stuns an ally just as it stuns the player (resolve_enemy_attack): the ally loses its next turn (combat.txt combat_stun_gate "ally").
     *if (((combat_enemy_inflicts_stun) and (reao_save_failed)) and ({(reao_ap & "hp")} > reao_dmg_total))
       *set {(reao_ap & "stunned")} 1
       *set {(reao_ap & "stun_kind")} ""
       *if ((combat_enemy_atk_dmg_dice = 1) and (not(combat_enemy_save_halved)))
-        *set {(reao_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${reao_dmg} ${reao_dmg_bonus_str} = ${reao_dmg_total}${reao_tag} | ${combat_enemy_stun_icon} ${combat_enemy_stun_name}][/b]"
+        *set {(reao_bannername)} "[b][🎲 ${combat_enemy_name} Damage${combat_enemy_crit_tag}: ${reao_dmg} ${reao_dmg_bonus_str} = ${reao_dmg_total}${reao_tag} | ${combat_enemy_stun_icon} ${combat_enemy_stun_name}][/b]"
       *else
-        *set {(reao_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${reao_dmg_total}${reao_tag} | ${combat_enemy_stun_icon} ${combat_enemy_stun_name}][/b]"
+        *set {(reao_bannername)} "[b][🎲 ${combat_enemy_name} Damage${combat_enemy_crit_tag}: ${reao_dmg_total}${reao_tag} | ${combat_enemy_stun_icon} ${combat_enemy_stun_name}][/b]"
     *set combat_enemy_dmg_on_ally_dealt reao_dmg_total
     *gosub record_last_hit "ally" reao_a_slot "enemy" combat_active_target
     *set {(reao_ap & "hp")} - reao_dmg_total
@@ -1367,13 +1386,19 @@ ${combat_player_dmg_roll_banner}
   *set raa_target_ac (raa_target_ac + combat_cover_ranged_defense_bonus)
   *comment Bardic Inspiration: an inspired ally rolls its die only on a MISS and adds it, deciding after the d20 like 5e. The die is spent either way.
   *temp raa_ins_str ""
-  *if ((combat_inspired_ally = raa_a_slot) and (raa_total < raa_target_ac))
+  *if (((combat_inspired_ally = raa_a_slot) and (raa_total < raa_target_ac)) and (not(raa_roll = 20)))
     *set combat_inspired_ally 0
     *temp raa_idie 0
     *rand raa_idie 1 bard_inspiration_die_sides
     *set raa_total + raa_idie
     *set raa_ins_str " +${raa_idie} (Inspiration)"
-  *set combat_ally_atk_hit (raa_total >= raa_target_ac)
+  *comment A natural 20 always hits, and is a critical hit. So is any hit on a paralyzed enemy by an ally Engaged with it.
+  *set combat_ally_atk_hit ((raa_total >= raa_target_ac) or (raa_roll = 20))
+  *temp raa_crit false
+  *if (combat_ally_atk_hit)
+    *temp raa_para {(raa_ep & "paralyzed")}
+    *if ((raa_roll = 20) or ((raa_para > 0) and (raa_range <= 0)))
+      *set raa_crit true
   *temp raa_bonus_str ""
   *if (raa_atk_bonus >= 0)
     *set raa_bonus_str "+${raa_atk_bonus}"
@@ -1391,12 +1416,22 @@ ${combat_player_dmg_roll_banner}
   *set combat_ally_blow_blocked false
   *if (combat_ally_atk_hit)
     *temp raa_dmg 0
+    *temp raa_sides {(raa_ap & "dmg_dice_sides")}
+    *temp raa_dmg_bonus {(raa_ap & "dmg_bonus")}
     *if (raa_knifed)
-      *rand raa_dmg 1 {(raa_ap & "sidearm_dmg_dice_sides")}
-      *temp raa_dmg_bonus {(raa_ap & "sidearm_dmg_bonus")}
+      *set raa_sides {(raa_ap & "sidearm_dmg_dice_sides")}
+      *set raa_dmg_bonus {(raa_ap & "sidearm_dmg_bonus")}
+    *temp raa_crit_tag ""
+    *temp raa_dmg_str ""
+    *if (raa_crit)
+      *comment A critical hit rolls the weapon die twice; the bonus is added once.
+      *gosub_scene combat_spells roll_spell_dice 2 raa_sides
+      *set raa_dmg spell_roll_total
+      *set raa_dmg_str spell_roll_dice_str
+      *set raa_crit_tag " (Critical)"
     *else
-      *rand raa_dmg 1 {(raa_ap & "dmg_dice_sides")}
-      *temp raa_dmg_bonus {(raa_ap & "dmg_bonus")}
+      *rand raa_dmg 1 raa_sides
+      *set raa_dmg_str "${raa_dmg}"
     *temp raa_dmg_bonus_str ""
     *if (raa_dmg_bonus >= 0)
       *set raa_dmg_bonus_str "+${raa_dmg_bonus}"
@@ -1419,7 +1454,7 @@ ${combat_player_dmg_roll_banner}
     *temp raa_dmg_after combat_packet_damage
     *set combat_ally_blow_blocked combat_packet_blocked
     *temp raa_dmg_tag combat_packet_suffix
-    *set {(raa_dmg_bannername)} "[b][🎲 ${raa_name} Damage: ${raa_dmg} ${raa_dmg_bonus_str} = ${raa_dmg_total}${raa_dmg_tag}][/b]"
+    *set {(raa_dmg_bannername)} "[b][🎲 ${raa_name} Damage${raa_crit_tag}: ${raa_dmg_str} ${raa_dmg_bonus_str} = ${raa_dmg_total}${raa_dmg_tag}][/b]"
     *set combat_ally_dmg_dealt raa_dmg_after
     *gosub record_last_hit "enemy" raa_e_slot "ally" raa_a_slot
     *set {(raa_ep & "hp")} - raa_dmg_after
@@ -1665,7 +1700,11 @@ ${combat_player_dmg_roll_banner}
   *set rebd_bonus_str "+${combat_enemy_dmg_bonus}"
 *else
   *set rebd_bonus_str "${combat_enemy_dmg_bonus}"
-*if ((combat_enemy_atk_dmg_dice = 1) and (not(combat_enemy_save_halved)))
+*comment A critical hit (combat_enemy_crit, set by the attack) rolls the dice twice; the bonus is added once.
+*temp rebd_n combat_enemy_atk_dmg_dice
+*if (combat_enemy_crit)
+  *set rebd_n (rebd_n * 2)
+*if ((rebd_n = 1) and (not(combat_enemy_save_halved)))
   *rand rebd_dmg 1 combat_enemy_dmg_dice_sides
   *temp rebd_dmg_total (rebd_dmg + combat_enemy_dmg_bonus)
   *set {(rebd_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${rebd_dmg} ${rebd_bonus_str} = ${rebd_dmg_total}][/b]"
@@ -1674,24 +1713,24 @@ ${combat_player_dmg_roll_banner}
   *temp rebd_di 1
   *temp rebd_die 0
   *label rebd_dmg_dice_loop
-  *if (rebd_di <= combat_enemy_atk_dmg_dice)
+  *if (rebd_di <= rebd_n)
     *rand rebd_die 1 combat_enemy_dmg_dice_sides
     *set rebd_dmg + rebd_die
     *set rebd_di + 1
     *goto rebd_dmg_dice_loop
   *temp rebd_dmg_total (rebd_dmg + combat_enemy_dmg_bonus)
   *temp rebd_dice_note ""
-  *if (combat_enemy_atk_dmg_dice > 1)
-    *set rebd_dice_note " (${combat_enemy_atk_dmg_dice}d${combat_enemy_dmg_dice_sides})"
+  *if (rebd_n > 1)
+    *set rebd_dice_note " (${rebd_n}d${combat_enemy_dmg_dice_sides})"
   *temp rebd_bonus_part " ${rebd_bonus_str}"
-  *if ((combat_enemy_atk_dmg_dice > 1) and (combat_enemy_dmg_bonus = 0))
+  *if ((rebd_n > 1) and (combat_enemy_dmg_bonus = 0))
     *set rebd_bonus_part ""
   *if (combat_enemy_save_halved)
     *temp rebd_dmg_half ((rebd_dmg_total - (rebd_dmg_total modulo 2)) / 2)
     *set {(rebd_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${rebd_dmg}${rebd_dice_note}${rebd_bonus_part} = ${rebd_dmg_total} -> ${rebd_dmg_half} (saved, half)][/b]"
     *set combat_enemy_dmg_dealt rebd_dmg_half
   *else
-    *set {(rebd_bannername)} "[b][🎲 ${combat_enemy_name} Damage: ${rebd_dmg}${rebd_dice_note}${rebd_bonus_part} = ${rebd_dmg_total}][/b]"
+    *set {(rebd_bannername)} "[b][🎲 ${combat_enemy_name} Damage${combat_enemy_crit_tag}: ${rebd_dmg}${rebd_dice_note}${rebd_bonus_part} = ${rebd_dmg_total}][/b]"
     *set combat_enemy_dmg_dealt rebd_dmg_total
 *return
 
