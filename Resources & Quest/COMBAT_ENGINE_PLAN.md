@@ -121,7 +121,7 @@ No scroll exists for Shatter (`ICONS/Item/Consumable/Scroll/Scroll_of_Shatter_Un
 
 ### 3.7 Clear the dead-space flags
 
-18 scripts carry `"allowDeadSpace": true` (`grep -l allowDeadSpace tools/play_scripts/*.json`). Each is a doubled line break to fix, then drop the flag; a script's transcript names the scene and line ("!! DEAD SPACE"; its line number counts from 0, so it is one less than the editor's). The biggest left: `longshade_forest` and `longshade_dryad` (3 each), and the three bark-fruit scripts (`dungeon.txt` `dg_status_line`). The bark-fruit cause is `calendar.txt` `advance_time`: its blank lines between commands end the caller's paragraph, so a page that passes time (`dg_time`) and then prints a `*line_break` (as `dg_status_line` does first) shows an empty line. Other dungeon pages that run `dg_time` straight before their menu likely have it too (not yet checked). Removing those blank lines fixes it everywhere, but text printed before and after a time skip may then join into one paragraph, so it needs a full transcript comparison.
+Done (2026-11-17): no script carries `"allowDeadSpace": true` any more (`grep -l allowDeadSpace tools/play_scripts/*.json` finds none), so a new doubled line break fails its script. A script's transcript names the scene and line ("!! DEAD SPACE"; its line number counts from 0, so it is one less than the editor's). Causes met while clearing them, for the next one. A routine called just before a `*line_break` that ends the paragraph itself (a time skip, `apply_unique_buff`) is the usual cause; a blank line instead of the break fixes it either way, since an empty paragraph prints nothing. A dice banner from `dice_engine` and the endings `fight_victory` and `fight_cured` already end on a break, so a `*line_break` straight after them is a second one. Another known cause: `calendar.txt`'s blank lines between commands end the caller's paragraph, so a page that passes time (`dg_time`) and then prints a `*line_break` (as `dg_status_line` does first) shows an empty line. Pass the time before the page's prose instead (as Bark's fruit exchanges in `longshade_forest.txt` do). Removing every blank line from `calendar.txt` was tried and reverted: 38 transcripts then joined text across a time skip (a shop's purchase banner ran into the next place's heading), because those pages rely on the time skip to end the paragraph.
 
 ### 3.8 Ally casters
 
@@ -152,7 +152,6 @@ Found by the step 8 audit. Play was left as it is in every case.
 | 2 | Bane's data says medium reach. The fight applies it to every enemy at any distance. | Add the reach check, or change the data. |
 | 3 | A level 3 Warlock spends a 2nd-level pact slot on Arms of Hadar, Armor of Agathys and Hellish Rebuke but gets 1st-level numbers. | Add `upcast` to the three data entries (the tabletop rule gives +1d6, +5 and +1d10), or leave as a deliberate limit. |
 | 4 | Ten utility spells (Alarm, Charm Person, Comprehend Languages, Detect Magic, Disguise Self, Feather Fall, Identify, Jump, Speak with Animals, Unseen Servant) carry a `combat` entry but have no fight option. | Harmless: the entry feeds the hover card. Leave unless a card looks wrong. |
-| 5 | A comment in `combat.txt` still says Poison Spray's reach is short. Data and code both say medium. | Fix the comment. |
 
 Older open questions:
 
@@ -168,7 +167,6 @@ Older open questions:
 - The opening page of a fight entered from another scene is not covered by the replay guard. A refresh resumes at the choice instead of re-running the page. The test tool skips those pages.
 - Quality of life, not urgent: a foe beaten into surrender in a non-lethal fight still gets the "💀 Defeated" banner, for every spell and weapon. The line above it reads as a surrender. A different banner for the non-lethal slot would finish the job.
 - A library fight with a beast and a swordsman, or with enemy slot 2 clicked, gives the enemies different ability scores when its first page is refreshed (true at commit `2a3efe1b`, before any spell). Scripts on those fights run without `"refresh"`.
-- A natural 1 is an automatic miss for the player's attack rolls but not for enemy or ally attacks (a natural 20 always hits for everyone). Decide whether enemies and allies should miss on a 1 too.
 - Hunter's Mark's damage type ("force") is still typed in `combat_dice.txt`; its die is the ranger's `favored_foe_die_sides`, not data.
 - Never checked in a real browser: the Web badge art on the lane, and a target click followed by Stats and back.
 - Other surfaces still use the browser's own `title` tooltip beside the themed card: the sidebar's condition chips (Restless, Poisoned, Wounds dressed), the boons (Mage Armor, Shield, False Life), the darts badge and the range tags.

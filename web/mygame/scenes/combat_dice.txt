@@ -699,9 +699,10 @@ ${combat_player_dmg_roll_banner}
     *comment A Shield that already fired this round (shield_active) is simply +5 AC for this attack too (RAW: until the start of the caster's next turn).
     *if (shield_active)
       *set cea_dc (cea_dc + 5)
-    *comment A natural 20 always hits, and is a critical hit. So is any hit on a paralyzed player by an enemy Engaged with them.
+    *comment A natural 20 always hits, and is a critical hit. So is any hit on a paralyzed player by an enemy Engaged with them. A natural 1 always misses, as it does for the player.
     *temp cea_nat20 (cea_roll = 20)
-    *set combat_enemy_hit_success ((combat_enemy_atk_total >= cea_dc) or (cea_nat20))
+    *temp cea_nat1 (cea_roll = 1)
+    *set combat_enemy_hit_success (((combat_enemy_atk_total >= cea_dc) or (cea_nat20)) and (not(cea_nat1)))
     *comment Arming reserves neither resource. If the wizard spent their last slot on another spell or used their
     *comment reaction on an opportunity attack after arming, the held Shield is no longer executable.
     *if (shield_armed)
@@ -735,7 +736,7 @@ ${combat_player_dmg_roll_banner}
       *set player_oa_used true
       *set combat_shield_triggered true
       *set cea_dc (cea_dc + 5)
-      *set combat_enemy_hit_success ((combat_enemy_atk_total >= cea_dc) or (cea_nat20))
+      *set combat_enemy_hit_success (((combat_enemy_atk_total >= cea_dc) or (cea_nat20)) and (not(cea_nat1)))
     *if (combat_enemy_hit_success)
       *if ((cea_nat20) or ((combat_player_paralyzed > 0) and (combat_enemy_range <= 0)))
         *set combat_enemy_crit true
@@ -747,6 +748,8 @@ ${combat_player_dmg_roll_banner}
     *temp cea_atk_verdict "MISS"
     *if (combat_enemy_hit_success)
       *set cea_atk_verdict "HIT"
+    *elseif (cea_nat1)
+      *set cea_atk_verdict "MISS (Natural 1)"
     *comment The AC printed is the final number the roll was compared against (cea_dc), so a bonus is shown as a breakdown in brackets, "vs AC 17 (12 +5 Shield)", not appended to it
     *comment ("AC 17 +5 Shield" read as 22, because the 17 already includes the +5). An armed Shield that did not
     *comment fire says whether the attack already missed or was too high for +5 to deflect.
@@ -1103,14 +1106,16 @@ ${combat_player_dmg_roll_banner}
       *rand reao_bane_die 1 4
       *set reao_total - reao_bane_die
       *set reao_bane_str " -${reao_bane_die} (Bane)"
-    *comment A natural 20 always hits, and is a critical hit.
-    *set combat_enemy_atk_on_ally_hit ((reao_total >= reao_target_ac) or (reao_roll = 20))
+    *comment A natural 20 always hits, and is a critical hit. A natural 1 always misses.
+    *set combat_enemy_atk_on_ally_hit (((reao_total >= reao_target_ac) or (reao_roll = 20)) and (not(reao_roll = 1)))
     *if (reao_roll = 20)
       *set combat_enemy_crit true
       *set combat_enemy_crit_tag " (Critical)"
     *temp reao_verdict "MISS"
     *if (combat_enemy_atk_on_ally_hit)
       *set reao_verdict "HIT"
+    *elseif (reao_roll = 1)
+      *set reao_verdict "MISS (Natural 1)"
     *temp reao_ac_str ""
     *if (combat_cover_ranged_defense_bonus > 0)
       *set reao_ac_str " (${reao_base_target_ac} +2 Cover)"
@@ -1384,16 +1389,16 @@ ${combat_player_dmg_roll_banner}
   *if ((raa_weapon = "ranged") and (not(raa_knifed)))
     *gosub_scene combat_movement combat_get_cover_ranged_defense_bonus "enemy" raa_e_slot
   *set raa_target_ac (raa_target_ac + combat_cover_ranged_defense_bonus)
-  *comment Bardic Inspiration: an inspired ally rolls its die only on a MISS and adds it, deciding after the d20 like 5e. The die is spent either way.
+  *comment Bardic Inspiration: an inspired ally rolls its die only on a MISS and adds it, deciding after the d20 like 5e. The die is spent either way. A natural 1 misses whatever the die adds, so it keeps the die.
   *temp raa_ins_str ""
-  *if (((combat_inspired_ally = raa_a_slot) and (raa_total < raa_target_ac)) and (not(raa_roll = 20)))
+  *if (((combat_inspired_ally = raa_a_slot) and (raa_total < raa_target_ac)) and ((not(raa_roll = 20)) and (not(raa_roll = 1))))
     *set combat_inspired_ally 0
     *temp raa_idie 0
     *rand raa_idie 1 bard_inspiration_die_sides
     *set raa_total + raa_idie
     *set raa_ins_str " +${raa_idie} (Inspiration)"
-  *comment A natural 20 always hits, and is a critical hit. So is any hit on a paralyzed enemy by an ally Engaged with it.
-  *set combat_ally_atk_hit ((raa_total >= raa_target_ac) or (raa_roll = 20))
+  *comment A natural 20 always hits, and is a critical hit. So is any hit on a paralyzed enemy by an ally Engaged with it. A natural 1 always misses.
+  *set combat_ally_atk_hit (((raa_total >= raa_target_ac) or (raa_roll = 20)) and (not(raa_roll = 1)))
   *temp raa_crit false
   *if (combat_ally_atk_hit)
     *temp raa_para {(raa_ep & "paralyzed")}
@@ -1407,6 +1412,8 @@ ${combat_player_dmg_roll_banner}
   *temp raa_verdict "MISS"
   *if (combat_ally_atk_hit)
     *set raa_verdict "HIT"
+  *elseif (raa_roll = 1)
+    *set raa_verdict "MISS (Natural 1)"
   *temp raa_ac_str ""
   *if (combat_cover_ranged_defense_bonus > 0)
     *set raa_ac_str " (${raa_base_target_ac} +2 Cover)"
