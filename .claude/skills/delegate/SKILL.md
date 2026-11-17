@@ -20,12 +20,18 @@ Pass `effort` on the Agent call as this table says (this skill is the instructio
 | --- | --- | --- |
 | Run a check (`play_all`, quicktest, lint) and report the failures | runner | low |
 | Broad search, or listing where something is used | runner | low |
-| Sort transcript diffs by a clear rule | runner | low; medium if the rule needs judgment |
+| Sort transcript diffs, or anything that needs judgment about what changed and why | worker | medium |
 | Mechanical edits from exact instructions | worker | low |
 | Write a play script from a spec | worker | medium |
 | Diagnose why a script fails | worker | high |
 
-If a runner comes back BLOCKED or its result looks wrong, rerun the job once on the worker before taking it yourself.
+The runner is for running a command and reporting what it printed, never for judgment: in testing, Haiku sorted diffs by the wrong rule and stated a wrong cause as fact. If a runner comes back BLOCKED or its result looks wrong, rerun the job once on the worker before taking it yourself.
+
+## Reuse or start fresh
+
+- A follow-up on material a helper has already read (the same diffs, files or failures): send it to that helper with SendMessage. It keeps its context and skips the start-up and re-reading.
+- An unrelated job: start a fresh helper. A reused one carries all its earlier context into every later step.
+- In a brief, say what is already committed. Do not point a helper at uncommitted changes (`git diff HEAD`) unless there are some.
 
 ## Do it yourself
 
