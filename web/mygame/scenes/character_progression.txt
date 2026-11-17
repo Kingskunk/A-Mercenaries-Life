@@ -730,6 +730,7 @@
 *set held_thunderwave false
 *set held_unseen_servant false
 *set held_blindness false
+*set held_shatter false
 *gosub book_scan "wizard_spell" 12
 *gosub book_scan "warlock_spell" 6
 *gosub book_scan "bard_spell" 8
@@ -766,6 +767,7 @@
 *set known_thunderwave (((((held_thunderwave) or (race_cantrip = "thunderwave")) or (race_cantrip_2 = "thunderwave")) and ((not(class_prepares)) or (prepared_thunderwave))) and (not(spells_blocked)))
 *set known_unseen_servant (((((held_unseen_servant) or (race_cantrip = "unseen_servant")) or (race_cantrip_2 = "unseen_servant")) and ((not(class_prepares)) or (prepared_unseen_servant))) and (not(spells_blocked)))
 *set known_blindness (((((held_blindness) or (race_cantrip = "blindness")) or (race_cantrip_2 = "blindness")) and ((not(class_prepares)) or (prepared_blindness))) and (not(spells_blocked)))
+*set known_shatter (((((held_shatter) or (race_cantrip = "shatter")) or (race_cantrip_2 = "shatter")) and ((not(class_prepares)) or (prepared_shatter))) and (not(spells_blocked)))
 *comment GEN:END spell_book_refresh
 *comment Otherworldly Leap lets the Warlock cast Jump, so the Warlock knows it.
 *if ((inv_otherworldly_leap) and (not(spells_blocked)))
@@ -864,6 +866,8 @@
   *set held_unseen_servant true
 *if (hm_id = "blindness")
   *set held_blindness true
+*if (hm_id = "shatter")
+  *set held_shatter true
 *return
 
 *comment BOOK CLEAR EXTRA: empties every slot after the first of every class (the Dev Hub's reset back to a level 1 loadout; a preset then sets slot 1 itself).
@@ -950,6 +954,7 @@
 *set prepared_thunderwave false
 *set prepared_unseen_servant false
 *set prepared_blindness false
+*set prepared_shatter false
 *set prepared_count 0
 *set prepared_count (prepared_count + 0)
 *return
@@ -1114,6 +1119,11 @@
     *set prepared_count + 1
   *else
     *set prepared_blindness false
+*if (prepared_shatter)
+  *if (held_shatter)
+    *set prepared_count + 1
+  *else
+    *set prepared_shatter false
 *return
 
 *comment PREPARE SET: carry one spell, or put it back. prepare_set "magic_missile" true. It refuses to carry what is not in the book, and refuses to go
@@ -1465,6 +1475,17 @@
       *else
         *set prepared_blindness false
         *set prepare_result "cleared"
+  *if (ps_id = "shatter")
+    *if (held_shatter)
+      *if (ps_on)
+        *if ((prepared_shatter) or (prepared_count < prepared_max))
+          *set prepared_shatter true
+          *set prepare_result "set"
+        *else
+          *set prepare_result "full"
+      *else
+        *set prepared_shatter false
+        *set prepare_result "cleared"
   *if ((prepare_result = "set") or (prepare_result = "cleared"))
     *gosub prepare_count
     *gosub refresh_known_spells
@@ -1574,6 +1595,9 @@
   *if (((not(prepared_blindness)) and (held_blindness)) and (prepared_count < prepared_max))
     *set prepared_blindness true
     *set prepared_count + 1
+  *if (((not(prepared_shatter)) and (held_shatter)) and (prepared_count < prepared_max))
+    *set prepared_shatter true
+    *set prepared_count + 1
   *gosub refresh_known_spells
 *return
 
@@ -1645,6 +1669,8 @@
   *set spell_desc_text "Thunderwave—a wave of thunderous force that rolls out from you in every direction, hard enough to lift what it catches off its feet. Those that fail to brace take the full weight of it and are thrown back a step; those that brace take the noise and keep their ground."
 *if (sd_id = "blindness")
   *set spell_desc_text "Blindness—a sharp pinch of power across one foe's eyes that drops their world to dark. They swing blind and leave themselves open until they manage to force their sight back."
+*if (sd_id = "shatter")
+  *set spell_desc_text "Shatter—a sudden, painfully loud crack of sound that bursts around one spot and rattles everything standing there. What braces against it takes the edge of the noise; what fails takes the full force. Things built rather than born, stone and metal given motion, take it worst."
 *return
 
 *comment CAN COPY SPELL: may this character write this spell into their book, and what would it cost? Sets copy_result and copy_cost, and
@@ -1667,7 +1693,7 @@
   *if ((cc_id = "absorb_elements") or ((cc_id = "ray_of_sickness") or ((cc_id = "alarm") or ((cc_id = "cause_fear") or ((cc_id = "comprehend_languages") or ((cc_id = "detect_magic") or ((cc_id = "false_life") or ((cc_id = "feather_fall") or ((cc_id = "grease") or ((cc_id = "identify") or ((cc_id = "jump") or ((cc_id = "mage_armor") or ((cc_id = "magic_missile") or ((cc_id = "shield") or ((cc_id = "burning_hands") or (cc_id = "thunderwave"))))))))))))))))
     *set copy_cost 10
     *set copy_result "ok"
-  *if (cc_id = "blindness")
+  *if ((cc_id = "blindness") or (cc_id = "shatter"))
     *set copy_cost 20
     *set copy_result "ok"
 *if (copy_result = "ok")
@@ -1721,6 +1747,9 @@
       *set copy_result "already_known"
   *if (cc_id = "blindness")
     *if (held_blindness)
+      *set copy_result "already_known"
+  *if (cc_id = "shatter")
+    *if (held_shatter)
       *set copy_result "already_known"
 *if (copy_result = "ok")
   *if (book_room_left < 1)
@@ -1998,7 +2027,11 @@ And the second.
     # Unseen Servant. An invisible servant that fetches and carries.@{show_stat_hints  [Spell: Unseen Servant]|}
       *gosub_scene character_progression learn_spell "warlock" "unseen_servant" "Unseen Servant—an invisible, mindless force you can summon to fetch, carry, clean, or open things at your spoken command."
       *goto level_up_warlock_3_done
-  *if ((held_arms_of_hadar and (held_hellish_rebuke and (held_cause_fear and (held_armor_of_agathys and (held_comprehend_languages and (held_false_life and ((held_hex or (race = "hexblood")) and held_unseen_servant))))))))
+  *if (not(held_shatter))
+    # Shatter. Burst a ringing crack of sound over one foe and everything beside them.@{show_stat_hints  [Spell: Shatter]|}
+      *gosub_scene character_progression learn_spell "warlock" "shatter" "Shatter—a sudden, painfully loud crack of sound that bursts around one spot and rattles everything standing there. What braces against it takes the edge of the noise; what fails takes the full force. Things built rather than born, stone and metal given motion, take it worst."
+      *goto level_up_warlock_3_done
+  *if ((held_arms_of_hadar and (held_hellish_rebuke and (held_cause_fear and (held_armor_of_agathys and (held_comprehend_languages and (held_false_life and ((held_hex or (race = "hexblood")) and (held_unseen_servant and held_shatter)))))))))
     # You have learned all you can for now.
       *goto level_up_warlock_3_done
   *comment GEN:END warlock_lvl3_pick
@@ -2536,7 +2569,11 @@ And a second.
     # Blindness. Strike one foe blind until they shake it off.@{show_stat_hints  [Spell: Blindness]|}
       *gosub_scene character_progression learn_spell "bard" "blindness" "Blindness—a sharp pinch of power across one foe's eyes that drops their world to dark. They swing blind and leave themselves open until they manage to force their sight back."
       *goto level_up_bard_3_done
-  *if ((held_bane and (held_charm_person and (held_comprehend_languages and (held_cure_wounds and (held_detect_magic and ((held_disguise_self or (race = "hexblood")) and (held_dissonant_whispers and (held_healing_word and (held_speak_with_animals and (held_thunderwave and held_blindness)))))))))))
+  *if (not(held_shatter))
+    # Shatter. Burst a ringing crack of sound over one foe and everything beside them.@{show_stat_hints  [Spell: Shatter]|}
+      *gosub_scene character_progression learn_spell "bard" "shatter" "Shatter—a sudden, painfully loud crack of sound that bursts around one spot and rattles everything standing there. What braces against it takes the edge of the noise; what fails takes the full force. Things built rather than born, stone and metal given motion, take it worst."
+      *goto level_up_bard_3_done
+  *if ((held_bane and (held_charm_person and (held_comprehend_languages and (held_cure_wounds and (held_detect_magic and ((held_disguise_self or (race = "hexblood")) and (held_dissonant_whispers and (held_healing_word and (held_speak_with_animals and (held_thunderwave and (held_blindness and held_shatter))))))))))))
     # You have learned all you can for now.
       *goto level_up_bard_3_done
   *comment GEN:END bard_lvl3_pick
@@ -2822,7 +2859,11 @@ And a second.
     # Blindness. Strike one foe blind until they shake it off.@{show_stat_hints  [Spell: Blindness]|}
       *gosub_scene character_progression learn_spell "wizard" "blindness" "Blindness—a sharp pinch of power across one foe's eyes that drops their world to dark. They swing blind and leave themselves open until they manage to force their sight back."
       *goto level_up_wizard_3_second
-  *if ((held_absorb_elements and (held_ray_of_sickness and (held_alarm and (held_cause_fear and (held_comprehend_languages and (held_detect_magic and (held_false_life and (held_feather_fall and (held_grease and (held_identify and (held_jump and (held_mage_armor and (held_magic_missile and (held_shield and (held_burning_hands and (held_thunderwave and held_blindness)))))))))))))))))
+  *if (not(held_shatter))
+    # Shatter. Burst a ringing crack of sound over one foe and everything beside them.@{show_stat_hints  [Spell: Shatter]|}
+      *gosub_scene character_progression learn_spell "wizard" "shatter" "Shatter—a sudden, painfully loud crack of sound that bursts around one spot and rattles everything standing there. What braces against it takes the edge of the noise; what fails takes the full force. Things built rather than born, stone and metal given motion, take it worst."
+      *goto level_up_wizard_3_second
+  *if ((held_absorb_elements and (held_ray_of_sickness and (held_alarm and (held_cause_fear and (held_comprehend_languages and (held_detect_magic and (held_false_life and (held_feather_fall and (held_grease and (held_identify and (held_jump and (held_mage_armor and (held_magic_missile and (held_shield and (held_burning_hands and (held_thunderwave and (held_blindness and held_shatter))))))))))))))))))
     # You have learned all you can for now.
       *goto level_up_wizard_3_second
   *comment GEN:END wizard_lvl3_pick_1
@@ -2901,7 +2942,11 @@ And a second.
     # Blindness. Strike one foe blind until they shake it off.@{show_stat_hints  [Spell: Blindness]|}
       *gosub_scene character_progression learn_spell "wizard" "blindness" "Blindness—a sharp pinch of power across one foe's eyes that drops their world to dark. They swing blind and leave themselves open until they manage to force their sight back."
       *goto level_up_wizard_3_done
-  *if ((held_absorb_elements and (held_ray_of_sickness and (held_alarm and (held_cause_fear and (held_comprehend_languages and (held_detect_magic and (held_false_life and (held_feather_fall and (held_grease and (held_identify and (held_jump and (held_mage_armor and (held_magic_missile and (held_shield and (held_burning_hands and (held_thunderwave and held_blindness)))))))))))))))))
+  *if (not(held_shatter))
+    # Shatter. Burst a ringing crack of sound over one foe and everything beside them.@{show_stat_hints  [Spell: Shatter]|}
+      *gosub_scene character_progression learn_spell "wizard" "shatter" "Shatter—a sudden, painfully loud crack of sound that bursts around one spot and rattles everything standing there. What braces against it takes the edge of the noise; what fails takes the full force. Things built rather than born, stone and metal given motion, take it worst."
+      *goto level_up_wizard_3_done
+  *if ((held_absorb_elements and (held_ray_of_sickness and (held_alarm and (held_cause_fear and (held_comprehend_languages and (held_detect_magic and (held_false_life and (held_feather_fall and (held_grease and (held_identify and (held_jump and (held_mage_armor and (held_magic_missile and (held_shield and (held_burning_hands and (held_thunderwave and (held_blindness and held_shatter))))))))))))))))))
     # You have learned all you can for now.
       *goto level_up_wizard_3_done
   *comment GEN:END wizard_lvl3_pick_2

@@ -1,0 +1,375 @@
+*comment ====================================================================================
+*comment THE GREEN BRANCH (Palmcote): the village inn, a long low house of pale stone with a leafy bough hung over the door. Plan: Resources & Quest/PALMCOTE_SETTLEMENT_PLAN.md.
+*comment Innkeeper: Odda Pellam (human woman, sixties, stout, long grey braid over one shoulder, flour to the elbows). Surname chosen to avoid the reserved Sergeant Dagny Marren (designer picked "Marren", 2026-11-16).
+*comment Built: common room with three layers, bean-and-olive stew, watered red wine, a curtained loft bunk (24 hours, shared loft), the lane-side well water, Odda's introduction and three one-time talk topics (carts and the press, pickers' wages, the big house on the slope; the big house is only ever "the big house", no Ferrand named).
+*comment Always open (the inn never shuts). Indoors: one muffled weather line only. No cooking site until a later quest.
+*comment Backdrop: generic_village_inn (scenery.js SCENE_PLACES, hall) and generic_village_inn_room (subplace village_inn_room); ambience: "tavern" via ambience.js ALIAS.
+*comment ====================================================================================
+
+*label pc_gb
+*set minutes_to_pass 5
+*set time_advance_call_id "pc_gb_walk_1"
+*gosub_scene hartwell/palmcote/palmcote pc_walk_time
+*goto pc_gb_hall
+
+*label pc_gb_hall
+*set scenery_subplace "village_inn_hall"
+*temp gb_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+*if (gb_now >= pc_gb_bunk_until)
+  *set pc_gb_bunk_active false
+*temp gb_first false
+*if (not(pc_gb_seen))
+  *set gb_first true
+*set pc_gb_seen true
+*temp gb_state "day"
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set gb_state "night"
+*elseif (time_period = "Morning")
+  *set gb_state "morning"
+*elseif (time_period = "Dusk")
+  *set gb_state "dusk"
+*temp gb_vignette (((campaign_day * 24) + clock_hour) modulo 4) + 1
+*temp gb_talk_done false
+*if (((pc_gb_asked_carts) and (pc_gb_asked_wages)) and (pc_gb_asked_house))
+  *set gb_talk_done true
+
+[b]◈ THE GREEN BRANCH[/b]
+*line_break
+*gosub pc_gb_layers
+
+*comment Open-world free time: the sidebar's Wait and Rest work on this page. The pitcher on the counter is drinking water.
+*set wait_ok_page page_id
+*set fresh_water_page page_id
+*choice
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 2)
+    # [2 Copper Bits] Buy a bowl of bean and olive stew. [~20 min]@{show_stat_hints  [+2 Temp HP, +1 CON for 4h]|}
+      *set tavern_item_cost_copper 2
+      *goto pc_gb_stew
+  *if ((((gold * 100) + (silver * 10)) + copper) >= 1)
+    # [1 Copper Bit] Buy a cup of watered red wine. [~10 min]@{show_stat_hints  [+1 CHA for 4h]|}
+      *set tavern_item_cost_copper 1
+      *goto pc_gb_wine
+  *if (not(gb_talk_done))
+    *if (not(pc_gb_talk_opened))
+      # Ask the woman at the counter about the village.
+        *goto pc_gb_talk
+    *else
+      # Talk with @{(met_odda) Odda|the woman at the counter} a little longer.
+        *goto pc_gb_talk
+  *if (pc_gb_bunk_active)
+    # Climb the ladder to your bunk.
+      *goto pc_gb_bunk
+  *elseif ((((gold * 100) + (silver * 10)) + copper) >= pc_gb_rate_copper)
+    # [${pc_gb_rate_copper} Copper Bits] Take a bunk in the loft for 24 hours.
+      *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+        *set currency_add_amount (0 - pc_gb_rate_copper)
+        *gosub_scene economy currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id page_id
+      *set pc_gb_bunk_active true
+      *set pc_gb_bunk_until (gb_now + 1440)
+      You set the coins on the counter. "A bunk, please."
+
+      @{(met_odda) Odda|The stout woman} sweeps them into her apron pocket and points a floury finger at the ladder. "Loft's up there. Pick any bunk with a curtain pulled back. Yours till this hour tomorrow."
+      *goto pc_gb_bunk
+  *else
+    # Ask what a bunk costs.
+      "What do you charge for a bunk?" you ask.
+
+      "Two coppers," @{(met_odda) Odda|the stout woman} says, without turning from the counter. "Straw tick, clean blanket, a curtain for your privacy."
+      *choice
+        # Step back from the counter.
+          *goto pc_gb_hall
+        # Step back out onto the lane.
+          *goto_scene hartwell/palmcote/palmcote pc_return
+  # Step back out onto the lane.
+    *goto_scene hartwell/palmcote/palmcote pc_return
+
+*comment ── LAYERS: the common room uses the same place, sky and activity contract as the village.
+*label pc_gb_layers
+*gosub pc_gb_place
+*gosub pc_gb_sky
+*gosub pc_gb_street
+*return
+
+*comment ── LAYER 1: PLACE ── Permanent room geography and smell.
+*label pc_gb_place
+*if (gb_first)
+  The Green Branch is one long room under a low beamed ceiling, with thick pale walls and a floor of worn red tiles. Plank tables and benches run down the middle, rubbed smooth and pale by years of elbows. A wide hearth takes up the far wall, and a clay oven with an iron door is built into its side. Along the near wall, a long counter holds a stack of bowls, a row of lidded jars, a bowl of dark olives and a tall pitcher of water. A ladder in the corner climbs to a loft closed in with hanging curtains. The room smells of warm bread, olive oil and wood smoke.
+*else
+  The inn's long room runs from the hearth and its clay oven to the counter and the corner ladder, with the plank tables and benches set between.
+*return
+
+*comment ── LAYER 2: SKY ── Weather and light reaching the room through its small windows. Indoors, so one muffled line.
+*label pc_gb_sky
+*if (weather_severity >= 3)
+  The shutters are closed and barred. Wind moans round the walls, and rain or snow thumps on the roof tiles.
+*elseif (weather = "Rain")
+  Rain patters on the roof tiles and trickles down the shutters.
+*elseif (weather = "Fog")
+  Grey cloud presses against the small windows and the lamps burn steady against it.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Wet snow slides off the tiles outside, and the hearth gives off a heavy warmth.
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  The small windows are dark, and the lamps on the counter and the hearth are the only light.
+*elseif (time_period = "Dusk")
+  Low orange light comes through the small windows and lies across the tables in long bars.
+*elseif (weather = "Clear")
+  Strong light comes through the small windows in bright squares on the red tiles.
+*else
+  Flat grey light comes through the windows and leaves the hearth glow to colour the room.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Wet footprints cross the tiles from the door to the counter.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  A few damp boot marks darken the tiles inside the door.
+*return
+
+*comment ── LAYER 3: STREET ── Odda and the room's company.
+*label pc_gb_street
+*if (gb_first)
+  A stout woman with a long grey braid over one shoulder stands behind the counter. Flour is dried pale on her forearms, and a cloth is tucked into her belt. She looks you over from boots to face.
+
+  "Sit anywhere there's room," she says, her voice rough and warm. "Bread's out of the oven, stew's hot."
+*elseif (met_odda)
+  Odda stands at the counter, kneading a lump of dough on a floured board.
+*else
+  The stout woman stands at the counter, kneading a lump of dough on a floured board.
+
+*if (street_life = "empty")
+  Travellers and a few villagers sit packed along the benches, waiting out the weather with their wet cloaks steaming near the hearth.
+*elseif (gb_state = "morning")
+  The tables are mostly empty. A few people eat bread and olives at the far end, then lift their baskets and head out.
+*elseif (gb_state = "dusk")
+  People drift in from the terraces with dust to their knees and drop onto the benches, leaving their baskets by the door.
+*elseif (gb_state = "night")
+  A handful of people sit in low talk by the hearth, their faces red in the glow, and nobody raises their voice.
+*elseif (gb_vignette = 1)
+  Two people share a wooden bowl at the end of a table, tearing bread and passing it back and forth.
+*elseif (gb_vignette = 2)
+  A mule driver sits near the door with his hat on his knee and his mule tied outside the window.
+*elseif (gb_vignette = 3)
+  A woman counts out coins on a table, frowns, and counts them again.
+*else
+  An old man sits in the corner picking stones out of a handful of dried beans.
+*return
+
+*label pc_gb_stew
+*set tavern_item_hp_heal 0
+*set tavern_item_temp_hp 2
+*set tavern_item_type "food"
+*set tavern_item_buff_name "Bean and Olive Stew"
+*set tavern_item_buff_desc "+1 CON"
+*set tavern_item_buff_stat "con"
+*set tavern_item_buff_bonus 1
+*set tavern_item_buff_minutes 240
+*gosub_scene economy buy_tavern_item
+*set hours_to_pass 0
+*set minutes_to_pass 20
+*set time_advance_call_id "pc_gb_stew"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "exhaustion"
+  *goto_scene death death_screen
+@{(met_odda) Odda|The stout woman} ladles a thick stew of white beans, onions and whole black olives into a clay bowl and sets a torn heel of bread on the rim. "Bread's for the oil," she says. "Don't leave it dry." The broth is salty and hot, with a sharp, bitter edge from the olives.
+
+[b][Hearty Meal Eaten: +2 Temporary HP | Bean and Olive Stew (+1 CON for 4 Hours) | HP: ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}][/b]
+*goto pc_gb_after_meal
+
+*label pc_gb_wine
+*set tavern_item_hp_heal 0
+*set tavern_item_temp_hp 0
+*set tavern_item_type "drink"
+*set tavern_item_buff_name "Watered Red Wine"
+*set tavern_item_buff_desc "+1 CHA"
+*set tavern_item_buff_stat "cha"
+*set tavern_item_buff_bonus 1
+*set tavern_item_buff_minutes 240
+*gosub_scene economy buy_tavern_item
+*set hours_to_pass 0
+*set minutes_to_pass 10
+*set time_advance_call_id "pc_gb_wine"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "exhaustion"
+  *goto_scene death death_screen
+@{(met_odda) Odda|The stout woman} pours dark wine from a clay jug into a small cup and tops it off from the pitcher. It's thin and sour-sweet, and it settles easily after the climb up the lane.
+
+[b][Watered Red Wine Drunk: +1 CHA for 4 Hours | HP: ${hp_current} / ${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|}][/b]
+*goto pc_gb_after_meal
+
+*label pc_gb_after_meal
+*choice
+  # Order something else.
+    *goto pc_gb_hall
+  *if (not(gb_talk_done))
+    *if (not(pc_gb_talk_opened))
+      # Ask the woman at the counter about the village.
+        *goto pc_gb_talk
+    *else
+      # Talk with @{(met_odda) Odda|the woman at the counter} a little longer.
+        *goto pc_gb_talk
+  *if (pc_gb_bunk_active)
+    # Climb the ladder to your bunk.
+      *goto pc_gb_bunk
+  # Step back out onto the lane.
+    *goto_scene hartwell/palmcote/palmcote pc_return
+
+*comment ── THE LOFT BUNK ── A curtained bunk in a shared loft.
+*label pc_gb_bunk
+*set scenery_subplace "village_inn_room"
+*temp gb_bunk_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
+*if (gb_bunk_now >= pc_gb_bunk_until)
+  *set pc_gb_bunk_active false
+*if (not(pc_gb_bunk_active))
+  *goto pc_gb_hall
+*set wait_ok_page page_id
+*set fresh_water_page page_id
+
+[b]◈ YOUR BUNK: THE GREEN BRANCH[/b]
+*line_break
+The loft runs the length of the house under the roof tiles, with a row of narrow wooden bunks along each side. Every bunk has its own curtain on a rail, a straw mattress and a folded grey blanket. A basin and a jug of water stand on a shelf by the ladder.
+
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  A little lamplight comes up through the ladder hole, and someone snores softly further down the row.
+*elseif (time_period = "Dusk")
+  Low light slips through the gap under the eaves, and voices rise from the room below.
+*else
+  Daylight comes through the gap under the eaves and shows dust floating over the empty bunks.
+
+*if (weather_severity >= 3)
+  The wind pushes at the roof tiles overhead, and the whole loft creaks.
+*elseif (weather = "Rain")
+  Rain patters on the tiles right above your head.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Snow ticks on the tiles, and the blanket is heavier than it looks.
+
+*choice
+  # Pull your curtain and sleep in the bunk. [~8 Hours]
+    *goto pc_gb_sleep
+  # Wash at the basin. [~10 min]
+    *goto pc_gb_wash
+  # Climb back down to the common room.
+    *goto pc_gb_hall
+  # Walk back out onto the lane.
+    *goto_scene hartwell/palmcote/palmcote pc_return
+
+*label pc_gb_sleep
+*set hours_to_pass 8
+*set minutes_to_pass 0
+*set time_advance_call_id "pc_gb_sleep"
+*gosub_scene calendar advance_time
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*set sleep_location_id "palmcote_green_branch"
+*set sleep_is_shared true
+*set sleep_is_permanent_home false
+*set sleep_is_paid_inn true
+*set sleep_tier_name "none"
+*set sleep_tier_stat1 "none"
+*set sleep_tier_bonus1 0
+*set sleep_tier_stat2 "none"
+*set sleep_tier_bonus2 0
+*gosub_scene calendar resolve_sleep
+You set your gear beside you, pull the curtain across and lie down. The murmur from the room below fades, and sleep takes you.
+*if ((time_period = "Morning") or (time_period = "Pre-Dawn"))
+  The creak of the ladder wakes you, and then the smell of baking bread. You feel rested.
+*elseif (time_period = "Dusk")
+  You wake to the clink of cups below and the last light under the eaves. The road ache has lifted.
+*elseif (time_period = "Night")
+  You wake in the dark to a quiet loft and a faint wind in the tiles. Your fatigue has cleared.
+*else
+  Light is full in the gap under the eaves when you wake, and the lane outside is busy. Your mind is clear.
+*if (not(sleep_gear_note = ""))
+  *line_break
+  ${sleep_gear_note}
+The bunk stays yours until this hour tomorrow.
+*goto pc_gb_bunk
+
+*label pc_gb_wash
+*set hours_to_pass 0
+*set minutes_to_pass 10
+*set time_advance_call_id "pc_gb_wash"
+*gosub_scene calendar advance_time
+*set minutes_since_wash 0
+*set hygiene_stage "Clean"
+*gosub_scene calendar update_hub_condition
+You pour cold water into the basin and scrub the dust off your face, neck and hands. The towel on the shelf is rough but dry.
+*line_break
+[b][🧼 Washed Up: Hygiene Restored to Clean][/b]
+*choice
+  # Set the basin aside.
+    *goto pc_gb_bunk
+  # Climb back down to the common room.
+    *goto pc_gb_hall
+
+*comment ── TALKING WITH ODDA ── Blunt and practical, with flour on her hands. Each topic disappears once asked.
+*label pc_gb_talk
+*if (not(pc_gb_talk_opened))
+  *set pc_gb_talk_opened true
+  *set minutes_to_pass 5
+  *set time_advance_call_id "pc_gb_talk_open"
+  *gosub_scene calendar advance_time
+  You lean on the counter. "What can you tell me about this village?"
+
+  The woman thumps the dough flat and wipes her hands on the cloth. "Olives. Olives and honey, and everyone here is up to their elbows in one or the other." She nods toward the door. "Folk are friendly enough if you buy their jars."
+
+  "I'm ${name}," you say. "And you are?"
+
+  *set met_odda true
+  "Odda Pellam, ${name}." She slides a small dish of olives across the counter. "First handful's free. Don't spit the stones on my floor."
+*goto pc_gb_talk_menu
+
+*label pc_gb_talk_menu
+*if (((pc_gb_asked_carts) and (pc_gb_asked_wages)) and (pc_gb_asked_house))
+  *line_break
+  Odda goes back to her dough, and the room carries on around you.
+  *page_break Back to the counter…
+  *goto pc_gb_hall
+*choice
+  *if (not(pc_gb_asked_carts))
+    # Ask about the carts waiting in the yard.
+      *goto pc_gb_talk_carts
+  *if (not(pc_gb_asked_wages))
+    # Ask what the pickers earn.
+      *goto pc_gb_talk_wages
+  *if (not(pc_gb_asked_house))
+    # Ask about the big house at the top of the hill.
+      *goto pc_gb_talk_house
+  # That's enough for now.
+    *goto pc_gb_hall
+
+*label pc_gb_talk_carts
+*set pc_gb_asked_carts true
+*set minutes_to_pass 5
+*set time_advance_call_id "pc_gb_talk_carts"
+*gosub_scene calendar advance_time
+"Where do all the carts in the yard go?" you ask.
+
+"Hartwell," Odda says. "Seven miles down the road to the press. They crush the olives there into oil, and the oil goes everywhere else." She pours herself a cup of water and drinks half. "Cart owners make the trip every dry day they can. When the road's mud, it all sits here and the fruit goes soft."
+*goto pc_gb_talk_menu
+
+*label pc_gb_talk_wages
+*set pc_gb_asked_wages true
+*set minutes_to_pass 5
+*set time_advance_call_id "pc_gb_talk_wages"
+*gosub_scene calendar advance_time
+"Do the pickers earn much?" you ask.
+
+Odda snorts. "By the basket, and the basket's weighed by someone who isn't picking." She wipes the board with the flat of her hand. "Most of them eat here when they've been paid and sleep at home when they haven't. I put an extra scoop in the bowl when a face looks thin. Don't tell anyone."
+*goto pc_gb_talk_menu
+
+*label pc_gb_talk_house
+*set pc_gb_asked_house true
+*set minutes_to_pass 5
+*set time_advance_call_id "pc_gb_talk_house"
+*gosub_scene calendar advance_time
+You tilt your head toward the window. "Whose is the big house at the top of the hill?"
+
+Odda glances at the window and back at you. "The people with the money." She kneads a moment longer before she goes on. "Their mark's on every cart in the yard. They don't come down here, and I don't go up there. It works fine."
+*goto pc_gb_talk_menu

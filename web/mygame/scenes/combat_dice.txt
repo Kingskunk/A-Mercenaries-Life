@@ -242,11 +242,16 @@
   *gosub apply_outgoing_damage_resist_vuln
   *comment Hex only enhances an attack roll that hit its marked creature. Save-based spells pass false here, so they cannot trigger it. It is its own necrotic packet, so a defense against the spell's own type leaves it standing.
   *if (((hex_active) and (rph_is_attack_roll)) and ((hex_target_slot > 0) and (hex_target_slot = combat_active_target)))
+    *gosub_scene combat_spells spell_facts_load "hex"
+    *comment Quicktest walks this body without running the fact lookup (sides 0); *rand needs max above min, so the range is clamped to at least 2.
+    *temp cph_hex_sides spell_fact_dice_sides
+    *if (cph_hex_sides < 2)
+      *set cph_hex_sides 2
     *temp cph_hex_die 0
-    *rand cph_hex_die 1 6
-    *gosub adjust_outgoing_damage_packet cph_hex_die "necrotic"
+    *rand cph_hex_die 1 cph_hex_sides
+    *gosub adjust_outgoing_damage_packet cph_hex_die spell_fact_dmg_type
     *set combat_player_dmg_dealt + combat_packet_damage
-    *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} [b][+ ${cph_hex_die} necrotic (Hex) = ${combat_packet_damage}${combat_packet_suffix}][/b]"
+    *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} [b][+ ${cph_hex_die} ${spell_fact_dmg_type} (Hex) = ${combat_packet_damage}${combat_packet_suffix}][/b]"
   *if (combat_player_extra_dmg_dice_sides > 0)
     *temp cph_packet_roll 0
     *comment Quicktest walks this body even when the rider is off (sides 0); *rand needs max above min, so the range is clamped to at least 2. A real rider is always 4 or more.
@@ -353,11 +358,16 @@ ${combat_player_dmg_roll_banner}
   *set combat_weapon_defense_text combat_packet_defense_text
   *comment Hex: only against its chosen creature (a weapon attack is an attack roll).
   *if (((hex_active) and (hex_target_slot > 0)) and (hex_target_slot = combat_active_target))
+    *gosub_scene combat_spells spell_facts_load "hex"
+    *comment Quicktest walks this body without running the fact lookup (sides 0); *rand needs max above min, so the range is clamped to at least 2.
+    *temp cwh_hex_sides spell_fact_dice_sides
+    *if (cwh_hex_sides < 2)
+      *set cwh_hex_sides 2
     *temp cwh_hex_die 0
-    *rand cwh_hex_die 1 6
-    *gosub adjust_outgoing_damage_packet cwh_hex_die "necrotic"
+    *rand cwh_hex_die 1 cwh_hex_sides
+    *gosub adjust_outgoing_damage_packet cwh_hex_die spell_fact_dmg_type
     *set combat_player_dmg_dealt + combat_packet_damage
-    *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} [b][+ ${cwh_hex_die} necrotic (Hex) = ${combat_packet_damage}${combat_packet_suffix}][/b]"
+    *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} [b][+ ${cwh_hex_die} ${spell_fact_dmg_type} (Hex) = ${combat_packet_damage}${combat_packet_suffix}][/b]"
   *comment Hunter's Mark (see startup.txt's *create comment): only the CURRENTLY marked slot benefits, unlike Hex's global flag, since only one creature can be marked at a time. favored_foe_target_slot > 0 rules out the unmarked
   *comment default (slot 0 never exists); expires_round >= combat_round is the 10-round maximum ceiling (concentration can end it earlier). The mark is cast as its own bonus action, so it is already live when the first weapon hit lands.
   *if (((favored_foe_target_slot > 0) and (favored_foe_target_slot = combat_active_target)) and (favored_foe_expires_round >= combat_round))
@@ -725,7 +735,8 @@ ${combat_player_dmg_roll_banner}
       *set player_oa_used true
       *comment Arms the melee rider for the player's own next hit (resolve_player_weapon_hit, this file) -- a
       *comment weapon attack only, RAW, and one-shot: that label clears the sides back to 0 once it fires.
-      *set combat_player_extra_dmg_dice_sides 6
+      *gosub_scene combat_spells spell_facts_load "absorb_elements"
+      *set combat_player_extra_dmg_dice_sides spell_fact_dice_sides
       *set combat_player_extra_dmg_bonus 0
       *set combat_player_extra_dmg_type cae_absorb_type
     *comment Barbarian Rage's physical-damage resistance is folded into this
@@ -1155,8 +1166,8 @@ ${combat_player_dmg_roll_banner}
   *set combat_edge_adv true
   *set combat_edge_label "Stunned"
 *comment A restrained target (Ensnaring Strike) is easy to hit from anywhere, for as long as the vines hold.
-*temp cae_restrained {(("combat_enemy" & cae_slot) & "_restrained_until")}
-*if ((cae_restrained > 0) and (cae_restrained >= combat_round))
+*temp cae_restrained {(("combat_enemy" & cae_slot) & "_restrained")}
+*if (cae_restrained > 0)
   *set combat_edge_adv true
   *set combat_edge_label "Restrained"
 *comment Grease is fuel: a fire attack (tag "fire": Fire Bolt, Alchemist's Fire) on a creature still slick with it has advantage at any distance.
@@ -1594,23 +1605,26 @@ ${combat_player_dmg_roll_banner}
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *comment SHARED COMBAT CONDITIONS (prefix-addressed: "combat_enemyN_", "combat_allyN_", "combat_player_")
 *comment Storage rule: each condition is stored as ROUNDS LEFT (0 = absent; 1 = until the end of next turn;
-*comment 10 = one minute) on <prefix><name>, with an optional repeat-save DC on <prefix><name>_dc (0 = no save).
+*comment 10 = one minute) on <prefix><name>, with an optional repeat-save DC on <prefix><name>_dc (0 = no save),
+*comment and who caused it on <prefix><name>_src (caster prefix & spell id, "" when nothing needs to find it again).
 *comment To add a new condition:
-*comment   1. Add *create <prefix><name> 0 (and <prefix><name>_dc 0 if repeatable) in startup_parts/31_combat_engine_state.txt
+*comment   1. Add *create <prefix><name> 0, <prefix><name>_dc 0 and <prefix><name>_src "" in startup_parts/31_combat_engine_state.txt
 *comment      (plus mygame.js) on combat_enemy0..6_, combat_ally0..4_, and combat_player_ (NEVER combat_enemy_ scratch).
-*comment   2. Reset both fields to 0 in combat.txt fight_cleanup (enemy, ally, player) and unused-slot setup loops.
+*comment   2. Reset all three fields in combat.txt fight_cleanup (enemy, ally, player) and unused-slot setup loops.
 *comment   3. Tick it in condition_tick below (with its repeat-save ability or dc = 0 countdown).
 *comment   4. Wire its mechanical effect at the narrowest shared hook and add its status/turn display in combat.txt.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+*comment ca_src names who caused it, for a concentration spell that must end only its own effects: the caster's prefix and the spell id ("combat_player_cause_fear"), or "" when nothing needs to find it again (condition_end_by_source).
 *label condition_apply
-*params ca_prefix ca_name ca_rounds ca_dc
+*params ca_prefix ca_name ca_rounds ca_dc ca_src
 *temp ca_field (ca_prefix & ca_name)
 *temp ca_dc_field (ca_field & "_dc")
 *temp ca_cur {(ca_field)}
 *if (ca_rounds > ca_cur)
   *set {(ca_field)} ca_rounds
   *set {(ca_dc_field)} ca_dc
+  *set {(ca_field & "_src")} ca_src
 *return
 
 *label condition_has
@@ -1624,10 +1638,61 @@ ${combat_player_dmg_roll_banner}
 *temp ce_field (ce_prefix & ce_name)
 *set {(ce_field)} 0
 *set {(ce_field & "_dc")} 0
+*set {(ce_field & "_src")} ""
+*return
+
+*comment Ends one condition on every combatant whose copy came from cebs_src (see condition_apply), and leaves the same condition from any other source standing. Silent: the caller prints its own banner (a concentration spell's "ends" line).
+*label condition_end_by_source
+*params cebs_name cebs_src
+*temp cebs_i 1
+*label condition_end_by_source_enemy_loop
+*if (cebs_i <= combat_enemy_slot_cap)
+  *temp cebs_p (("combat_enemy" & cebs_i) & "_")
+  *temp cebs_have {((cebs_p & cebs_name) & "_src")}
+  *if (cebs_have = cebs_src)
+    *gosub condition_end cebs_p cebs_name
+  *set cebs_i + 1
+  *goto condition_end_by_source_enemy_loop
+*set cebs_i 1
+*label condition_end_by_source_ally_loop
+*if (cebs_i <= combat_ally_slot_cap)
+  *temp cebs_ap (("combat_ally" & cebs_i) & "_")
+  *temp cebs_ahave {((cebs_ap & cebs_name) & "_src")}
+  *if (cebs_ahave = cebs_src)
+    *gosub condition_end cebs_ap cebs_name
+  *set cebs_i + 1
+  *goto condition_end_by_source_ally_loop
+*temp cebs_phave {(("combat_player_" & cebs_name) & "_src")}
+*if (cebs_phave = cebs_src)
+  *gosub condition_end "combat_player_" cebs_name
 *return
 
 *label condition_tick
 *params ct_prefix ct_lock
+*comment FRIGHTENED (Cause Fear): first, so its save comes before Blinded's, as it always has. With a DC, the bearer repeats its Wisdom save and a success ends the fear (the banner); a failure runs it one round down, and it ends silently when the rounds run out (the spell's 10-round ceiling).
+*gosub condition_has ct_prefix "frightened"
+*if (condition_result)
+  *temp ct_fr_rounds {(ct_prefix & "frightened")}
+  *temp ct_fr_dc {(ct_prefix & "frightened_dc")}
+  *temp ct_fr_name {(ct_prefix & "name")}
+  *temp ct_fr_holds true
+  *if (ct_fr_dc > 0)
+    *gosub resolve_save ct_prefix "wisdom" "Wisdom" ct_fr_dc ct_lock
+    *comment check_success is inverted: true = the bearer FAILED, so the fear holds.
+    *set ct_fr_holds check_success
+  *if (ct_fr_holds)
+    *temp ct_fr_left (ct_fr_rounds - 1)
+    *if (ct_fr_left <= 0)
+      *gosub condition_end ct_prefix "frightened"
+    *else
+      *set {(ct_prefix & "frightened")} ct_fr_left
+  *else
+    *gosub condition_end ct_prefix "frightened"
+    *if (ct_prefix = "combat_player_")
+      [b][😌 You shake off the fear][/b]
+    *else
+      [b][😌 ${ct_fr_name} shakes off the fear][/b]
+    *line_break
 *gosub condition_has ct_prefix "blinded"
 *if (condition_result)
   *temp ct_rounds {(ct_prefix & "blinded")}
@@ -1658,6 +1723,15 @@ ${combat_player_dmg_roll_banner}
       *set combat_turn_advanced_this_page true
     *else
       *set {(ct_prefix & "blinded")} ct_left
+*comment SLOWED: no save and no banner. It lasts until its bearer has taken its next turn (set to 1 by Ray of Frost or an Ice Arrow), so each tick takes one round off.
+*gosub condition_has ct_prefix "slowed"
+*if (condition_result)
+  *temp ct_slow_rounds {(ct_prefix & "slowed")}
+  *temp ct_slow_left (ct_slow_rounds - 1)
+  *if (ct_slow_left <= 0)
+    *gosub condition_end ct_prefix "slowed"
+  *else
+    *set {(ct_prefix & "slowed")} ct_slow_left
 *return
 
 *comment Shared spell effect: Blindness (Step 3c, 2026-11-15). Caller handles cast payment, prose, and cast-level replay lock.
@@ -1671,7 +1745,7 @@ ${combat_player_dmg_roll_banner}
 *gosub resolve_save seb_target_prefix "constitution" "Constitution" seb_dc seb_lock
 *temp seb_tname {(seb_target_prefix & "name")}
 *if (check_success)
-  *gosub condition_apply seb_target_prefix "blinded" 10 seb_dc
+  *gosub condition_apply seb_target_prefix "blinded" 10 seb_dc ""
   *set combat_spell_effect_applied true
   *if (seb_target_prefix = "combat_player_")
     *comment State only, no rules text (the user's rule for on-screen text); the hub's own Blinded line follows on the next page.
@@ -1733,12 +1807,8 @@ ${combat_player_dmg_roll_banner}
   *if (ce_prefix = "combat_player_")
     *set ensnaring_armed false
     *set ensnaring_expires_round 0
-    *temp ce_ei 1
-    *label ce_ensnare_loop
-    *if (ce_ei <= combat_enemy_slot_cap)
-      *set {(("combat_enemy" & ce_ei) & "_restrained_until")} 0
-      *set ce_ei + 1
-      *goto ce_ensnare_loop
+  *comment Only the restraint this caster's Ensnaring Strike put on.
+  *gosub condition_end_by_source "restrained" (ce_prefix & "ensnaring_strike")
   *return
 *if (ce_id = "bane")
   *if (ce_prefix = "combat_player_")
@@ -1757,14 +1827,9 @@ ${combat_player_dmg_roll_banner}
       *set ce_bai + 1
       *goto ce_bane_ally_loop
   *return
+*comment Only the fear this caster's Cause Fear put on: a creature frightened by anything else stays frightened.
 *if (ce_id = "cause_fear")
-  *if (ce_prefix = "combat_player_")
-    *temp ce_fi 1
-    *label ce_fear_loop
-    *if (ce_fi <= combat_enemy_slot_cap)
-      *set {(("combat_enemy" & ce_fi) & "_frightened")} 0
-      *set ce_fi + 1
-      *goto ce_fear_loop
+  *gosub condition_end_by_source "frightened" (ce_prefix & "cause_fear")
   *return
 *if (ce_id = "blade_ward")
   *if (ce_prefix = "combat_player_")
@@ -1868,8 +1933,10 @@ ${combat_player_dmg_roll_banner}
   *label cre_ensnare_loop
   *if (cre_i <= combat_enemy_count)
     *temp cre_hp {(("combat_enemy" & cre_i) & "_hp")}
-    *temp cre_ru {(("combat_enemy" & cre_i) & "_restrained_until")}
-    *if ((cre_hp > 0) and (cre_ru >= combat_round))
+    *temp cre_r {(("combat_enemy" & cre_i) & "_restrained")}
+    *temp cre_src {(("combat_enemy" & cre_i) & "_restrained_src")}
+    *comment The spell's last round (ensnaring_expires_round) is its 10-round ceiling: after it, concentration ends here and the restraint with it.
+    *if ((((cre_hp > 0) and (cre_r > 0)) and (cre_src = "combat_player_ensnaring_strike")) and (ensnaring_expires_round >= combat_round))
       *return
     *set cre_i + 1
     *goto cre_ensnare_loop
@@ -1893,7 +1960,8 @@ ${combat_player_dmg_roll_banner}
   *if (crf_i <= combat_enemy_count)
     *temp crf_hp {(("combat_enemy" & crf_i) & "_hp")}
     *temp crf_fr {(("combat_enemy" & crf_i) & "_frightened")}
-    *if ((crf_hp > 0) and (crf_fr > 0))
+    *temp crf_src {(("combat_enemy" & crf_i) & "_frightened_src")}
+    *if (((crf_hp > 0) and (crf_fr > 0)) and (crf_src = "combat_player_cause_fear"))
       *return
     *set crf_i + 1
     *goto crf_fear_loop

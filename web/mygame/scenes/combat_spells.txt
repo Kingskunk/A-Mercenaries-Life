@@ -468,6 +468,17 @@
   *set spell_fact_resolution "save"
   *set spell_fact_save_ability "constitution"
   *set spell_fact_slot_level 2
+*if (sfl_id = "shatter")
+  *set spell_fact_found true
+  *set spell_fact_name "Shatter"
+  *set spell_fact_resolution "save"
+  *set spell_fact_save_ability "constitution"
+  *set spell_fact_half_on_save true
+  *set spell_fact_dice_count 3
+  *set spell_fact_dice_sides 8
+  *set spell_fact_dmg_type "thunder"
+  *set spell_fact_slot_level 2
+  *set spell_fact_upcast_dice 1
 *return
 *comment GEN:END spell_facts_lookup
 
@@ -651,8 +662,11 @@ ${fsh}
   *set combat_cast_at_level 1
 *else
   *gosub_scene equipment spend_consumable combat_scroll_id
-*comment Always Force damage, RAW -- no per-caster variation.
-*set combat_player_dmg_type "force"
+*comment The die, the flat part per dart and the damage type come from the spell data (tools/spell_book.json); Force, RAW, with no per-caster variation. Copied to temps first, since later calls reload the shared facts.
+*gosub spell_facts_load "magic_missile"
+*temp mm_sides spell_fact_dice_sides
+*temp mm_flat_each spell_fact_flat
+*set combat_player_dmg_type spell_fact_dmg_type
 *set combat_mm_banner_1 ""
 *set combat_mm_banner_2 ""
 *set combat_mm_banner_3 ""
@@ -666,23 +680,13 @@ ${fsh}
   *if (mm_n > 0)
     *set combat_active_target mm_i
     *gosub_scene combat fight_sync_target_in
-    *temp mm_roll 0
-    *temp mm_dice_str ""
-    *temp mm_j 1
-    *label resolve_magic_missile_dart_loop
-    *if (mm_j <= mm_n)
-      *temp mm_die 0
-      *rand mm_die 1 4
-      *set mm_roll + mm_die
-      *if (mm_j = 1)
-        *set mm_dice_str "${mm_die}"
-      *else
-        *set mm_dice_str "${mm_dice_str}+${mm_die}"
-      *set mm_j + 1
-      *goto resolve_magic_missile_dart_loop
+    *gosub roll_spell_dice mm_n mm_sides
+    *temp mm_roll spell_roll_total
+    *temp mm_dice_str spell_roll_dice_str
+    *temp mm_flat (mm_flat_each * mm_n)
     *comment No Hex here, deliberately: the darts auto-hit with no attack roll (RAW, and per Sage Advice), so
     *comment they don't satisfy Hex's "hit with an attack" trigger -- same reasoning as the save-based spells.
-    *set combat_player_dmg_dealt (mm_roll + mm_n)
+    *set combat_player_dmg_dealt (mm_roll + mm_flat)
     *gosub_scene combat_dice apply_outgoing_damage_resist_vuln
     *set combat_enemy_hp - combat_player_dmg_dealt
     *if (combat_enemy_hp < 0)
@@ -690,9 +694,9 @@ ${fsh}
     *gosub_scene combat fight_sync_target_out
     *temp mm_banner_val ""
     *if (combat_enemy_hp <= 0)
-      *set mm_banner_val "[b][💀 ${combat_enemy_name} Defeated: ${mm_dice_str} +${mm_n} = ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]"
+      *set mm_banner_val "[b][💀 ${combat_enemy_name} Defeated: ${mm_dice_str} +${mm_flat} = ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]"
     *else
-      *set mm_banner_val "[b][✨ ${combat_enemy_name}: ${mm_dice_str} +${mm_n} = ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]"
+      *set mm_banner_val "[b][✨ ${combat_enemy_name}: ${mm_dice_str} +${mm_flat} = ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]"
     *set {(("combat_mm_banner_" & mm_i))} mm_banner_val
   *set mm_i + 1
   *goto resolve_magic_missile_dmg_loop
@@ -933,7 +937,7 @@ You pull the stopper with your teeth and hurl the flask at ${combat_enemy_epithe
   *comment check_success is inverted here (resolve_save: true = the enemy FAILED the save).
   *if (check_success)
     *set rcf_any_frightened true
-    *set {(rcf_p & "frightened")} 10
+    *gosub_scene combat_dice condition_apply rcf_p "frightened" 10 spell_save_dc "combat_player_cause_fear"
     *set combat_fear_banner "[b][😨 ${combat_enemy_name} is Frightened: its attacks have disadvantage and it will not come closer][/b]"
   *else
     *set combat_fear_banner "[b][💨 ${combat_enemy_name} fights off the dread][/b]"
@@ -958,7 +962,7 @@ You pull the stopper with your teeth and hurl the flask at ${combat_enemy_epithe
         *gosub_scene combat_dice resolve_save rcf_p2 "wisdom" "Wisdom" spell_save_dc rcf_i
         *if (check_success)
           *set rcf_any_frightened true
-          *set {(rcf_p2 & "frightened")} 10
+          *gosub_scene combat_dice condition_apply rcf_p2 "frightened" 10 spell_save_dc "combat_player_cause_fear"
           *set {(("combat_mm_banner_" & rcf_i))} "[b][😨 ${combat_enemy_name} is Frightened: its attacks have disadvantage and it will not come closer][/b]"
         *else
           *set {(("combat_mm_banner_" & rcf_i))} "[b][💨 ${combat_enemy_name} fights off the dread][/b]"
@@ -1003,6 +1007,82 @@ ${fsh}
 *line_break
 ${combat_blindness_banner}
 *line_break
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SPELL: SHATTER (Wizard, Bard and Warlock, 2nd level, 2026-11-17): RAW a 10-foot sphere of thunder at a point within 60 feet. This engine places
+*comment combatants in lane positions, not on a grid, so the sphere is read as the chosen enemy's own position: it and every other living enemy
+*comment standing at that same position make a Constitution save (Constructs with disadvantage), and take the one shared roll, half on a save.
+*comment The dice, type, save and half rule come from spell_book.json (3d8 thunder, +1d8 per slot level above 2nd). Not "a creature you can
+*comment see", so no Sight gate. The caller (combat.txt) sets combat_cast_at_level and prints the casting prose. Enemies only, like the other bursts here.
+*label resolve_cast_shatter
+*if (character_class = "warlock")
+  *gosub spend_pact_slot
+*else
+  *gosub spend_spell_slot combat_cast_at_level
+*gosub roll_spell_damage "shatter" true
+*temp sh_total combat_player_dmg_dealt
+*temp sh_save spell_fact_save_ability
+*temp sh_half spell_fact_half_on_save
+*comment One-shot, cleared now -- everything in this cast that needed the level has already read it.
+*set combat_cast_at_level 1
+*temp sh_center combat_active_target
+*temp sh_pos {(("combat_enemy" & sh_center) & "_position")}
+*set combat_mm_banner_1 ""
+*set combat_mm_banner_2 ""
+*set combat_mm_banner_3 ""
+*set combat_mm_banner_4 ""
+*set combat_mm_banner_5 ""
+*set combat_mm_banner_6 ""
+*temp sh_i 1
+*label resolve_cast_shatter_loop
+*if (sh_i <= combat_enemy_count)
+  *temp sh_p (("combat_enemy" & sh_i) & "_")
+  *temp sh_hp {(sh_p & "hp")}
+  *temp sh_here {(sh_p & "position")}
+  *if ((sh_hp > 0) and (sh_here = sh_pos))
+    *temp sh_kind {(sh_p & "creature_type")}
+    *set combat_save_disadv (sh_kind = "construct")
+    *gosub_scene combat_dice resolve_save sh_p sh_save "Constitution" spell_save_dc sh_i
+    *set combat_save_disadv false
+    *comment check_success is inverted here (resolve_save: true = the enemy FAILED the save).
+    *temp sh_failed check_success
+    *if ((sh_failed) or (not(sh_half)))
+      *set combat_player_dmg_dealt sh_total
+    *else
+      *set combat_player_dmg_dealt ((sh_total - (sh_total modulo 2)) / 2)
+    *set combat_active_target sh_i
+    *gosub_scene combat fight_sync_target_in
+    *gosub_scene combat_dice apply_outgoing_damage_resist_vuln
+    *set combat_enemy_hp - combat_player_dmg_dealt
+    *if (combat_enemy_hp < 0)
+      *set combat_enemy_hp 0
+    *gosub_scene combat fight_sync_target_out
+    *temp sh_line ""
+    *if (sh_failed)
+      *set sh_line "${combat_enemy_name}: ${combat_player_dmg_dealt} thunder damage${combat_outgoing_dmg_suffix}"
+    *else
+      *set sh_line "${combat_enemy_name}: ${combat_player_dmg_dealt} thunder damage${combat_outgoing_dmg_suffix} (braced, half)"
+    *if (combat_enemy_hp <= 0)
+      *set sh_line "${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} thunder damage${combat_outgoing_dmg_suffix}"
+    *set {(("combat_mm_banner_" & sh_i))} "[b][💥 ${sh_line}][/b]"
+  *set sh_i + 1
+  *goto resolve_cast_shatter_loop
+*comment Back on the enemy the burst was aimed at, so the page that follows reads the target the player chose.
+*set combat_active_target sh_center
+*gosub_scene combat fight_sync_target_in
+*if (not(combat_save_quiet))
+  ${combat_player_dmg_roll_banner}
+  *line_break
+*temp sh_pi 1
+*label resolve_cast_shatter_print_loop
+*if (sh_pi <= combat_enemy_slot_cap)
+  *temp sh_pval {(("combat_mm_banner_" & sh_pi))}
+  *if (not(sh_pval = ""))
+    ${sh_pval}
+    *line_break
+  *set sh_pi + 1
+  *goto resolve_cast_shatter_print_loop
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

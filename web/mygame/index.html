@@ -2162,7 +2162,8 @@ button#statSidebar .turnRow,
   var CONDITION_KEYS = [["slowed", "Slowed"], ["frightened", "Frightened"], ["greased", "Greased"], ["prone", "Prone"], ["burning", "Burning"], ["wet", "Wet"], ["blinded", "Blinded"]];
   // ── Statuses (2026-11-04): every condition and effect on a combatant, for the stage's token icons and the hover card's condition line,
   // so the two never disagree. Each reads the state combat.txt keeps; nothing here decides a rule. A round-limited effect counts while
-  // combat_round has not passed its last round (restrained_until, bane_expires_round, favored_foe_expires_round), as the hub reads them.
+  // combat_round has not passed its last round (bane_expires_round, favored_foe_expires_round), as the hub reads them. Restrained is a
+  // shared condition (<prefix>restrained > 0) that ends when Ensnaring Strike's concentration does.
   //   glyph: the icon's one character; tone: its colour (battlestage.css .stagePip.t-<tone>); tip: one line for the icon's tooltip.
   var STATUS_GLYPHS = {
     slowed: ["\u2744", "cold", "Slowed: cannot Dash on its next turn"], frightened: ["!", "fear", "Frightened: will not close on you"],
@@ -2211,8 +2212,7 @@ button#statSidebar .turnRow,
     if (cc) add("Concentrating", "❂", "gold", "Concentrating on " + cc);
     if (kind !== "enemy") return out;
     slot = Number(slot);
-    var until = Number(s[p + "restrained_until"]) || 0;
-    if (until > 0 && round <= until) add("Restrained", "\u2297", "good", "Restrained: held fast by thorny vines");
+    if ((Number(s[p + "restrained"]) || 0) > 0) add("Restrained", "\u2297", "good", "Restrained: held fast by thorny vines");
     var bane = Number(s[p + "bane_expires_round"]) || 0;
     if (bane > 0 && bane >= round) add("Baned", "\u2198", "fear", "Bane: -1d4 on its attacks");
     if (isTruthy(s.hex_active) && Number(s.hex_target_slot) === slot) add("Hexed", "\u2736", "fear", "Hex: your hits deal an extra 1d6 necrotic");

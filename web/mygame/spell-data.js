@@ -186,7 +186,10 @@
     // ── 2nd-level spells ───────────────────────────────────────────────
     { id: "blindness", name: "Blindness", level: 2, schools: "Transmutation",
       time: "Action", components: "V", duration: "A minute",
-      text: "A sudden dark that drops over one foe's eyes. While it lasts, their blows swing blind with disadvantage and every strike against them comes easier, until their body fights the working off." }
+      text: "A sudden dark that drops over one foe's eyes. While it lasts, their blows swing blind with disadvantage and every strike against them comes easier, until their body fights the working off." },
+    { id: "shatter", name: "Shatter", level: 2, schools: "Evocation",
+      time: "Action", components: "V, S, M", duration: "Instantaneous",
+      text: "A painfully loud crack of sound that bursts around one foe and rattles everything standing with them. What braces takes the edge of the noise; what fails takes the full force, and things built rather than born take it worst." }
   ];
 
   // The stat fields that can hold a spell id. The sidebar reads all of them rather than branching on
@@ -254,7 +257,8 @@
     "burning_hands": ["wizard"],
     "thunderwave": ["wizard","bard"],
     "unseen_servant": ["warlock"],
-    "blindness": ["bard","wizard"]
+    "blindness": ["bard","wizard"],
+    "shatter": ["wizard","bard","warlock"]
     };
   var SPELL_LEVELS = {
       "absorb_elements": 1,
@@ -287,7 +291,8 @@
     "burning_hands": 1,
     "thunderwave": 1,
     "unseen_servant": 1,
-    "blindness": 2
+    "blindness": 2,
+    "shatter": 2
     };
   var SPELL_CONCENTRATION = {
       "blade_ward": true,
@@ -340,7 +345,8 @@
     "burning_hands": {"name":"Burning Hands","level":1,"school":"Evocation","combat":{"cost":"action","slot_level":1,"resolution":"save","save_ability":"dexterity","half_on_save":true,"damage_dice":"3d6","damage_type":"fire","add_casting_mod":false,"upcast":{"damage_dice":"1d6"},"duration":"Instantaneous","area":"All engaged foes"}},
     "thunderwave": {"name":"Thunderwave","level":1,"school":"Evocation","combat":{"cost":"action","slot_level":1,"resolution":"save","save_ability":"constitution","half_on_save":true,"damage_dice":"2d8","damage_type":"thunder","add_casting_mod":false,"upcast":{"damage_dice":"1d8"},"duration":"Instantaneous","area":"All engaged foes","effect":"Pushes Large or smaller targets 1 step back on failed save"}},
     "unseen_servant": {"name":"Unseen Servant","level":1,"school":"Conjuration","combat":{"cost":"action","slot_level":1,"resolution":"effect","duration":"1 hour","area":"Far","effect":"Invisible mindless force for simple tasks"}},
-    "blindness": {"name":"Blindness","level":2,"school":"Necromancy","range":"ranged","reach":"long","combat":{"cost":"action","slot_level":2,"resolution":"save","save_ability":"constitution","duration":"Up to 10 rounds","effect":"Blinded: disadvantage on attacks, attacks against have advantage; repeats save end of turn"}}
+    "blindness": {"name":"Blindness","level":2,"school":"Necromancy","range":"ranged","reach":"long","combat":{"cost":"action","slot_level":2,"resolution":"save","save_ability":"constitution","duration":"Up to 10 rounds","effect":"Blinded: disadvantage on attacks, attacks against have advantage; repeats save end of turn"}},
+    "shatter": {"name":"Shatter","level":2,"school":"Evocation","range":"ranged","reach":"medium","combat":{"cost":"action","slot_level":2,"resolution":"save","save_ability":"constitution","half_on_save":true,"damage_dice":"3d8","damage_type":"thunder","add_casting_mod":false,"upcast":{"damage_dice":"1d8"},"duration":"Instantaneous","area":"The target and every foe at its spot","effect":"Constructs have disadvantage on the save"}}
     };
   // A scroll an item grants, keyed by the spell it carries (from tools/gear_catalog.json effect.spell). A spell with no scroll
   // simply never appears among the loose leaves.

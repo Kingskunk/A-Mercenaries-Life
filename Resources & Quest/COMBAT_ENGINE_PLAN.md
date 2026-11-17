@@ -119,21 +119,24 @@ Cure Wounds and Healing Word heal through `resolve_spell_heal`, which rolls from
 
 Booming Blade and True Strike read their dice from `cantrip_scale` and `base_move_dice`. `spell_facts_load` works out the counts for the caster's `character_level` (`spell_fact_hit_*`, `spell_fact_move_*`, `spell_fact_extra_*`), and the hit riders and `fight_booming_trigger` roll them through `roll_spell_dice`. No level number is typed in the scene code any more. A new scaling cantrip is a data entry; a tier that changes the die size is refused by the generator.
 
-### 3.5 Spells that stay hand-written
+### 3.5 Spells that stay hand-written (DONE 2026-11-16)
 
-Magic Missile (darts shared out by the player, rolled per target), Hex, Hunter's Mark, Ensnaring Strike (riders on other attacks or on turn start), Absorb Elements (damage type comes from the triggering hit). Leave them. Their numbers should still come from `spell_facts_load` where a single number is read.
+Magic Missile (darts shared out by the player, rolled per target), Hex, Hunter's Mark, Ensnaring Strike (riders on other attacks or on turn start), Absorb Elements (damage type comes from the triggering hit) keep their own code. Their single numbers now come from `spell_facts_load`: Magic Missile's die, flat part per dart and damage type (rolled with `roll_spell_dice`), Hex's die and type at both of its sites, Ensnaring Strike's thorn die and type, and Absorb Elements' rider die. Hunter's Mark is left as it was: its die is the ranger's `favored_foe_die_sides` progression variable, not a typed number, and its type "force" is still typed in `combat_dice.txt`.
 
-### 3.6 Older conditions onto the shared condition routines
+### 3.6 Older conditions onto the shared condition routines (DONE 2026-11-17)
 
-Frightened, Restrained and Slowed still use their own fields and their own tick code. Move them onto `condition_apply` / `condition_tick` the way Blinded works. Fix on the way: ending Cause Fear or Ensnaring Strike currently clears the effect from every enemy, not only the ones that spell affected.
+Slowed now lives on the shared routines: Ray of Frost and Ice Arrow apply it with `condition_apply`, `condition_tick` counts it down silently, and `_slowed` / `_slowed_dc` exist on every enemy, ally and the player.
 
-This must come before Web, Hold Person or any spell that restrains or paralyses.
+Frightened too: Cause Fear applies it with `condition_apply`, and its end-of-turn Wisdom save runs in `condition_tick` (before Blinded's, as before). Every shared condition now has a third field, `_src` (caster prefix & spell id), and `condition_apply` takes it as a fifth parameter. `condition_end_by_source` ends a condition only where it came from that source, so ending Cause Fear's concentration clears only the fear it caused, and `concentration_reconcile` keeps Cause Fear alive only while a living creature it frightened is left.
+
+Restrained too: Ensnaring Strike applies `restrained` 1 with its escape DC and its source; `restrained_until` is gone. Restrained has no countdown of its own, because its duration is the spell's: it ends when the creature tears free (`combat_restrain_tick`, still at the start of the turn, now checking the stored DC) or when the spell's concentration ends, and the spell's last round (`ensnaring_expires_round`) ends that concentration in `concentration_reconcile`, which the enemy turn and the player's movement code run before they read the restraint. A future spell that restrains (Web) applies the same condition with its own source and ends it the same way.
+
 
 ### 3.7 The 2nd-level spell batch
 
 Suggested order, easiest first:
 
-1. Shatter: area, save for half. The same shape as Burning Hands and Thunderwave, so close to pure data.
+1. Shatter (DONE 2026-11-17): Wizard, Bard and Warlock. `resolve_cast_shatter` (`combat_spells.txt`) reads its dice, type, save and half rule from the data; the sphere is the chosen enemy's lane position, so every living enemy standing at that position saves (enemies only, like the other bursts), and a Construct saves with disadvantage. Medium reach, no Sight gate (it targets a point). Learned from the generated level-3 menus; icon from `ICONS/Spell/Shatter_Icon.webp`. No scroll yet (`ICONS/Item/Consumable/Scroll/Scroll_of_Shatter_Unfaded_Icon.png` exists for one), and no enemy casts it.
 2. Scorching Ray: several attack rolls from one cast. Needs a "repeat the attack" loop; decide whether each ray picks its own target.
 3. After 3.6: Hold Person, Web.
 
