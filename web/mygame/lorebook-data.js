@@ -92,8 +92,8 @@
             return ["The Iron Carrion's commander. You have only seen his black raven pavilion from afar."];
           }
           var out = [
-            "The Iron Carrion's founding captain. In camp he receives reports at a trestle desk below the raven banner; on campaign he directs the company from horseback. He accepted Valen's standing war charter, but he sets the company's field orders and its internal rules.",
-            "Veterans say he gathered the company after the Broken Crown War. They disagree about whom he was before, and he does not settle it."
+            "The Iron Carrion's founding captain: a tall, lean human in his early sixties with slate-black hair brushed back from frost-white temples, an austere, clean-shaven aquiline jaw, and piercing, cold gunmetal-grey eyes. He dresses with severe military neatness in a high-collared charcoal-black officer's coat pinned with a muted silver raven brooch, a signet ring on his writing hand.",
+            "In camp he receives reports at a trestle desk below the raven banner; on campaign he directs the company from horseback. He accepted Valen's standing war charter, but he sets the company's field orders and its internal rules. Veterans say he raised the company thirty years ago from the wreckage of the Broken Crown War, gathering broken soldiers and deserters behind the raven banner. They disagree about who he was before, and he does not settle it."
           ];
           if (truthy(s.met_odessa)) {
             out[1] += " Surgeon Odessa has served under him for ten years.";
@@ -111,8 +111,8 @@
         unlock: "met_varren",
         body: function (s) {
           var out = [
-            "The Iron Carrion's Vanguard drillmaster and a frontline sergeant. He keeps the practice post, checks a recruit's gear, and expects the line to hold together.",
-            "Grey stubble, old siege scars, a broken nose and one pale damaged eye make him easy to recognize."
+            "The Iron Carrion's Vanguard drillmaster and a frontline sergeant. A massive human veteran in his early fifties with the heavy, rolling stride of an old foot-soldier, he keeps the practice post, checks recruits' harness, and expects the line to hold together.",
+            "Crisscrossed along the left half of his face by jagged siege-scars from the Redfort breach, he is marked by a blunt twice-broken nose, a blind milky left eye, and a dark steel-grey right eye that burns with harsh drillmaster scrutiny beneath cropped grizzled iron hair. He wears a battered iron-plated brigandine coat over dark wool and stained chainmail, with studded leather vambraces and iron-capped boots."
           ];
           if (truthy(s.prep_varren_drill)) {
             out.push("His doctrine, drilled into every file: keep your files tight, keep your feet dry, do not get flanked in the reeds, and keep grease on your iron. He ran the Vanguard line himself before a fight, checking straps and grips.");
@@ -139,8 +139,8 @@
         unlock: "met_kestrel",
         body: function (s) {
           var out = [
-            "Commander of the Iron Carrion's scout company. She goes by Kestrel, wears her dark hair cropped short beneath a leather coif, and carries a plain skinning knife.",
-            "The company gives her no formal rank beyond the work she does: finding a road, reading the ground, and bringing the scouts back."
+            "Commander of the Iron Carrion's scout company. A half-elven woman past sixty winters who appears in her lean, weather-beaten early thirties, she holds the still, watchful poise of a perched hunting hawk and claims no formal rank beyond finding a road, reading ground, and bringing her skirmishers back alive.",
+            "Cropped raven-black hair sits snug beneath a greased boiled-leather coif, revealing slightly tapered half-elven ears and piercing, unblinking pale moss-green eyes that catalog terrain and movement in an instant. She wears a mottled stone-grey and moss-green leather brigandine, supple peat-stained boots, a fingerless shooting glove, a plain iron skinning knife at her hip, and a recurve shortbow across her back."
           ];
           if (truthy(s.kestrel_advice_told)) {
             out.push("From the shutter of the watchtower's top room she watches the compound and the inland road. Her advice is to keep watching the whole time, since everyone shows you what they are about to do before they do it and you can never know which moment matters. She admits it is exhausting and that she is terrible company.");
@@ -164,8 +164,8 @@
         unlock: "met_ysolde",
         body: function (s) {
           var out = [
-            "The Cadre's handler. An older tiefling woman with small obsidian horns, iron-grey braids and a satchel of scrolls and glass vials, she is responsible for the company's gifted recruits.",
-            "She keeps the Cadre's work, supplies and training under close count."
+            "The Cadre's handler and a patrician scholar of House Ostrand. A tiefling woman in her mid-fifties of tall, upright carriage and aristocratic discipline, she is responsible for the company's gifted practitioners, keeping their work, spells, and supplies under strict count.",
+            "She has dusty indigo-slate skin, high cheekbones, and small curved obsidian horns sweeping tight over her temples. Intricate iron-grey braids are pinned severe at her crown, framing calm mercury-silver eyes that take in everything behind round silver-rimmed reading spectacles. She wears an immaculate charcoal-and-plum high-collared coat lined with dark silk, carrying an oiled leather satchel crammed with brass-capped vials, rolled charts, and wax seals."
           ];
           if (s.squad === "cadre") {
             out.push("Those who marched under her hand knew the terms: worth more alive than heroic, and told so plainly. She rationed the Cadre's spells because they cost the caster: a spell worked under arrow fire runs through the caster's own nerves, fingers seize if it's held too long, and a heart can quit in the mud. Her praise was a dry nod or an errand of trust. Her discipline was a hand keeping you out of the arrow-hail until the line truly broke.");
@@ -199,15 +199,15 @@
         meter: { stat: "lyra_bond", label: "Comradeship with Lyra" },
         body: function (s) {
           var out = [];
-          out.push("A fellow rookie who claimed her recurve bow beside you at the munitions cart. Sharp-eyed, guarded, and determined to survive her first campaign under the Carrion.");
+          out.push("A fellow rookie archer barely twenty-one who claimed her recurve shortbow beside you at the munitions cart. Built lean with feline agility, olive skin smudged with road dust, and guarded amber-hazel eyes, she is determined to survive her first campaign under the Carrion.");
           // The appearance line carries "quiet scars along both forearms that she's never once
           // explained" UNTIL lyra_scars_told, at which point that sentence is no longer true and
           // the explained version replaces it. Both must not print at once, so this is an if/else
           // and not two unconditional pushes.
           if (truthy(s.lyra_scars_told)) {
-            out.push("<i>\"Lean and sharp-featured, raven-dark hair tied back in rough cord that never quite stays neat, with quick, watchful eyes that catch every movement in a room before settling on you. Pale scars run along both forearms, and she has told you where they came from. A downriver survivor who took the iron shilling to outrun starvation—guarded, lethal with a shortbow, and watching your back whether you asked her to or not.\"</i>");
+            out.push("<i>\"Lean and sharp-featured, barely twenty-one, with unruly raven-black hair tied back in a fraying leather cord and quick, watchful amber-hazel eyes that catch every movement in a room before settling on you. Pale scars run along both forearms, and she has told you where they came from. A downriver survivor in a scuffed boiled-leather jerkin who took the iron shilling to outrun starvation—guarded, lethal with a shortbow, and watching your back whether you asked her to or not.\"</i>");
           } else {
-            out.push("<i>\"Lean and sharp-featured, raven-dark hair tied back in rough cord that never quite stays neat, with quick, watchful eyes that catch every movement in a room before settling on you. Quiet scars along both forearms that she's never once explained. A downriver survivor who took the iron shilling to outrun starvation—guarded, lethal with a shortbow, and watching your back whether you asked her to or not.\"</i>");
+            out.push("<i>\"Lean and sharp-featured, barely twenty-one, with unruly raven-black hair tied back in a fraying leather cord and quick, watchful amber-hazel eyes that catch every movement in a room before settling on you. Quiet scars along both forearms that she's never once explained. A downriver survivor in a scuffed boiled-leather jerkin who took the iron shilling to outrun starvation—guarded, lethal with a shortbow, and watching your back whether you asked her to or not.\"</i>");
           }
           // Two separate moments, and they must not be read as one.
           //
@@ -251,8 +251,8 @@
         unlock: "met_odessa",
         body: function (s) {
           var out = [
-            "The Iron Carrion's field surgeon. She works from a triage wagon on the march and from whatever clear ground the line leaves behind, with boiled linen, bone needles and waxed thread.",
-            "She is gaunt and sharp-featured, with scars across her hands, dark hair pinned back, and a leather apron marked by her work."
+            "The Iron Carrion's field surgeon. A severe, hollow-chested human woman in her late forties who works from a triage wagon on the march and from whatever clear ground the line leaves behind, she tends wounds with boiled linen, curved bone needles, and waxed thread.",
+            "Sallow and sharp-featured with deep tired hollows beneath her assessing dark brown eyes, her jet-black hair is streaked with silver and pinned tight in a utilitarian knot with a carved bone bodkin. Her steady, scarred hands never tremble as she works in a heavy cowhide apron stained dark with lanolin, iodine, boiled vinegar, and old blood, with tins of camphor and sulfur salve at her belt."
           ];
           if (truthy(s.codex_odessa)) {
             out.push("What she told you at the Black Sinks, knotting thread with her teeth: ten years under Captain Vane. Before that she kept an apothecary in the high city until a tax-collector burned it for unpaid levies. Vane offered forty silver marks a season and one promise — no lord, factor, or council clerk would tell her who she could or could not treat.");
@@ -272,8 +272,8 @@
         tags: ["Iron Carrion"], aliases: ["Rorik", "armorer", "smith", "sapper"],
         unlock: "met_rorik",
         body: [
-          "A grizzled Highland smith and munitions armorer who keeps the company's steel honed at the baggage wagons.",
-          "<i>\"A grizzled, broad-shouldered Highland smith with burn-scarred forearms, a notched ear, and a cloud of bitter pipeweed smoke trailing his steps. Having swung sledge for Master Torvald back in the Highland Crags, and helped him frame his mill at Alderford, before taking the mercenary shilling, he methodically hones company blades and shares hard-earned forgecraft with recruits who respect the steel.\"</i>"
+          "The company's munitions armorer: a barrel-chested Highland human in his mid-fifties with grizzled russet hair fading to ash, a wire-stiff reddish-grey beard cropped close to spare it forge sparks, and moss-green eyes ringed with soot. His left ear is notched like a branded calf, heavy burn scars run across his corded forearms and knuckles, and a clay pipe sending up bitter peatweed smoke rarely leaves his teeth.",
+          "<i>\"A barrel-chested Highland smith with grizzled russet hair, burn-scarred forearms, a notched ear, and a cloud of bitter peatweed smoke trailing his steps. Having swung sledge for Master Torvald back in the Highland Crags, and helped him frame his mill at Alderford before taking the mercenary shilling, he methodically hones company blades and shares hard-earned forgecraft with recruits who respect the steel.\"</i>"
         ],
         see: ["iron_carrion", "torvald", "alderford"]
       },
@@ -288,7 +288,7 @@
         unlock: "met_talia",
         body: function (s) {
           var out = [
-            "Forewoman of the four brine-curing lofts on Alderford's waterfront, and one of the last independent salters left on the wharf. Carts bring curing salt up the High Grey Road from Valen; Talia's crews turn it, river fish, smoke, and time into firkins for the downriver trade. She makes the tallow-and-oil grease the river trade rubs into its leather, runs the curing rooms and drying racks with veteran cutters like Maren and a crew of local women, and has no intention of selling to anyone."
+            "A wiry, sun-freckled human woman in her early thirties, with thick copper-auburn hair tied back in a coarse linen headcloth, clear sea-glass green eyes, and high cheekbones. She wears a brine-stained split-leather apron over rolled homespun sleeves with a curved scaling knife at her hip, holding the four brine-curing lofts on Alderford's waterfront as one of the last independent salters left on the wharf. Carts bring curing salt up the High Grey Road from Valen; Talia's crews turn it, river fish, smoke, and time into firkins for the downriver trade. She makes the tallow-and-oil grease the river trade rubs into its leather, runs the curing rooms and drying racks with veteran cutters like Maren and a crew of local women, and has no intention of selling to anyone."
           ];
           if (truthy(s.visited_talia_loft)) {
             var fatherInfo = "The lofts were her father's. Franklin Parker, Master Salter, felled the timber and drove the foundation piles thirty winters ago, when Alderford was three timber sheds and a ferry rope.";
@@ -315,8 +315,8 @@
         tags: ["Alderford"], aliases: ["cutter", "salt-cutter", "journeywoman", "elder cutter"],
         unlock: "met_maren",
         body: [
-          "A wiry, grey-haired salt-cutter in a brine-bleached apron, her forearms covered in old knife nicks and salt burns. She cut fish beside Talia's father, Garrett, for twenty winters, and knows these vats better than anyone on the river.",
-          "Gravel-voiced and protective of the lofts, she knows every water gate, drying rack, and salt ratio on the lower wharf. Talia handles the accounts, the leather grease, and the guild factors. Maren runs the cutting floor with a curved gutting knife and refuses to be short-weighed by Gilded Scales weigh-masters."
+          "A wiry, sinewy human woman in her late fifties with bowed shoulders from decades at the cutting vats, wearing a heavy split-leather and oiled apron encrusted with salt crystals over a coarse grey wool smock. Her leathery skin is pickled by brine spray and river gales, with deep squint-lines around flinty pale slate-blue eyes, a sharp hooked nose, and a tight, grim mouth.",
+          "Coarse steel-grey hair is bundled under a salt-bleached linen kerchief, and rolled sleeves reveal forearms scarred by old knife nicks and salt burns. She cut fish beside Talia's father, Garrett, for twenty winters, and knows these vats better than anyone on the river. Gravel-voiced and fiercely protective of the lofts, she runs the cutting floor with a curved horn-handled gutting knife, knowing every water gate, drying rack, and salt ratio on the lower wharf while refusing to be short-weighed by Gilded Scales weigh-masters."
         ],
         see: ["talia", "alderford", "rennick", "gilded_scales"]
       },
@@ -329,8 +329,8 @@
         unlock: "met_janna",
         body: function (s) {
           var out = [
-            "Journeyman smith at Torvald's Timber Forge & River Ironworks, the timber-and-granite workshop over the mill-race upstream of the weir. She is tall, soot-streaked, and bare-armed, and she works the trip-hammer and waterwheel gears by furnace light, with hands as calloused as the anvil's face.",
-            "She keeps the shop running while the old dwarf drinks: the racks, the orders, and the deadlines the factor sets. Sixteen barge mooring pins before dawn muster is a normal night's work, and a missed quota comes out of her pay, not his."
+            "Journeyman smith & striker at Torvald's Timber Forge & River Ironworks, the timber-and-granite workshop over the mill-race upstream of the weir. A tall, athletic human woman in her mid-twenties with broad shoulders, powerful arms, and warm olive skin smudged with dark soot and forge-scale, she works the trip-hammer and waterwheel gears by furnace light, with hands as calloused as the anvil's face.",
+            "Her thick dark brown hair is tied in a heavy low knot with a rawhide cord to keep it from the heat, framing a strong square jaw, a faint spark burn across her right collarbone, and keen copper-brown eyes that gauge glowing metal temperatures by eye. She works in a soot-stained split-cowhide smith's apron over a sleeveless unbleached linen shift with rawhide arm wraps, keeping the shop running while the old dwarf drinks: the racks, the orders, and the deadlines the factor sets."
           ];
           if (truthy(s.discussed_janna_temper)) {
             out[1] += " Torvald's temper, she says, is like furnace slag: loud, hot, and full of sparks, with honest craft underneath once you skim it.";
@@ -354,8 +354,8 @@
         unlock: "met_torvald",
         body: function (s) {
           var out = [
-            "A Crag Dwarf smith and millwright who runs the timber forge over Alderford's mill-race. His workshop turns out river hardware, tools and arms, and its wheel must be kept clear of the river's driftwood.",
-            "He is broad, grey-bearded and scarred, with a patch over his left eye. Janna works beside him at the forge."
+            "A Crag Dwarf master smith and millwright in his late sixties who runs the timber forge over Alderford's mill-race. Broad as an iron stove and standing barely five feet tall, he has arms as thick as cured timber, a rolling bow-legged stance, and rugged bronze skin pitted with furnace slag.",
+            "A scarred leather patch covers his missing left eye socket, while a single bloodshot, piercing steel-grey right eye glints fiercely under heavy bushy brows. Shaggy iron-grey hair is tied behind his neck, and a bristling grey beard is braided in singed highland knots. Wearing a scorched oxhide smith's apron scarred by slag over a soot-blackened leather tunic and hobnailed boots, he crafts river hardware, tools, and weapons alongside his journeyman, Janna."
           ];
           if (truthy(s.knows_torvald_sluice_trick)) {
             out.push("Veteran Rorik, who swung sledge for him back in the Highland Crags, tells how the two of them framed the timber mill over the Alderford weir. Torvald swore he would drown before wading into freezing muck every time driftwood jammed the wheel, so he hid a bypass under the intake casing. Trip the catch and a counterweight backs the gear teeth off, and the river flushes the jam itself. He calls it 'preventative drainage' so the guild inspectors cannot fine him. His rule in the old shops was two taps to set the angle and one blow to draw the metal, kept to an exact three-count, or you caught hot tongs across your shins.");
@@ -376,8 +376,8 @@
         unlock: "met_maura",
         body: function (s) {
           var out = [
-            "The lean woman in the bleached wolf-skin vest who keeps the Drowned Oar, the long timber taphouse built on cedar piles against the stone wharf wall. She works the wide oak counter with a linen rag, and her sharp eyes take in your road-weary gear before they take in your face. Her voice is calm and smoky, and her grate never goes cold: mutton-and-marrow pottage, river herring cured over peat smoke, spiced cider, herbal bitters, and a strong spirit she pours in small iron measures with a warning to go careful.",
-            "She keeps the timber carters from brawling and pays a good song in free drinks. For anyone bound downriver she has the thirty miles of open water to the capital mapped in her head. A smooth freight highway, she calls it, provided your boots are greased and you stay out of the river skippers' way."
+            "A lean, sinewy human woman in her early forties with a veteran mercenary's poise and a slight limp in her left knee from an old bolt wound, she keeps the Drowned Oar—the long timber taphouse on cedar piles against the wharf wall. She has weather-tanned skin, a straight calm mouth with a wry half-smirk, a faint white scar along her cheekbone, and a faded Iron Bull mercenary brand blurred into the left side of her throat.",
+            "Dusky ash-brown hair streaked with pale grey is tied loosely at her neck with an eel-skin thong, framing sharp, observant grey-green eyes that take in exits and road-weary gear before faces. Wearing a bleached wolf-skin vest over a clean dark wool tunic and homespun linen apron, with an oak bung-mallet and iron keys at her belt, her voice is calm and smoky, and her grate never goes cold: mutton-and-marrow pottage, peat-smoked herring, spiced cider, and mountain bitters."
           ];
           if (truthy(s.discussed_maura_past)) {
             out.push("The faded brand on her throat is the Iron Bull's. She did five campaign seasons with the Iron Bull Free Company in the border marches, she says, thumbing the blurred ink with a dry smirk, until a crossbow bolt through her left knee told her to find dry floorboards. She bought the timber house from an old barge-carpenter ten years ago. The river is quieter than the shield wall, she says, and nobody shoots at you over the counter, most nights anyway.");
@@ -404,8 +404,8 @@
         unlock: "met_rennick",
         body: function (s) {
           var out = [
-            "The Gilded Scales' tollreeve on the Alderford wharf. He wears a pewter cartel badge and a water-stained fur mantle, keeps a ledger close, and arrives with two dock-guards.",
-            "He collects tolls from the curing sheds and weighing slips, reading arrears aloud where the workers can hear."
+            "The Gilded Scales' tollreeve on the Alderford wharf: a narrow-shouldered human man in his late thirties with sallow skin, beady dark eyes, and a thin dark pencil mustache over a sneering lip. Greasy black hair is parted down the middle beneath a water-stained fur-collared coat, and an official pewter balance-scale badge is pinned to his lapel. Leaning on a brass-tipped cane, he arrives with two mace-bearing dock-guards and a brass-cornered tax ledger to collect tolls from the curing sheds and weighing slips.",
+            "He reads arrears aloud where the workers can hear, shaking down the independent salters for invented fees."
           ];
           if (truthy(s.rennick_reported)) {
             out.push("Report his light scales to Factor Morzan and the answer comes back without surprise. Morzan already knew, and means to have a word with him. Rennick's power ends where the Factor's signature begins, and the office he struts through exists at Morzan's pleasure.");
@@ -426,7 +426,8 @@
         unlock: "met_morzan",
         body: function (s) {
           var out = [
-            "The Gilded Scales' factor and merchant lord in Alderford. He heads [[house_morzan|House Morzan]], a cadet house of Ostrand whose interests lie in cargo bonds, river freight and the contracts that carry both toward Port Valen.",
+            "The Gilded Scales' factor and merchant lord in Alderford: a broad-girthed, heavyset human in his mid-fifties of House Ostrand's cadet line. He has dark chestnut hair oiled flat over a receding crown, hooded dark amber eyes, and a pointed spade-beard shot with silver threads that frames a heavy double chin. He wears an expensive water-stained beaver-fur mantle draped over a dark plum doublet, with a gold signet ring on his pinky and the Scales' balance-pendant around his neck.",
+            "He heads [[house_morzan|House Morzan]], whose interests lie in cargo bonds, river freight and the contracts that carry both toward Port Valen.",
             "The collective Council of Factors appointed him to Alderford's factor's chair. His house gives him rank and powerful connections, but the office is a Council charge rather than a private Ostrand grant, and another Council appointment can replace him.",
             "He controls the Scales' administration in Alderford and its customs district: contracts, official weights, tolls, bonded stores and payments that pass through the town. Whitefold and Redvein keep their own local councils, but their outward contracts and disputed trade agreements reach his Hall.",
             "His office is at the back of Alderford's Factor's Hall on the customs slip. Chief Clerk Orlov runs the public counter."
@@ -465,7 +466,7 @@
         unlock: "met_orlov",
         body: function (s) {
           var out = [
-            "Chief clerk of the Gilded Scales' Alderford Factor's Hall: a narrow man in ink-stained shirtsleeves behind an oak desk with a tarnished brass nameplate, spectacles pushed up into thinning grey hair, a goose quill behind one ear. He looks harried and behind on his own paperwork, and he sizes up every stranger by the state of their boots. He greets a Carrion hand on charter business with the news that the guild's board is open to you like any other contractor's.",
+            "Chief clerk of the Gilded Scales' Alderford Factor's Hall: a gaunt, narrow-shouldered human in his late fifties with wispy cobweb-pale strands combed across a parchment-dry skull, brass wire spectacles pushed up on his brow, and a goose quill tucked behind one ear. His face is sharp and bird-like, with sunken cheeks and washed-out milky-slate eyes that size up every stranger by their boots, while black ink permanently stains his cuffs and calloused fingertips. He greets a Carrion hand on charter business with the news that the guild's board is open to you like any other contractor's.",
             "Everything on the wharf that is weighed, sealed, taxed, or owed passes through his quill: the district parish register, the bounty board by the door, the vault floor with its rows of lead weights. The Factor signs behind the side door, but Orlov writes the wharf's business."
           ];
           if (truthy(s.asked_ch_commutation)) {
@@ -493,7 +494,7 @@
         unlock: "met_corbel",
         body: function (s) {
           var out = [
-            "The elderly deacon of Saint Althea's chapel on the ridge above the weir. He wears an undyed wool habit and a limestone spindle-cross, and keeps the parish ledger at the chancel desk.",
+            "The elderly deacon of Saint Althea's chapel on the ridge above the weir: a frail, gently stooped human in his early seventies with a sun-spotted bald crown ringed by a soft fringe of dandelion-white hair. His serene, sun-creased face carries kind cornflower-blue eyes behind round wire spectacles tied with hemp cord. He wears a coarse undyed oat-grey wool habit tied with a flax rope and a carved limestone spindle-cross resting against his chest.",
             "Corbel offers healing and a blessing for the road. His sanctuary keeps one rule: leave quarrels outside."
           ];
           if (truthy(s.discussed_chapel_deity)) {
@@ -518,7 +519,7 @@
         unlock: "met_bran",
         body: function (s) {
           var out = [
-            "Overseer of the Upper Weir Granary, the grain warehouse above the weir where the town's winter rye waits on the Scales' freight schedule. He is a tired, big-boned man in a leather apron dusted with chalk flour, with a chalk-board always within reach and chalk seals on every sack on the racks. He gives newcomers a cautious look that lingers on their gear. His spine has ached too long to carry thirty pounds without cost, though his hands remember heavier loads."
+            "Overseer of the Upper Weir Granary: a tall, big-jointed human in his early fifties who holds an aching lower back with stiff, lumbering care. He has coarse, horsehair-black locks heavily grizzled with steel-grey along the ears, rough-hewn dark stubble along a blunt square chin, and dark peat-brown eyes narrowed from decades of river glare. A heavy split-leather apron, white with flour and chalk tallies, hangs over his coarse grey linen tunic, and a stub of chalk sits behind his ear. He gives newcomers a cautious look that lingers on their gear."
           ];
           if (truthy(s.discussed_granary_rations)) {
             out.push("Nothing in the loft is for sale. Every bin is river freight bound for Port Valen, weighed at the loading dock. If he cracks a seal to sell five pounds of meal to a soldier, the difference comes out of his month's wage at Chief Clerk Orlov's quill. He tells a hungry squad so without anger: for hot bread, go see Maura at the Drowned Oar or try the company kettles.");
@@ -545,7 +546,8 @@
         unlock: "wf_common_seen",
         body: function (s) {
           var out = [
-            "A sheep-holder with a heavy grey braid, a wind-burned face, and a plain wool coat carefully mended at the cuffs. She holds the Commonwarden's chair in the small meeting room beside Whitefold's shared Fleecefold."
+            "Commonwarden of Whitefold: a broad-shouldered, stocky human woman in her late fifties with a dignified matriarchal presence and steady, unhurried movements. Her ruddy complexion is heavily lined and wind-burned from sixty highland winters, with a firm square chin, calm mouth, and shrewd, patient storm-grey eyes that miss nothing.",
+            "A thick, heavy iron-and-silver grey braid coils over one shoulder, and she wears a long, thick charcoal-and-moss wool coat neatly mended with waxed thread at the cuffs, over a checked wool shawl fastened with a carved bone clasp. She holds the Commonwarden's chair in the meeting room beside Whitefold's shared Fleecefold, with a polished ash shepherd's crook resting beside her seat."
           ];
           if (truthy(s.wf_common_asked_rule)) {
             out.push("Whitefold's Common has four seats: the upper folds, the lower folds, the quarry and kilns, and the houses that live by the road. When a seat falls vacant, its people choose another voice. The four choose one of themselves as Commonwarden. The chair carries the Common's word, keeps the meeting moving, and breaks a tied vote.");
@@ -569,7 +571,8 @@
         unlock: "wf_fold_seen",
         body: function (s) {
           var out = [
-            "The lean worker at the Fleecefold's beam scale, with sandy hair cut close against the wind, a pale burn scar across one hand, and loose wool clinging to his dark vest. He weighs each fleece and writes the result down before he looks up."
+            "A lean, wiry human wool grader in his early thirties who works at the Fleecefold's brass beam scale. He has a sun-tanned highland complexion, high narrow cheekbones, and sandy-blonde hair cropped short against upland gales, with watchful clear hazel eyes squinting against wool dust.",
+            "A pale, jagged burn scar runs from his right wrist across the back of his hand, and loose white sheep fleece clings to the coarse dark brown wool vest over his homespun linen shirt. Sturdy sheepskin trousers and gaitered boots brace him as he weighs each fleece on the scale and notes the weight with a lead-weighted tally pencil before looking up."
           ];
           if (truthy(s.wf_fold_asked_wool)) {
             out.push("Nerin separates the clip by length, grease, weather damage and burrs. His rule is that a buyer should pay for what is in the sack, so the next cart has reason to return.");
@@ -599,7 +602,8 @@
         unlock: "wf_yard_seen",
         body: function (s) {
           var out = [
-            "The middle-aged woman at the Quarry Yard's weigh platform, with a notebook at her hip, a pale seam through one eyebrow, and chalk worked into her dark gloves. She weighs the carts and marks each block before it leaves the yard."
+            "Weighkeeper at Whitefold's Quarry Yard: a solid, stout human woman in her late forties built for bracing against heavy masonry carts. Her weather-reddened, lime-freckled face is dusted with white limestone powder, marked by a broad jaw and a pale seam scar splitting her left eyebrow.",
+            "Dark russet-brown hair streaked with ash-white is tied in a tight bun under an oiled cap, and sharp, calculating amber-brown eyes estimate stone tonnage at a glance. She wears a heavy split-cowhide yard vest over an unbleached wool smock and chalk-dusted dark leather gloves, keeping a brass-cornered quarry ledger at her hip and a stick of blue marking chalk in hand."
           ];
           if (truthy(s.wf_yard_asked_stone)) {
             out.push("Whitefold sends cut blocks and lime down the road when the carts can carry them. Hessa leaves the wool to the folds, satisfied that the two trades share a road.");
@@ -633,8 +637,8 @@
         unlock: "wf_ram_seen",
         body: function (s) {
           var out = [
-            "The broad-shouldered keeper of the White Ram, with a close grey beard, a flattened nose that healed crooked, flour on one sleeve, and the room keys at his belt. He keeps the inn's stove, beds and stable yard in working order.",
-            "Perrin offers stew, a bed and a dry stall without ceremony. The White Ram's public room faces Whitefold's common, while its small stable yard has a covered trough, hitching rails and four dry stalls."
+            "The broad-shouldered, barrel-chested keeper of the White Ram in his early fifties, with thick forearms from kneading bread and hauling hearth-logs. He has a ruddy flour-dusted complexion, a flattened boxer's nose that healed crooked, receding slate-grey hair cut close, and a trimmed salt-and-pepper beard along a square jaw.",
+            "His warm, steady dark brown eyes take in travelers with calm welcome. Wearing a dark charcoal woollen shirt with rolled flour-dusted sleeves and a heavy brown split-hide apron, he keeps a heavy brass ring of room keys at his belt and offers stew, fresh bread, a warm bed, and a dry stall without ceremony."
           ];
           if (truthy(s.weight_road_perrin_reviewed)) {
             out.push("Carters and shepherds talk while they eat at his tables. He saw a handcart of the road crew's stacked stone go up the lane toward the lambing shelter before Edda came in wanting stew for the crew, and he cannot say who agreed to it.");
@@ -654,7 +658,7 @@
         tags: ["Redvein"], aliases: ["Mara", "Venn", "Gather House", "notices", "collection box"],
         unlock: "rv_hall_seen",
         body: [
-          "The middle-aged woman at the Gather House table, with dark hair streaked white at the temples beneath a wool cap, a thin scar across one cheek, and red dust in the folds of her rolled sleeves. She keeps the notice rail, hauling lists and collection box within reach.",
+          "A sturdy, broad-shouldered human woman in her late forties at the Gather House table: dark hair streaked with white at the temples beneath a knit wool cap, warm hazel-gold eyes, and a thin pale scar crossing her left cheek. Her heavy wool sleeves are rolled to the elbows, forearms dusted with reddish iron-ore dust as she keeps the notice rail, hauling lists, and collection box within reach.",
           "Mara directs anyone who needs a name posted or shelter from the weather to speak before helping themselves. The Gather House keeps a stove, benches, spare lamps and folded blankets for the village."
         ],
         see: ["redvein", "ilyra_fen"]
@@ -667,8 +671,8 @@
         tags: ["Redvein"], aliases: ["Ilyra", "Fen", "innkeeper", "Red Lantern", "rooms", "stable yard"],
         unlock: "rv_lantern_seen",
         body: [
-          "The lean keeper of the Red Lantern, with one cloudy grey eye, black hair pinned up with a wooden skewer, and small white nicks across the backs of her strong hands. She keeps the counter and the room keys within reach.",
-          "Ilyra tells travellers to warm themselves before deciding whether they need a bed, and directs anyone with an animal to the stable gate. The inn has a stove-warmed public room, beds upstairs and a walled yard with three covered stalls."
+          "The lean, tall keeper of the Red Lantern in her mid-forties, moving with quiet capability and grounded posture. She has weather-cured pale olive skin, a narrow angular face, and jet-black hair streaked with white at the temples pinned in a practical high coil with a carved darkwood skewer.",
+          "One scarred cloudy grey left eye is paired with a sharp, piercing dark charcoal right eye, and small pale scars mark the backs of her strong hands. Wearing a deep burgundy-and-charcoal wool tunic with rolled cuffs, a dark linen service apron, and a brass key ring at her belt, Ilyra tells travellers to warm themselves by the stove before deciding whether they need a bed, keeping the counter and keys within easy reach."
         ],
         see: ["redvein", "mara_venn"]
       },
@@ -683,7 +687,7 @@
         unlock: "codex_baron_karr",
         body: function (s) {
           var out = [
-            "Feudal lord of Karr's Keep in the Highland Crags. His tax collectors seize grain from his highland tenants by force, and Karr's riders burned Ashbrook during one such collection. Notices bearing his seal offer standing rewards for runaway bond-servants and deserters from his estates."
+            "Feudal lord of Karr's Keep in the Highland Crags: a broad, barrel-chested human patriarch in his late fifties with an imposing military bearing. He has a hard, granite-jawed face, thick iron-grey mustache, cold pale-blue eyes beneath bushy brows, and silver hair cropped square at the collar. He wears a burnished steel gorget over a dark wool tunic edged in silver thread, with a heavy wolf-pelt mantle draped across his shoulders. His tax collectors seize grain from his highland tenants by force, and Karr's riders burned Ashbrook during one such collection. Notices bearing his seal offer standing rewards for runaway bond-servants and deserters from his estates."
           ];
           if (truthy(s.codex_stenmark)) {
             out.push("His title is Baron of [[stenmark|Stenmark]], the valleys and passes under the southern Crags. Like most titles in the Marches, it rests on an imperial patent that nobody has renewed since the legions left. He keeps it with soldiers and riders loyal to his house. Karr's guards hold the toll gates on both roads out, and his tax collectors take the tenants' grain in autumn and refined steel by the hundredweight all year.");
@@ -701,7 +705,7 @@
         unlock: "codex_warlord_skell",
         body: function (s) {
           var out = [
-            "The warlord who holds the [[great_sedge|Great Sedge]] from Gryke, an old legion fort in the fen that is slowly sinking into it. The legion there dissolved where it stood, as the others did, and its garrison stayed on. Skell is said to have been a sergeant in it.",
+            "The warlord who holds the [[great_sedge|Great Sedge]] from Gryke, an old legion fort in the fen that is slowly sinking into it. A sinewy, predatory human in his early forties with a gaunt sun-blackened face, matted straw-blond hair bound with reed cord, and chilling pale grey-green eyes, he wears faded blue fen-ash ritual tattoos across his throat and a patched boiled-leather cuirass over rusted chainmail. The legion garrison there dissolved where it stood thirty years ago, and Skell—said to have been a sergeant in it—took command of the ruins.",
             "Skell takes tribute in peat, eels and spearmen, since the fen has no coin to give. Outsiders cross the Sedge by brushwood tracks that only Skell's people can find, and the Black Sinks causeway runs along the edge of it."
           ];
           if (s.silt_gate_resolution === "leverage" || truthy(s.has_silt_gate_payout_slip)) {
@@ -992,7 +996,7 @@
         tags: ["Alderford", "Trade"], aliases: ["provisioner", "storekeeper", "general goods"],
         unlock: "af_store_seen",
         body: [
-          "A compact woman with a blunt grey-streaked braid, square jaw, and small round spectacles. She measures rope against a notched stick and runs Pell's Stores from the Lower Wharf Market.",
+          "A compact, square-shouldered human woman in her late forties with a blunt steel-streaked dark braid hanging over one shoulder, a heavy square jaw, and watchful dark brown eyes behind small round wire spectacles. Wearing a durable dark canvas merchant's apron over a sturdy homespun gown, she measures rope against a notched wooden yard-stick and runs Pell's Stores from the Lower Wharf Market.",
           "Nessa deals in the ordinary things travelers, caravan hands, and barge crews tend to need too late: food for the road, light, rope, weatherproofing, bedding, and practical tools."
         ],
         see: ["pells_stores", "alderford"]

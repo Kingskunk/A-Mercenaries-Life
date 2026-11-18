@@ -438,6 +438,7 @@
 *set combat_enemy1_move2_condition_icon combat_enemy_move2_condition_icon
 *comment Slot 1's special move comes from its abilities (3.4a), now that its attack bonus and overrides are final.
 *gosub_scene combat_abilities ability_refresh_variant "combat_enemy1_"
+*gosub_scene combat_abilities ability_refresh_rider "combat_enemy1_"
 *set combat_enemy1_resist_types combat_enemy_resist_types
 *set combat_enemy1_vulnerable_types combat_enemy_vulnerable_types
 *set combat_enemy1_immune_types combat_enemy_immune_types
@@ -571,6 +572,7 @@
 *comment Assigned abilities (3.4a), then the special move they give (an attack_variant), now that this slot's attack bonus is final.
 *gosub_scene combat_abilities ability_apply_overrides aso_p
 *gosub_scene combat_abilities ability_refresh_variant aso_p
+*gosub_scene combat_abilities ability_refresh_rider aso_p
 *return
 
 *label compute_cast_dc
@@ -870,7 +872,7 @@
     *gosub fight_sync_target_out
     *if (combat_enemy_hp <= 0)
       *set combat_boom_last_text "$!{combat_enemy_epithet} moves, and the thunder along them breaks loose in a hammering crack that finishes the work."
-      *set combat_boom_last_banner "[b][⚡ Booming Blade: ${combat_player_dmg_dealt} Thunder damage${combat_outgoing_dmg_suffix} | 💀 ${combat_enemy_name} Defeated][/b]"
+      *set combat_boom_last_banner "[b][⚡ Booming Blade: ${combat_player_dmg_dealt} Thunder damage${combat_outgoing_dmg_suffix} | @{combat_is_nonlethal 🏳️|💀} ${combat_enemy_name} @{combat_is_nonlethal Beaten|Defeated}][/b]"
       *set combat_boom_killed true
     *else
       *set combat_boom_last_text "$!{combat_enemy_epithet} moves, and the thunder along them breaks loose in a hammering crack."
@@ -923,6 +925,45 @@
   *set combat_enemy_used_sidearm false
   *set feea_i + 1
   *goto fight_enemy_extra_attack_loop
+*return
+
+*comment EXTRA ATTACK ON AN ALLY (3.4a follow-up): fight_enemy_extra_attack's twin for an enemy whose attack an ally intercepts (fight_enemy_ally_attack). The same weapons ("own", "offhand"),
+*comment each strike on its own page for the same reason (the ally attack's dice and text are locked per page), and it stops once the ally is down.
+*label fight_enemy_ally_extra_attack
+*params feaea_slot
+*temp feaea_n ability_extra_attack_n
+*temp feaea_weapon ability_extra_attack_weapon
+*temp feaea_sides ability_extra_attack_sides
+*temp feaea_type ability_extra_attack_type
+*temp feaea_ally combat_intercepting_ally
+*temp feaea_i 1
+*label fight_enemy_ally_extra_attack_loop
+*temp feaea_ally_hp {(("combat_ally" & feaea_ally) & "_hp")}
+*if ((feaea_i <= feaea_n) and (feaea_ally_hp > 0))
+  *if (combat_enemy_weapon_type = "ranged")
+    *page_break Another shot follows…
+  *elseif (feaea_i = 1)
+    *page_break The second blow follows…
+  *else
+    *page_break Another blow follows…
+  *if (feaea_weapon = "own")
+    *gosub fight_sync_target_in
+    *if ((combat_enemy_weapon_type = "ranged") and (combat_ranged_cornered))
+      *gosub fight_enemy_quickdraw
+  *set combat_enemy_atk_save_stat ""
+  *set combat_enemy_atk_save_dc 0
+  *set combat_enemy_atk_save_half false
+  *set combat_enemy_atk_dmg_dice 1
+  *set combat_enemy_save_halved false
+  *if (feaea_weapon = "offhand")
+    *set combat_enemy_dmg_dice_sides feaea_sides
+    *set combat_enemy_dmg_type feaea_type
+  *set combat_enemy_move2_chance 0
+  *gosub_scene combat_dice resolve_enemy_attack_on_ally feaea_ally
+  *gosub_scene combat_prose fight_narrate_ally_attack "enemy" feaea_slot "ally" feaea_ally combat_enemy_atk_on_ally_hit
+  *set combat_enemy_used_sidearm false
+  *set feaea_i + 1
+  *goto fight_enemy_ally_extra_attack_loop
 *return
 
 *label fight_cleanup
@@ -2398,13 +2439,17 @@
   *gosub_scene combat_dice resolve_player_weapon_hit
   *set combat_roa_last_dmg_roll_banner combat_player_dmg_roll_banner
   *if (combat_enemy_hp <= 0)
-    *set combat_roa_last_line "$!{combat_enemy_epithet} takes the opening and drops, cut down mid-retreat."
-    *set combat_roa_last_banner "[b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]"
+    *comment A non-lethal foe yields here, as every finishing blow does in a non-lethal fight.
+    *if (combat_is_nonlethal)
+      *set combat_roa_last_line "You catch ${combat_enemy_epithet} pulling back, and the blow takes the fight out of them. They stumble to a halt and show you empty hands."
+    *else
+      *set combat_roa_last_line "You catch ${combat_enemy_epithet} pulling back, and the blow drops them mid-retreat."
+    *set combat_roa_last_banner "[b][@{combat_is_nonlethal 🏳️|💀} ${combat_enemy_name} @{combat_is_nonlethal Beaten|Defeated}: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]"
   *elseif (combat_weapon_blocked)
-    *set combat_roa_last_line "You catch ${combat_enemy_epithet} pulling back, and your ${weapon} lands true, then skates off the hide as if it had struck stone."
+    *set combat_roa_last_line "You catch ${combat_enemy_epithet} pulling back and land a clean blow with your ${weapon}, but the hit glances away as though you had struck stone."
     *set combat_roa_last_banner "[b][🚫 ${combat_enemy_name} is immune to ${combat_weapon_defense_text} | ${combat_player_dmg_dealt} damage][/b]"
   *else
-    *set combat_roa_last_line "You catch ${combat_enemy_epithet} pulling back, and the opening costs it."
+    *set combat_roa_last_line "You catch ${combat_enemy_epithet} pulling back, and the opening costs them."
     *set combat_roa_last_banner "[b][🩸 Opportunity Attack Hits: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]"
 *else
   *set combat_roa_last_line "$!{combat_enemy_epithet} breaks away before you can make the opening count."
@@ -4837,7 +4882,7 @@
         *if (combat_enemy_hp <= 0)
           ${fdh}
           *line_break
-          [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Fire damage${combat_outgoing_dmg_suffix}][/b]
+          [b][@{combat_is_nonlethal 🏳️|💀} ${combat_enemy_name} @{combat_is_nonlethal Beaten|Defeated}: ${combat_player_dmg_dealt} Fire damage${combat_outgoing_dmg_suffix}][/b]
         *else
           ${fsh}
           *line_break
@@ -4878,7 +4923,7 @@
         *if (combat_enemy_hp <= 0)
           ${fdh}
           *line_break
-          [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Cold damage${combat_outgoing_dmg_suffix}][/b]
+          [b][@{combat_is_nonlethal 🏳️|💀} ${combat_enemy_name} @{combat_is_nonlethal Beaten|Defeated}: ${combat_player_dmg_dealt} Cold damage${combat_outgoing_dmg_suffix}][/b]
         *else
           ${fsh}
           *line_break
@@ -4955,7 +5000,7 @@
         *if (combat_enemy_hp <= 0)
           ${fdh}
           *line_break
-          [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Lightning damage${combat_outgoing_dmg_suffix}][/b]
+          [b][@{combat_is_nonlethal 🏳️|💀} ${combat_enemy_name} @{combat_is_nonlethal Beaten|Defeated}: ${combat_player_dmg_dealt} Lightning damage${combat_outgoing_dmg_suffix}][/b]
         *elseif (combat_enemy_metal_armor)
           Blue-white lightning discharges from your palm and leaps hungrily to the iron on ${combat_enemy_epithet}, arcing through every buckle and plate in one violent convulsion.
           *line_break
@@ -5007,7 +5052,7 @@
         *if (combat_enemy_hp <= 0)
           ${fdh}
           *line_break
-          [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Force damage${combat_outgoing_dmg_suffix}][/b]
+          [b][@{combat_is_nonlethal 🏳️|💀} ${combat_enemy_name} @{combat_is_nonlethal Beaten|Defeated}: ${combat_player_dmg_dealt} Force damage${combat_outgoing_dmg_suffix}][/b]
         *else
           ${fsh}
           *line_break
@@ -5049,7 +5094,7 @@
         *if (combat_enemy_hp <= 0)
           ${fdh}
           *line_break
-          [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Necrotic damage${combat_outgoing_dmg_suffix}][/b]
+          [b][@{combat_is_nonlethal 🏳️|💀} ${combat_enemy_name} @{combat_is_nonlethal Beaten|Defeated}: ${combat_player_dmg_dealt} Necrotic damage${combat_outgoing_dmg_suffix}][/b]
         *else
           ${fsh}
           *line_break
@@ -5094,7 +5139,7 @@
         *if (combat_enemy_hp <= 0)
           ${fdh}
           *line_break
-          [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Psychic damage${combat_outgoing_dmg_suffix}][/b]
+          [b][@{combat_is_nonlethal 🏳️|💀} ${combat_enemy_name} @{combat_is_nonlethal Beaten|Defeated}: ${combat_player_dmg_dealt} Psychic damage${combat_outgoing_dmg_suffix}][/b]
         *else
           ${fsh}
           *line_break
@@ -5122,7 +5167,7 @@
         *if (combat_enemy_hp <= 0)
           ${fdh}
           *line_break
-          [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Poison damage${combat_outgoing_dmg_suffix}][/b]
+          [b][@{combat_is_nonlethal 🏳️|💀} ${combat_enemy_name} @{combat_is_nonlethal Beaten|Defeated}: ${combat_player_dmg_dealt} Poison damage${combat_outgoing_dmg_suffix}][/b]
         *else
           ${fsh}
           *line_break
@@ -5856,7 +5901,8 @@ You press the gnarled heart to your chest. It beats once against your palm, slow
 *set check_add_prof_bonus true
 *gosub combat_hidden_attack_roll
 *comment Unless the foe is stunned (just lost a turn, or still has some to lose) or at half health, the curse fights the brooch.
-*if (((fst_stun <= 0) and (combat_round > (fst_stun_round + 1))) and (not(combat_silver_bloodied)))
+*comment A foe that has never lost a turn (stun_last_round 0) is not stunned, in round 1 too.
+*if (((fst_stun <= 0) and ((fst_stun_round = 0) or (combat_round > (fst_stun_round + 1)))) and (not(combat_silver_bloodied)))
   *set disadvantage true
 *gosub_scene dice_engine roll_d20_check
 *set combat_silver_hit false
@@ -5986,7 +6032,7 @@ You pull the stopper and hurl the philter at ${combat_enemy_epithet}.
       The glass shatters, and the sticky fire spreads across ${combat_throw_epithet} before they can beat it out.
   *line_break
   *if (combat_enemy_hp <= 0)
-    [b][💀 ${combat_throw_name} Defeated: ${combat_player_dmg_dealt} Fire damage${combat_outgoing_dmg_suffix}][/b]
+    [b][@{combat_is_nonlethal 🏳️|💀} ${combat_throw_name} @{combat_is_nonlethal Beaten|Defeated}: ${combat_player_dmg_dealt} Fire damage${combat_outgoing_dmg_suffix}][/b]
   *else
     [b][🔥 Alchemist's Fire: Hit | ${combat_player_dmg_dealt} Fire damage${combat_outgoing_dmg_suffix}@{combat_throw_greased  (the grease caught, +2)|}][/b]
     *line_break
@@ -6525,7 +6571,7 @@ ${combat_dw_dmg_banner}
 *if (combat_dw_killed)
   ${fdh}
   *line_break
-  [b][💀 ${combat_dw_target_name} Defeated: ${combat_dw_dmg} Psychic Damage${combat_dw_suffix}][/b]
+  [b][@{combat_is_nonlethal 🏳️|💀} ${combat_dw_target_name} @{combat_is_nonlethal Beaten|Defeated}: ${combat_dw_dmg} Psychic Damage${combat_dw_suffix}][/b]
 *elseif (combat_dw_failed)
   ${fsh}
   *line_break
@@ -6614,7 +6660,7 @@ ${combat_dw_dmg_banner}
   *if (combat_enemy_hp <= 0)
     ${fdh}
     *line_break
-    [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} Poison damage${combat_outgoing_dmg_suffix}][/b]
+    [b][@{combat_is_nonlethal 🏳️|💀} ${combat_enemy_name} @{combat_is_nonlethal Beaten|Defeated}: ${combat_player_dmg_dealt} Poison damage${combat_outgoing_dmg_suffix}][/b]
   *else
     ${fsh}
     *line_break
@@ -6804,7 +6850,7 @@ ${fsh}
           *gosub_scene combat_prose pick_spell_death_flavor
           ${fdh}
           *line_break
-          [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} $!{frpa_type} damage${combat_outgoing_dmg_suffix}][/b]
+          [b][@{combat_is_nonlethal 🏳️|💀} ${combat_enemy_name} @{combat_is_nonlethal Beaten|Defeated}: ${combat_player_dmg_dealt} $!{frpa_type} damage${combat_outgoing_dmg_suffix}][/b]
         *else
           [b][${frpa_icon} ${frpa_word} at ${combat_enemy_name}: Hit | ${combat_player_dmg_dealt} $!{frpa_type} damage${combat_outgoing_dmg_suffix}][/b]
           *if (combat_repel_result = 1)
@@ -7074,13 +7120,13 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
             You strike from an opening ${combat_enemy_epithet} never saw coming, driving your ${weapon} into an exposed weak point for a vicious, precise strike.
     *line_break
     *if (combat_enemy_hp <= 0)
-      [b][🗡️ Sneak Attack | 💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
+      [b][🗡️ Sneak Attack | @{combat_is_nonlethal 🏳️|💀} ${combat_enemy_name} @{combat_is_nonlethal Beaten|Defeated}: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
     *else
       [b][🗡️ Sneak Attack | 🩸 Hit: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
   *elseif (combat_enemy_hp <= 0)
     ${fdh}
     *line_break
-    [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
+    [b][@{combat_is_nonlethal 🏳️|💀} ${combat_enemy_name} @{combat_is_nonlethal Beaten|Defeated}: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]
   *elseif (combat_weapon_blocked)
     ${combat_flavor_weapon_blocked}
     *line_break
@@ -7106,7 +7152,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
           The burning cord catches on ${combat_enemy_epithet} and flares higher.
         *line_break
         *if (combat_enemy_hp <= 0)
-          [b][🔥 Fire Arrow: +${combat_arrow_dealt} Fire damage${combat_arrow_suffix} | 💀 ${combat_enemy_name} Defeated][/b]
+          [b][🔥 Fire Arrow: +${combat_arrow_dealt} Fire damage${combat_arrow_suffix} | @{combat_is_nonlethal 🏳️|💀} ${combat_enemy_name} @{combat_is_nonlethal Beaten|Defeated}][/b]
         *else
           [b][🔥 Fire Arrow: +${combat_arrow_dealt} Fire damage${combat_arrow_suffix}@{combat_arrow_grease  (the grease caught, +2)|}][/b]
           *if (combat_arrow_burn)
@@ -7121,7 +7167,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
           The arrowhead shatters into white splinters, and ice crackles across ${combat_enemy_epithet}.
         *line_break
         *if (combat_enemy_hp <= 0)
-          [b][❄️ Ice Arrow: +${combat_arrow_dealt} Cold damage${combat_arrow_suffix} | 💀 ${combat_enemy_name} Defeated][/b]
+          [b][❄️ Ice Arrow: +${combat_arrow_dealt} Cold damage${combat_arrow_suffix} | @{combat_is_nonlethal 🏳️|💀} ${combat_enemy_name} @{combat_is_nonlethal Beaten|Defeated}][/b]
         *else
           [b][❄️ Ice Arrow: +${combat_arrow_dealt} Cold damage${combat_arrow_suffix} | ⚠️ Slowed — ${combat_enemy_epithet} can't Dash on its next turn][/b]
   *else
@@ -7216,15 +7262,16 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *goto fight_attack_spent
 *goto fight_action_spent
 
-*comment UNDEAD FORTITUDE (2026-10-31, the user: RAW). When the player's damage drops a zombie (library type "zombie") to 0 HP it makes a Constitution save with a DC of 5 + the damage taken, and on a success stays up at 1 HP instead. It is skipped when the damage is radiant or the
+*comment UNDEAD FORTITUDE (2026-10-31, the user: RAW). When the player's damage drops an enemy holding the undead_fortitude trait (the zombie type's default ability) to 0 HP it makes a Constitution save with a DC of 5 + the damage taken, and on a success stays up at 1 HP instead. It is skipped when the damage is radiant or the
 *comment attack roll was a natural 20 (combat_hit_nat20; the engine has no extra critical-hit damage, so a natural 20 is the critical hit here). It triggers every time the zombie reaches 0 HP. Called from fight_check_enemy_hp, the shared tail of every player damage option, before the HP is
 *comment synced out, so the one hook covers weapons, sidearms and every damage spell. NOT covered yet: damage from an ally, a thrown item or a start-of-turn effect (they do not pass through that tail). The save is guarded by a once-per-page lock; the one line of text it prints is combat_fort_banner.
 *label fight_undead_fortitude_roll
-*temp uf_type {(("combat_enemy" & combat_active_target) & "_flavor_type")}
 *if (not(combat_fort_locked)) or (not(locked_combat_fort_page_id = page_id))
   *set combat_fort_banner ""
   *set combat_fort_shown false
-  *if ((uf_type = "zombie") and (combat_enemy_hp <= 0))
+  *comment The rule belongs to whoever holds the undead_fortitude trait (3.4a step 5; the zombie type's default), not to the zombie type itself.
+  *gosub_scene combat_abilities ability_has_trait combat_active_target "undead_fortitude"
+  *if ((ability_has_trait_result) and (combat_enemy_hp <= 0))
     *if ((combat_hit_nat20) or ((combat_player_dmg_type = "radiant") or (combat_player_extra_dmg_type = "radiant")))
       *set combat_fort_banner "[b][💀 Undead Fortitude cannot save ${combat_enemy_epithet} from that blow.][/b]"
     *else
@@ -7493,7 +7540,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *elseif (combat_enemy_hp <= 0)
   The thorns close tight, and ${combat_enemy_epithet} goes still in the vines.
   *line_break
-  [b][🌿 ${combat_enemy_name} takes ${crt_dealt} piercing damage from the thorns${combat_outgoing_dmg_suffix} | 💀 Defeated][/b]
+  [b][🌿 ${combat_enemy_name} takes ${crt_dealt} piercing damage from the thorns${combat_outgoing_dmg_suffix} | @{combat_is_nonlethal 🏳️ Beaten|💀 Defeated}][/b]
   *line_break
   *set combat_burn_killed true
 *else
@@ -7608,7 +7655,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *if (combat_enemy_hp <= 0)
   The fire finishes ${combat_enemy_epithet}, and it drops, still burning.
   *line_break
-  [b][🔥 ${combat_enemy_name} burns: ${cb_dealt} Fire damage${combat_outgoing_dmg_suffix} | 💀 Defeated][/b]
+  [b][🔥 ${combat_enemy_name} burns: ${cb_dealt} Fire damage${combat_outgoing_dmg_suffix} | @{combat_is_nonlethal 🏳️ Beaten|💀 Defeated}][/b]
   *line_break
   *set combat_burn_killed true
 *else
@@ -8342,6 +8389,11 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *gosub fight_enemy_quickdraw
 *gosub_scene combat_dice resolve_enemy_attack_on_ally combat_intercepting_ally
 *gosub_scene combat_prose fight_narrate_ally_attack "enemy" feaa_slot "ally" combat_intercepting_ally combat_enemy_atk_on_ally_hit
+*comment An extra_attack ability (3.4a) follows the first blow at the intercepting ally too, as it does at the player (fight_enemy_extra_attack). Not after a cast.
+*if (combat_enemy_cast_spell = "")
+  *gosub_scene combat_abilities ability_extra_attacks feaa_slot
+  *if (ability_extra_attack_n > 0)
+    *gosub fight_enemy_ally_extra_attack feaa_slot
 *set combat_enemy_cast_spell ""
 *set combat_enemy_cast_place 0
 *set combat_enemy_used_sidearm false
@@ -9490,14 +9542,12 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 
 *label fight_dev_secondary_damage_test
 *comment Dev-only proof fixture for independently typed damage: a lacedon's claws deal their ordinary slashing
-*comment damage plus 1d2+3 poison. No story encounter uses this rider yet.
+*comment damage plus 1d2+3 poison (the Venom-Laced Claws rider, tools/ability_book.json).
 *set combat_is_nonlethal false
 *set combat_lib_1 "lacedon"
 *set combat_enemy_name_override "Venom-Laced Lacedon"
 *set combat_enemy_epithet_override "the venom-laced lacedon"
-*set combat_enemy_extra_dmg_dice_sides 2
-*set combat_enemy_extra_dmg_bonus 3
-*set combat_enemy_extra_dmg_type "poison"
+*set combat_enemy_ability_1_override "venom_laced_claws"
 *goto fight_library
 
 *label fight_dev_ally_ranged_test

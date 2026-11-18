@@ -451,9 +451,11 @@ ${combat_player_dmg_roll_banner}
       *set cwh_ff_die spell_roll_total
     *else
       *rand cwh_ff_die 1 favored_foe_die_sides
-    *gosub adjust_outgoing_damage_packet cwh_ff_die "force"
+    *comment The type is the spell's data (tools/spell_book.json); the die is the ranger's favored_foe_die_sides.
+    *gosub_scene combat_spells spell_facts_load "hunters_mark"
+    *gosub adjust_outgoing_damage_packet cwh_ff_die spell_fact_dmg_type
     *set combat_player_dmg_dealt + combat_packet_damage
-    *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} [b][+ ${cwh_ff_die} force (Hunter's Mark) = ${combat_packet_damage}${combat_packet_suffix}][/b]"
+    *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} [b][+ ${cwh_ff_die} ${spell_fact_dmg_type} (Hunter's Mark) = ${combat_packet_damage}${combat_packet_suffix}][/b]"
   *comment The only current source of this rider, Absorb Elements, is melee-only, RAW -- not(weapon_type = "ranged")
   *comment keeps a ranged weapon hit from spending it, so it survives to wait for an actual melee swing. One-shot:
   *comment sides resets to 0 the instant it fires, so it never carries past the single hit it was meant for.
@@ -986,7 +988,7 @@ ${combat_player_dmg_roll_banner}
       *else
         *set rb_note " (saved, half)"
       *if (combat_enemy_hp <= 0)
-        *set combat_rebuke_banner "[b][🔥 Hellish Rebuke: ${rb_dice} = ${rb_total}, ${combat_player_dmg_dealt} fire damage${combat_outgoing_dmg_suffix}${rb_note} | 💀 ${combat_enemy_name} Defeated][/b]"
+        *set combat_rebuke_banner "[b][🔥 Hellish Rebuke: ${rb_dice} = ${rb_total}, ${combat_player_dmg_dealt} fire damage${combat_outgoing_dmg_suffix}${rb_note} | @{combat_is_nonlethal 🏳️|💀} ${combat_enemy_name} @{combat_is_nonlethal Beaten|Defeated}][/b]"
       *else
         *set combat_rebuke_banner "[b][🔥 Hellish Rebuke: ${rb_dice} = ${rb_total}, ${combat_player_dmg_dealt} fire damage${combat_outgoing_dmg_suffix}${rb_note}][/b]"
   *set {cea_lockname} true

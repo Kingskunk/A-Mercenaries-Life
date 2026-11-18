@@ -25,6 +25,7 @@ var PROSE_FILE = path.join(SCENES, "combat_prose.txt");
 var CATALOG = JSON.parse(fs.readFileSync(path.join(__dirname, "enemy_catalog.json"), "utf8"));
 var CHECK = process.argv.indexOf("--check") !== -1;
 var types = CATALOG.types;
+var ABILITY_BOOK = JSON.parse(fs.readFileSync(path.join(__dirname, "ability_book.json"), "utf8")).abilities;
 
 // ---------------------------------------------------------------- validation
 var ABILITIES = ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"];
@@ -71,13 +72,9 @@ types.forEach(function (t) {
     if (!Array.isArray(r) || r.length !== 2 || !isInt(r[0]) || !isInt(r[1]) || r[0] > r[1] || r[0] < 1 || r[1] > 30) bad(t, "abilities." + k + " must be [low, high]");
   });
   Object.keys(t.abilities || {}).forEach(function (k) { if (ABILITIES.indexOf(k) === -1) bad(t, "unknown ability '" + k + "'"); });
-  if (t.move2) {
-    var m = t.move2;
-    if (!isInt(m.chance) || m.chance < 1 || m.chance > 100) bad(t, "move2.chance must be a percent from 1 to 100");
-    ["atk_bonus", "dice", "dmg_bonus"].forEach(function (k) { if (!isInt(m[k])) bad(t, "move2." + k + " must be a whole number"); });
-    dmgType(t, "move2", m.dmg_type);
-    if (m.condition && (!m.condition.name || !m.condition.icon)) bad(t, "move2.condition needs a name and an icon");
-  }
+  // A type's special move or rule is an assigned ability (COMBAT_ENGINE_PLAN.md 3.4a): default_ability names a tools/ability_book.json id, which goes into ability slot 3.
+  if (t.move2 !== undefined) bad(t, "move2 is retired: name an attack_variant in tools/ability_book.json as default_ability");
+  if (t.default_ability !== undefined && !ABILITY_BOOK[t.default_ability]) bad(t, "default_ability '" + t.default_ability + "' is not in tools/ability_book.json");
   if (t.sidearm) {
     var s = t.sidearm;
     var SAVE_ABILITIES = ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"];
@@ -129,18 +126,9 @@ function genTypeLabel(t) {
   L.push(set("dmg_type", q(t.attack.dmg_type)));
   // weapon_type must be written before apply_derived_combat_bonuses, which reads it to pick DEX over STR.
   if (t.attack.weapon_type !== "melee") L.push(set("weapon_type", q(t.attack.weapon_type)));
-  if (t.move2) {
-    var m = t.move2;
-    L.push(set("move2_chance", m.chance));
-    L.push(set("move2_atk_bonus", m.atk_bonus));
-    L.push(set("move2_dmg_dice_sides", m.dice));
-    L.push(set("move2_dmg_bonus", m.dmg_bonus));
-    L.push(set("move2_dmg_type", q(m.dmg_type)));
-    if (m.condition) {
-      L.push(set("move2_inflicts_condition", "true"));
-      L.push(set("move2_condition_name", q(m.condition.name)));
-      L.push(set("move2_condition_icon", q(m.condition.icon)));
-    }
+  if (t.default_ability !== undefined) {
+    if (ABILITY_BOOK[t.default_ability].kind === "attack_variant") L.push("*comment Its special move is an assigned ability (3.4a): the type default in ability slot 3, loaded into move2_* by combat_abilities ability_refresh_variant.");
+    L.push("*gosub_scene combat_abilities ability_type_default " + q(t.default_ability));
   }
   // Proficiency before the derived bonuses (apply_derived_combat_bonuses adds it to the attack roll). Slot 1's is also written to its numbered
   // combat_enemy1_ slot, where Intimidate reads it, like resolve.

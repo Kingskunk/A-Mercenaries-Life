@@ -459,7 +459,8 @@
 *comment Whether ANY living enemy is Engaged with the player (range 0), into combat_any_engaged. In 5e a ranged attack has disadvantage when a hostile creature is within 5 feet of the attacker,
 *comment whatever the attack is aimed at, so the close-combat penalty reads this and not just the target's own distance (found 2026-10-02: Ray of Frost at a Close rat took no penalty with two
 *comment rats Engaged). Read-only apart from the one flag, so it is safe to call from any option body or a replay.
-*comment The target itself counts when it is Engaged. A paralyzed enemy (Hold Person) is incapacitated and spoils no shot, RAW, so it is skipped.
+*comment The target itself counts when it is Engaged. A paralyzed enemy (Hold Person) or a stunned one is incapacitated and spoils no shot, RAW, so it is skipped. Stunned is read
+*comment as combat_dice.txt combat_attack_edge reads it: turns still to lose, or the round after its last lost turn.
 *label combat_check_engaged
 *set combat_any_engaged false
 *temp cce_i 1
@@ -468,6 +469,10 @@
   *temp cce_hp {(("combat_enemy" & cce_i) & "_hp")}
   *temp cce_range {(("combat_enemy" & cce_i) & "_range")}
   *temp cce_para {(("combat_enemy" & cce_i) & "_paralyzed")}
+  *temp cce_stun {(("combat_enemy" & cce_i) & "_stunned")}
+  *temp cce_stun_last {(("combat_enemy" & cce_i) & "_stun_last_round")}
+  *if ((cce_stun > 0) or ((cce_stun_last > 0) and (combat_round <= (cce_stun_last + 1))))
+    *set cce_para 1
   *if (((cce_hp > 0) and (cce_range <= 0)) and (cce_para <= 0))
     *set combat_any_engaged true
   *set cce_i + 1

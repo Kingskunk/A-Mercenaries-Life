@@ -73,7 +73,7 @@
         var out;
         if (truthy(s.tm_inn_seen)) {
           out = [
-            "A broad-shouldered woman with a grey-shot braid and a weathered face, the old scars of rope burns pale along both forearms, who stands behind the plank counter with a ring of keys at her belt. When you met her, she asked whether you needed a bed, food or room in the yard, and told you to mention an animal first."
+            "A broad-shouldered human woman in her late forties with a long iron-grey braid and a weathered, wind-tanned face, her pale rope-burn scars showing along both forearms from eleven years hauling freight. Wearing a dark forest-green wool kirtle under a bleached-linen apron with a ring of brass keys at her belt, she stands behind the plank counter watching the yard. When you met her, she asked whether you needed a bed, food or room in the yard, and told you to mention an animal first."
           ];
         } else if (truthy(s.hale_ring_cassia_spoken)) {
           out = [
@@ -119,7 +119,7 @@
       unlock: "tm_roan_seen",
       body: function (s) {
         var out = [
-          "A square-built woman with cropped iron-grey hair and two old breaks in her left hand that set crooked. She works at a bench with a half-built wheel clamped before her, and pale curls of fresh wood cling to her apron."
+          "A square-built, muscular human woman in her mid-fifties with cropped bristling iron-grey hair, flint-grey eyes, and two old breaks in her left fingers that set crooked. Wearing a heavy split-cowhide work apron dusted with pale wood shavings over an undyed smock, she works at a bench with a half-built wheel clamped before her."
         ];
         if (truthy(s.tm_works_talk_ash)) {
           out.push("She judges ash by sight and by sound: straight grain, run out nowhere, rings close together. Ash that grew fast looks as good as slow-grown wood, she says, and breaks like a carrot under load. She holds a stave to the ear and raps it to hear whether it is sound.");
@@ -172,7 +172,7 @@
       tags: ["Barleycross"], aliases: ["Wenna", "Hart", "village head"],
       unlock: "bc_head_seen",
       body: [
-        "A halfling woman in a worn sheepskin waistcoat, usually found on the bench outside the Gathering Hall with a folded packet of household papers across her knee and a cold pipe between her teeth. She says she is village head because nobody else would take it.",
+        "A robust, apple-cheeked halfling woman in her early fifties with curly honey-brown hair salted with silver, wearing a worn sheepskin waistcoat over an ochre skirt. She is usually found on the bench outside the Gathering Hall with a folded packet of household papers across her knee, mud-dusted clogs swinging, and a cold cherrywood pipe between her teeth. She says she is village head because nobody else would take it.",
         "Her division is plain: village business belongs in the Hall, while idling belongs by the pond. Both, she says, keep people busy."
       ],
       see: ["barleycross"]
@@ -186,7 +186,7 @@
       unlock: "peddler_met_wife",
       body: function (s) {
         var out = [
-          "Aldis Pellam's wife, who lives with her young daughter in the last cottage on the Barleycross Lane. She held herself steady while seeking word of Aldis, a gatherer who went deep into the Longshade with Marr and Joss to collect plants for Port Valen's apothecaries."
+          "Aldis Pellam's wife, a slender, weary human woman in her early thirties with pale strained skin, dull flaxen hair in a loose bun, and haunted grey-blue eyes. Wearing a faded brown homespun work dress under a heavily patched unbleached apron, she lives with her young daughter in the last cottage on the Barleycross Lane. She held herself steady while seeking word of Aldis, a gatherer who went deep into the Longshade with Marr and Joss to collect plants for Port Valen's apothecaries."
         ];
         if (s.peddler_stage === "active") {
           out.push("She does not expect anyone to bring them back. She wants to know where their journey ended, and whether it was quick.");
@@ -229,7 +229,7 @@
       tags: ["Ashrun Holt"], aliases: ["Lysa", "Thorn", "speaker"],
       unlock: "ah_speaker_seen",
       body: [
-        "The speaker at Ashrun Holt's Longhouse: a narrow, upright woman with a long silver-brown braid and resin-dark fingertips, who keeps a flat wooden map case under one arm. When a visitor needs something from the village, she hears it and takes it to the households concerned. She studies the Longhouse's board of knotted cords."
+        "The speaker at Ashrun Holt's Longhouse: a tall, blade-straight human woman in her mid-forties with high cheekbones, sun-bronzed skin, and dark forest-amber eyes. A thick silver-brown plait hangs to her waist, and her resin-dark fingertips hold a flat waxed-pine map case under one arm. When a visitor needs something from the village, she hears it and takes it to the households concerned. She studies the Longhouse's board of knotted cords."
       ],
       see: ["ashrun_holt"]
     },
@@ -263,7 +263,7 @@
       tags: ["Timbermouth"], aliases: ["storekeeper", "shopkeeper"],
       unlock: "tm_marlow_seen",
       body: [
-        "A lean man in shirtsleeves with ink on his fingers and a pencil tucked behind each ear, who weighs everything on a hanging scale and finishes a reading before he looks up. He sells by the pound, the yard or the pint."
+        "A lean, slightly stooped human man in his early forties with straight mousy-brown hair parted on the side, an alert calculating gaze, and a shaved carpenter's pencil tucked behind each ear. In rolled-up shirtsleeves and a canvas apron with ink-stained fingers, he weighs everything on a hanging scale and finishes a reading before he looks up. He sells by the pound, the yard or the pint."
       ],
       see: ["marlows_store"]
     }

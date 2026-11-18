@@ -78,7 +78,7 @@
       unlock: "met_ox_head",
       body: function (s) {
         var out = [
-          "The village head of [[oxworth|Oxworth]], a broad-shouldered human man in his late fifties with a grey-stubbled jaw, wind-reddened neck, and rope-scarred knuckles. A stiff leather brace wraps his left forearm, and a brass-tipped, notched ash stick rests beside his elbow on the oak counter.",
+          "The village head of [[oxworth|Oxworth]], a broad-shouldered, barrel-chested human man in his late fifties with a weathered, wind-reddened face, a heavy square jaw covered in coarse grey stubble, and steady grey eyes. A stiff leather brace wraps his crushed left forearm beneath a buttoned dark wool vest, and a brass-tipped, notched ash stick rests beside his rope-scarred knuckles on the oak counter.",
           "Blunt, steady, and plainspoken without ceremony, he sits in the public hall handling Oxworth's fence disputes, brand counts, and road postings."
         ];
         if (truthy(s.ox_hl_asked_post)) {
@@ -108,7 +108,7 @@
       unlock: "met_sigrin",
       body: function (s) {
         var out = [
-          "The broad-shouldered dwarf innkeeper of [[oxworth|The Yoke & Horn]], wearing dark-grey hair braided tight behind her ears and a heavy leather-trimmed apron over her woollen tunic, with ink stains on her thumb from tallying receipts.",
+          "The broad-shouldered, compact dwarf innkeeper of [[oxworth|The Yoke & Horn]] in her early sixties, with a hearty ruddy complexion, a cleft chin, and discerning dark brown eyes that size up strangers like steer ribs. Wearing thick dark-grey hair braided tight in twin plaits behind her ears and a heavy leather-trimmed apron over a green woollen tunic, she keeps an iron key ring and chalk tally slate at her hip, with ink stains on her thumb from counting receipts.",
           "Brisk, practical, and good-humoured without idle chatter, she measures strangers the way a buyer eyes ribs in the pens, yet still sets a dish of pickled turnip slices on the house at a first proper introduction."
         ];
         if (truthy(s.ox_yh_asked_self)) {

@@ -181,6 +181,18 @@
     *set fnet_m2m fft_m2miss
   *set fnet_hit fnet_m2h
   *set fnet_miss fnet_m2m
+*comment RESTRAINED (the player): the ordinary miss lines have you step, duck or roll clear, which a held player cannot do, so a miss on a restrained player is one of these,
+*comment picked from the stored variant (a replay prints the same one). A cast and a save attack keep their own lines. Any foe, melee or ranged, named through the epithet.
+*if (((combat_player_restrained > 0) and (combat_enemy_cast_spell = "")) and (combat_enemy_atk_save_stat = ""))
+  *temp fnet_rv ((fnet_v modulo 4) + 1)
+  *if (fnet_rv = 1)
+    *set fnet_miss "Held fast where you stand, you wrench your shoulders round, and ${combat_enemy_epithet}'s attack skids past at an angle."
+  *elseif (fnet_rv = 2)
+    *set fnet_miss "$!{combat_enemy_epithet} comes at you while you're stuck in place, but you jerk your head aside, and the attack goes by close enough to feel."
+  *elseif (fnet_rv = 3)
+    *set fnet_miss "With nowhere to step, you lean back hard against whatever holds you, and ${combat_enemy_epithet}'s attack falls just short."
+  *else
+    *set fnet_miss "You twist at the waist as far as you can, and ${combat_enemy_epithet}'s attack passes a hand's breadth wide."
 *comment Layout per attacker: the blank line before it (two breaks) leads resolve_enemy_attack's own roll banners
 *comment instead of leading here -- see that label's own comment for why. From here down, each prose line and
 *comment each [b][...] banner still needs its own line: ChoiceScript merges consecutive source lines, so every
@@ -217,7 +229,7 @@
         *gosub pick_spell_death_flavor
         ${fdh}
         *line_break
-        [b][💀 ${combat_enemy_name} Defeated — Killed by Its Own Strike][/b]
+        [b][@{combat_is_nonlethal 🏳️|💀} ${combat_enemy_name} @{combat_is_nonlethal Beaten|Defeated} — @{combat_is_nonlethal Dropped|Killed} by Its Own Strike][/b]
         *line_break
     [b][🩸 ${combat_enemy_name} Hits: ${combat_enemy_dmg_dealt} damage${combat_incoming_dmg_suffix}@{feature_arcane_ward  (Arcane Ward ${arcane_ward_hp} / ${arcane_ward_max})|} | HP: ${hp_current} / ${hp_max}][/b]
     *if (combat_absorb_triggered)
@@ -410,11 +422,11 @@
   *if (fnaa_v = 1)
     *set fnaa_line "$!{combat_attacker_epithet} closes in and lands a solid blow on ${combat_defender_epithet}."
   *if (fnaa_v = 2)
-    *set fnaa_line "$!{combat_attacker_epithet} presses the attack, and the strike catches ${combat_defender_epithet} off guard."
+    *set fnaa_line "$!{combat_attacker_epithet} presses the attack, and the strike catches ${combat_defender_epithet} out of position."
   *if (fnaa_v = 3)
     *set fnaa_line "A quick exchange, and ${combat_attacker_epithet}'s blow connects, staggering ${combat_defender_epithet}."
   *if (fnaa_v = 4)
-    *set fnaa_line "$!{combat_attacker_epithet} drives in past the guard, and the hit lands hard on ${combat_defender_epithet}."
+    *set fnaa_line "$!{combat_attacker_epithet} drives in close, and the hit lands hard on ${combat_defender_epithet}."
   *if (fnaa_v = 5)
     *set fnaa_line "$!{combat_attacker_epithet} finds an opening, and the blow tells on ${combat_defender_epithet}."
   *if (not(fnaa_hit))
@@ -427,7 +439,7 @@
     *if (fnaa_v = 4)
       *set fnaa_line "$!{combat_attacker_epithet} overreaches, and ${combat_defender_epithet} slips the strike."
     *if (fnaa_v = 5)
-      *set fnaa_line "$!{combat_attacker_epithet} can't find a way past ${combat_defender_epithet}'s guard this time."
+      *set fnaa_line "$!{combat_attacker_epithet} probes for an opening on ${combat_defender_epithet} and finds none this time."
 *comment A blow that landed on a target immune to it (2026-10-31): the line says what the fighters see, whichever side struck.
 *if ((fnaa_hit) and (combat_ally_blow_blocked))
   *if (fnaa_v <= 2)

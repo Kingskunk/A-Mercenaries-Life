@@ -4,7 +4,7 @@
 *comment tools/ability_book.json, or ""), each with its uses left this fight (ability_uses_1..3; -1 is unlimited). A fight fills them through
 *comment combat_enemy_ability_K_override (slot 1) or combat_enemyN_ability_K_override, as it fills cast_spell_*; "none" clears a slot.
 *comment Kinds built: extra_attack (Multiattack, Off-hand Knife), action (Net), attack_variant (the eight type special moves, each type's default in slot 3).
-*comment Still to come: on_hit_rider, trait (see the plan).
+*comment on_hit_rider (Venom, Venom-Laced Claws, Stunning Blow). trait (Undead Fortitude).
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *comment Quicktest runs every library scene once from the top. The first label below takes *params, which only exist inside a gosub, so that walk stops here. A real call jumps straight to its label and never runs this line.
@@ -30,6 +30,7 @@
 *set ability_fact_dmg_bonus 0
 *set ability_fact_cond_name ""
 *set ability_fact_cond_icon ""
+*set ability_fact_effect ""
 *if (afl_id = "bleeding_cut")
   *set ability_fact_name "Bleeding Cut"
   *set ability_fact_kind "attack_variant"
@@ -134,6 +135,31 @@
   *set ability_fact_dmg_type "piercing"
   *set ability_fact_cond_name "Poisoned"
   *set ability_fact_cond_icon "🤢"
+*if (afl_id = "stunning_blow")
+  *set ability_fact_name "Stunning Blow"
+  *set ability_fact_kind "on_hit_rider"
+  *set ability_fact_uses (0 - 1)
+  *set ability_fact_effect "stun"
+  *set ability_fact_cond_name "Stunned"
+  *set ability_fact_cond_icon "💫"
+*if (afl_id = "undead_fortitude")
+  *set ability_fact_name "Undead Fortitude"
+  *set ability_fact_kind "trait"
+  *set ability_fact_uses (0 - 1)
+*if (afl_id = "venom")
+  *set ability_fact_name "Venom"
+  *set ability_fact_kind "on_hit_rider"
+  *set ability_fact_uses (0 - 1)
+  *set ability_fact_dmg_dice_sides 4
+  *set ability_fact_dmg_bonus 0
+  *set ability_fact_dmg_type "poison"
+*if (afl_id = "venom_laced_claws")
+  *set ability_fact_name "Venom-Laced Claws"
+  *set ability_fact_kind "on_hit_rider"
+  *set ability_fact_uses (0 - 1)
+  *set ability_fact_dmg_dice_sides 2
+  *set ability_fact_dmg_bonus 3
+  *set ability_fact_dmg_type "poison"
 *comment GEN:END ability_facts_load
 *return
 
@@ -360,4 +386,51 @@
       *set {(arv_p & "move2_condition_icon")} ability_fact_cond_icon
   *set arv_k + 1
   *goto ability_refresh_variant_loop
+*return
+
+*comment ON-HIT RIDERS (3.4a step 4): loads this enemy slot's on_hit_rider abilities into the fields the hit resolvers read as they always have (combat_dice.txt
+*comment resolve_enemy_attack and the ally version): the first rider damage into extra_dmg_* (its own packet after the weapon's), the first stun into inflicts_stun,
+*comment stun_name and stun_icon. A slot holding no rider keeps the fields it has, so a test can still set them by hand; fight_cleanup clears them after every fight.
+*comment Called with ability_refresh_variant, once a slot's overrides are final (combat.txt fight_setup, apply_slot_stat_override).
+*label ability_refresh_rider
+*params arr_p
+*temp arr_k 1
+*temp arr_dmg false
+*temp arr_stun false
+*label ability_refresh_rider_loop
+*if (arr_k <= 3)
+  *temp arr_id {(arr_p & ("ability_" & arr_k))}
+  *temp arr_uses {(arr_p & ("ability_uses_" & arr_k))}
+  *if ((not(arr_id = "")) and (not(arr_uses = 0)))
+    *gosub ability_facts_load arr_id
+    *if (ability_fact_kind = "on_hit_rider")
+      *if ((ability_fact_dmg_dice_sides > 0) and (not(arr_dmg)))
+        *set arr_dmg true
+        *set {(arr_p & "extra_dmg_dice_sides")} ability_fact_dmg_dice_sides
+        *set {(arr_p & "extra_dmg_bonus")} ability_fact_dmg_bonus
+        *set {(arr_p & "extra_dmg_type")} ability_fact_dmg_type
+      *if ((ability_fact_effect = "stun") and (not(arr_stun)))
+        *set arr_stun true
+        *set {(arr_p & "inflicts_stun")} true
+        *set {(arr_p & "stun_name")} ability_fact_cond_name
+        *set {(arr_p & "stun_icon")} ability_fact_cond_icon
+  *set arr_k + 1
+  *goto ability_refresh_rider_loop
+*return
+
+*comment TRAITS (3.4a step 5): does enemy slot aht_slot hold the trait aht_id (in any of its three ability slots, with uses left)? The answer is ability_has_trait_result.
+*comment The engine asks where the rule applies: Undead Fortitude in combat.txt fight_undead_fortitude_roll.
+*label ability_has_trait
+*params aht_slot aht_id
+*temp aht_p (("combat_enemy" & aht_slot) & "_")
+*set ability_has_trait_result false
+*temp aht_k 1
+*label ability_has_trait_loop
+*if ((aht_k <= 3) and (not(ability_has_trait_result)))
+  *temp aht_have {(aht_p & ("ability_" & aht_k))}
+  *temp aht_uses {(aht_p & ("ability_uses_" & aht_k))}
+  *if ((aht_have = aht_id) and (not(aht_uses = 0)))
+    *set ability_has_trait_result true
+  *set aht_k + 1
+  *goto ability_has_trait_loop
 *return

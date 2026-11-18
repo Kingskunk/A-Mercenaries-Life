@@ -4664,6 +4664,8 @@ stats = {
   "ability_fact_dmg_bonus": "0",
   "ability_fact_cond_name": "",
   "ability_fact_cond_icon": "",
+  "ability_fact_effect": "",
+  "ability_has_trait_result": "false",
   "combat_enemy0_ability_pick_page": "0",
   "combat_enemy0_ability_pick_place": "0",
   "combat_enemy0_ability_act_page": "0",

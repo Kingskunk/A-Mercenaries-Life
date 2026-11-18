@@ -105,7 +105,7 @@ The 1st-level spells below, which lacked it, now grow with a 2nd-level slot: a "
 - Done (2026-11-18): a restrained creature (Web, Ensnaring Strike, any slot including the player and allies) makes Dexterity saves with disadvantage, in the shared `resolve_save`. The banner reads "(disadvantage, Restrained)" unless another disadvantage already applies. Script: `web_restrained_dex_save_disadvantage`.
 - Done (2026-11-18): AI and webs. A profile with `combat_behavior_hold_at_web` 1 (skirmisher, sharpshooter, caster; the user's call) whose next step toward its target would enter a web waits at the edge instead (`combat_ai_web_balk`, combat_ai.txt; the "holds back from the web" branch in combat_next_turn). The lane is one line, so there is no way around. Bruiser, guardian and feral push through. A foe already in the webs may step out; a ranged foe within reach shoots from where it stands. Scripts: `web_skirmisher_holds_at_edge`, `web_bruiser_pushes_through`.
 
-### 3.4a Assigned abilities (agreed 2026-11-18; design below awaits approval)
+### 3.4a Assigned abilities (agreed 2026-11-18; done 2026-11-18, steps 1-5)
 
 The non-magical twin of assigned spells. A type is a body (HP, AC, scores, weapon, profile); what it can *do* beyond a plain attack comes from up to three ability slots, filled from one catalog, so any body can carry any mix.
 
@@ -138,8 +138,8 @@ The non-magical twin of assigned spells. A type is a body (HP, AC, scores, weapo
 3. Done (2026-11-18): the eight **special moves** are `attack_variant` entries (`feint`, `bleeding_cut`, `poisoned_blade`, `dazing_blow`, `pinning_thrust`, `hook_and_pull`, `hobbling_shot`, `blinding_stone`), each its type's default in ability slot 3 (`ability_type_default`), so a fight's abilities in slots 1 and 2 add to it and `ability_3_override` replaces or clears it. `ability_refresh_variant` writes the slot's `move2_*` fields from the catalog once the slot's attack bonus and overrides are final; the to-hit is the body's attack bonus without its ability modifier (atk_bonus minus dmg_bonus), which is what every type had, and it follows an attack override (the old `so_delta` / `aso_delta` shifts are gone). The picker, sync, sidearm and prose still read `move2_*` as runtime fields, so behavior is unchanged: the whole suite's transcripts were diffed before and after (zero differences), and two seeded scripts that make the moves fire (`ability_special_moves_melee`, `ability_special_moves_reach_ranged`) were run on a worktree of the commit before and on the change, with identical transcripts.
 
    Known issue, found here and older than this step: in `fight_library` with an archer, slinger, spearman and hookman, refreshing the opening page re-rolls slot 1's ability scores (and so its attack and damage bonuses) and, with a melee type in slot 1 and ranged ones after it, its weapon fields. `ability_special_moves_reach_ranged` runs with refresh off until it is fixed. The authored `move2_*` blocks on the types are retired. A special move on a different body uses that body's own move2 flavor lines.
-4. **Riders and stun** become `on_hit_rider` and an effect, and the scenes that set `extra_dmg_*` by hand assign an ability instead.
-5. **Undead Fortitude** becomes a `trait`.
+4. **Riders and stun** become `on_hit_rider` and an effect, and the scenes that set `extra_dmg_*` by hand assign an ability instead. **Done (2026-11-18).** An `on_hit_rider` carries a damage packet (`damage_dice_sides`, `damage_bonus`, `damage_type`), an effect (`effect: "stun"` with `effect_name`, `effect_icon`), or both. `combat_abilities.txt ability_refresh_rider` runs beside `ability_refresh_variant` (slot 1 in fight setup, the others in `apply_slot_stat_override`) and loads the first rider damage into the slot's `extra_dmg_*` and the first stun into `inflicts_stun`, `stun_name`, `stun_icon`; the hit resolvers are unchanged. A slot with no rider keeps its fields, so a test can still set them by hand. Catalog: `venom` (1d4 poison: the Longshade venomous snake and the silt-conduit giant viper, both now `combat_enemy_ability_1_override "venom"`), `venom_laced_claws` (1d2+3 poison, the dev lacedon), `stunning_blow` (stun, 💫 Stunned; no story foe holds it). New script `ability_stunning_blow_stuns_player`.
+5. **Undead Fortitude** becomes a `trait`. **Done (2026-11-18).** `undead_fortitude` is a `trait` in the catalog and the zombie type's default (slot 3). `combat_abilities.txt ability_has_trait <slot> <id>` answers in `ability_has_trait_result`; `combat.txt fight_undead_fortitude_roll` asks it instead of reading the flavor type, so any body can hold the rule and a zombie fight can clear it (`ability_3_override "none"`). The unit scripts give the trait by hand (`combat_enemy1_ability_3`); new script `ability_trait_undead_fortitude_any_body` (a lacedon holding it).
 
 **Decided (the designer, 2026-11-18):**
 
@@ -161,7 +161,7 @@ The non-magical twin of assigned spells. A type is a body (HP, AC, scores, weapo
 
 ### 3.5 Paralyzed and other conditions on the player and allies
 
-Paralyzed has its fields on every combatant, but its effects (lost turn, no reactions, advantage against, failed Strength and Dexterity saves) are wired for enemies only, since only the player casts Hold Person. An enemy caster with Hold Person needs the player and ally side. Related: a stunned creature is also incapacitated, so it should not spoil a ranged shot either (`combat_check_engaged` skips only paralyzed ones).
+Paralyzed has its fields on every combatant, but its effects (lost turn, no reactions, advantage against, failed Strength and Dexterity saves) are wired for enemies only, since only the player casts Hold Person. An enemy caster with Hold Person needs the player and ally side. Done (2026-11-18): a stunned enemy no longer spoils a ranged shot (`combat_movement.txt combat_check_engaged` skips it as it skips a paralyzed one, reading stun as `combat_attack_edge` does).
 
 ### 3.6 Scrolls and enemy use of the 2nd-level spells
 
@@ -178,7 +178,8 @@ An ally has the spell fields (`combat_ally<N>_cast_*`) but no turn step that use
 ### 3.9 Enemy casting gaps
 
 - An enemy only casts when it is within weapon reach. A caster standing back never uses its ranged spells.
-- Enemies and allies make no concentration save when damaged. Only the player does.
+- Enemies and allies make no concentration save when damaged. Only the player does. (Checked 2026-11-18: nothing to save yet, since only the player ever calls `concentration_begin`; build it with the first enemy or ally concentration spell. `concentration_damage_check` already takes any prefix.)
+- Also found 2026-11-18: no story fight gives an enemy a spell yet (only scripts set `cast_spell_*`), and the spell data has no range band an enemy picker can read, so "cast from standing back" needs that first.
 
 ### 3.10 Subclasses and feats
 
@@ -220,8 +221,8 @@ Older open questions:
 
 - A refresh on a targeting prompt page (Magic Missile darts, a healing target) forgets the clicks. Nothing is rolled on those pages, so the player clicks again.
 - The opening page of a fight entered from another scene is not covered by the replay guard. A refresh resumes at the choice instead of re-running the page. The test tool skips those pages.
-- Quality of life, not urgent: a foe beaten into surrender in a non-lethal fight still gets the "💀 Defeated" banner, for every spell and weapon. The line above it reads as a surrender. A different banner for the non-lethal slot would finish the job.
-- A library fight with a beast and a swordsman, or with enemy slot 2 clicked, gives the enemies different ability scores when its first page is refreshed (true at commit `2a3efe1b`, before any spell). Scripts on those fights run without `"refresh"`.
-- Hunter's Mark's damage type ("force") is still typed in `combat_dice.txt`; its die is the ranger's `favored_foe_die_sides`, not data.
+- Fixed (2026-11-18): refreshing a library fight's opening page used to give slot 1 another slot's ability scores, bonuses, weapon and sidearm fields (slot 1 is built in the bare scratch fields, which later syncs on the page overwrite). `combat_types.txt` now restores slot 1's unchanging fields from its own snapshot on a locked replay (`apply_ability_score_range`, `apply_derived_combat_bonuses`, `apply_enemy_type`); 17 scripts that now replay cleanly run with refresh on. Test-tool limit, not a game bug: a script that injects fight overrides (`combat_enemy_hp_override` and the rest) as starting stats fails the refresh check on its first page, because a real scene sets them on that page and re-runs them, while injected stats are already spent; about 88 library-fight scripts run without refresh for that reason.
+- Off-Guard (and every condition that gives "disadvantage on the next d20") also hits the player's next skill check, so a swordsman's feint can spoil a Break Free roll. Settle it in the condition rebalance (the BG3 table in 3.4a).
+- Done (2026-11-18): an enemy whose attack an intercepting ally takes now makes its extra attacks (Multiattack, Off-hand Knife) at that ally (`combat.txt fight_enemy_ally_extra_attack`; script `ability_multiattack_on_intercepting_ally`). The Net needs no ally hook here: it is thrown at Close or Mid-Range, and an intercepting ally is Engaged.
 - Never checked in a real browser: the Web badge art on the lane, and a target click followed by Stats and back.
 - Other surfaces still use the browser's own `title` tooltip beside the themed card: the sidebar's condition chips (Restless, Poisoned, Wounds dressed), the boons (Mage Armor, Shield, False Life), the darts badge and the range tags.

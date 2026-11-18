@@ -30,7 +30,7 @@
       tags: ["Quayside", "Law"], aliases: ["Voss", "Harl", "dockmaster", "customs", "harbor registry"],
       unlock: "pv_quays_seen",
       body: [
-        "A hawk-nosed man with ink-stained thumbs who stands on an upturned cargo crate with a brass seal pinned to his salt-crusted oilskin coat, calling hull numbers down to a runner. He keeps the harbor registry: every hull is logged, and manifests are sealed with red wax before cargo moves.",
+        "A tall, wiry human dockmaster in his early fifties with a severe hawk nose, leathery wind-bitten skin, and piercing slate-grey eyes beneath thinning iron-grey hair. He stands on an upturned cargo crate with an official brass customs badge pinned to his salt-crusted black oilskin longcoat, calling hull numbers down to a runner with ink-stained thumbs. He keeps the harbor registry: every hull is logged, and manifests are sealed with red wax before cargo moves.",
         "He is a customs official, not a Watch officer. His lamp burns in the customs tower window long after the quay shuts, while he audits the next day's tide manifests."
       ],
       see: ["cargo_quay", "weigh_house", "port_watch", "dell"]
@@ -43,7 +43,7 @@
       tags: ["Quayside"], aliases: ["barkeep", "innkeeper", "taphouse"],
       unlock: "pv_tavern_seen",
       body: [
-        "A barrel-chested man with a salt-grey beard and a leather-strapped stump below the left knee. He spent twenty winters hauling logs on the shipwright slips before a snapped crane cable took the lower leg.",
+        "A massive, barrel-chested human in his late fifties with a broad, hearth-reddened face, a flat broken nose, calm sea-grey eyes, and a coarse silver-grey spade beard. He wears a sleeveless buff-leather jerkin over an oatmeal wool shirt, an indigo bar-apron, and an iron-hooped carved oak peg-leg strapped below his left knee. He spent twenty winters hauling logs on the shipwright slips before a snapped crane cable took the lower leg.",
         "He keeps an orderly house: keep the peace and your coin on the wood, and you are as welcome as anyone."
       ],
       see: ["cleaved_keel", "cutter"]
@@ -55,7 +55,7 @@
       tags: ["Quayside"], aliases: ["dice", "gambling", "table-master"],
       unlock: "pv_dice_met",
       body: [
-        "A scarred longshoreman with a missing finger, grease-stained cuffs, and a screeching laugh like gulls fighting over offal. He runs the game at the long trestle by the hearth with a cut-down drinking horn banded in brass, and a chalk circle for the throw.",
+        "A lean, sinewy human longshoreman in his late thirties with a slight stoop, sallow pockmarked skin, a crooked broken nose, a pale knife-scar slicing from cheek to chin, and limp coal-black rat-tails tied back with hemp twine. Shrewd and beady-eyed with a screeching gull-like laugh, his left hand is missing its little finger at the knuckle beneath grease-stained cuffs. He runs the game at the long trestle by the hearth with a cut-down drinking horn banded in brass, and a chalk circle for the throw.",
         "He insists his coin is as good as any porter's."
       ],
       see: ["cleaved_keel", "maret"]
@@ -70,7 +70,7 @@
       // entry follows the same rule.
       unlock: function (s) { return truthy(s.crane_grievance_known) || Number(s.crane_shifts_completed) > 0; },
       body: [
-        "A heavyset man in a salt-stiffened canvas coat who keeps a wax-slated manifest board under one arm like a shield. He runs the day crew at crane three, and the dockmaster sends anyone looking for hauling work to him.",
+        "A hulking, heavyset half-orc gang-boss in his early forties with weathered olive-grey skin, a blunt heavy brow, small lower tusks edging over his lip, and tired amber-brown eyes beneath bristling dark chops. Wearing a salt-stiffened canvas coat, he keeps a wax-slated manifest board under one thick arm like a shield. He runs the day crew at crane three, and the dockmaster sends anyone looking for hauling work to him.",
         "He works to the factor's contract, not the city's: a hold cleared late after the evening bell docks his own pay."
       ],
       see: ["cargo_quay", "voss", "gilded_scales"]
@@ -87,10 +87,10 @@
       unlock: "met_brant",
       body: function (s) {
         var out = [
-          "A master builder at the Iron Wharves, answerable to the Gilded Scales' factor, who is fined for every tide a cradle sits occupied. His apprentices call him Master Brant, and they fear those fines."
+          "A master builder at the Iron Wharves, answerable to the Gilded Scales' factor, who is fined for every tide a cradle sits occupied. A broad-shouldered, stooped human shipwright in his late sixties with a gnarled frame, tangled driftwood-white hair, a bushy beard pitch-stained at the mouth, watery pale-blue eyes under sawdust-caked brows, and iron-heeled bull-hide boots, he works Slipway Two with a short-handled iron testing mallet. His apprentices call him Master Brant, and they fear those fines."
         ];
         if (truthy(s.brant_saw_him)) {
-          out.push("He is an old shipwright in a tar-stained leather apron who works Slipway Two, moving along the ribs of a seventy-foot merchant hull with a short-handled iron mallet and listening to each note.");
+          out.push("He moves along the ribs of a seventy-foot merchant hull with his short-handled mallet, striking the timbers and listening to each note.");
         }
         if (truthy(s.has_rotten_rib_splinter)) {
           out.push("Under his mallet the third rib rings clean iron and the fourth gives back a flat, sodden thud. The oak in Bay Four's delivery was green, and he wants somebody to know it before the ship is launched on it.");
@@ -113,7 +113,7 @@
       unlock: "met_hendryk",
       body: function (s) {
         var out = [
-          "The Gilded Scales' factor at the Iron Wharves. The yard works to his schedule, and the apprentices fear their meal-tokens will be docked if the ways stand idle."
+          "The Gilded Scales' factor at the Iron Wharves: a thickset, portly human merchant in his mid-fifties with an imposing, haughty posture. He has a jowly, pale counting-house complexion, a manicured silver-threaded goatee, and hooded, cold flint-brown eyes. Dressed in a tailored midnight-blue broadcloth doublet with gold river-serpent embroidery and a heavy gold Scales balance-pendant, he runs the yard to a rigid schedule, and the apprentices fear their meal-tokens will be docked if the ways stand idle."
         ];
         if (truthy(s.met_hendryk_office)) {
           out.push("His office is a stone counting-house at the foot of the central slipway, its door hung with a bronze balance-scale, with a gate-runner in river-serpent colors on the step.");
@@ -131,7 +131,7 @@
       unlock: "met_elric",
       body: function (s) {
         var out = [
-          "The clerk who runs the yard office up on stilts behind the sawpits. Every load that passes through the yard gets his initials. Brant's warning about the yard: whatever sits still too long grows legs."
+          "The clerk who runs the yard office up on stilts behind the sawpits: a slender, narrow-shouldered half-elf in his early twenties with high cheekbones, slightly tapered ears peeking through sleek chestnut hair, and nervous pale hazel-amber eyes. He wears a high-collared charcoal vest and brass sleeve-garters over a white shirt with cuffs and fingers permanently dyed with violet iron-gall ink. Every load that passes through the yard gets his initials. Brant's warning about the yard: whatever sits still too long grows legs."
         ];
         if (s.rotten_rib_resolution === "failed") {
           out.push("A waybill carrying Master Hendryk's proof-stamp, which condemned the naval oak as worm-rotten, " + (truthy(s.ysolde_timber_turned_in) ? "went to Ysolde, its red seal whole." : "is in your pouch with its red seal whole.") + " The oak is gone.");
@@ -154,7 +154,7 @@
       unlock: "fish_met_wenna",
       body: function (s) {
         var out = [
-          "A fisherwoman who works the Patience, her late husband's boat, with a boy of about fifteen to help her. Her husband went over the side off the northern banks last spring, and she sells what the boat brings in at the Slip's dawn auction."
+          "A lean, wiry human fisherwoman in her early forties with wind-tangled bronze hair, salt-freckled skin, and defiant stormy sea-green eyes. Wearing a grease-and-salt-stiffened dun linen smock over a faded kirtle, she works the Patience, her late husband's boat, with a boy of about fifteen to help her. Her husband went over the side off the northern banks last spring, and she sells what the boat brings in at the Slip's dawn auction."
         ];
         if (s.fish_resolution === "lawful") {
           out.push("With three buyers struck off the block, her catch now sells for a fair price.");
@@ -178,7 +178,7 @@
       unlock: "fish_met_wenna",
       body: function (s) {
         var out = [
-          "A buyer in good leather gloves who owns two of the Slip's smokehouses. The other two buyers eat at his table, and when he lifts two fingers to the brim of his cap, nobody bids against him.",
+          "A stocky, broad-shouldered human buyer in his late forties with a florid jowly jaw, coarse russet hair under a dark flat cap, cold pale grey-blue eyes, and supple calfskin leather gloves. He wears a heavy dark forest-green wool coat and owns two of the Slip's smokehouses. The other two buyers eat at his table, and when he lifts two fingers to the brim of his cap, nobody bids against him.",
           "There is no law against nobody wanting a widow's fish, and the slip-warden says so."
         ];
         if (truthy(s.pq_seen_vantry)) {
@@ -199,7 +199,7 @@
       tags: ["Middle Ward"], aliases: ["Kess", "landlady", "lodgings", "rent"],
       unlock: "mw_lodgings_seen",
       body: [
-        "A crisp, no-nonsense landlady who keeps clean straw, a dry roof, quiet stairs, and Master Vael's deadbolts on every door.",
+        "A tall, straight-backed human landlady in her late fifties with sharp angular features, thin stern lips, and dark slate eyes behind round iron-rimmed spectacles. Her iron-grey hair is scraped into a severe knot pinned with a carved bone bodkin, and she wears a high-collared black wool dress brushed clean of lint. From behind her sloped writing desk, with a tin rent box at her elbow, she keeps clean straw, a dry roof, quiet stairs, and Master Vael's deadbolts on every door.",
         "No blood in her hallway, no thieves under her rafters, and no Watchmen asking questions, so long as the coin hits the tin on time."
       ],
       see: ["vael", "middle_ward"]
@@ -212,7 +212,7 @@
       tags: ["Middle Ward"], aliases: ["Marda", "baker", "bakehouse", "oven", "pasties"],
       unlock: "mw_bakehouse_seen",
       body: [
-        "Keeps the communal oven on Conduit Square, opposite the fountain: caraway loaves, rye, and hot pasties for the wagon drivers before they face the climb to Civic Heights.",
+        "A broad-shouldered, deep-chested human woman in her early sixties with flushed round cheeks, warm brown eyes, and thick russet-grey hair pinned beneath a clean linen kerchief. Flour dust coats her bare forearms as she works a coarse linen apron and wooden dough scraper, keeping the communal oven on Conduit Square opposite the fountain: caraway loaves, rye, and hot pasties for the wagon drivers before they face the climb to Civic Heights.",
         "She hears what the whole ward is doing, from the washerwomen at the conduit to the parish sexton and the Watch's rounds, and she passes it on to anyone who asks."
       ],
       see: ["middle_ward"]
@@ -225,7 +225,7 @@
       tags: ["Middle Ward", "Law"], aliases: ["Tomas", "Saye", "water-lines clerk", "water clerk", "conduit clerk", "surveyor"],
       unlock: "met_tomas_saye",
       body: [
-        "A city water clerk and field surveyor in a blue coat with a brass badge, who keeps damp plans, a grease pencil, and shutoff keys on his person. Tomas Saye follows the Second Terrace pipes in person and treats a line on the public roll as a promise the city has to defend.",
+        "A lean, athletic human field surveyor and city water clerk in his early thirties with a determined square jaw, sun-freckled skin, earnest grey-green eyes, and cropped sandy-brown hair. Wearing an indigo-blue wool coat pinned with a dull brass city badge and carrying a scuffed leather map case, Tomas Saye keeps damp plans, a grease pencil tucked behind his ear, and iron shutoff keys on his person. He follows the Second Terrace pipes in person and treats a line on the public roll as a promise the city has to defend.",
         "He is not a Watchman and cannot settle a landlord dispute by decree. He can close a valve, call an engineering crew to shore and dig, or enter a temporary service on the maintenance roll when the evidence will stand up in daylight."
       ],
       see: ["middle_ward", "marda", "merrin"]
@@ -238,7 +238,7 @@
       tags: ["Middle Ward"], aliases: ["Nadi", "Venn", "tenement yard", "tenement court", "court tenant", "yard tenant"],
       unlock: "met_nadi_venn",
       body: [
-        "A horned tenant from the cramped shared court behind the rented rooms off Locksmiths' Close. Nadi Venn speaks plainly when officials ask a question and keeps a child close when they begin talking about closures.",
+        "A slender, resilient tiefling tenant in her early thirties from the cramped shared court behind the rented rooms off Locksmiths' Close. She has dusty ochre-red skin, coarse dark plum hair tied with ribbon, watchful metallic copper eyes, and curving ram-horns sweeping low along her temples. Clad in a patched wool skirt and mended dun shawl, Nadi Venn speaks plainly when officials ask a question and keeps her young child close when they begin talking about closures.",
         "Forty families draw from the court's one standpipe. The landlord once folded the water charge into the rents, then stopped paying the city and left the old branch to the tenants, who kept it alive with pitch and patchwork."
       ],
       see: ["middle_ward", "tomas_saye"]
@@ -252,7 +252,7 @@
       unlock: "met_vael",
       body: function (s) {
         var out = [
-          "A lean, wiry craftsman in a leather apron stiff with oil, with measuring calipers in his breast pocket, who works a needle file inside a lock held up to his ear and tests the mechanism with a sharp flick of the wrist until it answers with a crisp snick. His sign reads: Locks Warranted Against Pick and Wedge.",
+          "A lean, wiry human craftsman in his late fifties with close-cropped salt-and-ash hair, a clean-shaven face, and piercing amber-hazel eyes beneath an adjustable jeweler's loupe. In a heavy split-leather apron stiff with coal oil and measuring calipers in his breast pocket, he works a needle file inside a lock held up to his ear and tests the mechanism with a sharp flick of the wrist until it answers with a crisp snick. His sign reads: Locks Warranted Against Pick and Wedge.",
           "The shop is Vael and Son, and the Son is long gone. He keeps the name up and works the trade himself, with apprentices on the benches."
         ];
         if (truthy(s.mw_vael_seen)) {
@@ -290,7 +290,7 @@
       tags: ["Middle Ward"], aliases: ["Ambrose", "herbalist", "physic", "salve", "still-room"],
       unlock: "mw_herb_seen",
       body: [
-        "An elderly herbalist with yellow-stained fingers, who pours pine medicine into small dark glass bottles behind a painted mortar-and-pestle sign. Wicker racks of mountain angelica, wormwood, pine resin and willow bark dry along the close, and two copper stills hiss over charcoal.",
+        "A frail, stooped human herbalist in his late seventies with wrinkled parchment skin, sunken cheeks, washed-out milky-hazel eyes, and a wispy white fringe around a sun-spotted bald crown. In a faded walnut-dyed smock with fingertips permanently stained yellow from pine resin, he pours medicine into small dark bottles behind a painted mortar-and-pestle sign. Wicker racks of mountain angelica, wormwood, and willow bark dry along the close, and two copper stills hiss over charcoal.",
         "The army takes his best willow bark for its field surgeons. What he sells to soldiers is wound salve, bitters, and a warming rub of animal fat with wintergreen, thyme and camphor that they swear by for strained knees and blistered heels."
       ],
       see: ["middle_ward"]
@@ -304,7 +304,7 @@
       unlock: "mw_store_seen",
       body: function (s) {
         var out = [
-          "An old shopkeeper in a canvas apron sewn with a dozen pockets, with close-cropped white hair, a nose broken at least once, and a stub of chalk on a cord at his waist. He keeps the general store on Lantern Lane, and every price in it is chalked on a slate on the wall behind him. Nothing is sold on credit.",
+          "A burly, broad-torsoed human shopkeeper in his early seventies with thick forearms, close-cropped stiff white hair, shrewd watery grey-blue eyes, and a nose broken at least once. Wearing a multi-pocketed heavy canvas apron over a checked wool shirt with a stub of chalk on a cord at his waist, he keeps the general store on Lantern Lane. Every price is chalked on a slate on the wall behind him, and nothing is sold on credit.",
           "The sign says Hollis & Daughters, but only he is ever behind the counter."
         ];
         if (truthy(s.mw_hollis_stock_talk)) {
@@ -329,7 +329,7 @@
       unlock: "mw_forge_seen",
       body: function (s) {
         var out = [
-          "A broad-shouldered smith past fifty, with a grey braid pinned up under a leather cap and forearms freckled with old burns. Her sign reads: Steel Bought, Sold, and Mended. She works the largest shed on Smiths' Row, and her racks hold every kind of blade, axe, spear, shield, helmet and mail shirt."
+          "A formidable, broad-shouldered human armorer in her mid-fifties with a heavy jaw, fierce charcoal-grey eyes, soot-smudged skin, and a thick steel-grey braid pinned up under an oiled leather cap. Her forearms are freckled with old burns, and she wears a heavy cowhide blacksmith's apron scarred with slag. Her sign reads: Steel Bought, Sold, and Mended. She works the largest shed on Smiths' Row, and her racks hold every kind of blade, axe, spear, shield, helmet and mail shirt."
         ];
         if (truthy(s.mw_rumor_steel)) {
           out.push("Rumor from the baths: half a wagon-load of Crag steel is sitting in a shed in Alderford, and no carter will haul it down while the bailiffs work the highway.");
@@ -347,7 +347,7 @@
       unlock: "mw_baths_seen",
       body: function (s) {
         var out = [
-          "A tall, thin woman in a spotless grey apron, with hands red and cracked from lye. She keeps the Conduit Baths from a small desk inside the door. Weapons go on the rack by the door until their owners leave."
+          "A tall, thin human woman in her late forties with a narrow high-cheekboned face flushed pink from constant steam, calm pale-grey eyes, and dark ash-brown hair coiled in a damp, neat knot at the nape. She wears a crisp bleached-grey linen apron over a dark gown, her sleeves rolled past elbows to reveal hands red and cracked from lye. She keeps the Conduit Baths from a small desk inside the door, with weapons placed on a tagged rack until bathers leave."
         ];
         if (truthy(s.mw_merrin_rules_talk)) {
           out.push("Her rules are three: steel on the rack, no quarrels in the steam, and nobody stays past the night bell. In twenty years she has had one fight, and both people left by the drain door without their clothes. People say things in the steam they would not say in the street, and anyone who repeats it outside does not come back.");
@@ -371,7 +371,7 @@
       unlock: "ch_records_seen",
       body: function (s) {
         var out = [
-          "A broad-shouldered clerk in a dark grey coat and a matching cap, with a straight back and the flat, carrying voice of a man who reads other people's terms aloud all day. He keeps the Postings window at the Hiring Hall."
+          "A broad-shouldered human clerk in his late forties with cropped dark brown hair, a square lantern jaw, and steady slate-brown eyes. Clad in a high-buttoned dark grey coat with a matching wool cap and an official pewter city seal badge, he sits with a rigid, military-straight back and speaks with the flat, carrying voice of a man who reads other people's terms aloud all day. He keeps the Postings window at the Hiring Hall."
         ];
         if (truthy(s.ch_roll_rules_talk)) {
           out.push("To him the Hall is the law and not a courtesy, and the words carved over the lintel are there so nobody can say they did not see them.");
@@ -394,7 +394,7 @@
       tags: ["Marlcross"], aliases: ["Sella", "Elder Morren", "elder", "Cross Hall"],
       unlock: "mc_sella_met",
       body: [
-        "The lean, weather-browned elder who holds Marlcross's chair at the Cross Hall. She sorts notices and council papers at the table nearest the door, and expects anyone with village business to say it plainly.",
+        "A lean, sharp-angled human elder in her mid-sixties who holds Marlcross's chair at the Cross Hall. She has coarse iron-brown hair heavily threaded with steel grey bound in a tight bun with a bone bodkin, deeply lined sun-cured skin, and piercing hawk-brown eyes. Dressed in a dark green homespun gown and brown quilted vest, she sorts notices and council papers at the table nearest the door with enlarged, working knuckles, expecting anyone with village business to say it plainly.",
         "Disputes are heard by the people who will live beside the answer; Sella and the council put a choice before the room rather than deciding it alone. The same rule covers road work and the grain-market business that depends on it."
       ],
       see: ["marlcross"]
@@ -407,7 +407,7 @@
       tags: ["Marlcross"], aliases: ["Tamsin", "innkeeper", "Wayfarer's Rest", "rooms", "stable yard"],
       unlock: "mc_rest_seen",
       body: [
-        "A broad-shouldered innkeeper with a close-cropped head, a pale burn scar across one hand, and a ring of room keys at her belt. She keeps the Wayfarer's Rest with a plain rule: the pot is on when it is on, rooms cost three copper, and the yard has water and hay.",
+        "A sturdy, broad-shouldered human innkeeper in her mid-forties with coarse dark chestnut hair cut close around her ears, a square weather-beaten jaw, candid slate-blue eyes, and a pale jagged burn scar across the back of her left hand. Wearing a dark russet wool kirtle under a heavy bleached-linen apron with a heavy iron ring of keys at her belt, she keeps the Wayfarer's Rest with a plain rule: the pot is on when it is on, rooms cost three copper, and the yard has water and hay.",
         "During the annual Milling Fair, she keeps the entry book and sends contestants on to the Grain Green when the judges call the table."
       ],
       see: ["marlcross", "sella_morren"]
@@ -423,7 +423,7 @@
       },
       body: function (s) {
         var out = [
-          "Boro, Tov and Keda Broadbelt are dwarf cousins who return to Marlcross's annual pie-eating contest. When they enter, one usually takes the table while the others keep close to the benches."
+          "Boro, Tov, and Keda Broadbelt are three dwarf cousins in their late fifties to mid-sixties who return to Marlcross's annual pie-eating contest. Boro is portly with a braided brick-red beard; Tov is stocky with a dark copper beard; and Keda is wiry with slicked auburn hair and ginger whiskers. When they enter, one usually takes the table while the others keep close to the benches."
         ];
         if (truthy(s.marlcross_milling_fair_spotted_trick) || truthy(s.marlcross_milling_fair_boro_out)) {
           out.push("Their great padded coat hid a cheating scheme: the cousins changed places beneath it while the crowd watched the plates. Sella disqualifies them if the trick is brought to her.");
@@ -443,7 +443,7 @@
       tags: ["Brinewick"], aliases: ["Hesta", "Elder Rill", "elder", "Tide House", "tide gates"],
       unlock: "bw_tide_house_seen",
       body: [
-        "The short, square-built elder who keeps Brinewick's chair at the Tide House. Notices, lamp oil and spare rope are arranged within reach of her place at the long table; when the water rises, the house is the village refuge.",
+        "A short, square-built human elder in her late fifties who keeps Brinewick's chair at the Tide House. She has deeply furrowed, weather-browned skin, pale slate-grey eyes that squint against sea glare, and coarse silver-grey hair pinned in a tight, practical knot. Dressed in a heavy navy wool coat rubbed shiny at the elbows and oiled leather boots, she keeps notices, lamp oil, and spare rope arranged within reach at the long table; when the water rises, the house is the village refuge.",
         "Hesta's rule for closing the tide gates is practical: the water, wind and channel marks decide the moment, and whoever is nearest shuts the gate. The village sorts out repairs afterward."
       ],
       see: ["brinewick"]
@@ -457,7 +457,7 @@
       unlock: "bw_reedhouse_seen",
       body: function (s) {
         var out = [
-          "The practical innkeeper of the Reedhouse, with salt-cracked hands and a plain kerchief over her dark hair. She keeps the counter, rooms and high-ground stable yard, and makes no ceremony of prices or necessities."
+          "The practical, compact human innkeeper of the Reedhouse in her mid-forties, with watchful dark brown eyes, a wind-reddened nose, and salt-cracked hands from curing fish and working brine. Wearing a coarse brown wool dress under a bleached-linen apron with a checkered dish towel at her belt and an undyed kerchief over dark raven hair, she keeps the counter, rooms and high-ground stable yard, making no ceremony of prices or necessities."
         ];
         if (s.bw_daughter_quest_stage === "active") {
           out.push("Her daughter Iria's intended marriage troubles her less for the man than for the quieter home she fears it will leave.");
@@ -477,7 +477,7 @@
       unlock: "bw_daughter_met",
       body: function (s) {
         var out = [
-          "Iria Cale is Nessa's daughter and a Reedhouse server. Tovin Rusk is the son of a Brinewick tanner; his family's small tanyard stands just past the salt store, across the bank rather than across the sea.",
+          "Iria Cale is Nessa's daughter and a Reedhouse server, a slender young human woman in her early twenties with wavy chestnut hair, bright hazel eyes, and wind-blushed cheeks. Tovin Rusk is the son of a Brinewick tanner, a broad-shouldered young man of twenty-four with tousled sandy hair, sun-freckled skin, and working hands stained by salt and hide-bark; his family's small tanyard stands just past the salt store, across the bank rather than across the sea.",
           "Their proposed marriage became difficult because Nessa feared a new household would turn Iria's childhood home into a stopover."
         ];
         if (truthy(s.bw_daughter_completed)) {
@@ -504,7 +504,7 @@
       unlock: "met_alyndra",
       body: function (s) {
         var out = [
-          "An elven traveler and scout. She wears travel-stained leathers and a moss-green tunic, with pale golden hair braided in leather cord, and introduces herself as an outrider seeking old roads and forgotten ruins.",
+          "An elven traveler and scout with a slender, duelist's build, pale porcelain skin, delicate pointed ears, and pale golden hair intricately braided with leather cord. She wears fitted travel-stained leathers beneath a moss-green tunic, peeling an apple with a bone-handled knife and disarming strangers with an innocent, radiant smile while acute hazel eyes rapidly catalog their weapons and armor.",
           "She speaks of growing up in a Western Vale tavern before riding out with a horse and hunting knife. When she sits with travelers"
         ];
         if (truthy(s.aly_knife_work)) {
@@ -645,7 +645,7 @@
       tags: ["Quayside", "Trade"], aliases: ["Farrow", "Odo", "weighmaster"],
       unlock: "wh_seen",
       body: [
-        "A stout, bald man in a grey coat and a leather apron, with a brass plumb-bob on a cord at his belt and chalk to the elbows, who keeps the great scale from a low platform beside it. He says nothing leaves his floor unweighed and nothing on it is weighed twice."
+        "A stout, heavy-set human man in his mid-fifties with a bald crown fringed with grizzled hair, a round ruddy face, and spectacles perched on a wide nose. He wears an iron-grey wool coat beneath a thick cowhide apron, chalk dust coating his forearms, with a heavy brass plumb-bob hanging on a braided cord at his belt. He keeps the great scale from a low platform beside it, insisting nothing leaves his floor unweighed and nothing on it is weighed twice."
       ],
       see: ["weigh_house", "voss"]
     },
@@ -841,7 +841,7 @@
       },
       body: function (s) {
         var out = [
-          "A wide, slow man in a greased canvas apron who runs the scrap pen at the boat-sheds, weighing salvaged iron by the pound and watching a seller's hands and boots before he ever looks at a face. Some weeks the chain that comes in has the harbor-master's mark rasped off it, and he pays for it the same as anything else."
+          "A massive, bull-necked human man in his early fifties with weathered, grit-lined skin, shaggy iron-streaked dark hair, and a heavy jaw darkened by coarse stubble. Dressed in a greased canvas apron and cowhide work smock with cut-off sleeves, he runs the scrap pen at the boat-sheds, weighing salvaged iron by the pound and watching a seller's boots and hands before he ever looks at a face. Some weeks the chain that comes in has the harbor-master's mark rasped off it, and he pays for it the same as anything else."
         ];
         if (truthy(s.hask_courier_unlocked)) {
           out.push("After enough honest sales, he put your name to a man he does business with, and now sends you out with a satchel of small parcels around the quarter — nothing heavy, nothing that would get you in trouble if you were stopped and asked to open one.");
@@ -919,7 +919,7 @@
       tags: ["Dredge-End", "Trade"], aliases: ["Angel", "pawnbroker", "shopkeeper"],
       unlock: "cut_pawn_angel_met",
       body: [
-        "A half-elf woman with dark curls pinned by a brass comb, quick eyes and a plum-coloured waistcoat. She calls herself Angel and keeps the Open Hand with a warm smile and no patience for bad prices. She says she can usually find the right customer for an unusual thing."
+        "A graceful half-elf woman in her early thirties with warm olive skin, high cheekbones, and delicate tapered ears with brass drops. Her voluminous raven curls are pinned with a pierced brass comb, and she wears a tailored plum velvet waistcoat over cream silk. Calling herself Angel, she keeps the Open Hand with bright amber-hazel eyes, a warm dimpled smile, and no patience for bad prices. She says she can usually find the right customer for an unusual thing."
       ],
       see: ["open_hand", "lamp_stair"]
     },
@@ -947,7 +947,7 @@
       unlock: "met_corve_sable",
       body: function (s) {
         var out = [
-          "A pale, sharp-eyed companion at Widow Corve's, with white-blonde hair cropped cleanly at her jawline and an unhurried, measuring manner. She moves without a sound, and without seeming to try."
+          "A lithe elf companion at Widow Corve's with pale alabaster skin, sharp sculpted cheekbones, and pointed ears. Her stark white-blonde hair is cropped cleanly at her jawline, framing cool, piercing sea-green eyes and a faint, measuring smirk. Dressed in midnight-blue silk and sheer smoky grey, she moves without a sound, and without seeming to try."
         ];
         if (truthy(s.sable_talk_1)) {
           out.push("She grew up on the high-terrace grain lofts of Civic Heights, where her mother worked the drying racks. A girl who spends her childhood crossing cedar rafters fifty feet above a stone floor learns where to put her weight, or she learns what broken ribs feel like.");
@@ -968,7 +968,7 @@
       unlock: "met_corve_brinna",
       body: function (s) {
         var out = [
-          "A broad-shouldered half-orc companion at Widow Corve's, built with formidable strength but light on her feet, with a wide, tusked smile and a booming, easy laugh."
+          "A broad-shouldered half-orc companion in her late twenties at Widow Corve's, built with powerhouse athletic strength from her youth at a smith's forge. She has dusky olive-green skin, prominent white lower tusks curling past full lips, crinkling laugh lines, and honey-gold eyes beneath a thick mane of russet-brown braids with bone beads. Wearing a saffron and terracotta laced bodice, she moves with unexpected lightness, balancing flagons with an easy, booming laugh."
         ];
         if (truthy(s.brinna_talk_1)) {
           out.push("Her father was a smith in the highland foothills, and she grew up swinging sledges and working the leather bellows. She can still judge the heat of iron by the color of its glow, but she says sitting warm by a stove beats breathing coal smoke all day.");
@@ -1024,7 +1024,7 @@
       unlock: "met_anselm",
       body: function (s) {
         var out = [
-          "The friar of the Alley Shrine, a man in a patched habit of undyed wool who ladles thin pea broth to the district's poorest on Hallowdays. He answers to Brother Anselm \"on the days the parish remembers it has brothers.\""
+          "The friar of the Alley Shrine, a tall, gaunt human man in his late fifties with a sun-freckled tonsure of wispy ash-grey hair, sunken cheeks, a crooked split lip, and sorrowful grey-blue eyes. Wearing a frayed, sacking-patched habit of undyed ecru wool tied with a knotted hemp rope, he ladles thin pea broth to the district's poorest on Hallowdays. He answers to Brother Anselm \"on the days the parish remembers it has brothers.\""
         ];
         if (s.shroud_resolution === "returned") {
           out.push("You brought back the purse and the silver knotted in the thieves' rag, and he said it belonged to the saint now and would bury the dead man properly.");
@@ -1192,7 +1192,7 @@
       unlock: "mw_inn_seen",
       body: function (s) {
         var out = [
-          "A heavy man in a leather apron with forearms corded from years on a carter's box, who keeps a slate on his knee and chalks every guest's bed and reckoning himself."
+          "A burly, barrel-chested human in his mid-fifties with squinting hazel eyes and coarse dark hair peppered with silver. Wearing a heavy split-cowhide drayman's apron over an oatmeal-grey tunic, with thick forearms corded from decades gripping the reins on a carter's box and breadcrumbs in his grizzled beard, he sits beside the hearth with a slate on his knee, chalking every guest's bed and reckoning himself."
         ];
         if (truthy(s.mw_inn_talk_house)) {
           out.push("He runs his house for the traveler who is there one night and gone the next, and sends anyone staying longer to the landlady in the Locksmiths' Close, who lets by the week.");
@@ -1297,7 +1297,7 @@
       unlock: "pw_captain_seen",
       body: function (s) {
         var out = [
-          "A short, square woman of about fifty with cropped iron-grey hair, a scar through one eyebrow and a blue-and-brass sash across a boiled-leather coat. She commands the Watch's patrols on the quays and in the lower city. She does not see walk-ups, and comes to the inner gate only for those whose names she knows."
+          "A short, square-built human veteran of fifty with cropped, bristling iron-grey hair, cold flint-blue eyes, and a pale vertical scar slashing through her right eyebrow. Wearing a heavy boiled-leather cuirass crossed by an officer's blue-and-brass sash, with a broadsword at her hip, she commands the Watch's patrols on the quays and in the lower city. She does not see walk-ups, and comes to the inner gate only for those whose names she knows."
         ];
         return out;
       },
@@ -1311,7 +1311,7 @@
       tags: ["Civic Heights", "Law"], aliases: ["Lund", "Gerrit", "duty sergeant"],
       unlock: "pw_desk_seen",
       body: [
-        "A heavy man with a drooping moustache and a quill behind his ear, who keeps the duty desk in the gatehouse passage by day. Complaints go to his left and claims to his right, and he wants to hear first if there is blood. He is the public face of the Watch: the captain sees only those she knows."
+        "A heavyset human duty sergeant in his mid-fifties with jowly weathered cheeks, tired watery hazel eyes, and a thick drooping dark brown walrus mustache shot with grey. In a heavy navy-blue Watch surcoat over iron chainmail, with a quill tucked behind his ear and ink-stained wristbands, he keeps the duty desk in the gatehouse passage by day. Complaints go to his left and claims to his right, and he wants to hear first if there is blood. He is the public face of the Watch: the captain sees only those she knows."
       ],
       see: ["port_watch_hq"]
     },
@@ -1340,7 +1340,7 @@
       tags: ["Civic Heights", "Gilded Scales"], aliases: ["Quillon", "Maris", "teller"],
       unlock: "ch_head_seen",
       body: [
-        "A lean woman in a black coat with river-serpent cuffs, who keeps the Deposits and Letters counter with a set of nested lead weights lined up beside her scale. She answers without looking up from her ledger, and her pen does not stop."
+        "A tall, slender human teller in her late thirties with sharp high cheekbones, calculating amber-brown eyes, and raven hair swept into an intricate braided crown pinned with gold. Wearing a tailored midnight-black velvet coat with embroidered emerald-and-gold river-serpent cuffs, she keeps the Deposits and Letters counter with a set of nested lead weights lined up beside her polished brass scale. She answers without looking up from her ledger, and her pen does not stop."
       ],
       see: ["scales_head_house", "letters_of_credit"]
     },
@@ -1353,7 +1353,7 @@
       unlock: "ch_head_writ_seen",
       body: function (s) {
         var out = [
-          "A heavyset man in spectacles and a black coat, ink to the wrist, who keeps the Writs and Registers window. A small clerk in city grey sits beside him with the three-masted seal, so every writ he issues carries two seals."
+          "A heavyset, round-faced human registrar in his early fifties with wavy chestnut hair thinning at the crown, shrewd black eyes, and wire spectacles perched on a fleshy nose. Dressed in a fine black broadcloth coat with gold piping, his hands stained with ink to the wrist, he keeps the Writs and Registers window. A small clerk in city grey sits beside him with the three-masted seal, so every writ he issues carries two seals."
         ];
         if (truthy(s.ch_head_writ_talk)) {
           out.push("He says a name in the book is one the house will answer for, and that drawing steel in the Quarter without good cause gets it struck from the book inside the hour, with the lockup and the shift bell after that.");
@@ -1416,7 +1416,7 @@
       tags: ["Patrician Quarter", "Law"], aliases: ["Threnn", "Alys", "gate-captain"],
       unlock: "pq_gate_seen",
       body: [
-        "A tall, weathered woman in a steel-trimmed surcoat, with grey at her temples and a duelist's stillness, who keeps the Inner Gate's book on a slanted desk under the arch. She serves the houses jointly, not the Watch."
+        "A tall human woman in her early fifties, blade-straight with a duelist's stillness, who keeps the Inner Gate's book on a slanted desk under the arch. She has dark slate hair threaded with silver at the temples pulled into a tight warrior's tail, cool steel-grey eyes, and weathered, pale skin. She wears a navy and silver surcoat over a polished steel-trimmed mail hauberk, fitted steel vambraces, and a fine dueling longsword and parrying dagger belted at her hip. She serves the houses jointly, not the Watch."
       ],
       see: ["upper_wharves", "entry_writs"]
     },
@@ -1451,7 +1451,7 @@
           "A captain in the city militia with a post on the Trunk Road. The militia keeps local rosters and arms residents for alarms, fires, and emergencies; it is not Valen's field army. Varren says Trent served through the war, is loud about wanting the killings solved, and has put out word that he wants hands from outside the Watch and the militia."
         ];
         if (truthy(s.slasher_trent_met)) {
-          out.push("A broad, barrel-chested man in a boiled-leather coat in the city's colors, with two horn-handled knives at his belt that are cleaner than anything else in his office. He says the Watch leaks, and that Ulrich of Avir is the killer.");
+          out.push("A thickset, barrel-chested human man of forty-nine with a heavy square jaw, dark stubble, and a blunt broken nose. He has bristling iron-grey hair cropped close to the scalp, small, deep-set black eyes with an unblinking stare, and ruddy, weathered skin. He wears a faded blue and gold militia coat of stiff boiled leather with the sleeves rolled up over thick, hairy forearms, and two horn-handled daggers at his belt that are cleaner than anything else in his office. He says the Watch leaks, and that Ulrich of Avir is the killer.");
         }
         if (s.slasher_resolution === "arrested") {
           out.push("He murdered at least seven people and kept something from each. He tried to send hired swords and then a stranger into Avir Manor to have Ulrich killed or framed. The Port Watch took him at the Drainage Cut.");
@@ -1494,7 +1494,7 @@
           out.push("He was at Alderford on timber business through the last three killings and came back to the city only afterward. Receipts from the Factor's Hall there put him thirty miles from the lanes.");
         }
         if (truthy(s.slasher_ulrich_met)) {
-          out.push("A lean, sharp-featured man in a wine-colored velvet robe, dry and weary. He says Trent has sent men into his house for a month, and that two of his own letters to the militia command were answered by Trent. He says he will not send for the Port Watch over a housebreaker, if the housebreaker carries his proof to Trent.");
+          out.push("A lean, elegant human patrician in his early sixties with pale, aristocratic skin, hollow cheekbones, and a sharp, aristocratic nose. He has fine silver hair combed straight back from a high brow, a neatly trimmed silver spade beard, and acute dark brown eyes that weigh everything without hurry. He dresses in a rich, wine-colored velvet robe lined with dark sable fur over ivory linen, wearing a heavy gold signet ring bearing his house's stone tower crest. He says Trent has sent men into his house for a month, and that two of his own letters to the militia command were answered by Trent. He says he will not send for the Port Watch over a housebreaker, if the housebreaker carries his proof to Trent.");
         }
         if (s.slasher_resolution === "arrested") {
           out.push("He has been cleared by Trent's arrest. He says he always has use for capable people.");
@@ -1523,7 +1523,7 @@
       unlock: "met_deacon_vey",
       body: function (s) {
         var out = [
-          "A lean man in a dark gold stole mended at the edge, with ink in the creases of his fingers. He keeps the oath desk near the front pews and gives the cathedral's healing rite, the rite closing what is open."
+          "A lean, ascetic human priest in his early sixties with tonsured silver-white hair, hollow cheeks, and serene pale-grey eyes. Draped in a dark gold silk stole embroidered with the radiant Sun-Father emblem and neatly mended at the edge, with altar oil and ink in the creases of his fingers, he keeps the oath desk near the front pews and gives the cathedral's healing rite, the rite closing what is open."
         ];
         if (truthy(s.slasher_kenny_seen)) {
           out.push("He is tending a dying man in the Althea chapel and says the rite cannot reach what is cracked inside a skull. When the militia sent a clerk for the man's name, he gave the name and kept back the man's fevered shouting.");
@@ -1632,7 +1632,7 @@
       unlock: "pq_tailor_seen",
       body: function (s) {
         var out = [
-          "A slight, silver-haired man in a dove-grey coat, with a tape measure looped about his neck and pins along his lapel. He says there is no peg in his shop: everything is cut to the wearer."
+          "A slight, dapper human man in his mid-sixties with pale, delicate skin, clear hazel-green eyes, and silky silver-white hair combed smooth. He wears a tailored dove-grey frock coat over a lavender silk waistcoat and crisp white cravat, with a yellow cloth tape measure looped about his neck, steel pins lining his lapel, and brass shears never far from hand. He says there is no peg in his shop: everything is cut to the wearer."
         ];
         if (truthy(s.pq_tailor_talk_clients)) {
           out.push("He dresses the great houses, their families, their clerks and their guards' officers, and the occasional captain who has done a house a service and wishes to be seen to have done it. To him a coat is a way of saying whose door you came from.");
@@ -1664,7 +1664,7 @@
       tags: ["Patrician Quarter", "Magic"], aliases: ["bookseller", "arcanist", "scrollwork"],
       unlock: "pq_ink_lamp_seen",
       body: [
-        "A lean man with close-cropped black hair, a narrow pale scar across one thumb, and ink marked into the side of one finger. He works beneath a brass lens at the back table of the Ink & Lamp, restoring old writing and examining scrolls before he will sell them.",
+        "A lean, scholarly human man in his early forties with fair skin, a high brow, and watchful dark brown eyes behind polished round brass-rimmed spectacles. He has close-cropped jet-black hair silvering lightly at the temples, a narrow pale scar across one thumb, and permanent ink staining the sides of his fingers. He wears a charcoal-and-plum scholar's robe with fitted silver-buckled cuffs. He works beneath a brass lens at the back table of the Ink & Lamp, restoring old writing and examining scrolls before he will sell them.",
         "His manner is careful rather than grand. He keeps rare stock behind the counter, asks what a customer needs before putting it in their hands, and insists that a spell on paper has to be tested before it can be trusted."
       ],
       see: ["ink_and_lamp", "upper_wharves"]
@@ -1689,7 +1689,7 @@
       tags: ["Patrician Quarter", "Trade"], aliases: ["jeweler", "appraiser", "goldsmith"],
       unlock: "pq_bright_setting_seen",
       body: [
-        "A broad-shouldered woman with copper-brown skin, cropped black curls, and a magnifying loupe habitually braced before one dark eye. She works from the rear bench of the Bright Setting, where every tool has a fixed place.",
+        "A broad-shouldered human woman in her early forties with warm copper-brown skin, a strong square jaw, cropped raven coils, and deep brown eyes, one customarily fitted with a brass jeweler's loupe. She wears a sturdy dark plum leather apron over an ochre linen shirt with rolled sleeves, her fingers calloused from forge work and adorned with two plain gold bands on her left hand. She works from the rear bench of the Bright Setting, where every tool has a fixed place.",
         "Cassia speaks plainly about the limits of her work. She can test metal, inspect stones, repair a setting, and offer a price her shop will stand behind; a magical property or disputed ownership belongs with someone else."
       ],
       see: ["bright_setting", "upper_wharves"]
