@@ -101,9 +101,50 @@ The 1st-level spells below, which lacked it, now grow with a 2nd-level slot: a "
 ### 3.4 Web and Restrained, the rest of the rules
 
 - Done (2026-11-18): fire burns the webs away. Fire damage to an enemy on the patch (any source: the player, an ally, a burn tick, Hellish Rebuke) sets `combat_web_burn_pending` in `adjust_damage_packet`; `web_burn_check` (combat_spells.txt) then deals one shared 2d4 fire to each living enemy on the patch and ends the Web's concentration, which clears the patch and frees everyone it held. Called from `fight_check_enemy_hp`, after an enemy's burn tick, at `cnt_boom_tail` and at the end of an ally's turn. Enemies only, like Web; the player and allies in the patch take no burn. Script: `web_fire_burns_patch`.
-- The player and allies are never caught; the patch only slows them. Catching them needs Restrained effects on the player side (no move, attacks against them with advantage, their own attacks with disadvantage) and a tear-free action on the player's menu.
+- Done (2026-11-18): Restrained on the player and allies. A restrained player has speed 0 (the round's movement is held in `combat_player_moves_held`, and Push Forward, Fall Back, Dash, Disengage and fleeing are gone), attacks against them have advantage, and their own attacks have disadvantage (labelled "Restrained"). A new action, Break Free, is an Athletics check against the stored `restrained_dc`; a success ends the condition and hands back the movement. A restrained ally never moves (`combat_ally_restrain_turn`): with a foe on its tile (or a ranged weapon) it attacks from the spot at disadvantage, otherwise it spends the turn on a Strength check to break free. Attacks against it have advantage. Prose keys on the source: `"net"` has its own lines, anything else gets general ones. Still no source: the player's Web stays enemies-only, and the Net comes as the first assigned ability (section 3.4a). Scripts: `restrained_player_break_free`, `restrained_player_attacks_at_disadvantage`, `restrained_ally_breaks_free`, `restrained_ally_fights_from_spot`.
 - Done (2026-11-18): a restrained creature (Web, Ensnaring Strike, any slot including the player and allies) makes Dexterity saves with disadvantage, in the shared `resolve_save`. The banner reads "(disadvantage, Restrained)" unless another disadvantage already applies. Script: `web_restrained_dex_save_disadvantage`.
-- AI: an optional step already avoids a web, but the closing route still walks a melee enemy into it. Decide which profiles refuse and fight from range or wait instead (a caster or sharpshooter holds back, a bruiser pushes through).
+- Done (2026-11-18): AI and webs. A profile with `combat_behavior_hold_at_web` 1 (skirmisher, sharpshooter, caster; the user's call) whose next step toward its target would enter a web waits at the edge instead (`combat_ai_web_balk`, combat_ai.txt; the "holds back from the web" branch in combat_next_turn). The lane is one line, so there is no way around. Bruiser, guardian and feral push through. A foe already in the webs may step out; a ranged foe within reach shoots from where it stands. Scripts: `web_skirmisher_holds_at_edge`, `web_bruiser_pushes_through`.
+
+### 3.4a Assigned abilities (agreed 2026-11-18; design below awaits approval)
+
+The non-magical twin of assigned spells. A type is a body (HP, AC, scores, weapon, profile); what it can *do* beyond a plain attack comes from up to three ability slots, filled from one catalog, so any body can carry any mix.
+
+**What exists today (each wired its own way):**
+
+| Ability | Where it lives | Limit |
+| --- | --- | --- |
+| Special move (Off-Guard, Bleeding, Poisoned, Dazed, Pinned, Off-Balance, Hobbled, Blinded) | One `move2_*` block per type in combat_types.txt (chance, to-hit, die, type, condition name and icon), picked in `fight_pick_enemy_move` | One per type, fixed. Every one has the same effect, disadvantage on the player's next d20 (`disadvantage true`), and Pinned, Hobbled and Off-Balance also set `player_movement_restricted`. The names are labels, not engine conditions, which is also why Off-Guard spoils a Break Free check. |
+| Multiattack (Captain Trent) | `combat_multiattack_slot`, one fight-wide number | One enemy per fight |
+| Damage rider (a poisoned bite) | `extra_dmg_*` fields, set by a scene before the fight | One per enemy, set by hand |
+| Stun on hit | `inflicts_stun` / `stun_name` fields | Set by hand |
+| Undead Fortitude | Keyed on the slot's flavor type "zombie" | Zombie only |
+
+**The design:**
+
+1. **Catalog.** `tools/ability_book.json`, one entry per ability, round-tripped like spell_book.json. A new `tools/gen_abilities.js` writes an `ability_facts_load` block (a GEN block, never hand-edited) into a new scene, `combat_abilities.txt`, which also holds the resolvers. An entry says its `kind` and its numbers:
+   - `attack_variant`: replaces a plain attack some of the time (today's move2): chance, to-hit and damage changes, the condition or effect on a hit.
+   - `action`: the turn is spent on it instead of attacking (the Net, later a breath or a shove): range bands, attack or save, damage, condition with escape DC and src, uses per fight or a recharge (5-6), and a "worth it" rule like `spell_worth_casting` (no Net on a target already restrained).
+   - `extra_attack`: Multiattack: how many extra swings, and at what die.
+   - `on_hit_rider`: an extra damage packet on every hit (die, type), resolved as its own packet as riders are now.
+   - `trait`: a passive rule the engine asks about (Undead Fortitude, later pack tactics).
+2. **Slots.** Per enemy and per ally: `ability_1..3` (an id or ""), `ability_uses_1..3`. A fight fills them through `combat_enemy_ability_1_override` .. `_3` for slot 1 and `combat_enemyN_ability_K_override` for the others, exactly as `cast_spell_*` is filled. A type can name **default** abilities (a swordsman's feint); a fight's override wins per slot, and `"none"` clears one.
+3. **Where each kind runs.** `action` abilities are picked first in `combat_enemy_player_action` (and the ally/intercept dispatchers), before assigned spells and before a plain attack. `attack_variant` is picked where move2 is picked now. `extra_attack` follows the first swing where Trent's does now. `on_hit_rider` joins the hit's damage packets. `trait` is a lookup ("does slot N have undead_fortitude?"). Every pick is replay-locked per slot, as `fight_pick_enemy_spell` is.
+4. **Allies.** The same slots and the same resolvers, aimed at enemies.
+
+**Order of work** (each its own piece, and each existing fight must play exactly as before, checked by transcript diffs against a worktree of the commit before the piece):
+
+1. Catalog, generator, slots and the dispatcher hook, with **Multiattack** moved over as the proof. Trent's fight and the dev test fight assign it instead of setting `combat_multiattack_slot`, which is retired.
+2. **The Net**, the first new ability: an action, a ranged attack at Close or Mid-Range, a hit restrains (escape DC 10, src `"net"`), once per fight. The restraint and Break Free from 3.4 are already built.
+3. The eight **special moves** become `attack_variant` entries and type defaults, behaving exactly as now (one disadvantage on the next d20, movement restricted for the three). `move2_*` is retired.
+4. **Riders and stun** become `on_hit_rider` and an effect, and the scenes that set `extra_dmg_*` by hand assign an ability instead.
+5. **Undead Fortitude** becomes a `trait`.
+
+**Decided (the designer, 2026-11-18):**
+
+- **Type defaults stay.** A type names its default abilities (the swordsman's feint). A fight's override wins per slot, and `"none"` clears one, so no existing fight changes.
+- **Turn order.** An action ability first, then an assigned spell, then a plain attack. Each uses its own chance and its own "worth it" rule.
+- **Uses.** Uses per fight, recharge 5-6, or a plain chance, chosen per ability.
+- **Real conditions come later, as their own piece.** The migration keeps today's behavior exactly. Turning the special-move names into real conditions (Poisoned as in the 2024 rules, Off-Guard limited to an attack roll) is a balance pass after step 3.
 
 ### 3.5 Paralyzed and other conditions on the player and allies
 

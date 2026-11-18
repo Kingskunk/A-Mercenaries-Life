@@ -3318,7 +3318,15 @@ if (window.location.hostname === 'localhost') {
     </div>
     <div class="ampSlotList" id="ampRecoveryList"></div>
   </section>
+  <section class="ampRecovery" id="ampWorldsSection" style="display:none" aria-labelledby="ampWorldsHeading">
+    <div class="ampRecoveryHead">
+      <h3 id="ampWorldsHeading">MemPalace RP Worlds</h3>
+      <p>Memories stored on your server per playthrough. Worlds marked "Not on this device" may belong to another device or a deleted save.</p>
+    </div>
+    <div class="ampSlotList" id="ampWorldsList"></div>
+  </section>
   <footer>
+    <button onclick="ampSaveLoad.toggleWorlds()" title="Inspect and clean up stored RP memories on MemPalace">🧠 RP Worlds</button>
     <button onclick="ampSaveLoad.exportAll()" title="Export all saves to a text file">📤 Export Saves</button>
     <button onclick="ampSaveLoad.importPrompt()" title="Import saves from a text file">📥 Import Saves</button>
     <input type="file" id="ampImportFile" accept=".json,.txt" style="display:none" onchange="ampSaveLoad.importFile(event)">
@@ -3615,6 +3623,95 @@ if (window.location.hostname === 'localhost') {
         toast('Imported ' + count + ' save(s).');
       };
       reader.readAsText(file);
+    },
+
+    toggleWorlds: function() {
+      var sec = document.getElementById('ampWorldsSection');
+      if (!sec) return;
+      var show = sec.style.display === 'none';
+      sec.style.display = show ? '' : 'none';
+      if (show) this.renderWorlds();
+    },
+
+    renderWorlds: function() {
+      var list = document.getElementById('ampWorldsList');
+      if (!list) return;
+      var baseUrl = (window.RPEngine && window.RPEngine.getServerUrl) ? window.RPEngine.getServerUrl() : 'http://127.0.0.1:5000';
+      if (!baseUrl) {
+        list.innerHTML = '<div class="ampSlot"><span class="ampSlotLabel empty">No MemPalace server URL configured.</span></div>';
+        return;
+      }
+      list.innerHTML = '<div class="ampSlot"><span class="ampSlotLabel empty">Checking MemPalace server...</span></div>';
+
+      // Gather rp_world_id values known on THIS device (active game + manual slots)
+      var known = {};
+      if (window.stats && window.stats.rp_world_id) {
+        known[window.stats.rp_world_id] = 'Active Game (' + (window.stats.name || 'Current') + ')';
+      }
+      for (var i = 1; i <= SLOTS; i++) {
+        var sl = readSlot(i);
+        if (sl && sl.cookie) {
+          try {
+            var st = JSON.parse(sl.cookie);
+            var wid = st && st.stats && st.stats.rp_world_id;
+            if (wid && !known[wid]) {
+              known[wid] = 'Slot ' + i + ' (' + ((st.stats && st.stats.name) || 'Save') + ')';
+            }
+          } catch (e) {}
+        }
+      }
+
+      fetch(baseUrl + '/list_cs_worlds', { headers: { 'ngrok-skip-browser-warning': 'true' } })
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(data) {
+          var worlds = (data && Array.isArray(data.worlds)) ? data.worlds : [];
+          if (!worlds.length) {
+            list.innerHTML = '<div class="ampSlot"><span class="ampSlotLabel empty">No ChoiceScript RP worlds stored on the server.</span></div>';
+            return;
+          }
+          list.innerHTML = worlds.map(function(w) {
+            var matchLabel = known[w.world_id] ? known[w.world_id] : 'Not on this device (another device or deleted save)';
+            var badgeColor = known[w.world_id] ? 'var(--ch-good)' : 'var(--ch-warn)';
+            var npcs = (w.npcs && w.npcs.length) ? w.npcs.join(', ') : 'RP World';
+            var sub = w.memory_count + ' memor' + (w.memory_count === 1 ? 'y' : 'ies') +
+                      (w.last_modified_str ? ' · ' + w.last_modified_str : '');
+            var prev = w.preview ? '<small style="opacity:0.75">' + esc(w.preview) + (w.preview.length >= 180 ? '…' : '') + '</small>' : '';
+            return '<div class="ampSlot">' +
+              '<span class="ampSlotLabel" style="white-space:normal">' +
+                '<b>' + esc(npcs) + '</b> <small style="display:inline;color:' + badgeColor + '">[' + esc(matchLabel) + ']</small>' +
+                '<small>' + esc(sub) + ' · ID: ' + esc(w.world_id) + '</small>' +
+                prev +
+              '</span>' +
+              '<span class="ampSlotBtns">' +
+                '<button class="ampBtnDel" onclick="ampSaveLoad.deleteWorld(\'' + esc(w.world_id) + '\')" title="Delete this world\'s memories from MemPalace">🗑 Delete</button>' +
+              '</span>' +
+            '</div>';
+          }).join('');
+        })
+        .catch(function() {
+          list.innerHTML = '<div class="ampSlot"><span class="ampSlotLabel empty">Could not reach MemPalace server.</span></div>';
+        });
+    },
+
+    deleteWorld: function(wid) {
+      if (!wid) return;
+      if (!confirm('Delete all MemPalace RP memories for world "' + wid + '"? This cannot be undone.')) return;
+      var baseUrl = (window.RPEngine && window.RPEngine.getServerUrl) ? window.RPEngine.getServerUrl() : 'http://127.0.0.1:5000';
+      var self = this;
+      fetch(baseUrl + '/wipe_cs_world', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+        body: JSON.stringify({ world_id: wid })
+      }).then(function(r) { return r.json(); })
+        .then(function(res) {
+          if (res && res.status === 'SUCCESS') {
+            toast('Deleted world ' + wid + '.');
+            self.renderWorlds();
+          } else {
+            toast('Failed to delete world.');
+          }
+        })
+        .catch(function() { toast('MemPalace server unreachable.'); });
     }
   };
 

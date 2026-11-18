@@ -346,30 +346,57 @@
     return out.join("\n\n");
   }
 
-  function insertStoryParagraphs(text, cssClass, beforeNode) {
-    var textEl = liveTextContainer();
-    if (!textEl) return [];
+  function renderTurnParagraphs(container, text, cssClass) {
     var paras = String(text || "").split(/\n\s*\n/).map(function (p) { return p.trim(); }).filter(Boolean);
     var created = [];
     paras.forEach(function (paraText) {
       var p;
       // Use window.printParagraph if available so TTSReader's hook automatically receives and queues the new paragraph!
       if (typeof window.printParagraph === "function") {
-        p = window.printParagraph(paraText, textEl);
+        p = window.printParagraph(paraText, container);
       } else {
         p = document.createElement("p");
         p.textContent = paraText;
-        textEl.appendChild(p);
+        container.appendChild(p);
       }
       if (p) {
         if (cssClass) p.classList.add(cssClass);
-        if (beforeNode && beforeNode.parentNode === textEl) {
-          textEl.insertBefore(p, beforeNode);
-        }
         created.push(p);
       }
     });
     return created;
+  }
+
+  function createTurnBlock(role, text, beforeNode) {
+    var textEl = liveTextContainer();
+    if (!textEl) return null;
+    var cssClass = role === "user" ? "rp-player-turn" : "rp-ai-turn";
+
+    var wrap = document.createElement("div");
+    wrap.className = "rp-turn";
+    wrap.setAttribute("data-role", role);
+
+    var content = document.createElement("div");
+    content.className = "rp-turn-content";
+    wrap.appendChild(content);
+
+    var actions = document.createElement("div");
+    actions.className = "rp-turn-actions";
+    actions.innerHTML =
+      '<button type="button" class="rp-tbtn" data-tact="edit" title="Edit this message">\u270E</button>' +
+      '<button type="button" class="rp-tbtn rp-tbtn-del" data-tact="del" title="Delete this message">\u2715</button>';
+    wrap.appendChild(actions);
+
+    if (beforeNode && beforeNode.parentNode === textEl) {
+      textEl.insertBefore(wrap, beforeNode);
+    } else {
+      textEl.appendChild(wrap);
+    }
+
+    var pEls = renderTurnParagraphs(content, text, cssClass);
+    var turnObj = { role: role, text: text, wrap: wrap, content: content, actions: actions, pEls: pEls };
+    wrap._rpTurn = turnObj;
+    return turnObj;
   }
 
   function checkServerAndModels(box) {
@@ -629,9 +656,8 @@
     var restored = loadActiveSession(sceneId);
     if (restored && Array.isArray(restored.turns) && restored.turns.length > 0) {
       restored.turns.forEach(function (t) {
-        var css = t.role === "user" ? "rp-player-turn" : "rp-ai-turn";
-        var pEls = insertStoryParagraphs(t.text, css, box);
-        session.turns.push({ role: t.role, text: t.text, pEls: pEls });
+        var turnObj = createTurnBlock(t.role, t.text, box);
+        if (turnObj) session.turns.push(turnObj);
       });
       setStatus("Session restored (" + Math.ceil(session.turns.length / 2) + " exchange(s)).");
     }
@@ -663,8 +689,8 @@
       updateButtons();
 
       if (!isReroll && playerText) {
-        var userPEls = insertStoryParagraphs(playerText, "rp-player-turn", box);
-        session.turns.push({ role: "user", text: playerText, pEls: userPEls });
+        var userTurn = createTurnBlock("user", playerText, box);
+        if (userTurn) session.turns.push(userTurn);
         saveActiveSession(inputEl.value);
       }
 
@@ -718,12 +744,12 @@
       }).then(function (res) {
         session.busy = false;
         if (res && res.status === "SUCCESS" && res.text && res.text !== "...") {
-          var aiPEls = insertStoryParagraphs(res.text, "rp-ai-turn", box);
-          session.turns.push({ role: "ai", text: res.text, pEls: aiPEls });
+          var aiTurn = createTurnBlock("ai", res.text, box);
+          if (aiTurn) session.turns.push(aiTurn);
           saveActiveSession(inputEl.value);
           setStatus("Turn complete (" + (res.mode === "perchance" ? "Perchance AI" : settings.model.split("/").pop()) + ").");
-          if (aiPEls.length && aiPEls[0].scrollIntoView) {
-            aiPEls[0].scrollIntoView({ behavior: "smooth", block: "nearest" });
+          if (aiTurn && aiTurn.wrap && aiTurn.wrap.scrollIntoView) {
+            aiTurn.wrap.scrollIntoView({ behavior: "smooth", block: "nearest" });
           }
         } else {
           var errMsg = (res && (res.error || res.reason)) || "Generation failed";
@@ -776,25 +802,8 @@
       } else if (act === "edit") {
         if (session.busy || !session.turns.length) return;
         var lastTurn = session.turns[session.turns.length - 1];
-        editArea.value = lastTurn.text;
-        editDrawer.hidden = !editDrawer.hidden;
-        if (!editDrawer.hidden) editArea.focus();
-      } else if (act === "cancel-edit") {
-        editDrawer.hidden = true;
-      } else if (act === "save-edit") {
-        if (!session.turns.length) { editDrawer.hidden = true; return; }
-        var newText = editArea.value.trim();
-        if (!newText) return;
-        var turnToEdit = session.turns[session.turns.length - 1];
-        var anchorNode = (turnToEdit.pEls && turnToEdit.pEls[0]) ? turnToEdit.pEls[0] : box;
-        var cssClass = turnToEdit.role === "user" ? "rp-player-turn" : "rp-ai-turn";
-        var newPEls = insertStoryParagraphs(newText, cssClass, anchorNode);
-        (turnToEdit.pEls || []).forEach(function (el) { if (el.parentNode) el.parentNode.removeChild(el); });
-        turnToEdit.text = newText;
-        turnToEdit.pEls = newPEls;
-        saveActiveSession(inputEl.value);
-        editDrawer.hidden = true;
-        setStatus("Last turn updated.");
+        var editBtnInLast = lastTurn.wrap ? lastTurn.wrap.querySelector('[data-tact="edit"]') : null;
+        if (editBtnInLast) editBtnInLast.click();
       } else if (act === "memories") {
         memDrawer.hidden = !memDrawer.hidden;
         if (!memDrawer.hidden) renderMemoriesDrawer();
@@ -839,7 +848,7 @@
         editDrawer.hidden = true;
         if (session.turns[session.turns.length - 1].role === "ai") {
           var poppedAi = session.turns.pop();
-          (poppedAi.pEls || []).forEach(function (el) { if (el.parentNode) el.parentNode.removeChild(el); });
+          if (poppedAi.wrap && poppedAi.wrap.parentNode) poppedAi.wrap.parentNode.removeChild(poppedAi.wrap);
         }
         var lastUser = session.turns.length && session.turns[session.turns.length - 1].role === "user"
           ? session.turns[session.turns.length - 1].text
@@ -850,16 +859,77 @@
         editDrawer.hidden = true;
         if (session.turns[session.turns.length - 1].role === "ai") {
           var aiTurn = session.turns.pop();
-          (aiTurn.pEls || []).forEach(function (el) { if (el.parentNode) el.parentNode.removeChild(el); });
+          if (aiTurn.wrap && aiTurn.wrap.parentNode) aiTurn.wrap.parentNode.removeChild(aiTurn.wrap);
         }
         if (session.turns.length && session.turns[session.turns.length - 1].role === "user") {
           var userTurn = session.turns.pop();
-          (userTurn.pEls || []).forEach(function (el) { if (el.parentNode) el.parentNode.removeChild(el); });
+          if (userTurn.wrap && userTurn.wrap.parentNode) userTurn.wrap.parentNode.removeChild(userTurn.wrap);
           inputEl.value = userTurn.text;
         }
         saveActiveSession(inputEl.value);
         updateButtons();
         setStatus("Last exchange undone.");
+      }
+    });
+
+    // Per-turn hover actions: edit or delete ANY individual message (player or AI) in-place
+    textEl.addEventListener("click", function (ev) {
+      var t = ev.target;
+      var btn = t && t.closest ? t.closest("[data-tact]") : null;
+      if (!btn) return;
+      var wrap = btn.closest(".rp-turn");
+      if (!wrap || !wrap._rpTurn) return;
+      var turn = wrap._rpTurn;
+      var tact = btn.getAttribute("data-tact");
+
+      if (tact === "del") {
+        if (session.busy) return;
+        var idx = session.turns.indexOf(turn);
+        if (idx !== -1) session.turns.splice(idx, 1);
+        if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
+        saveActiveSession(inputEl.value);
+        updateButtons();
+        setStatus("Message deleted.");
+      } else if (tact === "edit") {
+        if (wrap.querySelector(".rp-inline-editor")) return;
+        turn.content.style.display = "none";
+        turn.actions.style.display = "none";
+
+        var editor = document.createElement("div");
+        editor.className = "rp-inline-editor";
+        editor.innerHTML =
+          '<div class="rp-inline-editor-head">Edit ' + (turn.role === "user" ? "Your Message" : "Companion Response") + '</div>' +
+          '<textarea class="rp-edit-textarea"></textarea>' +
+          '<div class="rp-inline-editor-foot">' +
+            '<button type="button" class="rp-btn rp-btn-sm" data-iedit="cancel">\u2715</button>' +
+            '<button type="button" class="rp-btn rp-btn-primary rp-btn-sm" data-iedit="save">Save</button>' +
+          '</div>';
+        var ta = editor.querySelector(".rp-edit-textarea");
+        ta.value = turn.text;
+        wrap.appendChild(editor);
+        ta.focus();
+
+        editor.addEventListener("click", function (eev) {
+          var eb = eev.target && eev.target.closest ? eev.target.closest("[data-iedit]") : null;
+          if (!eb) return;
+          var what = eb.getAttribute("data-iedit");
+          if (what === "cancel") {
+            editor.remove();
+            turn.content.style.display = "";
+            turn.actions.style.display = "";
+          } else if (what === "save") {
+            var updated = ta.value.trim();
+            if (!updated) return;
+            turn.text = updated;
+            turn.content.innerHTML = "";
+            turn.pEls = renderTurnParagraphs(turn.content, updated, turn.role === "user" ? "rp-player-turn" : "rp-ai-turn");
+            editor.remove();
+            turn.content.style.display = "";
+            turn.actions.style.display = "";
+            saveActiveSession(inputEl.value);
+            setStatus("Message updated.");
+          }
+        });
       }
     });
 
@@ -875,9 +945,10 @@
     var t = ev.target;
     var tag = t && t.tagName ? t.tagName.toUpperCase() : "";
     var inField = (tag === "TEXTAREA" || tag === "INPUT" || tag === "SELECT" || (t && t.isContentEditable));
-    if (inField && box.contains(t)) {
-      // Handle Enter (without Shift) inside the RP textarea to send the turn
-      if (tag === "TEXTAREA" && ev.key === "Enter" && !ev.shiftKey) {
+    var inRpUi = inField && (box.contains(t) || !!(t.closest && t.closest(".rp-turn")));
+    if (inRpUi) {
+      // Handle Enter (without Shift) inside the main RP input textarea to send the turn
+      if (tag === "TEXTAREA" && t.classList && t.classList.contains("rp-input") && ev.key === "Enter" && !ev.shiftKey) {
         ev.preventDefault();
         ev.stopImmediatePropagation();
         var sendBtn = box.querySelector('[data-act="send"]');
@@ -926,6 +997,8 @@
       }
     }
   }
+
+  RP.getServerUrl = getServerUrl;
 
   var obs = new MutationObserver(function () {
     scanForMarker();

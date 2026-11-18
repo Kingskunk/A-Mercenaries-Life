@@ -623,6 +623,11 @@ ${combat_player_dmg_roll_banner}
     *if (condition_result)
       *set combat_enemy_advantage true
       *set cea_def_blinded true
+    *comment Restrained (3.4): attacks against a restrained creature have advantage.
+    *temp cea_def_restrained false
+    *if (combat_player_restrained > 0)
+      *set combat_enemy_advantage true
+      *set cea_def_restrained true
     *temp cea_dis false
     *comment Both disadvantage sources are precomputed into one flag rather than written as a mixed
     *comment `((A) or (B)) and (C)` condition. ChoiceScript's parser requires binary operators to be strictly
@@ -659,6 +664,8 @@ ${combat_player_dmg_roll_banner}
         *set cea_roll cea_roll_2
       *if (cea_def_blinded)
         *set cea_adv_label " (Advantage — Blinded)"
+      *elseif (cea_def_restrained)
+        *set cea_adv_label " (Advantage — Restrained)"
       *else
         *set cea_adv_label " (Advantage)"
     *comment Consumed on this actual roll (2026-09-28): reset both the bare scratch AND the per-slot field this
@@ -1061,6 +1068,11 @@ ${combat_player_dmg_roll_banner}
     *if (condition_result)
       *set combat_enemy_advantage true
       *set reao_def_blinded true
+    *comment Restrained (3.4): attacks against a restrained ally have advantage.
+    *temp reao_def_restrained false
+    *if ({(reao_ap & "restrained")} > 0)
+      *set combat_enemy_advantage true
+      *set reao_def_restrained true
     *temp reao_roll 0
     *rand reao_roll 1 20
     *temp reao_adv_label ""
@@ -1092,6 +1104,8 @@ ${combat_player_dmg_roll_banner}
         *set reao_roll reao_roll_2
       *if (reao_def_blinded)
         *set reao_adv_label " (Advantage — Blinded)"
+      *elseif (reao_def_restrained)
+        *set reao_adv_label " (Advantage — Restrained)"
       *else
         *set reao_adv_label " (Advantage)"
     *comment Consumed on this actual roll (2026-09-28): reset both the bare scratch AND the per-slot field this
@@ -1375,7 +1389,9 @@ ${combat_player_dmg_roll_banner}
   *temp raa_adv_label ""
   *gosub condition_has raa_ap "blinded"
   *temp raa_blinded condition_result
-  *temp raa_dis ((raa_ranged_pinned) or (raa_blinded))
+  *comment Restrained (3.4): a restrained ally's own attacks have disadvantage.
+  *temp raa_restrained ({(raa_ap & "restrained")} > 0)
+  *temp raa_dis (((raa_ranged_pinned) or (raa_blinded)) or (raa_restrained))
   *if (raa_dis)
     *temp raa_roll_2 0
     *rand raa_roll_2 1 20
@@ -1383,8 +1399,10 @@ ${combat_player_dmg_roll_banner}
       *set raa_roll raa_roll_2
     *if (raa_ranged_pinned)
       *set raa_adv_label " (Disadvantage — in reach)"
-    *else
+    *elseif (raa_blinded)
       *set raa_adv_label " (Disadvantage — Blinded)"
+    *else
+      *set raa_adv_label " (Disadvantage — Restrained)"
   *comment Advantage from the target (prone/stunned/restrained/greased/blinded, combat_attack_edge): it takes the better of two d20s, and cancels disadvantage above if both apply.
   *gosub combat_attack_edge raa_range raa_e_slot ""
   *if (combat_edge_adv)

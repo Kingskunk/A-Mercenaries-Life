@@ -110,6 +110,33 @@
   *set combat_ai_terrain_destination_legal false
 *return
 
+*comment WEB (3.4, 2026-11-18): whether an enemy's next step toward the player would walk it into a Web patch while its profile holds back from one
+*comment (combat_behavior_hold_at_web: skirmisher, sharpshooter, caster). The lane is a single line, so there is no way around: it waits at the edge instead.
+*comment A foe already standing in the webs is free to step out. Read-only; sets combat_ai_web_balk and leaves combat_behavior_* on this enemy's profile.
+*label combat_ai_web_balk
+*params cawb_slot
+*set combat_ai_web_balk false
+*temp cawb_p (("combat_enemy" & cawb_slot) & "_")
+*temp cawb_range {(cawb_p & "range")}
+*if (cawb_range <= 0)
+  *return
+*temp cawb_profile {(cawb_p & "behavior_profile")}
+*temp cawb_weapon {(cawb_p & "weapon_type")}
+*gosub_scene combat_types resolve_behavior_profile cawb_profile cawb_weapon
+*if (combat_behavior_hold_at_web <= 0)
+  *return
+*temp cawb_pos {(cawb_p & "position")}
+*gosub_scene combat_movement combat_web_at cawb_pos
+*if (combat_web_here)
+  *return
+*temp cawb_side {(cawb_p & "side")}
+*if (not(cawb_side = (0 - 1)))
+  *set cawb_side 1
+*temp cawb_next (cawb_pos - cawb_side)
+*gosub_scene combat_movement combat_web_at cawb_next
+*set combat_ai_web_balk combat_web_here
+*return
+
 *label combat_ai_choke_useful
 *comment IS THIS CHOKEPOINT DOING ITS JOB? (2026-11-03) Holding a narrow gap is worth it only while an opponent who fights hand to hand still has to
 *comment come through it to reach the holder's side: that is the whole point of the gap. Against nobody but archers, slingers and casters it protects

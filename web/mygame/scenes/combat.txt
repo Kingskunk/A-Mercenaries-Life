@@ -1390,6 +1390,7 @@
 *set combat_player_restrained 0
 *set combat_player_restrained_dc 0
 *set combat_player_restrained_src ""
+*set combat_player_moves_held 0
 *set combat_player_paralyzed 0
 *set combat_player_paralyzed_dc 0
 *set combat_player_paralyzed_src ""
@@ -1855,6 +1856,10 @@
 *if (condition_result)
   *set disadvantage true
   *set combat_atk_blinded true
+*comment Restrained (3.4): the player's own attacks have disadvantage.
+*if (combat_player_restrained > 0)
+  *set disadvantage true
+  *set combat_atk_restrained true
 *gosub_scene combat_dice combat_attack_edge combat_enemy_range combat_active_target cha_tag
 *if (combat_edge_adv)
   *set advantage true
@@ -2319,6 +2324,10 @@
 *if (condition_result)
   *set disadvantage true
   *set combat_atk_blinded true
+*comment Restrained (3.4): the player's own attacks have disadvantage.
+*if (combat_player_restrained > 0)
+  *set disadvantage true
+  *set combat_atk_restrained true
 *if (combat_save_quiet)
   *set check_silent true
 *gosub_scene dice_engine roll_d20_check
@@ -3081,6 +3090,10 @@
     *set cae_still_ok true
   *if ((not(cae_still_ok)) or (player_oa_used))
     *set absorb_elements_armed false
+*comment RESTRAINED (3.4): a restrained player's speed is 0. The movement left this round is held, not spent, and Break Free hands it back.
+*if ((combat_player_restrained > 0) and (combat_player_moves_left > 0))
+  *set combat_player_moves_held combat_player_moves_left
+  *set combat_player_moves_left 0
 *comment Re-syncs the HUD-picked target here too, not just at turn start or after a kill (fight_check_enemy_hp) --
 *comment a non-damaging first action (Brace, Second Wind, an item) never calls fight_check_enemy_hp, so a HUD
 *comment click made between it and a second action would otherwise sit unread until the next full turn.
@@ -3221,7 +3234,10 @@
 *if (combat_player_attacks_left < combat_player_attacks_max)
   *line_break
   [b][🗡️ Attacks used | ${combat_player_attacks_left} left this round][/b]
-*if (combat_player_moves_left < combat_player_moves_max)
+*if (combat_player_restrained > 0)
+  *line_break
+  [b][🪢 Restrained — you cannot move][/b]
+*elseif (combat_player_moves_left < combat_player_moves_max)
   *line_break
   [b][👟 Movement used | ${combat_player_moves_left} left this round][/b]
 
@@ -3544,7 +3560,8 @@
 *comment Nested rather than flat: ChoiceScript needs each partial result of a multi-operator condition
 *comment parenthesized (choicescript_stats.txt:1086 has the same 3-term shape written as ((A) and (B)) and (C)),
 *comment and a flat three-way `and` chain is a parse error, not a wrong answer.
-*if ((((combat_player_actions_left > 0) or (combat_cunning)) and (not(combat_player_disengaged))) and (not(player_movement_restricted)))
+*comment Restrained (3.4): no Disengage while held, since there is no movement to protect.
+*if (((((combat_player_actions_left > 0) or (combat_cunning)) and (not(combat_player_disengaged))) and (not(player_movement_restricted))) and (combat_player_restrained <= 0))
   *set combat_can_disengage true
 *temp combat_can_break_off false
 *comment A fight that cannot be left (combat_no_flee, the Burning Grove) never offers Break off.
@@ -4498,6 +4515,27 @@
         *gosub_scene equipment equip_weapon equipped_sidearm_id
       *goto resolve_weapon_attack_choice
 
+  *if ((combat_player_actions_left > 0) and (combat_player_restrained > 0))
+    # [b][ACTION][/b] [b][Break Free][/b] Tear loose from what holds you.@{show_stat_hints  [Athletics vs. DC ${combat_player_restrained_dc}]|}
+      *comment RESTRAINED (3.4, 2026-11-18): the action is a Strength (Athletics) check against the restraint's stored escape DC. A success ends the condition and hands back the movement the hold took this round
+      *comment (combat_player_moves_held). Whole-choice replay lock, as Shove's: a refresh reprints the stored result without rolling again.
+      *if (not(combat_break_free_locked)) or (not(locked_combat_break_free_page_id = page_id))
+        *set combat_break_free_v 1
+        *rand combat_break_free_v 1 3
+        *if (combat_player_restrained_src = "net")
+          *set combat_break_free_v (combat_break_free_v + 3)
+        *gosub_scene dice_engine roll_skill_check combat_player_restrained_dc "athletics" "" "" "" "" ""
+        *set combat_break_free_success check_success
+        *if (combat_break_free_success)
+          *gosub_scene combat_dice condition_end "combat_player_" "restrained"
+          *set combat_player_moves_left combat_player_moves_held
+          *set combat_player_moves_held 0
+        *set combat_break_free_locked true
+        *set locked_combat_break_free_page_id page_id
+      *gosub_scene combat_prose flavor_break_free
+      *line_break
+      *goto fight_action_spent
+
   *if (((combat_player_actions_left > 0) and (combat_melee_reach)))
     # [b][ACTION][/b] [b][Shove][/b] Drive an enemy in reach back to Close.@{show_stat_hints  [Athletics vs. its stronger STR/DEX defense]|}
       *gosub_scene combat_movement fight_reach_check
@@ -4690,7 +4728,7 @@
       *gosub resolve_opportunity_attack
       *goto fight_move_spent
 
-  *if (((combat_player_actions_left > 0) or (combat_cunning)) and (not(combat_player_on_difficult_terrain)))
+  *if ((((combat_player_actions_left > 0) or (combat_cunning)) and (not(combat_player_on_difficult_terrain))) and (combat_player_restrained <= 0))
     # [b][@{combat_cunning BONUS ACTION|ACTION}][/b] [b][Dash][/b] Push yourself for extra ground this turn@{combat_cunning .|, giving up anything else.}
       *comment Dash, RAW (2026-09-28): spends the action, grants ONE extra combat_player_moves_left, so a player
       *comment starting more than one tier out can close/open two tiers this turn -- at the cost of the action, so
@@ -7255,6 +7293,75 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *set combat_arrow_slow true
 *return
 
+*label combat_ally_restrain_turn
+*comment RESTRAINED, ally side (3.4, 2026-11-18): called on a held ally's turn in place of its usual one (no movement at all). A ranged ally, or a melee ally with a foe on its own tile, attacks from the spot,
+*comment with disadvantage (resolve_ally_attack). Otherwise it spends the turn on a Strength check against the stored escape DC (restrained_dc). The check, its DC and its prose variant are stored against the page id,
+*comment so a replay prints the same result (a success has already cleared the condition and its DC by then).
+*params cart_slot
+*temp cart_p (("combat_ally" & cart_slot) & "_")
+*set combat_attacker_name {(cart_p & "name")}
+*set combat_attacker_epithet {(cart_p & "epithet")}
+*temp cart_weapon {(cart_p & "weapon_type")}
+*temp cart_pos {(cart_p & "position")}
+*gosub_scene combat_ai select_ally_attack_target cart_slot
+*temp cart_target combat_active_target
+*temp cart_in_reach false
+*if (cart_target > 0)
+  *if (cart_weapon = "ranged")
+    *set cart_in_reach true
+  *else
+    *temp cart_tpos {(("combat_enemy" & cart_target) & "_position")}
+    *if (cart_tpos = cart_pos)
+      *set cart_in_reach true
+*if (cart_in_reach)
+  *set {(cart_p & "target")} cart_target
+  *gosub_scene combat_dice resolve_ally_attack cart_slot cart_target
+  *set combat_ally_break_deferred true
+  *gosub_scene combat_prose fight_narrate_ally_attack "ally" cart_slot "enemy" cart_target combat_ally_atk_hit
+  *set combat_ally_break_deferred false
+  *set combat_ally_atk_used_sidearm false
+  *line_break
+  *set combat_turn_advanced_this_page true
+  *return
+*temp cart_page {(cart_p & "restrain_page")}
+*temp cart_dc 0
+*temp cart_res 0
+*temp cart_roll 0
+*temp cart_v 1
+*if (cart_page = page_id)
+  *set cart_res {(cart_p & "restrain_res")}
+  *set cart_roll {(cart_p & "restrain_roll")}
+  *set cart_v {(cart_p & "restrain_v")}
+  *set cart_dc {(cart_p & "restrain_dc")}
+*else
+  *set cart_dc {(cart_p & "restrained_dc")}
+  *rand cart_v 1 3
+  *if ({(cart_p & "restrained_src")} = "net")
+    *set cart_v (cart_v + 3)
+  *temp cart_str {(cart_p & "strength")}
+  *gosub_scene startup score_to_mod cart_str
+  *rand cart_roll 1 20
+  *set cart_roll (cart_roll + sm_mod)
+  *set cart_res 1
+  *if (cart_roll >= cart_dc)
+    *set cart_res 2
+  *set {(cart_p & "restrain_res")} cart_res
+  *set {(cart_p & "restrain_roll")} cart_roll
+  *set {(cart_p & "restrain_v")} cart_v
+  *set {(cart_p & "restrain_dc")} cart_dc
+  *set {(cart_p & "restrain_page")} page_id
+  *if (cart_res = 2)
+    *gosub_scene combat_dice condition_end cart_p "restrained"
+*gosub_scene combat_prose flavor_ally_break_free cart_v cart_res
+*line_break
+*if (cart_res = 2)
+  [b][🪢 ${combat_attacker_name} breaks free (Strength check ${cart_roll} vs DC ${cart_dc}) — turn spent][/b]
+*else
+  [b][🪢 ${combat_attacker_name} fails to break free (Strength check ${cart_roll} vs DC ${cart_dc}) — turn spent][/b]
+*line_break
+*set combat_turn_advanced_this_page true
+*return
+
 *label combat_restrain_tick
 *comment RESTRAINED (2026-10-12, Ensnaring Strike): called at the start of the enemy's turn while it is held. It takes 1d6 piercing from the thorns (resistances applied). Then, if it means to move this turn, it spends its action on a Strength check against the restraint's stored DC (restrained_dc) to tear free (a success or a miss, the turn is
 *comment spent); if it only wanted to fight where it stands, it attacks with disadvantage instead. Stored per slot against the page id, so a replay prints the same tick and never rolls twice. Sets combat_restrain_stop when the turn is used up, and combat_burn_killed when the thorns finish the enemy.
@@ -8320,6 +8427,9 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
       *gosub_scene combat_ai combat_choose_ranged_tactical_step "enemy" cnt_slot cnt_terrain_target_position
     *else
       *gosub_scene combat_ai combat_choose_terrain_step "enemy" cnt_slot cnt_terrain_target_position cnt_terrain_must_close cnt_terrain_keep_distance
+    *comment WEB (3.4): a skirmisher, sharpshooter or caster whose next step toward you enters a Web patch waits at its edge (the cnt_web_balk branch below).
+    *gosub_scene combat_ai combat_ai_web_balk cnt_slot
+    *temp cnt_web_balk combat_ai_web_balk
     *comment GREASE (2026-10-12, the user's call): a greased enemy that tries to MOVE must pass a DC 10 Dexterity check or fall prone and lose its turn; a prone one spends its next turn standing. Standing still and swinging never trips it.
     *comment Whether this enemy would move this turn is worked out here from the same facts the branches below use (close on the player or an ally, back off from a corner, take a terrain step); combat_grease_gate does the rest.
     *comment REACH (2026-10-12): a ranged enemy whose weapon does not reach you from where it stands must close first (a slinger is medium, an archer long). cnt_e_out is true when it is out of its own reach.
@@ -8356,6 +8466,8 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
         *set cnt_wants_move true
       *elseif (((combat_enemy_range > 0) and (cnt_frightened <= 0)) and (not((combat_ai_terrain_hold_position) and (combat_ai_terrain_step_reason = "chokepoint"))))
         *set cnt_wants_move true
+    *if (cnt_web_balk)
+      *set cnt_wants_move false
     *comment ENSNARING STRIKE: a held enemy takes the thorns and either struggles (if it meant to move) or fights from where it stands. The hold runs out after the spell's last round.
     *comment STUN (2026-11-01): a stunned enemy loses its turn before anything else is rolled for it (combat_stun_gate prints it and counts it down once per page).
     *temp cnt_stun_stop false
@@ -8634,6 +8746,13 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
       [b][🛡️ ${combat_enemy_name} Holds the Chokepoint][/b]
       *line_break
       *set combat_turn_advanced_this_page true
+    *elseif ((cnt_web_balk) and (combat_enemy_range > 0))
+      *comment WEB (3.4): its next step toward you would enter the webs, and it will not walk in (combat_ai_web_balk). A ranged foe already within its reach never comes here: it shoots from where it stands.
+      *gosub_scene combat_prose flavor_web_balk
+      *line_break
+      [b][🕸️ ${combat_enemy_name} holds back from the web][/b]
+      *line_break
+      *set combat_turn_advanced_this_page true
     *elseif (cnt_e_out)
       *comment A ranged enemy out of its own reach (2026-10-12): it closes one step (a second if it Dashes and is not slowed) and shoots this same turn only if the first step put you within its reach. Placed after the cornered, interception, hidden and chase branches,
       *comment which still win where they apply, and ahead of the melee closing branch and the plain ranged one.
@@ -8837,6 +8956,13 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *comment STUN, ally side (2026-11-03): a stunned ally loses the turn before anything else, through the same gate as an enemy.
     *gosub combat_stun_gate "ally" cnt_slot
     *if (combat_stun_stop)
+      *goto cnt_ally_tail
+    *comment RESTRAINED (3.4): a held ally does not move. It fights from where it stands if a foe is in its reach, or spends the turn trying to break free.
+    *if ({(("combat_ally" & cnt_slot) & "_restrained")} > 0)
+      *gosub combat_ally_restrain_turn cnt_slot
+      *gosub fight_check_all_dead
+      *if (combat_all_enemies_dead)
+        *goto fight_victory
       *goto cnt_ally_tail
     *comment MORALE (2026-11-03): a wavering ally falls back and covers up instead of fighting (see MORALE).
     *gosub combat_morale_turn "ally" cnt_slot
