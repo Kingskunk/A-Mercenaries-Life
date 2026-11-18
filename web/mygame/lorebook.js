@@ -406,35 +406,11 @@
     elRead.innerHTML = html;
     var pImg = elRead.querySelector(".lb-portrait img");
     if (pImg) {
-      var candidates = r.portrait.indexOf("portraits/") === 0
-        ? [r.portrait, "../../" + r.portrait, "../" + r.portrait]
-        : [r.portrait];
-      var cIdx = 0;
-      pImg.onload = function () {
+      loadPortrait(r.id, r.portrait, pImg, function () {
         if (pImg.parentNode) pImg.parentNode.style.display = "";
-      };
-      pImg.onerror = function () {
-        if (cIdx < candidates.length) {
-          var url = candidates[cIdx++];
-          if (location.protocol.indexOf("http") === 0) {
-            fetch(url, { headers: { "ngrok-skip-browser-warning": "true" } })
-              .then(function (res) {
-                var ct = res.headers.get("content-type") || "";
-                if (!res.ok || ct.indexOf("image/") !== 0) throw new Error("not image");
-                return res.blob();
-              })
-              .then(function (blob) {
-                pImg.src = URL.createObjectURL(blob);
-              })
-              .catch(function () { pImg.onerror(); });
-            return;
-          }
-          pImg.src = url;
-        } else if (pImg.parentNode) {
-          pImg.parentNode.style.display = "none";
-        }
-      };
-      pImg.src = candidates[cIdx++];
+      }, function () {
+        if (pImg.parentNode) pImg.parentNode.style.display = "none";
+      });
     }
     elRead.scrollTop = 0;
   }
@@ -706,11 +682,133 @@
 
   // A click on a story link opens that entry (the panel is modal, so this only fires from the page).
   document.addEventListener("click", function (ev) {
+    hideHoverCard();
     var a = ev.target && ev.target.closest ? ev.target.closest("a.lb-story") : null;
     if (!a) return;
     ev.preventDefault();
     open(a.getAttribute("data-lore"));
   });
+
+  /* --------------------------------------------------- story-link portrait hover */
+
+  var portraitCache = {}; // id -> resolved image url, or false if unavailable
+  var hoverCard = null, hoverLink = null;
+
+  function loadPortrait(id, portraitPath, imgEl, onReady, onFail) {
+    if (!portraitPath) { if (onFail) onFail(); return; }
+    if (portraitCache[id] === false) { if (onFail) onFail(); return; }
+    if (typeof portraitCache[id] === "string") {
+      imgEl.onload = function () { if (onReady) onReady(); };
+      imgEl.onerror = function () { if (onFail) onFail(); };
+      imgEl.src = portraitCache[id];
+      return;
+    }
+    var candidates = portraitPath.indexOf("portraits/") === 0
+      ? [portraitPath, "../../" + portraitPath, "../" + portraitPath]
+      : [portraitPath];
+    var cIdx = 0;
+    imgEl.onload = function () {
+      portraitCache[id] = imgEl.src;
+      if (onReady) onReady();
+    };
+    imgEl.onerror = function () {
+      if (cIdx < candidates.length) {
+        var url = candidates[cIdx++];
+        if (location.protocol.indexOf("http") === 0) {
+          fetch(url, { headers: { "ngrok-skip-browser-warning": "true" } })
+            .then(function (res) {
+              var ct = res.headers.get("content-type") || "";
+              if (!res.ok || ct.indexOf("image/") !== 0) throw new Error("not image");
+              return res.blob();
+            })
+            .then(function (blob) {
+              var objUrl = URL.createObjectURL(blob);
+              portraitCache[id] = objUrl;
+              imgEl.src = objUrl;
+            })
+            .catch(function () { imgEl.onerror(); });
+          return;
+        }
+        imgEl.src = url;
+      } else {
+        portraitCache[id] = false;
+        if (onFail) onFail();
+      }
+    };
+    imgEl.src = candidates[cIdx++];
+  }
+
+  function ensureHoverCard() {
+    if (hoverCard) return hoverCard;
+    hoverCard = document.createElement("div");
+    hoverCard.id = "lbHoverCard";
+    hoverCard.className = "lb-hover-card";
+    hoverCard.style.display = "none";
+    hoverCard.innerHTML =
+      '<img alt="">' +
+      '<div class="lb-hover-meta"><div class="lb-hover-title"></div><div class="lb-hover-sub"></div></div>';
+    document.body.appendChild(hoverCard);
+    return hoverCard;
+  }
+
+  function positionHoverCard(anchor) {
+    if (!hoverCard || !anchor) return;
+    var r = anchor.getBoundingClientRect();
+    var cw = hoverCard.offsetWidth || 152;
+    var ch = hoverCard.offsetHeight || 260;
+    var pad = 10;
+    var left = Math.min(window.innerWidth - cw - pad, Math.max(pad, r.left));
+    var top = r.bottom + 8;
+    if (top + ch > window.innerHeight - pad) {
+      top = Math.max(pad, r.top - ch - 8);
+    }
+    hoverCard.style.left = left + "px";
+    hoverCard.style.top = top + "px";
+  }
+
+  function hideHoverCard() {
+    hoverLink = null;
+    if (hoverCard) hoverCard.style.display = "none";
+  }
+
+  function showHoverCard(a) {
+    if (dlg && dlg.open) return;
+    var id = a.getAttribute("data-lore");
+    if (!id) return;
+    var entry = core.data().entries.filter(function (e) { return e.id === id; })[0];
+    if (!entry) return;
+    var resolved = core.resolve(entry, statsNow());
+    if (!resolved.portrait || portraitCache[id] === false) return;
+
+    hoverLink = a;
+    var card = ensureHoverCard();
+    var img = card.querySelector("img");
+    card.querySelector(".lb-hover-title").textContent = resolved.title;
+    card.querySelector(".lb-hover-sub").textContent = resolved.sub || "";
+
+    loadPortrait(id, resolved.portrait, img, function () {
+      if (hoverLink !== a || (dlg && dlg.open)) return;
+      a.removeAttribute("title"); // suppress browser tooltip while portrait card is shown
+      card.style.display = "block";
+      positionHoverCard(a);
+    }, function () {
+      if (hoverLink === a) hideHoverCard();
+    });
+  }
+
+  document.addEventListener("mouseover", function (ev) {
+    var a = ev.target && ev.target.closest ? ev.target.closest("a.lb-story") : null;
+    if (!a || a === hoverLink) return;
+    showHoverCard(a);
+  });
+  document.addEventListener("mouseout", function (ev) {
+    if (!hoverLink) return;
+    var to = ev.relatedTarget;
+    if (to && hoverLink.contains(to)) return;
+    var a = ev.target && ev.target.closest ? ev.target.closest("a.lb-story") : null;
+    if (a === hoverLink) hideHoverCard();
+  });
+  window.addEventListener("scroll", hideHoverCard, true);
 
   /* --------------------------------------------------------------- global keys */
 

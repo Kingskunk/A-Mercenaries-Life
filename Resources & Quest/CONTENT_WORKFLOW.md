@@ -341,6 +341,12 @@ Read first, in the narrative guidelines: "Describe NPCs on Introduction" and "Na
 | --- | --- |
 | The name | `RESERVED` in `web/mygame/names-data.js`, first and last name |
 | Lorebook | A people entry unlocked by the `met_` flag. `link` phrases are full proper names only. The entry says only what the scenes say. |
+| Portrait (optional) | `portraits/<id>.webp` (`512×768`). `web/mygame/lorebook.js` loads it automatically by entry `id`; `tools/build_app.js` copies `portraits/` into `dist/`. |
+
+To generate Lorebook portraits through the free MemPalace ↔ Perchance bridge (`server.py` + open Perchance tab):
+1. `node tools/gen_portraits.js --sync` — adds any new `people` entry to `tools/portrait_prompts.json` (tweak the character's visual prompt there if needed; use `"warm low-key amber lighting, dark moody background"` instead of `"candlelight"` so the model does not draw literal candles).
+2. `node tools/gen_portraits.js --batch 3` — generates up to 3 missing `.webp` portraits into `portraits/` (run `node tools/gen_portraits.js --list` to see what is missing).
+3. Review the generated `.webp` files, delete any duds and re-run `--batch` (or `--ids <id> --force` to reroll one), then run `node tools/build_app.js` to pack them into `dist/`.
 
 ### 4.4 Check
 
