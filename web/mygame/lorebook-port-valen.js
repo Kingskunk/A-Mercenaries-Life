@@ -363,10 +363,10 @@
       see: ["conduit_baths", "marda", "middle_ward"]
     },
     {
-      id: "tolliver", category: "people", title: "Clerk Tolliver",
+      id: "tolliver", category: "people", title: "Tolliver",
       sub: "Clerk of the Hiring Hall",
       role: "Clerk, Postings window, the Hiring Hall (the Council Hall)",
-      link: ["Clerk Tolliver"],
+      link: ["Tolliver", "Clerk Tolliver"],
       tags: ["Civic Heights", "Law"], aliases: ["Tolliver", "clerk", "roll clerk", "postings"],
       unlock: "ch_records_seen",
       body: function (s) {
@@ -466,19 +466,19 @@
         }
         return out;
       },
-      see: ["brinewick", "iria_tovin"]
+      see: ["brinewick", "iria_cale", "tovin_rusk"]
     },
     {
-      id: "iria_tovin", category: "people", title: "Iria Cale and Tovin Rusk",
-      sub: "A Reedhouse daughter and a tanner's son",
-      role: "Brinewick couple",
-      link: ["Iria Cale", "Tovin Rusk"],
-      tags: ["Brinewick"], aliases: ["Iria", "Tovin", "Cale", "Rusk", "tanyard", "tannery"],
+      id: "iria_cale", category: "people", title: "Iria Cale",
+      sub: "Server at the Reedhouse",
+      role: "Reedhouse server, Brinewick",
+      link: ["Iria Cale"],
+      tags: ["Brinewick"], aliases: ["Iria", "Iria Cale", "Cale", "iria_tovin"],
       unlock: "bw_daughter_met",
       body: function (s) {
         var out = [
-          "Iria Cale is Nessa's daughter and a Reedhouse server, a slender young human woman in her early twenties with wavy chestnut hair, bright hazel eyes, and wind-blushed cheeks. Tovin Rusk is the son of a Brinewick tanner, a broad-shouldered young man of twenty-four with tousled sandy hair, sun-freckled skin, and working hands stained by salt and hide-bark; his family's small tanyard stands just past the salt store, across the bank rather than across the sea.",
-          "Their proposed marriage became difficult because Nessa feared a new household would turn Iria's childhood home into a stopover."
+          "Iria Cale is Nessa's daughter and a Reedhouse server, a slender young human woman in her early twenties with wavy chestnut hair, bright hazel eyes, and wind-blushed cheeks.",
+          "Her proposed marriage to Tovin Rusk became difficult because Nessa feared a new household would turn Iria's childhood home into a stopover."
         ];
         if (truthy(s.bw_daughter_completed)) {
           out.push("The couple were given Nessa's blessing and planned their household close enough to keep a place at both fires.");
@@ -488,7 +488,29 @@
         }
         return out;
       },
-      see: ["brinewick", "nessa_cale"]
+      see: ["brinewick", "nessa_cale", "tovin_rusk"]
+    },
+    {
+      id: "tovin_rusk", category: "people", title: "Tovin Rusk",
+      sub: "Tanner's son of Brinewick",
+      role: "Tanner, Brinewick",
+      link: ["Tovin Rusk"],
+      tags: ["Brinewick"], aliases: ["Tovin", "Tovin Rusk", "Rusk", "tanyard", "tannery"],
+      unlock: "bw_daughter_met",
+      body: function (s) {
+        var out = [
+          "Tovin Rusk is the son of a Brinewick tanner, a broad-shouldered young human man of twenty-four with tousled sandy hair, sun-freckled skin, and working hands stained by salt and hide-bark; his family's small tanyard stands just past the salt store, across the bank.",
+          "His proposed marriage to Iria Cale faced hesitation from Nessa, who worried about losing her daughter from the Reedhouse."
+        ];
+        if (truthy(s.bw_daughter_completed)) {
+          out.push("Tovin and Iria received Nessa's blessing and established their household close enough to remain part of both families.");
+        }
+        if (truthy(s.bw_daughter_wedding_seen)) {
+          out.push("They were wed in Brinewick with both families celebrating together.");
+        }
+        return out;
+      },
+      see: ["brinewick", "nessa_cale", "iria_cale"]
     },
 
     /* ------------------------------------------------------- PEOPLE: VALEN REACH */

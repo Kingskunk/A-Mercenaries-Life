@@ -122,6 +122,7 @@ This file records current mechanics, variables, subroutines, and architectural c
   * **Dead space fails by default:** Any `*line_break` printing an empty line fails unless `"allowDeadSpace": true` is explicitly marked.
   * **The `weather` shortcut pins the whole day** (`weather_day`, `weather_day_wet`) so `update_hub_condition` preserves forced weather across entries.
   * Always test a fight through its real caller scene, never a bare jump into `combat.txt` (which lacks a `*return` frame).
+* **`tools/suite_report.js`:** Runs `play_all.js` (same filters) and compares every transcript with the last run's baseline (`<system temp>/cs_suite_baseline`, updated file by file). It prints only the failures, the pass count and the names of changed or new transcripts; `--show=N` adds the changed lines, `--no-save` keeps the baseline, `--seed=<folder>` loads one. A changed transcript is not a failure: read it and decide.
 * **Domain Checkers & Simulators:**
   * `tools/sim_weather.js` — verifies weather/temperature/exposure distributions.
   * `tools/render_hub.js "[weather]" "[time]" "[day]" <scene> <label>` (`PICKS=N`) — renders every weather × time × day state.

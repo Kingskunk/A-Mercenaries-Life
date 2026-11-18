@@ -73,6 +73,7 @@ window.DISCARD_DATA = {
   "scroll_shatter": {"kind":"consumable"},
   "scroll_web": {"kind":"consumable"},
   "scroll_hold_person": {"kind":"consumable"},
+  "scroll_scorching_ray": {"kind":"consumable"},
   "cooking_pot": {"kind":"tool"},
   "dripping_roasted_boar": {"kind":"consumable"},
   "onion_seared_venison": {"kind":"consumable"},

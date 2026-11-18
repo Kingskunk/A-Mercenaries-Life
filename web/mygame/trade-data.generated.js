@@ -2226,6 +2226,31 @@ window.TRADE_DATA = {
     "countVar": ""
    }
   },
+  "scroll_scorching_ray": {
+   "name": "scorching ray scroll",
+   "title": "Scorching Ray Scroll",
+   "kind": "consumable",
+   "group": "",
+   "tier": "",
+   "retail": 90,
+   "weight": 0.05,
+   "minutes": 5,
+   "hint": "Read in a fight: three rays of fire, 2d6 each, at the foes you choose",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 0,
+    "countVar": ""
+   }
+  },
   "scroll_burning_hands": {
    "name": "burning hands scroll",
    "title": "Burning Hands Scroll",
@@ -4263,6 +4288,7 @@ window.TRADE_DATA = {
     "scroll_shatter",
     "scroll_web",
     "scroll_hold_person",
+    "scroll_scorching_ray",
     "scroll_burning_hands"
    ],
    "sell": [
@@ -4281,6 +4307,7 @@ window.TRADE_DATA = {
     "scroll_shatter",
     "scroll_web",
     "scroll_hold_person",
+    "scroll_scorching_ray",
     "scroll_burning_hands"
    ]
   },

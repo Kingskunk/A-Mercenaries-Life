@@ -3430,6 +3430,7 @@
 *temp combat_read_shatter false
 *temp combat_read_web false
 *temp combat_read_hold_person false
+*temp combat_read_scorching_ray false
 *if ((has_scroll_magic_missile) and (combat_player_actions_left > 0))
   *gosub fight_read_can_magic_missile
   *if (combat_read_ok)
@@ -3474,6 +3475,10 @@
   *gosub fight_read_can_hold_person
   *if (combat_read_ok)
     *set combat_read_hold_person true
+*if ((has_scroll_scorching_ray) and (combat_player_actions_left > 0))
+  *gosub fight_read_can_scorching_ray
+  *if (combat_read_ok)
+    *set combat_read_scorching_ray true
 *comment GEN:END combat_read_check
 *temp combat_can_second_wind false
 *if ((character_class = "fighter") and (fighter_second_wind_uses > 0))
@@ -5508,6 +5513,10 @@
     # [b][ACTION][/b] [b][Read: Hold Person Scroll][/b] You read the line, and the words close on your foe like a fist, locking every joint.@{show_stat_hints  [Wisdom save or Paralyzed, on a humanoid in medium reach; concentration]|}
       *set combat_scroll_id "scroll_hold_person"
       *goto fight_read_hold_person
+  *if (combat_read_scorching_ray)
+    # [b][ACTION][/b] [b][Read: Scorching Ray Scroll][/b] Loose three rays of fire at the foes you choose in the sidebar.@{show_stat_hints  [Ranged Spell Attack per ray, 2d6 Fire each]|}
+      *set combat_scroll_id "scroll_scorching_ray"
+      *goto fight_read_scorching_ray
   *comment GEN:END combat_read_options
 
   *if (combat_can_dodge)
@@ -6331,6 +6340,11 @@ A sharp, ringing cadence leaves your lips. Warmth rushes through your marrow, kn
 *set combat_read_ok true
 *return
 
+*comment Scorching Ray reaches any band, so a scroll can always be read while a foe stands (as Grease and Thunderwave).
+*label fight_read_can_scorching_ray
+*set combat_read_ok true
+*return
+
 *label fight_read_can_healing_word
 *set combat_read_ok false
 *if ((hp_current < hp_max) or (combat_hw_ally_hurt))
@@ -6370,6 +6384,15 @@ A sharp, ringing cadence leaves your lips. Warmth rushes through your marrow, kn
 *set combat_mm_darts_5 0
 *set combat_mm_darts_6 0
 *goto fight_target_magic_missile
+
+*comment Scorching Ray from a scroll: armed at the scroll's own level (2nd, three rays) on the shared multi-target page; the cast spends the scroll
+*comment instead of a slot (fight_resolve_scorching_ray), and Cancel spends nothing, since the hub clears combat_scroll_id.
+*label fight_read_scorching_ray
+*set combat_mm_targeting_active true
+*gosub_scene combat_spells projectiles_for_level "scorching_ray" 2
+*set combat_cast_at_level 2
+*gosub fight_target_multi_clear
+*goto fight_target_scorching_ray
 
 *label fight_read_healing_word
 *comment A scroll is always read at its base level.
@@ -6877,7 +6900,12 @@ ${combat_dw_dmg_banner}
 *comment SCORCHING RAY (Wizard, 2nd level, 2026-11-17): spends its slot and prints its opening, then looses its rays through the
 *comment shared projectile loop below.
 *label fight_resolve_scorching_ray
-*gosub_scene combat_spells spend_spell_slot combat_cast_at_level
+*if (not(combat_scroll_id = ""))
+  *gosub_scene equipment spend_consumable combat_scroll_id
+  You read the line aloud, and the paper browns and curls in your hand as the fire leaves it.
+  *line_break
+*else
+  *gosub_scene combat_spells spend_spell_slot combat_cast_at_level
 *set combat_cast_at_level 1
 *gosub_scene combat_prose flavor_scorching_ray
 ${fsh}

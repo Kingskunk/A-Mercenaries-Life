@@ -68,6 +68,7 @@ const MAP = {
   read_shatter_scroll: "Item/Consumable/Scroll/Scroll_of_Shatter_Unfaded_Icon.png",
   read_web_scroll: "Item/Consumable/Scroll/Scroll_of_Web_Unfaded_Icon.png",
   read_hold_person_scroll: "Item/Consumable/Scroll/Scroll_of_Hold_Person_Unfaded_Icon.png",
+  read_scorching_ray_scroll: "Item/Consumable/Scroll/Scroll_of_Scorching_Ray_Unfaded_Icon.png",
   swap_weapons: "Passive_feature/Dual_Wielder_Icon.webp",   // STAND-IN for the Swap Weapons button (the user to choose their own art)
   trade_places: "Action/Benign_Transposition_Swap_Icon.webp",
   call_ally_back: "Action/Benign_Transposition_Swap_Icon.webp",

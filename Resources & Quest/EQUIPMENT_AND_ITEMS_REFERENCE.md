@@ -400,6 +400,7 @@ Sold at **The Ink & Lamp** (Aldren Saye, Patrician Quarter), always in stock, bo
 | Shatter Scroll (`has_scroll_shatter`) | 90c | in a fight | Read at its 2nd level: 3d8 thunder to a foe in medium reach and every foe on its tile, Constitution save for half (2026-11-18) |
 | Web Scroll (`has_scroll_web`) | 90c | in a fight | Read at its 2nd level: webbing on a foe's ground in medium reach, Dexterity save or Restrained, while the reader holds concentration (2026-11-18) |
 | Hold Person Scroll (`has_scroll_hold_person`) | 90c | in a fight | Read at its 2nd level: a humanoid in medium reach makes a Wisdom save or is Paralyzed, while the reader holds concentration (2026-11-18) |
+| Scorching Ray Scroll (`has_scroll_scorching_ray`) | 90c | in a fight | Read at its 2nd level: three rays of fire, a ranged spell attack and 2d6 fire each, split or stacked over the foes chosen in the sidebar (2026-11-18) |
 
 Three more scrolls, 40c each, are read from the place that offers the spell, never from a fight or the pack: **Detect Magic Scroll** (`has_scroll_detect_magic`), **Animal Speech Scroll** (`has_scroll_speak_with_animals`, the Speak with Animals scroll), and **Jump Scroll** (`has_scroll_jump`). A character who cannot cast the spell any other way reads it at the relevant site; one who can cast it keeps the scroll. The Jump Scroll clears the Hidden Spring's muddy climb in Longshade.
 

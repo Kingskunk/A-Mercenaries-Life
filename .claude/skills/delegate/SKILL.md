@@ -18,9 +18,10 @@ Pass `effort` on the Agent call as this table says (this skill is the instructio
 
 | Job | Helper | Effort |
 | --- | --- | --- |
-| Run a check (`play_all`, quicktest, lint) and report the failures | runner | low |
+| Full or partial suite run with transcript comparison | none: run `node tools/suite_report.js [filters]` yourself in the background and read its few summary lines | — |
+| Quicktest or lint with long output | none if its summary line is enough (`| tail`); otherwise runner | low |
 | Broad search, or listing where something is used | runner | low |
-| Sort transcript diffs, or anything that needs judgment about what changed and why | worker | medium |
+| Sort transcript diffs, or anything that needs judgment about what changed and why (only when `suite_report.js --show=N` lists more changes than you can read cheaply) | worker | medium |
 | Mechanical edits from exact instructions | worker | low |
 | Write a play script from a spec | worker | medium |
 | Diagnose why a script fails | worker | high |

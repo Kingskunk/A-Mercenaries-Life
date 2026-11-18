@@ -294,6 +294,7 @@ const MAP = {
   scroll_shatter: "Scroll_of_Shatter_Unfaded_Icon.png",
   scroll_web: "Scroll_of_Web_Unfaded_Icon.png",
   scroll_hold_person: "Scroll_of_Hold_Person_Unfaded_Icon.png",
+  scroll_scorching_ray: "Scroll_of_Scorching_Ray_Unfaded_Icon.png",
   silverstar: "../Generic/Silverstar_Generated_Source.png",                    // Chapter 3: Roi's gift from Solaine, a brooch holding one Remove Curse
   water_jug: "../Generic/Filled_Water_Jug_Generated_Source.png",   // the user's own art (2026-10-19): the water jug, one icon for empty and full
   note: "Book_Note_A_Item_Icon.png",

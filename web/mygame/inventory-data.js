@@ -629,6 +629,13 @@
       badge: "Read in a fight: a person in reach makes a Wisdom save or is Paralyzed, for as long as you hold concentration"
     },
     {
+      id: "scroll_scorching_ray", category: "consumables", owned: "has_scroll_scorching_ray",
+      weight: 0.05, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_scroll_scorching_ray) || 0); return "Scorching Ray Scroll" + (n > 1 ? " ×" + n : ""); },
+      description: "Warm strip of paper with browned edges.",
+      badge: "Read in a fight: three rays of fire, 2d6 each, at the foes you choose"
+    },
+    {
       id: "cooking_pot", category: "provisions", owned: "has_cooking_pot",
       weight: 4, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_cooking_pot) || 0); return "Iron Cooking Pot" + (n > 1 ? " ×" + n : ""); },
