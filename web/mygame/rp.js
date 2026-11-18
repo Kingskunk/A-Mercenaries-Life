@@ -71,6 +71,7 @@
     cfg: null,
     openingText: "",
     turns: [],        // [{ role: "user" | "ai", text: "...", pEls: [<p>, ...] }]
+    saveMemory: true, // whether to distill & save this visit to MemPalace on exit
     busy: false,
     workerConnected: false,
     freeModels: []
@@ -91,6 +92,7 @@
         key: session.pageId,
         id: session.id,
         turns: cleanTurns,
+        saveMemory: session.saveMemory !== false,
         draft: typeof draftText === "string" ? draftText : ""
       };
       localStorage.setItem(ACTIVE_SESSION_KEY, JSON.stringify(payload));
@@ -262,12 +264,16 @@
     if (!baseUrl || !threadId) return Promise.resolve("");
     var s = statsNow();
     var currentDay = Number(s.campaign_day) || 1;
+    // During an active encounter, s.intimate_encounters has already been incremented by 1 for THIS visit,
+    // so past completed visits have order <= (intimate_encounters - 1).
+    var maxVisit = Math.max(0, (Number(s.intimate_encounters) || 1) - 1);
     return fetch(baseUrl + "/get_npc_memories", {
       method: "POST",
       headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
       body: JSON.stringify({
         thread_id: threadId,
         current_day: currentDay,
+        max_visit: maxVisit,
         query: queryText || ""
       })
     }).then(function (r) { return r.ok ? r.json() : null; })
@@ -280,7 +286,7 @@
 
   function commitSessionToMemPalace() {
     var baseUrl = getServerUrl();
-    if (!baseUrl || !session.cfg || session.cfg.memory === false || session.turns.length === 0) return;
+    if (!baseUrl || !session.cfg || session.cfg.memory === false || session.saveMemory === false || session.turns.length === 0) return;
     var s = statsNow();
     var threadId = resolveThreadId(session.cfg, s);
     if (!threadId) return;
@@ -310,17 +316,13 @@
     }).catch(function () {});
   }
 
-  // Called on a genuine new game (see restoreGame() in web/util.js) so a fresh playthrough
-  // clears any active RP session cache and wipes old ChoiceScript rooms in MemPalace.
+  // Called on a genuine new game (see restoreGame() in web/util.js).
+  // Clears any active RP session cache and assigns a fresh rp_world_id for the new playthrough
+  // WITHOUT wiping other save slots' or other devices' MemPalace rooms on the server!
   RP.resetAll = function () {
     clearActiveSession();
-    var baseUrl = getServerUrl();
-    if (!baseUrl) return;
-    fetch(baseUrl + "/wipe_cs_palaces", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
-      body: "{}"
-    }).catch(function () {});
+    var s = statsNow();
+    s.rp_world_id = "w" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   };
 
   if (typeof document === "undefined") return; // node tests stop here
@@ -419,10 +421,11 @@
     if (memBtn && session.cfg && session.cfg.memory !== false) {
       var threadId = resolveThreadId(session.cfg, statsNow());
       if (threadId) {
+        var maxV = Math.max(0, (Number(statsNow().intimate_encounters) || 1) - 1);
         fetch(baseUrl + "/get_npc_memories", {
           method: "POST",
           headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
-          body: JSON.stringify({ thread_id: threadId, current_day: Number(statsNow().campaign_day) || 1 })
+          body: JSON.stringify({ thread_id: threadId, current_day: Number(statsNow().campaign_day) || 1, max_visit: maxV })
         }).then(function (r) { return r.ok ? r.json() : null; })
           .then(function (d) {
             var count = (d && Array.isArray(d.all)) ? d.all.length : 0;
@@ -452,6 +455,7 @@
     session.pageId = currentPageKey(sceneId);
     session.cfg = cfg;
     session.turns = [];
+    session.saveMemory = cfg.memory !== false;
     session.busy = false;
     session.openingText = collectOpeningNarrative(textEl, markerParagraph);
 
@@ -527,6 +531,7 @@
             '<button type="button" class="rp-btn" data-act="undo" disabled title="Remove the last exchange">\u232B Undo</button>' +
           '</div>' +
           '<div class="rp-actions-right">' +
+            (hasMem ? '<label class="rp-mem-check" title="When checked, this scene will be distilled into a memory for this companion when you leave"><input type="checkbox" class="rp-save-mem-cb" checked><span>Save as memory</span></label>' : '') +
             '<span class="rp-status">Ready. Click "Rest together\u2026" below whenever you wish to finish.</span>' +
           '</div>' +
         '</div>' +
@@ -550,6 +555,7 @@
     var editArea = box.querySelector(".rp-edit-textarea");
     var memDrawer = box.querySelector(".rp-mem-drawer");
     var memList = box.querySelector(".rp-mem-list");
+    var saveMemCb = box.querySelector(".rp-save-mem-cb");
 
     function updateChipsVisibility() {
       var hasTurns = session.turns.length > 0;
@@ -583,10 +589,11 @@
         return;
       }
       memList.innerHTML = '<div class="rp-status">Loading memories...</div>';
+      var maxV = Math.max(0, (Number(statsNow().intimate_encounters) || 1) - 1);
       fetch(baseUrl + "/get_npc_memories", {
         method: "POST",
         headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
-        body: JSON.stringify({ thread_id: threadId, current_day: Number(statsNow().campaign_day) || 1 })
+        body: JSON.stringify({ thread_id: threadId, current_day: Number(statsNow().campaign_day) || 1, max_visit: maxV })
       }).then(function (r) { return r.ok ? r.json() : null; })
         .then(function (d) {
           var items = (d && Array.isArray(d.all)) ? d.all : [];
@@ -631,7 +638,19 @@
     if (restored && restored.draft) {
       inputEl.value = restored.draft;
     }
+    if (restored && typeof restored.saveMemory === "boolean") {
+      session.saveMemory = restored.saveMemory;
+      if (saveMemCb) saveMemCb.checked = restored.saveMemory;
+    }
     updateButtons();
+
+    if (saveMemCb) {
+      saveMemCb.addEventListener("change", function () {
+        session.saveMemory = !!saveMemCb.checked;
+        saveActiveSession(inputEl.value);
+        setStatus(session.saveMemory ? "This visit will be saved to memory on exit." : "Memory saving off for this visit.");
+      });
+    }
 
     inputEl.addEventListener("input", function () {
       saveActiveSession(inputEl.value);
@@ -885,6 +904,9 @@
     // and not in the temporary stats/menu view, commit the finished session once to MemPalace (if memory: true)
     // and clear the persisted active session buffer.
     var s = statsNow();
+    if (s && s.name && !s.rp_world_id) {
+      ensureWorldId(s);
+    }
     var isSecondary = s.scene && s.scene.secondaryMode === "stats";
     if (!isSecondary && (!s.rp_active_scene || s.rp_active_scene === "none") && !document.getElementById("rpConsoleBox")) {
       if (session.active) {

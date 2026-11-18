@@ -148,6 +148,12 @@
 *temp adp_wet 0
 *if (adp_slot > 0)
   *set adp_wet {(("combat_enemy" & adp_slot) & "_wet")}
+*comment WEB BURNS (3.4): fire that reaches an enemy standing on the player's Web patch sets the patch alight; combat_spells.txt web_burn_check resolves it once the blow's banners have printed.
+*if ((((adp_slot > 0) and (adp_type = "fire")) and (adp_amount > 0)) and ((combat_player_concentrating = "web") and (not(combat_web_burning))))
+  *temp adp_web_pos {(("combat_enemy" & adp_slot) & "_position")}
+  *gosub_scene combat_movement combat_web_at adp_web_pos
+  *if (combat_web_here)
+    *set combat_web_burn_pending true
 *if (adp_wet > 0)
   *if (adp_type = "fire")
     *set adp_resisted true
@@ -1623,6 +1629,17 @@ ${combat_player_dmg_roll_banner}
       *set res_mod + combat_player_save_bonus_wisdom
     *if (res_stat = "charisma")
       *set res_mod + combat_player_save_bonus_charisma
+  *comment Some callers pass the shared combat_enemy_ prefix for the active target; its condition fields live on the slot.
+  *temp res_cond_p res_prefix
+  *if (res_prefix = "combat_enemy_")
+    *set res_cond_p (("combat_enemy" & combat_active_target) & "_")
+  *comment Restrained (Web, Ensnaring Strike): Dexterity saves are made with disadvantage. The banner names it only when no other disadvantage already applies.
+  *temp res_restrained_dis false
+  *if (res_stat = "dexterity")
+    *temp res_restrained {(res_cond_p & "restrained")}
+    *if ((res_restrained > 0) and (not(res_dis)))
+      *set res_dis true
+      *set res_restrained_dis true
   *temp res_roll 0
   *rand res_roll 1 20
   *temp res_roll_b 0
@@ -1638,6 +1655,8 @@ ${combat_player_dmg_roll_banner}
     *if (res_roll_b < res_roll)
       *set res_roll res_roll_b
     *set res_dis_note " (disadvantage)"
+    *if (res_restrained_dis)
+      *set res_dis_note " (disadvantage, Restrained)"
   *temp res_total (res_roll + res_mod)
   *temp res_bane_str ""
   *temp res_bane_expires {(res_prefix & "bane_expires_round")}
@@ -1658,10 +1677,6 @@ ${combat_player_dmg_roll_banner}
     *set res_verdict "FAILED"
   *set res_banner "[b][🎲 ${res_name} Saving Throw: ${res_stat_label} (DC ${res_dc}) | Roll: ${res_roll}${res_dis_note} ${res_mod_str}${res_bane_str} = ${res_total} — ${res_verdict}][/b]"
   *comment Paralyzed (Hold Person): a held creature fails every Strength and Dexterity save without a roll.
-  *comment Some callers pass the shared combat_enemy_ prefix for the active target; its condition fields live on the slot.
-  *temp res_cond_p res_prefix
-  *if (res_prefix = "combat_enemy_")
-    *set res_cond_p (("combat_enemy" & combat_active_target) & "_")
   *temp res_paralyzed {(res_cond_p & "paralyzed")}
   *if ((res_paralyzed > 0) and ((res_stat = "strength") or (res_stat = "dexterity")))
     *set check_success true

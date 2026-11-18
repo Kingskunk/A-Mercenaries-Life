@@ -7116,6 +7116,12 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *gosub fight_check_all_dead
 *if (combat_all_enemies_dead)
   *goto fight_victory
+*comment WEB BURNS (3.4): fire this option dealt to a webbed enemy burns the patch, and that fire can finish the fight.
+*gosub_scene combat_spells web_burn_check
+*if (combat_web_burned)
+  *gosub fight_check_all_dead
+  *if (combat_all_enemies_dead)
+    *goto fight_victory
 *gosub_scene combat_dice concentration_reconcile
 *gosub_scene combat_movement fight_pick_target
 *if (combat_dual_shot_active)
@@ -8331,6 +8337,8 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *temp cnt_burning {(("combat_enemy" & cnt_slot) & "_burning")}
     *if ((cnt_burning > 0) and (not((combat_player_surprise) and (cnt_first_pass))))
       *gosub combat_burn_tick cnt_slot
+      *comment WEB BURNS (3.4): a burning foe in the webs sets them alight, so the patch is gone before it tries to tear free.
+      *gosub_scene combat_spells web_burn_check
       *comment Dead of the fire, or the turn spent putting it out: nothing more this turn.
       *if ((combat_burn_killed) or (combat_burn_doused))
         *goto cnt_boom_tail
@@ -8788,6 +8796,8 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
         *goto fight_victory_quiet
     *comment A move that killed the enemy (Booming Blade, fight_booming_trigger) jumps here, skipping the attack it would have made. Win the fight if that was the last one.
     *label cnt_boom_tail
+    *comment WEB BURNS (3.4): fire dealt during this turn (a Hellish Rebuke) burns the patch.
+    *gosub_scene combat_spells web_burn_check
     *gosub fight_check_all_dead
     *if (combat_all_enemies_dead)
       *goto fight_victory_quiet
@@ -9079,6 +9089,12 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
                 *goto fight_victory
               *line_break
     *label cnt_ally_tail
+    *comment WEB BURNS (3.4): an ally's fire on a webbed enemy burns the patch, and that fire can finish the fight.
+    *gosub_scene combat_spells web_burn_check
+    *if (combat_web_burned)
+      *gosub fight_check_all_dead
+      *if (combat_all_enemies_dead)
+        *goto fight_victory_quiet
     *if ({(("combat_ally" & cnt_slot) & "_hp")} > 0)
       *temp cnt_ap (("combat_ally" & cnt_slot) & "_")
       *gosub_scene combat_dice condition_tick cnt_ap 0

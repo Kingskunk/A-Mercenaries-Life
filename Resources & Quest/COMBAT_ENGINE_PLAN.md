@@ -100,9 +100,9 @@ The 1st-level spells below, which lacked it, now grow with a 2nd-level slot: a "
 
 ### 3.4 Web and Restrained, the rest of the rules
 
-- Fire burns the webs away: any fire damage to a creature in the patch clears it, frees everyone in it, and deals 2d4 fire to each.
+- Done (2026-11-18): fire burns the webs away. Fire damage to an enemy on the patch (any source: the player, an ally, a burn tick, Hellish Rebuke) sets `combat_web_burn_pending` in `adjust_damage_packet`; `web_burn_check` (combat_spells.txt) then deals one shared 2d4 fire to each living enemy on the patch and ends the Web's concentration, which clears the patch and frees everyone it held. Called from `fight_check_enemy_hp`, after an enemy's burn tick, at `cnt_boom_tail` and at the end of an ally's turn. Enemies only, like Web; the player and allies in the patch take no burn. Script: `web_fire_burns_patch`.
 - The player and allies are never caught; the patch only slows them. Catching them needs Restrained effects on the player side (no move, attacks against them with advantage, their own attacks with disadvantage) and a tear-free action on the player's menu.
-- A restrained creature should make Dexterity saves with disadvantage. Not built for any restraint.
+- Done (2026-11-18): a restrained creature (Web, Ensnaring Strike, any slot including the player and allies) makes Dexterity saves with disadvantage, in the shared `resolve_save`. The banner reads "(disadvantage, Restrained)" unless another disadvantage already applies. Script: `web_restrained_dex_save_disadvantage`.
 - AI: an optional step already avoids a web, but the closing route still walks a melee enemy into it. Decide which profiles refuse and fight from range or wait instead (a caster or sharpshooter holds back, a bruiser pushes through).
 
 ### 3.5 Paralyzed and other conditions on the player and allies
