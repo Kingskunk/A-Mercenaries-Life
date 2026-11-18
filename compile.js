@@ -231,6 +231,10 @@ function compile(){
   // used well beyond combat. Same shape as the other combat_* files: NOT in *scene_list, needs its own line here
   // or a compiled build fails with "scene doesn't exist" the moment any attack resolves.
   verifyFileName("combat_dice.txt");
+  // "combat_abilities" holds the enemy ability system (COMBAT_ENGINE_PLAN.md 3.4a: the Net, feints, venom riders, Undead Fortitude), with its
+  // generated ability_facts_load block from tools/ability_book.json. Same shape as the other combat_* files: NOT in *scene_list, needs its own
+  // line here or a compiled build fails with "scene doesn't exist" the first time any enemy fight sets up.
+  verifyFileName("combat_abilities.txt");
   // "character_progression" holds class resource pools (Second Wind, Rage), rest recovery, and leveling (Second
   // Wind, do_level_up, training, etc.), split out of startup.txt 2026-09-28 (see character_progression.txt's own
   // header comment) -- the widest caller spread of any split so far (8 files). Same shape as the other split
