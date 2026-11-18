@@ -25,7 +25,7 @@ var CHECK = process.argv.indexOf("--check") !== -1;
 var COMMON_KEYS = { name: true, kind: true, uses: true, desc: true };
 var KIND_KEYS = {
   extra_attack: { extra_attacks: true, weapon: true, damage_dice_sides: true, damage_type: true },
-  attack_variant: {},
+  attack_variant: { chance: true, damage_dice_sides: true, damage_bonus: true, damage_type: true, condition_name: true, condition_icon: true },
   action: { chance: true, range_min: true, range_max: true, condition: true, escape_dc: true, src: true },
   on_hit_rider: {},
   trait: {}
@@ -56,6 +56,9 @@ L.push("*set ability_fact_range_max 0");
 L.push("*set ability_fact_condition \"\"");
 L.push("*set ability_fact_escape_dc 0");
 L.push("*set ability_fact_src \"\"");
+L.push("*set ability_fact_dmg_bonus 0");
+L.push("*set ability_fact_cond_name \"\"");
+L.push("*set ability_fact_cond_icon \"\"");
 var CONDITIONS = { restrained: 1 };
 function band(id, key, v) {
   if (typeof v !== "number" || v !== Math.floor(v) || v < 0 || v > 5) fail(id, key + " must be a range band, 0 (Engaged) to 5");
@@ -89,6 +92,18 @@ Object.keys(abilities).sort().forEach(function (id) {
       fail(id, "weapon must be \"own\" or \"offhand\"");
     }
     L.push("  *set ability_fact_weapon \"" + a.weapon + "\"");
+  }
+  if (a.kind === "attack_variant") {
+    var vch = posInt(id, "chance", a.chance);
+    if (vch > 100) fail(id, "chance is 1 to 100");
+    if (typeof a.damage_bonus !== "number" || a.damage_bonus !== Math.floor(a.damage_bonus)) fail(id, "damage_bonus must be a whole number");
+    if (!DAMAGE_TYPES[a.damage_type]) fail(id, "damage_type must be a damage type, got '" + a.damage_type + "'");
+    L.push("  *set ability_fact_chance " + vch);
+    L.push("  *set ability_fact_dmg_dice_sides " + posInt(id, "damage_dice_sides", a.damage_dice_sides));
+    L.push("  *set ability_fact_dmg_bonus " + (a.damage_bonus < 0 ? "(0 - " + (-a.damage_bonus) + ")" : a.damage_bonus));
+    L.push("  *set ability_fact_dmg_type \"" + a.damage_type + "\"");
+    L.push("  *set ability_fact_cond_name \"" + csString(id, "condition_name", a.condition_name) + "\"");
+    L.push("  *set ability_fact_cond_icon \"" + csString(id, "condition_icon", a.condition_icon) + "\"");
   }
   if (a.kind === "action") {
     var ch = posInt(id, "chance", a.chance);

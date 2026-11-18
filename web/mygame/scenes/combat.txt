@@ -267,9 +267,8 @@
 *comment Stat overrides (see startup.txt): a scene that wants a tougher or weaker fighter than the library
 *comment type sets combat_enemy_hp_override, _ac_override and _atk_override (and the combat_enemy2_ / combat_enemy3_
 *comment versions) before calling the fight. They are applied here, after every slot has been built and before slot 1 is
-*comment snapshotted, so they work on any type and on any fight label. The special move's to-hit bonus moves by the same
-*comment amount as the basic attack's, so a +2 captain is +2 on every swing. 999 is "not set"; each is put back to 999 once used.
-*temp so_delta 0
+*comment snapshotted, so they work on any type and on any fight label. The special move's to-hit follows the basic attack's
+*comment (combat_abilities ability_refresh_variant derives it from the final attack bonus), so a +2 captain is +2 on every swing. 999 is "not set"; each is put back to 999 once used.
 *if (not(combat_enemy_hp_override = 999))
   *set combat_enemy_hp combat_enemy_hp_override
   *set combat_enemy_max_hp combat_enemy_hp_override
@@ -277,10 +276,6 @@
   *set combat_enemy_ac combat_enemy_ac_override
 *comment replay-ok: the override is consumed (set back to 999) a few lines below, so a replay finds 999 and skips this block.
 *if (not(combat_enemy_atk_override = 999))
-  *if (combat_enemy_move2_chance > 0)
-    *set so_delta combat_enemy_atk_override
-    *set so_delta - combat_enemy_atk_bonus
-    *set combat_enemy_move2_atk_bonus + so_delta
   *set combat_enemy_atk_bonus combat_enemy_atk_override
 *comment Resolve (2026-11-03): how hard slot 1 is to Intimidate, beyond its type's (it lives on the numbered slot, like morale).
 *if (not(combat_enemy_resolve_override = 999))
@@ -441,6 +436,8 @@
 *set combat_enemy1_move2_inflicts_condition combat_enemy_move2_inflicts_condition
 *set combat_enemy1_move2_condition_name combat_enemy_move2_condition_name
 *set combat_enemy1_move2_condition_icon combat_enemy_move2_condition_icon
+*comment Slot 1's special move comes from its abilities (3.4a), now that its attack bonus and overrides are final.
+*gosub_scene combat_abilities ability_refresh_variant "combat_enemy1_"
 *set combat_enemy1_resist_types combat_enemy_resist_types
 *set combat_enemy1_vulnerable_types combat_enemy_vulnerable_types
 *set combat_enemy1_immune_types combat_enemy_immune_types
@@ -521,17 +518,12 @@
 *if (not(aso_resolve_ov = 999))
   *set {(aso_p & "resolve")} aso_resolve_ov
   *set {(aso_p & "resolve_override")} 999
-*temp aso_delta 0
 *if (not(aso_hp_ov = 999))
   *set {(aso_p & "hp")} aso_hp_ov
   *set {(aso_p & "max_hp")} aso_hp_ov
 *if (not(aso_ac_ov = 999))
   *set {(aso_p & "ac")} aso_ac_ov
 *if (not(aso_atk_ov = 999))
-  *if ({(aso_p & "move2_chance")} > 0)
-    *set aso_delta aso_atk_ov
-    *set aso_delta - {(aso_p & "atk_bonus")}
-    *set {(aso_p & "move2_atk_bonus")} ({(aso_p & "move2_atk_bonus")} + aso_delta)
   *set {(aso_p & "atk_bonus")} aso_atk_ov
 *if (not(aso_size_ov = ""))
   *set {(aso_p & "size")} aso_size_ov
@@ -576,8 +568,9 @@
 *set {(aso_p & "cast_stat_override")} ""
 *set {(aso_p & "cast_dc_override")} 0
 *gosub compute_cast_dc aso_p aso_cstat aso_cdc
-*comment Assigned abilities (3.4a).
+*comment Assigned abilities (3.4a), then the special move they give (an attack_variant), now that this slot's attack bonus is final.
 *gosub_scene combat_abilities ability_apply_overrides aso_p
+*gosub_scene combat_abilities ability_refresh_variant aso_p
 *return
 
 *label compute_cast_dc

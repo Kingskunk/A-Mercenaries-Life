@@ -3,7 +3,8 @@
 *comment The non-magical twin of assigned spells. Every enemy slot holds up to three abilities (combat_enemyN_ability_1..3, an id from
 *comment tools/ability_book.json, or ""), each with its uses left this fight (ability_uses_1..3; -1 is unlimited). A fight fills them through
 *comment combat_enemy_ability_K_override (slot 1) or combat_enemyN_ability_K_override, as it fills cast_spell_*; "none" clears a slot.
-*comment Kinds: extra_attack (built: Multiattack), attack_variant, action, on_hit_rider, trait (still to come, see the plan).
+*comment Kinds built: extra_attack (Multiattack, Off-hand Knife), action (Net), attack_variant (the eight type special moves, each type's default in slot 3).
+*comment Still to come: on_hit_rider, trait (see the plan).
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *comment Quicktest runs every library scene once from the top. The first label below takes *params, which only exist inside a gosub, so that walk stops here. A real call jumps straight to its label and never runs this line.
@@ -26,6 +27,69 @@
 *set ability_fact_condition ""
 *set ability_fact_escape_dc 0
 *set ability_fact_src ""
+*set ability_fact_dmg_bonus 0
+*set ability_fact_cond_name ""
+*set ability_fact_cond_icon ""
+*if (afl_id = "bleeding_cut")
+  *set ability_fact_name "Bleeding Cut"
+  *set ability_fact_kind "attack_variant"
+  *set ability_fact_uses (0 - 1)
+  *set ability_fact_chance 30
+  *set ability_fact_dmg_dice_sides 4
+  *set ability_fact_dmg_bonus 0
+  *set ability_fact_dmg_type "slashing"
+  *set ability_fact_cond_name "Bleeding"
+  *set ability_fact_cond_icon "🩸"
+*if (afl_id = "blinding_stone")
+  *set ability_fact_name "Blinding Stone"
+  *set ability_fact_kind "attack_variant"
+  *set ability_fact_uses (0 - 1)
+  *set ability_fact_chance 25
+  *set ability_fact_dmg_dice_sides 2
+  *set ability_fact_dmg_bonus 0
+  *set ability_fact_dmg_type "bludgeoning"
+  *set ability_fact_cond_name "Blinded"
+  *set ability_fact_cond_icon "🌫️"
+*if (afl_id = "dazing_blow")
+  *set ability_fact_name "Dazing Blow"
+  *set ability_fact_kind "attack_variant"
+  *set ability_fact_uses (0 - 1)
+  *set ability_fact_chance 30
+  *set ability_fact_dmg_dice_sides 4
+  *set ability_fact_dmg_bonus 0
+  *set ability_fact_dmg_type "bludgeoning"
+  *set ability_fact_cond_name "Dazed"
+  *set ability_fact_cond_icon "😵"
+*if (afl_id = "feint")
+  *set ability_fact_name "Feint"
+  *set ability_fact_kind "attack_variant"
+  *set ability_fact_uses (0 - 1)
+  *set ability_fact_chance 30
+  *set ability_fact_dmg_dice_sides 4
+  *set ability_fact_dmg_bonus 0
+  *set ability_fact_dmg_type "slashing"
+  *set ability_fact_cond_name "Off-Guard"
+  *set ability_fact_cond_icon "🗡️"
+*if (afl_id = "hobbling_shot")
+  *set ability_fact_name "Hobbling Shot"
+  *set ability_fact_kind "attack_variant"
+  *set ability_fact_uses (0 - 1)
+  *set ability_fact_chance 25
+  *set ability_fact_dmg_dice_sides 4
+  *set ability_fact_dmg_bonus 0
+  *set ability_fact_dmg_type "piercing"
+  *set ability_fact_cond_name "Hobbled"
+  *set ability_fact_cond_icon "🦵"
+*if (afl_id = "hook_and_pull")
+  *set ability_fact_name "Hook and Pull"
+  *set ability_fact_kind "attack_variant"
+  *set ability_fact_uses (0 - 1)
+  *set ability_fact_chance 30
+  *set ability_fact_dmg_dice_sides 4
+  *set ability_fact_dmg_bonus 0
+  *set ability_fact_dmg_type "bludgeoning"
+  *set ability_fact_cond_name "Off-Balance"
+  *set ability_fact_cond_icon "🌀"
 *if (afl_id = "multiattack")
   *set ability_fact_name "Multiattack"
   *set ability_fact_kind "extra_attack"
@@ -50,6 +114,26 @@
   *set ability_fact_dmg_dice_sides 4
   *set ability_fact_dmg_type "piercing"
   *set ability_fact_weapon "offhand"
+*if (afl_id = "pinning_thrust")
+  *set ability_fact_name "Pinning Thrust"
+  *set ability_fact_kind "attack_variant"
+  *set ability_fact_uses (0 - 1)
+  *set ability_fact_chance 30
+  *set ability_fact_dmg_dice_sides 4
+  *set ability_fact_dmg_bonus 0
+  *set ability_fact_dmg_type "piercing"
+  *set ability_fact_cond_name "Pinned"
+  *set ability_fact_cond_icon "📌"
+*if (afl_id = "poisoned_blade")
+  *set ability_fact_name "Poisoned Blade"
+  *set ability_fact_kind "attack_variant"
+  *set ability_fact_uses (0 - 1)
+  *set ability_fact_chance 30
+  *set ability_fact_dmg_dice_sides 4
+  *set ability_fact_dmg_bonus 0
+  *set ability_fact_dmg_type "piercing"
+  *set ability_fact_cond_name "Poisoned"
+  *set ability_fact_cond_icon "🤢"
 *comment GEN:END ability_facts_load
 *return
 
@@ -237,4 +321,43 @@
   [b][🪢 You are Restrained (${ability_fact_name}, escape DC ${ability_fact_escape_dc})][/b]
   *line_break
 *set combat_turn_advanced_this_page true
+*return
+
+*comment TYPE DEFAULTS (3.4a step 3): a library type names its default ability, which goes into ability slot 3 of the slot being built (combat_apply_slot), unlimited
+*comment unless the catalog says otherwise. A fight's overrides come after, so ability_3_override (or "none") replaces or clears it, and slots 1 and 2 stay free for the fight.
+*label ability_type_default
+*params atd_id
+*temp atd_p (("combat_enemy" & combat_apply_slot) & "_")
+*gosub ability_facts_load atd_id
+*set {(atd_p & "ability_3")} atd_id
+*set {(atd_p & "ability_uses_3")} ability_fact_uses
+*return
+
+*comment ATTACK VARIANT (3.4a step 3): loads the first attack_variant ability this enemy slot holds into the slot's special-move fields (move2_*), which the rest of the
+*comment engine reads as it always has (combat_ai.txt fight_pick_enemy_move rolls the chance; the sync, the sidearm and the prose are unchanged). The to-hit is the body's
+*comment attack bonus without its ability modifier (atk_bonus minus dmg_bonus: proficiency, plus any attack override), so it follows the body and its overrides. With no
+*comment attack_variant the special move is off (move2_chance 0). Called once a slot's own fields and overrides are final (combat.txt fight_setup, apply_slot_stat_override).
+*label ability_refresh_variant
+*params arv_p
+*set {(arv_p & "move2_chance")} 0
+*temp arv_k 1
+*temp arv_done false
+*label ability_refresh_variant_loop
+*if ((arv_k <= 3) and (not(arv_done)))
+  *temp arv_id {(arv_p & ("ability_" & arv_k))}
+  *temp arv_uses {(arv_p & ("ability_uses_" & arv_k))}
+  *if ((not(arv_id = "")) and (not(arv_uses = 0)))
+    *gosub ability_facts_load arv_id
+    *if (ability_fact_kind = "attack_variant")
+      *set arv_done true
+      *set {(arv_p & "move2_chance")} ability_fact_chance
+      *set {(arv_p & "move2_atk_bonus")} ({(arv_p & "atk_bonus")} - {(arv_p & "dmg_bonus")})
+      *set {(arv_p & "move2_dmg_dice_sides")} ability_fact_dmg_dice_sides
+      *set {(arv_p & "move2_dmg_bonus")} ability_fact_dmg_bonus
+      *set {(arv_p & "move2_dmg_type")} ability_fact_dmg_type
+      *set {(arv_p & "move2_inflicts_condition")} true
+      *set {(arv_p & "move2_condition_name")} ability_fact_cond_name
+      *set {(arv_p & "move2_condition_icon")} ability_fact_cond_icon
+  *set arv_k + 1
+  *goto ability_refresh_variant_loop
 *return
