@@ -12,6 +12,8 @@
 //       node tools/suite_report.js --seed=some/folder  copy an existing transcript folder (play_all --out) in as the baseline, run nothing
 //       --jobs=N is passed on to play_all.js.
 // The baseline is updated file by file, so a run of a few scripts refreshes only theirs. A script missing from the baseline is listed as new.
+// Before a changed transcript's baseline is overwritten, the old one is copied to <baseline>_prev (emptied at the start of every run that
+// saves), so a change can still be read after the run: diff <baseline>_prev/<name>.txt <baseline>/<name>.txt.
 // Exit code: 0 when every script passed, 1 when any failed. A changed transcript is not a failure: it is for the reader to judge.
 const { spawn } = require("child_process");
 const fs = require("fs"), os = require("os"), path = require("path");
@@ -75,7 +77,16 @@ child.on("close", function (code) {
     if (added.length) console.log("NEW " + added.join(", "));
   }
 
-  if (!flags["no-save"]) copyTxt(NEW, BASE);
+  if (!flags["no-save"]) {
+    const PREV = BASE + "_prev";
+    fs.rmSync(PREV, { recursive: true, force: true });
+    if (changed.length) {
+      fs.mkdirSync(PREV, { recursive: true });
+      changed.forEach(function (c) { fs.copyFileSync(path.join(BASE, c.f), path.join(PREV, c.f)); });
+      console.log("suite_report: the old version of each changed transcript is in " + PREV);
+    }
+    copyTxt(NEW, BASE);
+  }
   else console.log("suite_report: baseline left as it was; this run's transcripts are in " + NEW);
   if (!flags["no-save"]) fs.rmSync(NEW, { recursive: true, force: true });
   process.exit(code === 0 ? 0 : 1);

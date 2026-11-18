@@ -127,6 +127,7 @@
     *set {(("combat_enemy" & fss_i) & "_cast_dc")} 0
     *set {(("combat_enemy" & fss_i) & "_cast_atk_bonus")} 0
     *set {(("combat_enemy" & fss_i) & "_spell_base_applied")} false
+    *set {(("combat_enemy" & fss_i) & "_spell_base_id")} ""
   *set {(("combat_enemy" & fss_i) & "_concentrating")} "none"
   *set fss_i (fss_i + 1)
   *goto fight_setup_stale_loop
@@ -619,17 +620,27 @@
 *return
 
 *label apply_enemy_spell_base
-*comment Replaces an enemy slot's base attack with an at-will attack spell (Poison Spray) when assigned, moving the body's own weapon into sidearm_* (Step 3c-2).
+*comment Replaces an enemy slot's base attack with an at-will attack spell when assigned, moving the body's own weapon into sidearm_* (Step 3c-2).
+*comment Since 3.6 step 2 (2026-11-18) it reads the data: the first assigned cantrip that is an attack-roll spell with enemy lines (spell_book.json combat.npc_lines),
+*comment or Poison Spray (a save in the player's data, an attack roll for an enemy since Step 3c-2). Its reach class becomes the slot's, so a caster with a
+*comment long-reach cantrip keeps its distance as an archer does; a touch cantrip makes it a melee attacker. The id goes in spell_base_id for the prose and the
+*comment spell picker. Damage is one die, as at character level 1 (an enemy's cantrip does not scale with the player's level).
 *params aesb_slot
 *temp aesb_p (("combat_enemy" & aesb_slot) & "_")
-*temp aesb_ps false
-*if ({(aesb_p & "cast_spell_1")} = "poison_spray")
-  *set aesb_ps true
-*if ({(aesb_p & "cast_spell_2")} = "poison_spray")
-  *set aesb_ps true
-*if ({(aesb_p & "cast_spell_3")} = "poison_spray")
-  *set aesb_ps true
-*if (aesb_ps)
+*temp aesb_id ""
+*temp aesb_k 1
+*label apply_enemy_spell_base_loop
+*if ((aesb_k <= 3) and (aesb_id = ""))
+  *temp aesb_c {(aesb_p & ("cast_spell_" & aesb_k))}
+  *if (not(aesb_c = ""))
+    *gosub_scene combat_spells spell_facts_load aesb_c
+    *if (((spell_fact_slot_level = 0) and (spell_fact_npc_lines)) and ((spell_fact_resolution = "attack") or (aesb_c = "poison_spray")))
+      *set aesb_id aesb_c
+  *set aesb_k + 1
+  *goto apply_enemy_spell_base_loop
+*set {(aesb_p & "spell_base_id")} aesb_id
+*if (not(aesb_id = ""))
+  *gosub_scene combat_spells spell_facts_load aesb_id
   *if (not({(aesb_p & "spell_base_applied")}))
     *set {(aesb_p & "spell_base_applied")} true
     *set {(aesb_p & "sidearm_weapon_type")} {(aesb_p & "weapon_type")}
@@ -641,10 +652,13 @@
     *set {(aesb_p & "sidearm_save_stat")} ""
     *set {(aesb_p & "sidearm_save_dc")} 0
     *set {(aesb_p & "sidearm_save_half")} false
-  *set {(aesb_p & "weapon_type")} "ranged"
-  *set {(aesb_p & "reach")} "medium"
-  *set {(aesb_p & "dmg_dice_sides")} 12
-  *set {(aesb_p & "dmg_type")} "poison"
+  *if (spell_fact_reach = "touch")
+    *set {(aesb_p & "weapon_type")} "melee"
+  *else
+    *set {(aesb_p & "weapon_type")} "ranged"
+    *set {(aesb_p & "reach")} spell_fact_reach
+  *set {(aesb_p & "dmg_dice_sides")} spell_fact_dice_sides
+  *set {(aesb_p & "dmg_type")} spell_fact_dmg_type
   *set {(aesb_p & "dmg_bonus")} 0
   *set {(aesb_p & "atk_bonus")} {(aesb_p & "cast_atk_bonus")}
   *if (aesb_slot = 1)
@@ -1297,6 +1311,7 @@
   *set {(fc_p & "slowed_src")} ""
   *set {(fc_p & "concentrating")} "none"
   *set {(fc_p & "spell_base_applied")} false
+  *set {(fc_p & "spell_base_id")} ""
   *set {(fc_p & "disadvantage")} false
   *set {(fc_p & "advantage")} false
   *comment Range: 0 means Engaged, every type's default -- reset per-slot for the same reason as Bane above.

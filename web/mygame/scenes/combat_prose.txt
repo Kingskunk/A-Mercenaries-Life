@@ -48,9 +48,9 @@
 *temp fnet_ep (("combat_enemy" & combat_active_target) & "_")
 *temp fnet_fp (("combat_flavor_enemy" & combat_active_target) & "_")
 *set fnet_type {(fnet_ep & "flavor_type")}
-*temp fnet_has_ps false
-*if ((({(fnet_ep & "cast_spell_1")} = "poison_spray") or ({(fnet_ep & "cast_spell_2")} = "poison_spray")) or ({(fnet_ep & "cast_spell_3")} = "poison_spray"))
-  *set fnet_has_ps true
+*comment An at-will attack cantrip in place of the body's own attack (combat.txt apply_enemy_spell_base): its id names the pool.
+*temp fnet_base_id {(fnet_ep & "spell_base_id")}
+*temp fnet_has_ps (not(fnet_base_id = ""))
 *comment Assigned spells (Step 3c-2) take precedence over both body flavor_type and quick-draw _dagger prose.
 *if (not(combat_enemy_cast_spell = ""))
   *set fnet_type combat_enemy_cast_spell
@@ -59,7 +59,7 @@
   *if (not(fnet_has_ps))
     *set fnet_type "${fnet_type}_dagger"
 *elseif (fnet_has_ps)
-  *set fnet_type "poison_spray"
+  *set fnet_type fnet_base_id
 *comment Per-slot replay lock (2026-09-30, real bug caught live via refresh_fuzz_test.js): this label is called
 *comment once per acting enemy per turn, and several enemies can act within one page before the player's next
 *comment choice -- same "shared subroutine called multiple times on one page" shape as resolve_enemy_attack's own
@@ -325,9 +325,10 @@
 *temp fnaa_claws ((fnaa_type = "blight_twig") or (fnaa_type = "twig_blight"))
 *temp fnaa_knife (((fnaa_attacker_kind = "ally") and (combat_ally_atk_used_sidearm)) or ((fnaa_attacker_kind = "enemy") and (combat_enemy_used_sidearm)))
 *temp fnaa_has_ps false
+*temp fnaa_base_id ""
 *if (fnaa_attacker_kind = "enemy")
-  *if ((({(fnaa_ap & "cast_spell_1")} = "poison_spray") or ({(fnaa_ap & "cast_spell_2")} = "poison_spray")) or ({(fnaa_ap & "cast_spell_3")} = "poison_spray"))
-    *set fnaa_has_ps true
+  *set fnaa_base_id {(fnaa_ap & "spell_base_id")}
+  *set fnaa_has_ps (not(fnaa_base_id = ""))
 *temp fnaa_dp ((("combat_" & fnaa_defender_kind) & fnaa_defender_slot) & "_")
 *set combat_defender_name {(fnaa_dp & "name")}
 *set combat_defender_epithet {(fnaa_dp & "epithet")}
@@ -360,6 +361,8 @@
       *set fnaa_line "$!{combat_attacker_epithet} snaps their wrists apart, sending a wall of heat and sparks crashing across ${combat_defender_epithet}'s shoulder."
 *elseif ((fnaa_knife) and (not(fnaa_has_ps)))
   *gosub flavor_ally_dagger
+*elseif (((fnaa_has_ps) and (not(fnaa_knife))) and (fnaa_base_id = "fire_bolt"))
+  *gosub flavor_npc_ally_fire_bolt
 *elseif ((fnaa_has_ps) and (not(fnaa_knife)))
   *comment An enemy casting Poison Spray at an intercepting or ranged ally (ranged spell attack, 1d12 poison).
   *if (fnaa_hit)
@@ -1801,6 +1804,8 @@
   *gosub flavor_type_hedge_mage
 *if (fft_type = "poison_spray")
   *gosub flavor_npc_poison_spray
+*if (fft_type = "fire_bolt")
+  *gosub flavor_npc_fire_bolt
 *if (fft_type = "burning_hands")
   *gosub flavor_npc_burning_hands
 *if (fft_type = "twig_blight")
@@ -2386,6 +2391,61 @@
 *if (fft_v = 8)
   *set fft_hit "The spray finds you on the second word, a fine acid mist that eats into your forearm as you raise it."
   *set fft_miss "The spray leaves ${combat_enemy_epithet}'s hand on the second word, but you have already turned a shoulder to it, and the mist falls short of you."
+*return
+
+*label flavor_npc_fire_bolt
+*comment Fire Bolt (keyed by spell id): a streak or fist of fire flung from the hand, a ranged spell attack. No move 2. Like Poison Spray's, the lines name no
+*comment worn piece or place, so any caster can use them.
+*if (fft_v = 1)
+  *set fft_hit "$!{combat_enemy_epithet} snaps a hand forward, and a streak of fire crosses the gap and bursts against your shoulder, hot enough to make you gasp."
+  *set fft_miss "$!{combat_enemy_epithet} snaps a hand forward, and the streak of fire whips past your ear, close enough that you feel the heat on your cheek."
+*if (fft_v = 2)
+  *set fft_hit "A bead of flame swells in ${combat_enemy_epithet}'s palm and leaps at you, and it splashes across your ribs in a burst of searing heat."
+  *set fft_miss "A bead of flame swells in ${combat_enemy_epithet}'s palm and leaps at you, but you drop a shoulder, and it sails past trailing sparks."
+*if (fft_v = 3)
+  *set fft_hit "$!{combat_enemy_epithet} flicks two fingers your way, and a bolt of fire slams into your chest, and the heat soaks straight through to the skin."
+  *set fft_miss "$!{combat_enemy_epithet} flicks two fingers your way, and you twist aside as the bolt of fire streaks through the space you just left."
+*if (fft_v = 4)
+  *set fft_hit "$!{combat_enemy_epithet} hurls a fist of fire overhand, and it breaks against your forearm as you raise it, scorching the skin under your sleeve."
+  *set fft_miss "$!{combat_enemy_epithet} hurls a fist of fire overhand, and you duck, and it streaks over your head."
+*if (fft_v = 5)
+  *set fft_hit "With a sharp word, ${combat_enemy_epithet} looses a spark that swells into a roaring streak, and it catches you in the side and drives the breath out of you."
+  *set fft_miss "With a sharp word, ${combat_enemy_epithet} looses a spark that swells into a roaring streak, but you sidestep, and it hisses past your hip."
+*if (fft_v = 6)
+  *set fft_hit "Fire gathers along ${combat_enemy_epithet}'s fingertips and flies at you in a tight burning line that sears across your collar."
+  *set fft_miss "Fire gathers along ${combat_enemy_epithet}'s fingertips and flies at you in a tight burning line, and you lean back as it passes a hand's width from your throat."
+*if (fft_v = 7)
+  *set fft_hit "$!{combat_enemy_epithet} throws an open palm toward you, and a burst of flame strikes your leg, and the pain flares from knee to hip."
+  *set fft_miss "$!{combat_enemy_epithet} throws an open palm toward you, but the burst of flame falls short and gutters out at your feet."
+*if (fft_v = 8)
+  *set fft_hit "The fire leaves ${combat_enemy_epithet}'s hand with a crack, and before you can move, it hits you square in the shoulder and spins you half around."
+  *set fft_miss "The fire leaves ${combat_enemy_epithet}'s hand with a crack, but you are already moving, and it streaks wide."
+*return
+
+*label flavor_npc_ally_fire_bolt
+*comment An enemy casting Fire Bolt at an ally (ranged spell attack, 1d10 fire): third person, both combatants by epithet, for fight_narrate_ally_attack.
+*if (fnaa_hit)
+  *if (fnaa_v = 1)
+    *set fnaa_line "$!{combat_attacker_epithet} snaps a hand forward, and a streak of fire bursts against ${combat_defender_epithet}'s shoulder."
+  *if (fnaa_v = 2)
+    *set fnaa_line "A bead of flame swells in ${combat_attacker_epithet}'s palm and leaps across the gap, splashing over ${combat_defender_epithet}'s ribs."
+  *if (fnaa_v = 3)
+    *set fnaa_line "$!{combat_attacker_epithet} flicks two fingers, and a bolt of fire slams into ${combat_defender_epithet}'s chest."
+  *if (fnaa_v = 4)
+    *set fnaa_line "$!{combat_attacker_epithet} hurls a fist of fire overhand, and it breaks across the arm ${combat_defender_epithet} throws up."
+  *if (fnaa_v = 5)
+    *set fnaa_line "Fire gathers along ${combat_attacker_epithet}'s fingertips and flies in a tight line that sears across ${combat_defender_epithet}'s side."
+*else
+  *if (fnaa_v = 1)
+    *set fnaa_line "$!{combat_attacker_epithet} snaps a hand forward, but ${combat_defender_epithet} jerks aside, and the streak of fire whips past."
+  *if (fnaa_v = 2)
+    *set fnaa_line "A bead of flame leaps from ${combat_attacker_epithet}'s palm, and ${combat_defender_epithet} drops low as it sails overhead."
+  *if (fnaa_v = 3)
+    *set fnaa_line "$!{combat_attacker_epithet} flicks a bolt of fire across the gap, and ${combat_defender_epithet} twists clear of it."
+  *if (fnaa_v = 4)
+    *set fnaa_line "$!{combat_attacker_epithet} hurls a fist of fire overhand, but ${combat_defender_epithet} sidesteps, and it streaks wide."
+  *if (fnaa_v = 5)
+    *set fnaa_line "Fire flies from ${combat_attacker_epithet}'s fingertips in a tight line, and ${combat_defender_epithet} leans back as it passes."
 *return
 
 *label flavor_npc_burning_hands

@@ -5033,7 +5033,12 @@ stats = {
   "spell_fact_slot_level": "0",
   "spell_fact_upcast_dice": "0",
   "spell_fact_projectiles": "0",
-  "spell_fact_upcast_projectiles": "0"
+  "spell_fact_upcast_projectiles": "0",
+  "spell_fact_target": "",
+  "spell_fact_condition": "",
+  "spell_fact_only_type": "",
+  "spell_fact_reach": "",
+  "spell_fact_npc_lines": "false"
 };
 purchases = {};
 achievements = [];

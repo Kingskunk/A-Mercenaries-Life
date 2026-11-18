@@ -244,10 +244,10 @@
       see: ["middle_ward", "tomas_saye"]
     },
     {
-      id: "vael", category: "people", title: "Master Vael",
+      id: "vael", category: "people", title: "Vael",
       sub: "Locksmith, Locksmiths' Close",
       role: "Locksmith, Vael & Son",
-      link: ["Master Vael"],
+      link: ["Master Vael", "Vael"],
       tags: ["Middle Ward"], aliases: ["Vael", "locksmith", "locks", "keys"],
       unlock: "met_vael",
       body: function (s) {
@@ -296,10 +296,10 @@
       see: ["middle_ward"]
     },
     {
-      id: "hollis", category: "people", title: "Master Hollis",
+      id: "hollis", category: "people", title: "Hollis",
       sub: "General goods, Lantern Lane",
       role: "Shopkeeper, Hollis & Daughters General Goods (Lantern Lane)",
-      link: ["Master Hollis"],
+      link: ["Master Hollis", "Hollis"],
       tags: ["Middle Ward", "Trade"], aliases: ["Hollis", "shopkeeper", "general goods", "general store", "Hollis & Daughters"],
       unlock: "mw_store_seen",
       body: function (s) {

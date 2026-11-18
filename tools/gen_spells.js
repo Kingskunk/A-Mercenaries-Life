@@ -171,8 +171,13 @@ var KNOWN_COMBAT_KEYS = {
   attack_kind: true, damage_dice: true, damage_type: true, add_casting_mod: true,
   save_ability: true, half_on_save: true, cantrip_scale: true, base_move_dice: true,
   upcast: true, temp_hp_flat: true, damage_flat: true, heal_dice: true,
-  temp_hp_dice: true, projectiles: true, targets: true
+  temp_hp_dice: true, projectiles: true, targets: true, target: true, condition: true, only_type: true, npc_lines: true
 };
+// Who a cast lands on, for any caster (3.6 enemy casting reads it): one creature, the target and everyone at its spot, everyone engaged
+// with the caster, up to combat.targets creatures, the caster itself, or a creature on the caster's own side.
+var VALID_TARGET = { one: true, spot: true, engaged: true, several: true, self: true, ally: true };
+// The shared condition (combat_dice.txt condition_apply) a failed save or a hit puts on the target.
+var VALID_CONDITION = { blinded: true, frightened: true, paralyzed: true, restrained: true, slowed: true };
 var KNOWN_UPCAST_KEYS = { damage_dice: true, projectiles: true, targets: true, temp_hp_flat: true, damage_flat: true };
 
 function parseDice(expr, ctx) {
@@ -203,6 +208,11 @@ function collectCombatSpell(id, sp, expectedLevel) {
   if (!VALID_COST[c.cost]) throw new Error("spell '" + id + "' has invalid combat.cost " + JSON.stringify(c.cost));
   if (!VALID_RES[c.resolution]) throw new Error("spell '" + id + "' has invalid combat.resolution " + JSON.stringify(c.resolution));
   checkIntMin(c.slot_level, 0, "spell '" + id + "' combat.slot_level");
+  if (c.target !== undefined && !VALID_TARGET[c.target]) throw new Error("spell '" + id + "' has invalid combat.target " + JSON.stringify(c.target));
+  if (c.target === undefined && c.resolution !== "effect") throw new Error("spell '" + id + "' (resolution " + c.resolution + ") needs combat.target");
+  if (c.target === "several" && c.targets === undefined) throw new Error("spell '" + id + "' combat.target 'several' needs combat.targets");
+  if (c.condition !== undefined && !VALID_CONDITION[c.condition]) throw new Error("spell '" + id + "' has invalid combat.condition " + JSON.stringify(c.condition));
+  if (c.only_type !== undefined && typeof c.only_type !== "string") throw new Error("spell '" + id + "' combat.only_type must be a creature type string");
   if (c.slot_level !== expectedLevel) {
     throw new Error("spell '" + id + "' combat.slot_level (" + c.slot_level + ") !== expected level (" + expectedLevel + ")");
   }
@@ -350,6 +360,11 @@ function collectCombatSpell(id, sp, expectedLevel) {
     upcast_flat: upcastFlat,
     targets: targets,
     upcast_targets: upcastTargets,
+    target: c.target || "",
+    condition: c.condition || "",
+    only_type: c.only_type || "",
+    reach: (!c.target || c.target === "self") ? "" : reachOf(sp),
+    npc_lines: c.npc_lines === true,
     scale: scale
   });
 }
@@ -387,7 +402,12 @@ function genFactsLookup() {
     "*set spell_fact_move_count 0",
     "*set spell_fact_move_sides 0",
     "*set spell_fact_extra_count 0",
-    "*set spell_fact_extra_sides 0"
+    "*set spell_fact_extra_sides 0",
+    "*set spell_fact_target \"\"",
+    "*set spell_fact_condition \"\"",
+    "*set spell_fact_only_type \"\"",
+    "*set spell_fact_reach \"\"",
+    "*set spell_fact_npc_lines false"
   ];
   combatSpells.forEach(function (s) {
     L.push("*if (sfl_id = " + q(s.id) + ")");
@@ -412,6 +432,11 @@ function genFactsLookup() {
     if (s.upcast_flat > 0) L.push("  *set spell_fact_upcast_flat " + s.upcast_flat);
     if (s.targets > 0) L.push("  *set spell_fact_targets " + s.targets);
     if (s.upcast_targets > 0) L.push("  *set spell_fact_upcast_targets " + s.upcast_targets);
+    if (s.target) L.push("  *set spell_fact_target " + q(s.target));
+    if (s.condition) L.push("  *set spell_fact_condition " + q(s.condition));
+    if (s.only_type) L.push("  *set spell_fact_only_type " + q(s.only_type));
+    if (s.reach) L.push("  *set spell_fact_reach " + q(s.reach));
+    if (s.npc_lines) L.push("  *set spell_fact_npc_lines true");
     // Cantrip scaling: the counts that hold at the caster's character level, worked out here from the tiers.
     ["hit", "move", "extra"].forEach(function (kind) {
       if (s.scale.sides[kind] > 0) L.push("  *set spell_fact_" + kind + "_sides " + s.scale.sides[kind]);

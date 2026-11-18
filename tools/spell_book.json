@@ -85,7 +85,19 @@
     "            touch   Engaged only (the same as the touch range tag)",
     "            short   up to Close (1)",
     "            medium  up to Mid-Range (2 in the four-band lane, 3 in the six-band one: combat_reach_medium)",
-    "            long    any distance (the default for a spell that gives none)"
+    "            long    any distance (the default for a spell that gives none)",
+    "",
+    "WHO A CAST LANDS ON (2026-11-18, for enemy casting, COMBAT_ENGINE_PLAN 3.6): read through spell_facts_load, so an enemy or ally caster",
+    "can be driven by the data instead of a hand-written branch per spell.",
+    "  combat.target     one | spot | engaged | several | self | ally. Required unless resolution is \"effect\". one: a single creature;",
+    "                    spot: the target and everyone at its spot (Shatter, Web, Grease); engaged: everyone engaged with the caster",
+    "                    (Burning Hands); several: up to combat.targets creatures (Bane); self: the caster; ally: one on the caster's side.",
+    "  combat.condition  optional: the shared condition a failed save or a hit applies (blinded, frightened, paralyzed, restrained, slowed).",
+    "  combat.only_type  optional: the one creature type it works on (Hold Person: humanoid).",
+    "  reach             also set on the engaged-area and healing spells that carry no range (touch, or long for Healing Word), so every",
+    "                    spell with a target has a reach class: spell_fact_reach (touch / short / medium / long; \"\" for a self spell).",
+    "  combat.npc_lines  optional true: the spell has enemy-voiced lines (combat_prose.txt flavor_npc_<id>, and the ally-target ones), so an",
+    "                    enemy may be given it. spell_fact_npc_lines; an at-will attack cantrip without it is never used by an enemy."
   ],
   "copy_cost_per_level": 10,
   "classes": {
@@ -125,7 +137,8 @@
         "resolution": "effect",
         "duration": "Up to 10 rounds",
         "area": "Self",
-        "effect": "-1d4 to enemy attack rolls against you"
+        "effect": "-1d4 to enemy attack rolls against you",
+        "target": "self"
       }
     },
     "fire_bolt": {
@@ -152,7 +165,9 @@
         },
         "damage_type": "fire",
         "add_casting_mod": false,
-        "duration": "Instantaneous"
+        "duration": "Instantaneous",
+        "target": "one",
+        "npc_lines": true
       }
     },
     "ray_of_frost": {
@@ -180,7 +195,9 @@
         "damage_type": "cold",
         "add_casting_mod": false,
         "duration": "Instantaneous",
-        "effect": "Slowed: target cannot Dash on its next turn"
+        "effect": "Slowed: target cannot Dash on its next turn",
+        "target": "one",
+        "condition": "slowed"
       }
     },
     "eldritch_blast": {
@@ -208,7 +225,8 @@
         },
         "damage_type": "force",
         "add_casting_mod": false,
-        "duration": "Instantaneous"
+        "duration": "Instantaneous",
+        "target": "one"
       }
     },
     "chill_touch": {
@@ -235,7 +253,8 @@
         },
         "damage_type": "necrotic",
         "add_casting_mod": false,
-        "duration": "Instantaneous"
+        "duration": "Instantaneous",
+        "target": "one"
       }
     },
     "vicious_mockery": {
@@ -264,7 +283,8 @@
         "damage_type": "psychic",
         "add_casting_mod": false,
         "duration": "1 round",
-        "effect": "Target has disadvantage on its next attack"
+        "effect": "Target has disadvantage on its next attack",
+        "target": "one"
       }
     },
     "poison_spray": {
@@ -292,7 +312,9 @@
         },
         "damage_type": "poison",
         "add_casting_mod": false,
-        "duration": "Instantaneous"
+        "duration": "Instantaneous",
+        "target": "one",
+        "npc_lines": true
       }
     },
     "shocking_grasp": {
@@ -320,7 +342,8 @@
         "damage_type": "lightning",
         "add_casting_mod": false,
         "duration": "Instantaneous",
-        "effect": "Target cannot take reactions this round; advantage vs. metal armor"
+        "effect": "Target cannot take reactions this round; advantage vs. metal armor",
+        "target": "one"
       }
     },
     "booming_blade": {
@@ -409,7 +432,8 @@
         },
         "duration": "1 round",
         "area": "Self",
-        "effect": "Resists triggering acid/cold/fire/lightning/thunder hit and adds +1d6 to next melee hit"
+        "effect": "Resists triggering acid/cold/fire/lightning/thunder hit and adds +1d6 to next melee hit",
+        "target": "self"
       }
     },
     "ray_of_sickness": {
@@ -436,7 +460,8 @@
           "damage_dice": "1d8"
         },
         "duration": "Instantaneous",
-        "effect": "Poisoned: disadvantage on next attack"
+        "effect": "Poisoned: disadvantage on next attack",
+        "target": "one"
       }
     },
     "alarm": {
@@ -481,8 +506,10 @@
         },
         "duration": "Instantaneous",
         "area": "All engaged foes",
-        "effect": "Failed targets lose reactions this round"
-      }
+        "effect": "Failed targets lose reactions this round",
+        "target": "engaged"
+      },
+      "reach": "touch"
     },
     "hellish_rebuke": {
       "name": "Hellish Rebuke",
@@ -506,7 +533,8 @@
           "damage_dice": "1d10"
         },
         "duration": "Instantaneous",
-        "effect": "Scorches the attacker when you take damage"
+        "effect": "Scorches the attacker when you take damage",
+        "target": "one"
       }
     },
     "cause_fear": {
@@ -531,7 +559,9 @@
           "targets": 1
         },
         "duration": "Up to 10 rounds",
-        "effect": "Frightened: disadvantage on attacks and will not move closer"
+        "effect": "Frightened: disadvantage on attacks and will not move closer",
+        "target": "one",
+        "condition": "frightened"
       }
     },
     "armor_of_agathys": {
@@ -556,7 +586,8 @@
         },
         "duration": "While temp HP lasts",
         "area": "Self",
-        "effect": "5 cold damage to melee attackers while temp HP lasts"
+        "effect": "5 cold damage to melee attackers while temp HP lasts",
+        "target": "self"
       }
     },
     "bane": {
@@ -582,7 +613,8 @@
         },
         "duration": "Up to 10 rounds",
         "area": "Up to 3 foes",
-        "effect": "Target subtracts 1d4 from attacks and saves"
+        "effect": "Target subtracts 1d4 from attacks and saves",
+        "target": "several"
       }
     },
     "charm_person": {
@@ -601,7 +633,8 @@
         "save_ability": "wisdom",
         "duration": "1 hour",
         "area": "Near",
-        "effect": "Target regards you as friendly until harmed or spell ends"
+        "effect": "Target regards you as friendly until harmed or spell ends",
+        "target": "one"
       }
     },
     "comprehend_languages": {
@@ -644,8 +677,10 @@
           "damage_dice": "2d8"
         },
         "duration": "Instantaneous",
-        "area": "Self or engaged ally"
-      }
+        "area": "Self or engaged ally",
+        "target": "ally"
+      },
+      "reach": "touch"
     },
     "detect_magic": {
       "name": "Detect Magic",
@@ -712,7 +747,8 @@
           "damage_dice": "1d6"
         },
         "duration": "Instantaneous",
-        "effect": "On a failed save, target uses its reaction to move 1 step away (provokes opportunity attacks)"
+        "effect": "On a failed save, target uses its reaction to move 1 step away (provokes opportunity attacks)",
+        "target": "one"
       }
     },
     "false_life": {
@@ -740,7 +776,8 @@
         },
         "duration": "12 hours",
         "area": "Self",
-        "effect": "Temporary HP (does not stack)"
+        "effect": "Temporary HP (does not stack)",
+        "target": "self"
       }
     },
     "feather_fall": {
@@ -779,7 +816,8 @@
         "save_ability": "dexterity",
         "duration": "6 rounds (3 moves)",
         "area": "Target band",
-        "effect": "Prone on fail; DC 10 DEX check to move; advantage on fire attacks"
+        "effect": "Prone on fail; DC 10 DEX check to move; advantage on fire attacks",
+        "target": "spot"
       }
     },
     "healing_word": {
@@ -801,8 +839,10 @@
           "damage_dice": "2d4"
         },
         "duration": "Instantaneous",
-        "area": "Self or ally (far)"
-      }
+        "area": "Self or ally (far)",
+        "target": "ally"
+      },
+      "reach": "long"
     },
     "hex": {
       "name": "Hex",
@@ -826,7 +866,8 @@
         "damage_dice": "1d6",
         "damage_type": "necrotic",
         "duration": "Up to 10 rounds",
-        "effect": "+1d6 necrotic on your attack-roll hits; movable as bonus action when target falls"
+        "effect": "+1d6 necrotic on your attack-roll hits; movable as bonus action when target falls",
+        "target": "one"
       }
     },
     "ensnaring_strike": {
@@ -870,7 +911,8 @@
         "damage_dice": "1d6",
         "damage_type": "force",
         "duration": "Up to 10 rounds",
-        "effect": "+1d6 force on your weapon hits; movable as bonus action when target falls"
+        "effect": "+1d6 force on your weapon hits; movable as bonus action when target falls",
+        "target": "one"
       }
     },
     "identify": {
@@ -925,7 +967,8 @@
         "resolution": "effect",
         "duration": "24 hours",
         "area": "Self (unarmored)",
-        "effect": "Base AC 13 + DEX modifier"
+        "effect": "Base AC 13 + DEX modifier",
+        "target": "self"
       }
     },
     "magic_missile": {
@@ -951,7 +994,8 @@
           "projectiles": 1
         },
         "add_casting_mod": false,
-        "duration": "Instantaneous"
+        "duration": "Instantaneous",
+        "target": "one"
       }
     },
     "shield": {
@@ -969,7 +1013,8 @@
         "resolution": "effect",
         "duration": "1 round",
         "area": "Self",
-        "effect": "+5 AC vs. a hit that it can deflect, until start of your next turn"
+        "effect": "+5 AC vs. a hit that it can deflect, until start of your next turn",
+        "target": "self"
       }
     },
     "speak_with_animals": {
@@ -1013,8 +1058,11 @@
           "damage_dice": "1d6"
         },
         "duration": "Instantaneous",
-        "area": "All engaged foes"
-      }
+        "area": "All engaged foes",
+        "target": "engaged",
+        "npc_lines": true
+      },
+      "reach": "touch"
     },
     "thunderwave": {
       "name": "Thunderwave",
@@ -1040,8 +1088,10 @@
         },
         "duration": "Instantaneous",
         "area": "All engaged foes",
-        "effect": "Pushes Large or smaller targets 1 step back on failed save"
-      }
+        "effect": "Pushes Large or smaller targets 1 step back on failed save",
+        "target": "engaged"
+      },
+      "reach": "touch"
     },
     "unseen_servant": {
       "name": "Unseen Servant",
@@ -1079,7 +1129,10 @@
         "resolution": "save",
         "save_ability": "constitution",
         "duration": "Up to 10 rounds",
-        "effect": "Blinded: disadvantage on attacks, attacks against have advantage; repeats save end of turn"
+        "effect": "Blinded: disadvantage on attacks, attacks against have advantage; repeats save end of turn",
+        "target": "one",
+        "condition": "blinded",
+        "npc_lines": true
       }
     },
     "hold_person": {
@@ -1105,7 +1158,10 @@
           "targets": 1
         },
         "duration": "Up to 10 rounds",
-        "effect": "Paralyzed: loses its turns, attacks against it have advantage, fails Strength and Dexterity saves; humanoids only"
+        "effect": "Paralyzed: loses its turns, attacks against it have advantage, fails Strength and Dexterity saves; humanoids only",
+        "target": "one",
+        "condition": "paralyzed",
+        "only_type": "humanoid"
       }
     },
     "web": {
@@ -1127,7 +1183,9 @@
         "save_ability": "dexterity",
         "duration": "While you concentrate",
         "area": "The target's spot, as a lasting patch of difficult terrain",
-        "effect": "Restrained on a failed Dexterity save, when cast and when a foe starts its turn in the webs or walks into them; a Strength check against your spell DC tears free"
+        "effect": "Restrained on a failed Dexterity save, when cast and when a foe starts its turn in the webs or walks into them; a Strength check against your spell DC tears free",
+        "target": "spot",
+        "condition": "restrained"
       }
     },
     "shatter": {
@@ -1157,7 +1215,8 @@
         },
         "duration": "Instantaneous",
         "area": "The target and every foe at its spot",
-        "effect": "Constructs have disadvantage on the save"
+        "effect": "Constructs have disadvantage on the save",
+        "target": "spot"
       }
     },
     "scorching_ray": {
@@ -1183,7 +1242,8 @@
         "upcast": {
           "projectiles": 1
         },
-        "duration": "Instantaneous"
+        "duration": "Instantaneous",
+        "target": "one"
       }
     }
   }
