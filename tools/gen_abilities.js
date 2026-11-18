@@ -24,7 +24,7 @@ var CHECK = process.argv.indexOf("--check") !== -1;
 
 var COMMON_KEYS = { name: true, kind: true, uses: true, desc: true };
 var KIND_KEYS = {
-  extra_attack: { extra_attacks: true, damage_dice_sides: true },
+  extra_attack: { extra_attacks: true, weapon: true, damage_dice_sides: true, damage_type: true },
   attack_variant: {},
   action: {},
   on_hit_rider: {},
@@ -48,6 +48,9 @@ L.push("*set ability_fact_kind \"\"");
 L.push("*set ability_fact_uses 0");
 L.push("*set ability_fact_extra_attacks 0");
 L.push("*set ability_fact_dmg_dice_sides 0");
+L.push("*set ability_fact_weapon \"\"");
+L.push("*set ability_fact_dmg_type \"\"");
+var DAMAGE_TYPES = { acid: 1, bludgeoning: 1, cold: 1, fire: 1, force: 1, lightning: 1, necrotic: 1, piercing: 1, poison: 1, psychic: 1, radiant: 1, slashing: 1, thunder: 1 };
 Object.keys(abilities).sort().forEach(function (id) {
   if (!/^[a-z][a-z0-9_]*$/.test(id)) fail(id, "an id is lowercase letters, digits and underscores");
   var a = abilities[id];
@@ -64,7 +67,17 @@ Object.keys(abilities).sort().forEach(function (id) {
   L.push("  *set ability_fact_uses " + (uses < 0 ? "(0 - 1)" : uses));
   if (a.kind === "extra_attack") {
     L.push("  *set ability_fact_extra_attacks " + posInt(id, "extra_attacks", a.extra_attacks));
-    L.push("  *set ability_fact_dmg_dice_sides " + posInt(id, "damage_dice_sides", a.damage_dice_sides));
+    // "own": the body's own weapon, so the entry names no die or type. "offhand": a second weapon, so it must name both.
+    if (a.weapon === "own") {
+      if (a.damage_dice_sides !== undefined || a.damage_type !== undefined) fail(id, "an \"own\" weapon takes the body's die and type; drop damage_dice_sides and damage_type");
+    } else if (a.weapon === "offhand") {
+      L.push("  *set ability_fact_dmg_dice_sides " + posInt(id, "damage_dice_sides", a.damage_dice_sides));
+      if (!DAMAGE_TYPES[a.damage_type]) fail(id, "damage_type must be a damage type, got '" + a.damage_type + "'");
+      L.push("  *set ability_fact_dmg_type \"" + a.damage_type + "\"");
+    } else {
+      fail(id, "weapon must be \"own\" or \"offhand\"");
+    }
+    L.push("  *set ability_fact_weapon \"" + a.weapon + "\"");
   }
 });
 

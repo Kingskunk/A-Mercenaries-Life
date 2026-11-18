@@ -889,31 +889,45 @@
       *line_break
 *return
 
-*comment EXTRA ATTACK (2026-10-11, for Captain Trent in Varren's Errand; an assigned ability since 3.4a): an enemy holding an extra_attack ability (Multiattack, tools/ability_book.json)
-*comment follows its first attack with weaker ones at the same attack bonus: the ability's die (Multiattack: a d4, one extra) and no special move, so a captain with a long blade and a knife strikes twice
-*comment a turn without doubling his damage. Only the active-target SCRATCH fields are lowered, the same transient-override shape the ranged quick-draw uses, so the slot's own durable stats are back next
-*comment turn with no restore step. Called by name after the first attack in both melee branches, once combat_abilities ability_extra_attacks has set ability_extra_attack_n and _sides.
+*comment EXTRA ATTACK (2026-10-11, for Captain Trent in Varren's Errand; an assigned ability since 3.4a): an enemy holding an extra_attack ability (tools/ability_book.json) follows its first
+*comment attack at the player with more, at the same attack bonus and with no special move. Two weapons (ability_extra_attack_weapon):
+*comment   "own" (Multiattack): its own weapon again. The scratch fields are re-read from the slot (fight_sync_target_in), so a special move on the first blow does not carry over, and a cornered
+*comment   archer stabs with its sidearm again (fight_enemy_quickdraw), as its first blow did. Melee or ranged.
+*comment   "offhand" (Trent's knife): a second weapon, the ability's die and damage type, so a captain with a long blade and a knife strikes twice a turn without doubling his damage.
+*comment Only the active-target SCRATCH fields change, the same transient-override shape the ranged quick-draw uses, so the slot's own durable stats are back next turn with no restore step. Called by name
+*comment after the enemy's attack on the player, once combat_abilities ability_extra_attacks has set ability_extra_attack_n, _weapon, _sides and _type.
 *label fight_enemy_extra_attack
 *comment Each strike runs on its OWN page: resolve_enemy_attack and fight_narrate_enemy_turn lock their dice and their text per slot per page_id, so a second call on the first attack's page would
 *comment only replay the first roll. A page break gives it a fresh page_id (and a refresh replays only this page), at the cost of one click.
 *temp feea_n ability_extra_attack_n
+*temp feea_weapon ability_extra_attack_weapon
 *temp feea_sides ability_extra_attack_sides
+*temp feea_type ability_extra_attack_type
 *temp feea_i 1
 *label fight_enemy_extra_attack_loop
 *if ((feea_i <= feea_n) and (hp_current > 1))
-  *if (feea_i = 1)
+  *if (combat_enemy_weapon_type = "ranged")
+    *page_break Another shot follows…
+  *elseif (feea_i = 1)
     *page_break The second blow follows…
   *else
     *page_break Another blow follows…
+  *if (feea_weapon = "own")
+    *gosub fight_sync_target_in
+    *if ((combat_enemy_weapon_type = "ranged") and (combat_ranged_cornered))
+      *gosub fight_enemy_quickdraw
   *set combat_enemy_atk_save_stat ""
   *set combat_enemy_atk_save_dc 0
   *set combat_enemy_atk_save_half false
   *set combat_enemy_atk_dmg_dice 1
   *set combat_enemy_save_halved false
-  *set combat_enemy_dmg_dice_sides feea_sides
+  *if (feea_weapon = "offhand")
+    *set combat_enemy_dmg_dice_sides feea_sides
+    *set combat_enemy_dmg_type feea_type
   *set combat_enemy_move2_chance 0
   *gosub_scene combat_dice resolve_enemy_attack
   *gosub_scene combat_prose fight_narrate_enemy_turn
+  *set combat_enemy_used_sidearm false
   *set feea_i + 1
   *goto fight_enemy_extra_attack_loop
 *return
@@ -8645,6 +8659,10 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
             *gosub fight_enemy_ally_attack cnt_slot
           *else
             *gosub combat_enemy_player_action cnt_slot
+            *comment An extra_attack ability (3.4a) follows the shot, as it follows every attack on the player.
+            *gosub_scene combat_abilities ability_extra_attacks cnt_slot
+            *if ((combat_enemy_cast_spell = "") and ((ability_extra_attack_n > 0) and (hp_current > 1)))
+              *gosub fight_enemy_extra_attack
             *set combat_enemy_cast_spell ""
             *set combat_enemy_cast_place 0
           *if (combat_player_can_die) and (hp_current <= 0)
@@ -8802,6 +8820,10 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
         *goto cnt_boom_tail
       *if ((combat_enemy_range <= cnt_e_tier) and (not(cnt_o_dashed)))
         *gosub combat_enemy_player_action cnt_slot
+        *comment An extra_attack ability (3.4a) follows the shot, as it follows every attack on the player.
+        *gosub_scene combat_abilities ability_extra_attacks cnt_slot
+        *if ((combat_enemy_cast_spell = "") and ((ability_extra_attack_n > 0) and (hp_current > 1)))
+          *gosub fight_enemy_extra_attack
         *set combat_enemy_cast_spell ""
         *set combat_enemy_cast_place 0
         *if (combat_player_can_die) and (hp_current <= 0)
@@ -9543,7 +9565,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *set combat_enemy_ac_override 14
 *set combat_enemy_atk_override 5
 *set combat_terrain_layout "random_standard"
-*set combat_enemy_ability_1_override "multiattack"
+*set combat_enemy_ability_1_override "offhand_knife"
 *goto fight_library
 
 *comment WEAPON IMMUNITY TEST FOES (2026-10-31, dev hub only; no story scene calls these). Each is a library "beast" with a defense set by the override variables, short enough to finish in a few rounds. What to try with each is in Resources & Quest/GAMEPLAY_MECHANICS_RULES.md,

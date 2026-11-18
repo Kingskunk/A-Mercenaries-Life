@@ -18,12 +18,22 @@
 *set ability_fact_uses 0
 *set ability_fact_extra_attacks 0
 *set ability_fact_dmg_dice_sides 0
+*set ability_fact_weapon ""
+*set ability_fact_dmg_type ""
 *if (afl_id = "multiattack")
   *set ability_fact_name "Multiattack"
   *set ability_fact_kind "extra_attack"
   *set ability_fact_uses (0 - 1)
   *set ability_fact_extra_attacks 1
+  *set ability_fact_weapon "own"
+*if (afl_id = "offhand_knife")
+  *set ability_fact_name "Off-hand Knife"
+  *set ability_fact_kind "extra_attack"
+  *set ability_fact_uses (0 - 1)
+  *set ability_fact_extra_attacks 1
   *set ability_fact_dmg_dice_sides 4
+  *set ability_fact_dmg_type "piercing"
+  *set ability_fact_weapon "offhand"
 *comment GEN:END ability_facts_load
 *return
 
@@ -66,12 +76,15 @@
   *goto ability_clear_slot_loop
 *return
 
-*comment EXTRA ATTACK: how many extra strikes this enemy slot makes after its first melee attack, and at what die, into ability_extra_attack_n
-*comment and ability_extra_attack_sides (0 when it holds no usable extra_attack ability). The first one it holds wins. Read-only.
+*comment EXTRA ATTACK: how many extra strikes this enemy slot makes after its first attack, and with what, into ability_extra_attack_n, _weapon
+*comment ("own": its own weapon; "offhand": a second one) and, for an off-hand weapon, _sides and _type. n is 0 when it holds no usable extra_attack
+*comment ability. The first one it holds wins. Read-only.
 *label ability_extra_attacks
 *params aea_slot
 *set ability_extra_attack_n 0
 *set ability_extra_attack_sides 0
+*set ability_extra_attack_weapon ""
+*set ability_extra_attack_type ""
 *temp aea_p (("combat_enemy" & aea_slot) & "_")
 *temp aea_k 1
 *label ability_extra_attacks_loop
@@ -83,6 +96,8 @@
     *if (ability_fact_kind = "extra_attack")
       *set ability_extra_attack_n ability_fact_extra_attacks
       *set ability_extra_attack_sides ability_fact_dmg_dice_sides
+      *set ability_extra_attack_weapon ability_fact_weapon
+      *set ability_extra_attack_type ability_fact_dmg_type
   *set aea_k + 1
   *goto ability_extra_attacks_loop
 *return
