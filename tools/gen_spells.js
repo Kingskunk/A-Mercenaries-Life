@@ -244,9 +244,9 @@ function collectCombatSpell(id, sp, expectedLevel) {
       var tier = c.cantrip_scale[lvl];
       if (!tier || typeof tier !== "object") throw new Error("spell '" + id + "' cantrip_scale[" + lvl + "] must be an object");
       if (!/^[1-9][0-9]*$/.test(lvl)) throw new Error("spell '" + id + "' cantrip_scale level '" + lvl + "' must be a whole number");
-      var entry = { level: Number(lvl), count: {}, dice: 0 };
+      var entry = { level: Number(lvl), count: {}, dice: 0, projectiles: 0 };
       Object.keys(tier).forEach(function (tk) {
-        if (tk !== "damage_dice" && !Object.keys(SCALE_KEYS).some(function (kind) { return SCALE_KEYS[kind] === tk; })) {
+        if (tk !== "damage_dice" && tk !== "projectiles" && !Object.keys(SCALE_KEYS).some(function (kind) { return SCALE_KEYS[kind] === tk; })) {
           throw new Error("spell '" + id + "' cantrip_scale." + lvl + " has unknown field '" + tk + "'");
         }
       });
@@ -257,6 +257,11 @@ function collectCombatSpell(id, sp, expectedLevel) {
           throw new Error("spell '" + id + "' cantrip_scale." + lvl + ".damage_dice sides (" + td.sides + ") !== base sides (" + baseDice.sides + ")");
         }
         entry.dice = td.count;
+      }
+      // A tier's projectiles replace the spell's own count (Eldritch Blast: one beam, two from level 5); projectiles_for_level reads it.
+      if (tier.projectiles !== undefined) {
+        checkIntMin(tier.projectiles, 1, "spell '" + id + "' cantrip_scale." + lvl + ".projectiles");
+        entry.projectiles = tier.projectiles;
       }
       Object.keys(SCALE_KEYS).forEach(function (kind) {
         var dk = SCALE_KEYS[kind];
@@ -390,9 +395,10 @@ function genFactsLookup() {
     });
     s.scale.tiers.forEach(function (t) {
       var kinds = Object.keys(t.count);
-      if (!kinds.length && !t.dice) return;
+      if (!kinds.length && !t.dice && !t.projectiles) return;
       L.push("  *if (character_level >= " + t.level + ")");
       if (t.dice) L.push("    *set spell_fact_dice_count " + t.dice);
+      if (t.projectiles) L.push("    *set spell_fact_projectiles " + t.projectiles);
       kinds.forEach(function (kind) { L.push("    *set spell_fact_" + kind + "_count " + t.count[kind]); });
     });
   });

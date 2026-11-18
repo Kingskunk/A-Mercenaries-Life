@@ -4150,7 +4150,16 @@
   *set combat_why_shocking_grasp combat_why_res
 *temp combat_why_eldritch_blast "unowned"
 *gosub combat_has_cantrip "eldritch_blast"
+*comment Beams by character level come from the spell data (cantrip_scale projectiles): one beam is the single-target option, two or more
+*comment go through the shared targeting page (fight_target_eldritch_blast), and eb_hub_word names the count in that option.
+*temp eb_beams 1
+*temp eb_hub_word ""
 *if ((combat_has_cantrip_ok) or (known_eldritch_blast))
+  *gosub_scene combat_spells projectiles_for_level "eldritch_blast" 0
+  *set eb_beams combat_mm_darts_max
+  *gosub_scene combat_prose mm_number_word combat_mm_darts_max
+  *set eb_hub_word combat_mm_count_word
+  *set combat_mm_darts_max 0
   *gosub combat_eval_spell_why "action" "" false "" true
   *set combat_why_eldritch_blast combat_why_res
 *temp combat_why_chill_touch "unowned"
@@ -4856,7 +4865,15 @@
       *gosub fight_tail_break
       *goto fight_check_enemy_hp
 
-  *if (combat_why_eldritch_blast = "")
+  *if ((combat_why_eldritch_blast = "") and (eb_beams > 1))
+    # [b][ACTION][/b] [b][Eldritch Blast][/b] Unleash ${eb_hub_word} crackling beams of eldritch force, each at a foe you choose.
+      *comment Arms the same dart allocation Scorching Ray uses: each beam is one "dart" on the enemy it is aimed at.
+      *set combat_mm_targeting_active true
+      *gosub_scene combat_spells projectiles_for_level "eldritch_blast" 0
+      *gosub fight_target_multi_clear
+      *goto fight_target_eldritch_blast
+
+  *if ((combat_why_eldritch_blast = "") and (eb_beams <= 1))
     # [b][ACTION][/b] [b][Eldritch Blast][/b] Unleash a crackling beam of eldritch force at ${combat_enemy_epithet}.
       *comment Shares Fire Bolt's own whole-body replay lock (combat_cantrip_choice_locked, its own comment above
       *comment has the full explanation) -- same bug shape, same one-action-per-page exclusivity.
@@ -4877,18 +4894,7 @@
       *if (check_success)
         *comment Agonizing Blast (Warlock invocation) adds the Charisma modifier here: resolve_spell_hit (combat_dice.txt) applies it.
         *gosub_scene combat_dice resolve_spell_hit "eldritch_blast" true
-        *comment Repelling Blast (Warlock invocation): a Large or smaller creature that is still standing is driven back one range step, forced movement (no opportunity attack), the same step Shove uses. At the back of the lane there is nowhere to go, so it stays.
-        *set combat_repel_result 0
-        *if ((inv_repelling_blast) and (combat_enemy_hp > 0))
-          *gosub combat_size_rank combat_enemy_size
-          *if ((combat_size_rank_value <= 3) and (combat_enemy_range < combat_max_range))
-            *comment The hit lowered the SCRATCH hit points; write them to the slot first, or the sync_in below reloads the old value over the wound and the damage is lost.
-            *gosub fight_sync_target_out
-            *gosub_scene combat_movement combat_shift_target_range combat_active_target "away"
-            *gosub fight_sync_target_in
-            *gosub_scene combat_movement combat_range_name combat_enemy_range
-            *set combat_repel_name combat_range_display_name
-            *set combat_repel_result 1
+        *gosub fight_repelling_blast
         *if (combat_enemy_hp <= 0)
           *gosub_scene combat_prose pick_spell_death_flavor
       *if (check_success)
@@ -6479,7 +6485,8 @@ ${combat_dw_dmg_banner}
 *comment cast itself does (a slot in the spell's own resolver, a scroll in resolve_magic_missile). Cause Fear changes nobody's HP,
 *comment so it ends at fight_action_spent; the others check for a kill. Scorching Ray: each ray is a dart on the enemy it is
 *comment aimed at, and the rays can be split or stacked (fight_resolve_scorching_ray). Cause Fear's 2nd level: a dart only marks
-*comment "frighten this one", so resolve_cast_cause_fear checks each slot for more than 0, never how many.
+*comment "frighten this one", so resolve_cast_cause_fear checks each slot for more than 0, never how many. Eldritch Blast comes
+*comment here from level 5, when it has two or more beams (fight_resolve_eldritch_blast); it spends no slot.
 *label fight_target_magic_missile
 *set combat_mm_spell "magic_missile"
 *goto fight_target_multi
@@ -6492,12 +6499,18 @@ ${combat_dw_dmg_banner}
 *set combat_mm_spell "cause_fear"
 *goto fight_target_multi
 
+*label fight_target_eldritch_blast
+*set combat_mm_spell "eldritch_blast"
+*goto fight_target_multi
+
 *label fight_target_multi
 *temp ftm_name "Magic Missile"
 *if (combat_mm_spell = "scorching_ray")
   *set ftm_name "Scorching Ray"
 *elseif (combat_mm_spell = "cause_fear")
   *set ftm_name "Cause Fear"
+*elseif (combat_mm_spell = "eldritch_blast")
+  *set ftm_name "Eldritch Blast"
 *choice
   # Cast ${ftm_name}.
     *gosub combat_mm_recount_darts
@@ -6506,6 +6519,8 @@ ${combat_dw_dmg_banner}
         None of the rays has a target yet.
       *elseif (combat_mm_spell = "cause_fear")
         No targets are chosen yet. Click an enemy in the sidebar to mark it, then cast.
+      *elseif (combat_mm_spell = "eldritch_blast")
+        None of the beams has a target yet.
       *else
         No darts are assigned yet. Click an enemy in the sidebar to place one, then cast.
       *line_break
@@ -6515,6 +6530,8 @@ ${combat_dw_dmg_banner}
       *gosub fight_resolve_scorching_ray
     *elseif (combat_mm_spell = "cause_fear")
       *gosub_scene combat_spells resolve_cast_cause_fear
+    *elseif (combat_mm_spell = "eldritch_blast")
+      *gosub fight_resolve_eldritch_blast
     *else
       *if (not(combat_scroll_id = ""))
         You read the scroll aloud, and the ink flares white along its lines.
@@ -6552,6 +6569,33 @@ ${fsh}
 *gosub fight_resolve_projectile_attacks "scorching_ray"
 *return
 
+*comment ELDRITCH BLAST, two or more beams (character level 5 and up, 2026-11-17): a cantrip, so no slot; prints its opening, then
+*comment looses the beams through the shared projectile loop below. Agonizing Blast lands on each beam that hits (resolve_spell_hit),
+*comment and Repelling Blast drives back each foe a beam hits (the loop calls fight_repelling_blast).
+*label fight_resolve_eldritch_blast
+*gosub_scene combat_prose flavor_eldritch_blast_beams
+${fsh}
+*line_break
+*gosub fight_resolve_projectile_attacks "eldritch_blast"
+*return
+
+*comment Repelling Blast (Warlock invocation), after an Eldritch Blast hit on the current target: a Large or smaller creature that is
+*comment still standing is driven back one range step, forced movement (no opportunity attack), the same step Shove uses. At the back
+*comment of the lane there is nowhere to go, so it stays. Output: combat_repel_result (1 when it moved) and combat_repel_name.
+*label fight_repelling_blast
+*set combat_repel_result 0
+*if ((inv_repelling_blast) and (combat_enemy_hp > 0))
+  *gosub combat_size_rank combat_enemy_size
+  *if ((combat_size_rank_value <= 3) and (combat_enemy_range < combat_max_range))
+    *comment The hit lowered the SCRATCH hit points; write them to the slot first, or the sync_in below reloads the old value over the wound and the damage is lost.
+    *gosub fight_sync_target_out
+    *gosub_scene combat_movement combat_shift_target_range combat_active_target "away"
+    *gosub fight_sync_target_in
+    *gosub_scene combat_movement combat_range_name combat_enemy_range
+    *set combat_repel_name combat_range_display_name
+    *set combat_repel_result 1
+*return
+
 *comment AN ATTACK ROLL PER PROJECTILE (2026-11-17), for a spell whose projectiles the player shares out on the targeting page
 *comment (fight_target_multi, combat_mm_darts_1..6). Parameter: the spell id. Every projectile is its own ranged spell attack and
 *comment its own hit, in slot order. The name and damage type come from the spell data (spell_facts_load); a hit goes through
@@ -6568,6 +6612,9 @@ ${fsh}
 *temp frpa_type spell_fact_dmg_type
 *temp frpa_word "Ray"
 *temp frpa_icon "🔥"
+*if (frpa_id = "eldritch_blast")
+  *set frpa_word "Beam"
+  *set frpa_icon "✨"
 *temp frpa_keep combat_active_target
 *temp frpa_any false
 *temp frpa_i 1
@@ -6602,6 +6649,9 @@ ${fsh}
       *if (check_success)
         *gosub_scene combat_dice resolve_spell_hit frpa_id true
         *gosub fight_sync_target_out
+        *set combat_repel_result 0
+        *if (frpa_id = "eldritch_blast")
+          *gosub fight_repelling_blast
         *if (combat_enemy_hp <= 0)
           *set combat_current_spell_id frpa_id
           *gosub_scene combat_prose pick_spell_death_flavor
@@ -6610,6 +6660,9 @@ ${fsh}
           [b][💀 ${combat_enemy_name} Defeated: ${combat_player_dmg_dealt} $!{frpa_type} damage${combat_outgoing_dmg_suffix}][/b]
         *else
           [b][${frpa_icon} ${frpa_word} at ${combat_enemy_name}: Hit | ${combat_player_dmg_dealt} $!{frpa_type} damage${combat_outgoing_dmg_suffix}][/b]
+          *if (combat_repel_result = 1)
+            *line_break
+            [b][💥 Repelling Blast: ${combat_enemy_name} is driven back to ${combat_repel_name}][/b]
       *else
         [b][💨 ${frpa_word} at ${combat_enemy_name}: Miss][/b]
     *set frpa_j + 1

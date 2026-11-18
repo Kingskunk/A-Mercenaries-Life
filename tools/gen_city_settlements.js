@@ -98,6 +98,16 @@ const SETTLEMENTS = {
       leave: { name: "Leave Oxworth", steps: [S("ox_menu", "ow_here", "hartwell/oxworth/oxworth.txt")], done: "You take the road out of Oxworth." }
     }
   },
+  // Palmcote (2026-11-17): the Notice Board is in the Gathering Hall, the inn is The Green Branch, and the way out is the road out of the village.
+  palmcote: {
+    name: "Palmcote", start: "palmcote", startScene: "hartwell/palmcote/palmcote", hubFile: "hartwell/palmcote/palmcote.txt", hubLabels: ["palmcote", "pc_menu", "pc_return"],
+    files: ["hartwell/palmcote/green_branch.txt", "hartwell/palmcote/palmcote_gathering_hall.txt", "hartwell/palmcote/palmcote_market.txt"],
+    services: {
+      board: { name: "Notice Board", seen: "pc_hall_seen", steps: [S("pc_menu", "pc_gh", "hartwell/palmcote/palmcote.txt"), S("pc_gh_front", "pc_gh_board", "hartwell/palmcote/palmcote_gathering_hall.txt")], done: "You are at the Notice Board." },
+      inn: { name: "The Green Branch", seen: "pc_gb_seen", steps: [S("pc_menu", "pc_gb", "hartwell/palmcote/palmcote.txt")], done: "You are at the Green Branch." },
+      leave: { name: "Leave Palmcote", steps: [S("pc_menu", "ow_here", "hartwell/palmcote/palmcote.txt")], done: "You take the road out of Palmcote." }
+    }
+  },
   brinewick: {
     name: "Brinewick", start: "brinewick", startScene: "port_valen/brinewick/brinewick", hubFile: "port_valen/brinewick/brinewick.txt", hubLabels: ["brinewick"],
     files: ["port_valen/brinewick/reedhouse.txt", "port_valen/brinewick/saltworks.txt", "port_valen/brinewick/tide_house.txt"],

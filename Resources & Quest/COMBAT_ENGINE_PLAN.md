@@ -89,20 +89,13 @@ RULES FOR THIS SESSION
 
 Roughly in the order I would take it. Each item is one hand-off, sized to review in one sitting.
 
-### 3.2 Shared multi-target attacks, then Eldritch Blast's beams
+### 3.3 Upcasting into 2nd-level slots (reachable now)
 
-What is shared today: the sidebar allocation (`assignMultiTargetDart` in `index.html`, writing `combat_mm_darts_1..6` up to `combat_mm_darts_max`), the count from the data (`projectiles_for_level`: `projectiles` plus `upcast.projectiles` per slot level) and the Cast/Cancel targeting page (`fight_target_multi`, keyed by `combat_mm_spell`; each spell's `fight_target_<id>` entry label names it). A new spell on the page adds an entry label, its name, its empty-page line and its resolver call there. The "an attack roll per projectile" loop is shared too (`fight_resolve_projectile_attacks <id>`, name and damage type from the data, banner word and icon per spell); Scorching Ray's resolver only spends its slot and prints its opening before calling it. Magic Missile keeps its own loop, since it never rolls to hit. What is written per spell: the hub option. Next, Eldritch Blast is data: beams from `cantrip_scale` (2 at level 5, 3 at 11, 4 at 17; `projectiles_for_level` reads the tier), with Agonizing Blast and Repelling Blast applied per beam. Until a character reaches level 5 it stays one target.
+The quests available today cap a character at level 3, where a Wizard and a Bard have 2nd-level slots and a Warlock's pact slots are 2nd level. These 1st-level spells should grow when cast with one and do not yet. Each needs its `upcast` in the data and, for a Wizard or Bard, a "Spell: 2nd level" hub option like Burning Hands' (a Warlock always casts at the pact slot's level).
 
-### 3.3 Upcasting gaps
-
-- Hold Person: one extra humanoid per slot level above 2nd. In the data (`upcast.targets`), not built; it would use the target sidebar that Cause Fear's 2nd-level cast uses.
-- Cure Wounds has no `upcast` in the data, so it heals the same at every slot level.
-- Decision 3 in section 4 (a Warlock's 2nd-level pact slot on 1st-level spells).
-- A 3rd-level Scorching Ray (four rays) and Magic Missile need their own hub option once a character has 3rd-level slots (level 5). The ray and dart counts and the prose already follow the cast level.
-
-### 3.3a Spell slots of 3rd level and up
-
-Needed before any caster reaches level 5. Wizard, bard and ranger have only the 1st- and 2nd-level pools (`spell_slots_1` / `_2`), and `refresh_slot_left` (`combat_spells.txt`) maps a Warlock's pact slots to `slot_left_1` / `_2` only for `pact_slot_level` 1 and 2, so a level 5 Warlock's 3rd-level pact slots would count as none and no leveled spell would be offered. Needs: the pools from 3rd level up, `slot_left_N` and the hub's slot reasons for them, `spend_spell_slot` / `spend_lowest_slot` for them, and the rest and level-up refills.
+- Cure Wounds and Healing Word: no `upcast` in the data, so they heal the same at every slot level.
+- Absorb Elements (+1d6 per slot level above 1st) and Bane (one more creature): no `upcast`, no 2nd-level option.
+- Decision 3 in section 4: a level 3 Warlock spends a 2nd-level pact slot on Arms of Hadar, Armor of Agathys and Hellish Rebuke but gets 1st-level numbers.
 
 ### 3.4 Web and Restrained, the rest of the rules
 
@@ -139,6 +132,14 @@ Not yet built or tested end to end. The fight has places meant for them (for exa
 ### 3.11 Optional: the remaining replay locks
 
 Step 6a removed only the spell-layer locks. Still in place: dice, save, attack and last-hit locks; budget spend and grant locks; manoeuvre locks; the banner caches that exist only for replay. A new spell never writes these, so removing them makes nothing cheaper. Do it only as clean-up, one family at a time, and keep every lock that a scene outside a fight can reach (`roll_locked`, `false_life_cast_locked`, anything `choicescript_stats`, `equipment`, `dungeon` or `character_stats` calls).
+
+### 3.12 Level 5 and up: 3rd-level slots and upcasting into them
+
+Not needed until a character can reach level 5 (no quest goes past level 3 yet). Built ahead only where it saves coming back to a piece later.
+
+- Spell slots of 3rd level and up. Wizard, bard and ranger have only the 1st- and 2nd-level pools (`spell_slots_1` / `_2`), and `refresh_slot_left` (`combat_spells.txt`) maps a Warlock's pact slots to `slot_left_1` / `_2` only for `pact_slot_level` 1 and 2, so a level 5 Warlock's 3rd-level pact slots would count as none and no leveled spell would be offered. Needs: the pools from 3rd level up, `slot_left_N` and the hub's slot reasons for them, `spend_spell_slot` / `spend_lowest_slot` for them, and the rest and level-up refills.
+- A 3rd-level Scorching Ray (four rays) and Magic Missile need their own hub option. The ray and dart counts and the prose already follow the cast level.
+- Hold Person: one extra humanoid per slot level above 2nd. In the data (`upcast.targets`), not built; it would use the shared targeting page (`fight_target_multi`).
 
 ---
 

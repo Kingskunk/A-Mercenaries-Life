@@ -1168,7 +1168,8 @@
     nv: { place: "the Village Head's Hall", setting: "village", region: "marches" },   // Barolo (2026-11-02): its Contract Board is in the Village Head's Hall (Langston/barolo/village_heads_hall.txt ba_hall_board); the village count [0, 2]
     bm: { place: "the Village Head's Hall", setting: "village", region: "marches" },   // Broadmead (2026-11-02): its Contract Board is in the Village Head's Hall (Langston/broadmead/village_heads_hall.txt bm_hall_board); the village count [0, 2]
     fm: { place: "the Village Head's Hall", setting: "village", region: "marches" },   // Fallowmere (2026-11-02): its thin Contract Board is in the Village Head's Hall (Langston/fallowmere/village_heads_hall.txt fm_hall_board); the village count [0, 2]
-    rn2: { place: "the Village Head's Hall", setting: "village", region: "marches" }   // Oxworth (2026-11-16): its Contract Board is in the Village Head's Hall (hartwell/oxworth/village_heads_hall.txt ox_hall_board); the village count [0, 2]
+    rn2: { place: "the Village Head's Hall", setting: "village", region: "marches" },   // Oxworth (2026-11-16): its Contract Board is in the Village Head's Hall (hartwell/oxworth/village_heads_hall.txt ox_hall_board); the village count [0, 2]
+    pc: { place: "the Gathering Hall", setting: "village", region: "marches" }   // Palmcote (2026-11-17): its notice rack is in the Gathering Hall (hartwell/palmcote/palmcote_gathering_hall.txt pc_gh_board); the village count [0, 2]
   };
   // count is how many postings a board shows on a given day, rolled between the two numbers from the day and the origin (so a refresh and a return visit show the same board): a city is busiest and a village is
   // sometimes empty (the user's call, 2026-10-11). A COURIER_TILES entry may give its own count: [min, max].

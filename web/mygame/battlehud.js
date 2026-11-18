@@ -777,6 +777,8 @@
       if (atkDice) {
         var atkDmg = formatDiceAndMod(atkDice, atkFlat) + (c.damage_type ? " " + c.damage_type : "");
         if (c.damage_type === "poison" && s.equipped_armor_id === "poisoners_robes") atkDmg += " (+1d4 Poisoner's Robes)";
+        // Eldritch Blast's beams by level (cantrip_scale projectiles): each beam is its own attack and its own damage.
+        if (atkStep && atkStep.projectiles > 1) atkDmg = atkStep.projectiles + " × (" + atkDmg + ")";
         mainBits.push(atkDmg);
       }
       mainBits.push(signed(spellAttackBonus(s)) + " to hit");
