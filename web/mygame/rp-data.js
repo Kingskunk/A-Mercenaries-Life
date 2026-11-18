@@ -70,11 +70,19 @@
         "Catch her by the waist, pull her flush against your chest, and kiss her throat.",
         "Guide her to sit on the edge of the bed while you trace her jaw and shoulders.",
         "Tell her to shed her linen smock slowly in the candlelight."
+      ],
+      beats: [
+        { label: "▸ Let her lead", prompt: "Continue the moment naturally, letting her take the lead." },
+        { label: "Slow & unhurried", prompt: "Slow the rhythm down, drawing out the touch and taking your time with her." },
+        { label: "Rougher & urgent", prompt: "Tighten your grip and quicken the pace with raw, urgent intensity." },
+        { label: "Shift position", prompt: "Shift position on the mattress, guiding her body into a new angle." },
+        { label: "Pull her close", prompt: "Draw her flush against your chest, feeling her breath and warmth against your skin." }
       ]
     },
 
     corve_sable: {
       id: "corve_sable",
+      npcName: "Sable",
       title: "Sable — Private Chamber",
       subtitle: "Upstairs at Widow Corve's",
       memory: true,
@@ -104,11 +112,19 @@
         "Let Sable take the lead as she draws you toward the bed.",
         "Run your fingers through her cropped white-blonde hair and tilt her chin up.",
         "Pull her onto your lap at the edge of the wool mattress."
+      ],
+      beats: [
+        { label: "▸ Let Sable lead", prompt: "Continue the moment naturally, letting Sable take the lead." },
+        { label: "Slow & deliberate", prompt: "Slow the pace down, savoring every deliberate touch with her." },
+        { label: "Deepen the heat", prompt: "Grip her waist firmer and drive the rhythm deeper and more urgent." },
+        { label: "Shift position", prompt: "Shift position on the wool mattress, guiding Sable into a new angle." },
+        { label: "Speak to her", prompt: "Murmur quietly against her ear, watching her cool green eyes react." }
       ]
     },
 
     corve_brinna: {
       id: "corve_brinna",
+      npcName: "Brinna",
       title: "Brinna — Private Chamber",
       subtitle: "Upstairs at Widow Corve's",
       memory: true,
@@ -138,6 +154,12 @@
         "Let Brinna take the lead and pin you back against the wool bolsters.",
         "Grip her strong waist and pull her down onto the mattress with you.",
         "Trace the muscle of her shoulders and forearms in the candlelight."
+      ],
+      beats: [
+        { label: "▸ Let Brinna lead", prompt: "Continue the moment naturally, letting Brinna take the lead with her strength." },
+        { label: "Match her strength", prompt: "Match her physical power, gripping her heavy frame and pushing back against her." },
+        { label: "Slow & warm", prompt: "Slow the pace down into a deep, unhurried grind against the wool blankets." },
+        { label: "Shift position", prompt: "Shift position on the bed, trading leverage with her on the mattress." }
       ]
     }
 

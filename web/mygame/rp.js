@@ -210,7 +210,7 @@
       "- Stay strictly faithful to the clothing, materials, and setting established in the scene (do not invent luxury fabrics or props that are not there).",
       "- Never dictate the player's spoken words, internal thoughts, or involuntary emotional reactions (never tell the player they are trembling, nervous, or overwhelmed; only describe physical sensations and the companion's actions).",
       "- Do NOT write a list of choices at the end, do NOT speak as an AI assistant, and do NOT summarize or rush to the end of the scene unless the player initiates finishing.",
-      "- Write 1 to 2 rich, cohesive paragraphs per response, pacing the moment naturally so the player can react turn by turn.",
+      "- Write 1 to 2 concise, complete paragraphs per response (around 120 to 180 words total) so your last sentence always finishes cleanly without being cut off.",
       "",
       "CURRENT TIME & WEATHER:",
       getCurrentDateSummary(s),
@@ -374,6 +374,7 @@
     var dot = box.querySelector(".rp-dot");
     var badgeText = box.querySelector(".rp-badge-text");
     var modelSelect = box.querySelector(".rp-model-select");
+    var memBtn = box.querySelector('[data-act="memories"]');
     var baseUrl = getServerUrl();
     if (!baseUrl) {
       dot.className = "rp-dot bad";
@@ -414,7 +415,30 @@
         if (html) modelSelect.innerHTML = html;
       })
       .catch(function () {});
+
+    if (memBtn && session.cfg && session.cfg.memory !== false) {
+      var threadId = resolveThreadId(session.cfg, statsNow());
+      if (threadId) {
+        fetch(baseUrl + "/get_npc_memories", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+          body: JSON.stringify({ thread_id: threadId, current_day: Number(statsNow().campaign_day) || 1 })
+        }).then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (d) {
+            var count = (d && Array.isArray(d.all)) ? d.all.length : 0;
+            memBtn.textContent = "Memories (" + count + ")";
+          })
+          .catch(function () {});
+      }
+    }
   }
+
+  var DEFAULT_BEATS = [
+    { label: "\u25B8 Let them lead", prompt: "Continue the moment naturally, letting the companion take the lead." },
+    { label: "Slow & unhurried", prompt: "Slow the pace down, savoring the touch and taking your time." },
+    { label: "More urgent", prompt: "Tighten your grip and quicken the rhythm with deeper intensity." },
+    { label: "Shift position", prompt: "Shift position, guiding the companion into a new angle." }
+  ];
 
   function mountConsole(markerParagraph, sceneId) {
     var cfg = (window.RP_DATA || {})[sceneId];
@@ -438,9 +462,15 @@
     var title = evalField(cfg.title, s) || "Roleplay Session";
     var subtitle = evalField(cfg.subtitle, s) || "";
     var starters = cfg.starters || [];
+    var beats = cfg.beats || DEFAULT_BEATS;
+    var hasMem = cfg.memory !== false;
 
     var startersHtml = starters.map(function (st) {
       return '<button type="button" class="rp-chip" data-starter="' + esc(st) + '">' + esc(st) + '</button>';
+    }).join("");
+
+    var beatsHtml = '<span class="rp-beats-label">Next Beat:</span>' + beats.map(function (b) {
+      return '<button type="button" class="rp-chip rp-chip-beat" data-beat="' + esc(b.prompt) + '">' + esc(b.label) + '</button>';
     }).join("");
 
     box.innerHTML =
@@ -453,6 +483,7 @@
           '<span class="rp-badge" title="Connection status to MemPalace & Perchance">' +
             '<span class="rp-dot"></span><span class="rp-badge-text">Checking...</span>' +
           '</span>' +
+          (hasMem ? '<button type="button" class="rp-btn rp-btn-sm" data-act="memories" title="View or edit what this companion remembers about you">Memories (0)</button>' : '') +
           '<select class="rp-select rp-mode-select" title="Choose AI Engine">' +
             '<option value="auto"' + (settings.mode === "auto" ? " selected" : "") + '>Auto (Perchance \u2192 OpenRouter)</option>' +
             '<option value="perchance"' + (settings.mode === "perchance" ? " selected" : "") + '>Perchance AI (Unrestricted)</option>' +
@@ -464,11 +495,34 @@
         '</div>' +
       '</div>' +
       '<div class="rp-body">' +
+        '<div class="rp-drawer rp-mem-drawer" hidden>' +
+          '<div class="rp-drawer-head">' +
+            '<span>Companion Memories</span>' +
+            '<button type="button" class="rp-btn rp-btn-sm" data-act="close-memories">\u00D7 Close</button>' +
+          '</div>' +
+          '<div class="rp-mem-list"></div>' +
+        '</div>' +
+        '<div class="rp-drawer rp-edit-drawer" hidden>' +
+          '<div class="rp-drawer-head">' +
+            '<span>Edit Last Response</span>' +
+            '<button type="button" class="rp-btn rp-btn-sm" data-act="cancel-edit">\u00D7 Cancel</button>' +
+          '</div>' +
+          '<textarea class="rp-edit-textarea"></textarea>' +
+          '<div class="rp-actions-left">' +
+            '<button type="button" class="rp-btn rp-btn-primary rp-btn-sm" data-act="save-edit">Save Changes</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="rp-typing" hidden>' +
+          '<div class="rp-typing-dots"><span></span><span></span><span></span></div>' +
+          '<span class="rp-typing-text">Writing response...</span>' +
+        '</div>' +
         (startersHtml ? '<div class="rp-starters">' + startersHtml + '</div>' : '') +
-        '<textarea class="rp-input" placeholder="Write what you do or say (e.g. You draw her down onto the wool mattress...) or click a starter above."></textarea>' +
+        '<div class="rp-beats" style="display:none">' + beatsHtml + '</div>' +
+        '<textarea class="rp-input" placeholder="Write what you do or say (or click a prompt chip above)..."></textarea>' +
         '<div class="rp-foot">' +
           '<div class="rp-actions-left">' +
             '<button type="button" class="rp-btn rp-btn-primary" data-act="send">Send / Continue</button>' +
+            '<button type="button" class="rp-btn" data-act="edit" disabled title="Edit the last turn text in-place">\u270E Edit</button>' +
             '<button type="button" class="rp-btn" data-act="reroll" disabled title="Regenerate the last AI response">\u21BB Reroll</button>' +
             '<button type="button" class="rp-btn" data-act="undo" disabled title="Remove the last exchange">\u232B Undo</button>' +
           '</div>' +
@@ -483,19 +537,85 @@
     var inputEl = box.querySelector(".rp-input");
     var statusEl = box.querySelector(".rp-status");
     var sendBtn = box.querySelector('[data-act="send"]');
+    var editBtn = box.querySelector('[data-act="edit"]');
     var rerollBtn = box.querySelector('[data-act="reroll"]');
     var undoBtn = box.querySelector('[data-act="undo"]');
     var modeSel = box.querySelector(".rp-mode-select");
     var modelSel = box.querySelector(".rp-model-select");
+    var starterWrap = box.querySelector(".rp-starters");
+    var beatsWrap = box.querySelector(".rp-beats");
+    var typingEl = box.querySelector(".rp-typing");
+    var typingTextEl = box.querySelector(".rp-typing-text");
+    var editDrawer = box.querySelector(".rp-edit-drawer");
+    var editArea = box.querySelector(".rp-edit-textarea");
+    var memDrawer = box.querySelector(".rp-mem-drawer");
+    var memList = box.querySelector(".rp-mem-list");
+
+    function updateChipsVisibility() {
+      var hasTurns = session.turns.length > 0;
+      if (starterWrap) starterWrap.style.display = hasTurns ? "none" : "";
+      if (beatsWrap) beatsWrap.style.display = hasTurns ? "flex" : "none";
+    }
 
     function updateButtons() {
+      var hasTurns = session.turns.length > 0;
       sendBtn.disabled = session.busy;
-      rerollBtn.disabled = session.busy || session.turns.length === 0;
-      undoBtn.disabled = session.busy || session.turns.length === 0;
+      if (editBtn) editBtn.disabled = session.busy || !hasTurns;
+      rerollBtn.disabled = session.busy || !hasTurns;
+      undoBtn.disabled = session.busy || !hasTurns;
+      Array.prototype.forEach.call(box.querySelectorAll(".rp-chip"), function (c) {
+        c.disabled = session.busy;
+      });
+      if (typingEl) typingEl.hidden = !session.busy;
+      updateChipsVisibility();
     }
 
     function setStatus(msg) {
       if (statusEl) statusEl.textContent = msg;
+    }
+
+    function renderMemoriesDrawer() {
+      if (!memList) return;
+      var threadId = resolveThreadId(cfg, statsNow());
+      var baseUrl = getServerUrl();
+      if (!threadId || !baseUrl) {
+        memList.innerHTML = '<div class="rp-status">No persistent memory room for this scene.</div>';
+        return;
+      }
+      memList.innerHTML = '<div class="rp-status">Loading memories...</div>';
+      fetch(baseUrl + "/get_npc_memories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+        body: JSON.stringify({ thread_id: threadId, current_day: Number(statsNow().campaign_day) || 1 })
+      }).then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          var items = (d && Array.isArray(d.all)) ? d.all : [];
+          var memBtn = box.querySelector('[data-act="memories"]');
+          if (memBtn) memBtn.textContent = "Memories (" + items.length + ")";
+          if (!items.length) {
+            memList.innerHTML = '<div class="rp-status">No past memories recorded with this companion yet. Memories are distilled and saved when you finish a visit.</div>';
+            return;
+          }
+          memList.innerHTML = items.map(function (m, idx) {
+            var label = m.order ? ("Visit #" + m.order) : ("Memory #" + (idx + 1));
+            if (m.saved_day) label += " · Day " + m.saved_day;
+            return (
+              '<div class="rp-mem-item" data-mem-id="' + esc(m.source) + '">' +
+                '<div class="rp-mem-meta">' +
+                  '<span>' + esc(label) + '</span>' +
+                  '<div class="rp-actions-left">' +
+                    '<button type="button" class="rp-btn rp-btn-sm" data-act="save-mem" data-id="' + esc(m.source) + '">Save</button>' +
+                    '<button type="button" class="rp-btn rp-btn-sm" data-act="del-mem" data-id="' + esc(m.source) + '">Delete</button>' +
+                  '</div>' +
+                '</div>' +
+                '<textarea class="rp-mem-textarea">' + esc(m.content) + '</textarea>' +
+              '</div>'
+            );
+          }).join("");
+        })
+        .catch(function () {
+          memList.innerHTML = '<div class="rp-status">Could not reach MemPalace server.</div>';
+        });
     }
 
     // Restore turns and draft if the page was refreshed or returned to from Show Stats / Menu
@@ -506,8 +626,6 @@
         var pEls = insertStoryParagraphs(t.text, css, box);
         session.turns.push({ role: t.role, text: t.text, pEls: pEls });
       });
-      var swRestore = box.querySelector(".rp-starters");
-      if (swRestore) swRestore.style.display = "none";
       setStatus("Session restored (" + Math.ceil(session.turns.length / 2) + " exchange(s)).");
     }
     if (restored && restored.draft) {
@@ -521,6 +639,7 @@
 
     function runGeneration(playerText, isReroll) {
       if (session.busy) return;
+      editDrawer.hidden = true;
       session.busy = true;
       updateButtons();
 
@@ -530,15 +649,14 @@
         saveActiveSession(inputEl.value);
       }
 
-      var starterWrap = box.querySelector(".rp-starters");
-      if (starterWrap && session.turns.length > 0) starterWrap.style.display = "none";
-
       var chosenMode = settings.mode;
       if (chosenMode === "auto") {
         chosenMode = session.workerConnected ? "perchance" : "openrouter";
       }
 
-      setStatus(chosenMode === "perchance" ? "Generating via Perchance AI..." : "Generating via OpenRouter...");
+      var waitMsg = chosenMode === "perchance" ? "Generating via Perchance AI..." : "Generating via OpenRouter...";
+      setStatus(waitMsg);
+      if (typingTextEl) typingTextEl.textContent = waitMsg;
 
       var threadId = resolveThreadId(cfg, statsNow());
 
@@ -554,15 +672,15 @@
             mode: chosenMode,
             model: settings.model,
             raw_mode: true,
-            max_tokens: 420,
+            max_tokens: 600,
             system: sysPrompt,
             prompt: usrPrompt
           })
         }).then(function (r) { return r.json(); })
           .then(function (res) {
-            // If Perchance timed out because the tab was closed, automatically retry on OpenRouter when in auto mode
             if (res.status !== "SUCCESS" && settings.mode === "auto" && chosenMode === "perchance") {
               setStatus("Perchance tab asleep — falling back to OpenRouter...");
+              if (typingTextEl) typingTextEl.textContent = "Falling back to OpenRouter...";
               return fetch(baseUrl + "/rp_generate", {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
@@ -570,7 +688,7 @@
                   mode: "openrouter",
                   model: settings.model,
                   raw_mode: true,
-                  max_tokens: 420,
+                  max_tokens: 600,
                   system: sysPrompt,
                   prompt: usrPrompt
                 })
@@ -585,6 +703,9 @@
           session.turns.push({ role: "ai", text: res.text, pEls: aiPEls });
           saveActiveSession(inputEl.value);
           setStatus("Turn complete (" + (res.mode === "perchance" ? "Perchance AI" : settings.model.split("/").pop()) + ").");
+          if (aiPEls.length && aiPEls[0].scrollIntoView) {
+            aiPEls[0].scrollIntoView({ behavior: "smooth", block: "nearest" });
+          }
         } else {
           var errMsg = (res && (res.error || res.reason)) || "Generation failed";
           setStatus("Error: " + errMsg + " (try another model or check Perchance tab).");
@@ -611,10 +732,17 @@
     box.addEventListener("click", function (ev) {
       var target = ev.target;
       var starterBtn = target.closest ? target.closest("[data-starter]") : null;
-      if (starterBtn) {
+      if (starterBtn && !session.busy) {
         var stText = starterBtn.getAttribute("data-starter");
         inputEl.value = "";
         runGeneration(stText, false);
+        return;
+      }
+
+      var beatBtn = target.closest ? target.closest("[data-beat]") : null;
+      if (beatBtn && !session.busy) {
+        var bText = beatBtn.getAttribute("data-beat");
+        runGeneration(bText, false);
         return;
       }
 
@@ -626,9 +754,70 @@
         var val = inputEl.value.trim();
         inputEl.value = "";
         runGeneration(val || "Continue the moment naturally, letting the companion take the lead.", false);
+      } else if (act === "edit") {
+        if (session.busy || !session.turns.length) return;
+        var lastTurn = session.turns[session.turns.length - 1];
+        editArea.value = lastTurn.text;
+        editDrawer.hidden = !editDrawer.hidden;
+        if (!editDrawer.hidden) editArea.focus();
+      } else if (act === "cancel-edit") {
+        editDrawer.hidden = true;
+      } else if (act === "save-edit") {
+        if (!session.turns.length) { editDrawer.hidden = true; return; }
+        var newText = editArea.value.trim();
+        if (!newText) return;
+        var turnToEdit = session.turns[session.turns.length - 1];
+        var anchorNode = (turnToEdit.pEls && turnToEdit.pEls[0]) ? turnToEdit.pEls[0] : box;
+        var cssClass = turnToEdit.role === "user" ? "rp-player-turn" : "rp-ai-turn";
+        var newPEls = insertStoryParagraphs(newText, cssClass, anchorNode);
+        (turnToEdit.pEls || []).forEach(function (el) { if (el.parentNode) el.parentNode.removeChild(el); });
+        turnToEdit.text = newText;
+        turnToEdit.pEls = newPEls;
+        saveActiveSession(inputEl.value);
+        editDrawer.hidden = true;
+        setStatus("Last turn updated.");
+      } else if (act === "memories") {
+        memDrawer.hidden = !memDrawer.hidden;
+        if (!memDrawer.hidden) renderMemoriesDrawer();
+      } else if (act === "close-memories") {
+        memDrawer.hidden = true;
+      } else if (act === "save-mem") {
+        var memId = actBtn.getAttribute("data-id");
+        var itemEl = actBtn.closest(".rp-mem-item");
+        var ta = itemEl ? itemEl.querySelector(".rp-mem-textarea") : null;
+        var threadId = resolveThreadId(cfg, statsNow());
+        if (!memId || !ta || !threadId) return;
+        actBtn.disabled = true;
+        actBtn.textContent = "Saving...";
+        fetch(getServerUrl() + "/append_memory", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+          body: JSON.stringify({ thread_id: threadId, id: memId, text: ta.value.trim(), distill: false })
+        }).then(function () {
+          actBtn.disabled = false;
+          actBtn.textContent = "Saved \u2713";
+          setTimeout(function () { actBtn.textContent = "Save"; }, 1500);
+        }).catch(function () {
+          actBtn.disabled = false;
+          actBtn.textContent = "Error";
+        });
+      } else if (act === "del-mem") {
+        var delId = actBtn.getAttribute("data-id");
+        var delThreadId = resolveThreadId(cfg, statsNow());
+        if (!delId || !delThreadId) return;
+        actBtn.disabled = true;
+        fetch(getServerUrl() + "/delete_npc_memory", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+          body: JSON.stringify({ thread_id: delThreadId, id: delId })
+        }).then(function () {
+          renderMemoriesDrawer();
+        }).catch(function () {
+          actBtn.disabled = false;
+        });
       } else if (act === "reroll") {
         if (session.busy || !session.turns.length) return;
-        // Pop the last AI turn if present
+        editDrawer.hidden = true;
         if (session.turns[session.turns.length - 1].role === "ai") {
           var poppedAi = session.turns.pop();
           (poppedAi.pEls || []).forEach(function (el) { if (el.parentNode) el.parentNode.removeChild(el); });
@@ -639,6 +828,7 @@
         runGeneration(lastUser, true);
       } else if (act === "undo") {
         if (session.busy || !session.turns.length) return;
+        editDrawer.hidden = true;
         if (session.turns[session.turns.length - 1].role === "ai") {
           var aiTurn = session.turns.pop();
           (aiTurn.pEls || []).forEach(function (el) { if (el.parentNode) el.parentNode.removeChild(el); });
@@ -647,10 +837,6 @@
           var userTurn = session.turns.pop();
           (userTurn.pEls || []).forEach(function (el) { if (el.parentNode) el.parentNode.removeChild(el); });
           inputEl.value = userTurn.text;
-        }
-        if (session.turns.length === 0) {
-          var sw = box.querySelector(".rp-starters");
-          if (sw) sw.style.display = "";
         }
         saveActiveSession(inputEl.value);
         updateButtons();
