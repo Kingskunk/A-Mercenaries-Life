@@ -62,6 +62,7 @@ function copyDir(from, to, exts) {
 }
 const nSound = copyDir(path.join(ROOT, "ambience"), path.join(OUT, "ambience"), [".ogg"]);
 const nArt = copyDir(path.join(ROOT, "scenery"), path.join(OUT, "scenery"), [".webp"]);
+const nPortraits = copyDir(path.join(ROOT, "portraits"), path.join(OUT, "portraits"), [".webp"]);
 copyDir(path.join(APP, "icons"), path.join(OUT, "icons"), [".png"]);
 fs.copyFileSync(path.join(APP, "sw.js"), path.join(OUT, "sw.js"));
 
@@ -89,9 +90,9 @@ const files = {};
     files[r] = { h: crypto.createHash("sha1").update(buf).digest("hex").slice(0, 16), s: buf.length };
   });
 })(OUT, "");
-const core = Object.keys(files).filter((f) => !f.startsWith("ambience/") && !f.startsWith("scenery/"));
+const core = Object.keys(files).filter((f) => !f.startsWith("ambience/") && !f.startsWith("scenery/") && !f.startsWith("portraits/"));
 const build = crypto.createHash("sha1").update(Object.keys(files).map((f) => f + ":" + files[f].h).join("|")).digest("hex").slice(0, 12);
 fs.writeFileSync(path.join(OUT, "asset-manifest.json"), JSON.stringify({ build, core, files }, null, 1) + "\n");
 
 const total = Object.keys(files).reduce((a, f) => a + files[f].s, 0), coreBytes = core.reduce((a, f) => a + files[f].s, 0);
-console.log("dist/ built: build " + build + ", " + Object.keys(files).length + " files (" + nSound + " sounds, " + nArt + " backdrops), " + (total / 1048576).toFixed(1) + " MB, of which the game itself " + (coreBytes / 1048576).toFixed(1) + " MB");
+console.log("dist/ built: build " + build + ", " + Object.keys(files).length + " files (" + nSound + " sounds, " + nArt + " backdrops, " + nPortraits + " portraits), " + (total / 1048576).toFixed(1) + " MB, of which the game itself " + (coreBytes / 1048576).toFixed(1) + " MB");

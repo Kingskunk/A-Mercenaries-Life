@@ -1112,7 +1112,11 @@ ${combat_blindness_banner}
 *comment (combat.txt combat_next_turn). A failure is Restrained (src "combat_player_web", escape DC spell_save_dc), torn free by Ensnaring's Strength check (combat_restrain_tick)
 *comment with no thorn damage. Ending concentration clears the patch and every restraint it made (concentration_end). Fire on a webbed enemy burns the patch away (web_burn_check).
 *label resolve_cast_web
-*gosub spend_spell_slot 2
+*comment Read from a scroll (combat.txt fight_read_web), the scroll is spent instead of a slot.
+*if (not(combat_scroll_id = ""))
+  *gosub_scene equipment spend_consumable combat_scroll_id
+*else
+  *gosub spend_spell_slot 2
 *gosub_scene combat_dice concentration_begin "combat_player_" "web"
 *temp rcw_pos {(("combat_enemy" & combat_active_target) & "_position")}
 *comment The first open terrain slot takes the patch. Each slot is named outright (quicktest walks every branch, so a slot number built at run time could name slot 0).
@@ -1242,7 +1246,10 @@ ${combat_web_burn_banner}
 *comment and fails Strength and Dexterity saves (resolve_save). It repeats the Wisdom save at the end of each of its turns
 *comment (condition_tick). No critical hits: the engine has none yet. Upcasting is in the data but not built (one target only).
 *label resolve_cast_hold_person
-*if (character_class = "warlock")
+*comment Read from a scroll (combat.txt fight_read_hold_person), the scroll is spent instead of a slot.
+*if (not(combat_scroll_id = ""))
+  *gosub_scene equipment spend_consumable combat_scroll_id
+*elseif (character_class = "warlock")
   *gosub spend_pact_slot
 *else
   *gosub spend_spell_slot 2
@@ -1251,17 +1258,17 @@ ${combat_web_burn_banner}
 *gosub_scene combat_dice resolve_save rhp_p "wisdom" "Wisdom" spell_save_dc combat_active_target
 *comment check_success is inverted here (resolve_save: true = the enemy FAILED the save).
 *if (check_success)
+  *comment A held creature is incapacitated, so a spell it was concentrating on ends: condition_apply ends it (3.5) and writes its banner, which prints here; the player's own
+  *comment banner (a spell this cast replaced) is kept for the end. What it held is read first, since the apply clears it.
+  *temp rhp_conc {(rhp_p & "concentrating")}
+  *temp rhp_keep combat_conc_ended_banner
   *gosub_scene combat_dice condition_apply rhp_p "paralyzed" 10 spell_save_dc "combat_player_hold_person"
   [b][🧍 ${combat_enemy_name} is Paralyzed][/b]
   *line_break
-  *comment A held creature is incapacitated, so a spell it was concentrating on ends. Its banner prints here; the player's own (a spell this cast replaced) is kept for the end.
-  *temp rhp_conc {(rhp_p & "concentrating")}
   *if (not(rhp_conc = "none"))
-    *temp rhp_keep combat_conc_ended_banner
-    *gosub_scene combat_dice concentration_end_incapacitated rhp_p
     ${combat_conc_ended_banner}
     *line_break
-    *set combat_conc_ended_banner rhp_keep
+  *set combat_conc_ended_banner rhp_keep
 *else
   [b][💨 ${combat_enemy_name} shrugs off the hold][/b]
   *line_break
@@ -1270,7 +1277,10 @@ ${combat_web_burn_banner}
 *return
 
 *label resolve_cast_shatter
-*if (character_class = "warlock")
+*comment Read from a scroll (combat.txt fight_read_shatter), the scroll is spent instead of a slot.
+*if (not(combat_scroll_id = ""))
+  *gosub_scene equipment spend_consumable combat_scroll_id
+*elseif (character_class = "warlock")
   *gosub spend_pact_slot
 *else
   *gosub spend_spell_slot combat_cast_at_level

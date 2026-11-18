@@ -608,6 +608,27 @@
       badge: "Read in a fight: 2d8 thunder to every foe beside you, Constitution save for half and a shove"
     },
     {
+      id: "scroll_shatter", category: "consumables", owned: "has_scroll_shatter",
+      weight: 0.05, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_scroll_shatter) || 0); return "Shatter Scroll" + (n > 1 ? " ×" + n : ""); },
+      description: "Stiff strip of paper that rings when flicked.",
+      badge: "Read in a fight: 3d8 thunder to a foe and every foe beside them, Constitution save for half"
+    },
+    {
+      id: "scroll_web", category: "consumables", owned: "has_scroll_web",
+      weight: 0.05, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_scroll_web) || 0); return "Web Scroll" + (n > 1 ? " ×" + n : ""); },
+      description: "Tacky strip of paper that clings to the fingers.",
+      badge: "Read in a fight: sticky webbing over a foe's ground, Dexterity save or Restrained, for as long as you hold concentration"
+    },
+    {
+      id: "scroll_hold_person", category: "consumables", owned: "has_scroll_hold_person",
+      weight: 0.05, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_scroll_hold_person) || 0); return "Hold Person Scroll" + (n > 1 ? " ×" + n : ""); },
+      description: "Cold, stiff strip of paper that barely bends.",
+      badge: "Read in a fight: a person in reach makes a Wisdom save or is Paralyzed, for as long as you hold concentration"
+    },
+    {
       id: "cooking_pot", category: "provisions", owned: "has_cooking_pot",
       weight: 4, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_cooking_pot) || 0); return "Iron Cooking Pot" + (n > 1 ? " ×" + n : ""); },

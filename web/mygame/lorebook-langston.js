@@ -212,8 +212,8 @@
       unlock: "wol_met_mayor",
       body: function (s) {
         var out = [
-          "The mayor of Langston, a half-orc woman in a tailored suit whose Common carries a heavy, guttural Orcish accent. She has a hard stare and little patience for small talk. She introduced herself at Maybelline's funeral, said she might have use for you, and asked you to stay for the service.",
-          "She hears petitions and disputes at the long table in [[langston|Langston Hall]]."
+          "Mayor of Langston: an imposing, heavily muscled half-orc woman in her mid-forties with a commanding noble bearing and a guttural Orcish accent. Pale olive-green skin is crisscrossed by old battle scars across her jaw and broad hands, with prominent lower tusks framing a firm, determined mouth beneath a hard, unyielding stare.",
+          "Thick charcoal-black hair with a bold silver streak down the center is pulled back into a severe high queue with an iron ring, framing piercing amber-yellow eyes. Impeccably dressed in a tailored, high-collared forest-green and black velvet coat with silver buttons bearing Langston's seal, she has little patience for small talk and is rarely seen without Buttercup, her massive mastiff war-dog, hearing petitions and disputes at the long table in [[langston|Langston Hall]]."
         ];
         if (["offered", "active", "complete"].indexOf(String(s.wol_quest_stage)) >= 0) {
           out.push("A very large dog goes with her.");
@@ -248,7 +248,8 @@
       unlock: "wol_met_tomlin",
       body: function (s) {
         var out = [
-          "Langston's herbalist, who was engaged to Maybelline and spoke at her funeral. Tomlin is a handsome man with warm brown eyes, dark hair falling loosely across his brow, and a neatly kept beard. His practical clothes and working gloves suit a man accustomed to the garden and the brewing bench, while his quiet warmth softens an otherwise rugged appearance."
+          "Langston's herbalist, engaged to Maybelline before her death, who spoke at her funeral. A tall, handsome human in his late twenties with an easy, magnetic grace, he has smooth sun-warmed tan skin, a sculpted jawline, and a neatly trimmed dark brown beard and mustache.",
+          "Wavy dark chestnut-brown hair falls loosely across his brow in a deliberate, artful fringe, framing warm honey-brown eyes that convey gentle sorrow and quiet charm. He wears a practical forest-green wool tunic over a cream linen shirt, supple calfskin boots, and garden-stained leather gloves, equally at home tending his crowded herb rows or working the brewing bench."
         ];
         if (Number(s.wol_funeral_day) > 0) {
           out.push("After the funeral he asked how you had known Maybelline and told you to come to his home for whatever you needed.");
@@ -282,7 +283,8 @@
       unlock: "wol_met_roi",
       body: function (s) {
         var out = [
-          "A bald dwarf druid in rough-spun clothes and animal hides, who sneezes often. He drove a wolf pack off the road when you first came toward Langston and told you to say he had sent you to the [[langston|Pickled Hen]]. He was on his way to a funeral."
+          "The druid of Langston's grove: a stocky, barrel-chested Mountain Dwarf in his early seventies who moves with surprisingly springy, loping agility. His completely bald, smooth dome shines in the sun above weather-beaten bronze skin, with a broad bulbous nose reddened at the nostrils from seasonal sneezes and polypox.",
+          "A thick, bristly reddish-brown beard braided with dried river grass and willow twigs frames bright, mischievous hazel-green eyes that sparkle with nature magic. Draped in a rough-spun homespun tunic layered with patched deer-hide and badger pelts, horn buttons, and mud-crusted leather gaiters, he commands dancing motes of druidic fire over his calloused palms."
         ];
         if (truthy(s.wol_met_mayor) || Number(s.wol_funeral_day) > 0) {
           out.push("He spoke at Maybelline's funeral. His circle assigned him to Langston, and he acts as its spiritual counsel and its guide among the forces of nature.");
@@ -318,7 +320,8 @@
       unlock: "wol_met_solaine",
       body: function (s) {
         var out = [
-          "A small young human woman in a white robe embroidered with sun motifs. She spoke at Maybelline's funeral, introduced herself as a member of the Church of the True Sun and custodian of Langston's chapel, and led the hymn. Townsfolk greet her with a nod or a gesture of respect."
+          "Custodian of Langston's temple and a cleric of the Church of the True Sun. A petite, slender young human woman in her early twenties, she has fair porcelain skin, delicate features, and dark circles of deep exhaustion and hidden torment beneath wide, troubled sky-blue eyes.",
+          "Fine golden-blonde hair is parted in the middle and falls in soft waves past her shoulders. She wears a pristine white ceremonial robe embroidered with gold-thread sunburst motifs around the high collar and cuffs, with a heavy golden sun amulet resting at her breast. Though hurried and visibly anxious on the street, she conducts church rites with rigid, formal dignity."
         ];
         if (truthy(s.wol_chapter_5_started)) {
           out.push("She looks after the [[true_sun_temple|True Sun Temple]] on the eastern edge of town.");
@@ -351,7 +354,8 @@
       unlock: "met_harlan_vetch",
       body: function (s) {
         var out = [
-          "The aproned, balding innkeeper of the [[langston|Pickled Hen]]. He looks over his common room and its front door in turn, wiping down the plank counter and keeping an eye on who comes in off the square."
+          "The thickset, burly innkeeper of the [[langston|Pickled Hen]] in his late fifties, slightly heavy at the waist with a grounded, watchful presence behind the plank counter. He has a ruddy, lived-in face lined with cautious furrowed brows, clean-shaven jowls, and shrewd dark peat-brown eyes that constantly track the front door and patrons' hands.",
+          "Balding with a fringe of coarse salt-and-charcoal hair around his ears, he wears a faded brown wool vest over an off-white homespun shirt, a heavy greased linen apron with deep front pockets, and a stout leather belt carrying iron till keys."
         ];
         if (truthy(s.wol_chapter_1_complete)) {
           out.push("Mayor Anathram arranged for the town to pay for your room and meals at the Hen while you worked for her.");
@@ -372,7 +376,8 @@
       unlock: "met_ansel_reed",
       body: function (s) {
         var out = [
-          "A broad, greying man who keeps the [[langston|Cord & Kettle]] off Langston's market square. He measures cord against the notches cut into the edge of his counter and tells customers plainly whether he has what they need for the road, the camp, or small repairs."
+          "Keeper of the [[langston|Cord & Kettle]] off Langston's market square: a broad, heavy-framed human tradesman in his mid-fifties with thick, capable hands and a calm, straight-speaking demeanor. Weathered tan skin and faint creases across a wide, honest brow are framed by coarse iron-grey hair cut in a practical brush cut.",
+          "Discerning slate-grey eyes peer over wire-rimmed half-moon spectacles when measuring goods. Wearing a durable navy-blue woollen smock over a dark tunic and an oilcloth shop apron with brass measuring notches, he measures cord against the marks on his counter and tells customers plainly whether he has what they need for road, camp, or repair."
         ];
         return out;
       },
@@ -387,7 +392,8 @@
       unlock: function (s) { return truthy(s.ba_know_head) || truthy(s.ba_hl_head_opened); },
       body: function (s) {
         var out = [
-          "The village head of [[barolo|Barolo]], a tall, stooped man in his mid-fifties with cropped grey hair and ink soaked into his cuffs. He works at a window table in the Village Head's Hall with a pen in hand, writing down what he hears as he listens because he forgets what has not been recorded.",
+          "The village head of [[barolo|Barolo]], a tall, lean human in his mid-fifties with a stooped posture earned through decades hunched over parchment rolls and ledgers. Thin iron-grey hair recedes at his temples above pale, parchment-toned skin creased with squint lines, a narrow aquiline nose, and an ever-present ink smudge along his right temple. Mild, observant slate-blue eyes peer through silver-rimmed spectacles as he works unhurriedly with split goose quill and drying blotter.",
+          "Clad in a dark plum woollen tunic with ink-soaked cuffs over an unbleached linen shirt and a worn leather vest fitted with quill slots, he sits at a window table in the Village Head's Hall, writing down what he hears as he listens because he forgets what has not been recorded.",
           "He was once the clerk to the old village head. When his predecessor died at the table mid-sentence, Hobart was the only one who could read the hand; Mayor [[anathram|Anathram]] confirmed his appointment under the Countess's seal that spring. He is known as slow, fair, and careful with every boundary and contract."
         ];
         if (truthy(s.ba_hl_asked_growers)) {
@@ -409,7 +415,8 @@
       unlock: "met_odalie_hollowell",
       body: function (s) {
         var out = [
-          "The round-faced halfling innkeeper of the [[barolo|Red Stave]], with a streak of grey in her auburn braid and forearms stained purple to the elbow from wine. She stands on a wooden step behind the counter so she can see over it, a heavy ring of cellar keys at her hip.",
+          "The lively, round-faced halfling innkeeper of the [[barolo|Red Stave]], in her early forties with a plump, energetic build. Her sun-warmed, rosy complexion is punctuated by dimpled cheeks and a quick, perceptive smile, while warm hazel eyes sparkle with sharp hospitality. A thick coronet braid of rich auburn hair bears a striking silver-grey streak across the crown.",
+          "Dressed in a fitted wine-red woollen bodice over an embroidered gold-and-cream blouse and heavy canvas apron, her stout forearms are stained deep purple to the elbow from countless autumn pressings. She stands briskly on a wooden step behind the counter so she can oversee the taproom, a heavy iron ring of cellar keys clinking at her hip as she dries tall wine flutes.",
           "She came up the river road as a cook with her mother's recipes and bought the inn on terms from its previous owner, paying off every coin. She pours for all three manor houses and prides herself on keeping their rivalries outside her doors."
         ];
         if (truthy(s.ba_rs_talk_opened)) {
@@ -428,7 +435,8 @@
       unlock: function (s) { return truthy(s.bm_know_head) || truthy(s.bm_hl_opened); },
       body: function (s) {
         var out = [
-          "The village head of [[broadmead|Broadmead]], a dwarf woman with thick grey braids who works at the plank counter in the Village Head's Hall, with a big grey drover dog sleeping across the threshold. She settles disputes with blunt, numbered points counted on her fingers, and takes in every visitor with a sharp eye.",
+          "The village head of [[broadmead|Broadmead]], a sturdy dwarf woman in her mid-sixties with the solid, immovable frame of a veteran drover. Her weather-beaten, ruddy bronze face features a resolute, square jaw and blunt nose, complemented by piercing dark brown eyes that can identify a counterfeit brand at thirty paces. Heavy iron-grey braids are wound securely atop her head and fastened with scarlet wool cord.",
+          "She wears a dun woollen vest over a coarse grey homespun shirt with sleeves rolled past thick, muscled forearms, alongside sturdy sheepskin breeches and scarred leather gaiters. Working at the plank counter in the Village Head's Hall with a massive grey drover hound sleeping across the threshold, she settles disputes with blunt, numbered points counted off on thick calloused fingers.",
           "She walked cattle and sheep for the yard's buyers for thirty years, between Dunmow and the river, and knows every brand in the Vale. When the previous head retired, every man in the village pointed at her because a head who cannot read a brand can be lied to. She accepted the post under [[house_gault|House Gault]]'s charter to give her worn knees a rest, though she calls a desk the worse trade."
         ];
         if (truthy(s.bm_hl_asked_holders)) {
@@ -453,7 +461,8 @@
       unlock: "met_olof",
       body: function (s) {
         var out = [
-          "The big half-orc innkeeper of the [[broadmead|Crooked Halter]], with small worn tusks, a grey braid over one shoulder, old rope scars across his forearms, and a left leg stretched out stiff from an old injury. He wipes pewter mugs behind a stall-partition bar and slides drinks across without standing up.",
+          "The hulking half-orc innkeeper of the [[broadmead|Crooked Halter]], in his late forties with a massive, barrel-chested build. His mottled grey-green skin is leathery from decades in the high wind, framed by a broad, flat nose, weathered lower tusks chipped from trail grit, and deep-set, calm amber eyes that weigh how newcomers treat beasts before checking their coin.",
+          "Grizzled charcoal-and-grey hair hangs in a thick, plaited braid over his left shoulder. He wears a scuffed brown leather jerkin over a rough dark wool shirt, his powerful forearms marked with pale rope-burn scars. A damaged left hip from an old horse kick leaves his leg stretched out stiffly beside his stool, allowing him to wipe heavy pewter mugs and slide ale across the stall-partition bar without having to rise.",
           "He spent twenty-two years on the road as a drover, driving wool to Langston and cattle to the river, until a mare put her hoof through his hip outside Dunmow. Unable to walk the roads, he bought the Halter with his savings and his second-best horse when the previous owner wanted to sit down. He judges people by how they handle dogs and horses."
         ];
         if (truthy(s.bm_ch_talk_opened)) {
@@ -475,7 +484,8 @@
       unlock: function (s) { return truthy(s.bm_know_sergeant) || truthy(s.bm_ry_met); },
       body: function (s) {
         var out = [
-          "A human woman of forty-odd who commands the [[broadmead|Remount Yard]] across the stream from Broadmead, managing the Countess's warhorses and schooling mounts under [[house_gault|House Gault]]. She has a quiet, level voice, an old scar through her left eyebrow, and pale lines worn into her palms from years of holding reins. She speaks to a horse before speaking to a person, and counts every foal raised for the yard herself.",
+          "A tall, wiry human woman in her early forties who commands the [[broadmead|Remount Yard]] across the stream from Broadmead, managing the Countess's warhorses and schooling mounts under [[house_gault|House Gault]]. She possesses a wind-hardened, highland complexion, a calm and unblinking gaze in cool grey-hazel eyes, and a pale scar cleaving cleanly through her left eyebrow. Her steel-brown hair is cut short to the jawline and tucked behind her ears.",
+          "Dressed in a navy-blue cavalry tunic bearing the golden horse crest of House Gault beneath a buff leather riding brigandine, tall polished riding boots with dulled brass spurs, and rein-calloused palms, she walks with an easy equestrian stride touched by a slight stiffness in her right knee. She speaks to horses with quiet authority before speaking to people, and counts every foal raised for the yard herself.",
           "The yard's gate remains barred to strangers without business or a writ from [[langston|Langston Hall]]."
         ];
         if (truthy(s.bm_ry_met)) {
@@ -494,7 +504,8 @@
       unlock: function (s) { return truthy(s.fm_know_head) || truthy(s.fm_hl_opened); },
       body: function (s) {
         var out = [
-          "The village head and sole clerk of [[fallowmere|Fallowmere]], a lean, sunburnt human man in his late thirties with ink-stained cuffs and a surveyor's cord constantly looped around his fingers. He is earnest, anxious, and quick to apologise, speaking in fast, looping sentences that frequently double back on themselves.",
+          "The village head and sole clerk of [[fallowmere|Fallowmere]], a lean, gangly human in his late thirties with a restless, slightly stooped frame. His narrow, earnest face is heavily freckled and sunburnt from long days walking field strips, framed by unruly curls of sandy-brown hair that spill over his ears. Wide, anxious hazel eyes blink rapidly when startled, accompanied by an apologetic, earnest expression.",
+          "He wears a faded russet work coat with ink-stained cuffs over a homespun linen shirt, mud-spattered boots, and a knotted surveyor's cord constantly wound around his nervous fingers. Tucking brass measuring ells and parchment boundary rolls beneath his arm, he speaks in rapid, looping sentences that frequently double back on themselves.",
           "He studied surveying in Langston with dreams of drawing grand maps of high ridges and rivers. When his booming father died, the elders found every field roll in Aubrey's hand and asked him to see out the autumn rent; he never left. He keeps the rolls, measures boundary lines with his cord, oversees ditch and road duties, and reports to [[langston|Langston Hall]] under [[house_gault|House Gault]]'s seal."
         ];
         if (truthy(s.fm_hl_asked_village)) {
@@ -516,7 +527,8 @@
       unlock: "met_ione",
       body: function (s) {
         var out = [
-          "The dry, unbothered half-elf innkeeper of the [[fallowmere|Grey Gander]], with grey-streaked hair in a plain knot and scarred forearms from years over the hearth. She polishes pewter mugs in steady, slow circles and addresses customers levelly by their trade before learning their name.",
+          "The dry, unflappable half-elf innkeeper of the [[fallowmere|Grey Gander]], in her early fifties though carrying herself with the graceful endurance of someone ten years younger. She has a slender, tall frame, smooth light olive skin with subtle laugh lines at the corners of her mouth, and delicate, slightly pointed ears. Her deep sable hair is streaked with silver and drawn back into an austere, tidy coil at the nape of her neck.",
+          "Cool, assessing amber-brown eyes take in everyone who enters, sizing them up with quiet precision. Wearing a dark slate-grey wool gown under a crisp linen apron, her lean forearms bear faint pale scars from decades tending boiling cauldrons and turning spit-roasts. She wipes pewter tankards in rhythmic, deliberate circles and addresses customers levelly by their trade before learning their names.",
           "She grew up at the inn as a potgirl after her father, a local reaper, died of a winter illness. The old landlord raised her, kept the taps for another decade, and left her the inn, the cask, and no debts. Her mother was an elven wagon-singer whom Ione brushes off simply as 'passing trade.' She feeds the harvest crews and keeps a peaceful, orderly house."
         ];
         if (truthy(s.fm_gg_asked_dice) || truthy(s.fm_gg_dice_met)) {
@@ -535,7 +547,9 @@
       unlock: "wol_cleric_met",
       body: function (s) {
         var out = [
-          "A lean man in a white robe mended at both elbows, with iron-grey hair cut close, who arrived to look after the [[true_sun_temple|True Sun Temple]] for the [[order_radiant_light|Order of Radiant Light]]. He came with two novices: Wynne, who has taken on the burial register, and Tamsin, who sits with the dead. He gives a healing rite once a day for what a visitor can spare, and the temple's doors are open at any hour."
+          "A gentle, spare-framed human cleric in his early sixties who arrived to look after the [[true_sun_temple|True Sun Temple]] for the [[order_radiant_light|Order of Radiant Light]]. Weather-worn, kindly pale skin is etched with fine prayer lines around a straight nose and compassionate mouth, illuminated by calm, luminous pale grey eyes that convey humble devotion. His thin iron-grey hair is cut in a plain, austere tonsure.",
+          "He wears a simple, spotless white woollen clerical robe neatly mended with coarse thread at both elbows, bound at the waist with a plain hemp cincture carrying cedarwood prayer beads. Walking in worn leather sandals with a slight, respectful stoop, he carries a wax writing tablet or brass holy water vessel as he tends the altars.",
+          "He came with two novices: Wynne, who has taken on the burial register, and Tamsin, who sits with the dead. He gives a healing rite once a day for what a visitor can spare, and the temple's doors are open at any hour."
         ];
         if (truthy(s.wol_cleric_asked_temple)) {
           out.push("He says Veyra's ward was weak but holding when he came, and that fourteen burials had never been written down. The Order could spare him two novices and no more. He covers the temple and three villages on the east road, and rides out two days in seven.");
@@ -555,7 +569,8 @@
       unlock: function (s) { return truthy(s.wol_met_mayor) || Number(s.wol_funeral_day) > 0; },
       body: function (s) {
         var out = [
-          "A young woman of Langston whose funeral you attended on reaching the town. She was engaged to Tomlin, and her parents spoke at the service. The mourners were told that a killer was out there."
+          "A gentle young woman of Langston, barely nineteen at the time of her death, whose tragic killing shook the Western Vale. Remembered by her grieving parents and the whole town as 'a ray of sunshine,' she had a fair, rosy complexion, soft rounded features, and a sweet, disarming smile.",
+          "Rich honey-amber wavy hair framed warm, gentle hazel eyes. She is remembered in her favorite lavender linen dress trimmed with delicate white lace, carrying freshly picked wild pink daisies or a light silk scarf. Her funeral was held at the Pickled Hen before she was laid to rest in the cemetery behind the True Sun Temple."
         ];
         if (truthy(s.wol_ep_asked_maybelline) || truthy(s.wol_chapter_6_complete)) {
           out.push("She is buried in the cemetery behind the temple, and fresh flowers keep appearing at her grave.");

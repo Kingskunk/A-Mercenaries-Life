@@ -4666,6 +4666,7 @@ stats = {
   "ability_fact_cond_icon": "",
   "ability_fact_effect": "",
   "ability_has_trait_result": "false",
+  "combat_read_hp_slot": "0",
   "combat_enemy0_ability_pick_page": "0",
   "combat_enemy0_ability_pick_place": "0",
   "combat_enemy0_ability_act_page": "0",

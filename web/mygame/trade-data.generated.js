@@ -2151,6 +2151,81 @@ window.TRADE_DATA = {
     "countVar": ""
    }
   },
+  "scroll_shatter": {
+   "name": "shatter scroll",
+   "title": "Shatter Scroll",
+   "kind": "consumable",
+   "group": "",
+   "tier": "",
+   "retail": 90,
+   "weight": 0.05,
+   "minutes": 5,
+   "hint": "Read in a fight: 3d8 thunder to a foe and every foe beside them, Constitution save for half",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 0,
+    "countVar": ""
+   }
+  },
+  "scroll_web": {
+   "name": "web scroll",
+   "title": "Web Scroll",
+   "kind": "consumable",
+   "group": "",
+   "tier": "",
+   "retail": 90,
+   "weight": 0.05,
+   "minutes": 5,
+   "hint": "Read in a fight: sticky webbing over a foe's ground, Dexterity save or Restrained, for as long as you hold concentration",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 0,
+    "countVar": ""
+   }
+  },
+  "scroll_hold_person": {
+   "name": "hold person scroll",
+   "title": "Hold Person Scroll",
+   "kind": "consumable",
+   "group": "",
+   "tier": "",
+   "retail": 90,
+   "weight": 0.05,
+   "minutes": 5,
+   "hint": "Read in a fight: a person in reach makes a Wisdom save or is Paralyzed, for as long as you hold concentration",
+   "slot": "",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 0,
+    "general": 50,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 0,
+    "countVar": ""
+   }
+  },
   "scroll_burning_hands": {
    "name": "burning hands scroll",
    "title": "Burning Hands Scroll",
@@ -4185,6 +4260,9 @@ window.TRADE_DATA = {
     "scroll_remove_curse",
     "scroll_grease",
     "scroll_thunderwave",
+    "scroll_shatter",
+    "scroll_web",
+    "scroll_hold_person",
     "scroll_burning_hands"
    ],
    "sell": [
@@ -4200,6 +4278,9 @@ window.TRADE_DATA = {
     "scroll_remove_curse",
     "scroll_grease",
     "scroll_thunderwave",
+    "scroll_shatter",
+    "scroll_web",
+    "scroll_hold_person",
     "scroll_burning_hands"
    ]
   },

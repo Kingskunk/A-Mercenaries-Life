@@ -3331,6 +3331,14 @@
   *comment A turn lost to a stun is still a turn for Blade Ward's duration -- it ages here like any
   *comment other turn-end (agreed house rule), so the ward cannot be stalled indefinitely by stun.
   *goto fight_end_player_turn
+*comment PARALYZED (3.5, Hold Person on the player): the whole turn is lost, as to a stun. The end-of-turn Wisdom save runs in fight_end_player_turn (condition_tick), and a success ends it there.
+*if (combat_player_paralyzed > 0)
+  Every muscle strains against the hold, and your body stays locked rigid where it stands.
+  *line_break
+  [b][🧍 Paralyzed — you lose this turn][/b]
+  *line_break
+  *set combat_turn_advanced_this_page true
+  *goto fight_end_player_turn
 
 *comment Whether the player can start (or continue) attacking this page. attacks_left alone isn't enough: the
 *comment first swing of the turn still has to spend the general action, so if something else already spent it
@@ -3419,6 +3427,9 @@
 *temp combat_read_grease false
 *temp combat_read_burning_hands false
 *temp combat_read_thunderwave false
+*temp combat_read_shatter false
+*temp combat_read_web false
+*temp combat_read_hold_person false
 *if ((has_scroll_magic_missile) and (combat_player_actions_left > 0))
   *gosub fight_read_can_magic_missile
   *if (combat_read_ok)
@@ -3451,6 +3462,18 @@
   *gosub fight_read_can_thunderwave
   *if (combat_read_ok)
     *set combat_read_thunderwave true
+*if ((has_scroll_shatter) and (combat_player_actions_left > 0))
+  *gosub fight_read_can_shatter
+  *if (combat_read_ok)
+    *set combat_read_shatter true
+*if ((has_scroll_web) and (combat_player_actions_left > 0))
+  *gosub fight_read_can_web
+  *if (combat_read_ok)
+    *set combat_read_web true
+*if ((has_scroll_hold_person) and (combat_player_actions_left > 0))
+  *gosub fight_read_can_hold_person
+  *if (combat_read_ok)
+    *set combat_read_hold_person true
 *comment GEN:END combat_read_check
 *temp combat_can_second_wind false
 *if ((character_class = "fighter") and (fighter_second_wind_uses > 0))
@@ -5473,6 +5496,18 @@
     # [b][ACTION][/b] [b][Read: Thunderwave Scroll][/b] You clap your hands together and the sound does not stop at sound: it rolls out of you as a wall of hard air.@{show_stat_hints  [2d8 Thunder, Constitution save for half, pushed back a step on a failure]|}
       *set combat_scroll_id "scroll_thunderwave"
       *goto fight_read_thunderwave
+  *if (combat_read_shatter)
+    # [b][ACTION][/b] [b][Read: Shatter Scroll][/b] You read the last word, and a crack of sound bursts over your foe like a bell struck an inch from the ear.@{show_stat_hints  [3d8 Thunder, Constitution save for half, to a foe in medium reach and everyone beside them]|}
+      *set combat_scroll_id "scroll_shatter"
+      *goto fight_read_shatter
+  *if (combat_read_web)
+    # [b][ACTION][/b] [b][Read: Web Scroll][/b] You read the line, and grey strands spill from the paper and stretch across the ground where your foe stands.@{show_stat_hints  [Dexterity save or Restrained, on a foe in medium reach and everyone on its ground; concentration]|}
+      *set combat_scroll_id "scroll_web"
+      *goto fight_read_web
+  *if (combat_read_hold_person)
+    # [b][ACTION][/b] [b][Read: Hold Person Scroll][/b] You read the line, and the words close on your foe like a fist, locking every joint.@{show_stat_hints  [Wisdom save or Paralyzed, on a humanoid in medium reach; concentration]|}
+      *set combat_scroll_id "scroll_hold_person"
+      *goto fight_read_hold_person
   *comment GEN:END combat_read_options
 
   *if (combat_can_dodge)
@@ -6375,6 +6410,94 @@ You unfold the greasy slip and read the smeared line aloud, and the ground under
 *label fight_read_can_burning_hands
 *set combat_read_ok true
 *return
+
+*comment Shatter and Web read from a scroll (3.6) need a living foe in medium reach, as the spells do. The reach flags (combat_in_medium) are worked out later on the hub page, so
+*comment fight_read_foe_in_medium scans the same way itself: Close and Mid-Range, and Long too on a map wider than three bands.
+*label fight_read_can_shatter
+*gosub fight_read_foe_in_medium
+*return
+
+*label fight_read_can_web
+*gosub fight_read_foe_in_medium
+*return
+
+*comment Hold Person from a scroll needs a living, unheld humanoid in medium reach, as the spell does (fight_read_hold_person_target).
+*label fight_read_can_hold_person
+*gosub fight_read_hold_person_target
+*set combat_read_ok (combat_read_hp_slot > 0)
+*return
+
+*comment The scroll's target, worked out as the spell's is on the hub page (the clicked foe when it qualifies, otherwise the weakest that does), into combat_read_hp_slot.
+*comment Its own scan, since the hub's runs only for a character who knows the spell and after the scroll checks.
+*label fight_read_hold_person_target
+*set combat_read_hp_slot 0
+*temp frhp_reach 2
+*if (combat_max_range > 3)
+  *set frhp_reach 3
+*temp frhp_best_hp 0
+*temp frhp_chosen false
+*temp frhp_i 1
+*label fight_read_hold_person_target_loop
+*if (frhp_i <= combat_enemy_count)
+  *temp frhp_p (("combat_enemy" & frhp_i) & "_")
+  *temp frhp_hp {(frhp_p & "hp")}
+  *temp frhp_kind {(frhp_p & "creature_type")}
+  *temp frhp_now {(frhp_p & "paralyzed")}
+  *temp frhp_rng {(frhp_p & "range")}
+  *if ((((frhp_hp > 0) and (frhp_kind = "humanoid")) and (frhp_now <= 0)) and (frhp_rng <= frhp_reach))
+    *if (frhp_i = combat_player_chosen_target)
+      *set combat_read_hp_slot frhp_i
+      *set frhp_chosen true
+    *elseif ((not(frhp_chosen)) and ((combat_read_hp_slot = 0) or (frhp_hp < frhp_best_hp)))
+      *set combat_read_hp_slot frhp_i
+      *set frhp_best_hp frhp_hp
+  *set frhp_i + 1
+  *goto fight_read_hold_person_target_loop
+*return
+
+*label fight_read_foe_in_medium
+*set combat_read_ok false
+*temp frcs_reach 2
+*if (combat_max_range > 3)
+  *set frcs_reach 3
+*temp frcs_i 1
+*label fight_read_foe_in_medium_loop
+*if (frcs_i <= combat_enemy_count)
+  *temp frcs_hp {(("combat_enemy" & frcs_i) & "_hp")}
+  *temp frcs_range {(("combat_enemy" & frcs_i) & "_range")}
+  *if ((frcs_hp > 0) and (frcs_range <= frcs_reach))
+    *set combat_read_ok true
+  *set frcs_i + 1
+  *goto fight_read_foe_in_medium_loop
+*return
+
+*comment Shatter from a scroll: the scroll's own level (2nd), at the foe the player clicked or the weakest one in reach (fight_pick_target), and the scroll is spent instead of a slot (resolve_cast_shatter).
+*label fight_read_shatter
+*gosub_scene combat_movement fight_pick_target
+*set combat_cast_at_level 2
+You unroll the stiff strip and read the line aloud, and a crack of sound bursts over ${combat_enemy_epithet} and everything beside them.
+*line_break
+*gosub_scene combat_spells resolve_cast_shatter
+*goto fight_check_enemy_hp
+
+*comment Hold Person from a scroll: the spell's own cast (resolve_cast_hold_person) on the scroll's target; the reader holds its concentration, and the scroll is spent instead of a slot.
+*label fight_read_hold_person
+*gosub fight_read_hold_person_target
+*set combat_active_target combat_read_hp_slot
+*gosub fight_sync_target_in
+You unroll the cold, stiff strip and read the line aloud, and the words close on ${combat_enemy_epithet} like a fist, locking every joint.
+*line_break
+*gosub_scene combat_spells resolve_cast_hold_person
+*goto fight_action_spent
+
+*comment Web from a scroll: the same patch the spell lays (resolve_cast_web), on the clicked foe or the weakest one in medium reach; the reader holds its concentration, and the scroll is spent instead of a slot.
+*label fight_read_web
+*gosub_scene combat_movement fight_pick_target
+*gosub_scene combat_movement fight_retarget_by_class "medium"
+You peel the tacky strip open and read the line aloud, and grey strands spill out and stretch across the ground where ${combat_enemy_epithet} stands.
+*line_break
+*gosub_scene combat_spells resolve_cast_web
+*goto fight_action_spent
 
 *comment Burning Hands read from a scroll: no individual target, exactly like Thunderwave below -- resolve_cast_burning_hands picks every Engaged enemy itself.
 *label fight_read_burning_hands
@@ -9072,6 +9195,16 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *comment STUN, ally side (2026-11-03): a stunned ally loses the turn before anything else, through the same gate as an enemy.
     *gosub combat_stun_gate "ally" cnt_slot
     *if (combat_stun_stop)
+      *goto cnt_ally_tail
+    *comment PARALYZED (3.5): a held ally loses the whole turn too; its end-of-turn Wisdom save runs in cnt_ally_tail (condition_tick).
+    *if ({(("combat_ally" & cnt_slot) & "_paralyzed")} > 0)
+      *temp cnt_pa_ep {(("combat_ally" & cnt_slot) & "_epithet")}
+      *temp cnt_pa_name {(("combat_ally" & cnt_slot) & "_name")}
+      Locked rigid by the hold, ${cnt_pa_ep} strains to move and stays fixed in place.
+      *line_break
+      [b][🧍 ${cnt_pa_name} is Paralyzed — turn lost][/b]
+      *line_break
+      *set combat_turn_advanced_this_page true
       *goto cnt_ally_tail
     *comment RESTRAINED (3.4): a held ally does not move. It fights from where it stands if a foe is in its reach, or spends the turn trying to break free.
     *if ({(("combat_ally" & cnt_slot) & "_restrained")} > 0)

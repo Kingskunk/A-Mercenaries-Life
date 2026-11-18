@@ -85,12 +85,17 @@
     }
     var sub = fill(evalField(entry.sub, s) || "", s);
     var role = evalField(entry.role, s);
+    var portrait = evalField(entry.portrait, s);
+    if (portrait === undefined && entry.category === "people") {
+      portrait = "portraits/" + entry.id + ".webp";
+    }
     return {
       id: entry.id,
       category: entry.category,
       title: fill(evalField(entry.title, s), s),
       sub: sub,
       role: role === undefined ? sub : fill(role, s),
+      portrait: portrait || "",
       tags: entry.tags || [],
       aliases: entry.aliases || [],
       html: html,
@@ -373,6 +378,9 @@
     html += '<div class="lb-crumbs">' +
       '<button type="button" class="lb-mobile-only" data-act="tolist">‹ All entries</button>' +
       (view.history.length ? '<button type="button" data-act="back">‹ Back</button>' : "") + '</div>';
+    if (r.portrait) {
+      html += '<figure class="lb-portrait"><img src="' + esc(r.portrait) + '" alt="' + esc(r.title) + '" loading="lazy" data-try="0"></figure>';
+    }
     html += '<div class="lb-cat">' + esc(categoryLabel(r.category)) + '</div>';
     html += '<h3>' + esc(r.title) + '</h3>';
     if (r.role) html += '<div class="lb-role">' + esc(r.role) + '</div>';
@@ -396,6 +404,19 @@
     }
     html += '</div>';
     elRead.innerHTML = html;
+    var pImg = elRead.querySelector(".lb-portrait img");
+    if (pImg) {
+      pImg.addEventListener("error", function () {
+        var idx = Number(pImg.getAttribute("data-try") || 0);
+        var prefixes = ["../../", "../"];
+        if (r.portrait.indexOf("portraits/") === 0 && idx < prefixes.length) {
+          pImg.setAttribute("data-try", String(idx + 1));
+          pImg.src = prefixes[idx] + r.portrait;
+        } else {
+          pImg.parentNode.style.display = "none";
+        }
+      });
+    }
     elRead.scrollTop = 0;
   }
 

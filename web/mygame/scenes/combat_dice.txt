@@ -630,6 +630,11 @@ ${combat_player_dmg_roll_banner}
     *if (combat_player_restrained > 0)
       *set combat_enemy_advantage true
       *set cea_def_restrained true
+    *comment Paralyzed (3.5): attacks against a paralyzed creature have advantage (and a hit from within reach is a critical hit, below).
+    *temp cea_def_paralyzed false
+    *if (combat_player_paralyzed > 0)
+      *set combat_enemy_advantage true
+      *set cea_def_paralyzed true
     *temp cea_dis false
     *comment Both disadvantage sources are precomputed into one flag rather than written as a mixed
     *comment `((A) or (B)) and (C)` condition. ChoiceScript's parser requires binary operators to be strictly
@@ -666,6 +671,8 @@ ${combat_player_dmg_roll_banner}
         *set cea_roll cea_roll_2
       *if (cea_def_blinded)
         *set cea_adv_label " (Advantage — Blinded)"
+      *elseif (cea_def_paralyzed)
+        *set cea_adv_label " (Advantage — Paralyzed)"
       *elseif (cea_def_restrained)
         *set cea_adv_label " (Advantage — Restrained)"
       *else
@@ -1075,6 +1082,11 @@ ${combat_player_dmg_roll_banner}
     *if ({(reao_ap & "restrained")} > 0)
       *set combat_enemy_advantage true
       *set reao_def_restrained true
+    *comment Paralyzed (3.5): advantage against a paralyzed ally, and a melee hit on one is a critical hit (below).
+    *temp reao_def_paralyzed false
+    *if ({(reao_ap & "paralyzed")} > 0)
+      *set combat_enemy_advantage true
+      *set reao_def_paralyzed true
     *temp reao_roll 0
     *rand reao_roll 1 20
     *temp reao_adv_label ""
@@ -1106,6 +1118,8 @@ ${combat_player_dmg_roll_banner}
         *set reao_roll reao_roll_2
       *if (reao_def_blinded)
         *set reao_adv_label " (Advantage — Blinded)"
+      *elseif (reao_def_paralyzed)
+        *set reao_adv_label " (Advantage — Paralyzed)"
       *elseif (reao_def_restrained)
         *set reao_adv_label " (Advantage — Restrained)"
       *else
@@ -1146,6 +1160,9 @@ ${combat_player_dmg_roll_banner}
     *comment A natural 20 always hits, and is a critical hit. A natural 1 always misses.
     *set combat_enemy_atk_on_ally_hit (((reao_total >= reao_target_ac) or (reao_roll = 20)) and (not(reao_roll = 1)))
     *if (reao_roll = 20)
+      *set combat_enemy_crit true
+      *set combat_enemy_crit_tag " (Critical)"
+    *elseif (((combat_enemy_atk_on_ally_hit) and (reao_def_paralyzed)) and (not(combat_enemy_weapon_type = "ranged")))
       *set combat_enemy_crit true
       *set combat_enemy_crit_tag " (Critical)"
     *temp reao_verdict "MISS"
@@ -1273,7 +1290,7 @@ ${combat_player_dmg_roll_banner}
 *params ccr_kind ccr_slot
 *set combat_can_react_ok false
 *if (ccr_kind = "player")
-  *if (((hp_current > 0) and (not(player_oa_used))) and (not(player_stunned)))
+  *if ((((hp_current > 0) and (not(player_oa_used))) and (not(player_stunned))) and (combat_player_paralyzed <= 0))
     *set combat_can_react_ok true
 *else
   *comment Fixed prefixes, not one built from ccr_kind: quicktest walks every branch whatever the values, and "combat_player0_" names nothing.
@@ -1814,6 +1831,9 @@ ${combat_player_dmg_roll_banner}
   *set {(ca_field)} ca_rounds
   *set {(ca_dc_field)} ca_dc
   *set {(ca_field & "_src")} ca_src
+*comment Paralyzed (3.5) includes incapacitated, which ends the bearer's concentration at once, with no save (as a stun does). Nothing happens when it holds none.
+*if ((ca_name = "paralyzed") and (ca_rounds > 0))
+  *gosub concentration_end_incapacitated ca_prefix
 *return
 
 *label condition_has

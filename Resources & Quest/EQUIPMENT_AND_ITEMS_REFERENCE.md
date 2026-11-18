@@ -397,6 +397,9 @@ Sold at **The Ink & Lamp** (Aldren Saye, Patrician Quarter), always in stock, bo
 | Mage Armor Scroll (`has_scroll_mage_armor`) | 50c | in a fight or from the pack | Base AC 13 + Dexterity for 24 hours, with no armor worn |
 | Bane Scroll (`has_scroll_bane`) | 50c | in a fight | Up to three foes make a Charisma save (DC 8 + proficiency + casting modifier) or are Baned for 10 rounds |
 | False Life Scroll (`has_scroll_false_life`) | 40c | in a fight or from the pack | 1d4 + 4 temporary hit points for 12 hours |
+| Shatter Scroll (`has_scroll_shatter`) | 90c | in a fight | Read at its 2nd level: 3d8 thunder to a foe in medium reach and every foe on its tile, Constitution save for half (2026-11-18) |
+| Web Scroll (`has_scroll_web`) | 90c | in a fight | Read at its 2nd level: webbing on a foe's ground in medium reach, Dexterity save or Restrained, while the reader holds concentration (2026-11-18) |
+| Hold Person Scroll (`has_scroll_hold_person`) | 90c | in a fight | Read at its 2nd level: a humanoid in medium reach makes a Wisdom save or is Paralyzed, while the reader holds concentration (2026-11-18) |
 
 Three more scrolls, 40c each, are read from the place that offers the spell, never from a fight or the pack: **Detect Magic Scroll** (`has_scroll_detect_magic`), **Animal Speech Scroll** (`has_scroll_speak_with_animals`, the Speak with Animals scroll), and **Jump Scroll** (`has_scroll_jump`). A character who cannot cast the spell any other way reads it at the relevant site; one who can cast it keeps the scroll. The Jump Scroll clears the Hidden Spring's muddy climb in Longshade.
 

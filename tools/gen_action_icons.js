@@ -65,6 +65,9 @@ const MAP = {
   read_false_life_scroll: "Item/Consumable/Scroll/Scroll_of_False_Life_Unfaded_Icon.png",   // the user's own jug art (2026-10-19)
   read_grease_scroll: "Item/Consumable/Scroll/Scroll_of_Grease_Unfaded_Icon.png",
   read_thunderwave_scroll: "Item/Consumable/Scroll/Scroll_of_Thunderwave_Unfaded_Icon.png",
+  read_shatter_scroll: "Item/Consumable/Scroll/Scroll_of_Shatter_Unfaded_Icon.png",
+  read_web_scroll: "Item/Consumable/Scroll/Scroll_of_Web_Unfaded_Icon.png",
+  read_hold_person_scroll: "Item/Consumable/Scroll/Scroll_of_Hold_Person_Unfaded_Icon.png",
   swap_weapons: "Passive_feature/Dual_Wielder_Icon.webp",   // STAND-IN for the Swap Weapons button (the user to choose their own art)
   trade_places: "Action/Benign_Transposition_Swap_Icon.webp",
   call_ally_back: "Action/Benign_Transposition_Swap_Icon.webp",
