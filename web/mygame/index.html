@@ -3140,30 +3140,35 @@ if (window.location.hostname === 'localhost') {
 ═══════════════════════════════════════════════════════════ -->
 <style>
 #ampSLModal {
-  border: none;
+  border: 1px solid var(--ch-line-hi);
   border-radius: 10px;
   padding: 0;
-  max-width: 560px;
+  max-width: 900px;
   width: calc(100vw / var(--z, 1) - 2rem);
   max-height: calc(100vh / var(--z, 1) - 2rem);
-  overflow-y: auto;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.35);
+  overflow: hidden;
+  box-shadow: 0 12px 44px rgba(0,0,0,0.55);
   font-family: Helvetica, Arial, sans-serif;
   color: var(--ch-text);
   background: var(--ch-bg);
 }
+#ampSLModal[open] {
+  display: flex;
+  flex-direction: column;
+}
 #ampSLModal::backdrop {
-  background: rgba(0,0,0,0.55);
+  background: rgba(0,0,0,0.62);
 }
 #ampSLModal header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1em 1.25em 0.75em;
+  gap: 0.75em;
+  padding: 0.85em 1.25em;
   border-bottom: 1px solid var(--ch-line);
   background: var(--ch-head);
-  border-radius: 10px 10px 0 0;
   color: var(--ch-head-text);
+  flex-shrink: 0;
 }
 #ampSLModal header h2 {
   margin: 0;
@@ -3181,52 +3186,98 @@ if (window.location.hostname === 'localhost') {
   padding: 0 0.2em;
 }
 #ampSLModal header button.ampClose:hover { color: var(--ch-head-text); }
+.ampTabs {
+  display: flex;
+  gap: 0.35em;
+  padding: 0.55em 1.1em;
+  background: var(--ch-bg-deep);
+  border-bottom: 1px solid var(--ch-line);
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+.ampTabBtn {
+  background: transparent;
+  color: var(--ch-dim);
+  border: 1px solid transparent;
+  border-radius: 5px;
+  padding: 0.42em 0.9em;
+  font-size: 0.82em;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.14s, color 0.14s, border-color 0.14s;
+}
+.ampTabBtn:hover {
+  background: var(--ch-hover);
+  color: var(--ch-text);
+}
+.ampTabBtn.active {
+  background: var(--ch-card);
+  color: var(--ch-brass);
+  border-color: var(--ch-line-hi);
+}
+.ampTabBody {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
 .ampSlotList {
-  padding: 0.75em 1em;
+  padding: 0.9em 1.1em;
   display: flex;
   flex-direction: column;
-  gap: 0.5em;
+  gap: 0.6em;
+}
+.ampSlotGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65em;
+}
+@media (max-width: 640px) {
+  .ampSlotGrid {
+    grid-template-columns: 1fr;
+  }
 }
 .ampSlot {
   display: flex;
   align-items: center;
-  gap: 0.5em;
+  gap: 0.65em;
   background: var(--ch-card);
   border: 1px solid var(--ch-line);
   border-radius: 7px;
-  padding: 0.55em 0.75em;
+  padding: 0.65em 0.85em;
+  min-width: 0;
   transition: border-color 0.15s;
 }
 .ampSlot:hover { border-color: var(--ch-brass); }
 .ampSlotNum {
   font-size: 0.78em;
   font-weight: 700;
-  color: var(--ch-dim);
-  min-width: 2em;
+  color: var(--ch-brass);
+  min-width: 1.8em;
   text-align: center;
+  flex-shrink: 0;
 }
 .ampSlotLabel {
   flex: 1;
+  min-width: 0;
   font-size: 0.85em;
   line-height: 1.4;
   color: var(--ch-text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  word-break: break-word;
 }
 .ampSlotLabel.empty { color: var(--ch-dim); font-style: italic; }
-.ampSlotLabel small { display: block; font-size: 0.85em; color: var(--ch-dim); }
+.ampSlotLabel small { display: block; font-size: 0.84em; color: var(--ch-dim); }
 .ampSlotBtns {
   display: flex;
-  gap: 0.3em;
+  gap: 0.35em;
   flex-shrink: 0;
 }
 .ampSlotBtns button {
-  font-size: 0.78em;
-  padding: 0.3em 0.6em;
+  font-size: 0.8em;
+  padding: 0.4em 0.72em;
   border: 1px solid var(--ch-line-hi);
   border-radius: 5px;
-  background: var(--ch-card);
+  background: var(--ch-bg-deep);
   cursor: pointer;
   transition: background 0.12s, border-color 0.12s;
 }
@@ -3237,12 +3288,8 @@ if (window.location.hostname === 'localhost') {
 .ampSlotBtns button.ampBtnLoad:hover { background: var(--ch-hover); }
 .ampSlotBtns button.ampBtnDel  { border-color: var(--ch-bad); color: var(--ch-bad); }
 .ampSlotBtns button.ampBtnDel:hover  { background: var(--ch-crimson-soft); }
-.ampRecovery {
-  border-top: 1px solid var(--ch-line);
-  padding-top: 0.15em;
-}
 .ampRecoveryHead {
-  padding: 0.7em 1em 0;
+  padding: 0.85em 1.1em 0;
 }
 .ampRecoveryHead h3 {
   margin: 0;
@@ -3252,24 +3299,27 @@ if (window.location.hostname === 'localhost') {
 .ampRecoveryHead p {
   margin: 0.3em 0 0;
   color: var(--ch-dim);
-  font-size: 0.76em;
+  font-size: 0.78em;
   line-height: 1.35;
 }
-.ampRecovery .ampSlotList { padding-top: 0.55em; }
+.ampRecovery .ampSlotList { padding-top: 0.65em; }
 .ampRecovery .ampSlotNum {
-  min-width: 4.8em;
+  min-width: 4.4em;
   text-align: left;
 }
 #ampSLModal footer {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 0.5em;
-  padding: 0.6em 1em 0.8em;
+  padding: 0.65em 1.1em;
   border-top: 1px solid var(--ch-line);
+  background: var(--ch-head);
+  flex-shrink: 0;
 }
 #ampSLModal footer button {
   font-size: 0.8em;
-  padding: 0.35em 0.85em;
+  padding: 0.42em 0.9em;
   border: 1px solid var(--ch-line-hi);
   border-radius: 5px;
   background: var(--ch-card);
@@ -3278,6 +3328,8 @@ if (window.location.hostname === 'localhost') {
 #ampSLModal footer button:hover { background: var(--ch-hover); border-color: var(--ch-brass); }
 /* THEME (2026-10-02): the buttons and fields in these dialogs inherit the dark panel's text instead of the browser's black. */
 #ampSLModal button { color: var(--ch-text); }
+#ampSLModal .ampTabBtn.active { color: var(--ch-brass); }
+#ampSLModal .ampTabBtn:not(.active) { color: var(--ch-dim); }
 #ampSLModal .ampSlotBtns button.ampBtnSave { color: var(--ch-good); }
 #ampSLModal .ampSlotBtns button.ampBtnLoad { color: var(--ch-info); }
 #ampSLModal .ampSlotBtns button.ampBtnDel { color: var(--ch-bad); }
@@ -3310,23 +3362,31 @@ if (window.location.hostname === 'localhost') {
     <h2>⚔ Save &amp; Load</h2>
     <button class="ampClose" onclick="document.getElementById('ampSLModal').close()" title="Close">✕</button>
   </header>
-  <div class="ampSlotList" id="ampSlotList"></div>
-  <section class="ampRecovery" aria-labelledby="ampRecoveryHeading">
-    <div class="ampRecoveryHead">
-      <h3 id="ampRecoveryHeading">Recovery Saves</h3>
-      <p>Automatic snapshots are replaced as you play. Use these when your latest save cannot be loaded safely.</p>
-    </div>
-    <div class="ampSlotList" id="ampRecoveryList"></div>
-  </section>
-  <section class="ampRecovery" id="ampWorldsSection" style="display:none" aria-labelledby="ampWorldsHeading">
-    <div class="ampRecoveryHead">
-      <h3 id="ampWorldsHeading">MemPalace RP Worlds</h3>
-      <p>Memories stored on your server per playthrough. Worlds marked "Not on this device" may belong to another device or a deleted save.</p>
-    </div>
-    <div class="ampSlotList" id="ampWorldsList"></div>
-  </section>
+  <nav class="ampTabs" role="tablist">
+    <button type="button" class="ampTabBtn active" data-tab="slots" onclick="ampSaveLoad.setTab('slots')">💾 Save Slots (6)</button>
+    <button type="button" class="ampTabBtn" data-tab="recovery" onclick="ampSaveLoad.setTab('recovery')">🛡 Recovery Saves</button>
+    <button type="button" class="ampTabBtn" data-tab="worlds" onclick="ampSaveLoad.setTab('worlds')">🧠 RP Worlds</button>
+  </nav>
+  <div class="ampTabBody">
+    <section id="ampTabSlots">
+      <div class="ampSlotList ampSlotGrid" id="ampSlotList"></div>
+    </section>
+    <section class="ampRecovery" id="ampTabRecovery" style="display:none" aria-labelledby="ampRecoveryHeading">
+      <div class="ampRecoveryHead">
+        <h3 id="ampRecoveryHeading">Recovery Saves</h3>
+        <p>Automatic snapshots are replaced as you play. Use these when your latest save cannot be loaded safely.</p>
+      </div>
+      <div class="ampSlotList ampSlotGrid" id="ampRecoveryList"></div>
+    </section>
+    <section class="ampRecovery" id="ampTabWorlds" style="display:none" aria-labelledby="ampWorldsHeading">
+      <div class="ampRecoveryHead">
+        <h3 id="ampWorldsHeading">MemPalace RP Worlds</h3>
+        <p>Memories stored on your server per playthrough. Worlds marked "Not on this device" may belong to another device or a deleted save.</p>
+      </div>
+      <div class="ampSlotList" id="ampWorldsList"></div>
+    </section>
+  </div>
   <footer>
-    <button onclick="ampSaveLoad.toggleWorlds()" title="Inspect and clean up stored RP memories on MemPalace">🧠 RP Worlds</button>
     <button onclick="ampSaveLoad.exportAll()" title="Export all saves to a text file">📤 Export Saves</button>
     <button onclick="ampSaveLoad.importPrompt()" title="Import saves from a text file">📥 Import Saves</button>
     <input type="file" id="ampImportFile" accept=".json,.txt" style="display:none" onchange="ampSaveLoad.importFile(event)">
@@ -3388,7 +3448,7 @@ if (window.location.hostname === 'localhost') {
     var cls      = s.class_name || (s.character_class || '');
     var hp       = (s.hp_current !== undefined) ? (s.hp_current + '/' + s.hp_max + ' HP') : '';
     var location = s.calendar_date ? (s.calendar_date + (s.clock_time ? ' · ' + s.clock_time : '')) : '';
-    var scene    = s.sceneName ? s.sceneName.replace(/_/g,' ') : '';
+    var scene    = s.sceneName ? friendlyWords(s.sceneName) : '';
     var label    = [name, cls ? ('· ' + cls) : '', hp ? ('· ' + hp) : ''].filter(Boolean).join(' ');
     var sub      = [location, scene].filter(Boolean).join(' — ');
     return { label: label, sub: sub, saved: new Date().toLocaleString() };
@@ -3513,7 +3573,20 @@ if (window.location.hostname === 'localhost') {
     open: function() {
       render();
       renderRecovery();
+      this.setTab('slots');
       document.getElementById('ampSLModal').showModal();
+    },
+
+    setTab: function(tab) {
+      var tabs = { slots: 'ampTabSlots', recovery: 'ampTabRecovery', worlds: 'ampTabWorlds' };
+      Object.keys(tabs).forEach(function(k) {
+        var el = document.getElementById(tabs[k]);
+        if (el) el.style.display = (k === tab) ? '' : 'none';
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('#ampSLModal .ampTabBtn'), function(b) {
+        b.classList.toggle('active', b.getAttribute('data-tab') === tab);
+      });
+      if (tab === 'worlds') this.renderWorlds();
     },
 
     save: function(n) {
@@ -3623,14 +3696,6 @@ if (window.location.hostname === 'localhost') {
         toast('Imported ' + count + ' save(s).');
       };
       reader.readAsText(file);
-    },
-
-    toggleWorlds: function() {
-      var sec = document.getElementById('ampWorldsSection');
-      if (!sec) return;
-      var show = sec.style.display === 'none';
-      sec.style.display = show ? '' : 'none';
-      if (show) this.renderWorlds();
     },
 
     renderWorlds: function() {

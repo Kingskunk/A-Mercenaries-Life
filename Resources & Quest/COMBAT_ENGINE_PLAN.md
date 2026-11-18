@@ -133,7 +133,7 @@ The non-magical twin of assigned spells. A type is a body (HP, AC, scores, weapo
 
 **Order of work** (each its own piece, and each existing fight must play exactly as before, checked by transcript diffs against a worktree of the commit before the piece):
 
-1. Catalog, generator, slots and the dispatcher hook, with **Multiattack** moved over as the proof. Trent's fight and the dev test fight assign it instead of setting `combat_multiattack_slot`, which is retired.
+1. Done (2026-11-18): catalog (`tools/ability_book.json`), generator (`tools/gen_abilities.js`, `--check` for staleness), the new scene `combat_abilities.txt` (`ability_facts_load`, `ability_apply_overrides`, `ability_clear_slot`, `ability_extra_attacks`) and three ability slots on every enemy slot (enemies only so far; ally slots arrive with the first ally ability). **Multiattack** is the first entry: Trent's fight and the dev test fight set `combat_enemy_ability_1_override "multiattack"`, the extra-attack loop reads its count and die, and `combat_multiattack_slot` is retired. Trent's fights play identically (transcripts diffed before and after). Script: `ability_multiattack_any_slot` (slot 2 carries it).
 2. **The Net**, the first new ability: an action, a ranged attack at Close or Mid-Range, a hit restrains (escape DC 10, src `"net"`), once per fight. The restraint and Break Free from 3.4 are already built.
 3. The eight **special moves** become `attack_variant` entries and type defaults, behaving exactly as now (one disadvantage on the next d20, movement restricted for the three). `move2_*` is retired.
 4. **Riders and stun** become `on_hit_rider` and an effect, and the scenes that set `extra_dmg_*` by hand assign an ability instead.
@@ -144,7 +144,18 @@ The non-magical twin of assigned spells. A type is a body (HP, AC, scores, weapo
 - **Type defaults stay.** A type names its default abilities (the swordsman's feint). A fight's override wins per slot, and `"none"` clears one, so no existing fight changes.
 - **Turn order.** An action ability first, then an assigned spell, then a plain attack. Each uses its own chance and its own "worth it" rule.
 - **Uses.** Uses per fight, recharge 5-6, or a plain chance, chosen per ability.
-- **Real conditions come later, as their own piece.** The migration keeps today's behavior exactly. Turning the special-move names into real conditions (Poisoned as in the 2024 rules, Off-Guard limited to an attack roll) is a balance pass after step 3.
+- **Real conditions come later, as their own piece.** The migration keeps today's behavior exactly. Turning the special-move names into real conditions is a balance pass after step 3. The designer's targets, after Baldur's Gate 3 (2026-11-18; Daze was an early design and is to be redone):
+
+| Condition | Effect | Ends |
+| --- | --- | --- |
+| Dazed | Disadvantage on Wisdom saves, no reactions, loses its Dexterity bonus to AC | An ally Helps it |
+| Stunned | Cannot move or take actions, bonus actions or reactions; fails Strength and Dexterity saves; attacks against it have advantage; breaks concentration when applied | (its duration) |
+| Off-Balance | Disadvantage on Strength and Dexterity ability checks; attacks against it have advantage | It takes damage, or is Helped |
+| Blinded | Disadvantage on attack rolls; its attacks and spells reach only 10 ft (Engaged); attacks against it have advantage | (its duration) |
+| Poisoned | Disadvantage on attack rolls and ability checks | (its duration) |
+| Bleeding | 2 slashing at the start of each of its turns; disadvantage on Constitution saves | Any healing |
+
+  Off-Guard, Pinned and Hobbled have no target yet. A "Help" action (one ally ends Dazed or Off-Balance on another) would arrive with this pass.
 
 ### 3.5 Paralyzed and other conditions on the player and allies
 

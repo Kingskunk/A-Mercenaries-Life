@@ -123,6 +123,7 @@
     *set {(("combat_enemy" & fss_i) & "_cast_chance_1")} 0
     *set {(("combat_enemy" & fss_i) & "_cast_chance_2")} 0
     *set {(("combat_enemy" & fss_i) & "_cast_chance_3")} 0
+    *gosub_scene combat_abilities ability_clear_slot (("combat_enemy" & fss_i) & "_")
     *set {(("combat_enemy" & fss_i) & "_cast_dc")} 0
     *set {(("combat_enemy" & fss_i) & "_cast_atk_bonus")} 0
     *set {(("combat_enemy" & fss_i) & "_spell_base_applied")} false
@@ -334,6 +335,23 @@
 *set combat_enemy_cast_chance_3_override 0
 *set combat_enemy_cast_stat_override ""
 *set combat_enemy_cast_dc_override 0
+*comment Slot 1 assigned abilities (3.4a): the bare overrides land on slot 1's own override fields, and combat_abilities applies those as it does for every slot.
+*if (not(combat_enemy_ability_1_override = ""))
+  *set combat_enemy1_ability_1_override combat_enemy_ability_1_override
+  *set combat_enemy1_ability_uses_1_override combat_enemy_ability_uses_1_override
+*if (not(combat_enemy_ability_2_override = ""))
+  *set combat_enemy1_ability_2_override combat_enemy_ability_2_override
+  *set combat_enemy1_ability_uses_2_override combat_enemy_ability_uses_2_override
+*if (not(combat_enemy_ability_3_override = ""))
+  *set combat_enemy1_ability_3_override combat_enemy_ability_3_override
+  *set combat_enemy1_ability_uses_3_override combat_enemy_ability_uses_3_override
+*set combat_enemy_ability_1_override ""
+*set combat_enemy_ability_2_override ""
+*set combat_enemy_ability_3_override ""
+*set combat_enemy_ability_uses_1_override 0
+*set combat_enemy_ability_uses_2_override 0
+*set combat_enemy_ability_uses_3_override 0
+*gosub_scene combat_abilities ability_apply_overrides "combat_enemy1_"
 *comment Slots 2 and beyond: one generic subroutine (apply_slot_stat_override, below) instead of a hand-copied
 *comment block per slot. Widening combat_enemy_slot_cap later needs no change here.
 *temp fs_ov_i 2
@@ -558,6 +576,8 @@
 *set {(aso_p & "cast_stat_override")} ""
 *set {(aso_p & "cast_dc_override")} 0
 *gosub compute_cast_dc aso_p aso_cstat aso_cdc
+*comment Assigned abilities (3.4a).
+*gosub_scene combat_abilities ability_apply_overrides aso_p
 *return
 
 *label compute_cast_dc
@@ -869,23 +889,33 @@
       *line_break
 *return
 
-*comment EXTRA ATTACK (2026-10-11, for Captain Trent in Varren's Errand): the enemy in slot combat_multiattack_slot follows its first attack with a second, weaker one at the same attack bonus: a d4 and
-*comment no special move, so a captain with a long blade and a knife strikes twice a turn without doubling his damage. Only the active-target SCRATCH fields are lowered, the same transient-override shape the
-*comment ranged quick-draw uses, so the slot's own durable stats are back next turn with no restore step. Called by name after the first attack in both melee branches; a caller sets combat_multiattack_slot
-*comment before fight_library and fight_cleanup clears it.
+*comment EXTRA ATTACK (2026-10-11, for Captain Trent in Varren's Errand; an assigned ability since 3.4a): an enemy holding an extra_attack ability (Multiattack, tools/ability_book.json)
+*comment follows its first attack with weaker ones at the same attack bonus: the ability's die (Multiattack: a d4, one extra) and no special move, so a captain with a long blade and a knife strikes twice
+*comment a turn without doubling his damage. Only the active-target SCRATCH fields are lowered, the same transient-override shape the ranged quick-draw uses, so the slot's own durable stats are back next
+*comment turn with no restore step. Called by name after the first attack in both melee branches, once combat_abilities ability_extra_attacks has set ability_extra_attack_n and _sides.
 *label fight_enemy_extra_attack
-*comment The second strike runs on its OWN page: resolve_enemy_attack and fight_narrate_enemy_turn lock their dice and their text per slot per page_id, so a second call on the first attack's page would
+*comment Each strike runs on its OWN page: resolve_enemy_attack and fight_narrate_enemy_turn lock their dice and their text per slot per page_id, so a second call on the first attack's page would
 *comment only replay the first roll. A page break gives it a fresh page_id (and a refresh replays only this page), at the cost of one click.
-*page_break The second blow follows…
-*set combat_enemy_atk_save_stat ""
-*set combat_enemy_atk_save_dc 0
-*set combat_enemy_atk_save_half false
-*set combat_enemy_atk_dmg_dice 1
-*set combat_enemy_save_halved false
-*set combat_enemy_dmg_dice_sides 4
-*set combat_enemy_move2_chance 0
-*gosub_scene combat_dice resolve_enemy_attack
-*gosub_scene combat_prose fight_narrate_enemy_turn
+*temp feea_n ability_extra_attack_n
+*temp feea_sides ability_extra_attack_sides
+*temp feea_i 1
+*label fight_enemy_extra_attack_loop
+*if ((feea_i <= feea_n) and (hp_current > 1))
+  *if (feea_i = 1)
+    *page_break The second blow follows…
+  *else
+    *page_break Another blow follows…
+  *set combat_enemy_atk_save_stat ""
+  *set combat_enemy_atk_save_dc 0
+  *set combat_enemy_atk_save_half false
+  *set combat_enemy_atk_dmg_dice 1
+  *set combat_enemy_save_halved false
+  *set combat_enemy_dmg_dice_sides feea_sides
+  *set combat_enemy_move2_chance 0
+  *gosub_scene combat_dice resolve_enemy_attack
+  *gosub_scene combat_prose fight_narrate_enemy_turn
+  *set feea_i + 1
+  *goto fight_enemy_extra_attack_loop
 *return
 
 *label fight_cleanup
@@ -965,7 +995,6 @@
 *set combat_dubhar_blights 0
 *set combat_leader_slot 0
 *set combat_nonlethal_slot 0
-*set combat_multiattack_slot 0
 *comment Same reason for hiding: cover from one fight must not arm advantage in the next.
 *set combat_player_hidden false
 *set combat_hide_uses 0
@@ -1273,6 +1302,7 @@
   *set {(fc_p & "cast_chance_3")} 0
   *set {(fc_p & "cast_dc")} 0
   *set {(fc_p & "cast_atk_bonus")} 0
+  *gosub_scene combat_abilities ability_clear_slot fc_p
   *set {(fc_p & "cast_spell_1_override")} ""
   *set {(fc_p & "cast_spell_2_override")} ""
   *set {(fc_p & "cast_spell_3_override")} ""
@@ -8840,7 +8870,8 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
           *goto cnt_boom_tail
         *if ((combat_enemy_range <= 0) and (not(cnt_dashed)))
           *gosub combat_enemy_player_action cnt_slot
-          *if ((combat_enemy_cast_spell = "") and ((combat_multiattack_slot = cnt_slot) and (hp_current > 1)))
+          *gosub_scene combat_abilities ability_extra_attacks cnt_slot
+          *if ((combat_enemy_cast_spell = "") and ((ability_extra_attack_n > 0) and (hp_current > 1)))
             *gosub fight_enemy_extra_attack
           *set combat_enemy_cast_spell ""
           *set combat_enemy_cast_place 0
@@ -8902,7 +8933,8 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
       *set combat_enemy_atk_dmg_dice 1
       *set combat_enemy_save_halved false
       *set combat_turn_advanced_this_page true
-      *if ((combat_enemy_cast_spell = "") and ((combat_multiattack_slot = cnt_slot) and (hp_current > 1)))
+      *gosub_scene combat_abilities ability_extra_attacks cnt_slot
+      *if ((combat_enemy_cast_spell = "") and ((ability_extra_attack_n > 0) and (hp_current > 1)))
         *gosub fight_enemy_extra_attack
       *set combat_enemy_cast_spell ""
       *set combat_enemy_cast_place 0
@@ -9511,7 +9543,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *set combat_enemy_ac_override 14
 *set combat_enemy_atk_override 5
 *set combat_terrain_layout "random_standard"
-*set combat_multiattack_slot 1
+*set combat_enemy_ability_1_override "multiattack"
 *goto fight_library
 
 *comment WEAPON IMMUNITY TEST FOES (2026-10-31, dev hub only; no story scene calls these). Each is a library "beast" with a defense set by the override variables, short enough to finish in a few rounds. What to try with each is in Resources & Quest/GAMEPLAY_MECHANICS_RULES.md,
