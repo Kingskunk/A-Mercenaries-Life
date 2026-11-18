@@ -298,11 +298,14 @@
     *temp cph_xs combat_player_extra_dmg_dice_sides
     *if (cph_xs < 2)
       *set cph_xs 2
+    *comment combat_player_extra_dmg_dice_count dice (Absorb Elements: one more per slot level above 1st), doubled on a crit.
+    *temp cph_xn combat_player_extra_dmg_dice_count
+    *if (cph_xn < 1)
+      *set cph_xn 1
     *if (combat_player_crit)
-      *gosub_scene combat_spells roll_spell_dice 2 cph_xs
-      *set cph_packet_roll spell_roll_total
-    *else
-      *rand cph_packet_roll 1 cph_xs
+      *set cph_xn (cph_xn * 2)
+    *gosub_scene combat_spells roll_spell_dice cph_xn cph_xs
+    *set cph_packet_roll spell_roll_total
     *temp cph_packet_raw (cph_packet_roll + combat_player_extra_dmg_bonus)
     *temp cph_packet_bonus_str ""
     *if (combat_player_extra_dmg_bonus >= 0)
@@ -454,11 +457,14 @@ ${combat_player_dmg_roll_banner}
     *temp cwh_xs combat_player_extra_dmg_dice_sides
     *if (cwh_xs < 2)
       *set cwh_xs 2
+    *comment combat_player_extra_dmg_dice_count dice (Absorb Elements: one more per slot level above 1st), doubled on a crit.
+    *temp cwh_xn combat_player_extra_dmg_dice_count
+    *if (cwh_xn < 1)
+      *set cwh_xn 1
     *if (combat_player_crit)
-      *gosub_scene combat_spells roll_spell_dice 2 cwh_xs
-      *set cwh_packet_roll spell_roll_total
-    *else
-      *rand cwh_packet_roll 1 cwh_xs
+      *set cwh_xn (cwh_xn * 2)
+    *gosub_scene combat_spells roll_spell_dice cwh_xn cwh_xs
+    *set cwh_packet_roll spell_roll_total
     *temp cwh_packet_raw (cwh_packet_roll + combat_player_extra_dmg_bonus)
     *temp cwh_packet_bonus_str ""
     *if (combat_player_extra_dmg_bonus >= 0)
@@ -469,6 +475,7 @@ ${combat_player_dmg_roll_banner}
     *set combat_player_dmg_dealt + combat_packet_damage
     *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} [b][+ ${cwh_packet_roll} ${cwh_packet_bonus_str} ${combat_player_extra_dmg_type} = ${combat_packet_damage}${combat_packet_suffix}][/b]"
     *set combat_player_extra_dmg_dice_sides 0
+    *set combat_player_extra_dmg_dice_count 1
   *comment TRUE STRIKE: from level 5 the hit adds Radiant dice whichever damage type was chosen: 1d6 at level 5, 2d6 at 11, 3d6 at 17 (5e). Rolled inside the hit lock, through the same resistance check as any rider.
   *if (true_strike_on)
     *comment The dice by level come from the spell data: spell_facts_load works out spell_fact_extra_count and _sides from cantrip_scale (tools/spell_book.json), so no level is written here.
@@ -811,24 +818,25 @@ ${combat_player_dmg_roll_banner}
     *elseif ((((((combat_enemy_extra_dmg_type = "acid") or (combat_enemy_extra_dmg_type = "cold")) or (combat_enemy_extra_dmg_type = "fire")) or (combat_enemy_extra_dmg_type = "lightning")) or (combat_enemy_extra_dmg_type = "thunder")))
       *set cae_absorb_type combat_enemy_extra_dmg_type
     *gosub combat_can_react "player" 0
+    *comment UPCASTING (2026-11-17): it spends a slot of the level it was armed at (absorb_elements_level, Wizard and Ranger pools), and the rider gains
+    *comment +1d6 per level above 1st, from the data.
     *temp cae_slot_ok false
-    *if ((character_class = "wizard") and (spell_slots_1 > 0))
+    *if ((absorb_elements_level >= 2) and (spell_slots_2 > 0))
       *set cae_slot_ok true
-    *if ((character_class = "ranger") and (spell_slots_1 > 0))
+    *if ((absorb_elements_level < 2) and (spell_slots_1 > 0))
       *set cae_slot_ok true
     *if ((((absorb_elements_armed) and (not(cae_absorb_type = ""))) and (combat_can_react_ok)) and (cae_slot_ok))
       *set combat_absorb_triggered true
       *set absorb_elements_armed false
       *set absorb_elements_dmg_type cae_absorb_type
+      *gosub_scene combat_spells spend_spell_slot absorb_elements_level
       *if (character_class = "wizard")
-        *set spell_slots_1 - 1
-        *gosub_scene combat_spells arcane_ward_on_abjuration_cast 1
-      *else
-        *set spell_slots_1 - 1
+        *gosub_scene combat_spells arcane_ward_on_abjuration_cast absorb_elements_level
       *set player_oa_used true
       *comment Arms the melee rider for the player's own next hit (resolve_player_weapon_hit, this file) -- a
       *comment weapon attack only, RAW, and one-shot: that label clears the sides back to 0 once it fires.
       *gosub_scene combat_spells spell_facts_load "absorb_elements"
+      *set combat_player_extra_dmg_dice_count (spell_fact_dice_count + (spell_fact_upcast_dice * (absorb_elements_level - spell_fact_slot_level)))
       *set combat_player_extra_dmg_dice_sides spell_fact_dice_sides
       *set combat_player_extra_dmg_bonus 0
       *set combat_player_extra_dmg_type cae_absorb_type
@@ -874,10 +882,10 @@ ${combat_player_dmg_roll_banner}
       *comment combat_player_dmg_dealt is safe to reuse here: the round's
       *comment actual player-attack banner (if any) already printed earlier
       *comment this same page, before the enemy's turn ever begins.
-      *comment The ward's damage and type are its data (damage_flat 5, cold).
+      *comment The ward's type is its data (cold); its damage was fixed at the cast (agathys_dmg: 5, +5 per slot level above 1st).
       *gosub_scene combat_spells spell_facts_load "armor_of_agathys"
       *set combat_player_dmg_type spell_fact_dmg_type
-      *set combat_player_dmg_dealt spell_fact_flat
+      *set combat_player_dmg_dealt agathys_dmg
       *gosub apply_outgoing_damage_resist_vuln
       *set combat_enemy_hp - combat_player_dmg_dealt
       *if (combat_enemy_hp < 0)
@@ -936,7 +944,11 @@ ${combat_player_dmg_roll_banner}
       *set player_oa_used true
       *set combat_rebuke_triggered true
       *comment The 2d10 is the shared roll (spell_book.json via roll_spell_damage). Its own banner is not printed here; the rebuke's banner below names the dice from spell_roll_dice_str.
+      *comment UPCASTING (2026-11-17): the pact slot it spent sets the level (+1d10 per level above 1st, from the data). The level in hand is put back after.
+      *temp rb_prev_level combat_cast_at_level
+      *gosub_scene combat_spells pact_cast_level
       *gosub_scene combat_spells roll_spell_damage "hellish_rebuke" true
+      *set combat_cast_at_level rb_prev_level
       *temp rb_total combat_player_dmg_dealt
       *temp rb_dice spell_roll_dice_str
       *temp rb_prefix (("combat_enemy" & combat_active_target) & "_")

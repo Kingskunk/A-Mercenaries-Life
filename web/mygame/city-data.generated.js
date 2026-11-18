@@ -941,6 +941,61 @@ window.CITY_SETTLEMENTS = {
    }
   ]
  },
+ "palmcote": {
+  "name": "Palmcote",
+  "keys": [
+   "pc_menu:pc_gh",
+   "pc_gh_front:pc_gh_board",
+   "pc_menu:pc_gb",
+   "pc_menu:ow_here"
+  ],
+  "services": [
+   {
+    "id": "board",
+    "name": "Notice Board",
+    "seen": "pc_hall_seen",
+    "lock": "",
+    "lockReason": "",
+    "done": "You are at the Notice Board.",
+    "steps": [
+     "pc_menu:pc_gh",
+     "pc_gh_front:pc_gh_board"
+    ],
+    "stepMin": [
+     0,
+     0
+    ]
+   },
+   {
+    "id": "inn",
+    "name": "The Green Branch",
+    "seen": "pc_gb_seen",
+    "lock": "",
+    "lockReason": "",
+    "done": "You are at the Green Branch.",
+    "steps": [
+     "pc_menu:pc_gb"
+    ],
+    "stepMin": [
+     0
+    ]
+   },
+   {
+    "id": "leave",
+    "name": "Leave Palmcote",
+    "seen": "",
+    "lock": "",
+    "lockReason": "",
+    "done": "You take the road out of Palmcote.",
+    "steps": [
+     "pc_menu:ow_here"
+    ],
+    "stepMin": [
+     0
+    ]
+   }
+  ]
+ },
  "brinewick": {
   "name": "Brinewick",
   "keys": [

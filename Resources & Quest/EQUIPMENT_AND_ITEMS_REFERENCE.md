@@ -393,7 +393,7 @@ Sold at **The Ink & Lamp** (Aldren Saye, Patrician Quarter), always in stock, bo
 | Item | Price | Where it is read | What it does |
 |---|---|---|---|
 | Magic Missile Scroll (`has_scroll_magic_missile`) | 60c | in a fight | Three darts of force, 1d4+1 each, never miss, split among targets in the sidebar |
-| Healing Word Scroll (`has_scroll_healing_word`) | 40c | in a fight (bonus action) | Heals 1d4 plus the reader's casting modifier, you or an ally |
+| Healing Word Scroll (`has_scroll_healing_word`) | 40c | in a fight (bonus action) | Heals 2d4 plus the reader's casting modifier, you or an ally |
 | Mage Armor Scroll (`has_scroll_mage_armor`) | 50c | in a fight or from the pack | Base AC 13 + Dexterity for 24 hours, with no armor worn |
 | Bane Scroll (`has_scroll_bane`) | 50c | in a fight | Up to three foes make a Charisma save (DC 8 + proficiency + casting modifier) or are Baned for 10 rounds |
 | False Life Scroll (`has_scroll_false_life`) | 40c | in a fight or from the pack | 1d4 + 4 temporary hit points for 12 hours |

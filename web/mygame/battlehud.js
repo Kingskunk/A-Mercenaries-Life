@@ -211,12 +211,36 @@
       ]
     },
     { id: "arms_of_hadar", group: "action", name: "Arms of Hadar", whyKey: "combat_why_arms_of_hadar", blurb: "Black arms lash every foe within reach, and what they catch cannot strike back." },
-    { id: "bane", group: "action", name: "Bane", whyKey: "combat_why_bane", blurb: "Sour the aim and nerve of every foe still standing near you." },
-    { id: "healing_word", group: "bonus", name: "Healing Word", whyKey: "combat_why_healing_word", blurb: "Speak a curative word across the fight." },
-    { id: "cure_wounds", group: "action", name: "Cure Wounds", whyKey: "combat_why_cure_wounds", blurb: "Lay a hand on a wound and knit it closed with magic." },
+    {
+      id: "bane", group: "action", name: "Bane", blurb: "Sour the aim and nerve of every foe still standing near you.",
+      variants: [
+        { id: "bane_1st_level", label: "1st level", whyKey: "combat_why_bane", blurb: "Sour the aim and nerve of every foe still standing near you." },
+        { id: "bane_2nd_level", label: "2nd level", whyKey: "combat_why_bane_2", blurb: "An empowered curse: up to four foes instead of three." }
+      ]
+    },
+    {
+      id: "healing_word", group: "bonus", name: "Healing Word", blurb: "Speak a curative word across the fight.",
+      variants: [
+        { id: "healing_word_1st_level", label: "1st level", whyKey: "combat_why_healing_word", blurb: "Speak a curative word across the fight." },
+        { id: "healing_word_2nd_level", label: "2nd level", whyKey: "combat_why_healing_word_2", blurb: "An empowered word: 4d4 instead of 2d4." }
+      ]
+    },
+    {
+      id: "cure_wounds", group: "action", name: "Cure Wounds", blurb: "Lay a hand on a wound and knit it closed with magic.",
+      variants: [
+        { id: "cure_wounds_1st_level", label: "1st level", whyKey: "combat_why_cure_wounds", blurb: "Lay a hand on a wound and knit it closed with magic." },
+        { id: "cure_wounds_2nd_level", label: "2nd level", whyKey: "combat_why_cure_wounds_2", blurb: "An empowered touch: 4d8 instead of 2d8." }
+      ]
+    },
     { id: "shield", group: "free", name: "Shield", whyKey: "combat_why_shield", blurb: "Hold the barrier-spell ready to snap into place when it can deflect a hit." },
     { id: "hellish_rebuke", group: "free", name: "Hellish Rebuke", whyKey: "combat_why_hellish_rebuke", blurb: "Hold a vengeful retort ready, to scorch whoever next wounds you." },
-    { id: "absorb_elements", group: "free", name: "Absorb Elements", whyKey: "combat_why_absorb_elements", blurb: "Hold a ward ready, to turn an element's own force back into your next blow." },
+    {
+      id: "absorb_elements", group: "free", name: "Absorb Elements", blurb: "Hold a ward ready, to turn an element's own force back into your next blow.",
+      variants: [
+        { id: "absorb_elements_1st_level", label: "1st level", whyKey: "combat_why_absorb_elements", blurb: "Hold a ward ready, to turn an element's own force back into your next blow." },
+        { id: "absorb_elements_2nd_level", label: "2nd level", whyKey: "combat_why_absorb_elements_2", blurb: "An empowered ward: your next melee hit adds 2d6 instead of 1d6." }
+      ]
+    },
     { id: "hunters_mark", group: "bonus", name: "Hunter's Mark", whyKey: "combat_why_hunters_mark", blurb: "Mark a foe as your quarry." },
     { id: "ensnaring_strike", group: "bonus", name: "Ensnaring Strike", whyKey: "combat_why_ensnaring_strike", blurb: "Your next weapon hit calls up thorned vines that bind the target." }
   ];
@@ -739,6 +763,8 @@
     if (!fact || !fact.combat) return "";
     var s = statsNow(), c = fact.combat, baseLevel = fact.level || 0;
     var slotLevel = parseVariantSlot(variantLabel) || baseLevel;
+    // Pact Magic casts every leveled spell at the pact slot's level, so a Warlock's card shows that level's numbers.
+    if (!parseVariantSlot(variantLabel) && baseLevel > 0 && num(s.pact_slots_max) > 0 && num(s.pact_slot_level) > baseLevel) slotLevel = num(s.pact_slot_level);
     var up = (baseLevel > 0 && slotLevel > baseLevel) ? (slotLevel - baseLevel) : 0;
     var cmod = castingMod(s), lvl = num(s.character_level);
     var title = fact.name + (variantLabel && !parseVariantSlot(variantLabel) ? " (" + variantLabel + ")" : "");
@@ -797,21 +823,26 @@
       var perDart = formatDiceAndMod(c.damage_dice || "1d4", c.damage_flat || 0);
       mainBits.push((proj > 1 ? proj + " \u00d7 (" + perDart + ")" : perDart) + (c.damage_type ? " " + c.damage_type : ""), "Automatic hit");
     } else if (c.resolution === "heal") {
-      mainBits.push(formatDiceAndMod(c.heal_dice || "1d4", c.add_casting_mod ? cmod : 0) + " healing");
+      var healDice = c.heal_dice || "1d4";
+      if (up > 0 && c.upcast && c.upcast.damage_dice) healDice = scaleDice(healDice, c.upcast.damage_dice, up);
+      mainBits.push(formatDiceAndMod(healDice, c.add_casting_mod ? cmod : 0) + " healing");
     } else if (c.resolution === "effect") {
       if (c.temp_hp_dice || c.temp_hp_flat) {
         var thpFlat = (c.temp_hp_flat || 0) + (up > 0 && c.upcast && c.upcast.temp_hp_flat ? c.upcast.temp_hp_flat * up : 0);
         mainBits.push((c.temp_hp_dice ? formatDiceAndMod(c.temp_hp_dice, thpFlat) : String(thpFlat)) + " temp HP");
       }
-      if (c.damage_flat && c.damage_type) mainBits.push(c.damage_flat + " " + c.damage_type + " to melee attackers");
+      if (c.damage_flat && c.damage_type) {
+        var effFlat = c.damage_flat + (up > 0 && c.upcast && c.upcast.damage_flat ? c.upcast.damage_flat * up : 0);
+        mainBits.push(effFlat + " " + c.damage_type + " to melee attackers");
+      }
     }
 
     var metaBits = [];
     var rch = fact.reach || (window.SPELL_REACH || {})[id];
     var rangeLabel = REACH_NAME[rch] || (fact.range && REACH_NAME[fact.range]) || "";
     var areaLabel = c.area || "";
-    if (!areaLabel && c.upcast && c.upcast.targets) {
-      var tCount = 1 + c.upcast.targets * up;
+    if ((!areaLabel || c.targets) && c.upcast && c.upcast.targets) {
+      var tCount = (c.targets || 1) + c.upcast.targets * up;
       areaLabel = tCount === 1 ? "1 foe" : "Up to " + tCount + " foes";
     }
     if (rangeLabel && areaLabel && areaLabel.toLowerCase() !== rangeLabel.toLowerCase()) metaBits.push(rangeLabel + " \u00b7 " + areaLabel);

@@ -89,13 +89,14 @@ RULES FOR THIS SESSION
 
 Roughly in the order I would take it. Each item is one hand-off, sized to review in one sitting.
 
-### 3.3 Upcasting into 2nd-level slots (reachable now)
+### 3.3 Upcasting into 2nd-level slots (done 2026-11-17)
 
-The quests available today cap a character at level 3, where a Wizard and a Bard have 2nd-level slots and a Warlock's pact slots are 2nd level. These 1st-level spells should grow when cast with one and do not yet. Each needs its `upcast` in the data and, for a Wizard or Bard, a "Spell: 2nd level" hub option like Burning Hands' (a Warlock always casts at the pact slot's level).
+The 1st-level spells below, which lacked it, now grow with a 2nd-level slot: a "Spell: 2nd level" hub option for a Wizard, Bard or Ranger, the pact slot's own level for a Warlock.
 
-- Cure Wounds and Healing Word: no `upcast` in the data, so they heal the same at every slot level.
-- Absorb Elements (+1d6 per slot level above 1st) and Bane (one more creature): no `upcast`, no 2nd-level option.
-- Decision 3 in section 4: a level 3 Warlock spends a 2nd-level pact slot on Arms of Hadar, Armor of Agathys and Hellish Rebuke but gets 1st-level numbers.
+- Cure Wounds and Healing Word upcast (+2d8 and +2d4), with 1st and 2nd level options. Healing Word moved to the 2024 rules' 2d4.
+- Warlock pact upcasts: Arms of Hadar (+1d6), Armor of Agathys (+5 temporary hit points and +5 cold) and Hellish Rebuke (+1d10) per slot level above 1st, cast at the pact slot's level (`pact_cast_level`). Agathys keeps its retaliation in `agathys_dmg`, fixed at the cast.
+- Bane: one more creature per slot level above 1st (the data's `targets` 3 and `upcast.targets` 1, read through `spell_fact_targets` / `spell_fact_upcast_targets`).
+- Absorb Elements: armed at a chosen level (`absorb_elements_level`), it spends that level's slot when it fires and its melee rider rolls +1d6 per level above 1st (`combat_player_extra_dmg_dice_count`).
 
 ### 3.4 Web and Restrained, the rest of the rules
 
@@ -151,7 +152,6 @@ Found by the step 8 audit. Play was left as it is in every case.
 | --- | --- | --- |
 | 1 | An enemy's Poison Spray is an attack roll (1d12). The data, and the 2024 rule, make it a Constitution save. The player's version has the same question. | Make both a save, or record in the data that this game uses an attack roll. |
 | 2 | Bane's data says medium reach. The fight applies it to every enemy at any distance. | Add the reach check, or change the data. |
-| 3 | A level 3 Warlock spends a 2nd-level pact slot on Arms of Hadar, Armor of Agathys and Hellish Rebuke but gets 1st-level numbers. | Add `upcast` to the three data entries (the tabletop rule gives +1d6, +5 and +1d10), or leave as a deliberate limit. |
 | 4 | Ten utility spells (Alarm, Charm Person, Comprehend Languages, Detect Magic, Disguise Self, Feather Fall, Identify, Jump, Speak with Animals, Unseen Servant) carry a `combat` entry but have no fight option. | Harmless: the entry feeds the hover card. Leave unless a card looks wrong. |
 
 Older open questions:

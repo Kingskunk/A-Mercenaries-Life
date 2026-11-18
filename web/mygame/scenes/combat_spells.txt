@@ -150,6 +150,9 @@
 *set spell_fact_temp_hp_sides 0
 *set spell_fact_temp_hp_flat 0
 *set spell_fact_upcast_temp_hp 0
+*set spell_fact_upcast_flat 0
+*set spell_fact_targets 0
+*set spell_fact_upcast_targets 0
 *set spell_fact_hit_count 0
 *set spell_fact_hit_sides 0
 *set spell_fact_move_count 0
@@ -294,6 +297,7 @@
   *set spell_fact_dice_count 1
   *set spell_fact_dice_sides 6
   *set spell_fact_slot_level 1
+  *set spell_fact_upcast_dice 1
 *if (sfl_id = "ray_of_sickness")
   *set spell_fact_found true
   *set spell_fact_name "Ray of Sickness"
@@ -318,6 +322,7 @@
   *set spell_fact_dice_sides 6
   *set spell_fact_dmg_type "necrotic"
   *set spell_fact_slot_level 1
+  *set spell_fact_upcast_dice 1
 *if (sfl_id = "hellish_rebuke")
   *set spell_fact_found true
   *set spell_fact_name "Hellish Rebuke"
@@ -328,12 +333,14 @@
   *set spell_fact_dice_sides 10
   *set spell_fact_dmg_type "fire"
   *set spell_fact_slot_level 1
+  *set spell_fact_upcast_dice 1
 *if (sfl_id = "cause_fear")
   *set spell_fact_found true
   *set spell_fact_name "Cause Fear"
   *set spell_fact_resolution "save"
   *set spell_fact_save_ability "wisdom"
   *set spell_fact_slot_level 1
+  *set spell_fact_upcast_targets 1
 *if (sfl_id = "armor_of_agathys")
   *set spell_fact_found true
   *set spell_fact_name "Armor of Agathys"
@@ -342,12 +349,16 @@
   *set spell_fact_dmg_type "cold"
   *set spell_fact_slot_level 1
   *set spell_fact_temp_hp_flat 5
+  *set spell_fact_upcast_temp_hp 5
+  *set spell_fact_upcast_flat 5
 *if (sfl_id = "bane")
   *set spell_fact_found true
   *set spell_fact_name "Bane"
   *set spell_fact_resolution "save"
   *set spell_fact_save_ability "charisma"
   *set spell_fact_slot_level 1
+  *set spell_fact_targets 3
+  *set spell_fact_upcast_targets 1
 *if (sfl_id = "charm_person")
   *set spell_fact_found true
   *set spell_fact_name "Charm Person"
@@ -367,6 +378,7 @@
   *set spell_fact_dice_sides 8
   *set spell_fact_add_mod true
   *set spell_fact_slot_level 1
+  *set spell_fact_upcast_dice 2
 *if (sfl_id = "detect_magic")
   *set spell_fact_found true
   *set spell_fact_name "Detect Magic"
@@ -413,10 +425,11 @@
   *set spell_fact_found true
   *set spell_fact_name "Healing Word"
   *set spell_fact_resolution "heal"
-  *set spell_fact_dice_count 1
+  *set spell_fact_dice_count 2
   *set spell_fact_dice_sides 4
   *set spell_fact_add_mod true
   *set spell_fact_slot_level 1
+  *set spell_fact_upcast_dice 2
 *if (sfl_id = "hex")
   *set spell_fact_found true
   *set spell_fact_name "Hex"
@@ -517,6 +530,7 @@
   *set spell_fact_resolution "save"
   *set spell_fact_save_ability "wisdom"
   *set spell_fact_slot_level 2
+  *set spell_fact_upcast_targets 1
 *if (sfl_id = "web")
   *set spell_fact_found true
   *set spell_fact_name "Web"
@@ -881,8 +895,11 @@ ${fsh}
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_arms_of_hadar
 *gosub spend_pact_slot
+*comment UPCASTING (2026-11-17): a pact slot is always cast at its own level, so the roll reads pact_slot_level (+1d6 per level above 1st, from the data).
+*gosub pact_cast_level
 *comment The 2d6 is the shared roll (spell_book.json via roll_spell_damage): one total for every target, no casting modifier. It also sets the roll banner and the damage type.
 *gosub roll_spell_damage "arms_of_hadar" true
+*set combat_cast_at_level 1
 *temp aoh_total combat_player_dmg_dealt
 *set combat_mm_banner_1 ""
 *set combat_mm_banner_2 ""
@@ -1353,16 +1370,21 @@ ${combat_blindness_banner}
 *comment same reasoning as resolve_dissonant_whispers/resolve_cast_hex: putting it in the bare *choice body
 *comment instead would let a Stats-screen replay double-spend it.
 *label resolve_cast_bane
+*comment UPCASTING (2026-11-17): the slot comes from the pool combat_cast_at_level names (the hub's 1st or 2nd level option), and each level above 1st adds a target (the data's
+*comment targets 3, upcast.targets 1). A scroll is always read at 1st level.
 *if (combat_scroll_id = "")
-  *set spell_slots_1 - 1
+  *gosub spend_spell_slot combat_cast_at_level
 *else
   *gosub_scene equipment spend_consumable combat_scroll_id
+*gosub spell_facts_load "bane"
+*temp rcb_max (spell_fact_targets + (spell_fact_upcast_targets * (combat_cast_at_level - spell_fact_slot_level)))
+*set combat_cast_at_level 1
 *gosub_scene combat_dice concentration_begin "combat_player_" "bane"
 *temp rcb_targeted 0
 *temp rcb_any_baned false
 *temp rcb_i 1
 *label resolve_cast_bane_loop
-*if (rcb_i <= combat_enemy_count) and (rcb_targeted < 3)
+*if (rcb_i <= combat_enemy_count) and (rcb_targeted < rcb_max)
   *temp rcb_p (("combat_enemy" & rcb_i) & "_")
   *temp rcb_hp {(rcb_p & "hp")}
   *if (rcb_hp > 0)
@@ -1391,15 +1413,27 @@ ${combat_blindness_banner}
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment SPELL: ARMOR OF AGATHYS (5 Temp HP + 5 Cold Retaliation)
+*comment SPELL: ARMOR OF AGATHYS (5 Temp HP + 5 Cold Retaliation, each +5 per slot level above 1st)
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_cast_agathys
 *gosub spend_pact_slot
-*comment Temporary hit points never stack (5e): the ward gives what its data says (5) unless more are already held.
+*comment UPCASTING (2026-11-17): cast at the pact slot's level, so a 2nd-level slot gives 10 and 10.
+*gosub pact_cast_level
+*comment Temporary hit points never stack (5e): the ward gives what its data says unless more are already held.
 *gosub roll_spell_temp_hp "armor_of_agathys"
 *if (temp_hp < spell_roll_temp_hp)
   *set temp_hp spell_roll_temp_hp
+*comment The retaliation is fixed now, at this cast's level; the hit that triggers it (combat_dice.txt) reads agathys_dmg.
+*set agathys_dmg (spell_fact_flat + (spell_fact_upcast_flat * (combat_cast_at_level - spell_fact_slot_level)))
 *set agathys_active true
+*set combat_cast_at_level 1
+*return
+
+*comment The casting level of a spell paid from Pact Magic: the pact slot's own level (Warlock), or 1st for anyone without Pact Magic.
+*label pact_cast_level
+*set combat_cast_at_level 1
+*if (pact_slots_max > 0)
+  *set combat_cast_at_level pact_slot_level
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1482,16 +1516,19 @@ ${combat_blindness_banner}
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment SPELL: HEALING WORD (1d4 + CHA mod healing)
+*comment SPELL: HEALING WORD (2d4 + casting modifier healing, +2d4 per slot level above 1st; 2024 rules, 2026-11-17)
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_cast_healing_word
 *comment Heals the player when combat_friendly_target is 0, otherwise the ally in that slot (chosen in the sidebar, see fight_target_friendly_healing_word).
+*comment The slot comes from the pool combat_cast_at_level names (set by the hub's 1st or 2nd level option); a scroll is always read at 1st level.
 *if (combat_scroll_id = "")
-  *set spell_slots_1 - 1
+  *gosub spend_spell_slot combat_cast_at_level
 *else
   *gosub_scene equipment spend_consumable combat_scroll_id
-*comment 1d4 plus the casting modifier (spell_damage_mod): a Bard's Charisma as always, and for a scroll read by anyone, the reader's own (Intelligence for a Fighter or Rogue, Charisma for a Barbarian). The shared heal rolls it, floors it at 1 and applies it.
+*comment 2d4 plus the casting modifier (spell_damage_mod): a Bard's Charisma as always, and for a scroll read by anyone, the reader's own (Intelligence for a Fighter or Rogue, Charisma for a Barbarian). The shared heal rolls it, adds the upcast dice, floors it at 1 and applies it.
 *gosub resolve_spell_heal "healing_word"
+*comment One-shot, cleared now that the heal has read it.
+*set combat_cast_at_level 1
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1765,10 +1802,10 @@ ${combat_player_dmg_roll_banner}
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_cast_cure_wounds
 *comment Heals the player when combat_friendly_target is 0, otherwise the ally in that slot (chosen in the sidebar, see fight_target_friendly_cure_wounds).
-*if (character_class = "ranger")
-  *set spell_slots_1 - 1
-*else
-  *set spell_slots_1 - 1
-*comment 2d8 plus the casting modifier: the shared heal rolls it, floors it at 1 and applies it.
+*comment UPCASTING (2026-11-17, 2024 rules): +2d8 per slot level above 1st. The slot comes from the pool combat_cast_at_level names.
+*gosub spend_spell_slot combat_cast_at_level
+*comment 2d8 plus the casting modifier: the shared heal rolls it, adds the upcast dice, floors it at 1 and applies it.
 *gosub resolve_spell_heal "cure_wounds"
+*comment One-shot, cleared now that the heal has read it.
+*set combat_cast_at_level 1
 *return

@@ -1124,6 +1124,7 @@ function restoreGame(state, forcedScene, userRestored, forcedStats, forcedTemps)
         // save file, so it survives page reloads mid-playthrough. Reset it
         // here so a fresh playthrough gets NEW badges again.
         if (window.LoreBook && typeof LoreBook.resetSeen === "function") LoreBook.resetSeen();
+        if (window.RPEngine && typeof RPEngine.resetAll === "function") RPEngine.resetAll();
     } else {
       if (forcedScene) state.stats.sceneName = forcedScene;
       if (forcedStats) {

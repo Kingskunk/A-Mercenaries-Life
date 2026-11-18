@@ -171,9 +171,9 @@ var KNOWN_COMBAT_KEYS = {
   attack_kind: true, damage_dice: true, damage_type: true, add_casting_mod: true,
   save_ability: true, half_on_save: true, cantrip_scale: true, base_move_dice: true,
   upcast: true, temp_hp_flat: true, damage_flat: true, heal_dice: true,
-  temp_hp_dice: true, projectiles: true
+  temp_hp_dice: true, projectiles: true, targets: true
 };
-var KNOWN_UPCAST_KEYS = { damage_dice: true, projectiles: true, targets: true, temp_hp_flat: true };
+var KNOWN_UPCAST_KEYS = { damage_dice: true, projectiles: true, targets: true, temp_hp_flat: true, damage_flat: true };
 
 function parseDice(expr, ctx) {
   if (typeof expr !== "string") throw new Error(ctx + ": expected NdM dice string, got " + JSON.stringify(expr));
@@ -288,7 +288,13 @@ function collectCombatSpell(id, sp, expectedLevel) {
     checkIntMin(c.projectiles, 1, "spell '" + id + "' combat.projectiles");
     projectiles = c.projectiles;
   }
-  var upcastDice = 0, upcastProjectiles = 0, upcastTempHp = 0;
+  // How many creatures a cast affects (Bane: up to 3), and how many more each slot level above adds (upcast.targets).
+  var targets = 0;
+  if (c.targets !== undefined) {
+    checkIntMin(c.targets, 1, "spell '" + id + "' combat.targets");
+    targets = c.targets;
+  }
+  var upcastDice = 0, upcastProjectiles = 0, upcastTempHp = 0, upcastFlat = 0, upcastTargets = 0;
   if (c.upcast !== undefined) {
     if (typeof c.upcast !== "object" || Array.isArray(c.upcast)) {
       throw new Error("spell '" + id + "' combat.upcast must be an object");
@@ -307,10 +313,19 @@ function collectCombatSpell(id, sp, expectedLevel) {
       checkIntMin(c.upcast.projectiles, 1, "spell '" + id + "' combat.upcast.projectiles");
       upcastProjectiles = c.upcast.projectiles;
     }
-    if (c.upcast.targets !== undefined) checkIntMin(c.upcast.targets, 1, "spell '" + id + "' combat.upcast.targets");
+    if (c.upcast.targets !== undefined) {
+      checkIntMin(c.upcast.targets, 1, "spell '" + id + "' combat.upcast.targets");
+      upcastTargets = c.upcast.targets;
+    }
     if (c.upcast.temp_hp_flat !== undefined) {
       checkIntMin(c.upcast.temp_hp_flat, 0, "spell '" + id + "' combat.upcast.temp_hp_flat");
       upcastTempHp = c.upcast.temp_hp_flat;
+    }
+    // A flat damage that grows with the slot (Armor of Agathys: 5 cold, +5 per slot level above 1st).
+    if (c.upcast.damage_flat !== undefined) {
+      checkIntMin(c.upcast.damage_flat, 0, "spell '" + id + "' combat.upcast.damage_flat");
+      if (c.damage_flat === undefined) throw new Error("spell '" + id + "' combat.upcast.damage_flat needs combat.damage_flat");
+      upcastFlat = c.upcast.damage_flat;
     }
   }
   combatSpells.push({
@@ -332,6 +347,9 @@ function collectCombatSpell(id, sp, expectedLevel) {
     temp_hp_sides: tempHpDice.sides,
     temp_hp_flat: c.temp_hp_flat || 0,
     upcast_temp_hp: upcastTempHp,
+    upcast_flat: upcastFlat,
+    targets: targets,
+    upcast_targets: upcastTargets,
     scale: scale
   });
 }
@@ -361,6 +379,9 @@ function genFactsLookup() {
     "*set spell_fact_temp_hp_sides 0",
     "*set spell_fact_temp_hp_flat 0",
     "*set spell_fact_upcast_temp_hp 0",
+    "*set spell_fact_upcast_flat 0",
+    "*set spell_fact_targets 0",
+    "*set spell_fact_upcast_targets 0",
     "*set spell_fact_hit_count 0",
     "*set spell_fact_hit_sides 0",
     "*set spell_fact_move_count 0",
@@ -388,6 +409,9 @@ function genFactsLookup() {
     if (s.temp_hp_sides > 0) L.push("  *set spell_fact_temp_hp_sides " + s.temp_hp_sides);
     if (s.temp_hp_flat > 0) L.push("  *set spell_fact_temp_hp_flat " + s.temp_hp_flat);
     if (s.upcast_temp_hp > 0) L.push("  *set spell_fact_upcast_temp_hp " + s.upcast_temp_hp);
+    if (s.upcast_flat > 0) L.push("  *set spell_fact_upcast_flat " + s.upcast_flat);
+    if (s.targets > 0) L.push("  *set spell_fact_targets " + s.targets);
+    if (s.upcast_targets > 0) L.push("  *set spell_fact_upcast_targets " + s.upcast_targets);
     // Cantrip scaling: the counts that hold at the caster's character level, worked out here from the tiers.
     ["hit", "move", "extra"].forEach(function (kind) {
       if (s.scale.sides[kind] > 0) L.push("  *set spell_fact_" + kind + "_sides " + s.scale.sides[kind]);

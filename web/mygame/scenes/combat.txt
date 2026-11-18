@@ -3073,8 +3073,11 @@
   *if (((slot_left_1 + slot_left_2) <= 0) or (player_oa_used))
     *set rebuke_armed false
 *if (absorb_elements_armed)
+  *comment It holds while a slot of the level it was armed at is left (absorb_elements_level, set by its hub option).
   *temp cae_still_ok false
-  *if (slot_left_1 > 0)
+  *if ((absorb_elements_level >= 2) and (slot_left_2 > 0))
+    *set cae_still_ok true
+  *if ((absorb_elements_level < 2) and (slot_left_1 > 0))
     *set cae_still_ok true
   *if ((not(cae_still_ok)) or (player_oa_used))
     *set absorb_elements_armed false
@@ -3199,7 +3202,7 @@
     [b][✋ Your spellcasting is spoiled: ${spells_blocked_why}][/b]
 *if (agathys_active)
   *line_break
-  [b][❄️ Armor of Agathys Active — ${temp_hp} Temp HP | 5 Cold Damage Retaliation][/b]
+  [b][❄️ Armor of Agathys Active — ${temp_hp} Temp HP | ${agathys_dmg} Cold Damage Retaliation][/b]
 *if (combat_player_blinded > 0)
   *line_break
   *if (combat_player_blinded = 1)
@@ -3293,7 +3296,7 @@
 *comment combat_friendly_validate is what refuses an ally who is standing too far off, so the player is told why rather than finding the option quietly gone.
 *temp combat_can_cure_wounds false
 *temp ccw_slots 0
-*set ccw_slots slot_left_1
+*set ccw_slots (slot_left_1 + slot_left_2)
 *if ((known_cure_wounds) and (ccw_slots > 0))
   *if ((hp_current < hp_max) or (combat_ally_hurt_exists))
     *set combat_can_cure_wounds true
@@ -3304,7 +3307,7 @@
   *set combat_hw_ally combat_ally_alive_exists
   *set combat_hw_ally_hurt combat_ally_hurt_exists
 *temp combat_can_healing_word false
-*if ((known_healing_word) and (slot_left_1 > 0))
+*if ((known_healing_word) and ((slot_left_1 + slot_left_2) > 0))
   *if ((hp_current < hp_max) or (combat_hw_ally_hurt))
     *set combat_can_healing_word true
 *comment SPELL SCROLLS (the user, 2026-10-19; generated 2026-10-20): any character with the scroll can read it, with no slot. The catalog (tools/gear_catalog.json, effect.fight) says how each is offered; each Read option is shown only while its spell could be cast: the
@@ -3369,7 +3372,7 @@
 *comment five types can actually spend it. Wizard and Ranger share the spell, each off their own slot pool.
 *temp combat_can_absorb_elements false
 *temp cae_slot_ok false
-*if (slot_left_1 > 0)
+*if ((slot_left_1 + slot_left_2) > 0)
   *set cae_slot_ok true
 *if ((((known_absorb_elements) and (cae_slot_ok)) and (not(absorb_elements_armed))) and (not(player_oa_used)))
   *set combat_can_absorb_elements true
@@ -4279,6 +4282,14 @@
     *gosub combat_eval_spell_why "action" cw_slot_2 false cw_tw_spec true
     *set combat_why_thunderwave_2 combat_why_res
 *temp combat_why_arms_of_hadar "unowned"
+*comment The hint's dice, from the data at the level the cast would use (a pact slot's own level, see pact_cast_level).
+*temp combat_hadar_dice ""
+*if (known_arms_of_hadar)
+  *gosub_scene combat_spells pact_cast_level
+  *gosub_scene combat_spells spell_facts_load "arms_of_hadar"
+  *temp cw_hadar_n (spell_fact_dice_count + (spell_fact_upcast_dice * (combat_cast_at_level - spell_fact_slot_level)))
+  *set combat_hadar_dice "${cw_hadar_n}d${spell_fact_dice_sides}"
+  *set combat_cast_at_level 1
 *if (((((held_arms_of_hadar) or (race_cantrip = "arms_of_hadar")) or (race_cantrip_2 = "arms_of_hadar")) and ((not(class_prepares)) or (prepared_arms_of_hadar))) or (known_arms_of_hadar))
   *temp cw_hadar_spec ""
   *if (not(combat_hadar_ok))
@@ -4286,10 +4297,16 @@
   *gosub combat_eval_spell_why "action" cw_slot_any false cw_hadar_spec true
   *set combat_why_arms_of_hadar combat_why_res
 *temp combat_why_bane "unowned"
+*temp combat_why_bane_2 "unowned"
 *if (((((held_bane) or (race_cantrip = "bane")) or (race_cantrip_2 = "bane")) and ((not(class_prepares)) or (prepared_bane))) or (known_bane))
-  *gosub combat_eval_spell_why "action" cw_slot_1 true "" true
-  *set combat_why_bane combat_why_res
+  *if ((combat_has_pool_1) or (pact_slots_max = 0))
+    *gosub combat_eval_spell_why "action" cw_slot_1 true "" true
+    *set combat_why_bane combat_why_res
+  *if ((combat_has_pool_2) or (slot_left_2 > 0))
+    *gosub combat_eval_spell_why "action" cw_slot_2 true "" true
+    *set combat_why_bane_2 combat_why_res
 *temp combat_why_healing_word "unowned"
+*temp combat_why_healing_word_2 "unowned"
 *if (((((held_healing_word) or (race_cantrip = "healing_word")) or (race_cantrip_2 = "healing_word")) and ((not(class_prepares)) or (prepared_healing_word))) or (known_healing_word))
   *temp cw_hw_sight false
   *temp cw_hw_spec ""
@@ -4297,15 +4314,24 @@
     *set cw_hw_spec "no_hurt_target"
   *elseif ((hp_current >= hp_max) and (combat_ally_hurt_exists))
     *set cw_hw_sight true
-  *gosub combat_eval_spell_why "bonus" cw_slot_1 cw_hw_sight cw_hw_spec true
-  *set combat_why_healing_word combat_why_res
+  *if ((combat_has_pool_1) or (pact_slots_max = 0))
+    *gosub combat_eval_spell_why "bonus" cw_slot_1 cw_hw_sight cw_hw_spec true
+    *set combat_why_healing_word combat_why_res
+  *if ((combat_has_pool_2) or (slot_left_2 > 0))
+    *gosub combat_eval_spell_why "bonus" cw_slot_2 cw_hw_sight cw_hw_spec true
+    *set combat_why_healing_word_2 combat_why_res
 *temp combat_why_cure_wounds "unowned"
+*temp combat_why_cure_wounds_2 "unowned"
 *if (((((held_cure_wounds) or (race_cantrip = "cure_wounds")) or (race_cantrip_2 = "cure_wounds")) and ((not(class_prepares)) or (prepared_cure_wounds))) or (known_cure_wounds))
   *temp cw_cw_spec ""
   *if ((hp_current >= hp_max) and (not(combat_ally_hurt_exists)))
     *set cw_cw_spec "no_hurt_target"
-  *gosub combat_eval_spell_why "action" cw_slot_1 false cw_cw_spec true
-  *set combat_why_cure_wounds combat_why_res
+  *if ((combat_has_pool_1) or (pact_slots_max = 0))
+    *gosub combat_eval_spell_why "action" cw_slot_1 false cw_cw_spec true
+    *set combat_why_cure_wounds combat_why_res
+  *if ((combat_has_pool_2) or (slot_left_2 > 0))
+    *gosub combat_eval_spell_why "action" cw_slot_2 false cw_cw_spec true
+    *set combat_why_cure_wounds_2 combat_why_res
 *temp combat_why_shield "unowned"
 *if (((((held_shield) or (race_cantrip = "shield")) or (race_cantrip_2 = "shield")) and ((not(class_prepares)) or (prepared_shield))) or (known_shield))
   *temp cw_sh_spec ""
@@ -4316,12 +4342,17 @@
   *gosub combat_eval_spell_why "reaction" cw_slot_any false cw_sh_spec true
   *set combat_why_shield combat_why_res
 *temp combat_why_absorb_elements "unowned"
+*temp combat_why_absorb_elements_2 "unowned"
 *if (((((held_absorb_elements) or (race_cantrip = "absorb_elements")) or (race_cantrip_2 = "absorb_elements")) and ((not(class_prepares)) or (prepared_absorb_elements))) or (known_absorb_elements))
   *temp cw_ae_spec ""
   *if (absorb_elements_armed)
     *set cw_ae_spec "already_armed"
-  *gosub combat_eval_spell_why "reaction" cw_slot_1 false cw_ae_spec true
-  *set combat_why_absorb_elements combat_why_res
+  *if ((combat_has_pool_1) or (pact_slots_max = 0))
+    *gosub combat_eval_spell_why "reaction" cw_slot_1 false cw_ae_spec true
+    *set combat_why_absorb_elements combat_why_res
+  *if ((combat_has_pool_2) or (slot_left_2 > 0))
+    *gosub combat_eval_spell_why "reaction" cw_slot_2 false cw_ae_spec true
+    *set combat_why_absorb_elements_2 combat_why_res
 *temp combat_why_ensnaring_strike "unowned"
 *if (((((held_ensnaring_strike) or (race_cantrip = "ensnaring_strike")) or (race_cantrip_2 = "ensnaring_strike")) and ((not(class_prepares)) or (prepared_ensnaring_strike))) or (known_ensnaring_strike))
   *temp cw_es_spec ""
@@ -5251,58 +5282,41 @@
       *goto fight_check_enemy_hp
 
   *if (combat_why_arms_of_hadar = "")
-    # [b][ACTION][/b] [b][Arms of Hadar][/b] Black arms lash every foe within reach, and what they catch cannot strike back.@{show_stat_hints  [Strength Save, 2d6 Necrotic]|}
+    # [b][ACTION][/b] [b][Arms of Hadar][/b] Black arms lash every foe within reach, and what they catch cannot strike back.@{show_stat_hints  [Strength Save, ${combat_hadar_dice} Necrotic]|}
       *gosub_scene combat_prose flavor_arms_of_hadar
       *line_break
       *gosub_scene combat_spells resolve_arms_of_hadar
       *goto fight_check_enemy_hp
 
   *if (combat_why_bane = "")
-    # [b][ACTION][/b] [b][Bane][/b] Sour the aim and nerve of every foe still standing near you.
-      *comment No fight_pick_target re-sync here -- unlike every other targeted option, Bane doesn't act on the
-      *comment single "active" target at all; resolve_cast_bane picks its own up to three targets internally.
-      You let the curse spill out low and wide, ill fortune threading itself around throat after throat in the same breath.
-      *line_break
-      *gosub_scene combat_spells resolve_cast_bane
-      *goto fight_action_spent
+    # [b][ACTION][/b] [b][Bane: 1st level][/b] Sour the aim and nerve of every foe still standing near you.
+      *set combat_cast_at_level 1
+      *goto fight_cast_bane
+
+  *if (combat_why_bane_2 = "")
+    # [b][ACTION][/b] [b][Bane: 2nd level][/b] An empowered curse: up to four foes instead of three.
+      *set combat_cast_at_level 2
+      *goto fight_cast_bane
 
   *if (combat_why_healing_word = "")
-    # [b][BONUS ACTION][/b] [b][Healing Word][/b] @{combat_hw_ally Speak a curative word across the fight, to you or an ally.|Speak a curative syllable to knit your gashes.}
-      *comment With an ally on the field the player picks who is healed in the sidebar (fight_target_friendly_healing_word); alone, it heals the caster at once, as it always did.
-      *set combat_friendly_target 0
-      *if (combat_hw_ally)
-        *set combat_friendly_reach 3
-        *if (hp_current < hp_max)
-          *set combat_friendly_target 0
-        *else
-          *set combat_friendly_target combat_ally_hurt_first
-        *set combat_friendly_targeting_active true
-        *goto fight_target_friendly_healing_word
-      *gosub_scene combat_spells resolve_cast_healing_word
-      A sharp, ringing cadence leaves your lips. Warmth rushes through your marrow, knitting shut the worst of your wounds.
-      *line_break
-      [b][🩸 Healing Word: Restored ${combat_cast_result} HP | HP: ${hp_current}/${hp_max}][/b]
-      *line_break
-      *goto fight_bonus_spent
+    # [b][BONUS ACTION][/b] [b][Healing Word: 1st level][/b] @{combat_hw_ally Speak a curative word across the fight, to you or an ally.|Speak a curative syllable to knit your gashes.}@{show_stat_hints  [Heals 2d4 plus your casting modifier]|}
+      *set combat_cast_at_level 1
+      *goto fight_cast_healing_word
+
+  *if (combat_why_healing_word_2 = "")
+    # [b][BONUS ACTION][/b] [b][Healing Word: 2nd level][/b] An empowered word: 4d4 instead of 2d4.@{show_stat_hints  [Heals 4d4 plus your casting modifier]|}
+      *set combat_cast_at_level 2
+      *goto fight_cast_healing_word
 
   *if (combat_why_cure_wounds = "")
-    # [b][ACTION][/b] [b][Cure Wounds][/b] @{combat_ally_alive_exists Lay a hand on your own wound, or on one beside you.|Lay a hand on the worst of your wounds and hold it there.}@{show_stat_hints  [Heals 2d8 plus your casting modifier, at arm's length]|}
-      *comment Touch, so combat_friendly_reach is 0: the ally has to be standing at the same range as the caster. With nobody else on the field it simply heals the caster, as Healing Word does.
-      *set combat_friendly_target 0
-      *if (combat_ally_alive_exists)
-        *set combat_friendly_reach 0
-        *if (hp_current < hp_max)
-          *set combat_friendly_target 0
-        *else
-          *set combat_friendly_target combat_ally_hurt_first
-        *set combat_friendly_targeting_active true
-        *goto fight_target_friendly_cure_wounds
-      *gosub_scene combat_spells resolve_cast_cure_wounds
-      You press a palm flat to the worst of it and hold it there until the bleeding stops under your hand.
-      *line_break
-      [b][🩸 Cure Wounds: Restored ${combat_cast_result} HP | HP: ${hp_current}/${hp_max}][/b]
-      *line_break
-      *goto fight_action_spent
+    # [b][ACTION][/b] [b][Cure Wounds: 1st level][/b] @{combat_ally_alive_exists Lay a hand on your own wound, or on one beside you.|Lay a hand on the worst of your wounds and hold it there.}@{show_stat_hints  [Heals 2d8 plus your casting modifier, at arm's length]|}
+      *set combat_cast_at_level 1
+      *goto fight_cast_cure_wounds
+
+  *if (combat_why_cure_wounds_2 = "")
+    # [b][ACTION][/b] [b][Cure Wounds: 2nd level][/b] An empowered touch: 4d8 instead of 2d8.@{show_stat_hints  [Heals 4d8 plus your casting modifier, at arm's length]|}
+      *set combat_cast_at_level 2
+      *goto fight_cast_cure_wounds
 
   *comment THE SPELL SCROLLS (the user, 2026-10-19; generated 2026-10-20). "Read: <Title>" options fold into one Read button on the battle bar, like Throw. combat_scroll_id makes the spell's own resolve label spend the scroll where it would spend a slot
   *comment (combat_spells.txt, equipment.txt cast_mage_armor). Each option goes to its body label, fight_read_<spell>, below.
@@ -5312,7 +5326,7 @@
       *set combat_scroll_id "scroll_magic_missile"
       *goto fight_read_magic_missile
   *if (combat_read_healing_word)
-    # [b][BONUS ACTION][/b] [b][Read: Healing Word Scroll][/b] @{combat_hw_ally Speak the line across the fight, to you or an ally.|Speak the line to knit your gashes.}@{show_stat_hints  [Heals 1d4 plus your casting modifier]|}
+    # [b][BONUS ACTION][/b] [b][Read: Healing Word Scroll][/b] @{combat_hw_ally Speak the line across the fight, to you or an ally.|Speak the line to knit your gashes.}@{show_stat_hints  [Heals 2d4 plus your casting modifier]|}
       *set combat_scroll_id "scroll_healing_word"
       *goto fight_read_healing_word
   *if (combat_read_mage_armor)
@@ -5428,14 +5442,14 @@
       *goto fight_round_hub
 
   *if (combat_why_absorb_elements = "")
-    # [b][Absorb Elements][/b] Hold a ward ready, to turn an element's own force back into your next blow.
-      *set absorb_elements_armed true
-      You hold the counter-working coiled at your fingertips, waiting for the air itself to turn hostile.
-      *comment No banner here -- the hub's own "Absorb Elements Ready" status line says the same thing the instant
-      *comment it reopens. Arming is free, like Shield and Hellish Rebuke: the slot and the reaction are spent only
-      *comment if it fires (resolve_enemy_attack, combat_dice.txt).
-      *line_break
-      *goto fight_round_hub
+    # [b][Absorb Elements: 1st level][/b] Hold a ward ready, to turn an element's own force back into your next blow.
+      *set absorb_elements_level 1
+      *goto fight_arm_absorb_elements
+
+  *if (combat_why_absorb_elements_2 = "")
+    # [b][Absorb Elements: 2nd level][/b] An empowered ward: your next melee hit adds 2d6 instead of 1d6.
+      *set absorb_elements_level 2
+      *goto fight_arm_absorb_elements
 
   *if ((combat_can_second_wind) and (combat_player_bonus_left > 0))
     # [b][BONUS ACTION][/b] [b][Second Wind][/b] Grit your teeth through the pain, and keep going.
@@ -6009,6 +6023,58 @@ ${use_text}
 *comment when the page is built, and would go stale the instant a sidebar click changed the count afterward.
 *comment Its body re-sums the per-slot counts fresh at the moment it's actually picked, which is what matters --
 *comment casting with nothing assigned just explains why and loops back rather than silently doing nothing.
+*comment ABSORB ELEMENTS (upcast 2026-11-17): both hub options set absorb_elements_level and come here. No banner -- the hub's own "Absorb Elements Ready"
+*comment status line says it the instant it reopens. Arming is free, like Shield and Hellish Rebuke: the slot of that level and the reaction are spent only
+*comment if it fires (resolve_enemy_attack, combat_dice.txt).
+*label fight_arm_absorb_elements
+*set absorb_elements_armed true
+You hold the counter-working coiled at your fingertips, waiting for the air itself to turn hostile.
+*line_break
+*goto fight_round_hub
+
+*comment BANE (upcast 2026-11-17): the 1st and 2nd level hub options set combat_cast_at_level and come here. No fight_pick_target re-sync: Bane doesn't act on the
+*comment single "active" target; resolve_cast_bane picks its own targets (three, one more per slot level above 1st) and clears the level.
+*label fight_cast_bane
+You let the curse spill out low and wide, ill fortune threading itself around throat after throat in the same breath.
+*line_break
+*gosub_scene combat_spells resolve_cast_bane
+*goto fight_action_spent
+
+*comment HEALING UPCASTS (2026-11-17, 2024 rules): Healing Word and Cure Wounds each have a 1st and a 2nd level hub option. Both set combat_cast_at_level
+*comment and come here; the resolve label (combat_spells.txt) spends that level's slot, adds the upcast dice and clears the level.
+*label fight_cast_healing_word
+*comment With an ally on the field the player picks who is healed in the sidebar (fight_target_friendly_healing_word); alone, it heals the caster at once.
+*set combat_friendly_target 0
+*if (combat_hw_ally)
+  *set combat_friendly_reach 3
+  *if (hp_current < hp_max)
+    *set combat_friendly_target 0
+  *else
+    *set combat_friendly_target combat_ally_hurt_first
+  *set combat_friendly_targeting_active true
+  *goto fight_target_friendly_healing_word
+*gosub_scene combat_spells resolve_cast_healing_word
+A sharp, ringing cadence leaves your lips. Warmth rushes through your marrow, knitting shut the worst of your wounds.
+*line_break
+[b][🩸 Healing Word: Restored ${combat_cast_result} HP | HP: ${hp_current}/${hp_max}][/b]
+*line_break
+*goto fight_bonus_spent
+
+*label fight_cast_cure_wounds
+*comment Touch, so combat_friendly_reach is 0: the ally has to be standing at the same range as the caster. With nobody else on the field it simply heals the caster, as Healing Word does.
+*set combat_friendly_target 0
+*if (combat_ally_alive_exists)
+  *set combat_friendly_reach 0
+  *if (hp_current < hp_max)
+    *set combat_friendly_target 0
+  *else
+    *set combat_friendly_target combat_ally_hurt_first
+  *set combat_friendly_targeting_active true
+  *goto fight_target_friendly_cure_wounds
+*gosub_scene combat_spells resolve_cast_cure_wounds
+*gosub combat_cure_wounds_cast_text
+*goto fight_action_spent
+
 *label fight_target_friendly_cure_wounds
 *comment Cure Wounds aimed in the sidebar, the same shape as Healing Word's page below, with one difference that matters: combat_friendly_reach was set to 0 at the
 *comment call site, so combat_friendly_validate refuses an ally who is not standing right beside the caster and says so instead of leaving the player guessing.
@@ -6027,6 +6093,7 @@ ${use_text}
     *goto fight_action_spent
   # Cancel.
     *set combat_friendly_targeting_active false
+    *set combat_cast_at_level 1
     You take your hand back, the working unspent.
     *line_break
     *goto fight_round_hub
@@ -6062,6 +6129,7 @@ ${use_text}
     *goto fight_bonus_spent
   # Cancel.
     *set combat_friendly_targeting_active false
+    *set combat_cast_at_level 1
     You let the word die on your tongue, unspent.
     *line_break
     *goto fight_round_hub
@@ -6148,6 +6216,8 @@ ${use_text}
 *goto fight_target_magic_missile
 
 *label fight_read_healing_word
+*comment A scroll is always read at its base level.
+*set combat_cast_at_level 1
 *set combat_friendly_target 0
 *if (combat_hw_ally)
   *set combat_friendly_reach 3
@@ -6165,6 +6235,8 @@ You break the seal and speak the line aloud. Warmth floods through you, and the 
 *goto fight_bonus_spent
 
 *label fight_read_bane
+*comment A scroll is always read at its base level.
+*set combat_cast_at_level 1
 You unroll the dark paper and read it low and fast, and ill fortune threads itself around throat after throat in the same breath.
 *line_break
 *gosub_scene combat_spells resolve_cast_bane

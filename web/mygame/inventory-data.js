@@ -525,7 +525,7 @@
       weight: 0.05, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_scroll_healing_word) || 0); return "Healing Word Scroll" + (n > 1 ? " ×" + n : ""); },
       description: "Short slip of folded paper with one bright line of script.",
-      badge: "Read in a fight, as a bonus action: heal 1d4 plus your casting modifier"
+      badge: "Read in a fight, as a bonus action: heal 2d4 plus your casting modifier"
     },
     {
       id: "scroll_mage_armor", category: "consumables", owned: "has_scroll_mage_armor",
