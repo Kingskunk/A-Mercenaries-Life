@@ -29,15 +29,21 @@ const fs = require("fs");
 const path = require("path");
 
 const ROOT = path.resolve(__dirname, "..");
-const LORE_PATH = path.join(ROOT, "web", "mygame", "lorebook-data.js");
+const LORE_FILES = [
+  path.join(ROOT, "web", "mygame", "lorebook-data.js"),
+  path.join(ROOT, "web", "mygame", "lorebook-port-valen.js"),
+  path.join(ROOT, "web", "mygame", "lorebook-langston.js"),
+  path.join(ROOT, "web", "mygame", "lorebook-timbermouth.js"),
+  path.join(ROOT, "web", "mygame", "lorebook-hartwell.js"),
+];
 const PROMPTS_PATH = path.join(__dirname, "portrait_prompts.json");
 const PORTRAITS_DIR = path.join(ROOT, "portraits");
 
-const STYLE_PREFIX = "Dark fantasy oil painting portrait of";
+const STYLE_PREFIX = "Close-up bust portrait (head and shoulders, chest-up framing) in gritty realistic medieval oil painting style of";
 const STYLE_SUFFIX =
-  "Warm low-key amber lighting, dark moody background, painterly brushwork, rich muted medieval fantasy palette, head and shoulders portrait.";
+  "Tight head-and-shoulders framing, warm low-key amber lighting, dark moody background, master oil painting brushwork, rich muted historical palette.";
 const DEFAULT_NEGATIVE =
-  "low quality, worst quality, blurry, anime, cartoon, 3d render, modern clothes, text, watermark, signature, extra fingers, deformed";
+  "pointed ears, elf, elven, half-elf, fantasy race, alien ears, animal ears, full body, waist up, hips, legs, knees, distant, wide shot, low quality, worst quality, blurry, anime, cartoon, 3d render, modern clothes, text, watermark, signature, extra fingers, deformed";
 
 const args = process.argv.slice(2);
 function hasFlag(name) { return args.includes(name); }
@@ -50,8 +56,8 @@ const DO_LIST = hasFlag("--list");
 const DO_SYNC = hasFlag("--sync");
 const DO_FORCE = hasFlag("--force");
 const DRY_RUN = hasFlag("--dry-run");
-const BATCH_LIMIT = Math.max(1, parseInt(optVal("--batch", "5"), 10) || 5);
-const DELAY_MS = Math.max(0, parseInt(optVal("--delay", "2500"), 10) || 2500);
+const BATCH_LIMIT = Math.max(1, parseInt(optVal("--batch", "3"), 10) || 3);
+const DELAY_MS = Math.max(0, parseInt(optVal("--delay", "12000"), 10) || 12000);
 const SERVER_URL = optVal("--server", "http://127.0.0.1:5000").replace(/\/$/, "");
 const ONLY_IDS = optVal("--ids", "")
   .split(",")
@@ -60,7 +66,11 @@ const ONLY_IDS = optVal("--ids", "")
 
 function loadPeopleFromLorebook() {
   global.window = {};
-  require(LORE_PATH);
+  for (const f of LORE_FILES) {
+    if (fs.existsSync(f)) {
+      require(f);
+    }
+  }
   const entries = (global.window.LOREBOOK && global.window.LOREBOOK.entries) || [];
   // Proxy that safely evaluates function-based titles/roles/bodies with truthy defaults
   const statsProxy = new Proxy(

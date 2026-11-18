@@ -344,7 +344,10 @@ Read first, in the narrative guidelines: "Describe NPCs on Introduction" and "Na
 | Portrait (optional) | `portraits/<id>.webp` (`512×768`). `web/mygame/lorebook.js` loads it automatically by entry `id`; `tools/build_app.js` copies `portraits/` into `dist/`. |
 
 To generate Lorebook portraits through the free MemPalace ↔ Perchance bridge (`server.py` + open Perchance tab):
-1. `node tools/gen_portraits.js --sync` — adds any new `people` entry to `tools/portrait_prompts.json` (tweak the character's visual prompt there if needed; use `"warm low-key amber lighting, dark moody background"` instead of `"candlelight"` so the model does not draw literal candles).
+1. `node tools/gen_portraits.js --sync` — adds any new `people` entry to `tools/portrait_prompts.json`. Rewrite each new prompt to **visual-only chest-up looks and clothing** before generating:
+   - **Keep:** age, skin, hair, eyes, scars, and upper-body clothing/collars.
+   - **Strip:** backstory, waist-level gear (belts, aprons with tools, satchels, canes), small props (quills/chalk behind ears, pipes, knives), small faction insignia/badges/emblems/pendants, and surface splatters/particles (salt crystals, flour dust, sparks).
+   - **Lighting:** use `"warm low-key amber lighting, dark moody background"` (never `"candlelight"`, which draws literal candles).
 2. `node tools/gen_portraits.js --batch 3` — generates up to 3 missing `.webp` portraits into `portraits/` (run `node tools/gen_portraits.js --list` to see what is missing).
 3. Review the generated `.webp` files, delete any duds and re-run `--batch` (or `--ids <id> --force` to reroll one), then run `node tools/build_app.js` to pack them into `dist/`.
 
