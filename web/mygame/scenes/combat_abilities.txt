@@ -20,12 +20,28 @@
 *set ability_fact_dmg_dice_sides 0
 *set ability_fact_weapon ""
 *set ability_fact_dmg_type ""
+*set ability_fact_chance 0
+*set ability_fact_range_min 0
+*set ability_fact_range_max 0
+*set ability_fact_condition ""
+*set ability_fact_escape_dc 0
+*set ability_fact_src ""
 *if (afl_id = "multiattack")
   *set ability_fact_name "Multiattack"
   *set ability_fact_kind "extra_attack"
   *set ability_fact_uses (0 - 1)
   *set ability_fact_extra_attacks 1
   *set ability_fact_weapon "own"
+*if (afl_id = "net")
+  *set ability_fact_name "Net"
+  *set ability_fact_kind "action"
+  *set ability_fact_uses 1
+  *set ability_fact_chance 100
+  *set ability_fact_range_min 1
+  *set ability_fact_range_max 2
+  *set ability_fact_condition "restrained"
+  *set ability_fact_escape_dc 10
+  *set ability_fact_src "net"
 *if (afl_id = "offhand_knife")
   *set ability_fact_name "Off-hand Knife"
   *set ability_fact_kind "extra_attack"
@@ -100,4 +116,125 @@
       *set ability_extra_attack_type ability_fact_dmg_type
   *set aea_k + 1
   *goto ability_extra_attacks_loop
+*return
+
+*comment ACTION abilities (3.4a step 2): an ability that takes the enemy's whole attack, thrown or used instead of a plain attack (the Net). ability_pick_action asks whether this enemy slot
+*comment uses one at the player now: it holds an action ability with uses left, the player stands within the ability's range bands (range_min to range_max, the enemy's own range to the player), the
+*comment ability's effect would do something (a restraint on a player who is not already restrained), and its chance comes up. The answer, the slot place (1-3) or 0, goes to ability_action_place
+*comment and is cached per slot per page, so the two places that ask (combat.txt: before a melee enemy closes, and in combat_enemy_player_action) agree, and a replay never re-rolls the chance.
+*label ability_pick_action
+*params apa_slot apa_range
+*set ability_action_place 0
+*if (apa_slot <= 0)
+  *return
+*temp apa_p (("combat_enemy" & apa_slot) & "_")
+*if ({(apa_p & "ability_pick_page")} = page_id)
+  *set ability_action_place {(apa_p & "ability_pick_place")}
+  *return
+*temp apa_k 1
+*label ability_pick_action_loop
+*if ((apa_k <= 3) and (ability_action_place = 0))
+  *temp apa_id {(apa_p & ("ability_" & apa_k))}
+  *temp apa_uses {(apa_p & ("ability_uses_" & apa_k))}
+  *if ((not(apa_id = "")) and (not(apa_uses = 0)))
+    *gosub ability_facts_load apa_id
+    *if (((ability_fact_kind = "action") and (apa_range >= ability_fact_range_min)) and (apa_range <= ability_fact_range_max))
+      *temp apa_worth true
+      *if ((ability_fact_condition = "restrained") and (combat_player_restrained > 0))
+        *set apa_worth false
+      *if (combat_player_hidden)
+        *set apa_worth false
+      *if (apa_worth)
+        *temp apa_roll 1
+        *rand apa_roll 1 100
+        *if (apa_roll <= ability_fact_chance)
+          *set ability_action_place apa_k
+  *set apa_k + 1
+  *goto ability_pick_action_loop
+*set {(apa_p & "ability_pick_page")} page_id
+*set {(apa_p & "ability_pick_place")} ability_action_place
+*return
+
+*comment Uses the action ability in slot place aua_place of enemy slot aua_slot on the player: one use is spent, an attack roll (d20 + the enemy's attack bonus) against the player's AC
+*comment (cover against a thrown weapon, Dodge and an active Shield count, as for any ranged attack), with advantage on a blinded player and disadvantage for a blinded or frightened thrower,
+*comment and on a hit the ability's condition (Restrained, with its escape DC and src). Stored per slot against the page id, so a replay prints the same throw. Prints its own prose and banners.
+*comment Needs the active target synced to this slot (combat_enemy_name, combat_enemy_atk_bonus): both callers have it.
+*label ability_use_action
+*params aua_slot aua_place
+*temp aua_p (("combat_enemy" & aua_slot) & "_")
+*temp aua_id {(aua_p & ("ability_" & aua_place))}
+*gosub ability_facts_load aua_id
+*temp aua_roll 0
+*temp aua_total 0
+*temp aua_hit false
+*temp aua_v 1
+*temp aua_dc 0
+*temp aua_note ""
+*if ({(aua_p & "ability_act_page")} = page_id)
+  *set aua_roll {(aua_p & "ability_act_roll")}
+  *set aua_total {(aua_p & "ability_act_total")}
+  *set aua_hit {(aua_p & "ability_act_hit")}
+  *set aua_v {(aua_p & "ability_act_v")}
+  *set aua_dc {(aua_p & "ability_act_dc")}
+  *set aua_note {(aua_p & "ability_act_note")}
+*else
+  *temp aua_uses {(aua_p & ("ability_uses_" & aua_place))}
+  *if (aua_uses > 0)
+    *set {(aua_p & ("ability_uses_" & aua_place))} (aua_uses - 1)
+  *set combat_cover_ranged_defense_bonus 0
+  *gosub_scene combat_movement combat_get_cover_ranged_defense_bonus "player" 0
+  *set aua_dc (armor_class + combat_cover_ranged_defense_bonus)
+  *if (dodge_active)
+    *set aua_dc (aua_dc + 5)
+  *if (shield_active)
+    *set aua_dc (aua_dc + 5)
+  *temp aua_adv false
+  *temp aua_dis false
+  *gosub_scene combat_dice condition_has "combat_player_" "blinded"
+  *if (condition_result)
+    *set aua_adv true
+  *gosub_scene combat_dice condition_has aua_p "blinded"
+  *if (condition_result)
+    *set aua_dis true
+  *if ({(aua_p & "frightened")} > 0)
+    *set aua_dis true
+  *rand aua_roll 1 20
+  *temp aua_roll_b 0
+  *if ((aua_adv) and (not(aua_dis)))
+    *rand aua_roll_b 1 20
+    *if (aua_roll_b > aua_roll)
+      *set aua_roll aua_roll_b
+    *set aua_note " (Advantage)"
+  *if ((aua_dis) and (not(aua_adv)))
+    *rand aua_roll_b 1 20
+    *if (aua_roll_b < aua_roll)
+      *set aua_roll aua_roll_b
+    *set aua_note " (Disadvantage)"
+  *set aua_total (aua_roll + combat_enemy_atk_bonus)
+  *set aua_hit (((aua_total >= aua_dc) or (aua_roll = 20)) and (not(aua_roll = 1)))
+  *rand aua_v 1 3
+  *if (aua_hit)
+    *if (not(ability_fact_condition = ""))
+      *gosub_scene combat_dice condition_apply "combat_player_" ability_fact_condition 1 ability_fact_escape_dc ability_fact_src
+  *set {(aua_p & "ability_act_roll")} aua_roll
+  *set {(aua_p & "ability_act_total")} aua_total
+  *set {(aua_p & "ability_act_hit")} aua_hit
+  *set {(aua_p & "ability_act_v")} aua_v
+  *set {(aua_p & "ability_act_dc")} aua_dc
+  *set {(aua_p & "ability_act_note")} aua_note
+  *set {(aua_p & "ability_act_page")} page_id
+*gosub_scene combat_prose flavor_ability_action aua_id aua_v aua_hit
+*line_break
+*temp aua_bonus_str "+${combat_enemy_atk_bonus}"
+*if (combat_enemy_atk_bonus < 0)
+  *set aua_bonus_str "${combat_enemy_atk_bonus}"
+*temp aua_verdict "MISS"
+*if (aua_hit)
+  *set aua_verdict "HIT"
+[b][🎲 ${combat_enemy_name} ${ability_fact_name}: ${aua_roll}${aua_note} ${aua_bonus_str} = ${aua_total} vs AC ${aua_dc} — ${aua_verdict}][/b]
+*line_break
+*if ((aua_hit) and (ability_fact_condition = "restrained"))
+  [b][🪢 You are Restrained (${ability_fact_name}, escape DC ${ability_fact_escape_dc})][/b]
+  *line_break
+*set combat_turn_advanced_this_page true
 *return

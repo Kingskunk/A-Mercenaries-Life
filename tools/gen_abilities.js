@@ -26,7 +26,7 @@ var COMMON_KEYS = { name: true, kind: true, uses: true, desc: true };
 var KIND_KEYS = {
   extra_attack: { extra_attacks: true, weapon: true, damage_dice_sides: true, damage_type: true },
   attack_variant: {},
-  action: {},
+  action: { chance: true, range_min: true, range_max: true, condition: true, escape_dc: true, src: true },
   on_hit_rider: {},
   trait: {}
 };
@@ -50,6 +50,17 @@ L.push("*set ability_fact_extra_attacks 0");
 L.push("*set ability_fact_dmg_dice_sides 0");
 L.push("*set ability_fact_weapon \"\"");
 L.push("*set ability_fact_dmg_type \"\"");
+L.push("*set ability_fact_chance 0");
+L.push("*set ability_fact_range_min 0");
+L.push("*set ability_fact_range_max 0");
+L.push("*set ability_fact_condition \"\"");
+L.push("*set ability_fact_escape_dc 0");
+L.push("*set ability_fact_src \"\"");
+var CONDITIONS = { restrained: 1 };
+function band(id, key, v) {
+  if (typeof v !== "number" || v !== Math.floor(v) || v < 0 || v > 5) fail(id, key + " must be a range band, 0 (Engaged) to 5");
+  return v;
+}
 var DAMAGE_TYPES = { acid: 1, bludgeoning: 1, cold: 1, fire: 1, force: 1, lightning: 1, necrotic: 1, piercing: 1, poison: 1, psychic: 1, radiant: 1, slashing: 1, thunder: 1 };
 Object.keys(abilities).sort().forEach(function (id) {
   if (!/^[a-z][a-z0-9_]*$/.test(id)) fail(id, "an id is lowercase letters, digits and underscores");
@@ -78,6 +89,21 @@ Object.keys(abilities).sort().forEach(function (id) {
       fail(id, "weapon must be \"own\" or \"offhand\"");
     }
     L.push("  *set ability_fact_weapon \"" + a.weapon + "\"");
+  }
+  if (a.kind === "action") {
+    var ch = posInt(id, "chance", a.chance);
+    if (ch > 100) fail(id, "chance is 1 to 100");
+    var lo = band(id, "range_min", a.range_min), hi = band(id, "range_max", a.range_max);
+    if (lo > hi) fail(id, "range_min is above range_max");
+    L.push("  *set ability_fact_chance " + ch);
+    L.push("  *set ability_fact_range_min " + lo);
+    L.push("  *set ability_fact_range_max " + hi);
+    if (a.condition !== undefined) {
+      if (!CONDITIONS[a.condition]) fail(id, "condition must be one the engine applies here: " + Object.keys(CONDITIONS).join(", "));
+      L.push("  *set ability_fact_condition \"" + a.condition + "\"");
+      L.push("  *set ability_fact_escape_dc " + posInt(id, "escape_dc", a.escape_dc));
+      L.push("  *set ability_fact_src \"" + csString(id, "src", a.src) + "\"");
+    }
   }
 });
 

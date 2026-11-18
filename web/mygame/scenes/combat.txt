@@ -8301,6 +8301,13 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *temp cepa_p (("combat_enemy" & cepa_slot) & "_")
 *set combat_enemy_cast_spell ""
 *set combat_enemy_cast_place 0
+*comment ACTION ABILITIES (3.4a): an action ability (the Net) comes before an assigned spell and before a plain attack. It takes the whole attack, so it is marked in combat_enemy_cast_spell
+*comment ("ability") like a cast: the callers' extra-attack check reads that and skips, and they clear it after.
+*gosub_scene combat_abilities ability_pick_action cepa_slot combat_enemy_range
+*if (ability_action_place > 0)
+  *gosub_scene combat_abilities ability_use_action cepa_slot ability_action_place
+  *set combat_enemy_cast_spell "ability"
+  *return
 *if (not(combat_player_hidden))
   *gosub_scene combat_ai fight_pick_enemy_spell
 *if (combat_enemy_cast_spell = "blindness")
@@ -8474,6 +8481,13 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *comment WEB (3.4): a skirmisher, sharpshooter or caster whose next step toward you enters a Web patch waits at its edge (the cnt_web_balk branch below).
     *gosub_scene combat_ai combat_ai_web_balk cnt_slot
     *temp cnt_web_balk combat_ai_web_balk
+    *comment ACTION ABILITIES (3.4a): a melee enemy with a thrown action ability (the Net) still out of reach uses it before closing (the cnt_throw_place branch below).
+    *temp cnt_throw_place 0
+    *if ((((not(combat_enemy_weapon_type = "ranged")) and (combat_enemy_range > 0)) and (combat_intercepting_ally = 0)) and (not((combat_player_surprise) and (cnt_first_pass))))
+      *gosub_scene combat_abilities ability_pick_action cnt_slot combat_enemy_range
+      *set cnt_throw_place ability_action_place
+    *if (cnt_throw_place > 0)
+      *set cnt_web_balk false
     *comment GREASE (2026-10-12, the user's call): a greased enemy that tries to MOVE must pass a DC 10 Dexterity check or fall prone and lose its turn; a prone one spends its next turn standing. Standing still and swinging never trips it.
     *comment Whether this enemy would move this turn is worked out here from the same facts the branches below use (close on the player or an ally, back off from a corner, take a terrain step); combat_grease_gate does the rest.
     *comment REACH (2026-10-12): a ranged enemy whose weapon does not reach you from where it stands must close first (a slinger is medium, an archer long). cnt_e_out is true when it is out of its own reach.
@@ -8510,7 +8524,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
         *set cnt_wants_move true
       *elseif (((combat_enemy_range > 0) and (cnt_frightened <= 0)) and (not((combat_ai_terrain_hold_position) and (combat_ai_terrain_step_reason = "chokepoint"))))
         *set cnt_wants_move true
-    *if (cnt_web_balk)
+    *if ((cnt_web_balk) or (cnt_throw_place > 0))
       *set cnt_wants_move false
     *comment ENSNARING STRIKE: a held enemy takes the thorns and either struggles (if it meant to move) or fights from where it stands. The hold runs out after the spell's last round.
     *comment STUN (2026-11-01): a stunned enemy loses its turn before anything else is rolled for it (combat_stun_gate prints it and counts it down once per page).
@@ -8794,6 +8808,9 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
       [b][🛡️ ${combat_enemy_name} Holds the Chokepoint][/b]
       *line_break
       *set combat_turn_advanced_this_page true
+    *elseif (cnt_throw_place > 0)
+      *comment ACTION ABILITIES (3.4a): thrown from where it stands, instead of closing this turn.
+      *gosub_scene combat_abilities ability_use_action cnt_slot cnt_throw_place
     *elseif ((cnt_web_balk) and (combat_enemy_range > 0))
       *comment WEB (3.4): its next step toward you would enter the webs, and it will not walk in (combat_ai_web_balk). A ranged foe already within its reach never comes here: it shoots from where it stands.
       *gosub_scene combat_prose flavor_web_balk
