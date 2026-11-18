@@ -379,7 +379,7 @@
       '<button type="button" class="lb-mobile-only" data-act="tolist">‹ All entries</button>' +
       (view.history.length ? '<button type="button" data-act="back">‹ Back</button>' : "") + '</div>';
     if (r.portrait) {
-      html += '<figure class="lb-portrait"><img src="' + esc(r.portrait) + '" alt="' + esc(r.title) + '" loading="lazy" data-try="0"></figure>';
+      html += '<figure class="lb-portrait" style="display:none"><img alt="' + esc(r.title) + '"></figure>';
     }
     html += '<div class="lb-cat">' + esc(categoryLabel(r.category)) + '</div>';
     html += '<h3>' + esc(r.title) + '</h3>';
@@ -406,16 +406,35 @@
     elRead.innerHTML = html;
     var pImg = elRead.querySelector(".lb-portrait img");
     if (pImg) {
-      pImg.addEventListener("error", function () {
-        var idx = Number(pImg.getAttribute("data-try") || 0);
-        var prefixes = ["../../", "../"];
-        if (r.portrait.indexOf("portraits/") === 0 && idx < prefixes.length) {
-          pImg.setAttribute("data-try", String(idx + 1));
-          pImg.src = prefixes[idx] + r.portrait;
-        } else {
+      var candidates = r.portrait.indexOf("portraits/") === 0
+        ? [r.portrait, "../../" + r.portrait, "../" + r.portrait]
+        : [r.portrait];
+      var cIdx = 0;
+      pImg.onload = function () {
+        if (pImg.parentNode) pImg.parentNode.style.display = "";
+      };
+      pImg.onerror = function () {
+        if (cIdx < candidates.length) {
+          var url = candidates[cIdx++];
+          if (location.protocol.indexOf("http") === 0) {
+            fetch(url, { headers: { "ngrok-skip-browser-warning": "true" } })
+              .then(function (res) {
+                var ct = res.headers.get("content-type") || "";
+                if (!res.ok || ct.indexOf("image/") !== 0) throw new Error("not image");
+                return res.blob();
+              })
+              .then(function (blob) {
+                pImg.src = URL.createObjectURL(blob);
+              })
+              .catch(function () { pImg.onerror(); });
+            return;
+          }
+          pImg.src = url;
+        } else if (pImg.parentNode) {
           pImg.parentNode.style.display = "none";
         }
-      });
+      };
+      pImg.src = candidates[cIdx++];
     }
     elRead.scrollTop = 0;
   }
