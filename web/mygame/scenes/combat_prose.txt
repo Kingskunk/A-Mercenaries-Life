@@ -260,6 +260,12 @@
     *if (combat_stun_inflicted)
       *line_break
       [b][${combat_enemy_stun_icon} ${combat_enemy_stun_name} — you lose your next turn][/b]
+    *if (combat_cantrip_rider = "ray_of_frost")
+      *line_break
+      [b][❄️ Slowed — no Dash on your next turn][/b]
+    *elseif (combat_cantrip_rider = "shocking_grasp")
+      *line_break
+      [b][⚡ Jolted — no reactions until your turn][/b]
     *if (combat_conc_save_triggered)
       *line_break
       ${combat_conc_save_banner}
@@ -335,58 +341,13 @@
 *temp fnaa_v 1
 *rand fnaa_v 1 5
 *temp fnaa_line ""
-*if ((fnaa_attacker_kind = "enemy") and (combat_enemy_cast_spell = "burning_hands"))
-  *comment An enemy casting Burning Hands against an intercepting ally (3d6 fire, DEX save, half on a save).
-  *if (combat_enemy_save_halved) or (not(fnaa_hit))
-    *if (fnaa_v = 1)
-      *set fnaa_line "$!{combat_attacker_epithet} snaps their wrists together and looses an arc of flame, and ${combat_defender_epithet} ducks clear of the core while the outer sparks singe their shoulder."
-    *if (fnaa_v = 2)
-      *set fnaa_line "$!{combat_attacker_epithet} sends a sheet of fire roaring forward, and ${combat_defender_epithet} twists sideways just enough to take only the scorching edge."
-    *if (fnaa_v = 3)
-      *set fnaa_line "At arm's length, ${combat_attacker_epithet} sweeps a fan of fire across the gap, and ${combat_defender_epithet} pivots clear of its heart so only the outer tongue catches their ribs."
-    *if (fnaa_v = 4)
-      *set fnaa_line "Flame bursts from ${combat_attacker_epithet}'s spread fingers, and ${combat_defender_epithet} drops low under the main blast as heat rolls over their back."
-    *if (fnaa_v = 5)
-      *set fnaa_line "$!{combat_attacker_epithet} lets loose a sudden fan of flame, and ${combat_defender_epithet} throws an arm up and reels back from the worst of it."
-  *else
-    *if (fnaa_v = 1)
-      *set fnaa_line "$!{combat_attacker_epithet} spreads both hands wide, thumbs locked, and a roaring fan of flame washes straight across ${combat_defender_epithet}."
-    *if (fnaa_v = 2)
-      *set fnaa_line "$!{combat_attacker_epithet} drives both palms forward, and a sheet of bright fire catches ${combat_defender_epithet} full in the chest."
-    *if (fnaa_v = 3)
-      *set fnaa_line "At arm's length, ${combat_attacker_epithet} unleashes a broad sweep of orange flame that scorches ${combat_defender_epithet} from hip to throat."
-    *if (fnaa_v = 4)
-      *set fnaa_line "Flame leaps from ${combat_attacker_epithet}'s outstretched fingers and washes over ${combat_defender_epithet} before they can turn aside."
-    *if (fnaa_v = 5)
-      *set fnaa_line "$!{combat_attacker_epithet} snaps their wrists apart, sending a wall of heat and sparks crashing across ${combat_defender_epithet}'s shoulder."
+*if ((fnaa_attacker_kind = "enemy") and ((not(combat_enemy_cast_spell = "")) and (not(combat_enemy_cast_spell = "ability"))))
+  *comment An enemy casting a leveled spell at an ally (3.6 step 3: Burning Hands), keyed by spell id.
+  *gosub flavor_npc_ally_spell
 *elseif ((fnaa_knife) and (not(fnaa_has_ps)))
   *gosub flavor_ally_dagger
-*elseif (((fnaa_has_ps) and (not(fnaa_knife))) and (fnaa_base_id = "fire_bolt"))
-  *gosub flavor_npc_ally_fire_bolt
 *elseif ((fnaa_has_ps) and (not(fnaa_knife)))
-  *comment An enemy casting Poison Spray at an intercepting or ranged ally (ranged spell attack, 1d12 poison).
-  *if (fnaa_hit)
-    *if (fnaa_v = 1)
-      *set fnaa_line "$!{combat_attacker_epithet} thrusts out a palm, and a jet of green-yellow vapor catches ${combat_defender_epithet} full in the face."
-    *if (fnaa_v = 2)
-      *set fnaa_line "A sour mist boils off ${combat_attacker_epithet}'s fingers and rolls straight over ${combat_defender_epithet}, leaving them coughing hard."
-    *if (fnaa_v = 3)
-      *set fnaa_line "$!{combat_attacker_epithet} flicks a hand, and a gout of bitter vapor washes across ${combat_defender_epithet}'s chest."
-    *if (fnaa_v = 4)
-      *set fnaa_line "$!{combat_attacker_epithet} draws two fingers through the air, and a ribbon of poison whips into ${combat_defender_epithet}'s flank."
-    *if (fnaa_v = 5)
-      *set fnaa_line "A hiss of stinging fog leaps from ${combat_attacker_epithet}'s palm and envelops ${combat_defender_epithet} before they can break clear."
-  *else
-    *if (fnaa_v = 1)
-      *set fnaa_line "$!{combat_attacker_epithet} thrusts out a palm, but ${combat_defender_epithet} throws an arm up and twists aside as the vapor drifts past."
-    *if (fnaa_v = 2)
-      *set fnaa_line "A sour mist boils off ${combat_attacker_epithet}'s fingers, and ${combat_defender_epithet} breaks clear before it can settle."
-    *if (fnaa_v = 3)
-      *set fnaa_line "$!{combat_attacker_epithet} flicks a gout of bitter vapor across the gap, and ${combat_defender_epithet} ducks cleanly underneath it."
-    *if (fnaa_v = 4)
-      *set fnaa_line "$!{combat_attacker_epithet} whips a ribbon of poison out from two fingers, but ${combat_defender_epithet} shifts aside and lets it dissolve."
-    *if (fnaa_v = 5)
-      *set fnaa_line "A hiss of stinging fog leaps from ${combat_attacker_epithet}'s palm, and ${combat_defender_epithet} backs out of it untouched."
+  *gosub flavor_npc_ally_cantrip
 *elseif (fnaa_claws)
   *comment A twig-and-bramble creature (the Gnarled Bramble Heart's Blight Twigs, or an enemy Twig Blight striking an ally): claws, thorns and knotted fists, never a weapon.
   *if (fnaa_v = 1)
@@ -1026,6 +987,13 @@
   *set fsh "You twist a sharp syllable across the space between you, and the world goes black behind ${combat_enemy_epithet}'s gaze."
 *else
   *set fsh "You catch ${combat_enemy_epithet}'s eyes with a clipped word and snuff the sight straight out of them."
+*return
+
+*label flavor_npc_cast_spell
+*comment A non-player caster's save-or-condition spell (COMBAT_ENGINE_PLAN 3.6 step 4), keyed by spell id: each sets fsh, one line read whether the target saves or not.
+*params fncs_id
+*if (fncs_id = "blindness")
+  *gosub flavor_npc_blindness
 *return
 
 *label flavor_npc_blindness
@@ -1806,6 +1774,18 @@
   *gosub flavor_npc_poison_spray
 *if (fft_type = "fire_bolt")
   *gosub flavor_npc_fire_bolt
+*if (fft_type = "ray_of_frost")
+  *gosub flavor_npc_ray_of_frost
+*if (fft_type = "chill_touch")
+  *gosub flavor_npc_chill_touch
+*if (fft_type = "shocking_grasp")
+  *gosub flavor_npc_shocking_grasp
+*if (fft_type = "eldritch_blast")
+  *gosub flavor_npc_eldritch_blast
+*if (fft_type = "ray_of_sickness")
+  *gosub flavor_npc_ray_of_sickness
+*if (fft_type = "scorching_ray")
+  *gosub flavor_npc_scorching_ray
 *if (fft_type = "burning_hands")
   *gosub flavor_npc_burning_hands
 *if (fft_type = "twig_blight")
@@ -2447,6 +2427,353 @@
   *if (fnaa_v = 5)
     *set fnaa_line "Fire flies from ${combat_attacker_epithet}'s fingertips in a tight line, and ${combat_defender_epithet} leans back as it passes."
 *return
+
+*comment The ally-target lines of an enemy's at-will attack cantrip (combat.txt apply_enemy_spell_base), by its id. Poison Spray's are inline in fight_narrate_ally_attack.
+*label flavor_npc_ally_spell
+*if (combat_enemy_cast_spell = "burning_hands")
+  *gosub flavor_npc_ally_burning_hands
+*return
+
+*label flavor_npc_ally_burning_hands
+*comment An enemy casting Burning Hands at an ally (3d6 fire, Dexterity save, half on a save): the first five lines are a save (only the edge catches), the rest a failed one.
+*if (combat_enemy_save_halved) or (not(fnaa_hit))
+  *if (fnaa_v = 1)
+    *set fnaa_line "$!{combat_attacker_epithet} snaps their wrists together and looses an arc of flame, and ${combat_defender_epithet} ducks clear of the core while the outer sparks singe their shoulder."
+  *if (fnaa_v = 2)
+    *set fnaa_line "$!{combat_attacker_epithet} sends a sheet of fire roaring forward, and ${combat_defender_epithet} twists sideways just enough to take only the scorching edge."
+  *if (fnaa_v = 3)
+    *set fnaa_line "At arm's length, ${combat_attacker_epithet} sweeps a fan of fire across the gap, and ${combat_defender_epithet} pivots clear of its heart so only the outer tongue catches their ribs."
+  *if (fnaa_v = 4)
+    *set fnaa_line "Flame bursts from ${combat_attacker_epithet}'s spread fingers, and ${combat_defender_epithet} drops low under the main blast as heat rolls over their back."
+  *if (fnaa_v = 5)
+    *set fnaa_line "$!{combat_attacker_epithet} lets loose a sudden fan of flame, and ${combat_defender_epithet} throws an arm up and reels back from the worst of it."
+*else
+  *if (fnaa_v = 1)
+    *set fnaa_line "$!{combat_attacker_epithet} spreads both hands wide, thumbs locked, and a roaring fan of flame washes straight across ${combat_defender_epithet}."
+  *if (fnaa_v = 2)
+    *set fnaa_line "$!{combat_attacker_epithet} drives both palms forward, and a sheet of bright fire catches ${combat_defender_epithet} full in the chest."
+  *if (fnaa_v = 3)
+    *set fnaa_line "At arm's length, ${combat_attacker_epithet} unleashes a broad sweep of orange flame that scorches ${combat_defender_epithet} from hip to throat."
+  *if (fnaa_v = 4)
+    *set fnaa_line "Flame leaps from ${combat_attacker_epithet}'s outstretched fingers and washes over ${combat_defender_epithet} before they can turn aside."
+  *if (fnaa_v = 5)
+    *set fnaa_line "$!{combat_attacker_epithet} snaps their wrists apart, sending a wall of heat and sparks crashing across ${combat_defender_epithet}'s shoulder."
+*return
+
+*label flavor_npc_ally_poison_spray
+*comment An enemy casting Poison Spray at an ally (1d12 poison, Constitution save, none on a save since 3.6 step 3): a hit is a failed save.
+*if (fnaa_hit)
+  *if (fnaa_v = 1)
+    *set fnaa_line "$!{combat_attacker_epithet} thrusts out a palm, and a jet of green-yellow vapor catches ${combat_defender_epithet} full in the face."
+  *if (fnaa_v = 2)
+    *set fnaa_line "A sour mist boils off ${combat_attacker_epithet}'s fingers and rolls straight over ${combat_defender_epithet}, leaving them coughing hard."
+  *if (fnaa_v = 3)
+    *set fnaa_line "$!{combat_attacker_epithet} flicks a hand, and a gout of bitter vapor washes across ${combat_defender_epithet}'s chest."
+  *if (fnaa_v = 4)
+    *set fnaa_line "$!{combat_attacker_epithet} draws two fingers through the air, and a ribbon of poison whips into ${combat_defender_epithet}'s flank."
+  *if (fnaa_v = 5)
+    *set fnaa_line "A hiss of stinging fog leaps from ${combat_attacker_epithet}'s palm and envelops ${combat_defender_epithet} before they can break clear."
+*else
+  *if (fnaa_v = 1)
+    *set fnaa_line "$!{combat_attacker_epithet} thrusts out a palm, but ${combat_defender_epithet} throws an arm up and twists aside as the vapor drifts past."
+  *if (fnaa_v = 2)
+    *set fnaa_line "A sour mist boils off ${combat_attacker_epithet}'s fingers, and ${combat_defender_epithet} breaks clear before it can settle."
+  *if (fnaa_v = 3)
+    *set fnaa_line "$!{combat_attacker_epithet} flicks a gout of bitter vapor across the gap, and ${combat_defender_epithet} ducks cleanly underneath it."
+  *if (fnaa_v = 4)
+    *set fnaa_line "$!{combat_attacker_epithet} whips a ribbon of poison out from two fingers, but ${combat_defender_epithet} shifts aside and lets it dissolve."
+  *if (fnaa_v = 5)
+    *set fnaa_line "A hiss of stinging fog leaps from ${combat_attacker_epithet}'s palm, and ${combat_defender_epithet} backs out of it untouched."
+*return
+
+*label flavor_npc_ally_cantrip
+*if (fnaa_base_id = "poison_spray")
+  *gosub flavor_npc_ally_poison_spray
+*elseif (fnaa_base_id = "fire_bolt")
+  *gosub flavor_npc_ally_fire_bolt
+*elseif (fnaa_base_id = "ray_of_frost")
+  *gosub flavor_npc_ally_ray_of_frost
+*elseif (fnaa_base_id = "chill_touch")
+  *gosub flavor_npc_ally_chill_touch
+*elseif (fnaa_base_id = "shocking_grasp")
+  *gosub flavor_npc_ally_shocking_grasp
+*elseif (fnaa_base_id = "eldritch_blast")
+  *gosub flavor_npc_ally_eldritch_blast
+*return
+
+*label flavor_npc_ray_of_frost
+*comment Ray of Frost (keyed by spell id): a pale beam of cold from the hand, a ranged spell attack; a hit holds the player's movement for the round (resolve_enemy_attack). No move 2; the lines name no worn piece or place.
+*if (fft_v = 1)
+  *set fft_hit "$!{combat_enemy_epithet} points two fingers, and a pale ray of frost strikes your thigh, and the cold sinks in so deep the leg goes stiff and slow."
+  *set fft_miss "$!{combat_enemy_epithet} points two fingers, and the pale ray lances past your hip, leaving a breath of frost hanging behind it."
+*if (fft_v = 2)
+  *set fft_hit "A thin beam of blue-white light leaps from ${combat_enemy_epithet}'s palm and hits your chest, and frost crawls across you as the breath catches in your throat."
+  *set fft_miss "A thin beam of blue-white light leaps from ${combat_enemy_epithet}'s palm, but you twist aside, and it streaks past in a trail of glittering frost."
+*if (fft_v = 3)
+  *set fft_hit "$!{combat_enemy_epithet} flicks a hand toward you, and a ray of bitter cold catches your arm, numbing it from shoulder to fingertips."
+  *set fft_miss "$!{combat_enemy_epithet} flicks a hand toward you, and you duck as the ray of bitter cold hisses over your shoulder."
+*if (fft_v = 4)
+  *set fft_hit "A sharp, pale glow flares between you as ${combat_enemy_epithet}'s ray lands on your knee, and the joint locks up with cold."
+  *set fft_miss "A sharp, pale glow flares between you, but you sidestep, and ${combat_enemy_epithet}'s ray glitters harmlessly past."
+*if (fft_v = 5)
+  *set fft_hit "$!{combat_enemy_epithet} speaks one cold word, and a beam of frost slams into your side, and every step after it feels heavy."
+  *set fft_miss "$!{combat_enemy_epithet} speaks one cold word, and the beam of frost misses you by a hand's width, chilling your cheek as it goes."
+*if (fft_v = 6)
+  *set fft_hit "A streak of icy light crosses the gap from ${combat_enemy_epithet}'s fingertips and wraps your legs in a crust of frost that cracks as you move."
+  *set fft_miss "A streak of icy light crosses the gap from ${combat_enemy_epithet}'s fingertips, but you are already moving, and it strikes nothing."
+*if (fft_v = 7)
+  *set fft_hit "$!{combat_enemy_epithet} thrusts a palm out, and a pale ray hits you in the shoulder, and a deep ache of cold spreads through the muscle."
+  *set fft_miss "$!{combat_enemy_epithet} thrusts a palm out, and you lean back as the pale ray cuts past in front of your face."
+*if (fft_v = 8)
+  *set fft_hit "The ray finds you on the second word, and frost spreads across your sleeve and the skin beneath, stiffening you where you stand."
+  *set fft_miss "The ray leaves ${combat_enemy_epithet}'s hand on the second word, but you have already turned, and it passes cold and close behind you."
+*return
+
+*label flavor_npc_ally_ray_of_frost
+*comment An enemy casting Ray Of Frost at an ally: third person, both combatants by epithet, for fight_narrate_ally_attack.
+*if (fnaa_hit)
+  *if (fnaa_v = 1)
+    *set fnaa_line "$!{combat_attacker_epithet} points two fingers, and a pale ray of frost strikes ${combat_defender_epithet}'s leg, stiffening it with cold."
+  *if (fnaa_v = 2)
+    *set fnaa_line "A thin beam of blue-white light leaps from ${combat_attacker_epithet}'s palm and crusts ${combat_defender_epithet}'s chest with frost."
+  *if (fnaa_v = 3)
+    *set fnaa_line "$!{combat_attacker_epithet} flicks a hand, and a ray of bitter cold numbs ${combat_defender_epithet}'s arm to the fingertips."
+  *if (fnaa_v = 4)
+    *set fnaa_line "A streak of icy light from ${combat_attacker_epithet} wraps ${combat_defender_epithet}'s legs in a crust of frost."
+  *if (fnaa_v = 5)
+    *set fnaa_line "$!{combat_attacker_epithet} speaks one cold word, and a beam of frost slams into ${combat_defender_epithet}'s side."
+*else
+  *if (fnaa_v = 1)
+    *set fnaa_line "$!{combat_attacker_epithet} points two fingers, but ${combat_defender_epithet} twists aside, and the pale ray lances past."
+  *if (fnaa_v = 2)
+    *set fnaa_line "A thin beam of blue-white light leaps from ${combat_attacker_epithet}'s palm, and ${combat_defender_epithet} ducks under it."
+  *if (fnaa_v = 3)
+    *set fnaa_line "$!{combat_attacker_epithet} flicks a ray of bitter cold across the gap, but ${combat_defender_epithet} sidesteps it."
+  *if (fnaa_v = 4)
+    *set fnaa_line "A streak of icy light from ${combat_attacker_epithet} glitters past ${combat_defender_epithet}'s shoulder."
+  *if (fnaa_v = 5)
+    *set fnaa_line "$!{combat_attacker_epithet} speaks one cold word, and the beam of frost misses ${combat_defender_epithet} by a hand's width."
+*return
+
+*label flavor_npc_chill_touch
+*comment Chill Touch (keyed by spell id): a ghostly hand of bone that grips the target, a ranged spell attack, necrotic. No move 2; the lines name no worn piece or place.
+*if (fft_v = 1)
+  *set fft_hit "$!{combat_enemy_epithet} reaches toward you across the gap, and a ghostly hand of bone closes on your arm, and a grave-cold ache sinks into the flesh."
+  *set fft_miss "$!{combat_enemy_epithet} reaches toward you across the gap, and a ghostly hand of bone grasps at you, but you jerk away, and it closes on nothing."
+*if (fft_v = 2)
+  *set fft_hit "A pale, skeletal hand forms beside you and clamps onto your shoulder, and the skin under it greys and goes numb."
+  *set fft_miss "A pale, skeletal hand forms beside you and snatches at your shoulder, but you twist free before the fingers close."
+*if (fft_v = 3)
+  *set fft_hit "$!{combat_enemy_epithet} curls their fingers, and a hand of grey bone seizes your wrist, and a cold like rot crawls up your arm."
+  *set fft_miss "$!{combat_enemy_epithet} curls their fingers, and a hand of grey bone snaps shut where your wrist just was."
+*if (fft_v = 4)
+  *set fft_hit "Bony fingers made of faint grey light grip your side, and the strength seems to drain out of the wound they leave."
+  *set fft_miss "Bony fingers made of faint grey light grab for your side, but you step back, and they fade before they find you."
+*if (fft_v = 5)
+  *set fft_hit "$!{combat_enemy_epithet} hisses a word, and a spectral hand latches onto your chest, cold as a buried stone, and the ache settles deep in your ribs."
+  *set fft_miss "$!{combat_enemy_epithet} hisses a word, and a spectral hand reaches for your chest, but you knock it aside, and it comes apart like smoke."
+*if (fft_v = 6)
+  *set fft_hit "A skeletal hand rises out of nothing and rakes down your forearm, and the marks it leaves turn pale and bloodless."
+  *set fft_miss "A skeletal hand rises out of nothing and rakes at your forearm, but you pull the arm in, and the fingers pass through empty space."
+*if (fft_v = 7)
+  *set fft_hit "$!{combat_enemy_epithet} points, and ghostly fingers close around your leg, and a deathly cold makes the muscle shudder."
+  *set fft_miss "$!{combat_enemy_epithet} points, and ghostly fingers grasp at your leg, but you kick free, and they wither away."
+*if (fft_v = 8)
+  *set fft_hit "The bone hand appears at your collar and squeezes, and the cold of it steals your breath for a moment."
+  *set fft_miss "The bone hand appears at your collar, but you twist away before it can tighten, and it fades into grey haze."
+*return
+
+*label flavor_npc_ally_chill_touch
+*comment An enemy casting Chill Touch at an ally: third person, both combatants by epithet, for fight_narrate_ally_attack.
+*if (fnaa_hit)
+  *if (fnaa_v = 1)
+    *set fnaa_line "$!{combat_attacker_epithet} reaches out, and a ghostly hand of bone closes on ${combat_defender_epithet}'s arm, greying the skin beneath."
+  *if (fnaa_v = 2)
+    *set fnaa_line "A pale, skeletal hand forms beside ${combat_defender_epithet} and clamps onto their shoulder."
+  *if (fnaa_v = 3)
+    *set fnaa_line "$!{combat_attacker_epithet} curls their fingers, and a hand of grey bone seizes ${combat_defender_epithet}'s wrist."
+  *if (fnaa_v = 4)
+    *set fnaa_line "Bony fingers of faint grey light grip ${combat_defender_epithet}'s side and leave the skin pale and cold."
+  *if (fnaa_v = 5)
+    *set fnaa_line "$!{combat_attacker_epithet} hisses a word, and a spectral hand latches onto ${combat_defender_epithet}'s chest."
+*else
+  *if (fnaa_v = 1)
+    *set fnaa_line "$!{combat_attacker_epithet} reaches out, but ${combat_defender_epithet} jerks away before the ghostly hand can close."
+  *if (fnaa_v = 2)
+    *set fnaa_line "A pale, skeletal hand snatches at ${combat_defender_epithet}'s shoulder, and they twist free."
+  *if (fnaa_v = 3)
+    *set fnaa_line "$!{combat_attacker_epithet} curls their fingers, and a hand of grey bone snaps shut beside ${combat_defender_epithet}, gripping nothing."
+  *if (fnaa_v = 4)
+    *set fnaa_line "Bony fingers of grey light grab for ${combat_defender_epithet} and fade as they step back."
+  *if (fnaa_v = 5)
+    *set fnaa_line "$!{combat_attacker_epithet} hisses a word, but ${combat_defender_epithet} knocks the spectral hand aside, and it comes apart like smoke."
+*return
+
+*label flavor_npc_shocking_grasp
+*comment Shocking Grasp (keyed by spell id): lightning from a touch, a melee spell attack; a hit costs the player their reaction (resolve_enemy_attack). No move 2; the lines name no worn piece or place.
+*if (fft_v = 1)
+  *set fft_hit "$!{combat_enemy_epithet} slaps a crackling palm against your chest, and lightning jolts through you, locking your jaw and jarring every joint."
+  *set fft_miss "$!{combat_enemy_epithet} lunges with a crackling palm, but you knock the arm aside, and the sparks snap harmlessly past your ribs."
+*if (fft_v = 2)
+  *set fft_hit "Blue sparks dance over ${combat_enemy_epithet}'s fingers as they grab your arm, and the shock runs straight to your shoulder and leaves it twitching."
+  *set fft_miss "Blue sparks dance over ${combat_enemy_epithet}'s fingers as they grab for your arm, but you wrench back out of reach."
+*if (fft_v = 3)
+  *set fft_hit "$!{combat_enemy_epithet} jabs two fingers into your side, and a snap of lightning makes your whole body seize for a heartbeat."
+  *set fft_miss "$!{combat_enemy_epithet} jabs two fingers at your side, and you turn so they skid off, trailing a harmless crackle."
+*if (fft_v = 4)
+  *set fft_hit "A hand wreathed in lightning clamps onto your shoulder, and the jolt rattles your teeth and blanks your thoughts."
+  *set fft_miss "A hand wreathed in lightning swipes at your shoulder, but you duck under it, and the space where you stood hums."
+*if (fft_v = 5)
+  *set fft_hit "$!{combat_enemy_epithet} catches your wrist, and lightning leaps from their grip into your arm with a sharp crack."
+  *set fft_miss "$!{combat_enemy_epithet} reaches for your wrist, but you pull it away, and the spark leaps from their grip into nothing."
+*if (fft_v = 6)
+  *set fft_hit "With a hiss of static, ${combat_enemy_epithet} presses a palm to your collarbone, and the shock throws your muscles into a spasm."
+  *set fft_miss "With a hiss of static, ${combat_enemy_epithet} pushes a palm toward your collarbone, but you slap it away before it lands."
+*if (fft_v = 7)
+  *set fft_hit "Sparks crawl up ${combat_enemy_epithet}'s forearm and burst into you as they shove you, and the jolt leaves your hands shaking."
+  *set fft_miss "Sparks crawl up ${combat_enemy_epithet}'s forearm as they shove at you, but you sidestep, and the jolt crackles out into nothing."
+*if (fft_v = 8)
+  *set fft_hit "$!{combat_enemy_epithet}'s fingertips brush your neck, and a hot white snap of lightning makes you flinch hard from head to foot."
+  *set fft_miss "$!{combat_enemy_epithet}'s fingertips stretch toward your neck, but you jerk your head back, and the snap of lightning misses."
+*return
+
+*label flavor_npc_ally_shocking_grasp
+*comment An enemy casting Shocking Grasp at an ally: third person, both combatants by epithet, for fight_narrate_ally_attack.
+*if (fnaa_hit)
+  *if (fnaa_v = 1)
+    *set fnaa_line "$!{combat_attacker_epithet} slaps a crackling palm against ${combat_defender_epithet}'s chest, and lightning jolts through them."
+  *if (fnaa_v = 2)
+    *set fnaa_line "Blue sparks dance over ${combat_attacker_epithet}'s fingers as they grab ${combat_defender_epithet}'s arm, and the shock leaves it twitching."
+  *if (fnaa_v = 3)
+    *set fnaa_line "$!{combat_attacker_epithet} jabs two fingers into ${combat_defender_epithet}'s side, and a snap of lightning makes them seize."
+  *if (fnaa_v = 4)
+    *set fnaa_line "A hand wreathed in lightning clamps onto ${combat_defender_epithet}'s shoulder and rattles them to the teeth."
+  *if (fnaa_v = 5)
+    *set fnaa_line "$!{combat_attacker_epithet} catches ${combat_defender_epithet}'s wrist, and lightning leaps into their arm with a sharp crack."
+*else
+  *if (fnaa_v = 1)
+    *set fnaa_line "$!{combat_attacker_epithet} lunges with a crackling palm, but ${combat_defender_epithet} knocks the arm aside."
+  *if (fnaa_v = 2)
+    *set fnaa_line "Blue sparks dance over ${combat_attacker_epithet}'s fingers, but ${combat_defender_epithet} wrenches out of reach."
+  *if (fnaa_v = 3)
+    *set fnaa_line "$!{combat_attacker_epithet} jabs at ${combat_defender_epithet}'s side, and the crackling fingers skid off."
+  *if (fnaa_v = 4)
+    *set fnaa_line "A hand wreathed in lightning swipes at ${combat_defender_epithet}, who ducks under it."
+  *if (fnaa_v = 5)
+    *set fnaa_line "$!{combat_attacker_epithet} reaches for ${combat_defender_epithet}'s wrist, but the spark leaps into nothing as they pull away."
+*return
+
+*label flavor_npc_eldritch_blast
+*comment Eldritch Blast (keyed by spell id): a crackling beam of force, a ranged spell attack; one beam for an enemy. No move 2; the lines name no worn piece or place.
+*if (fft_v = 1)
+  *set fft_hit "$!{combat_enemy_epithet} thrusts out a hand, and a crackling beam of violet force slams into your chest and knocks you back a step."
+  *set fft_miss "$!{combat_enemy_epithet} thrusts out a hand, and the crackling beam of violet force tears past your shoulder."
+*if (fft_v = 2)
+  *set fft_hit "A streak of dark, sputtering light leaps from ${combat_enemy_epithet}'s fingers and strikes your side like a thrown stone."
+  *set fft_miss "A streak of dark, sputtering light leaps from ${combat_enemy_epithet}'s fingers, but you drop low, and it howls overhead."
+*if (fft_v = 3)
+  *set fft_hit "$!{combat_enemy_epithet} snarls a word, and a bolt of raw force hits your shoulder hard enough to spin you halfway round."
+  *set fft_miss "$!{combat_enemy_epithet} snarls a word, and you throw yourself aside as the bolt of raw force rips through the space you held."
+*if (fft_v = 4)
+  *set fft_hit "A sharp crack sounds as ${combat_enemy_epithet}'s beam lands on your ribs, and the impact drives the breath out of you."
+  *set fft_miss "A sharp crack sounds as ${combat_enemy_epithet}'s beam lances toward you, but it goes wide by a hand's width."
+*if (fft_v = 5)
+  *set fft_hit "$!{combat_enemy_epithet} flings an open palm forward, and a pulse of humming force catches your leg and nearly takes it out from under you."
+  *set fft_miss "$!{combat_enemy_epithet} flings an open palm forward, but you step clear, and the pulse of humming force fizzles past."
+*if (fft_v = 6)
+  *set fft_hit "Violet light gathers in ${combat_enemy_epithet}'s fist and bursts out in a beam that punches into your chest with a dull, deep thud."
+  *set fft_miss "Violet light gathers in ${combat_enemy_epithet}'s fist and bursts out in a beam, but you twist, and it tears past your ribs."
+*if (fft_v = 7)
+  *set fft_hit "$!{combat_enemy_epithet} points, and a ray of crackling darkness strikes your arm, and the bone aches as if struck with a hammer."
+  *set fft_miss "$!{combat_enemy_epithet} points, and the ray of crackling darkness misses you, buzzing like a hornet as it passes."
+*if (fft_v = 8)
+  *set fft_hit "The blast leaves ${combat_enemy_epithet}'s hand with a low thrum and hits you square, hard enough to rock you on your heels."
+  *set fft_miss "The blast leaves ${combat_enemy_epithet}'s hand with a low thrum, but you are already moving, and it streaks wide."
+*return
+
+*label flavor_npc_ally_eldritch_blast
+*comment An enemy casting Eldritch Blast at an ally: third person, both combatants by epithet, for fight_narrate_ally_attack.
+*if (fnaa_hit)
+  *if (fnaa_v = 1)
+    *set fnaa_line "$!{combat_attacker_epithet} thrusts out a hand, and a crackling beam of violet force slams into ${combat_defender_epithet}'s chest."
+  *if (fnaa_v = 2)
+    *set fnaa_line "A streak of dark, sputtering light from ${combat_attacker_epithet} strikes ${combat_defender_epithet}'s side like a thrown stone."
+  *if (fnaa_v = 3)
+    *set fnaa_line "$!{combat_attacker_epithet} snarls a word, and a bolt of raw force spins ${combat_defender_epithet} halfway round."
+  *if (fnaa_v = 4)
+    *set fnaa_line "A sharp crack sounds as ${combat_attacker_epithet}'s beam lands on ${combat_defender_epithet}'s ribs."
+  *if (fnaa_v = 5)
+    *set fnaa_line "Violet light bursts from ${combat_attacker_epithet}'s fist and punches into ${combat_defender_epithet} with a deep thud."
+*else
+  *if (fnaa_v = 1)
+    *set fnaa_line "$!{combat_attacker_epithet} thrusts out a hand, but the crackling beam tears past ${combat_defender_epithet}'s shoulder."
+  *if (fnaa_v = 2)
+    *set fnaa_line "A streak of dark light from ${combat_attacker_epithet} howls over ${combat_defender_epithet} as they drop low."
+  *if (fnaa_v = 3)
+    *set fnaa_line "$!{combat_attacker_epithet} snarls a word, and ${combat_defender_epithet} throws themselves clear of the bolt."
+  *if (fnaa_v = 4)
+    *set fnaa_line "A sharp crack sounds as ${combat_attacker_epithet}'s beam goes wide of ${combat_defender_epithet}."
+  *if (fnaa_v = 5)
+    *set fnaa_line "Violet light bursts from ${combat_attacker_epithet}'s fist, but ${combat_defender_epithet} twists, and it tears past."
+*return
+
+*label flavor_npc_ray_of_sickness
+*comment Ray of Sickness (keyed by spell id): a sickly green ray, a ranged spell attack, 2d8 poison; a hit poisons (the condition-on-hit banner). No move 2; no worn piece or place.
+*if (fft_v = 1)
+  *set fft_hit "$!{combat_enemy_epithet} levels a finger at you, and a sickly green ray strikes your chest, and your stomach heaves as a wave of nausea rolls through you."
+  *set fft_miss "$!{combat_enemy_epithet} levels a finger at you, and the sickly green ray streaks past your shoulder, leaving a sour smell behind it."
+*if (fft_v = 2)
+  *set fft_hit "A thin beam of yellow-green light leaps from ${combat_enemy_epithet}'s hand and hits your side, and a feverish sweat breaks across your skin."
+  *set fft_miss "A thin beam of yellow-green light leaps from ${combat_enemy_epithet}'s hand, but you twist aside, and it fizzles out past you."
+*if (fft_v = 3)
+  *set fft_hit "$!{combat_enemy_epithet} spits a word, and a ray the color of bile catches your arm, and the sickness spreads up into your throat."
+  *set fft_miss "$!{combat_enemy_epithet} spits a word, and you duck as a ray the color of bile hisses over your head."
+*if (fft_v = 4)
+  *set fft_hit "The ray hits you low in the ribs, and your vision swims as your gut clenches around the poison."
+  *set fft_miss "The ray lances toward your ribs, but you turn sideways, and it passes close enough that you taste something sour."
+*if (fft_v = 5)
+  *set fft_hit "$!{combat_enemy_epithet} flicks a hand, and a streak of murky green light slams into your shoulder and leaves you queasy and shaking."
+  *set fft_miss "$!{combat_enemy_epithet} flicks a hand, and the streak of murky green light misses you by a hand's width."
+*if (fft_v = 6)
+  *set fft_hit "Green light gathers in ${combat_enemy_epithet}'s palm and lances into your chest, and your legs go weak as your stomach turns over."
+  *set fft_miss "Green light gathers in ${combat_enemy_epithet}'s palm and lances toward you, but you step aside, and it dies away."
+*if (fft_v = 7)
+  *set fft_hit "$!{combat_enemy_epithet} points, and a sour ray strikes your leg, and the poison crawls upward until your head pounds with it."
+  *set fft_miss "$!{combat_enemy_epithet} points, and the sour ray falls short, sputtering out before it reaches you."
+*if (fft_v = 8)
+  *set fft_hit "The sickly beam finds you on the second word, and you gag as a sour heat spreads through your belly."
+  *set fft_miss "The sickly beam leaves ${combat_enemy_epithet}'s hand on the second word, but you are already moving, and it goes wide."
+*return
+
+
+*label flavor_npc_scorching_ray
+*comment Scorching Ray (keyed by spell id): one ray of the three, each its own attack on its own page (combat.txt fight_enemy_cast_attack), 2d6 fire. Each line is one ray, never the volley. No move 2; no worn piece or place.
+*if (fft_v = 1)
+  *set fft_hit "$!{combat_enemy_epithet} flings a hand forward, and a ray of fire sears across your shoulder."
+  *set fft_miss "$!{combat_enemy_epithet} flings a hand forward, and a ray of fire streaks past your shoulder, hot on your cheek."
+*if (fft_v = 2)
+  *set fft_hit "A ray of fire leaps from ${combat_enemy_epithet}'s fingers and burns a line across your ribs."
+  *set fft_miss "A ray of fire leaps from ${combat_enemy_epithet}'s fingers, but you twist, and it hisses past your ribs."
+*if (fft_v = 3)
+  *set fft_hit "A ray of fire catches your forearm as you raise it, and the skin blisters under your sleeve."
+  *set fft_miss "A ray of fire flashes toward you, but you drop low, and it roars overhead."
+*if (fft_v = 4)
+  *set fft_hit "A bright thread of flame from ${combat_enemy_epithet} strikes your thigh, and the heat bites deep."
+  *set fft_miss "A bright thread of flame from ${combat_enemy_epithet} snaps past your thigh and gutters out."
+*if (fft_v = 5)
+  *set fft_hit "$!{combat_enemy_epithet} snaps their wrist, and a ray of fire hits you square in the chest, scorching the breath from you."
+  *set fft_miss "$!{combat_enemy_epithet} snaps their wrist, but the ray of fire goes wide, trailing sparks."
+*if (fft_v = 6)
+  *set fft_hit "A streak of fire from ${combat_enemy_epithet}'s hand rakes across your collar, and the burn stings like a lash."
+  *set fft_miss "A streak of fire from ${combat_enemy_epithet}'s hand cuts past beside your neck, and you feel only its heat."
+*if (fft_v = 7)
+  *set fft_hit "A ray of fire finds you and burns into your side with a sharp crackle."
+  *set fft_miss "A ray of fire flies at you, but you sidestep, and it burns out short."
+*if (fft_v = 8)
+  *set fft_hit "The ray strikes your leg, and you stagger as the fire sinks in."
+  *set fft_miss "The ray lances toward your leg, but you hop aside, and it scorches nothing."
+*return
+
 
 *label flavor_npc_burning_hands
 *comment An assigned caster's Burning Hands (3d6 fire, DEX save against cast_dc, half on a save), keyed by spell id. fft_hit is a failed save (caught full in the flame); fft_miss is a successful save (ducking clear of the heart so only the edge catches you for half damage). No move 2.

@@ -824,6 +824,18 @@ ${combat_player_dmg_roll_banner}
   *if (((combat_enemy_hit_success) and (cea_save_failed)) and (combat_enemy_inflicts_stun))
     *set player_stunned true
     *set combat_stun_inflicted true
+  *comment An at-will cantrip's rider (COMBAT_ENGINE_PLAN 3.6 step 2), when the slot's own attack is that cantrip (not its sidearm, not a leveled cast): Ray of Frost
+  *comment Slows the player (the shared condition, 1: no Dash until they have taken their next turn, condition_tick at its end), as it does an enemy; Shocking Grasp
+  *comment spends the player's reaction until the round turns over (combat_can_react reads player_oa_used).
+  *set combat_cantrip_rider ""
+  *if ((combat_enemy_hit_success) and ((combat_enemy_cast_spell = "") and (not(combat_enemy_used_sidearm))))
+    *temp cea_base_id {(("combat_enemy" & combat_active_target) & "_spell_base_id")}
+    *if (cea_base_id = "ray_of_frost")
+      *gosub condition_apply "combat_player_" "slowed" 1 0 "ray_of_frost"
+      *set combat_cantrip_rider cea_base_id
+    *elseif (cea_base_id = "shocking_grasp")
+      *set player_oa_used true
+      *set combat_cantrip_rider cea_base_id
   *set {(cea_bannername)} ""
   *if (combat_enemy_hit_success)
     *gosub roll_enemy_base_dmg cea_bannername
@@ -1973,26 +1985,44 @@ ${combat_player_dmg_roll_banner}
 *comment Shared spell effect: Blindness (Step 3c, 2026-11-15). Caller handles cast payment, prose, and cast-level replay lock.
 *comment Parameters: caster_prefix, target_prefix, save_dc, resolve_save lock_index (0..6 enemies, 7 player).
 *comment Outputs: combat_spell_effect_applied (boolean), combat_spell_effect_banner (string); respects combat_save_quiet.
-*label spell_effect_blindness
-*params seb_caster_prefix seb_target_prefix seb_dc seb_lock
+*label spell_effect_condition
+*comment The save-or-condition shape (COMBAT_ENGINE_PLAN 3.6 step 4), from the data: the target saves with the spell's save_ability against sec_dc, and on a failure
+*comment takes the spell's combat.condition for 10 rounds (every such spell lasts up to a minute; the repeat save at the end of the bearer's turn runs in condition_tick).
+*comment Used for Blindness by the player (resolve_cast_blindness) and by an enemy (resolve_npc_cast_condition). The banners name the condition, not the spell.
+*params sec_caster_prefix sec_target_prefix sec_dc sec_lock sec_spell_id
 *set combat_spell_effect_applied false
 *set combat_spell_effect_banner ""
-*set {("combat_save_locked_" & seb_lock)} false
-*gosub resolve_save seb_target_prefix "constitution" "Constitution" seb_dc seb_lock
-*temp seb_tname {(seb_target_prefix & "name")}
+*gosub_scene combat_spells spell_facts_load sec_spell_id
+*temp sec_cond spell_fact_condition
+*temp sec_stat spell_fact_save_ability
+*temp sec_label "Charisma"
+*if (sec_stat = "strength")
+  *set sec_label "Strength"
+*if (sec_stat = "dexterity")
+  *set sec_label "Dexterity"
+*if (sec_stat = "constitution")
+  *set sec_label "Constitution"
+*if (sec_stat = "intelligence")
+  *set sec_label "Intelligence"
+*if (sec_stat = "wisdom")
+  *set sec_label "Wisdom"
+*set {("combat_save_locked_" & sec_lock)} false
+*gosub resolve_save sec_target_prefix sec_stat sec_label sec_dc sec_lock
+*temp sec_tname {(sec_target_prefix & "name")}
+*temp sec_you (sec_target_prefix = "combat_player_")
 *if (check_success)
-  *gosub condition_apply seb_target_prefix "blinded" 10 seb_dc ""
+  *gosub condition_apply sec_target_prefix sec_cond 10 sec_dc ""
   *set combat_spell_effect_applied true
-  *if (seb_target_prefix = "combat_player_")
-    *comment State only, no rules text (the user's rule for on-screen text); the hub's own Blinded line follows on the next page.
+  *comment State only, no rules text (the user's rule for on-screen text); the hub's own condition line follows on the next page.
+  *if ((sec_cond = "blinded") and (sec_you))
     *set combat_spell_effect_banner "[b][👁️ You are Blinded][/b]"
-  *else
-    *set combat_spell_effect_banner "[b][👁️ ${seb_tname} is Blinded][/b]"
+  *elseif (sec_cond = "blinded")
+    *set combat_spell_effect_banner "[b][👁️ ${sec_tname} is Blinded][/b]"
 *else
-  *if (seb_target_prefix = "combat_player_")
+  *if ((sec_cond = "blinded") and (sec_you))
     *set combat_spell_effect_banner "[b][💨 You fight off the blindness][/b]"
-  *else
-    *set combat_spell_effect_banner "[b][💨 ${seb_tname} fights off the blindness][/b]"
+  *elseif (sec_cond = "blinded")
+    *set combat_spell_effect_banner "[b][💨 ${sec_tname} fights off the blindness][/b]"
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

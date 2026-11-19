@@ -195,6 +195,7 @@
   *set spell_fact_target "one"
   *set spell_fact_condition "slowed"
   *set spell_fact_reach "medium"
+  *set spell_fact_npc_lines true
   *if (character_level >= 5)
     *set spell_fact_dice_count 2
   *if (character_level >= 11)
@@ -211,6 +212,7 @@
   *set spell_fact_projectiles 1
   *set spell_fact_target "one"
   *set spell_fact_reach "long"
+  *set spell_fact_npc_lines true
   *if (character_level >= 5)
     *set spell_fact_projectiles 2
   *if (character_level >= 11)
@@ -226,6 +228,7 @@
   *set spell_fact_dmg_type "necrotic"
   *set spell_fact_target "one"
   *set spell_fact_reach "medium"
+  *set spell_fact_npc_lines true
   *if (character_level >= 5)
     *set spell_fact_dice_count 2
   *if (character_level >= 11)
@@ -274,6 +277,7 @@
   *set spell_fact_dmg_type "lightning"
   *set spell_fact_target "one"
   *set spell_fact_reach "touch"
+  *set spell_fact_npc_lines true
   *if (character_level >= 5)
     *set spell_fact_dice_count 2
   *if (character_level >= 11)
@@ -333,6 +337,7 @@
   *set spell_fact_upcast_dice 1
   *set spell_fact_target "one"
   *set spell_fact_reach "medium"
+  *set spell_fact_npc_lines true
 *if (sfl_id = "alarm")
   *set spell_fact_found true
   *set spell_fact_name "Alarm"
@@ -633,6 +638,7 @@
   *set spell_fact_upcast_projectiles 1
   *set spell_fact_target "one"
   *set spell_fact_reach "long"
+  *set spell_fact_npc_lines true
 *return
 *comment GEN:END spell_facts_lookup
 
@@ -1166,7 +1172,7 @@ You pull the stopper with your teeth and hurl the flask at ${combat_enemy_epithe
 *gosub spend_spell_slot 2
 *gosub_scene combat_prose flavor_blindness
 *temp rcb_p (("combat_enemy" & combat_active_target) & "_")
-*gosub_scene combat_dice spell_effect_blindness "combat_player_" rcb_p spell_save_dc combat_active_target
+*gosub_scene combat_dice spell_effect_condition "combat_player_" rcb_p spell_save_dc combat_active_target "blindness"
 *set combat_blindness_banner combat_spell_effect_banner
 ${fsh}
 *line_break
@@ -1425,13 +1431,13 @@ ${combat_web_burn_banner}
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*comment NPC SPELL: BLINDNESS (Step 3c, 2026-11-15): Three-layer architecture -- payment + per-slot replay lock here;
-*comment shared save + Blinded effect in spell_effect_blindness (combat_dice.txt); caster prose in combat_prose.txt.
+*comment NPC SPELL: SAVE OR CONDITION (Step 3c, 2026-11-15, Blindness; general since COMBAT_ENGINE_PLAN 3.6 step 4): payment + per-slot replay lock here;
+*comment the shared save + condition in spell_effect_condition (combat_dice.txt), from the spell's data; caster prose through flavor_npc_cast_spell (combat_prose.txt).
 *comment Parameters: caster_prefix ("combat_enemy1_" / "combat_ally1_"), target_prefix, resolve_save lock_index (0..7),
-*comment and assigned spell place (1..3, or 0 for direct script tests).
+*comment assigned spell place (1..3, or 0 for direct script tests), and the spell id.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*label resolve_npc_cast_blindness
-*params rncb_caster rncb_target rncb_lock rncb_place
+*label resolve_npc_cast_condition
+*params rncb_caster rncb_target rncb_lock rncb_place rncb_spell
 *temp rncb_key "enemy1"
 *if (rncb_caster = "combat_enemy1_")
   *set rncb_key "enemy1"
@@ -1462,13 +1468,13 @@ ${combat_web_burn_banner}
     *set {(rncb_ufield)} ({rncb_ufield} - 1)
 *set combat_caster_name {(rncb_caster & "name")}
 *set combat_caster_epithet {(rncb_caster & "epithet")}
-*gosub_scene combat_prose flavor_npc_blindness
+*gosub_scene combat_prose flavor_npc_cast_spell rncb_spell
 *set {rncb_prosename} fsh
 *temp rncb_dc {(rncb_caster & "cast_dc")}
 *if (rncb_dc <= 0)
   *set rncb_dc 10
 *set combat_save_quiet true
-*gosub_scene combat_dice spell_effect_blindness rncb_caster rncb_target rncb_dc rncb_lock
+*gosub_scene combat_dice spell_effect_condition rncb_caster rncb_target rncb_dc rncb_lock rncb_spell
 *set combat_save_quiet false
 *set {rncb_savename} {("combat_save_banner_" & rncb_lock)}
 *set {rncb_effname} combat_spell_effect_banner
@@ -1487,17 +1493,40 @@ ${combat_web_burn_banner}
     *set {(snsu_ufield)} ({snsu_ufield} - 1)
 *return
 
+*label load_enemy_base_save
+*comment The body's at-will cantrip as a save (COMBAT_ENGINE_PLAN 3.6 step 3: Poison Spray, a Constitution save against the caster's cast_dc, none on a success), from the data.
+*comment Called by fight_sync_target_in for a slot with a spell_base_id, after the body's fields are in, so every attack the body makes is the save. An attack-roll cantrip
+*comment (Fire Bolt and the rest) needs nothing here: apply_enemy_spell_base already wrote its numbers into the body. A quick-drawn sidearm overwrites these afterwards.
+*params lebs_caster
+*temp lebs_id {(lebs_caster & "spell_base_id")}
+*gosub spell_facts_load lebs_id
+*if ((spell_fact_resolution = "save") and (spell_fact_dice_sides > 0))
+  *temp lebs_dc {(lebs_caster & "cast_dc")}
+  *if (lebs_dc <= 0)
+    *set lebs_dc 10
+  *set combat_enemy_atk_save_stat spell_fact_save_ability
+  *set combat_enemy_atk_save_dc lebs_dc
+  *set combat_enemy_atk_save_half spell_fact_half_on_save
+  *set combat_enemy_atk_dmg_dice spell_fact_dice_count
+  *set combat_enemy_move2_chance 0
+*return
+
 *label load_enemy_spell_profile
 *comment Loads an assigned attack-profile spell's numbers into the active enemy's scratch attack fields (Step 3c-2) so resolve_enemy_attack / resolve_enemy_attack_on_ally runs the unified damage pipeline.
 *params lesp_caster lesp_spell_id
 *set combat_enemy_used_sidearm false
 *set combat_enemy_move2_chance 0
-*if (lesp_spell_id = "burning_hands")
-  *gosub spell_facts_load lesp_spell_id
+*gosub spell_facts_load lesp_spell_id
+*comment A save-for-damage spell (COMBAT_ENGINE_PLAN 3.6 step 3: Burning Hands), from the data: the target saves against the caster's cast_dc, and takes half or none
+*comment on a success as the spell says (resolve_enemy_save_attack). None of the body's own riders. The caller puts the body's fields back afterwards.
+*if ((spell_fact_resolution = "save") and (spell_fact_dice_sides > 0))
   *temp lesp_dc {(lesp_caster & "cast_dc")}
   *if (lesp_dc <= 0)
     *set lesp_dc 10
-  *set combat_enemy_weapon_type "melee"
+  *if (spell_fact_reach = "touch")
+    *set combat_enemy_weapon_type "melee"
+  *else
+    *set combat_enemy_weapon_type "ranged"
   *set combat_enemy_atk_save_stat spell_fact_save_ability
   *set combat_enemy_atk_save_dc lesp_dc
   *set combat_enemy_atk_save_half spell_fact_half_on_save
@@ -1505,6 +1534,37 @@ ${combat_web_burn_banner}
   *set combat_enemy_dmg_dice_sides spell_fact_dice_sides
   *set combat_enemy_dmg_bonus 0
   *set combat_enemy_dmg_type spell_fact_dmg_type
+  *set combat_enemy_extra_dmg_dice_sides 0
+  *set combat_enemy_extra_dmg_bonus 0
+  *set combat_enemy_extra_dmg_type ""
+  *set combat_enemy_inflicts_stun false
+  *set combat_enemy_inflicts_condition false
+  *return
+*comment An attack-roll spell (COMBAT_ENGINE_PLAN 3.6, the leveled ones: Ray of Sickness, Scorching Ray), from the data: a spell attack with the caster's cast_atk_bonus,
+*comment the spell's dice and type, and none of the body's own riders. Ray of Sickness poisons on a hit (the condition-on-hit banner: disadvantage on the next attack).
+*comment The caller puts the body's own fields back afterwards (fight_sync_target_in).
+*if (spell_fact_resolution = "attack")
+  *if (spell_fact_reach = "touch")
+    *set combat_enemy_weapon_type "melee"
+  *else
+    *set combat_enemy_weapon_type "ranged"
+  *set combat_enemy_atk_bonus {(lesp_caster & "cast_atk_bonus")}
+  *set combat_enemy_atk_save_stat ""
+  *set combat_enemy_atk_save_dc 0
+  *set combat_enemy_atk_save_half false
+  *set combat_enemy_atk_dmg_dice spell_fact_dice_count
+  *set combat_enemy_dmg_dice_sides spell_fact_dice_sides
+  *set combat_enemy_dmg_bonus 0
+  *set combat_enemy_dmg_type spell_fact_dmg_type
+  *set combat_enemy_extra_dmg_dice_sides 0
+  *set combat_enemy_extra_dmg_bonus 0
+  *set combat_enemy_extra_dmg_type ""
+  *set combat_enemy_inflicts_stun false
+  *set combat_enemy_inflicts_condition false
+  *if (lesp_spell_id = "ray_of_sickness")
+    *set combat_enemy_inflicts_condition true
+    *set combat_enemy_condition_name "Poisoned"
+    *set combat_enemy_condition_icon "🤢"
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -1125,25 +1125,33 @@
 *set combat_spell_worth_it false
 *if ({(swc_caster_prefix & "hp")} <= 0)
   *return
-*if (swc_spell_id = "blindness")
+*gosub_scene combat_spells spell_facts_load swc_spell_id
+*comment A save-or-condition spell with enemy lines (3.6 step 4: Blindness), from the data: worth it while the player is seen, the caster can see (not Blinded),
+*comment the player does not already have the condition, and the player is within the spell's reach.
+*if ((((spell_fact_resolution = "save") and (spell_fact_dice_sides <= 0)) and (not(spell_fact_condition = ""))) and (spell_fact_npc_lines))
   *if (combat_player_hidden)
     *return
   *gosub_scene combat_dice condition_has swc_caster_prefix "blinded"
   *if (condition_result)
     *return
-  *gosub_scene combat_dice condition_has "combat_player_" "blinded"
+  *gosub_scene combat_dice condition_has "combat_player_" spell_fact_condition
   *if (condition_result)
     *return
-  *set combat_spell_worth_it true
-  *return
-*if (swc_spell_id = "burning_hands")
-  *if (not(combat_player_hidden)) and (combat_enemy_range <= 0)
+  *gosub_scene combat_movement combat_reach_tier spell_fact_reach
+  *if (combat_enemy_range <= combat_reach_tier_result)
     *set combat_spell_worth_it true
   *return
+*comment Any attack-roll or save-for-damage spell with enemy lines (3.6: Ray of Sickness, Scorching Ray, Burning Hands): worth it while the player is seen and within the spell's own reach, from the data.
+*temp swc_shape ((spell_fact_resolution = "attack") or ((spell_fact_resolution = "save") and (spell_fact_dice_sides > 0)))
+*if (((swc_shape) and (spell_fact_npc_lines)) and (not(combat_player_hidden)))
+  *gosub_scene combat_movement combat_reach_tier spell_fact_reach
+  *if (combat_enemy_range <= combat_reach_tier_result)
+    *set combat_spell_worth_it true
 *return
 
 *label fight_pick_ally_intercept_spell
-*comment Chooses an offensive melee-range attack-profile spell for an enemy attacking an intercepting ally in reach (Step 3c-2). Shares the per-slot page replay lock with fight_pick_enemy_spell.
+*comment Chooses an offensive spell for an enemy attacking an intercepting ally in reach (Step 3c-2): any save-for-damage spell with enemy lines (3.6 step 3: Burning Hands), from the data.
+*comment An attack-roll leveled spell is not offered here yet (it has no lines for an ally target). Shares the per-slot page replay lock with fight_pick_enemy_spell.
 *set combat_enemy_cast_spell ""
 *set combat_enemy_cast_place 0
 *if (combat_active_target <= 0)
@@ -1172,13 +1180,15 @@
   *temp fpais_id {(fpais_p & ("cast_spell_" & fpais_k))}
   *temp fpais_uses {(fpais_p & ("cast_uses_" & fpais_k))}
   *temp fpais_chance {(fpais_p & ("cast_chance_" & fpais_k))}
-  *if ((fpais_id = "burning_hands") and ((fpais_uses > 0) and (fpais_chance > 0)))
-    *temp fpais_roll 0
-    *rand fpais_roll 1 100
-    *if (fpais_roll <= fpais_chance)
-      *set fpais_picked_spell fpais_id
-      *set fpais_picked_place fpais_k
-      *goto fpais_done
+  *if (((not(fpais_id = "")) and (not(fpais_id = {(fpais_p & "spell_base_id")}))) and ((fpais_uses > 0) and (fpais_chance > 0)))
+    *gosub_scene combat_spells spell_facts_load fpais_id
+    *if (((spell_fact_resolution = "save") and (spell_fact_dice_sides > 0)) and (spell_fact_npc_lines))
+      *temp fpais_roll 0
+      *rand fpais_roll 1 100
+      *if (fpais_roll <= fpais_chance)
+        *set fpais_picked_spell fpais_id
+        *set fpais_picked_place fpais_k
+        *goto fpais_done
   *set fpais_k + 1
   *goto fpais_loop
 *label fpais_done

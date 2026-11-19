@@ -5038,7 +5038,8 @@ stats = {
   "spell_fact_condition": "",
   "spell_fact_only_type": "",
   "spell_fact_reach": "",
-  "spell_fact_npc_lines": "false"
+  "spell_fact_npc_lines": "false",
+  "combat_cantrip_rider": ""
 };
 purchases = {};
 achievements = [];

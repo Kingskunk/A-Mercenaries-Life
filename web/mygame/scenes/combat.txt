@@ -621,8 +621,8 @@
 
 *label apply_enemy_spell_base
 *comment Replaces an enemy slot's base attack with an at-will attack spell when assigned, moving the body's own weapon into sidearm_* (Step 3c-2).
-*comment Since 3.6 step 2 (2026-11-18) it reads the data: the first assigned cantrip that is an attack-roll spell with enemy lines (spell_book.json combat.npc_lines),
-*comment or Poison Spray (a save in the player's data, an attack roll for an enemy since Step 3c-2). Its reach class becomes the slot's, so a caster with a
+*comment Since 3.6 step 2 (2026-11-18) it reads the data: the first assigned cantrip with enemy lines (spell_book.json combat.npc_lines) that is an attack-roll spell
+*comment or a save for damage (Poison Spray: since 3.6 step 3 a save, as for the player; load_enemy_base_save sets the save on each sync). Its reach class becomes the slot's, so a caster with a
 *comment long-reach cantrip keeps its distance as an archer does; a touch cantrip makes it a melee attacker. The id goes in spell_base_id for the prose and the
 *comment spell picker. Damage is one die, as at character level 1 (an enemy's cantrip does not scale with the player's level).
 *params aesb_slot
@@ -634,7 +634,7 @@
   *temp aesb_c {(aesb_p & ("cast_spell_" & aesb_k))}
   *if (not(aesb_c = ""))
     *gosub_scene combat_spells spell_facts_load aesb_c
-    *if (((spell_fact_slot_level = 0) and (spell_fact_npc_lines)) and ((spell_fact_resolution = "attack") or (aesb_c = "poison_spray")))
+    *if (((spell_fact_slot_level = 0) and (spell_fact_npc_lines)) and ((spell_fact_resolution = "attack") or ((spell_fact_resolution = "save") and (spell_fact_dice_sides > 0))))
       *set aesb_id aesb_c
   *set aesb_k + 1
   *goto apply_enemy_spell_base_loop
@@ -939,6 +939,29 @@
   *set combat_enemy_used_sidearm false
   *set feea_i + 1
   *goto fight_enemy_extra_attack_loop
+*return
+
+*comment AN ENEMY'S ATTACK-ROLL SPELL (COMBAT_ENGINE_PLAN 3.6): a leveled spell from its cast_spell_* places (Ray of Sickness, Scorching Ray), at the player. The use is spent,
+*comment the spell's numbers replace the body's (load_enemy_spell_profile), and each projectile is its own attack roll on its own page, as the extra attacks are (the dice
+*comment and the text lock per slot per page). It stops once the player is down to 1 HP, as they do. The body's own fields come back at the end (fight_sync_target_in).
+*label fight_enemy_cast_attack
+*params feca_p
+*gosub_scene combat_spells spend_npc_spell_use feca_p combat_enemy_cast_place
+*gosub_scene combat_spells load_enemy_spell_profile feca_p combat_enemy_cast_spell
+*temp feca_n spell_fact_projectiles
+*if (feca_n < 1)
+  *set feca_n 1
+*gosub_scene combat_dice resolve_enemy_attack
+*gosub_scene combat_prose fight_narrate_enemy_turn
+*temp feca_i 2
+*label fight_enemy_cast_attack_loop
+*if ((feca_i <= feca_n) and (hp_current > 1))
+  *page_break Another ray follows…
+  *gosub_scene combat_dice resolve_enemy_attack
+  *gosub_scene combat_prose fight_narrate_enemy_turn
+  *set feca_i + 1
+  *goto fight_enemy_cast_attack_loop
+*gosub fight_sync_target_in
 *return
 
 *comment EXTRA ATTACK ON AN ALLY (3.4a follow-up): fight_enemy_extra_attack's twin for an enemy whose attack an ally intercepts (fight_enemy_ally_attack). The same weapons ("own", "offhand"),
@@ -1699,6 +1722,9 @@
 *comment Opportunity attacks (2026-09-28): synced the same way, so find_opportunity_attacker and the OA
 *comment resolution read a bare scratch like every other field here rather than re-doing slot indirection.
 *set combat_enemy_oa_used {(fti_p & "oa_used")}
+*comment An at-will save cantrip as the body's attack (Poison Spray, COMBAT_ENGINE_PLAN 3.6 step 3): the attack is a save, from the data, wherever the body attacks.
+*if (not({(fti_p & "spell_base_id")} = ""))
+  *gosub_scene combat_spells load_enemy_base_save fti_p
 *return
 
 *label fight_sync_target_out
@@ -4853,7 +4879,8 @@
       *gosub resolve_opportunity_attack
       *goto fight_move_spent
 
-  *if ((((combat_player_actions_left > 0) or (combat_cunning)) and (not(combat_player_on_difficult_terrain))) and (combat_player_restrained <= 0))
+  *comment Slowed (an enemy's Ray of Frost, 3.6 step 2): no Dash until the player has taken their next turn, as for an enemy.
+  *if (((((combat_player_actions_left > 0) or (combat_cunning)) and (not(combat_player_on_difficult_terrain))) and (combat_player_restrained <= 0)) and (combat_player_slowed <= 0))
     # [b][@{combat_cunning BONUS ACTION|ACTION}][/b] [b][Dash][/b] Push yourself for extra ground this turn@{combat_cunning .|, giving up anything else.}
       *comment Dash, RAW (2026-09-28): spends the action, grants ONE extra combat_player_moves_left, so a player
       *comment starting more than one tier out can close/open two tiers this turn -- at the cost of the action, so
@@ -8516,41 +8543,36 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *return
 *if (not(combat_player_hidden))
   *gosub_scene combat_ai fight_pick_enemy_spell
-*if (combat_enemy_cast_spell = "blindness")
-  *set combat_caster_name combat_enemy_name
-  *set combat_caster_epithet combat_enemy_epithet
-  *gosub_scene combat_spells resolve_npc_cast_blindness cepa_p "combat_player_" 7 combat_enemy_cast_place
-  *set combat_turn_advanced_this_page true
-  *return
-*if (combat_enemy_cast_spell = "burning_hands")
-  *gosub_scene combat_spells spend_npc_spell_use cepa_p combat_enemy_cast_place
-  *gosub_scene combat_spells load_enemy_spell_profile cepa_p "burning_hands"
-  *gosub_scene combat_dice resolve_enemy_attack
-  *gosub_scene combat_prose fight_narrate_enemy_turn
-  *set combat_enemy_used_sidearm false
-  *set combat_enemy_atk_save_stat ""
-  *set combat_enemy_atk_save_dc 0
-  *set combat_enemy_atk_save_half false
-  *set combat_enemy_atk_dmg_dice 1
-  *set combat_enemy_save_halved false
-  *set combat_turn_advanced_this_page true
-  *return
+*if (not(combat_enemy_cast_spell = ""))
+  *gosub_scene combat_spells spell_facts_load combat_enemy_cast_spell
+  *comment A save-or-condition spell (3.6 step 4: Blindness), from the data.
+  *if (((spell_fact_resolution = "save") and (spell_fact_dice_sides <= 0)) and (not(spell_fact_condition = "")))
+    *set combat_caster_name combat_enemy_name
+    *set combat_caster_epithet combat_enemy_epithet
+    *gosub_scene combat_spells resolve_npc_cast_condition cepa_p "combat_player_" 7 combat_enemy_cast_place combat_enemy_cast_spell
+    *set combat_turn_advanced_this_page true
+    *return
+  *comment An attack-roll spell, or a save-for-damage one (3.6 step 3: Burning Hands; half or none on a save, from the data), cast at the player.
+  *if ((spell_fact_resolution = "attack") or ((spell_fact_resolution = "save") and (spell_fact_dice_sides > 0)))
+    *gosub fight_enemy_cast_attack cepa_p
+    *set combat_turn_advanced_this_page true
+    *return
 *gosub_scene combat_ai fight_pick_enemy_move
 *gosub_scene combat_dice resolve_enemy_attack
 *gosub_scene combat_prose fight_narrate_enemy_turn
 *return
 
 *label fight_enemy_ally_attack
-*comment Shared enemy-vs-intercepting-ally attack dispatcher (Step 3c-2): lets an enemy in melee reach cast an assigned close-range attack-profile spell (burning_hands) before falling back to sidearm quick-draw and normal melee/ranged ally attack.
+*comment Shared enemy-vs-intercepting-ally attack dispatcher (Step 3c-2): lets an enemy in melee reach cast an assigned save-for-damage spell with enemy lines (Burning Hands; 3.6 step 3, from the data) before falling back to sidearm quick-draw and normal melee/ranged ally attack.
 *params feaa_slot
 *temp feaa_p (("combat_enemy" & feaa_slot) & "_")
 *set combat_enemy_cast_spell ""
 *set combat_enemy_cast_place 0
 *if ((combat_ranged_cornered) or (not(combat_enemy_weapon_type = "ranged")))
   *gosub_scene combat_ai fight_pick_ally_intercept_spell
-*if (combat_enemy_cast_spell = "burning_hands")
+*if (not(combat_enemy_cast_spell = ""))
   *gosub_scene combat_spells spend_npc_spell_use feaa_p combat_enemy_cast_place
-  *gosub_scene combat_spells load_enemy_spell_profile feaa_p "burning_hands"
+  *gosub_scene combat_spells load_enemy_spell_profile feaa_p combat_enemy_cast_spell
 *elseif ((combat_enemy_weapon_type = "ranged") and (combat_ranged_cornered))
   *gosub fight_enemy_quickdraw
 *gosub_scene combat_dice resolve_enemy_attack_on_ally combat_intercepting_ally
@@ -8699,6 +8721,14 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
       *set cnt_throw_place ability_action_place
     *if (cnt_throw_place > 0)
       *set cnt_web_balk false
+    *comment CASTING FROM RANGE (3.6, closing 3.9's gap): a melee enemy still out of reach with an assigned spell worth casting from there (an attack-roll spell whose reach
+    *comment holds the player, or Blindness) casts it instead of closing. The pick is cached per slot per page, so combat_enemy_player_action reads the same one.
+    *temp cnt_cast_from_range false
+    *if ((((not(combat_enemy_weapon_type = "ranged")) and (combat_enemy_range > 0)) and ((combat_intercepting_ally = 0) and (cnt_throw_place = 0))) and ((not(combat_player_hidden)) and (not((combat_player_surprise) and (cnt_first_pass)))))
+      *gosub_scene combat_ai fight_pick_enemy_spell
+      *if (not(combat_enemy_cast_spell = ""))
+        *set cnt_cast_from_range true
+        *set cnt_web_balk false
     *comment GREASE (2026-10-12, the user's call): a greased enemy that tries to MOVE must pass a DC 10 Dexterity check or fall prone and lose its turn; a prone one spends its next turn standing. Standing still and swinging never trips it.
     *comment Whether this enemy would move this turn is worked out here from the same facts the branches below use (close on the player or an ally, back off from a corner, take a terrain step); combat_grease_gate does the rest.
     *comment REACH (2026-10-12): a ranged enemy whose weapon does not reach you from where it stands must close first (a slinger is medium, an archer long). cnt_e_out is true when it is out of its own reach.
@@ -8735,7 +8765,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
         *set cnt_wants_move true
       *elseif (((combat_enemy_range > 0) and (cnt_frightened <= 0)) and (not((combat_ai_terrain_hold_position) and (combat_ai_terrain_step_reason = "chokepoint"))))
         *set cnt_wants_move true
-    *if ((cnt_web_balk) or (cnt_throw_place > 0))
+    *if (((cnt_web_balk) or (cnt_throw_place > 0)) or (cnt_cast_from_range))
       *set cnt_wants_move false
     *comment ENSNARING STRIKE: a held enemy takes the thorns and either struggles (if it meant to move) or fights from where it stands. The hold runs out after the spell's last round.
     *comment STUN (2026-11-01): a stunned enemy loses its turn before anything else is rolled for it (combat_stun_gate prints it and counts it down once per page).
@@ -9022,6 +9052,16 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *elseif (cnt_throw_place > 0)
       *comment ACTION ABILITIES (3.4a): thrown from where it stands, instead of closing this turn.
       *gosub_scene combat_abilities ability_use_action cnt_slot cnt_throw_place
+    *elseif (cnt_cast_from_range)
+      *comment Cast from where it stands (above), instead of closing this turn.
+      *gosub combat_enemy_player_action cnt_slot
+      *set combat_enemy_cast_spell ""
+      *set combat_enemy_cast_place 0
+      *set combat_turn_advanced_this_page true
+      *if (combat_player_can_die) and (hp_current <= 0)
+        *goto fight_player_died
+      *if (not(combat_player_can_die)) and (hp_current <= 1)
+        *goto fight_rescued
     *elseif ((cnt_web_balk) and (combat_enemy_range > 0))
       *comment WEB (3.4): its next step toward you would enter the webs, and it will not walk in (combat_ai_web_balk). A ranged foe already within its reach never comes here: it shoots from where it stands.
       *gosub_scene combat_prose flavor_web_balk
