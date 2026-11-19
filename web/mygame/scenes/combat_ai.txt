@@ -1119,6 +1119,35 @@
 *set {fpes_lock} true
 *return
 
+*comment OWN SIDE IN THE PATCH (3.9a 5): whether any living enemy, the caster included, stands at aosa_pos. A patch spell (Web, Grease) lands on the whole spot and
+*comment catches its own side as it does anyone (RAW), so an enemy caster will not lay one there. Sets combat_ai_own_side_here.
+*comment The player's side's twin: any living ally at apsa_pos (the player is checked by the caller). Sets combat_ai_own_side_here.
+*label ai_player_side_at
+*params apsa_pos
+*set combat_ai_own_side_here false
+*temp apsa_i 1
+*label ai_player_side_at_loop
+*if ((apsa_i <= combat_ally_slot_cap) and (not(combat_ai_own_side_here)))
+  *temp apsa_ap (("combat_ally" & apsa_i) & "_")
+  *if (({(apsa_ap & "hp")} > 0) and ({(apsa_ap & "position")} = apsa_pos))
+    *set combat_ai_own_side_here true
+  *set apsa_i + 1
+  *goto ai_player_side_at_loop
+*return
+
+*label ai_own_side_at
+*params aosa_pos
+*set combat_ai_own_side_here false
+*temp aosa_i 1
+*label ai_own_side_at_loop
+*if ((aosa_i <= combat_enemy_slot_cap) and (not(combat_ai_own_side_here)))
+  *temp aosa_ep (("combat_enemy" & aosa_i) & "_")
+  *if (({(aosa_ep & "hp")} > 0) and ({(aosa_ep & "position")} = aosa_pos))
+    *set combat_ai_own_side_here true
+  *set aosa_i + 1
+  *goto ai_own_side_at_loop
+*return
+
 *comment Per-spell worth-casting checks (explicit *if on literal ids, never construct variable names from spell_id).
 *label spell_worth_casting
 *params swc_caster_prefix swc_spell_id
@@ -1126,6 +1155,11 @@
 *if ({(swc_caster_prefix & "hp")} <= 0)
   *return
 *gosub_scene combat_spells spell_facts_load swc_spell_id
+*comment A patch spell is not laid where its own side stands (ai_own_side_at).
+*if ((swc_spell_id = "web") or (swc_spell_id = "grease"))
+  *gosub ai_own_side_at combat_lane_player_position
+  *if (combat_ai_own_side_here)
+    *return
 *comment Bane (3.6 step 4): worth it while the player is seen and not already Baned, the caster can see, and the player is within its reach.
 *if ((swc_spell_id = "bane") and (spell_fact_npc_lines))
   *if ((combat_player_hidden) or ((combat_player_bane_expires_round > 0) and (combat_player_bane_expires_round >= combat_round)))
@@ -1268,6 +1302,14 @@
 *gosub_scene combat_dice condition_has swce_caster_prefix "blinded"
 *if (condition_result)
   *return
+*comment A patch spell is not laid where its own side stands: the player or a living ally at the foe's spot (the allies' twin of ai_own_side_at).
+*if (swce_spell_id = "web")
+  *temp swce_spot {(swce_ep & "position")}
+  *if (combat_lane_player_position = swce_spot)
+    *return
+  *gosub ai_player_side_at swce_spot
+  *if (combat_ai_own_side_here)
+    *return
 *if ((spell_fact_resolution = "save") and (not(spell_fact_condition = "")))
   *gosub_scene combat_dice condition_has swce_ep spell_fact_condition
   *if (not(condition_result))
@@ -1300,6 +1342,12 @@
 *gosub_scene combat_dice condition_has swca_caster_prefix "blinded"
 *if (condition_result)
   *return
+*comment A patch spell is not laid where its own side stands (ai_own_side_at).
+*if ((swca_spell_id = "web") or (swca_spell_id = "grease"))
+  *temp swca_patch_pos {(swca_ap & "position")}
+  *gosub ai_own_side_at swca_patch_pos
+  *if (combat_ai_own_side_here)
+    *return
 *if (swca_spell_id = "grease")
   *temp gat_pos_6 {(swca_ap & "position")}
   *gosub_scene combat_spells grease_at gat_pos_6

@@ -302,6 +302,8 @@
 *set combat_player_dmg_bonus spell_fact_flat
 *if ((rsh_id = "eldritch_blast") and ((inv_agonizing_blast) and (cha_mod > 0)))
   *set combat_player_dmg_bonus cha_mod
+*comment A melee spell attack (an attack roll at touch reach: Shocking Grasp) sets off an enemy's Armor of Agathys (resolve_player_hit).
+*set combat_player_hit_touch (((rsh_is_attack_roll) and (spell_fact_resolution = "attack")) and (spell_fact_reach = "touch"))
 *gosub resolve_player_hit rsh_is_attack_roll
 *return
 
@@ -311,6 +313,10 @@
   *comment CRITICAL HIT: only an attack roll can crit (a save spell passes false). crit_check decides it: a natural 20, or a paralyzed target the player is Engaged with.
   *set combat_player_crit false
   *set combat_crit_tag ""
+  *comment AN ENEMY'S ARMOR OF AGATHYS (3.9a 5): a melee spell attack (combat_player_hit_touch, resolve_spell_hit) is answered as a melee weapon hit is; read before the damage takes the temp HP.
+  *temp cph_agathys 0
+  *if ((combat_player_hit_touch) and ({(("combat_enemy" & combat_active_target) & "_temp_hp")} > 0))
+    *set cph_agathys {(("combat_enemy" & combat_active_target) & "_agathys")}
   *if (rph_is_attack_roll)
     *gosub crit_check
   *set combat_hit_nat20 combat_player_crit
@@ -385,10 +391,13 @@
   *if (not(combat_fort_banner = ""))
     *set combat_fort_shown true
     *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} ${combat_fort_banner}"
+  *if (cph_agathys > 0)
+    *gosub enemy_agathys_bite cph_agathys
   *set combat_player_hit_locked true
   *set locked_combat_player_hit_page_id page_id
 *comment Back to one die, outside the lock, so a replayed page that skips the roll still clears what resolve_spell_hit set.
 *set combat_player_dmg_dice_count 1
+*set combat_player_hit_touch false
 ${combat_player_dmg_roll_banner}
 *line_break
 *return
@@ -398,6 +407,55 @@ ${combat_player_dmg_roll_banner}
 *comment Resolves weapon damage, Great Weapon Fighting rerolls, Sneak Attack, and Hex.
 *comment Outputs: combat_player_dmg_dealt, combat_sneak_attack_triggered
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment AN ENEMY'S ARMOR OF AGATHYS BITES THE PLAYER (3.9a 5): the cold a warded enemy sends back at the player's melee hit, a weapon's (resolve_player_weapon_hit) or a melee
+*comment spell attack's (resolve_player_hit, Shocking Grasp). Called inside the hit's own lock. Resisted as any blow on the player is; a fight the player cannot die in stops
+*comment at 1 HP. Printed after the blow's own lines (combat_spells.txt enemy_agathys_print); a second hit on the same page adds its line.
+*label enemy_agathys_bite
+*params eab_amt
+*gosub adjust_incoming_damage_packet eab_amt "cold"
+*temp eab_dmg combat_packet_damage
+*set hp_current - eab_dmg
+*if (hp_current < 0)
+  *set hp_current 0
+*if ((not(combat_player_can_die)) and (hp_current < 1))
+  *set hp_current 1
+*if (not(combat_enemy_agathys_page = page_id))
+  *set combat_enemy_agathys_banner ""
+  *set combat_enemy_agathys_site ""
+*set combat_enemy_agathys_page page_id
+*temp eab_line "[b][❄️ ${combat_enemy_name}'s Armor of Agathys bites back: ${eab_dmg} cold damage${combat_packet_suffix} | HP: ${hp_current} / ${hp_max}][/b]"
+*if (combat_enemy_agathys_banner = "")
+  *set combat_enemy_agathys_banner eab_line
+*else
+  *set combat_enemy_agathys_banner ((combat_enemy_agathys_banner & "[n/]") & eab_line)
+*return
+
+*comment THE WEAPON'S OWN DIE: read from weapon_damage ("1d6 piercing", set by equipment.txt for every weapon), never from its category. Every weapon in the game is one
+*comment die; a weapon_damage with no die ("1 bludgeoning", bare hands) gives 1, which resolve_player_weapon_hit reads as a flat 1 with no roll. Sets combat_player_dmg_dice_sides.
+*label weapon_die_sides
+*set combat_player_dmg_dice_sides 1
+*if (length(weapon_damage) < 4)
+  *return
+*if (not((weapon_damage#2) = "d"))
+  *return
+*temp wds_a (weapon_damage#3)
+*temp wds_b (weapon_damage#4)
+*if ((wds_a = "1") and (wds_b = "2"))
+  *set combat_player_dmg_dice_sides 12
+*elseif ((wds_a = "1") and (wds_b = "0"))
+  *set combat_player_dmg_dice_sides 10
+*elseif (wds_a = "8")
+  *set combat_player_dmg_dice_sides 8
+*elseif (wds_a = "6")
+  *set combat_player_dmg_dice_sides 6
+*elseif (wds_a = "4")
+  *set combat_player_dmg_dice_sides 4
+*elseif (wds_a = "3")
+  *set combat_player_dmg_dice_sides 3
+*elseif (wds_a = "2")
+  *set combat_player_dmg_dice_sides 2
+*return
+
 *label resolve_player_weapon_hit
 *if (not(combat_weapon_hit_locked)) or (not(locked_combat_weapon_hit_page_id = page_id))
   *comment AN ENEMY'S ARMOR OF AGATHYS (3.9a 5): read before the blow, since the blow may take the temp HP that keeps the ward up.
@@ -410,18 +468,26 @@ ${combat_player_dmg_roll_banner}
   *set combat_weapon_blocked false
   *set combat_weapon_defense_text ""
   *temp cwh_roll 0
-  *rand cwh_roll 1 combat_player_dmg_dice_sides
-  *if (((fighting_style = "great_weapon") and (weapon_hands = "two_handed")) and (not(weapon_type = "ranged")))
+  *comment A weapon with no die (bare hands, weapon_die_sides gives 1) deals a flat 1, and a critical hit has no die to double.
+  *temp cwh_flat (combat_player_dmg_dice_sides < 2)
+  *temp cwh_sides combat_player_dmg_dice_sides
+  *if (cwh_sides < 2)
+    *set cwh_sides 2
+  *if (cwh_flat)
+    *set cwh_roll 1
+  *else
+    *rand cwh_roll 1 cwh_sides
+  *if ((((fighting_style = "great_weapon") and (weapon_hands = "two_handed")) and (not(weapon_type = "ranged"))) and (not(cwh_flat)))
     *if (cwh_roll <= 2)
-      *rand cwh_roll 1 combat_player_dmg_dice_sides
+      *rand cwh_roll 1 cwh_sides
   *temp cwh_roll_str "${cwh_roll}"
-  *if (combat_player_crit)
+  *if ((combat_player_crit) and (not(cwh_flat)))
     *comment The second weapon die, with Great Weapon Fighting's reroll of a 1 or 2 like the first.
     *temp cwh_roll2 0
-    *rand cwh_roll2 1 combat_player_dmg_dice_sides
+    *rand cwh_roll2 1 cwh_sides
     *if (((fighting_style = "great_weapon") and (weapon_hands = "two_handed")) and (not(weapon_type = "ranged")))
       *if (cwh_roll2 <= 2)
-        *rand cwh_roll2 1 combat_player_dmg_dice_sides
+        *rand cwh_roll2 1 cwh_sides
     *set cwh_roll_str "${cwh_roll}+${cwh_roll2}"
     *set cwh_roll + cwh_roll2
   *set combat_player_dmg_dealt (cwh_roll + combat_player_dmg_bonus)
@@ -585,25 +651,8 @@ ${combat_player_dmg_roll_banner}
   *if (not(combat_fort_banner = ""))
     *set combat_fort_shown true
     *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} ${combat_fort_banner}"
-  *comment The ward answers a melee hit with cold (its data type), resisted as any blow on the player is; a fight the player cannot die in stops at 1 HP.
   *if (cwh_agathys > 0)
-    *gosub adjust_incoming_damage_packet cwh_agathys "cold"
-    *temp cwh_ag_dmg combat_packet_damage
-    *set hp_current - cwh_ag_dmg
-    *if (hp_current < 0)
-      *set hp_current 0
-    *if ((not(combat_player_can_die)) and (hp_current < 1))
-      *set hp_current 1
-    *comment Printed after the blow's own lines (combat_spells.txt enemy_agathys_print); a second hit on the same page adds its line.
-    *if (not(combat_enemy_agathys_page = page_id))
-      *set combat_enemy_agathys_banner ""
-      *set combat_enemy_agathys_site ""
-    *set combat_enemy_agathys_page page_id
-    *temp cwh_ag_line "[b][❄️ ${combat_enemy_name}'s Armor of Agathys bites back: ${cwh_ag_dmg} cold damage${combat_packet_suffix} | HP: ${hp_current} / ${hp_max}][/b]"
-    *if (combat_enemy_agathys_banner = "")
-      *set combat_enemy_agathys_banner cwh_ag_line
-    *else
-      *set combat_enemy_agathys_banner ((combat_enemy_agathys_banner & "[n/]") & cwh_ag_line)
+    *gosub enemy_agathys_bite cwh_agathys
   *set combat_weapon_hit_locked true
   *set locked_combat_weapon_hit_page_id page_id
 *if (not(combat_save_quiet))
@@ -749,6 +798,15 @@ ${combat_player_dmg_roll_banner}
     *if ((combat_player_prone) and (combat_enemy_range <= 0))
       *set combat_enemy_advantage true
       *set cea_def_prone true
+    *comment SHOCKING GRASP (RAW): advantage against a player in metal armour (the studded brigandine and scale mail, the mail shirt, the plate harness), as the player's has
+    *comment against a foe in metal (combat_enemy_metal_armor). The spell is the slot's cast, or its at-will cantrip when it is not using its sidearm.
+    *temp cea_def_metal false
+    *temp cea_sg_id combat_enemy_cast_spell
+    *if ((cea_sg_id = "") and (not(combat_enemy_used_sidearm)))
+      *set cea_sg_id {(("combat_enemy" & combat_active_target) & "_spell_base_id")}
+    *if ((cea_sg_id = "shocking_grasp") and (((armor_type = "brigandine") or (armor_type = "chain_jack")) or (armor_type = "plate_harness")))
+      *set combat_enemy_advantage true
+      *set cea_def_metal true
     *temp cea_dis false
     *comment Both disadvantage sources are precomputed into one flag rather than written as a mixed
     *comment `((A) or (B)) and (C)` condition. ChoiceScript's parser requires binary operators to be strictly
@@ -793,6 +851,8 @@ ${combat_player_dmg_roll_banner}
         *set cea_adv_label " (Advantage — Prone)"
       *elseif (cea_def_restrained)
         *set cea_adv_label " (Advantage — Restrained)"
+      *elseif (cea_def_metal)
+        *set cea_adv_label " (Advantage — Metal Armor)"
       *else
         *set cea_adv_label " (Advantage)"
     *comment Consumed on this actual roll (2026-09-28): reset both the bare scratch AND the per-slot field this
@@ -953,6 +1013,11 @@ ${combat_player_dmg_roll_banner}
       *set combat_cantrip_rider cea_base_id
     *elseif (cea_base_id = "shocking_grasp")
       *set player_oa_used true
+      *set combat_cantrip_rider cea_base_id
+    *elseif (cea_base_id = "chill_touch")
+      *comment Chill Touch (RAW 2024): the player regains no HP until the end of the caster's next turn (combat_player_no_heal_slot / _round, cleared at that turn's end in combat.txt).
+      *set combat_player_no_heal_slot combat_active_target
+      *set combat_player_no_heal_round combat_round
       *set combat_cantrip_rider cea_base_id
     *elseif (cea_base_id = "vicious_mockery")
       *comment Vicious Mockery (3.6 step 5): a failed save (the only way it lands, no damage on a save) puts disadvantage on the player's next attack roll, the flag a condition-on-hit sets.
@@ -1789,18 +1854,7 @@ ${combat_player_dmg_roll_banner}
       *comment An enemy hit by an ally makes its concentration save (3.9), lock 8.
       *gosub concentration_damage_check raa_ep raa_dmg_after 8
     *if (raa_agathys > 0)
-      *gosub adjust_damage_packet raa_ap raa_agathys "cold" 0
-      *temp raa_ag_dmg combat_packet_damage
-      *temp raa_ag_suffix combat_packet_suffix
-      *temp raa_ag_ename {(raa_ep & "name")}
-      *set {(raa_ap & "hp")} - raa_ag_dmg
-      *if ({(raa_ap & "hp")} <= 0)
-        *set {(raa_ap & "hp")} 0
-        *gosub concentration_end raa_ap
-      *else
-        *gosub concentration_damage_check raa_ap raa_ag_dmg 8
-      *temp raa_db {(raa_dmg_bannername)}
-      *set {(raa_dmg_bannername)} "${raa_db}[n/][b][❄️ ${raa_ag_ename}'s Armor of Agathys bites back: ${raa_ag_dmg} cold damage to ${raa_name}${raa_ag_suffix}][/b]"
+      *gosub ally_agathys_bite raa_ap raa_ep raa_agathys raa_dmg_bannername
   *set {(raa_lockname)} true
 *comment No trailing *line_break after the last banner here, deliberately -- fight_narrate_ally_attack (combat.txt),
 *comment the only caller, already opens with its own leading break. A break here too would stack into a full
@@ -1824,6 +1878,25 @@ ${combat_player_dmg_roll_banner}
 *comment (Magic Missile) lands every dart; a save spell has the foe save against the ally's cast_dc, half or none on a success as the data says. The damage meets the foe's
 *comment defenses (adjust_damage_packet), then the foe's concentration save (lock 8) or its end. Shares resolve_ally_attack's lock and banners, so a refresh prints the same.
 *comment Sets combat_ally_atk_hit (anything landed) and combat_enemy_save_halved (the foe saved for half), which the lines read.
+*comment AN ENEMY'S ARMOR OF AGATHYS BITES AN ALLY (3.9a 5): the cold a warded enemy (aab_ep) sends back at an ally's (aab_ap) melee hit, a weapon's (resolve_ally_attack)
+*comment or a melee spell attack's (resolve_ally_cast_damage, Shocking Grasp). Called inside the hit's own lock; the line joins the ally's damage banner (aab_bn names it).
+*label ally_agathys_bite
+*params aab_ap aab_ep aab_amt aab_bn
+*gosub adjust_damage_packet aab_ap aab_amt "cold" 0
+*temp aab_dmg combat_packet_damage
+*temp aab_suffix combat_packet_suffix
+*temp aab_ename {(aab_ep & "name")}
+*temp aab_name {(aab_ap & "name")}
+*set {(aab_ap & "hp")} - aab_dmg
+*if ({(aab_ap & "hp")} <= 0)
+  *set {(aab_ap & "hp")} 0
+  *gosub concentration_end aab_ap
+*else
+  *gosub concentration_damage_check aab_ap aab_dmg 8
+*temp aab_db {aab_bn}
+*set {aab_bn} "${aab_db}[n/][b][❄️ ${aab_ename}'s Armor of Agathys bites back: ${aab_dmg} cold damage to ${aab_name}${aab_suffix}][/b]"
+*return
+
 *label resolve_ally_cast_damage
 *params racd_a racd_e
 *temp racd_ap (("combat_ally" & racd_a) & "_")
@@ -1903,6 +1976,10 @@ ${combat_player_dmg_roll_banner}
         *set racd_dmg ((racd_dmg - (racd_dmg modulo 2)) / 2)
         *set combat_enemy_save_halved true
   *if ((combat_ally_atk_hit) and (racd_dmg > 0))
+    *comment AN ENEMY'S ARMOR OF AGATHYS (3.9a 5): a melee spell attack (an attack roll at touch reach: Shocking Grasp) is answered as a melee blow is; read before the damage takes the temp HP.
+    *temp racd_agathys 0
+    *if (((spell_fact_resolution = "attack") and (spell_fact_reach = "touch")) and ({(racd_ep & "temp_hp")} > 0))
+      *set racd_agathys {(racd_ep & "agathys")}
     *temp racd_pre racd_dmg
     *gosub adjust_damage_packet racd_ep racd_dmg spell_fact_dmg_type racd_e
     *temp racd_after combat_packet_damage
@@ -1936,6 +2013,8 @@ ${combat_player_dmg_roll_banner}
       *if (not(racd_rider = ""))
         *temp racd_db {(racd_dmg_bannername)}
         *set {(racd_dmg_bannername)} (racd_db & " [b][${racd_rider}][/b]")
+    *if (racd_agathys > 0)
+      *gosub ally_agathys_bite racd_ap racd_ep racd_agathys racd_dmg_bannername
   *comment AN ALLY'S AREA SPELL (3.9a 5, 2026-11-19): a save spell aimed at an area ("engaged": everyone at the caster's position; "spot": everyone at the target's) also
   *comment catches every other living enemy there. Each saves on its own, against the same damage roll (racd_full), half on a success as the data says. Their lines join the damage banner.
   *if ((spell_fact_resolution = "save") and (racd_full > 0))

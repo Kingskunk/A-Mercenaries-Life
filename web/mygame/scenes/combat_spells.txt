@@ -703,7 +703,12 @@
   *set combat_cast_result + spell_damage_mod
 *if (combat_cast_result < 1)
   *set combat_cast_result 1
+*set combat_heal_note ""
 *if (combat_friendly_target = 0)
+  *comment Chilled (an enemy's Chill Touch): no HP regained while it lasts; the roll still prints, as 0 with the cause.
+  *if (combat_player_no_heal_slot > 0)
+    *set combat_cast_result 0
+    *set combat_heal_note " (Chilled)"
   *set hp_current + combat_cast_result
   *if (hp_current > hp_max)
     *set hp_current hp_max
@@ -1253,6 +1258,35 @@ ${combat_blindness_banner}
     *gosub web_catch rcw_i
   *set rcw_i + 1
   *goto resolve_cast_web_enemy_loop
+*comment The webs hold anyone on the spot (RAW): the player and each living ally standing there save too, against the player's own DC (source combat_player_web, so
+*comment ending the concentration frees them). Each is its own save lock: 7 for the player, the ally's slot for an ally.
+*set combat_foe_web_owner "combat_player_"
+*set combat_foe_web_dc spell_save_dc
+*if ((combat_lane_player_position = rcw_pos) and (combat_player_restrained <= 0))
+  *set combat_save_locked_7 false
+  *set combat_save_quiet true
+  *gosub_scene combat_dice resolve_save "combat_player_" "dexterity" "Dexterity" spell_save_dc 7
+  *set combat_save_quiet false
+  ${combat_save_banner_7}
+  *line_break
+  *if (check_success)
+    *gosub_scene combat_dice condition_apply "combat_player_" "restrained" 10 spell_save_dc "combat_player_web"
+    [b][🕸️ You are Restrained in your own web][/b]
+  *else
+    [b][💨 You keep free of the strands][/b]
+  *line_break
+*set rcw_i 1
+*label resolve_cast_web_ally_loop
+*if (rcw_i <= combat_ally_slot_cap)
+  *temp rcw_ap (("combat_ally" & rcw_i) & "_")
+  *if (({(rcw_ap & "hp")} > 0) and ({(rcw_ap & "position")} = rcw_pos))
+    *gosub foe_web_catch rcw_ap rcw_i
+    *if (not(combat_foe_web_catch_line = ""))
+      ${combat_foe_web_catch_line}
+      *line_break
+  *set rcw_i + 1
+  *goto resolve_cast_web_ally_loop
+*set combat_foe_web_owner ""
 *gosub_scene combat_prose print_concentration_ended_banner
 *return
 
@@ -1263,26 +1297,30 @@ ${combat_blindness_banner}
 *comment the patch stands; concentration_end clears it). Its own side is caught as anyone is (foe_web_catch, 3.9a 5), and fire burns it (foe_web_burn_check).
 *label foe_web_place
 *params fwp_owner fwp_pos
+*comment An ally's Web lays "ally_web" (the lane names it apart); the rules are the same for both.
+*temp fwp_type "foe_web"
+*if ((((fwp_owner = "combat_ally1_") or (fwp_owner = "combat_ally2_")) or (fwp_owner = "combat_ally3_")) or (fwp_owner = "combat_ally4_"))
+  *set fwp_type "ally_web"
 *if (combat_terrain1_type = "none")
-  *set combat_terrain1_type "foe_web"
+  *set combat_terrain1_type fwp_type
   *set combat_terrain1_owner fwp_owner
   *set combat_terrain1_position fwp_pos
   *set combat_terrain1_capacity 0
   *set combat_terrain1_blocks_los false
 *elseif (combat_terrain2_type = "none")
-  *set combat_terrain2_type "foe_web"
+  *set combat_terrain2_type fwp_type
   *set combat_terrain2_owner fwp_owner
   *set combat_terrain2_position fwp_pos
   *set combat_terrain2_capacity 0
   *set combat_terrain2_blocks_los false
 *elseif (combat_terrain3_type = "none")
-  *set combat_terrain3_type "foe_web"
+  *set combat_terrain3_type fwp_type
   *set combat_terrain3_owner fwp_owner
   *set combat_terrain3_position fwp_pos
   *set combat_terrain3_capacity 0
   *set combat_terrain3_blocks_los false
 *elseif (combat_terrain4_type = "none")
-  *set combat_terrain4_type "foe_web"
+  *set combat_terrain4_type fwp_type
   *set combat_terrain4_owner fwp_owner
   *set combat_terrain4_position fwp_pos
   *set combat_terrain4_capacity 0
@@ -1386,7 +1424,7 @@ ${combat_player_web_check_banner}
   *line_break
 *return
 
-*comment An enemy that moved this turn, at the start of its action (combat_enemy_player_action, fight_enemy_ally_attack): stepping into a Web (the player's or an enemy's) is a
+*comment An enemy that moved this turn, at the start of its action (combat_enemy_player_action, fight_enemy_ally_attack) or, with no action after the move, at its turn's end: stepping into a Web (the player's or an enemy's) is a
 *comment Dexterity save or Restrained, and onto Grease a Dexterity save or Prone. Once a turn (combat_enemy_step_checked); combat_enemy_turn_from_slot and _pos are set at the
 *comment top of its turn. A fall sets combat_enemy_step_fell, and its action is lost (it can take none while Prone).
 *label enemy_step_in_check
@@ -1414,6 +1452,31 @@ ${combat_player_web_check_banner}
   *set combat_enemy_step_fell {(esic_p & "prone")}
 *return
 
+*comment An ally that moved this turn, before its attack or cast (combat.txt ally branch) or, with none after the move, at its turn's end (cnt_ally_tail): stepping into an
+*comment enemy's Web is a Dexterity save or Restrained, and onto Grease a Dexterity save or Prone. Once a turn (combat_ally_step_checked); combat_ally_turn_from_slot and
+*comment _pos are set at the top of its turn. A fall sets combat_ally_step_fell, and its action is lost.
+*label ally_step_in_check
+*params asic_slot
+*set combat_ally_step_fell false
+*if (not(combat_ally_turn_from_slot = asic_slot))
+  *return
+*if (combat_ally_step_checked)
+  *return
+*temp asic_p (("combat_ally" & asic_slot) & "_")
+*temp asic_pos {(asic_p & "position")}
+*if (asic_pos = combat_ally_turn_from_pos)
+  *return
+*set combat_ally_step_checked true
+*gosub foe_web_turn_check asic_p asic_slot asic_pos
+*gosub grease_at asic_pos
+*if ((combat_grease_here) and (not({(asic_p & "prone")})))
+  *set combat_grease_land_banner ""
+  *gosub grease_save asic_p asic_slot
+  ${combat_grease_land_banner}
+  *line_break
+  *set combat_ally_step_fell {(asic_p & "prone")}
+*return
+
 *comment AN ENEMY'S ARMOR OF AGATHYS, PRINTED (3.9a 5): the cold a warded enemy sent back at the player's melee hit this page (resolve_player_weapon_hit), after the blow's
 *comment lines. Called where the player's blow ends (fight_check_enemy_hp) and at the end of an enemy's turn (an opportunity attack); the first call on the page claims it
 *comment (eap_site), so a replay prints it there again and nowhere else.
@@ -1432,13 +1495,13 @@ ${combat_enemy_agathys_banner}
 *label foe_web_at
 *params fwa_pos
 *set combat_foe_web_owner ""
-*if ((combat_terrain1_type = "foe_web") and (combat_terrain1_position = fwa_pos))
+*if (((combat_terrain1_type = "foe_web") or (combat_terrain1_type = "ally_web")) and (combat_terrain1_position = fwa_pos))
   *set combat_foe_web_owner combat_terrain1_owner
-*elseif ((combat_terrain2_type = "foe_web") and (combat_terrain2_position = fwa_pos))
+*elseif (((combat_terrain2_type = "foe_web") or (combat_terrain2_type = "ally_web")) and (combat_terrain2_position = fwa_pos))
   *set combat_foe_web_owner combat_terrain2_owner
-*elseif ((combat_terrain3_type = "foe_web") and (combat_terrain3_position = fwa_pos))
+*elseif (((combat_terrain3_type = "foe_web") or (combat_terrain3_type = "ally_web")) and (combat_terrain3_position = fwa_pos))
   *set combat_foe_web_owner combat_terrain3_owner
-*elseif ((combat_terrain4_type = "foe_web") and (combat_terrain4_position = fwa_pos))
+*elseif (((combat_terrain4_type = "foe_web") or (combat_terrain4_type = "ally_web")) and (combat_terrain4_position = fwa_pos))
   *set combat_foe_web_owner combat_terrain4_owner
 *set combat_foe_web_dc 0
 *if (combat_foe_web_owner = "combat_enemy1_")
@@ -1453,6 +1516,14 @@ ${combat_enemy_agathys_banner}
   *set combat_foe_web_dc combat_enemy5_cast_dc
 *elseif (combat_foe_web_owner = "combat_enemy6_")
   *set combat_foe_web_dc combat_enemy6_cast_dc
+*elseif (combat_foe_web_owner = "combat_ally1_")
+  *set combat_foe_web_dc combat_ally1_cast_dc
+*elseif (combat_foe_web_owner = "combat_ally2_")
+  *set combat_foe_web_dc combat_ally2_cast_dc
+*elseif (combat_foe_web_owner = "combat_ally3_")
+  *set combat_foe_web_dc combat_ally3_cast_dc
+*elseif (combat_foe_web_owner = "combat_ally4_")
+  *set combat_foe_web_dc combat_ally4_cast_dc
 *if (combat_foe_web_dc <= 0)
   *set combat_foe_web_dc 10
 *return
@@ -1490,7 +1561,7 @@ ${combat_enemy_agathys_banner}
 *label foe_web_catch_enemies_loop
 *if (fwce_i <= combat_enemy_slot_cap)
   *temp fwce_p (("combat_enemy" & fwce_i) & "_")
-  *if (({(fwce_p & "hp")} > 0) and ({(fwce_p & "position")} = fwce_pos))
+  *if ((({(fwce_p & "hp")} > 0) and ({(fwce_p & "position")} = fwce_pos)) and (not(fwce_p = combat_foe_web_catch_skip)))
     *gosub foe_web_catch fwce_p fwce_i
     *if (not(combat_foe_web_catch_line = ""))
       *set combat_foe_web_catch_all ((combat_foe_web_catch_all & "[n/]") & combat_foe_web_catch_line)
@@ -1519,6 +1590,10 @@ ${combat_enemy_agathys_banner}
 *elseif ((wst_src = "combat_enemy4_web") or (wst_src = "combat_enemy5_web"))
   *set combat_web_src_is true
 *elseif (wst_src = "combat_enemy6_web")
+  *set combat_web_src_is true
+*elseif ((wst_src = "combat_ally1_web") or (wst_src = "combat_ally2_web"))
+  *set combat_web_src_is true
+*elseif ((wst_src = "combat_ally3_web") or (wst_src = "combat_ally4_web"))
   *set combat_web_src_is true
 *return
 
@@ -1909,13 +1984,14 @@ ${combat_web_burn_banner}
     *set rncb_extra ((rncb_extra & "[n/]") & (({("combat_save_banner_" & rncb_i)} & "[n/]") & combat_spell_effect_banner))
   *set rncb_i + 1
   *goto rncb_spot_loop
-*comment An enemy's Web leaves its patch at the spot whoever saved (3.9), and the caster concentrates on it either way.
-*temp rncb_is_ally (((rncb_key = "ally1") or (rncb_key = "ally2")) or ((rncb_key = "ally3") or (rncb_key = "ally4")))
-*if ((rncb_spell = "web") and (not(rncb_is_ally)))
+*comment A Web leaves its patch at the spot whoever saved (3.9), and the caster concentrates on it either way: an enemy's ("foe_web") or an ally's ("ally_web").
+*comment Every other living enemy at the spot saves too (3.9a 5): for an enemy's Web its own side, the caster included; for an ally's, the foes beside its target.
+*if (rncb_spell = "web")
   *gosub foe_web_place rncb_caster rncb_center
   *set rncb_any true
-  *comment Its own side is caught too (3.9a 5): every living enemy at the spot, the caster included, saves.
+  *set combat_foe_web_catch_skip rncb_target
   *gosub foe_web_catch_enemies rncb_center
+  *set combat_foe_web_catch_skip ""
   *set rncb_extra (rncb_extra & combat_foe_web_catch_all)
 *comment A concentration spell (Cause Fear, 3.9): the caster concentrates on it once it takes hold on anyone. A save leaves nothing to hold, so no concentration starts.
 *if ((spell_fact_concentration) and (rncb_any))

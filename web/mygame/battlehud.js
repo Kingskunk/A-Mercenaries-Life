@@ -720,7 +720,9 @@
     var archery = (type === "ranged" && s.fighting_style === "archery") ? 2 : 0;
     var flimsy = truthy(s[pre + "_flimsy"]) ? -1 : 0;
     var atk = num(s.prof_bonus) + abMod + archery + magic + flimsy;
-    var dice = type === "finesse" ? "1d4" : (type === "ranged" ? "1d6" : (hands === "two_handed" ? "1d12" : "1d8"));
+    // The weapon's own die, from its damage string ("1d6 piercing"); one with no die ("1 bludgeoning", bare hands) is a flat 1. Matches combat_dice.txt weapon_die_sides.
+    var dieMatch = String(s[pre + "_damage"] || "").match(/^(\d+d\d+)/);
+    var dice = dieMatch ? dieMatch[1] : "1";
     var dueling = (s.fighting_style === "dueling" && type !== "ranged" && hands !== "two_handed") ? 2 : 0;
     var rage = (!opts.ignoreRage && s.character_class === "barbarian" && truthy(s.is_raging) && type !== "ranged" && (type !== "finesse" || strMod > dexMod)) ? num(s.barbarian_rage_damage_bonus) : 0;
     var dmgMod = abMod + dueling + rage + magic;

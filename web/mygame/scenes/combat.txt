@@ -1551,6 +1551,7 @@
 *set combat_player_stood_round 0
 *set combat_player_fell_round 0
 *set combat_player_step_pending false
+*set combat_player_no_heal_slot 0
 *set combat_player_moves_held 0
 *set combat_player_paralyzed 0
 *set combat_player_paralyzed_dc 0
@@ -2522,17 +2523,14 @@
 *set combat_roa_last_dmg_roll_banner ""
 *if (check_success)
   *set combat_player_dmg_type weapon_damage_type
+  *comment The weapon's own die (combat_dice.txt weapon_die_sides), never its category's.
+  *gosub_scene combat_dice weapon_die_sides
   *if (weapon_type = "finesse")
-    *set combat_player_dmg_dice_sides 4
     *if (str_mod > dex_mod)
       *set combat_player_dmg_bonus str_mod
     *else
       *set combat_player_dmg_bonus dex_mod
-  *elseif (weapon_hands = "two_handed")
-    *set combat_player_dmg_dice_sides 12
-    *set combat_player_dmg_bonus str_mod
   *else
-    *set combat_player_dmg_dice_sides 8
     *set combat_player_dmg_bonus str_mod
   *if (fighting_style = "dueling")
     *if (not(weapon_hands = "two_handed"))
@@ -2650,31 +2648,84 @@
 *temp ccd_stay (((ccd_p_shot * ccd_p_shot) * ccd_avg_shot))
 *if (ccd_has_staff)
   *set ccd_stay ((ccd_p_staff * ccd_avg_staff) * 100)
+*comment A spell it can cast from Engaged (touch reach, or an area around itself) can be worth staying for. Each assigned place with a use and a chance left is read
+*comment from its data (ccd_spell_value): an attack roll by its hit chance, a save by the player's chance to fail (their save's ability modifier as the estimate),
+*comment always-hits in full; the best one counts if it beats the shot.
+*temp ccd_ep (("combat_enemy" & combat_active_target) & "_")
+*temp ccd_spell_stay 0
+*temp ccd_k 1
 *if (combat_active_target > 0)
-  *temp ccd_has_bh false
-  *temp ccd_ep (("combat_enemy" & combat_active_target) & "_")
-  *if ((({(ccd_ep & "cast_spell_1")} = "burning_hands") and ({(ccd_ep & "cast_uses_1")} > 0)) and ({(ccd_ep & "cast_chance_1")} > 0))
-    *set ccd_has_bh true
-  *if ((({(ccd_ep & "cast_spell_2")} = "burning_hands") and ({(ccd_ep & "cast_uses_2")} > 0)) and ({(ccd_ep & "cast_chance_2")} > 0))
-    *set ccd_has_bh true
-  *if ((({(ccd_ep & "cast_spell_3")} = "burning_hands") and ({(ccd_ep & "cast_uses_3")} > 0)) and ({(ccd_ep & "cast_chance_3")} > 0))
-    *set ccd_has_bh true
-  *if (ccd_has_bh)
-    *temp ccd_bh_atk {(ccd_ep & "cast_atk_bonus")}
-    *if (ccd_bh_atk <= 0)
-      *set ccd_bh_atk combat_enemy_atk_bonus
-    *temp ccd_p_bh (5 * (21 - (ccd_ac - ccd_bh_atk)))
-    *if (ccd_p_bh < 5)
-      *set ccd_p_bh 5
-    *if (ccd_p_bh > 95)
-      *set ccd_p_bh 95
-    *temp ccd_bh_stay ((ccd_p_bh * 7) * 100)
-    *if (ccd_bh_stay > ccd_stay)
-      *set ccd_stay ccd_bh_stay
+  *gosub ccd_spell_loop
 *if ((ccd_oa_sides > 0) and (ccd_oa_max >= combat_enemy_hp))
   *set combat_cornered_choice "disengage"
 *elseif ((ccd_dealt - ccd_taken) < ccd_stay)
   *set combat_cornered_choice "stay"
+*return
+
+*comment combat_cornered_decide's loop over the slot's three spell places (ccd_ep, ccd_k), keeping the best score in ccd_stay.
+*label ccd_spell_loop
+*if (ccd_k > 3)
+  *return
+*temp ccd_sid {(ccd_ep & ("cast_spell_" & ccd_k))}
+*if (((not(ccd_sid = "")) and ({(ccd_ep & ("cast_uses_" & ccd_k))} > 0)) and ({(ccd_ep & ("cast_chance_" & ccd_k))} > 0))
+  *gosub ccd_spell_value ccd_sid
+  *if (ccd_spell_stay > ccd_stay)
+    *set ccd_stay ccd_spell_stay
+*set ccd_k + 1
+*goto ccd_spell_loop
+
+*comment combat_cornered_decide's spell score (combat_ai's units: percent chance times average damage, times 100). 0 for a spell that cannot be cast from Engaged
+*comment or does no damage. Reads the slot in ccd_ep and the player's AC in ccd_ac.
+*label ccd_spell_value
+*params csv_id
+*set ccd_spell_stay 0
+*gosub_scene combat_spells spell_facts_load csv_id
+*if (spell_fact_dice_sides <= 0)
+  *return
+*if ((not(spell_fact_reach = "touch")) and (not(spell_fact_target = "engaged")))
+  *return
+*temp csv_n spell_fact_dice_count
+*if (csv_n < 1)
+  *set csv_n 1
+*temp csv_avg (((csv_n * (spell_fact_dice_sides + 1)) / 2) + spell_fact_flat)
+*if (spell_fact_resolution = "auto")
+  *set ccd_spell_stay ((100 * csv_avg) * 100)
+*elseif (spell_fact_resolution = "attack")
+  *temp csv_atk {(ccd_ep & "cast_atk_bonus")}
+  *if (csv_atk <= 0)
+    *set csv_atk combat_enemy_atk_bonus
+  *temp csv_p (5 * (21 - (ccd_ac - csv_atk)))
+  *if (csv_p < 5)
+    *set csv_p 5
+  *if (csv_p > 95)
+    *set csv_p 95
+  *set ccd_spell_stay ((csv_p * csv_avg) * 100)
+*elseif (spell_fact_resolution = "save")
+  *temp csv_dc {(ccd_ep & "cast_dc")}
+  *if (csv_dc <= 0)
+    *set csv_dc 10
+  *temp csv_mod 0
+  *if (spell_fact_save_ability = "strength")
+    *set csv_mod str_mod
+  *elseif (spell_fact_save_ability = "dexterity")
+    *set csv_mod dex_mod
+  *elseif (spell_fact_save_ability = "constitution")
+    *set csv_mod con_mod
+  *elseif (spell_fact_save_ability = "intelligence")
+    *set csv_mod int_mod
+  *elseif (spell_fact_save_ability = "wisdom")
+    *set csv_mod wis_mod
+  *elseif (spell_fact_save_ability = "charisma")
+    *set csv_mod cha_mod
+  *temp csv_fail (5 * ((csv_dc - 1) - csv_mod))
+  *if (csv_fail < 5)
+    *set csv_fail 5
+  *if (csv_fail > 95)
+    *set csv_fail 95
+  *temp csv_exp (csv_fail * csv_avg)
+  *if (spell_fact_half_on_save)
+    *set csv_exp (csv_exp + (((100 - csv_fail) * csv_avg) / 2))
+  *set ccd_spell_stay (csv_exp * 100)
 *return
 
 *label fight_check_all_dead
@@ -3054,6 +3105,10 @@
 *comment ============================================================================
 
 *label combat_begin_round
+*comment Chilled from a caster that has since fallen: it has no next turn to end it on, so it ends with the round.
+*if (combat_player_no_heal_slot > 0)
+  *if ({(("combat_enemy" & combat_player_no_heal_slot) & "_hp")} <= 0)
+    *set combat_player_no_heal_slot 0
 *comment Opportunity attacks (2026-09-28): each enemy regains its one reaction for the new round, exactly like
 *comment the advantage/disadvantage reset below -- same per-slot loop, and deliberately NOT the round-start
 *comment player_movement_restricted clear, which is a condition expiring rather than a budget refreshing.
@@ -4372,9 +4427,8 @@
   *temp cw_hr_spec ""
   *if (rebuke_armed)
     *set cw_hr_spec "already_armed"
+  *comment A reaction, armed for free as Shield is: no action needed (it spends the reaction and a slot only when it fires).
   *gosub combat_eval_spell_why "reaction" cw_slot_any true cw_hr_spec true
-  *if ((combat_why_res = "") and (combat_player_actions_left <= 0))
-    *set combat_why_res "no_action"
   *set combat_why_hellish_rebuke combat_why_res
 *temp combat_has_cantrip_ok false
 *temp combat_why_booming_blade "unowned"
@@ -5789,9 +5843,12 @@
   *if ((combat_can_second_wind) and (combat_player_bonus_left > 0))
     # [b][BONUS ACTION][/b] [b][Second Wind][/b] Grit your teeth through the pain, and keep going.
       *gosub_scene character_progression second_wind
-      A surge of stubborn, practiced discipline steadies your breathing and closes the worst of your scrapes.
+      *if (combat_player_no_heal_slot > 0)
+        You steady your breathing, but the grave-cold in the wound will not let it close.
+      *else
+        A surge of stubborn, practiced discipline steadies your breathing and closes the worst of your scrapes.
       *line_break
-      [b][🩸 Hit Points: ${hp_current} / ${hp_max}][/b]
+      [b][🩸 Hit Points: ${hp_current} / ${hp_max}@{(combat_player_no_heal_slot > 0)  (Chilled)|}][/b]
       *line_break
       *goto fight_bonus_spent
 
@@ -6399,7 +6456,7 @@ You let the curse spill out low and wide, ill fortune threading itself around th
 *gosub_scene combat_spells resolve_cast_healing_word
 A sharp, ringing cadence leaves your lips. Warmth rushes through your marrow, knitting shut the worst of your wounds.
 *line_break
-[b][🩸 Healing Word: Restored ${combat_cast_result} HP | HP: ${hp_current}/${hp_max}][/b]
+[b][🩸 Healing Word: Restored ${combat_cast_result} HP${combat_heal_note} | HP: ${hp_current}/${hp_max}][/b]
 *line_break
 *goto fight_bonus_spent
 
@@ -6446,7 +6503,7 @@ A sharp, ringing cadence leaves your lips. Warmth rushes through your marrow, kn
 *if (combat_friendly_target = 0)
   You press a palm flat to the worst of it and hold it there until the bleeding stops under your hand.
   *line_break
-  [b][🩸 Cure Wounds: Restored ${combat_cast_result} HP | HP: ${hp_current}/${hp_max}][/b]
+  [b][🩸 Cure Wounds: Restored ${combat_cast_result} HP${combat_heal_note} | HP: ${hp_current}/${hp_max}][/b]
 *else
   You get a hand onto ${combat_friendly_name} and hold it against the wound until the edges of it close.
   *line_break
@@ -6485,7 +6542,7 @@ A sharp, ringing cadence leaves your lips. Warmth rushes through your marrow, kn
   *else
     You break the seal and speak the line aloud. Warmth floods through you, and the worst of your wounds close.
   *line_break
-  [b][🩸 Healing Word: Restored ${combat_cast_result} HP | HP: ${hp_current}/${hp_max}][/b]
+  [b][🩸 Healing Word: Restored ${combat_cast_result} HP${combat_heal_note} | HP: ${hp_current}/${hp_max}][/b]
   *line_break
 *else
   *temp cfct_name {(("combat_ally" & combat_friendly_target) & "_name")}
@@ -6590,7 +6647,7 @@ A sharp, ringing cadence leaves your lips. Warmth rushes through your marrow, kn
 *gosub_scene combat_spells resolve_cast_healing_word
 You break the seal and speak the line aloud. Warmth floods through you, and the worst of your wounds close.
 *line_break
-[b][🩸 Healing Word: Restored ${combat_cast_result} HP | HP: ${hp_current}/${hp_max}][/b]
+[b][🩸 Healing Word: Restored ${combat_cast_result} HP${combat_heal_note} | HP: ${hp_current}/${hp_max}][/b]
 *line_break
 *goto fight_bonus_spent
 
@@ -7343,27 +7400,19 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *set check_flat_bonus 0
   *if (check_success)
     *set combat_player_dmg_type weapon_damage_type
+    *comment The weapon's own die (combat_dice.txt weapon_die_sides, from weapon_damage), never its category's.
+    *gosub_scene combat_dice weapon_die_sides
     *if (weapon_type = "finesse")
-      *set combat_player_dmg_dice_sides 4
       *comment Matches the STR-or-higher check above -- 5e uses the same
       *comment ability for a finesse weapon's attack and its damage.
       *if (str_mod > dex_mod)
         *set combat_player_dmg_bonus str_mod
       *else
         *set combat_player_dmg_bonus dex_mod
+    *elseif (weapon_type = "ranged")
+      *set combat_player_dmg_bonus dex_mod
     *else
-      *if (weapon_type = "ranged")
-        *set combat_player_dmg_dice_sides 6
-        *set combat_player_dmg_bonus dex_mod
-      *else
-        *comment Two-handedness lives in weapon_hands (the broadaxe is weapon_type "melee"); ranged and
-        *comment finesse are handled above, so a two-handed bow stays a d6.
-        *if (weapon_hands = "two_handed")
-          *set combat_player_dmg_dice_sides 12
-          *set combat_player_dmg_bonus str_mod
-        *else
-          *set combat_player_dmg_dice_sides 8
-          *set combat_player_dmg_bonus str_mod
+      *set combat_player_dmg_bonus str_mod
     *comment True Strike: the spellcasting modifier replaces the Strength or Dexterity one, and the player may turn the damage to Radiant. The level 5 Radiant dice are rolled with the hit, in combat_dice.txt.
     *if (true_strike_on)
       *set combat_player_dmg_bonus spell_damage_mod
@@ -8699,6 +8748,8 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *set combat_enemy_cast_spell ""
 *set combat_enemy_cast_place 0
 *comment STEPPING IN (3.9a 5): a move into a Web or onto Grease this turn is a save now; a fall to Prone costs the action. Marked like an ability, so no extra attack follows.
+*comment A movepool pick is per attack (fight_pick_enemy_move); one left over from an earlier attacker on this page would put its lines on a spell.
+*set combat_enemy_move2_used false
 *gosub_scene combat_spells enemy_step_in_check cepa_slot
 *if (combat_enemy_step_fell)
   *set combat_enemy_cast_spell "prone"
@@ -9559,18 +9610,15 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *comment Frightened's end-of-turn Wisdom save, Blinded's Constitution save and Slowed's countdown all run in condition_tick (combat_dice.txt), which reads the live fields, so a Cause Fear whose concentration broke during this turn is already gone. If it died during its own turn (a Rebuke, Armor of Agathys) there is nothing to roll for.
     *if (combat_enemy_hp > 0)
       *temp cnt_cp (("combat_enemy" & cnt_slot) & "_")
-      *comment WEB: a foe that moved into the webs this turn makes its Dexterity save once it stops there (difficult terrain ends the move on the patch).
-      *temp cnt_web_to {(cnt_cp & "position")}
-      *temp cnt_web_held2 {(cnt_cp & "restrained")}
-      *comment Skipped when it already saved on stepping in, before its action (enemy_step_in_check).
-      *if (((not(cnt_web_to = cnt_web_from)) and (cnt_web_held2 <= 0)) and (not(combat_enemy_step_checked)))
-        *gosub_scene combat_movement combat_web_at cnt_web_to
-        *if (combat_web_here)
-          *gosub_scene combat_spells web_catch cnt_slot
-        *gosub_scene combat_spells foe_web_turn_check cnt_cp cnt_slot cnt_web_to
+      *comment STEPPING IN (3.9a 5): a foe that moved this turn and took no action after it (a Dash, a retreat) saves for the Web or the Grease it stopped in here, as one
+      *comment that acted did before its action (enemy_step_in_check, which skips a slot that already checked).
+      *gosub_scene combat_spells enemy_step_in_check cnt_slot
       *comment GREASE (3.9a): ending the turn on a patch is a Dexterity save or Prone.
       *gosub_scene combat_spells grease_end_turn cnt_cp cnt_slot
       *gosub_scene combat_dice condition_tick cnt_cp cnt_slot
+      *comment Chilled ends at the end of the caster's next turn (a turn in a later round than the hit).
+      *if ((combat_player_no_heal_slot = cnt_slot) and (combat_round > combat_player_no_heal_round))
+        *set combat_player_no_heal_slot 0
     *gosub_scene combat_dice concentration_reconcile
 *if (cnt_kind = "ally")
   *comment select_ally_attack_target (2026-09-29, plan §11.1) picks this ally's target: ranged-prefers-ranged or
@@ -9605,6 +9653,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *comment AN ENEMY'S WEB (3.9a 5): an ally that starts its turn in one, not already held, saves; one that moves in saves as its turn ends (cnt_ally_tail, read
     *comment only for this slot, since some turns reach the tail before this line).
     *set combat_ally_turn_from_slot cnt_slot
+    *set combat_ally_step_checked false
     *set combat_ally_turn_from_pos {(("combat_ally" & cnt_slot) & "_position")}
     *temp cnt_a_web_p (("combat_ally" & cnt_slot) & "_")
     *gosub_scene combat_spells foe_web_turn_check cnt_a_web_p cnt_slot combat_ally_turn_from_pos
@@ -9740,8 +9789,10 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
           [b][🏃 ${combat_attacker_name} Falls Back to ${combat_range_display_name}][/b]
           *line_break
           *set combat_turn_advanced_this_page true
+          *comment STEPPING IN (3.9a 5): falling back into an enemy's Web or onto Grease is a save first; a fall to Prone costs the shot.
+          *gosub_scene combat_spells ally_step_in_check cnt_slot
           *gosub_scene combat_ai select_ally_attack_target cnt_slot
-          *if (combat_active_target > 0)
+          *if ((combat_active_target > 0) and (not(combat_ally_step_fell)))
             *set {(("combat_ally" & cnt_slot) & "_target")} combat_active_target
             *gosub_scene combat_dice resolve_ally_attack cnt_slot combat_active_target
             *set combat_ally_break_deferred true
@@ -9785,7 +9836,11 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
             *line_break
         *if (not(cnt_a_weapon = "ranged"))
           *gosub_scene combat_ai combat_choose_terrain_step "ally" cnt_slot cnt_a_target_position true false
-        *if (cnt_a_cast)
+        *comment STEPPING IN (3.9a 5): a step into an enemy's Web or onto Grease is a save first; a fall to Prone costs the action.
+        *gosub_scene combat_spells ally_step_in_check cnt_slot
+        *if (combat_ally_step_fell)
+          *set combat_turn_advanced_this_page true
+        *elseif (cnt_a_cast)
           *gosub fight_ally_cast cnt_slot combat_active_target
           *gosub fight_check_all_dead
           *if (combat_all_enemies_dead)
@@ -9872,7 +9927,10 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
               [b][🏃 ${combat_attacker_name} Closes to ${combat_range_display_name}@{cnt_a_dashed  (Dashed the extra distance)|}][/b]
             *line_break
             *set combat_turn_advanced_this_page true
+            *comment STEPPING IN (3.9a 5), as above.
             *if ((cnt_a_range <= 0) and (not(cnt_a_dashed)))
+              *gosub_scene combat_spells ally_step_in_check cnt_slot
+            *if (((cnt_a_range <= 0) and (not(cnt_a_dashed))) and (not(combat_ally_step_fell)))
               *gosub_scene combat_dice resolve_ally_attack cnt_slot combat_active_target
               *set combat_ally_break_deferred true
               *gosub_scene combat_prose fight_narrate_ally_attack "ally" cnt_slot "enemy" combat_active_target combat_ally_atk_hit
@@ -9903,10 +9961,8 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
         *goto fight_victory_quiet
     *if ({(("combat_ally" & cnt_slot) & "_hp")} > 0)
       *temp cnt_ap (("combat_ally" & cnt_slot) & "_")
-      *if (combat_ally_turn_from_slot = cnt_slot)
-        *temp cnt_a_web_to {(cnt_ap & "position")}
-        *if (not(cnt_a_web_to = combat_ally_turn_from_pos))
-          *gosub_scene combat_spells foe_web_turn_check cnt_ap cnt_slot cnt_a_web_to
+      *comment An ally that moved with no action after it saves here (ally_step_in_check skips one that already did).
+      *gosub_scene combat_spells ally_step_in_check cnt_slot
       *comment GREASE (3.9a): ending the turn on a patch is a Dexterity save or Prone.
       *gosub_scene combat_spells grease_end_turn cnt_ap cnt_slot
       *gosub_scene combat_dice condition_tick cnt_ap 0
@@ -10382,32 +10438,34 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *goto fight_library
 
 *label fight_dev_grease_brawl
-*comment Dev-hub only (3.9a 6, 2026-11-19): Prone and the area spells in a crowd. An Oil-Mage (Grease, Thunderwave, Arms of Hadar) fights beside two swordsmen,
-*comment everyone close together; the player has Rook, a guard. Grease patches, falls and standing up, the engaged-area spells catching the player and Rook
-*comment together, and the riders, all at once.
+*comment Dev-hub only (3.9a 6, 2026-11-19): Prone and the area spells in a crowd. An Oil-Mage (Grease, Thunderwave, Arms of Hadar) fights beside two swordsmen;
+*comment the player has Rook, a guard. The swordsmen start behind the mage, so it can grease the player's spot before they arrive (an enemy caster will not lay a
+*comment patch on its own side, combat_ai.txt ai_own_side_at), and then they must cross it. Grease patches, falls and standing up, the engaged-area spells catching
+*comment the player and Rook together, and the riders, all at once.
 *set combat_is_nonlethal false
 *set combat_range_mode "expanded6"
-*set combat_lib_1 "swordsman"
-*set combat_enemy_name_override "Left Swordsman"
-*set combat_enemy_epithet_override "the left swordsman"
-*set combat_enemy_range 1
+*comment The mage is slot 1, so it acts before the swordsmen on a tied initiative.
+*set combat_lib_1 "hedge_mage"
+*set combat_enemy_name_override "Oil-Mage"
+*set combat_enemy_epithet_override "the oil-mage"
+*set combat_enemy_range 2
+*set combat_enemy_cast_spell_1_override "grease"
+*set combat_enemy_cast_uses_1_override 2
+*set combat_enemy_cast_chance_1_override 70
+*set combat_enemy_cast_spell_2_override "thunderwave"
+*set combat_enemy_cast_uses_2_override 2
+*set combat_enemy_cast_chance_2_override 80
+*set combat_enemy_cast_spell_3_override "arms_of_hadar"
+*set combat_enemy_cast_uses_3_override 1
+*set combat_enemy_cast_chance_3_override 80
 *set combat_lib_2 "swordsman"
-*set combat_enemy2_name_override "Right Swordsman"
-*set combat_enemy2_epithet_override "the right swordsman"
-*set combat_enemy2_range 1
-*set combat_lib_3 "hedge_mage"
-*set combat_enemy3_name_override "Oil-Mage"
-*set combat_enemy3_epithet_override "the oil-mage"
-*set combat_enemy3_range 2
-*set combat_enemy3_cast_spell_1_override "grease"
-*set combat_enemy3_cast_uses_1_override 2
-*set combat_enemy3_cast_chance_1_override 70
-*set combat_enemy3_cast_spell_2_override "thunderwave"
-*set combat_enemy3_cast_uses_2_override 2
-*set combat_enemy3_cast_chance_2_override 80
-*set combat_enemy3_cast_spell_3_override "arms_of_hadar"
-*set combat_enemy3_cast_uses_3_override 1
-*set combat_enemy3_cast_chance_3_override 80
+*set combat_enemy2_name_override "Left Swordsman"
+*set combat_enemy2_epithet_override "the left swordsman"
+*set combat_enemy2_range 4
+*set combat_lib_3 "swordsman"
+*set combat_enemy3_name_override "Right Swordsman"
+*set combat_enemy3_epithet_override "the right swordsman"
+*set combat_enemy3_range 4
 *set combat_ally_lib_1 "guard"
 *set combat_ally1_name_override "Rook"
 *set combat_ally1_epithet_override "Rook"

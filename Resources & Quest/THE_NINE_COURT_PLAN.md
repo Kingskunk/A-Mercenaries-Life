@@ -27,35 +27,15 @@
 
 ---
 
-## 4. Quest Structure: *The Broken Spindle* (Working Title)
+## 4. Quest Hook & Initial Foundation
 
-Following the standard Branch-and-Bottleneck architecture:
-
-### **Beat 1: The Broken Thread (Hask's Revelation)**
+### **The Broken Thread (The Hask Junction)**
 * **Requirement:** Lyra's *Five Silver* debt repaid; player has established trust with Hask in Dredge-End.
-* **Action:** The player brings Hask an inquiry regarding the aunt. Hask reveals that before she died, she gave him a pawned tin box or a spool of unusual, heavy cord she hid from her handlers.
-* **Handoff:** The player takes the clue back to Lyra at the barracks or a quiet lane. Lyra recognizes the material and points out that the dye and oil come from a specialized shop in the Middle Ward.
-
-### **Beat 2: The Intermediary in Middle Ward (The Assembly Trail)**
-* **The Setting:** A dye-works, weaver's loft, or apothecary in the Middle Ward that handles the intermediary step in the production line.
-* **Tactical Approaches (Archetype Parity):**
-  * *Stealth/Finesse (DEX):* Infiltrate the loft rafters or picking the ledger desk after hours.
-  * *Social/Streetwise (CHA):* Pose as an agent of the Court or intimidate the dyer into revealing his handler.
-  * *Cunning/Investigation (INT/WIS):* Analyze the delivery slates and identify the drop location on the border of Civic Heights.
-  * *Combat/Force (STR):* Intercept the courier when they come to collect the finished bundle.
-
-### **Beat 3: The Gathering in Upper Valen (Climax & Discovery)**
-* **The Setting:** A private townhouse, embalming hall, or ancestral vault in Upper Wharves or the lower terraces of Civic Heights where the components are assembled into the finished ritual garment.
-* **The Discovery:** Lyra confronts the reality of the Nine Court. She learns her aunt was murdered for a passing comment, revealing the terrifying reach of ancient patrician families who treat slum lives as ink to be blotted out.
-* **The Resolution / Dilemma:**
-  * *Vengeance / The Assassin's Arrow:* Helping Lyra put a bodkin arrow through the patrician handler, avenging her aunt but risking heat from high-society watchmen.
-  * *Leverage / Blackmail:* Stealing the completed ritual vestment and proof of the Court's barbaric practices, securing immunity and lifelong funding for her cousins' room and board.
-  * *Exposure / The Legal Net:* Handing the evidence over to the Port Watch or Gilded Scales authorities, exposing the archaic cult cell at the cost of drawing their ire.
+* **Setup:** The player brings an inquiry to Hask regarding Lyra's aunt. Hask reveals his friendship with her and shares what he knows—or what she left with him—opening the door for Lyra to begin unravelling the mystery.
 
 ---
 
 ## 5. Narrative & Design Guardrails
 
 1. **No Black Oath Villainization:** Ensure dialogues clearly separate the Black Oath's street crime from the Nine Court's archaic patrician atrocities. The Black Oath are transactional crooks; the Nine Court are an elite, esoteric bloodline cult.
-2. **Lyra's Agency:** Lyra remains an archer and a survivor. She should have distinct tactical input during Beat 2 and Beat 3, taking overwatch positions with her recurve while the player operates on the ground.
-3. **World Scale:** The quest starts in Dredge-End, crosses Middle Ward, and touches the fringes of Civic Heights, physically reflecting the social ladder of Port Valen.
+2. **Lyra's Agency:** Lyra remains an archer and a survivor driven by protecting her family and discovering the truth behind her aunt's death.
