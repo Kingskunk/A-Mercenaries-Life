@@ -956,6 +956,24 @@
   *set feca_n 1
 *gosub_scene combat_dice resolve_enemy_attack
 *gosub_scene combat_prose fight_narrate_enemy_turn
+*comment DISSONANT WHISPERS' STEP PROVOKES (RAW): the foe resolve_enemy_attack picked before moving the player swings now, on its own page (each attack locks its dice
+*comment per slot per page, and that foe may already have attacked on this one). Then the caster's fields come back for the rest of its turn.
+*if ((combat_dw_oa_page = page_id) and (combat_dw_oa_slot > 0))
+  *temp feca_caster combat_active_target
+  *temp feca_oa combat_dw_oa_slot
+  *page_break The whispers drive you back…
+  *set combat_dw_oa_slot 0
+  *comment A plain weapon swing: the cast is set aside while it resolves (its lines and numbers belong to the caster), and comes back after.
+  *temp feca_spell combat_enemy_cast_spell
+  *temp feca_auto combat_enemy_atk_auto
+  *set combat_enemy_cast_spell ""
+  *set combat_enemy_atk_auto false
+  *set combat_oa_candidate feca_oa
+  *gosub resolve_opportunity_attack
+  *set combat_active_target feca_caster
+  *gosub fight_sync_target_in
+  *set combat_enemy_cast_spell feca_spell
+  *set combat_enemy_atk_auto feca_auto
 *temp feca_i 2
 *label fight_enemy_cast_attack_loop
 *if ((feca_i <= feca_n) and (hp_current > 1))

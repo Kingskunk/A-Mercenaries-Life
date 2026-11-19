@@ -1034,11 +1034,21 @@ ${combat_player_dmg_roll_banner}
       *set player_oa_used true
       *set combat_cantrip_rider combat_enemy_cast_spell
     *elseif (combat_enemy_cast_spell = "dissonant_whispers")
-      *comment Dissonant Whispers: the player spends their reaction to move one step away from the caster, if they have it to spend (not Stunned or Paralyzed). Only the
-      *comment caster's distance changes, as with Thunderwave's push; the opportunity attacks a step away from other foes would draw are not rolled.
+      *comment Dissonant Whispers (RAW): the player spends their reaction to move one step away from the caster, if they have it to spend (not Stunned or Paralyzed). It is
+      *comment a real move (combat_shift_all_ranges, as Fall Back), so it provokes: the foe that gets the swing is picked now, while the ranges are still the old ones
+      *comment (find_opportunity_attacker), and swings once the caster's lines have printed (fight_enemy_cast_attack, on a page of its own).
       *if ((((not(player_oa_used)) and (not(player_stunned))) and (combat_player_paralyzed <= 0)) and (combat_enemy_range < combat_max_range))
         *set player_oa_used true
-        *gosub_scene combat_movement combat_shift_target_range combat_active_target "away"
+        *temp cea_dw_caster combat_active_target
+        *gosub_scene combat find_opportunity_attacker
+        *set combat_dw_oa_slot combat_oa_candidate
+        *set combat_dw_oa_page page_id
+        *set combat_oa_candidate 0
+        *temp cea_dw_dir "fallback"
+        *if ({(("combat_enemy" & cea_dw_caster) & "_side")} < 0)
+          *set cea_dw_dir "push"
+        *gosub_scene combat_movement combat_shift_all_ranges cea_dw_dir
+        *set combat_enemy_range {(("combat_enemy" & cea_dw_caster) & "_range")}
         *set combat_cantrip_rider combat_enemy_cast_spell
   *set {(cea_bannername)} ""
   *if (combat_enemy_hit_success)

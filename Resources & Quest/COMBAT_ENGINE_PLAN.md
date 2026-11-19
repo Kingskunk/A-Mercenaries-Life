@@ -106,7 +106,7 @@ The user wants as much of the D&D system working as possible before subclasses s
 
 ### 3.2 Gaps in what exists
 
-- **Dissonant Whispers' step draws opportunity attacks** (RAW: the move away from the caster provokes as any move does, the caster's own included). Today only the caster's distance changes (`combat_shift_target_range` in `resolve_enemy_attack`), so nobody else is left behind. Doing it right means moving the player on the lane during the caster's turn (as Fall Back does, `combat_shift_all_ranges` away from the caster), then the opportunity attack (`find_opportunity_attacker`, `resolve_opportunity_attack`) once the caster's own lines have printed, since both share the active-enemy scratch fields. A piece of its own.
+None open. Add one here when a play-through finds it.
 
 ### 3.3 Real conditions for the special moves
 
