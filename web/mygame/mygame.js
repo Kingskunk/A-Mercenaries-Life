@@ -3280,6 +3280,8 @@ stats = {
   "combat_enemy6_agathys": "0",
   "combat_enemy_agathys_page": "",
   "combat_precast_page": "",
+  "ability_target": "",
+  "combat_web_incl_player": false,
   "combat_foe_web_catch_skip": "",
   "combat_player_no_heal_slot": 0,
   "combat_player_no_heal_round": 0,

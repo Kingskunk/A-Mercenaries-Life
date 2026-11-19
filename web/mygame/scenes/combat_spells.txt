@@ -1341,7 +1341,9 @@ ${combat_blindness_banner}
 *set combat_player_web_check_round combat_round
 *if (combat_player_restrained > 0)
   *return
+*set combat_web_incl_player true
 *gosub foe_web_at combat_lane_player_position
+*set combat_web_incl_player false
 *temp fwpc_owner combat_foe_web_owner
 *if (fwpc_owner = "")
   *return
@@ -1392,7 +1394,9 @@ ${combat_player_web_check_banner}
 *set combat_player_step_page page_id
 *set combat_player_step_banner ""
 *temp psic_pos combat_lane_player_position
+*set combat_web_incl_player true
 *gosub foe_web_at psic_pos
+*set combat_web_incl_player false
 *if ((not(combat_foe_web_owner = "")) and (combat_player_restrained <= 0))
   *temp psic_dc combat_foe_web_dc
   *temp psic_owner combat_foe_web_owner
@@ -1503,8 +1507,20 @@ ${combat_enemy_agathys_banner}
   *set combat_foe_web_owner combat_terrain3_owner
 *elseif (((combat_terrain4_type = "foe_web") or (combat_terrain4_type = "ally_web")) and (combat_terrain4_position = fwa_pos))
   *set combat_foe_web_owner combat_terrain4_owner
+*comment The player's own Web holds the player and allies too (RAW). Asked for only on their checks (combat_web_incl_player): enemies have their own (web_catch).
+*if ((combat_foe_web_owner = "") and (combat_web_incl_player))
+  *if ((combat_terrain1_type = "web") and (combat_terrain1_position = fwa_pos))
+    *set combat_foe_web_owner "combat_player_"
+  *elseif ((combat_terrain2_type = "web") and (combat_terrain2_position = fwa_pos))
+    *set combat_foe_web_owner "combat_player_"
+  *elseif ((combat_terrain3_type = "web") and (combat_terrain3_position = fwa_pos))
+    *set combat_foe_web_owner "combat_player_"
+  *elseif ((combat_terrain4_type = "web") and (combat_terrain4_position = fwa_pos))
+    *set combat_foe_web_owner "combat_player_"
 *set combat_foe_web_dc 0
-*if (combat_foe_web_owner = "combat_enemy1_")
+*if (combat_foe_web_owner = "combat_player_")
+  *set combat_foe_web_dc spell_save_dc
+*elseif (combat_foe_web_owner = "combat_enemy1_")
   *set combat_foe_web_dc combat_enemy1_cast_dc
 *elseif (combat_foe_web_owner = "combat_enemy2_")
   *set combat_foe_web_dc combat_enemy2_cast_dc
@@ -1572,7 +1588,10 @@ ${combat_enemy_agathys_banner}
 *comment A turn's share: an enemy or ally that starts its turn in an enemy's Web, or ends its turn there after moving in, saves (foe_web_catch) and its lines print.
 *label foe_web_turn_check
 *params fwtc_prefix fwtc_lock fwtc_pos
+*comment An ally is held by the player's Web too; an enemy's own check for that one is web_catch.
+*set combat_web_incl_player (not(fwtc_prefix = (("combat_enemy" & fwtc_lock) & "_")))
 *gosub foe_web_at fwtc_pos
+*set combat_web_incl_player false
 *gosub foe_web_catch fwtc_prefix fwtc_lock
 *if (not(combat_foe_web_catch_line = ""))
   ${combat_foe_web_catch_line}

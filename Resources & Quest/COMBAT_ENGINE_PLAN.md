@@ -106,18 +106,7 @@ The user wants as much of the D&D system working as possible before subclasses s
 
 ### 3.2 Gaps in what exists
 
-Each is small and stands alone.
-
-**Enemy spells at the player**
-- Dissonant Whispers moves the player away from the caster, but the opportunity attacks that step would draw from other foes are not rolled.
-
-**Allies as casters and targets**
-- No ally library type casts: only the ally slot 1 overrides give an ally spells.
-- An ally never casts Grease: `spell_worth_casting_at_enemy` takes a spell only for its damage or its condition, and Grease has neither in the data.
-- The Net is thrown at the player only; netting an ally needs an ally-target hook.
-- Thunderwave cast by an ally does not push the enemy it hits.
-- An enemy's Thunderwave or Dissonant Whispers moves an ally only when the caster is the foe that ally fights (or it has none), since the ally's lane range is kept against that foe.
-- The player's own Web catches the player and allies only when it is cast; one who starts a turn in it, or walks in, makes no save (enemies do, through `web_catch`).
+- **Dissonant Whispers' step draws opportunity attacks** (RAW: the move away from the caster provokes as any move does, the caster's own included). Today only the caster's distance changes (`combat_shift_target_range` in `resolve_enemy_attack`), so nobody else is left behind. Doing it right means moving the player on the lane during the caster's turn (as Fall Back does, `combat_shift_all_ranges` away from the caster), then the opportunity attack (`find_opportunity_attacker`, `resolve_opportunity_attack`) once the caster's own lines have printed, since both share the active-enemy scratch fields. A piece of its own.
 
 ### 3.3 Real conditions for the special moves
 

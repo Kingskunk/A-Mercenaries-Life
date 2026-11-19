@@ -1296,6 +1296,14 @@
 *gosub_scene combat_movement combat_reach_tier spell_fact_reach
 *if (swce_d > combat_reach_tier_result)
   *return
+*comment GREASE (3.9a): worth it at a foe that is not Prone and has no patch under it, while the caster can see and none of its own side stands there (below).
+*if (swce_spell_id = "grease")
+  *if ({(swce_ep & "prone")})
+    *return
+  *temp swce_gpos {(swce_ep & "position")}
+  *gosub_scene combat_spells grease_at swce_gpos
+  *if (combat_grease_here)
+    *return
 *if (((spell_fact_resolution = "attack") or (spell_fact_resolution = "auto")) or ((spell_fact_resolution = "save") and (spell_fact_dice_sides > 0)))
   *set combat_spell_worth_it true
   *return
@@ -1303,12 +1311,15 @@
 *if (condition_result)
   *return
 *comment A patch spell is not laid where its own side stands: the player or a living ally at the foe's spot (the allies' twin of ai_own_side_at).
-*if (swce_spell_id = "web")
+*if ((swce_spell_id = "web") or (swce_spell_id = "grease"))
   *temp swce_spot {(swce_ep & "position")}
   *if (combat_lane_player_position = swce_spot)
     *return
   *gosub ai_player_side_at swce_spot
   *if (combat_ai_own_side_here)
+    *return
+  *if (swce_spell_id = "grease")
+    *set combat_spell_worth_it true
     *return
 *if ((spell_fact_resolution = "save") and (not(spell_fact_condition = "")))
   *gosub_scene combat_dice condition_has swce_ep spell_fact_condition

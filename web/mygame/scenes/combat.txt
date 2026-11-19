@@ -3402,6 +3402,10 @@
 *gosub_scene combat_spells foe_web_player_check
 *comment STEPPING IN (3.9a 5): a move into an enemy's Web or onto Grease this turn is a save now (player_step_in_check).
 *gosub_scene combat_spells player_step_in_check
+*comment Caught by either check: the movement is held now, as at the top of the hub, so the menu offers no step.
+*if ((combat_player_restrained > 0) and (combat_player_moves_left > 0))
+  *set combat_player_moves_held combat_player_moves_left
+  *set combat_player_moves_left 0
 *comment Shield's +5 reaches the player's printed AC only after the reaction has actually fired. While it is
 *comment merely armed, the caster is still on their ordinary AC and is waiting to see a hit that the +5 can
 *comment deflect. This keeps the round banner and sidebar honest without writing the temporary bonus into
@@ -8801,7 +8805,10 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *params fac_a fac_e
 *temp fac_ap (("combat_ally" & fac_a) & "_")
 *gosub_scene combat_spells spell_facts_load combat_ally_cast_spell
-*if (((spell_fact_resolution = "save") and (spell_fact_dice_sides <= 0)) and (not(spell_fact_condition = "")))
+*if (combat_ally_cast_spell = "grease")
+  *comment Grease (3.9a): the patch at the foe's spot, everyone there saving (resolve_npc_cast_grease, the enemy's own, with the third-person lines).
+  *gosub_scene combat_spells resolve_npc_cast_grease fac_ap combat_ally_cast_place (("combat_enemy" & fac_e) & "_")
+*elseif (((spell_fact_resolution = "save") and (spell_fact_dice_sides <= 0)) and (not(spell_fact_condition = "")))
   *gosub_scene combat_spells resolve_npc_cast_condition fac_ap (("combat_enemy" & fac_e) & "_") fac_e combat_ally_cast_place combat_ally_cast_spell
 *else
   *gosub_scene combat_spells spend_npc_spell_use fac_ap combat_ally_cast_place
@@ -8847,6 +8854,18 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *gosub_scene combat_spells enemy_step_in_check feaa_slot
 *if (combat_enemy_step_fell)
   *goto feaa_tail
+*comment ACTION ABILITIES (3.4a) at an ally, as at the player: an action ability (the Net) in range of the ally comes before an assigned spell and a plain attack.
+*temp feaa_d ({(feaa_p & "position")} - {(("combat_ally" & feaa_ally) & "_position")})
+*if (feaa_d < 0)
+  *set feaa_d (0 - feaa_d)
+*set ability_target (("combat_ally" & feaa_ally) & "_")
+*gosub_scene combat_abilities ability_pick_action feaa_slot feaa_d
+*if (ability_action_place > 0)
+  *gosub_scene combat_abilities ability_use_action feaa_slot ability_action_place
+  *set ability_target ""
+  *set combat_enemy_cast_spell "ability"
+  *goto feaa_tail
+*set ability_target ""
 *gosub_scene combat_ai fight_pick_ally_intercept_spell feaa_ally
 *if (not(combat_enemy_cast_spell = ""))
   *gosub_scene combat_spells spell_facts_load combat_enemy_cast_spell
@@ -9021,7 +9040,8 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *temp cnt_web_balk combat_ai_web_balk
     *comment ACTION ABILITIES (3.4a): a melee enemy with a thrown action ability (the Net) still out of reach uses it before closing (the cnt_throw_place branch below).
     *temp cnt_throw_place 0
-    *if ((((not(combat_enemy_weapon_type = "ranged")) and (combat_enemy_range > 0)) and (combat_intercepting_ally = 0)) and (not((combat_player_surprise) and (cnt_first_pass))))
+    *comment Only while the player is its goal; one closing on an ally throws at that ally (the goal-ally pick below).
+    *if ((((not(combat_enemy_weapon_type = "ranged")) and (combat_enemy_range > 0)) and ((combat_intercepting_ally = 0) and (combat_enemy_goal_ally = 0))) and (not((combat_player_surprise) and (cnt_first_pass))))
       *gosub_scene combat_abilities ability_pick_action cnt_slot combat_enemy_range
       *set cnt_throw_place ability_action_place
     *if (cnt_throw_place > 0)
@@ -9039,10 +9059,21 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *temp cnt_cast_at_goal false
     *if (((not(combat_enemy_weapon_type = "ranged")) and (combat_enemy_goal_ally > 0)) and ((combat_intercepting_ally = 0) and (cnt_throw_place = 0)))
       *if (not((combat_player_surprise) and (cnt_first_pass)))
-        *gosub_scene combat_ai fight_pick_ally_intercept_spell combat_enemy_goal_ally
-        *if (not(combat_enemy_cast_spell = ""))
+        *comment A thrown action ability (the Net) at the ally first, from the two lane positions (fight_enemy_ally_attack throws it; the pick is cached per slot per page).
+        *temp cnt_g_d ({(("combat_enemy" & cnt_slot) & "_position")} - {(("combat_ally" & combat_enemy_goal_ally) & "_position")})
+        *if (cnt_g_d < 0)
+          *set cnt_g_d (0 - cnt_g_d)
+        *set ability_target (("combat_ally" & combat_enemy_goal_ally) & "_")
+        *gosub_scene combat_abilities ability_pick_action cnt_slot cnt_g_d
+        *set ability_target ""
+        *if (ability_action_place > 0)
           *set cnt_cast_at_goal true
           *set cnt_web_balk false
+        *else
+          *gosub_scene combat_ai fight_pick_ally_intercept_spell combat_enemy_goal_ally
+          *if (not(combat_enemy_cast_spell = ""))
+            *set cnt_cast_at_goal true
+            *set cnt_web_balk false
     *comment GREASE (2026-10-12, the user's call): a greased enemy that tries to MOVE must pass a DC 10 Dexterity check or fall prone and lose its turn; a prone one spends its next turn standing. Standing still and swinging never trips it.
     *comment Whether this enemy would move this turn is worked out here from the same facts the branches below use (close on the player or an ally, back off from a corner, take a terrain step); combat_grease_gate does the rest.
     *comment REACH (2026-10-12): a ranged enemy whose weapon does not reach you from where it stands must close first (a slinger is medium, an archer long). cnt_e_out is true when it is out of its own reach.

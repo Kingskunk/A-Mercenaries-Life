@@ -241,6 +241,10 @@
 *if ({(apa_p & "ability_pick_page")} = page_id)
   *set ability_action_place {(apa_p & "ability_pick_place")}
   *return
+*comment The target: the player, or the ally in ability_target (fight_enemy_ally_attack sets it, and clears it after).
+*temp apa_tp "combat_player_"
+*if (not(ability_target = ""))
+  *set apa_tp ability_target
 *temp apa_k 1
 *label ability_pick_action_loop
 *if ((apa_k <= 3) and (ability_action_place = 0))
@@ -250,9 +254,9 @@
     *gosub ability_facts_load apa_id
     *if (((ability_fact_kind = "action") and (apa_range >= ability_fact_range_min)) and (apa_range <= ability_fact_range_max))
       *temp apa_worth true
-      *if ((ability_fact_condition = "restrained") and (combat_player_restrained > 0))
+      *if ((ability_fact_condition = "restrained") and ({(apa_tp & "restrained")} > 0))
         *set apa_worth false
-      *if (combat_player_hidden)
+      *if ((combat_player_hidden) and (apa_tp = "combat_player_"))
         *set apa_worth false
       *if (apa_worth)
         *temp apa_roll 1
@@ -280,6 +284,11 @@
 *temp aua_v 1
 *temp aua_dc 0
 *temp aua_note ""
+*comment The target: the player, or the ally in ability_target (see ability_pick_action). An ally has no cover, Dodge or Shield here; its own AC is the mark.
+*temp aua_tp "combat_player_"
+*if (not(ability_target = ""))
+  *set aua_tp ability_target
+*temp aua_ally (not(aua_tp = "combat_player_"))
 *if ({(aua_p & "ability_act_page")} = page_id)
   *set aua_roll {(aua_p & "ability_act_roll")}
   *set aua_total {(aua_p & "ability_act_total")}
@@ -291,16 +300,19 @@
   *temp aua_uses {(aua_p & ("ability_uses_" & aua_place))}
   *if (aua_uses > 0)
     *set {(aua_p & ("ability_uses_" & aua_place))} (aua_uses - 1)
-  *set combat_cover_ranged_defense_bonus 0
-  *gosub_scene combat_movement combat_get_cover_ranged_defense_bonus "player" 0
-  *set aua_dc (armor_class + combat_cover_ranged_defense_bonus)
-  *if (dodge_active)
-    *set aua_dc (aua_dc + 5)
-  *if (shield_active)
-    *set aua_dc (aua_dc + 5)
+  *if (aua_ally)
+    *set aua_dc {(aua_tp & "ac")}
+  *else
+    *set combat_cover_ranged_defense_bonus 0
+    *gosub_scene combat_movement combat_get_cover_ranged_defense_bonus "player" 0
+    *set aua_dc (armor_class + combat_cover_ranged_defense_bonus)
+    *if (dodge_active)
+      *set aua_dc (aua_dc + 5)
+    *if (shield_active)
+      *set aua_dc (aua_dc + 5)
   *temp aua_adv false
   *temp aua_dis false
-  *gosub_scene combat_dice condition_has "combat_player_" "blinded"
+  *gosub_scene combat_dice condition_has aua_tp "blinded"
   *if (condition_result)
     *set aua_adv true
   *gosub_scene combat_dice condition_has aua_p "blinded"
@@ -325,7 +337,7 @@
   *rand aua_v 1 3
   *if (aua_hit)
     *if (not(ability_fact_condition = ""))
-      *gosub_scene combat_dice condition_apply "combat_player_" ability_fact_condition 1 ability_fact_escape_dc ability_fact_src
+      *gosub_scene combat_dice condition_apply aua_tp ability_fact_condition 1 ability_fact_escape_dc ability_fact_src
   *set {(aua_p & "ability_act_roll")} aua_roll
   *set {(aua_p & "ability_act_total")} aua_total
   *set {(aua_p & "ability_act_hit")} aua_hit
@@ -333,7 +345,11 @@
   *set {(aua_p & "ability_act_dc")} aua_dc
   *set {(aua_p & "ability_act_note")} aua_note
   *set {(aua_p & "ability_act_page")} page_id
-*gosub_scene combat_prose flavor_ability_action aua_id aua_v aua_hit
+*if (aua_ally)
+  *set combat_defender_epithet {(aua_tp & "epithet")}
+  *gosub_scene combat_prose flavor_ability_action_at_ally aua_id aua_v aua_hit
+*else
+  *gosub_scene combat_prose flavor_ability_action aua_id aua_v aua_hit
 *line_break
 *temp aua_bonus_str "+${combat_enemy_atk_bonus}"
 *if (combat_enemy_atk_bonus < 0)
@@ -344,7 +360,11 @@
 [b][🎲 ${combat_enemy_name} ${ability_fact_name}: ${aua_roll}${aua_note} ${aua_bonus_str} = ${aua_total} vs AC ${aua_dc} — ${aua_verdict}][/b]
 *line_break
 *if ((aua_hit) and (ability_fact_condition = "restrained"))
-  [b][🪢 You are Restrained (${ability_fact_name}, escape DC ${ability_fact_escape_dc})][/b]
+  *if (aua_ally)
+    *temp aua_tname {(aua_tp & "name")}
+    [b][🪢 ${aua_tname} is Restrained (${ability_fact_name}, escape DC ${ability_fact_escape_dc})][/b]
+  *else
+    [b][🪢 You are Restrained (${ability_fact_name}, escape DC ${ability_fact_escape_dc})][/b]
   *line_break
 *set combat_turn_advanced_this_page true
 *return

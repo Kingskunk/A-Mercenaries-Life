@@ -1449,8 +1449,8 @@ ${combat_player_dmg_roll_banner}
       *comment An ally caster hit while concentrating makes the save (3.8), lock 8 as an enemy's does; its banners wait with theirs (concentration_pending_print).
       *gosub concentration_damage_check reao_ap reao_dmg_total 8
     *comment A leveled save spell's rider on an ally that failed and still stands (3.6 step 5), as at the player (resolve_enemy_attack): Thunderwave throws it a step back
-    *comment and Dissonant Whispers spends its reaction on one, both only when the caster is the foe it is fighting (its lane range is kept against that foe); Arms of Hadar
-    *comment spends its reaction. Shown on the damage banner.
+    *comment and Dissonant Whispers spends its reaction on one, away from the caster whichever foe it fights (enemy_push_ally); Arms of Hadar spends its reaction.
+    *comment Shown on the damage banner.
     *temp reao_rider ""
     *comment A condition-on-hit (Ray of Sickness's Poisoned, a swordsman's Off-Guard) and an at-will Vicious Mockery leave the ally's next attack at disadvantage (3.9a 5).
     *if ({(reao_ap & "hp")} > 0)
@@ -1467,17 +1467,16 @@ ${combat_player_dmg_roll_banner}
         *set {(reao_ap & "atk_disadv_name")} reao_cond_name
         *set reao_rider "${reao_cond_icon} ${reao_cond_name}: disadvantage on its next attack"
     *if ((reao_save_failed) and ((reao_is_save) and ({(reao_ap & "hp")} > 0)))
-      *temp reao_own_foe (({(reao_ap & "target")} = combat_active_target) or ({(reao_ap & "target")} <= 0))
-      *if ((combat_enemy_cast_spell = "thunderwave") and (reao_own_foe))
-        *gosub_scene combat_movement combat_lane_move_ally_relative_to_target reao_a_slot combat_active_target "away"
+      *if (combat_enemy_cast_spell = "thunderwave")
+        *gosub enemy_push_ally reao_a_slot combat_active_target
         *set reao_rider "🌊 thrown back"
       *elseif (combat_enemy_cast_spell = "arms_of_hadar")
         *set {(reao_ap & "oa_used")} true
         *set reao_rider "🖤 no reactions until its turn"
-      *elseif ((combat_enemy_cast_spell = "dissonant_whispers") and (reao_own_foe))
+      *elseif (combat_enemy_cast_spell = "dissonant_whispers")
         *if (((not({(reao_ap & "oa_used")})) and ({(reao_ap & "stunned")} <= 0)) and ({(reao_ap & "paralyzed")} <= 0))
           *set {(reao_ap & "oa_used")} true
-          *gosub_scene combat_movement combat_lane_move_ally_relative_to_target reao_a_slot combat_active_target "away"
+          *gosub enemy_push_ally reao_a_slot combat_active_target
           *set reao_rider "👂 driven back, reaction spent"
     *if (not(reao_rider = ""))
       *temp reao_rb {(reao_bannername)}
@@ -1997,7 +1996,7 @@ ${combat_player_dmg_roll_banner}
     *else
       *gosub concentration_damage_check racd_ep racd_after 8
       *comment The riders (3.9a 5), as the enemy versions put them on the player: Ray of Frost Slows, Ray of Sickness and Vicious Mockery give disadvantage on its next attack,
-      *comment Shocking Grasp, Arms of Hadar and Dissonant Whispers spend its reaction. A save spell's rider lands only on a failed save. Thunderwave's push is not built here.
+      *comment Shocking Grasp, Arms of Hadar and Dissonant Whispers spend its reaction. A save spell's rider lands only on a failed save. Thunderwave throws it back a step (ally_push_enemy).
       *temp racd_rider ""
       *temp racd_landed ((spell_fact_resolution = "attack") or (not(combat_enemy_save_halved)))
       *if (racd_landed)
@@ -2010,6 +2009,9 @@ ${combat_player_dmg_roll_banner}
         *elseif (((combat_ally_cast_spell = "shocking_grasp") or (combat_ally_cast_spell = "arms_of_hadar")) or (combat_ally_cast_spell = "dissonant_whispers"))
           *set {(racd_ep & "oa_used")} true
           *set racd_rider "no reaction until its turn"
+        *elseif (combat_ally_cast_spell = "thunderwave")
+          *gosub ally_push_enemy racd_ap racd_e
+          *set racd_rider "🌊 Thrown back"
       *if (not(racd_rider = ""))
         *temp racd_db {(racd_dmg_bannername)}
         *set {(racd_dmg_bannername)} (racd_db & " [b][${racd_rider}][/b]")
@@ -2035,6 +2037,44 @@ ${combat_player_dmg_roll_banner}
 *return
 
 *comment resolve_ally_cast_damage's area pass (shares its temps): every other living enemy at racd_center saves and takes racd_full, or half.
+*comment AN ALLY'S PUSH (Thunderwave): enemy slot ape_e is thrown one step away from ally ape_ap (forced movement: no opportunity attack). Sharing the ally's tile, it goes
+*comment the way its own side faces (ahead, or behind the player's line). The lane's ends stop it (combat_lane_move_enemy_to_position clamps).
+*comment AN ENEMY'S PUSH ON AN ALLY (Thunderwave, Dissonant Whispers): ally slot epa_a moves one step away from enemy slot epa_e on the lane, whichever foe it fights;
+*comment combat_lane_move_ally_to_position keeps its range to its own foe in step. On the caster's tile it goes toward the player's line (away from the caster's side).
+*label enemy_push_ally
+*params epa_a epa_e
+*temp epa_ap (("combat_ally" & epa_a) & "_")
+*temp epa_pos {(epa_ap & "position")}
+*temp epa_from {(("combat_enemy" & epa_e) & "_position")}
+*temp epa_to epa_pos
+*if (epa_pos > epa_from)
+  *set epa_to (epa_pos + 1)
+*elseif (epa_pos < epa_from)
+  *set epa_to (epa_pos - 1)
+*elseif ({(("combat_enemy" & epa_e) & "_side")} < 0)
+  *set epa_to (epa_pos + 1)
+*else
+  *set epa_to (epa_pos - 1)
+*gosub_scene combat_movement combat_lane_move_ally_to_position epa_a 0 epa_to
+*return
+
+*label ally_push_enemy
+*params ape_ap ape_e
+*temp ape_ep (("combat_enemy" & ape_e) & "_")
+*temp ape_pos {(ape_ep & "position")}
+*temp ape_from {(ape_ap & "position")}
+*temp ape_to ape_pos
+*if (ape_pos > ape_from)
+  *set ape_to (ape_pos + 1)
+*elseif (ape_pos < ape_from)
+  *set ape_to (ape_pos - 1)
+*elseif ({(ape_ep & "side")} < 0)
+  *set ape_to (ape_pos - 1)
+*else
+  *set ape_to (ape_pos + 1)
+*gosub_scene combat_movement combat_lane_move_enemy_to_position ape_e ape_to
+*return
+
 *label racd_area_loop
 *if (racd_x <= combat_enemy_slot_cap)
   *temp racd_xp (("combat_enemy" & racd_x) & "_")
@@ -2061,6 +2101,10 @@ ${combat_player_dmg_roll_banner}
       *else
         *gosub concentration_damage_check racd_xp racd_xafter 8
       *set racd_xline "${racd_xline}[n/][b][💥 ${racd_xname}: ${racd_xafter} ${spell_fact_dmg_type} damage${combat_packet_suffix}][/b]"
+      *comment Thunderwave throws back each foe that failed and still stands, as it does the main target.
+      *if ((check_success) and ((combat_ally_cast_spell = "thunderwave") and ({(racd_xp & "hp")} > 0)))
+        *gosub ally_push_enemy racd_ap racd_x
+        *set racd_xline "${racd_xline} [b][🌊 Thrown back][/b]"
     *temp racd_db2 {(racd_dmg_bannername)}
     *set {(racd_dmg_bannername)} ((racd_db2 & "[n/]") & racd_xline)
   *set racd_x + 1

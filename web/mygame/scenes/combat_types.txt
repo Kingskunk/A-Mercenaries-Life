@@ -161,6 +161,8 @@
 *temp aab_profile "guardian"
 *if ((aab_type = "archer") or (aab_type = "slinger"))
   *set aab_profile "sharpshooter"
+*if (aab_type = "hedge_mage")
+  *set aab_profile "caster"
 *temp aab_p (("combat_ally" & aab_slot) & "_")
 *temp aab_weapon {(aab_p & "weapon_type")}
 *set {(aab_p & "behavior_profile")} aab_profile
@@ -1062,6 +1064,15 @@
   *set combat_ally1_cast_chance_2 combat_ally_cast_chance_2_override
   *set combat_ally1_cast_chance_3 combat_ally_cast_chance_3_override
   *gosub_scene combat compute_cast_dc "combat_ally1_" "" combat_ally_cast_dc_override
+*comment A library type's own spells (the hedge-mage) get their DC and spell attack the same way, each slot named outright; slot 1 with overrides has had its own above.
+*if ((combat_ally_count >= 1) and ((combat_ally_cast_spell_1_override = "") and (not(combat_ally1_cast_spell_1 = ""))))
+  *gosub_scene combat compute_cast_dc "combat_ally1_" "" 0
+*if ((combat_ally_count >= 2) and (not(combat_ally2_cast_spell_1 = "")))
+  *gosub_scene combat compute_cast_dc "combat_ally2_" "" 0
+*if ((combat_ally_count >= 3) and (not(combat_ally3_cast_spell_1 = "")))
+  *gosub_scene combat compute_cast_dc "combat_ally3_" "" 0
+*if ((combat_ally_count >= 4) and (not(combat_ally4_cast_spell_1 = "")))
+  *gosub_scene combat compute_cast_dc "combat_ally4_" "" 0
 *set combat_ally_cast_spell_1_override ""
 *set combat_ally_cast_spell_2_override ""
 *set combat_ally_cast_spell_3_override ""
@@ -1081,6 +1092,8 @@
   *gosub apply_allytype_slinger
 *if (combat_apply_ally_type = "guard")
   *gosub apply_allytype_guard
+*if (combat_apply_ally_type = "hedge_mage")
+  *gosub apply_allytype_hedge_mage
 *if (combat_apply_ally_type = "blight_twig")
   *gosub apply_allytype_blight_twig
 *gosub assign_ally_behavior_profile combat_apply_ally_slot combat_apply_ally_type
@@ -1182,6 +1195,44 @@
 *comment RANGED_AI_PLAN.md §4.7 for why this hasn't been balance-simmed either.
 *set {(aaa_p & "can_retreat")} true
 *set {(aaa_p & "flee_hp_pct")} 33
+*return
+
+*label apply_allytype_hedge_mage
+*comment The first ally library type that casts (3.9a 5): a hedge-mage who keeps its distance with a sling and its spells. Its spells are the type's defaults
+*comment (cast places 1-3), picked in order each turn while worth casting (combat_ai.txt fight_pick_ally_cast_spell): Hold Person once, Shatter twice, then Fire Bolt at will
+*comment (99 uses stands for a cantrip). A fight's slot 1 overrides replace them (apply_ally_roster). Its DC and spell attack come from its Intelligence (compute_cast_dc).
+*temp ahm_p (("combat_ally" & combat_apply_ally_slot) & "_")
+*set {(ahm_p & "name")} "Hedge-Mage"
+*set {(ahm_p & "epithet")} "the hedge-mage"
+*set {(ahm_p & "hp")} 11
+*set {(ahm_p & "max_hp")} 11
+*set {(ahm_p & "ac")} 12
+*set {(ahm_p & "dmg_dice_sides")} 4
+*set {(ahm_p & "dmg_type")} "bludgeoning"
+*set {(ahm_p & "weapon_type")} "ranged"
+*gosub apply_ability_score_range ahm_p "strength" 8 10
+*gosub apply_ability_score_range ahm_p "dexterity" 12 14
+*gosub apply_ability_score_range ahm_p "constitution" 10 12
+*gosub apply_ability_score_range ahm_p "intelligence" 14 16
+*gosub apply_ability_score_range ahm_p "wisdom" 10 12
+*gosub apply_ability_score_range ahm_p "charisma" 8 10
+*gosub apply_derived_combat_bonuses ahm_p
+*set {(ahm_p & "sidearm_weapon_type")} "melee"
+*set {(ahm_p & "sidearm_atk_bonus")} {(ahm_p & "atk_bonus")}
+*set {(ahm_p & "sidearm_dmg_dice_sides")} 4
+*set {(ahm_p & "sidearm_dmg_bonus")} {(ahm_p & "dmg_bonus")}
+*set {(ahm_p & "sidearm_dmg_type")} "piercing"
+*set {(ahm_p & "can_retreat")} true
+*set {(ahm_p & "flee_hp_pct")} 33
+*set {(ahm_p & "cast_spell_1")} "hold_person"
+*set {(ahm_p & "cast_uses_1")} 1
+*set {(ahm_p & "cast_chance_1")} 60
+*set {(ahm_p & "cast_spell_2")} "shatter"
+*set {(ahm_p & "cast_uses_2")} 2
+*set {(ahm_p & "cast_chance_2")} 60
+*set {(ahm_p & "cast_spell_3")} "fire_bolt"
+*set {(ahm_p & "cast_uses_3")} 99
+*set {(ahm_p & "cast_chance_3")} 100
 *return
 
 *label apply_allytype_slinger
