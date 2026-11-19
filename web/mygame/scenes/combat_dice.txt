@@ -145,6 +145,31 @@
 *temp adp_vulnerable combat_def_vulnerable
 *if (combat_extra_resist)
   *set adp_resisted true
+*comment An enemy's Absorb Elements (3.9a 4c): the first acid, cold, fire, lightning or thunder that reaches it, with a use and its reaction left, is resisted, and so is
+*comment that type until its next turn (combat_enemyN_absorb_type, cleared at its turn start).
+*temp adp_absorbed false
+*if ((adp_slot > 0) and (adp_amount > 0))
+  *temp adp_elem (((adp_type = "acid") or (adp_type = "cold")) or (((adp_type = "fire") or (adp_type = "lightning")) or (adp_type = "thunder")))
+  *if (adp_elem)
+    *temp adp_ep (("combat_enemy" & adp_slot) & "_")
+    *if ({(adp_ep & "absorb_type")} = adp_type)
+      *set adp_resisted true
+    *else
+      *temp adp_ae 0
+      *if (({(adp_ep & "cast_spell_1")} = "absorb_elements") and ({(adp_ep & "cast_uses_1")} > 0))
+        *set adp_ae 1
+      *elseif (({(adp_ep & "cast_spell_2")} = "absorb_elements") and ({(adp_ep & "cast_uses_2")} > 0))
+        *set adp_ae 2
+      *elseif (({(adp_ep & "cast_spell_3")} = "absorb_elements") and ({(adp_ep & "cast_uses_3")} > 0))
+        *set adp_ae 3
+      *if (adp_ae > 0)
+        *gosub combat_can_react "enemy" adp_slot
+        *if (combat_can_react_ok)
+          *set {(adp_ep & ("cast_uses_" & adp_ae))} ({(adp_ep & ("cast_uses_" & adp_ae))} - 1)
+          *set {(adp_ep & "oa_used")} true
+          *set {(adp_ep & "absorb_type")} adp_type
+          *set adp_resisted true
+          *set adp_absorbed true
 *temp adp_wet 0
 *if (adp_slot > 0)
   *set adp_wet {(("combat_enemy" & adp_slot) & "_wet")}
@@ -188,12 +213,24 @@
 *elseif (adp_resisted)
   *set combat_packet_damage (combat_packet_damage - (combat_packet_damage modulo 2)) / 2
   *set combat_packet_suffix " | 🛡️ Resisted"
+  *if (adp_absorbed)
+    *set combat_packet_suffix " | 🌀 Absorb Elements: Resisted"
 *elseif (adp_vulnerable)
   *set combat_packet_damage combat_packet_damage * 2
   *set combat_packet_suffix " | 💥 Vulnerable"
 *if (adp_learned)
   *if (adp_slot > 0)
     *set {(("combat_enemy" & adp_slot) & "_defense_known")} true
+*comment TEMP HP on an enemy (3.9a 4a): what gets past its defenses comes off its temp HP first (False Life, Armor of Agathys), and the banner says how much.
+*if ((adp_slot > 0) and (combat_packet_damage > 0))
+  *temp adp_thp {(("combat_enemy" & adp_slot) & "_temp_hp")}
+  *if (adp_thp > 0)
+    *temp adp_soak combat_packet_damage
+    *if (adp_soak > adp_thp)
+      *set adp_soak adp_thp
+    *set {(("combat_enemy" & adp_slot) & "_temp_hp")} (adp_thp - adp_soak)
+    *set combat_packet_damage - adp_soak
+    *set combat_packet_suffix "${combat_packet_suffix} | 🛡️ ${adp_soak} to temp HP"
 *return
 
 *comment The enemy as defender: the active target's scratch fields, with its slot for wet and defense_known. Every player attack and spell packet comes through here.
@@ -569,6 +606,32 @@ ${combat_player_dmg_roll_banner}
   *if (cea_is_save)
     *gosub resolve_enemy_save_attack "combat_player_" cea_atk_bannername
     *set cea_save_failed check_success
+  *elseif (combat_enemy_atk_auto)
+    *comment An always-hitting spell (3.6 step 5: Magic Missile, load_enemy_spell_profile): no roll, so no crit and no cover. Shield, armed and able to fire, stops all of it
+    *comment (RAW: the darts strike the shield), spending its slot and the reaction as it does against a hit.
+    *gosub_scene combat_spells refresh_slot_left
+    *if (shield_armed)
+      *if (((slot_left_1 + slot_left_2) <= 0) or (player_oa_used))
+        *set shield_armed false
+    *gosub combat_can_react "player" 0
+    *set combat_enemy_hit_success true
+    *if (shield_active)
+      *set combat_enemy_hit_success false
+    *elseif (((shield_armed) and (combat_can_react_ok)) and ((slot_left_1 + slot_left_2) > 0))
+      *set shield_armed false
+      *set shield_active true
+      *temp cea_mm_shield_level 1
+      *if (spell_slots_1 <= 0)
+        *set cea_mm_shield_level 2
+      *gosub_scene combat_spells spend_lowest_slot
+      *gosub_scene combat_spells arcane_ward_on_abjuration_cast cea_mm_shield_level
+      *set player_oa_used true
+      *set combat_shield_triggered true
+      *set combat_enemy_hit_success false
+    *if (combat_enemy_hit_success)
+      *set {(cea_atk_bannername)} "[b][✨ ${combat_enemy_name}'s Magic Missile — every dart strikes][/b]"
+    *else
+      *set {(cea_atk_bannername)} "[b][🛡️ ${combat_enemy_name}'s Magic Missile — the darts burst on your Shield][/b]"
   *else
     *comment Ranged-at-closerange penalty: a ranged attack made against a creature within 5 feet of the attacker
     *comment has disadvantage -- "Ranged Attacks in Close Combat". It applies to a weapon, a spell, or any other
@@ -635,6 +698,11 @@ ${combat_player_dmg_roll_banner}
     *if (combat_player_paralyzed > 0)
       *set combat_enemy_advantage true
       *set cea_def_paralyzed true
+    *comment Prone (3.9a): advantage against a prone player from Engaged.
+    *temp cea_def_prone false
+    *if ((combat_player_prone) and (combat_enemy_range <= 0))
+      *set combat_enemy_advantage true
+      *set cea_def_prone true
     *temp cea_dis false
     *comment Both disadvantage sources are precomputed into one flag rather than written as a mixed
     *comment `((A) or (B)) and (C)` condition. ChoiceScript's parser requires binary operators to be strictly
@@ -673,6 +741,8 @@ ${combat_player_dmg_roll_banner}
         *set cea_adv_label " (Advantage — Blinded)"
       *elseif (cea_def_paralyzed)
         *set cea_adv_label " (Advantage — Paralyzed)"
+      *elseif (cea_def_prone)
+        *set cea_adv_label " (Advantage — Prone)"
       *elseif (cea_def_restrained)
         *set cea_adv_label " (Advantage — Restrained)"
       *else
@@ -698,7 +768,7 @@ ${combat_player_dmg_roll_banner}
     *comment (synced in by fight_sync_target_in) hasn't passed, a fresh 1d4 comes off the attack total -- RAW,
     *comment re-rolled every attack, never touching damage.
     *temp cea_bane_str ""
-    *if (combat_enemy_bane_expires_round >= combat_round)
+    *if ((combat_enemy_bane_expires_round > 0) and (combat_enemy_bane_expires_round >= combat_round))
       *temp cea_bane_die 0
       *rand cea_bane_die 1 4
       *set combat_enemy_atk_total - cea_bane_die
@@ -836,6 +906,27 @@ ${combat_player_dmg_roll_banner}
     *elseif (cea_base_id = "shocking_grasp")
       *set player_oa_used true
       *set combat_cantrip_rider cea_base_id
+    *elseif (cea_base_id = "vicious_mockery")
+      *comment Vicious Mockery (3.6 step 5): a failed save (the only way it lands, no damage on a save) puts disadvantage on the player's next attack roll, the flag a condition-on-hit sets.
+      *set disadvantage true
+      *set combat_cantrip_rider cea_base_id
+  *comment A leveled save spell's rider on a failed save (3.6 step 5), from the spell id: Thunderwave throws the player one step back from the caster (forced
+  *comment movement, so no opportunity attack; only the caster's distance changes, as the player's Thunderwave moves only the foe it pushes, and every
+  *comment player is Large or smaller); Arms of Hadar spends the player's reaction until the round turns over, as Shocking Grasp does.
+  *if (((combat_enemy_hit_success) and (cea_save_failed)) and (cea_is_save))
+    *if ((combat_enemy_cast_spell = "thunderwave") and (combat_enemy_range < combat_max_range))
+      *gosub_scene combat_movement combat_shift_target_range combat_active_target "away"
+      *set combat_cantrip_rider combat_enemy_cast_spell
+    *elseif (combat_enemy_cast_spell = "arms_of_hadar")
+      *set player_oa_used true
+      *set combat_cantrip_rider combat_enemy_cast_spell
+    *elseif (combat_enemy_cast_spell = "dissonant_whispers")
+      *comment Dissonant Whispers: the player spends their reaction to move one step away from the caster, if they have it to spend (not Stunned or Paralyzed). Only the
+      *comment caster's distance changes, as with Thunderwave's push; the opportunity attacks a step away from other foes would draw are not rolled.
+      *if ((((not(player_oa_used)) and (not(player_stunned))) and (combat_player_paralyzed <= 0)) and (combat_enemy_range < combat_max_range))
+        *set player_oa_used true
+        *gosub_scene combat_movement combat_shift_target_range combat_active_target "away"
+        *set combat_cantrip_rider combat_enemy_cast_spell
   *set {(cea_bannername)} ""
   *if (combat_enemy_hit_success)
     *gosub roll_enemy_base_dmg cea_bannername
@@ -1073,6 +1164,10 @@ ${combat_player_dmg_roll_banner}
     *gosub resolve_enemy_save_attack reao_ap reao_atk_bannername
     *set reao_save_failed check_success
     *set combat_enemy_atk_on_ally_hit combat_enemy_hit_success
+  *elseif (combat_enemy_atk_auto)
+    *comment Magic Missile (3.6 step 5): every dart strikes, as at the player; an ally has no Shield to raise.
+    *set combat_enemy_atk_on_ally_hit true
+    *set {(reao_atk_bannername)} "[b][✨ ${combat_enemy_name}'s Magic Missile — every dart strikes][/b]"
   *else
     *if (combat_reckless_active)
       *set combat_enemy_advantage true
@@ -1099,6 +1194,11 @@ ${combat_player_dmg_roll_banner}
     *if ({(reao_ap & "paralyzed")} > 0)
       *set combat_enemy_advantage true
       *set reao_def_paralyzed true
+    *comment Prone (3.9a): advantage against a prone ally from Engaged (the two at one lane position).
+    *temp reao_def_prone false
+    *if (({(reao_ap & "prone")}) and ({(reao_ap & "position")} = {(("combat_enemy" & combat_active_target) & "_position")}))
+      *set combat_enemy_advantage true
+      *set reao_def_prone true
     *temp reao_roll 0
     *rand reao_roll 1 20
     *temp reao_adv_label ""
@@ -1132,6 +1232,8 @@ ${combat_player_dmg_roll_banner}
         *set reao_adv_label " (Advantage — Blinded)"
       *elseif (reao_def_paralyzed)
         *set reao_adv_label " (Advantage — Paralyzed)"
+      *elseif (reao_def_prone)
+        *set reao_adv_label " (Advantage — Prone)"
       *elseif (reao_def_restrained)
         *set reao_adv_label " (Advantage — Restrained)"
       *else
@@ -1164,7 +1266,7 @@ ${combat_player_dmg_roll_banner}
     *comment applies, reading the same already-synced combat_enemy_bane_expires_round (fight_sync_target_in ran for
     *comment this exact enemy slot before combat_next_turn ever decided to redirect it here).
     *temp reao_bane_str ""
-    *if (combat_enemy_bane_expires_round >= combat_round)
+    *if ((combat_enemy_bane_expires_round > 0) and (combat_enemy_bane_expires_round >= combat_round))
       *temp reao_bane_die 0
       *rand reao_bane_die 1 4
       *set reao_total - reao_bane_die
@@ -1223,6 +1325,43 @@ ${combat_player_dmg_roll_banner}
     *if ({(reao_ap & "hp")} <= 0)
       *set {(reao_ap & "hp")} 0
       *gosub concentration_end reao_ap
+    *else
+      *comment An ally caster hit while concentrating makes the save (3.8), lock 8 as an enemy's does; its banners wait with theirs (concentration_pending_print).
+      *gosub concentration_damage_check reao_ap reao_dmg_total 8
+    *comment A leveled save spell's rider on an ally that failed and still stands (3.6 step 5), as at the player (resolve_enemy_attack): Thunderwave throws it a step back
+    *comment and Dissonant Whispers spends its reaction on one, both only when the caster is the foe it is fighting (its lane range is kept against that foe); Arms of Hadar
+    *comment spends its reaction. Shown on the damage banner.
+    *temp reao_rider ""
+    *comment A condition-on-hit (Ray of Sickness's Poisoned, a swordsman's Off-Guard) and an at-will Vicious Mockery leave the ally's next attack at disadvantage (3.9a 5).
+    *if ({(reao_ap & "hp")} > 0)
+      *temp reao_cond_name ""
+      *temp reao_cond_icon ""
+      *if ((reao_save_failed) and (combat_enemy_inflicts_condition))
+        *set reao_cond_name combat_enemy_condition_name
+        *set reao_cond_icon combat_enemy_condition_icon
+      *elseif ((combat_enemy_cast_spell = "") and ({(("combat_enemy" & combat_active_target) & "_spell_base_id")} = "vicious_mockery"))
+        *set reao_cond_name "Rattled"
+        *set reao_cond_icon "🗯️"
+      *if (not(reao_cond_name = ""))
+        *set {(reao_ap & "atk_disadv")} true
+        *set {(reao_ap & "atk_disadv_name")} reao_cond_name
+        *set reao_rider "${reao_cond_icon} ${reao_cond_name}: disadvantage on its next attack"
+    *if ((reao_save_failed) and ((reao_is_save) and ({(reao_ap & "hp")} > 0)))
+      *temp reao_own_foe (({(reao_ap & "target")} = combat_active_target) or ({(reao_ap & "target")} <= 0))
+      *if ((combat_enemy_cast_spell = "thunderwave") and (reao_own_foe))
+        *gosub_scene combat_movement combat_lane_move_ally_relative_to_target reao_a_slot combat_active_target "away"
+        *set reao_rider "🌊 thrown back"
+      *elseif (combat_enemy_cast_spell = "arms_of_hadar")
+        *set {(reao_ap & "oa_used")} true
+        *set reao_rider "🖤 no reactions until its turn"
+      *elseif ((combat_enemy_cast_spell = "dissonant_whispers") and (reao_own_foe))
+        *if (((not({(reao_ap & "oa_used")})) and ({(reao_ap & "stunned")} <= 0)) and ({(reao_ap & "paralyzed")} <= 0))
+          *set {(reao_ap & "oa_used")} true
+          *gosub_scene combat_movement combat_lane_move_ally_relative_to_target reao_a_slot combat_active_target "away"
+          *set reao_rider "👂 driven back, reaction spent"
+    *if (not(reao_rider = ""))
+      *temp reao_rb {(reao_bannername)}
+      *set {(reao_bannername)} (reao_rb & " [b][${reao_rider}][/b]")
   *set {(reao_lockname)} true
 *temp reao_atk_banner_text {(reao_atk_bannername)}
 *temp reao_dmg_banner_text {(reao_bannername)}
@@ -1298,11 +1437,24 @@ ${combat_player_dmg_roll_banner}
 *comment asks here too, and a new condition that takes reactions away (incapacitated, paralysed, unconscious) is added here once.
 *comment Rules: alive; its one reaction this round not yet spent (player_oa_used / combat_<kind>N_oa_used, which Shocking Grasp and Arms of Hadar also spend);
 *comment and not stunned (player_stunned, or a stun count above 0). Output: combat_can_react_ok.
+*comment PRONE (3.9a, 2026-11-19): every knock-down calls this. The flag is <prefix>prone (true/false) on the player, an enemy slot or an ally slot. Falling prone ends
+*comment concentration at once (its "ends" line waits with the others, concentration_pending_print). The caller ends the turn when it fell on its own turn. While prone: no
+*comment reactions (combat_can_react), disadvantage on Strength and Dexterity saves (resolve_save), advantage on attacks against it from Engaged. It stands at the start of its
+*comment next turn, which costs half its movement: no Dash that turn.
+*label prone_apply
+*params pra_prefix
+*set {(pra_prefix & "prone")} true
+*set combat_conc_ended_banner ""
+*gosub concentration_end_incapacitated pra_prefix
+*if (pra_prefix = "combat_player_")
+  *gosub concentration_pending_add combat_conc_ended_banner
+*return
+
 *label combat_can_react
 *params ccr_kind ccr_slot
 *set combat_can_react_ok false
 *if (ccr_kind = "player")
-  *if ((((hp_current > 0) and (not(player_oa_used))) and (not(player_stunned))) and (combat_player_paralyzed <= 0))
+  *if (((((hp_current > 0) and (not(player_oa_used))) and (not(player_stunned))) and (combat_player_paralyzed <= 0)) and (not(combat_player_prone)))
     *set combat_can_react_ok true
 *else
   *comment Fixed prefixes, not one built from ccr_kind: quicktest walks every branch whatever the values, and "combat_player0_" names nothing.
@@ -1313,7 +1465,8 @@ ${combat_player_dmg_roll_banner}
   *temp ccr_used {(ccr_p & "oa_used")}
   *temp ccr_stun {(ccr_p & "stunned")}
   *temp ccr_para {(ccr_p & "paralyzed")}
-  *if ((((ccr_hp > 0) and (not(ccr_used))) and (ccr_stun <= 0)) and (ccr_para <= 0))
+  *temp ccr_prone {(ccr_p & "prone")}
+  *if (((((ccr_hp > 0) and (not(ccr_used))) and (ccr_stun <= 0)) and (ccr_para <= 0)) and (not(ccr_prone)))
     *set combat_can_react_ok true
 *return
 
@@ -1324,8 +1477,9 @@ ${combat_player_dmg_roll_banner}
 *params cae_distance cae_slot cae_tag
 *set combat_edge_adv false
 *set combat_edge_label ""
+*comment Prone (3.9a, BG3): advantage from within 10 ft, so Engaged only (it was Close or Engaged).
 *temp cae_prone {(("combat_enemy" & cae_slot) & "_prone")}
-*if ((cae_prone) and (cae_distance <= 1))
+*if ((cae_prone) and (cae_distance <= 0))
   *set combat_edge_adv true
   *set combat_edge_label "Prone"
 *comment A stunned target (the Philter of Remembrance, 2026-11-01) is easy to hit from anywhere while it still has turns to lose, and for the round after its last one.
@@ -1346,6 +1500,12 @@ ${combat_player_dmg_roll_banner}
   *set combat_edge_label "Paralyzed"
 *comment Grease is fuel: a fire attack (tag "fire": Fire Bolt, Alchemist's Fire) on a creature still slick with it has advantage at any distance.
 *temp cae_greased {(("combat_enemy" & cae_slot) & "_greased")}
+*comment A foe standing on a Grease patch is as slick as a flask-greased one (3.9a, the user: flammable, as in BG3).
+*if (cae_tag = "fire")
+  *temp gat_pos_5 {(("combat_enemy" & cae_slot) & "_position")}
+  *gosub_scene combat_spells grease_at gat_pos_5
+  *if (combat_grease_here)
+    *set cae_greased 1
 *if ((cae_tag = "fire") and (cae_greased > 0))
   *set combat_edge_adv true
   *if (combat_edge_label = "")
@@ -1422,7 +1582,12 @@ ${combat_player_dmg_roll_banner}
   *temp raa_blinded condition_result
   *comment Restrained (3.4): a restrained ally's own attacks have disadvantage.
   *temp raa_restrained ({(raa_ap & "restrained")} > 0)
-  *temp raa_dis (((raa_ranged_pinned) or (raa_blinded)) or (raa_restrained))
+  *comment Frightened (an enemy's Cause Fear, 3.6 step 5): disadvantage while the source is in sight, so not while the ally is Blinded (as player_fear_source reads it for the player).
+  *temp raa_frightened (({(raa_ap & "frightened")} > 0) and (not(raa_blinded)))
+  *temp raa_next_dis {(raa_ap & "atk_disadv")}
+  *temp raa_next_name {(raa_ap & "atk_disadv_name")}
+  *set {(raa_ap & "atk_disadv")} false
+  *temp raa_dis (((((raa_ranged_pinned) or (raa_blinded)) or (raa_restrained)) or (raa_frightened)) or (raa_next_dis))
   *if (raa_dis)
     *temp raa_roll_2 0
     *rand raa_roll_2 1 20
@@ -1432,8 +1597,12 @@ ${combat_player_dmg_roll_banner}
       *set raa_adv_label " (Disadvantage — in reach)"
     *elseif (raa_blinded)
       *set raa_adv_label " (Disadvantage — Blinded)"
-    *else
+    *elseif (raa_restrained)
       *set raa_adv_label " (Disadvantage — Restrained)"
+    *elseif (raa_frightened)
+      *set raa_adv_label " (Disadvantage — Frightened)"
+    *else
+      *set raa_adv_label " (Disadvantage — ${raa_next_name})"
   *comment Advantage from the target (prone/stunned/restrained/greased/blinded, combat_attack_edge): it takes the better of two d20s, and cancels disadvantage above if both apply.
   *gosub combat_attack_edge raa_range raa_e_slot ""
   *if (combat_edge_adv)
@@ -1452,6 +1621,14 @@ ${combat_player_dmg_roll_banner}
   *if ((raa_weapon = "ranged") and (not(raa_knifed)))
     *gosub_scene combat_movement combat_get_high_ground_attack_modifier "ally" raa_a_slot "enemy" raa_e_slot
   *temp raa_total ((raa_roll + raa_atk_bonus) + combat_high_ground_attack_bonus)
+  *comment Bane on the ally (an enemy's, 3.6 step 4): a fresh 1d4 off the attack roll, as for the player and the enemies.
+  *temp raa_bane_str ""
+  *temp raa_bane_exp {(raa_ap & "bane_expires_round")}
+  *if ((raa_bane_exp > 0) and (raa_bane_exp >= combat_round))
+    *temp raa_bane_die 0
+    *rand raa_bane_die 1 4
+    *set raa_total - raa_bane_die
+    *set raa_bane_str " -${raa_bane_die} (Bane)"
   *temp raa_base_target_ac {(raa_ep & "ac")}
   *temp raa_target_ac raa_base_target_ac
   *set combat_cover_ranged_defense_bonus 0
@@ -1467,6 +1644,17 @@ ${combat_player_dmg_roll_banner}
     *rand raa_idie 1 bard_inspiration_die_sides
     *set raa_total + raa_idie
     *set raa_ins_str " +${raa_idie} (Inspiration)"
+  *comment The enemy's Blade Ward (a fresh 1d4 off) and Shield (+5 AC, raised now if the roll would hit by less than 5) count against an ally's attack too (3.9a 5).
+  *if ({(raa_ep & "blade_ward")})
+    *temp raa_bw 0
+    *rand raa_bw 1 4
+    *set raa_total - raa_bw
+    *set raa_ins_str "${raa_ins_str} -${raa_bw} (Blade Ward)"
+  *if (not(raa_roll = 20))
+    *gosub_scene combat_spells enemy_shield_react raa_e_slot raa_total raa_target_ac
+    *if (combat_enemy_shield_fired)
+      *set raa_target_ac + 5
+      *set raa_ins_str "${raa_ins_str} (🛡️ Shield +5 AC)"
   *comment A natural 20 always hits, and is a critical hit. So is any hit on a paralyzed enemy by an ally Engaged with it. A natural 1 always misses.
   *set combat_ally_atk_hit (((raa_total >= raa_target_ac) or (raa_roll = 20)) and (not(raa_roll = 1)))
   *temp raa_crit false
@@ -1487,7 +1675,7 @@ ${combat_player_dmg_roll_banner}
   *temp raa_ac_str ""
   *if (combat_cover_ranged_defense_bonus > 0)
     *set raa_ac_str " (${raa_base_target_ac} +2 Cover)"
-  *set {(raa_atk_bannername)} "[b][🎲 ${raa_name} Attack Roll: ${raa_roll} ${raa_bonus_str}${combat_high_ground_attack_label}${raa_ins_str}${raa_adv_label} = ${raa_total} vs AC ${raa_target_ac}${raa_ac_str} — ${raa_verdict}][/b]"
+  *set {(raa_atk_bannername)} "[b][🎲 ${raa_name} Attack Roll: ${raa_roll} ${raa_bonus_str}${combat_high_ground_attack_label}${raa_bane_str}${raa_ins_str}${raa_adv_label} = ${raa_total} vs AC ${raa_target_ac}${raa_ac_str} — ${raa_verdict}][/b]"
   *set {(raa_dmg_bannername)} ""
   *set combat_ally_dmg_dealt 0
   *set combat_ally_blow_blocked false
@@ -1538,6 +1726,9 @@ ${combat_player_dmg_roll_banner}
     *if ({(raa_ep & "hp")} <= 0)
       *set {(raa_ep & "hp")} 0
       *gosub concentration_end raa_ep
+    *else
+      *comment An enemy hit by an ally makes its concentration save (3.9), lock 8.
+      *gosub concentration_damage_check raa_ep raa_dmg_after 8
   *set {(raa_lockname)} true
 *comment No trailing *line_break after the last banner here, deliberately -- fight_narrate_ally_attack (combat.txt),
 *comment the only caller, already opens with its own leading break. A break here too would stack into a full
@@ -1555,6 +1746,205 @@ ${combat_player_dmg_roll_banner}
     ${raa_dmg_banner_text}
 *return
 
+
+*comment ALLY CASTERS (3.8, 2026-11-19): an ally's damage spell at enemy racd_e (combat_ally_cast_spell, from the data), resolve_ally_attack's twin. An attack-roll
+*comment spell rolls each projectile (Scorching Ray's rays) against the foe's AC with the ally's cast_atk_bonus, a natural 20 doubling that ray's dice; an always-hitting one
+*comment (Magic Missile) lands every dart; a save spell has the foe save against the ally's cast_dc, half or none on a success as the data says. The damage meets the foe's
+*comment defenses (adjust_damage_packet), then the foe's concentration save (lock 8) or its end. Shares resolve_ally_attack's lock and banners, so a refresh prints the same.
+*comment Sets combat_ally_atk_hit (anything landed) and combat_enemy_save_halved (the foe saved for half), which the lines read.
+*label resolve_ally_cast_damage
+*params racd_a racd_e
+*temp racd_ap (("combat_ally" & racd_a) & "_")
+*temp racd_ep (("combat_enemy" & racd_e) & "_")
+*temp racd_name {(racd_ap & "name")}
+*temp racd_ename {(racd_ep & "name")}
+*if (not(locked_combat_ally_atk_page_id = page_id))
+  *set combat_ally_atk_locked_1 false
+  *set combat_ally_atk_locked_2 false
+  *set combat_ally_atk_locked_3 false
+  *set combat_ally_atk_locked_4 false
+  *set locked_combat_ally_atk_page_id page_id
+*temp racd_lockname ("combat_ally_atk_locked_" & racd_a)
+*temp racd_atk_bannername ("combat_ally_atk_banner_" & racd_a)
+*temp racd_dmg_bannername ("combat_ally_dmg_banner_" & racd_a)
+*if (not({racd_lockname}))
+  *gosub_scene combat_spells spell_facts_load combat_ally_cast_spell
+  *temp racd_dc {(racd_ap & "cast_dc")}
+  *if (racd_dc <= 0)
+    *set racd_dc 10
+  *temp racd_atkb {(racd_ap & "cast_atk_bonus")}
+  *temp racd_n spell_fact_projectiles
+  *if (racd_n < 1)
+    *set racd_n 1
+  *temp racd_dmg 0
+  *temp racd_full 0
+  *temp racd_stat ""
+  *temp racd_label ""
+  *temp racd_dice_str ""
+  *set combat_ally_atk_hit false
+  *set combat_enemy_save_halved false
+  *set {(racd_atk_bannername)} ""
+  *set {(racd_dmg_bannername)} ""
+  *if (spell_fact_resolution = "attack")
+    *temp racd_ac {(racd_ep & "ac")}
+    *temp racd_bonus_str "+${racd_atkb}"
+    *if (racd_atkb < 0)
+      *set racd_bonus_str "${racd_atkb}"
+    *temp racd_lines ""
+    *temp racd_i 1
+    *gosub racd_rays
+    *set {(racd_atk_bannername)} racd_lines
+  *elseif (spell_fact_resolution = "auto")
+    *set combat_ally_atk_hit true
+    *gosub_scene combat_spells roll_spell_dice (spell_fact_dice_count * racd_n) spell_fact_dice_sides
+    *set racd_dmg (spell_roll_total + (spell_fact_flat * racd_n))
+    *temp racd_flat (spell_fact_flat * racd_n)
+    *set racd_dice_str "${spell_roll_dice_str} +${racd_flat}"
+    *set {(racd_atk_bannername)} "[b][✨ ${racd_name}'s ${spell_fact_name} — every dart strikes][/b]"
+  *else
+    *temp racd_stat spell_fact_save_ability
+    *temp racd_label "Charisma"
+    *if (racd_stat = "strength")
+      *set racd_label "Strength"
+    *if (racd_stat = "dexterity")
+      *set racd_label "Dexterity"
+    *if (racd_stat = "constitution")
+      *set racd_label "Constitution"
+    *if (racd_stat = "intelligence")
+      *set racd_label "Intelligence"
+    *if (racd_stat = "wisdom")
+      *set racd_label "Wisdom"
+    *set {("combat_save_locked_" & racd_e)} false
+    *set combat_save_quiet true
+    *gosub resolve_save racd_ep racd_stat racd_label racd_dc racd_e
+    *set combat_save_quiet false
+    *comment check_success is inverted for a foe's save (resolve_save: true = the foe FAILED).
+    *temp racd_failed check_success
+    *set {(racd_atk_bannername)} {("combat_save_banner_" & racd_e)}
+    *if ((racd_failed) or (spell_fact_half_on_save))
+      *set combat_ally_atk_hit true
+      *gosub_scene combat_spells roll_spell_dice spell_fact_dice_count spell_fact_dice_sides
+      *set racd_dmg spell_roll_total
+      *set racd_full spell_roll_total
+      *set racd_dice_str spell_roll_dice_str
+      *if (not(racd_failed))
+        *set racd_dmg ((racd_dmg - (racd_dmg modulo 2)) / 2)
+        *set combat_enemy_save_halved true
+  *if ((combat_ally_atk_hit) and (racd_dmg > 0))
+    *temp racd_pre racd_dmg
+    *gosub adjust_damage_packet racd_ep racd_dmg spell_fact_dmg_type racd_e
+    *temp racd_after combat_packet_damage
+    *temp racd_tag combat_packet_suffix
+    *temp racd_half_tag ""
+    *if (combat_enemy_save_halved)
+      *set racd_half_tag " (${racd_full}, halved)"
+    *set {(racd_dmg_bannername)} "[b][🎲 ${racd_name} Damage: ${racd_dice_str} = ${racd_pre}${racd_half_tag}${racd_tag}][/b]"
+    *set combat_ally_dmg_dealt racd_after
+    *gosub record_last_hit "enemy" racd_e "ally" racd_a
+    *set {(racd_ep & "hp")} - racd_after
+    *if ({(racd_ep & "hp")} <= 0)
+      *set {(racd_ep & "hp")} 0
+      *gosub concentration_end racd_ep
+    *else
+      *gosub concentration_damage_check racd_ep racd_after 8
+      *comment The riders (3.9a 5), as the enemy versions put them on the player: Ray of Frost Slows, Ray of Sickness and Vicious Mockery give disadvantage on its next attack,
+      *comment Shocking Grasp, Arms of Hadar and Dissonant Whispers spend its reaction. A save spell's rider lands only on a failed save. Thunderwave's push is not built here.
+      *temp racd_rider ""
+      *temp racd_landed ((spell_fact_resolution = "attack") or (not(combat_enemy_save_halved)))
+      *if (racd_landed)
+        *if (combat_ally_cast_spell = "ray_of_frost")
+          *gosub condition_apply racd_ep "slowed" 1 0 "ray_of_frost"
+          *set racd_rider "❄️ Slowed"
+        *elseif ((combat_ally_cast_spell = "ray_of_sickness") or (combat_ally_cast_spell = "vicious_mockery"))
+          *set {(racd_ep & "disadvantage")} true
+          *set racd_rider "disadvantage on its next attack"
+        *elseif (((combat_ally_cast_spell = "shocking_grasp") or (combat_ally_cast_spell = "arms_of_hadar")) or (combat_ally_cast_spell = "dissonant_whispers"))
+          *set {(racd_ep & "oa_used")} true
+          *set racd_rider "no reaction until its turn"
+      *if (not(racd_rider = ""))
+        *temp racd_db {(racd_dmg_bannername)}
+        *set {(racd_dmg_bannername)} (racd_db & " [b][${racd_rider}][/b]")
+  *comment AN ALLY'S AREA SPELL (3.9a 5, 2026-11-19): a save spell aimed at an area ("engaged": everyone at the caster's position; "spot": everyone at the target's) also
+  *comment catches every other living enemy there. Each saves on its own, against the same damage roll (racd_full), half on a success as the data says. Their lines join the damage banner.
+  *if ((spell_fact_resolution = "save") and (racd_full > 0))
+    *if ((spell_fact_target = "engaged") or (spell_fact_target = "spot"))
+      *temp racd_center {(racd_ep & "position")}
+      *if (spell_fact_target = "engaged")
+        *set racd_center {(racd_ap & "position")}
+      *temp racd_x 1
+      *gosub racd_area_loop
+  *set {racd_lockname} true
+*temp racd_atk_text {(racd_atk_bannername)}
+*temp racd_dmg_text {(racd_dmg_bannername)}
+*if (not(racd_atk_text = ""))
+  ${racd_atk_text}
+*if (not(racd_dmg_text = ""))
+  *line_break
+  ${racd_dmg_text}
+*return
+
+*comment resolve_ally_cast_damage's area pass (shares its temps): every other living enemy at racd_center saves and takes racd_full, or half.
+*label racd_area_loop
+*if (racd_x <= combat_enemy_slot_cap)
+  *temp racd_xp (("combat_enemy" & racd_x) & "_")
+  *if (((not(racd_x = racd_e)) and ({(racd_xp & "hp")} > 0)) and ({(racd_xp & "position")} = racd_center))
+    *set {("combat_save_locked_" & racd_x)} false
+    *set combat_save_quiet true
+    *gosub resolve_save racd_xp racd_stat racd_label racd_dc racd_x
+    *set combat_save_quiet false
+    *temp racd_xdmg racd_full
+    *if (not(check_success))
+      *set racd_xdmg 0
+      *if (spell_fact_half_on_save)
+        *set racd_xdmg ((racd_full - (racd_full modulo 2)) / 2)
+    *temp racd_xname {(racd_xp & "name")}
+    *temp racd_xline {("combat_save_banner_" & racd_x)}
+    *if (racd_xdmg > 0)
+      *gosub adjust_damage_packet racd_xp racd_xdmg spell_fact_dmg_type racd_x
+      *temp racd_xafter combat_packet_damage
+      *gosub record_last_hit "enemy" racd_x "ally" racd_a
+      *set {(racd_xp & "hp")} - racd_xafter
+      *if ({(racd_xp & "hp")} <= 0)
+        *set {(racd_xp & "hp")} 0
+        *gosub concentration_end racd_xp
+      *else
+        *gosub concentration_damage_check racd_xp racd_xafter 8
+      *set racd_xline "${racd_xline}[n/][b][💥 ${racd_xname}: ${racd_xafter} ${spell_fact_dmg_type} damage${combat_packet_suffix}][/b]"
+    *temp racd_db2 {(racd_dmg_bannername)}
+    *set {(racd_dmg_bannername)} ((racd_db2 & "[n/]") & racd_xline)
+  *set racd_x + 1
+  *goto racd_area_loop
+*return
+
+*comment resolve_ally_cast_damage's rays, one attack roll each (it shares that label's temps).
+*label racd_rays
+*if (racd_i <= racd_n)
+  *temp racd_roll 0
+  *rand racd_roll 1 20
+  *temp racd_total (racd_roll + racd_atkb)
+  *temp racd_hit (((racd_total >= racd_ac) or (racd_roll = 20)) and (not(racd_roll = 1)))
+  *temp racd_verdict "MISS"
+  *if (racd_hit)
+    *set racd_verdict "HIT"
+    *set combat_ally_atk_hit true
+    *temp racd_cnt spell_fact_dice_count
+    *if (racd_roll = 20)
+      *set racd_cnt (racd_cnt * 2)
+      *set racd_verdict "HIT (Critical)"
+    *gosub_scene combat_spells roll_spell_dice racd_cnt spell_fact_dice_sides
+    *set racd_dmg + spell_roll_total
+    *if (racd_dice_str = "")
+      *set racd_dice_str spell_roll_dice_str
+    *else
+      *set racd_dice_str ((racd_dice_str & " + ") & spell_roll_dice_str)
+  *temp racd_line "[b][🎲 ${racd_name} Spell Attack: ${racd_roll} ${racd_bonus_str} = ${racd_total} vs AC ${racd_ac} — ${racd_verdict}][/b]"
+  *if (racd_lines = "")
+    *set racd_lines racd_line
+  *else
+    *set racd_lines ((racd_lines & "[n/]") & racd_line)
+  *set racd_i + 1
+  *goto racd_rays
+*return
 
 *comment combat_player_sync (2026-11-14): copies the player's live name, six ability scores, and save-proficiency
 *comment bonuses onto the "combat_player_" prefix so resolve_save addresses the player the same way it
@@ -1622,6 +2012,7 @@ ${combat_player_dmg_roll_banner}
   *set combat_save_locked_5 false
   *set combat_save_locked_6 false
   *set combat_save_locked_7 false
+  *set combat_save_locked_8 false
   *set locked_combat_save_page_id page_id
 *if ({(res_lockname)}) and (locked_combat_save_page_id = page_id)
   *set check_success {(res_successname)}
@@ -1689,6 +2080,13 @@ ${combat_player_dmg_roll_banner}
     *if ((res_restrained > 0) and (not(res_dis)))
       *set res_dis true
       *set res_restrained_dis true
+  *comment Prone (3.9a): Strength and Dexterity saves are made with disadvantage.
+  *temp res_prone_dis false
+  *if ((res_stat = "strength") or (res_stat = "dexterity"))
+    *temp res_prone {(res_cond_p & "prone")}
+    *if ((res_prone) and (not(res_dis)))
+      *set res_dis true
+      *set res_prone_dis true
   *temp res_roll 0
   *rand res_roll 1 20
   *temp res_roll_b 0
@@ -1706,10 +2104,12 @@ ${combat_player_dmg_roll_banner}
     *set res_dis_note " (disadvantage)"
     *if (res_restrained_dis)
       *set res_dis_note " (disadvantage, Restrained)"
+    *if (res_prone_dis)
+      *set res_dis_note " (disadvantage, Prone)"
   *temp res_total (res_roll + res_mod)
   *temp res_bane_str ""
   *temp res_bane_expires {(res_prefix & "bane_expires_round")}
-  *if (res_bane_expires >= combat_round)
+  *if ((res_bane_expires > 0) and (res_bane_expires >= combat_round))
     *temp res_bane_die 0
     *rand res_bane_die 1 4
     *set res_total - res_bane_die
@@ -1985,6 +2385,26 @@ ${combat_player_dmg_roll_banner}
 *comment Shared spell effect: Blindness (Step 3c, 2026-11-15). Caller handles cast payment, prose, and cast-level replay lock.
 *comment Parameters: caster_prefix, target_prefix, save_dc, resolve_save lock_index (0..6 enemies, 7 player).
 *comment Outputs: combat_spell_effect_applied (boolean), combat_spell_effect_banner (string); respects combat_save_quiet.
+*label player_fear_source
+*comment FRIGHTENED on the player (COMBAT_ENGINE_PLAN 3.6 step 4, 2026-11-18): the living enemy slot whose spell has the player Frightened (the condition's _src is that
+*comment caster's prefix and the spell it concentrates on, as spell_effect_condition stores it), into combat_player_fear_slot; 0 when there is none, or while the
+*comment player is Blinded, since Frightened works only while its source is in sight. Read by the player's attack rolls (disadvantage) and the movement options
+*comment (no step closer to the source).
+*set combat_player_fear_slot 0
+*if ((combat_player_frightened <= 0) or (combat_player_blinded > 0))
+  *return
+*temp pfs_i 1
+*label player_fear_source_loop
+*if (pfs_i <= combat_enemy_slot_cap)
+  *temp pfs_p (("combat_enemy" & pfs_i) & "_")
+  *temp pfs_conc {(pfs_p & "concentrating")}
+  *if (({(pfs_p & "hp")} > 0) and (combat_player_frightened_src = (pfs_p & pfs_conc)))
+    *set combat_player_fear_slot pfs_i
+    *return
+  *set pfs_i + 1
+  *goto player_fear_source_loop
+*return
+
 *label spell_effect_condition
 *comment The save-or-condition shape (COMBAT_ENGINE_PLAN 3.6 step 4), from the data: the target saves with the spell's save_ability against sec_dc, and on a failure
 *comment takes the spell's combat.condition for 10 rounds (every such spell lasts up to a minute; the repeat save at the end of the bearer's turn runs in condition_tick).
@@ -2010,19 +2430,47 @@ ${combat_player_dmg_roll_banner}
 *gosub resolve_save sec_target_prefix sec_stat sec_label sec_dc sec_lock
 *temp sec_tname {(sec_target_prefix & "name")}
 *temp sec_you (sec_target_prefix = "combat_player_")
+*comment A concentration spell (Cause Fear) marks the condition with its caster and spell, so ending the caster's concentration ends it (condition_end_by_source).
+*temp sec_src ""
+*if (spell_fact_concentration)
+  *set sec_src (sec_caster_prefix & sec_spell_id)
 *if (check_success)
-  *gosub condition_apply sec_target_prefix sec_cond 10 sec_dc ""
+  *gosub condition_apply sec_target_prefix sec_cond 10 sec_dc sec_src
   *set combat_spell_effect_applied true
   *comment State only, no rules text (the user's rule for on-screen text); the hub's own condition line follows on the next page.
   *if ((sec_cond = "blinded") and (sec_you))
     *set combat_spell_effect_banner "[b][👁️ You are Blinded][/b]"
   *elseif (sec_cond = "blinded")
     *set combat_spell_effect_banner "[b][👁️ ${sec_tname} is Blinded][/b]"
+  *elseif ((sec_cond = "frightened") and (sec_you))
+    *set combat_spell_effect_banner "[b][😨 You are Frightened][/b]"
+  *elseif (sec_cond = "frightened")
+    *set combat_spell_effect_banner "[b][😨 ${sec_tname} is Frightened][/b]"
+  *elseif ((sec_cond = "paralyzed") and (sec_you))
+    *set combat_spell_effect_banner "[b][🧍 You are Paralyzed][/b]"
+  *elseif (sec_cond = "paralyzed")
+    *set combat_spell_effect_banner "[b][🧍 ${sec_tname} is Paralyzed][/b]"
+  *elseif ((sec_cond = "restrained") and (sec_you))
+    *set combat_spell_effect_banner "[b][🕸️ You are Restrained][/b]"
+  *elseif (sec_cond = "restrained")
+    *set combat_spell_effect_banner "[b][🕸️ ${sec_tname} is Restrained][/b]"
 *else
   *if ((sec_cond = "blinded") and (sec_you))
     *set combat_spell_effect_banner "[b][💨 You fight off the blindness][/b]"
   *elseif (sec_cond = "blinded")
     *set combat_spell_effect_banner "[b][💨 ${sec_tname} fights off the blindness][/b]"
+  *elseif ((sec_cond = "frightened") and (sec_you))
+    *set combat_spell_effect_banner "[b][💨 You master the fear][/b]"
+  *elseif (sec_cond = "frightened")
+    *set combat_spell_effect_banner "[b][💨 ${sec_tname} masters the fear][/b]"
+  *elseif ((sec_cond = "paralyzed") and (sec_you))
+    *set combat_spell_effect_banner "[b][💨 You shrug off the hold][/b]"
+  *elseif (sec_cond = "paralyzed")
+    *set combat_spell_effect_banner "[b][💨 ${sec_tname} shrugs off the hold][/b]"
+  *elseif ((sec_cond = "restrained") and (sec_you))
+    *set combat_spell_effect_banner "[b][💨 You twist clear of the webbing][/b]"
+  *elseif (sec_cond = "restrained")
+    *set combat_spell_effect_banner "[b][💨 ${sec_tname} twists clear of the webbing][/b]"
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2033,7 +2481,7 @@ ${combat_player_dmg_roll_banner}
 *comment (concentration_begin) or failing a Constitution saving throw on taking combat damage
 *comment (concentration_damage_check: DC max(10, floor(damage / 2)); Arcane Ward absorption is excluded, temp HP counts,
 *comment dropping to 0 HP makes no save). Dying also calls concentration_end. Damage checks are wired for the player
-*comment in resolve_enemy_attack; enemy/ally callers are deferred.
+*comment in resolve_enemy_attack, and for an enemy (3.9, 2026-11-18) in fight_sync_target_out (combat.txt) and resolve_ally_attack; an ally's are deferred.
 *comment How to add a new concentration spell:
 *comment   1. Add "concentration": true to its record in tools/spell_book.json and run `node tools/gen_spell_book.js`.
 *comment   2. Add an explicit `*if (ce_id = "<spell_id>")` branch in concentration_end below to clear all ongoing combat
@@ -2102,6 +2550,19 @@ ${combat_player_dmg_roll_banner}
   *comment Held in its own temp: condition_end (called inside condition_end_by_source) takes ce_prefix as its own parameter and overwrites it.
   *temp ce_web_caster ce_prefix
   *gosub condition_end_by_source "restrained" (ce_prefix & "web")
+  *comment An enemy's patch (foe_web) goes with its own caster's concentration (3.9).
+  *if (combat_terrain1_owner = ce_web_caster)
+    *set combat_terrain1_type "none"
+    *set combat_terrain1_owner ""
+  *if (combat_terrain2_owner = ce_web_caster)
+    *set combat_terrain2_type "none"
+    *set combat_terrain2_owner ""
+  *if (combat_terrain3_owner = ce_web_caster)
+    *set combat_terrain3_type "none"
+    *set combat_terrain3_owner ""
+  *if (combat_terrain4_owner = ce_web_caster)
+    *set combat_terrain4_type "none"
+    *set combat_terrain4_owner ""
   *if (ce_web_caster = "combat_player_")
     *if (combat_terrain1_type = "web")
       *set combat_terrain1_type "none"
@@ -2173,6 +2634,19 @@ ${combat_player_dmg_roll_banner}
   *return
 *gosub concentration_end cei_prefix
 *gosub concentration_format_ended_banner cei_prefix cei_spell
+*comment An enemy's "ends" line waits for the next print point (concentration_pending_print); the player's own callers print theirs.
+*if (not(cei_prefix = "combat_player_"))
+  *gosub concentration_pending_add combat_conc_ended_banner
+*return
+
+*comment concentration_reconcile's scan for an ally's condition on any living enemy (shares its cra_* temps).
+*label cra_scan
+*if (cra_e <= combat_enemy_slot_cap)
+  *temp cra_ep (("combat_enemy" & cra_e) & "_")
+  *if ((({(cra_ep & "hp")} > 0) and ({(cra_ep & cra_cond)} > 0)) and ({((cra_ep & cra_cond) & "_src")} = cra_src))
+    *set cra_held true
+  *set cra_e + 1
+  *goto cra_scan
 *return
 
 *label concentration_damage_check
@@ -2195,16 +2669,123 @@ ${combat_player_dmg_roll_banner}
 *set combat_save_dmg_type ""
 *comment Feat hook: War Caster would grant advantage on this concentration Constitution save.
 *set {("combat_save_locked_" & cdc_lock)} false
+*temp cdc_quiet combat_save_quiet
+*if (not(cdc_prefix = "combat_player_"))
+  *set combat_save_quiet true
 *gosub resolve_save cdc_prefix "constitution" "Constitution" cdc_dc cdc_lock
+*set combat_save_quiet cdc_quiet
 *if (cdc_prefix = "combat_player_")
   *set combat_conc_save_triggered true
   *set combat_conc_save_banner {("combat_save_banner_" & cdc_lock)}
+*else
+  *comment An enemy's save (lock 8) and any "ends" line wait for the next print point (concentration_pending_print).
+  *temp cdc_banner {("combat_save_banner_" & cdc_lock)}
+  *gosub concentration_pending_add cdc_banner
 *if (check_success)
   *gosub concentration_end cdc_prefix
   *gosub concentration_format_ended_banner cdc_prefix cdc_spell
+  *if (not(cdc_prefix = "combat_player_"))
+    *gosub concentration_pending_add combat_conc_ended_banner
+*return
+
+*comment ENEMY CONCENTRATION LINES (COMBAT_ENGINE_PLAN 3.9, 2026-11-18). An enemy's concentration save and its "ends" line are rolled where the damage lands
+*comment (fight_sync_target_out, resolve_ally_attack), which is often mid-way through another banner block, so they wait in combat_conc_pending and print at the next
+*comment print point: the top of the player's menu (fight_round_hub) and the top of each turn in the chain (combat_next_turn). The list belongs to one page: a new page
+*comment starts it afresh, so a refresh of the menu page (which runs the action again on top of its results, with the damage already applied) prints the same lines.
+*comment Inside a turn chain the printed list is emptied, since the chain restores its variables on a refresh anyway (combat_chain_begin).
+*label concentration_pending_add
+*params cpa_text
+*if (cpa_text = "")
+  *return
+*if (not(combat_conc_pending_page = page_id))
+  *set combat_conc_pending ""
+  *set combat_conc_pending_page page_id
+*if (combat_conc_pending = "")
+  *set combat_conc_pending cpa_text
+*else
+  *set combat_conc_pending ((combat_conc_pending & "[n/]") & cpa_text)
+*return
+
+*label concentration_pending_print
+*if ((combat_conc_pending = "") or (not(combat_conc_pending_page = page_id)))
+  *return
+${combat_conc_pending}
+*line_break
+*if ((combat_chain_page = page_id) and (not(combat_chain_pruned)))
+  *set combat_conc_pending ""
 *return
 
 *label concentration_reconcile
+*comment An enemy's concentration ends once nobody is held by it any more (3.9, 2026-11-18): every target saved, the rounds ran out, or the targets fell. Silent, as the player's is.
+*temp crn_i 1
+*label crn_enemy_loop
+*if (crn_i <= combat_enemy_slot_cap)
+  *temp crn_p (("combat_enemy" & crn_i) & "_")
+  *temp crn_spell {(crn_p & "concentrating")}
+  *if (not(crn_spell = "none"))
+    *temp crn_cond ""
+    *if (crn_spell = "cause_fear")
+      *set crn_cond "frightened"
+    *elseif (crn_spell = "hold_person")
+      *set crn_cond "paralyzed"
+    *elseif (crn_spell = "web")
+      *set crn_cond "restrained"
+    *temp crn_held false
+    *comment An enemy's Web holds while its patch stands, whether or not anyone is stuck in it (3.9).
+    *if (crn_spell = "web")
+      *if ((((combat_terrain1_owner = crn_p) or (combat_terrain2_owner = crn_p)) or (combat_terrain3_owner = crn_p)) or (combat_terrain4_owner = crn_p))
+        *set crn_held true
+    *if (crn_spell = "bane")
+      *if ((combat_player_bane_expires_round > 0) and (combat_player_bane_expires_round >= combat_round))
+        *set crn_held true
+      *temp crn_ba 1
+      *label crn_bane_ally_loop
+      *if (crn_ba <= combat_ally_slot_cap)
+        *if (({(("combat_ally" & crn_ba) & "_hp")} > 0) and (({(("combat_ally" & crn_ba) & "_bane_expires_round")} > 0) and ({(("combat_ally" & crn_ba) & "_bane_expires_round")} >= combat_round)))
+          *set crn_held true
+        *set crn_ba + 1
+        *goto crn_bane_ally_loop
+    *elseif (not(crn_cond = ""))
+      *temp crn_src (crn_p & crn_spell)
+      *if (({("combat_player_" & crn_cond)} > 0) and ({(("combat_player_" & crn_cond) & "_src")} = crn_src))
+        *set crn_held true
+      *temp crn_a 1
+      *label crn_cond_ally_loop
+      *if (crn_a <= combat_ally_slot_cap)
+        *temp crn_ap (("combat_ally" & crn_a) & "_")
+        *if ((({(crn_ap & "hp")} > 0) and ({(crn_ap & crn_cond)} > 0)) and ({((crn_ap & crn_cond) & "_src")} = crn_src))
+          *set crn_held true
+        *set crn_a + 1
+        *goto crn_cond_ally_loop
+    *else
+      *comment A concentration spell with no condition to read (none yet for an enemy) is left alone.
+      *set crn_held true
+    *if (not(crn_held))
+      *gosub concentration_end crn_p
+  *set crn_i + 1
+  *goto crn_enemy_loop
+*comment An ally caster's concentration (3.8, 2026-11-19) ends once no enemy holds its condition from it (Cause Fear, Hold Person, Web). Silent, as the enemy's.
+*temp cra_i 1
+*label cra_ally_loop
+*if (cra_i <= combat_ally_slot_cap)
+  *temp cra_p (("combat_ally" & cra_i) & "_")
+  *temp cra_spell {(cra_p & "concentrating")}
+  *temp cra_cond ""
+  *if (cra_spell = "cause_fear")
+    *set cra_cond "frightened"
+  *elseif (cra_spell = "hold_person")
+    *set cra_cond "paralyzed"
+  *elseif (cra_spell = "web")
+    *set cra_cond "restrained"
+  *if (not(cra_cond = ""))
+    *temp cra_src (cra_p & cra_spell)
+    *temp cra_held false
+    *temp cra_e 1
+    *gosub cra_scan
+    *if (not(cra_held))
+      *gosub concentration_end cra_p
+  *set cra_i + 1
+  *goto cra_ally_loop
 *if (combat_player_concentrating = "none")
   *return
 *if (combat_player_concentrating = "blade_ward")
@@ -2241,7 +2822,7 @@ ${combat_player_dmg_roll_banner}
   *if (crb_i <= combat_enemy_count)
     *temp crb_hp {(("combat_enemy" & crb_i) & "_hp")}
     *temp crb_be {(("combat_enemy" & crb_i) & "_bane_expires_round")}
-    *if ((crb_hp > 0) and (crb_be >= combat_round))
+    *if ((crb_hp > 0) and ((crb_be > 0) and (crb_be >= combat_round)))
       *return
     *set crb_i + 1
     *goto crb_bane_loop

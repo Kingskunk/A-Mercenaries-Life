@@ -87,6 +87,9 @@
   *if ((combat_atk_restrained) and (adv_label = " (Disadvantage)"))
     *set adv_label " (Disadvantage — Restrained)"
   *set combat_atk_restrained false
+  *if ((combat_atk_frightened) and (adv_label = " (Disadvantage)"))
+    *set adv_label " (Disadvantage — Frightened)"
+  *set combat_atk_frightened false
   *if ((poisoned_minutes_left > 0) and (adv_label = " (Disadvantage)"))
     *set adv_label " (Disadvantage — Poisoned)"
 
@@ -134,6 +137,20 @@
   *if (not(check_flat_bonus_label = ""))
     *set adv_label "${adv_label}${check_flat_bonus_label}"
   *set check_flat_bonus_label ""
+  *comment Bane on the player (an enemy's, COMBAT_ENGINE_PLAN 3.6 step 4): the caller's attack roll (combat_hidden_attack_roll, the opportunity attack) sets combat_atk_baned, and a fresh 1d4 comes off here, inside the roll's own lock.
+  *comment It comes off the total (below), not check_mod, so the banner still shows the true modifier: "Roll: 11 +5 -3 (Bane) = 13".
+  *temp bane_die 0
+  *if (combat_atk_baned)
+    *rand bane_die 1 4
+    *set adv_label "${adv_label} -${bane_die} (Bane)"
+  *set combat_atk_baned false
+  *comment Blade Ward on the enemy this attack is aimed at (3.9a 4d): a fresh 1d4 off the total, as Bane's is.
+  *if (combat_atk_vs_enemy > 0)
+    *if ({(("combat_enemy" & combat_atk_vs_enemy) & "_blade_ward")})
+      *temp bw_die 0
+      *rand bw_die 1 4
+      *set bane_die + bw_die
+      *set adv_label "${adv_label} -${bw_die} (Blade Ward)"
 
   *comment Task-marked gear: a scene sets check_task_type before the roll, and the matching item adds +1 here (Repair Kit for "repair", Lute for "perform").
   *comment Repair Kit: a scene marks a repair or mechanism task with check_task_type "repair".
@@ -210,7 +227,7 @@
   *comment Food, drink, unique and sleep buffs no longer add to the roll here: they raise the ability
   *comment SCORE (recalculate_buff_stats), so they already sit inside check_mod via the modifier.
 
-  *set check_total (d20_roll + check_mod)
+  *set check_total ((d20_roll + check_mod) - bane_die)
   *if ((guidance_active) and ((not(combat_engaged)) and (not(check_no_guidance))))
     *set check_total + guidance_roll
 
@@ -253,7 +270,10 @@
   *set save_vs "none"
   *set combat_atk_blinded false
   *set combat_atk_restrained false
+  *set combat_atk_frightened false
+  *set combat_atk_baned false
   *set combat_reach_pinned false
+  *set combat_atk_vs_enemy 0
   *return
 
 *if (d20_roll = 1)
@@ -277,12 +297,18 @@
   *set save_vs "none"
   *set combat_atk_blinded false
   *set combat_atk_restrained false
+  *set combat_atk_frightened false
+  *set combat_atk_baned false
   *set combat_reach_pinned false
+  *set combat_atk_vs_enemy 0
   *return
 
 *set is_nat_20 false
 *set is_nat_1 false
 
+*comment An enemy's Shield (3.9a 4c): an attack at it that would hit by less than 5 lets it raise one (enemy_shield_check), and one already up adds its +5.
+*if (combat_atk_vs_enemy > 0)
+  *gosub_scene combat_spells enemy_shield_check combat_atk_vs_enemy
 *if (check_total >= check_dc)
   *set check_success true
   *if (check_mod >= 0)
@@ -311,7 +337,10 @@
 *set save_vs "none"
 *set combat_atk_blinded false
 *set combat_atk_restrained false
+*set combat_atk_frightened false
+*set combat_atk_baned false
 *set combat_reach_pinned false
+*set combat_atk_vs_enemy 0
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

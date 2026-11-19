@@ -1126,6 +1126,31 @@
 *if ({(swc_caster_prefix & "hp")} <= 0)
   *return
 *gosub_scene combat_spells spell_facts_load swc_spell_id
+*comment Bane (3.6 step 4): worth it while the player is seen and not already Baned, the caster can see, and the player is within its reach.
+*if ((swc_spell_id = "bane") and (spell_fact_npc_lines))
+  *if ((combat_player_hidden) or ((combat_player_bane_expires_round > 0) and (combat_player_bane_expires_round >= combat_round)))
+    *return
+  *gosub_scene combat_dice condition_has swc_caster_prefix "blinded"
+  *if (condition_result)
+    *return
+  *gosub_scene combat_movement combat_reach_tier spell_fact_reach
+  *if (combat_enemy_range <= combat_reach_tier_result)
+    *set combat_spell_worth_it true
+  *return
+*comment Grease (3.9a): worth it while the player is seen, not already Prone, has no patch under them, the caster can see, and the player is within reach.
+*if ((swc_spell_id = "grease") and (spell_fact_npc_lines))
+  *if ((combat_player_hidden) or (combat_player_prone))
+    *return
+  *gosub_scene combat_dice condition_has swc_caster_prefix "blinded"
+  *if (condition_result)
+    *return
+  *gosub_scene combat_spells grease_at combat_lane_player_position
+  *if (combat_grease_here)
+    *return
+  *gosub_scene combat_movement combat_reach_tier spell_fact_reach
+  *if (combat_enemy_range <= combat_reach_tier_result)
+    *set combat_spell_worth_it true
+  *return
 *comment A save-or-condition spell with enemy lines (3.6 step 4: Blindness), from the data: worth it while the player is seen, the caster can see (not Blinded),
 *comment the player does not already have the condition, and the player is within the spell's reach.
 *if ((((spell_fact_resolution = "save") and (spell_fact_dice_sides <= 0)) and (not(spell_fact_condition = ""))) and (spell_fact_npc_lines))
@@ -1142,16 +1167,160 @@
     *set combat_spell_worth_it true
   *return
 *comment Any attack-roll or save-for-damage spell with enemy lines (3.6: Ray of Sickness, Scorching Ray, Burning Hands): worth it while the player is seen and within the spell's own reach, from the data.
-*temp swc_shape ((spell_fact_resolution = "attack") or ((spell_fact_resolution = "save") and (spell_fact_dice_sides > 0)))
+*temp swc_shape (((spell_fact_resolution = "attack") or (spell_fact_resolution = "auto")) or ((spell_fact_resolution = "save") and (spell_fact_dice_sides > 0)))
 *if (((swc_shape) and (spell_fact_npc_lines)) and (not(combat_player_hidden)))
   *gosub_scene combat_movement combat_reach_tier spell_fact_reach
   *if (combat_enemy_range <= combat_reach_tier_result)
     *set combat_spell_worth_it true
 *return
 
+*comment POSITIONING (3.9, 2026-11-19): the closest reach tier among enemy slot eswt_slot's assigned spells it would still cast at the player (uses and chance left, enemy
+*comment lines, not its at-will cantrip, not a touch spell; a condition spell only while the player lacks the condition), into combat_ai_spell_want_tier. 99 when there is none.
+*label enemy_spell_want_tier
+*params eswt_slot
+*set combat_ai_spell_want_tier 99
+*temp eswt_p (("combat_enemy" & eswt_slot) & "_")
+*temp eswt_k 1
+*label eswt_loop
+*if (eswt_k <= 3)
+  *temp eswt_id {(eswt_p & ("cast_spell_" & eswt_k))}
+  *if (((not(eswt_id = "")) and (not(eswt_id = {(eswt_p & "spell_base_id")}))) and (({(eswt_p & ("cast_uses_" & eswt_k))} > 0) and ({(eswt_p & ("cast_chance_" & eswt_k))} > 0)))
+    *gosub_scene combat_spells spell_facts_load eswt_id
+    *temp eswt_ok (((spell_fact_resolution = "attack") or (spell_fact_resolution = "auto")) or ((spell_fact_resolution = "save") and (spell_fact_dice_sides > 0)))
+    *if (((spell_fact_resolution = "save") and (spell_fact_dice_sides <= 0)) and (not(spell_fact_condition = "")))
+      *gosub_scene combat_dice condition_has "combat_player_" spell_fact_condition
+      *set eswt_ok (not(condition_result))
+    *comment A touch spell (Burning Hands) never draws a ranged caster into melee: those wait for a foe that closes on it.
+    *if (((eswt_ok) and (spell_fact_npc_lines)) and (not(spell_fact_reach = "touch")))
+      *gosub_scene combat_movement combat_reach_tier spell_fact_reach
+      *if (combat_reach_tier_result < combat_ai_spell_want_tier)
+        *set combat_ai_spell_want_tier combat_reach_tier_result
+  *set eswt_k + 1
+  *goto eswt_loop
+*return
+
+*comment ALLY CASTERS (3.8, 2026-11-19): an ally's spell for its turn, at the enemy it is fighting (fpacs_e). Any assigned spell with uses left that
+*comment spell_worth_casting_at_enemy takes, rolled against its chance in place order, as an enemy picks. Locked per ally slot per page, so a refresh casts the same one.
+*label fight_pick_ally_cast_spell
+*params fpacs_a fpacs_e
+*set combat_ally_cast_spell ""
+*set combat_ally_cast_place 0
+*if ((fpacs_a <= 0) or (fpacs_e <= 0))
+  *return
+*if (not(locked_combat_ally_cast_page_id = page_id))
+  *set combat_ally_cast_locked_1 false
+  *set combat_ally_cast_locked_2 false
+  *set combat_ally_cast_locked_3 false
+  *set combat_ally_cast_locked_4 false
+  *set locked_combat_ally_cast_page_id page_id
+*temp fpacs_lock ("combat_ally_cast_locked_" & fpacs_a)
+*temp fpacs_p (("combat_ally" & fpacs_a) & "_")
+*if ({fpacs_lock})
+  *set combat_ally_cast_spell {(fpacs_p & "cast_picked_spell")}
+  *set combat_ally_cast_place {(fpacs_p & "cast_picked_place")}
+  *return
+*temp fpacs_k 1
+*label fpacs_loop
+*if (fpacs_k <= 3)
+  *temp fpacs_id {(fpacs_p & ("cast_spell_" & fpacs_k))}
+  *temp fpacs_uses {(fpacs_p & ("cast_uses_" & fpacs_k))}
+  *temp fpacs_chance {(fpacs_p & ("cast_chance_" & fpacs_k))}
+  *if ((not(fpacs_id = "")) and ((fpacs_uses > 0) and (fpacs_chance > 0)))
+    *gosub spell_worth_casting_at_enemy fpacs_p fpacs_id fpacs_e
+    *if (combat_spell_worth_it)
+      *temp fpacs_roll 0
+      *rand fpacs_roll 1 100
+      *if (fpacs_roll <= fpacs_chance)
+        *set combat_ally_cast_spell fpacs_id
+        *set combat_ally_cast_place fpacs_k
+        *goto fpacs_done
+  *set fpacs_k + 1
+  *goto fpacs_loop
+*label fpacs_done
+*set {(fpacs_p & "cast_picked_spell")} combat_ally_cast_spell
+*set {(fpacs_p & "cast_picked_place")} combat_ally_cast_place
+*set {fpacs_lock} true
+*return
+
+*comment Is this spell worth an ally casting at enemy swce_e (3.8)? The twin of spell_worth_casting_at_ally, from the same data, with the same lines: within the spell's reach
+*comment (the two lane positions); a damage spell always is; a condition spell while the foe does not have it and the caster can see, and Hold Person only at a humanoid
+*comment (the enemy's creature_type). Bane is left out (its cast is the enemy's, at the player's side).
+*label spell_worth_casting_at_enemy
+*params swce_caster_prefix swce_spell_id swce_e
+*set combat_spell_worth_it false
+*temp swce_ep (("combat_enemy" & swce_e) & "_")
+*if (({(swce_caster_prefix & "hp")} <= 0) or ({(swce_ep & "hp")} <= 0))
+  *return
+*gosub_scene combat_spells spell_facts_load swce_spell_id
+*if ((not(spell_fact_npc_lines)) or (swce_spell_id = "bane"))
+  *return
+*if ((spell_fact_only_type = "humanoid") and (not({(swce_ep & "creature_type")} = "humanoid")))
+  *return
+*temp swce_d ({(swce_caster_prefix & "position")} - {(swce_ep & "position")})
+*if (swce_d < 0)
+  *set swce_d (0 - swce_d)
+*gosub_scene combat_movement combat_reach_tier spell_fact_reach
+*if (swce_d > combat_reach_tier_result)
+  *return
+*if (((spell_fact_resolution = "attack") or (spell_fact_resolution = "auto")) or ((spell_fact_resolution = "save") and (spell_fact_dice_sides > 0)))
+  *set combat_spell_worth_it true
+  *return
+*gosub_scene combat_dice condition_has swce_caster_prefix "blinded"
+*if (condition_result)
+  *return
+*if ((spell_fact_resolution = "save") and (not(spell_fact_condition = "")))
+  *gosub_scene combat_dice condition_has swce_ep spell_fact_condition
+  *if (not(condition_result))
+    *set combat_spell_worth_it true
+*return
+
+*comment Is this spell worth casting at ally swca_ally (3.6 step 5)? The ally's twin of spell_worth_casting, from the same data: within the spell's reach of the caster (the two lane
+*comment positions), and for a spell that sets something, the ally does not already have it and the caster can see. Hold Person is left out: allies carry no creature type to
+*comment check "humanoid" against.
+*label spell_worth_casting_at_ally
+*params swca_caster_prefix swca_spell_id swca_ally
+*set combat_spell_worth_it false
+*temp swca_ap (("combat_ally" & swca_ally) & "_")
+*if (({(swca_caster_prefix & "hp")} <= 0) or ({(swca_ap & "hp")} <= 0))
+  *return
+*gosub_scene combat_spells spell_facts_load swca_spell_id
+*comment Hold Person only at an ally of its type (humanoid, apply_ally_type) (3.9a 5).
+*if ((not(spell_fact_npc_lines)) or ((not(spell_fact_only_type = "")) and (not({(swca_ap & "creature_type")} = spell_fact_only_type))))
+  *return
+*temp swca_d ({(swca_caster_prefix & "position")} - {(swca_ap & "position")})
+*if (swca_d < 0)
+  *set swca_d (0 - swca_d)
+*gosub_scene combat_movement combat_reach_tier spell_fact_reach
+*if (swca_d > combat_reach_tier_result)
+  *return
+*temp swca_dmg (((spell_fact_resolution = "attack") or (spell_fact_resolution = "auto")) or ((spell_fact_resolution = "save") and (spell_fact_dice_sides > 0)))
+*if (swca_dmg)
+  *set combat_spell_worth_it true
+  *return
+*gosub_scene combat_dice condition_has swca_caster_prefix "blinded"
+*if (condition_result)
+  *return
+*if (swca_spell_id = "grease")
+  *temp gat_pos_6 {(swca_ap & "position")}
+  *gosub_scene combat_spells grease_at gat_pos_6
+  *if ((not({(swca_ap & "prone")})) and (not(combat_grease_here)))
+    *set combat_spell_worth_it true
+  *return
+*if (swca_spell_id = "bane")
+  *temp swca_be {(swca_ap & "bane_expires_round")}
+  *if (not((swca_be > 0) and (swca_be >= combat_round)))
+    *set combat_spell_worth_it true
+  *return
+*if ((spell_fact_resolution = "save") and (not(spell_fact_condition = "")))
+  *gosub_scene combat_dice condition_has swca_ap spell_fact_condition
+  *if (not(condition_result))
+    *set combat_spell_worth_it true
+*return
+
 *label fight_pick_ally_intercept_spell
-*comment Chooses an offensive spell for an enemy attacking an intercepting ally in reach (Step 3c-2): any save-for-damage spell with enemy lines (3.6 step 3: Burning Hands), from the data.
-*comment An attack-roll leveled spell is not offered here yet (it has no lines for an ally target). Shares the per-slot page replay lock with fight_pick_enemy_spell.
+*comment Chooses a spell for an enemy whose target is an ally (fpais_ally): Engaged with it, shooting at it, or closing on it (3.6 step 5, 2026-11-19; was save-for-damage at an
+*comment intercepting ally only). Any assigned spell spell_worth_casting_at_ally takes. Shares the per-slot page replay lock with fight_pick_enemy_spell (one target a turn).
+*params fpais_ally
 *set combat_enemy_cast_spell ""
 *set combat_enemy_cast_place 0
 *if (combat_active_target <= 0)
@@ -1181,8 +1350,8 @@
   *temp fpais_uses {(fpais_p & ("cast_uses_" & fpais_k))}
   *temp fpais_chance {(fpais_p & ("cast_chance_" & fpais_k))}
   *if (((not(fpais_id = "")) and (not(fpais_id = {(fpais_p & "spell_base_id")}))) and ((fpais_uses > 0) and (fpais_chance > 0)))
-    *gosub_scene combat_spells spell_facts_load fpais_id
-    *if (((spell_fact_resolution = "save") and (spell_fact_dice_sides > 0)) and (spell_fact_npc_lines))
+    *gosub spell_worth_casting_at_ally fpais_p fpais_id fpais_ally
+    *if (combat_spell_worth_it)
       *temp fpais_roll 0
       *rand fpais_roll 1 100
       *if (fpais_roll <= fpais_chance)

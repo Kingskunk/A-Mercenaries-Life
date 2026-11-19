@@ -20,7 +20,7 @@ The upper room of the Duckboard Market rope-and-oil house is a place for local a
 - *The Night List* is repeatable night work after association: one run per campaign day, 18 copper per successful route, and a lifetime-success counter. The first run always has the lane confrontation; later runs roll a hidden 1-in-8 chance for it. Its first success grants standing; later runs do not farm it.
 - `black_oath_status` ("outsider"/"contact"/"associate") tracks how the network receives the player. `black_oath_rep` and `black_oath_heat` existed as a small reputation/attention foundation but were removed 2026-11-09 (NPC/faction regard refactor): neither ever gated anything. Future standing or attention effects should be specific quest/event flags, not a reputation or heat counter.
 - The Silt-Gate outcome and an outlaw origin both still affect the Oath's reception of the player, but through flags (e.g. `silt_gate_resolution`, `silt_gate_face_seen`) rather than a counter.
-- Lyra's current aftermath points toward unfinished Black Oath business rather than treating the Five Silver plot as a full resolution.
+- Lyra's aftermath intersects with the Black Oath network through Hask, but her aunt's death is an independent mystery (The Nine Court) rather than internal syndicate business.
 
 These are foundations, not a promise that the proposed titles or counters below must be added exactly as written.
 
@@ -145,13 +145,15 @@ A boat, cargo record, crew member, or signal route goes missing across ward boun
 
 **Possible result:** Trusted Hand standing, plus an introduction to a person connected to the Black Oath's broader network.
 
-### 5. Lyra crossover: *Names Under Wax* (working title)
+### 5. Lyra crossover: *The Broken Spindle* (The Hask Junction)
 
-**Suggested giver:** Lyra brings the personal reason; a rollkeeper, senior fixer, or other higher-ranked Oath contact controls the information. It should not return the player to Hask for another main quest.
+**Giver / Connection:** Hask and Lyra's aunt were longtime close friends. Lyra cannot approach Hask directly because Hask regards her as a traitor who broke faith with the Oath when she fled three winters ago. Hask will only speak of his suspicions to a trusted associate—the player.
 
-Once Lyra has spoken about her scars and the Five Silver aftermath has settled, the player needs access beyond the ward's ordinary records. The task is not simply to fight another collection crew. It should reveal who protected, redirected, or profited from the old debt chain—and force a decision about what Lyra wants done with that truth.
-
-This can be the moment that proves the faction and Lyra's arc are genuinely intertwined: the player needs Black Oath standing to reach the records, while Lyra's history makes the information matter.
+**The Role of the Black Oath:** 
+The Black Oath did *not* murder Lyra's aunt. The staged debt and quiet death were executed by **The Nine Court**, an archaic imperial cult embedded in the Valen Reach's patrician families. The Oath's role is purely peripheral:
+1. Hask holds the vital missing clue (a piece of the aunt's dismantled workshop kit, or the identity of the anonymous courier who paid with archaic marks).
+2. Hask refuses to deal with Lyra, forcing the player to act as the intermediary or bridge between them.
+3. Once Hask provides the lead, Lyra's quest branches away from the syndicate into a dedicated occult/investigative arc across Port Valen's districts (see `THE_NINE_COURT_PLAN.md`).
 
 ### 6. Later faction endpoint
 

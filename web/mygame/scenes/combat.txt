@@ -481,6 +481,8 @@
 *comment Terrain randomisation is resolved once, after every actor has an opening lane coordinate and before initiative.
 *comment Fixed is the default, so existing authored encounters remain exactly as they are until they opt in.
 *gosub_scene combat_movement combat_generate_terrain_layout
+*comment Enemies' hour-long buffs are already up (3.9a 4a: Mage Armor, False Life, Armor of Agathys).
+*gosub_scene combat_spells enemy_precast_buffs
 *comment Turn order: rolled once here, after every slot above is fully built, so the roll sees the real
 *comment combat_ally_count/combat_enemy_count and every slot's real DEX. combat_current_turn_index 0 plus the
 *comment needs_advance flag means the very next *goto fight_round_hub (every fight_<name> label already ends with
@@ -949,7 +951,8 @@
 *gosub_scene combat_spells spend_npc_spell_use feca_p combat_enemy_cast_place
 *gosub_scene combat_spells load_enemy_spell_profile feca_p combat_enemy_cast_spell
 *temp feca_n spell_fact_projectiles
-*if (feca_n < 1)
+*comment Magic Missile's darts are one packet (load_enemy_spell_profile), so one page.
+*if ((feca_n < 1) or (combat_enemy_atk_auto))
   *set feca_n 1
 *gosub_scene combat_dice resolve_enemy_attack
 *gosub_scene combat_prose fight_narrate_enemy_turn
@@ -961,7 +964,42 @@
   *gosub_scene combat_prose fight_narrate_enemy_turn
   *set feca_i + 1
   *goto fight_enemy_cast_attack_loop
+*gosub fight_enemy_cast_area 0
+*set combat_enemy_atk_auto false
 *gosub fight_sync_target_in
+*return
+
+*comment AN ENEMY'S AREA SPELL (3.6 step 5, 2026-11-19): after the main target (the player, or fcar_primary_ally when an ally took it), everyone else inside the spell's area makes
+*comment their own save, as the player's own area spells hit every foe in theirs. The area is from the data (spell_fact_target): "engaged" (Burning Hands, Thunderwave, Arms of Hadar)
+*comment is everyone at the caster's own position; "spot" (Shatter) is everyone at the main target's position. Each extra target is on its own page, since the attack's dice and text
+*comment lock per enemy slot per page, as the extra rays do, and each rolls its own damage. The spell's numbers must still be loaded (load_enemy_spell_profile), and
+*comment combat_enemy_cast_spell still set, for the lines. Riders (Thunderwave's push, Arms of Hadar's lost reaction) land on the player only.
+*label fight_enemy_cast_area
+*params fcar_primary_ally
+*temp fcar_shape spell_fact_target
+*if ((not(fcar_shape = "engaged")) and (not(fcar_shape = "spot")))
+  *return
+*temp fcar_caster_pos {(("combat_enemy" & combat_active_target) & "_position")}
+*temp fcar_center combat_lane_player_position
+*if (fcar_shape = "engaged")
+  *set fcar_center fcar_caster_pos
+*elseif (fcar_primary_ally > 0)
+  *set fcar_center {(("combat_ally" & fcar_primary_ally) & "_position")}
+*comment The player, when an ally was the main target and the player stands in the area too.
+*if ((fcar_primary_ally > 0) and ((hp_current > 1) and (combat_lane_player_position = fcar_center)))
+  *page_break The spell spreads…
+  *gosub_scene combat_dice resolve_enemy_attack
+  *gosub_scene combat_prose fight_narrate_enemy_turn
+*temp fcar_i 1
+*label fight_enemy_cast_area_loop
+*if (fcar_i <= combat_ally_slot_cap)
+  *temp fcar_ap (("combat_ally" & fcar_i) & "_")
+  *if (((not(fcar_i = fcar_primary_ally)) and ({(fcar_ap & "hp")} > 0)) and ({(fcar_ap & "position")} = fcar_center))
+    *page_break The spell spreads…
+    *gosub_scene combat_dice resolve_enemy_attack_on_ally fcar_i
+    *gosub_scene combat_prose fight_narrate_ally_attack "enemy" combat_active_target "ally" fcar_i combat_enemy_atk_on_ally_hit
+  *set fcar_i + 1
+  *goto fight_enemy_cast_area_loop
 *return
 
 *comment EXTRA ATTACK ON AN ALLY (3.4a follow-up): fight_enemy_extra_attack's twin for an enemy whose attack an ally intercepts (fight_enemy_ally_attack). The same weapons ("own", "offhand"),
@@ -1114,6 +1152,8 @@
 *label fight_cleanup_terrain_loop
 *if (fcl_terrain_i <= combat_terrain_slot_cap)
   *set {(("combat_terrain" & fcl_terrain_i) & "_type")} "none"
+  *set {(("combat_terrain" & fcl_terrain_i) & "_owner")} ""
+  *set {(("combat_terrain" & fcl_terrain_i) & "_until")} 0
   *set {(("combat_terrain" & fcl_terrain_i) & "_position")} 0
   *set {(("combat_terrain" & fcl_terrain_i) & "_capacity")} 0
   *set {(("combat_terrain" & fcl_terrain_i) & "_blocks_los")} false
@@ -1429,6 +1469,7 @@
   *comment Reaction asymmetry (2026-09-29, plan §4.5/Phase 5) -- same leftover-state reason as the enemy-side
   *comment oa_used reset above.
   *set {(("combat_ally" & fc_a_i) & "_oa_used")} false
+  *set {(("combat_ally" & fc_a_i) & "_prone")} false
   *comment A stun (2026-11-03) never carries into the next fight.
   *set {(("combat_ally" & fc_a_i) & "_stunned")} 0
   *set {(("combat_ally" & fc_a_i) & "_stun_page")} 0
@@ -1506,6 +1547,9 @@
 *set combat_player_restrained 0
 *set combat_player_restrained_dc 0
 *set combat_player_restrained_src ""
+*set combat_player_prone false
+*set combat_player_stood_round 0
+*set combat_player_fell_round 0
 *set combat_player_moves_held 0
 *set combat_player_paralyzed 0
 *set combat_player_paralyzed_dc 0
@@ -1728,9 +1772,15 @@
 *return
 
 *label fight_sync_target_out
-*set {(("combat_enemy" & combat_active_target) & "_hp")} combat_enemy_hp
+*temp fsto_p (("combat_enemy" & combat_active_target) & "_")
+*comment The damage since the last write-back, for an enemy's concentration save (3.9, 2026-11-18). Every blow the player lands on an enemy passes through
+*comment the scratch combat_enemy_hp and back out here, so this is the one place they are all seen. Two blows written back together make one save.
+*temp fsto_dmg ({(fsto_p & "hp")} - combat_enemy_hp)
+*set {(fsto_p & "hp")} combat_enemy_hp
 *if (combat_enemy_hp <= 0)
-  *gosub_scene combat_dice concentration_end (("combat_enemy" & combat_active_target) & "_")
+  *gosub_scene combat_dice concentration_end fsto_p
+*elseif (fsto_dmg > 0)
+  *gosub_scene combat_dice concentration_damage_check fsto_p fsto_dmg 8
 *return
 
 *comment Legacy fights use 0 Engaged, 1 Close, 2 Mid-Range, 3 Long Range; expanded6 uses 0 Engaged, 1 Close,
@@ -1971,6 +2021,8 @@
 *comment Advantage from the target itself (a prone enemy after grease, 2026-10-12) comes from combat_attack_edge in combat_dice.txt, the one rule every attacker, ally attacks included, asks.
 *temp cha_tag combat_attack_tag
 *set combat_attack_tag ""
+*comment The enemy this roll is aimed at, for its Shield and Blade Ward (roll_d20_check, 3.9a 4c/4d).
+*set combat_atk_vs_enemy combat_active_target
 *gosub_scene combat_dice condition_has "combat_player_" "blinded"
 *if (condition_result)
   *set disadvantage true
@@ -1979,6 +2031,13 @@
 *if (combat_player_restrained > 0)
   *set disadvantage true
   *set combat_atk_restrained true
+*comment Frightened (3.6 step 4): so do they while the source of the fear is alive and in sight.
+*gosub_scene combat_dice player_fear_source
+*if (combat_player_fear_slot > 0)
+  *set disadvantage true
+  *set combat_atk_frightened true
+*comment Bane (an enemy's, 3.6 step 4): 1d4 off the attack roll, rolled in dice_engine's lock.
+*set combat_atk_baned ((combat_player_bane_expires_round > 0) and (combat_player_bane_expires_round >= combat_round))
 *gosub_scene combat_dice combat_attack_edge combat_enemy_range combat_active_target cha_tag
 *if (combat_edge_adv)
   *set advantage true
@@ -2447,6 +2506,13 @@
 *if (combat_player_restrained > 0)
   *set disadvantage true
   *set combat_atk_restrained true
+*comment Frightened (3.6 step 4): so do they while the source of the fear is alive and in sight.
+*gosub_scene combat_dice player_fear_source
+*if (combat_player_fear_slot > 0)
+  *set disadvantage true
+  *set combat_atk_frightened true
+*comment Bane (an enemy's, 3.6 step 4): 1d4 off the attack roll, rolled in dice_engine's lock.
+*set combat_atk_baned ((combat_player_bane_expires_round > 0) and (combat_player_bane_expires_round >= combat_round))
 *if (combat_save_quiet)
   *set check_silent true
 *gosub_scene dice_engine roll_d20_check
@@ -3012,15 +3078,31 @@
 *comment (combat_enemy<N>_disadvantage/_advantage, see fight_sync_target_in/apply_enemy_type/resolve_enemy_attack),
 *comment it's tied to that specific enemy's own next attack roll, RAW, and is consumed there instead -- a fight
 *comment where the targeted enemy spends a round or two just closing distance (the range-tier system) no longer
-*comment loses the debuff before that enemy ever actually attacks. player_movement_restricted stays round-scoped
-*comment on purpose, for its own separate reason -- see its own create comment (startup.txt).
+*comment loses the debuff before that enemy ever actually attacks. player_movement_restricted is no longer cleared here
+*comment (3.9, 2026-11-19): it lasts until the end of the player's next turn (fight_end_player_turn), so a rider landed after the player's turn still holds on the next one.
 *set combat_player_actions_left combat_player_actions_max
 *set combat_player_bonus_left combat_player_bonus_max
 *set combat_player_attacks_left combat_player_attacks_max
 *set combat_player_moves_left combat_player_moves_max
 *set combat_move_touched_difficult_terrain false
 *set combat_sneak_spent false
-*set player_movement_restricted false
+*comment A timed terrain piece (Grease, 3.9a) is gone once its last round has passed.
+*if ((combat_terrain1_until > 0) and (combat_round > combat_terrain1_until))
+  *set combat_terrain1_type "none"
+  *set combat_terrain1_owner ""
+  *set combat_terrain1_until 0
+*if ((combat_terrain2_until > 0) and (combat_round > combat_terrain2_until))
+  *set combat_terrain2_type "none"
+  *set combat_terrain2_owner ""
+  *set combat_terrain2_until 0
+*if ((combat_terrain3_until > 0) and (combat_round > combat_terrain3_until))
+  *set combat_terrain3_type "none"
+  *set combat_terrain3_owner ""
+  *set combat_terrain3_until 0
+*if ((combat_terrain4_until > 0) and (combat_round > combat_terrain4_until))
+  *set combat_terrain4_type "none"
+  *set combat_terrain4_owner ""
+  *set combat_terrain4_until 0
 *gosub_scene combat_dice concentration_reconcile
 *return
 
@@ -3102,6 +3184,10 @@
 *gosub combat_chain_begin
 *gosub blade_ward_tick
 *gosub_scene combat_dice condition_tick "combat_player_" 7
+*comment GREASE (3.9a): ending the turn on a patch is a Dexterity save or Prone.
+*gosub_scene combat_spells grease_end_turn "combat_player_" 7
+*comment Pinned / Hobbled / Off-Balance (player_movement_restricted) end with the turn they held, as Slowed does (3.9, 2026-11-19). Cleared before the chain, so one landed in it holds next turn.
+*set player_movement_restricted false
 *goto combat_next_turn
 
 *label combat_spend_attack
@@ -3244,6 +3330,20 @@
   *comment When the player acts first nothing has printed since the Turn Order line (announce_turn_order ends on a blank line), so a break here would be an empty line. The same holds after an ambush: the enemies' opening turns end in the "Hold your ground..." page break, which leaves the hub at the top of a fresh page.
   *if ((not(combat_turn_kind_1 = "player")) and (not(combat_turn_advanced_this_page)))
     *line_break
+*comment An enemy's concentration save and "ends" line from the action just taken (3.9; concentration_pending_print, combat_dice.txt).
+*gosub_scene combat_dice concentration_pending_print
+*comment PRONE (3.9a): a prone player gets back up at the first menu of their turn, which costs half their movement: no Dash this round.
+*if (combat_player_stood_page = page_id)
+  [b][🧎 You get back to your feet][/b]
+  *line_break
+*elseif ((combat_player_prone) and (not(combat_player_fell_round = combat_round)))
+  *set combat_player_prone false
+  *set combat_player_stood_round combat_round
+  *set combat_player_stood_page page_id
+  [b][🧎 You get back to your feet][/b]
+  *line_break
+*comment AN ENEMY'S WEB (3.9, 2026-11-19): a player who starts their turn in one and is not already held makes the Dexterity save (foe_web_player_check).
+*gosub_scene combat_spells foe_web_player_check
 *comment Shield's +5 reaches the player's printed AC only after the reaction has actually fired. While it is
 *comment merely armed, the caster is still on their ordinary AC and is waiting to see a hit that the +5 can
 *comment deflect. This keeps the round banner and sidebar honest without writing the temporary bonus into
@@ -3252,26 +3352,26 @@
 *if (shield_active)
   *set ac_shown (armor_class + 5)
 *if (combat_enemy_count = 1)
-  [b][⚔️ Round ${combat_round} — ${combat_enemy_name}: HP ${combat_enemy_hp}/${combat_enemy_max_hp} (AC ${combat_enemy_ac}) | You: HP ${hp_current}/${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|} (AC ${ac_shown}@{shield_active  (Shield)|})][/b]
+  [b][⚔️ Round ${combat_round} — ${combat_enemy_name}: HP ${combat_enemy_hp}/${combat_enemy_max_hp}@{(combat_enemy1_temp_hp > 0)  (+${combat_enemy1_temp_hp} Temp HP)|} (AC ${combat_enemy_ac}) | You: HP ${hp_current}/${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|} (AC ${ac_shown}@{shield_active  (Shield)|})][/b]
 *else
   [b][⚔️ Round ${combat_round}][/b]
   *line_break
-  [b][${combat_enemy1_name}: HP ${combat_enemy1_hp}/${combat_enemy1_max_hp}@{((combat_enemy1_hp <= 0) and (combat_enemy1_out = ""))  (Down)|}@{(combat_enemy1_out = "fled")  (Fled)|}@{(combat_enemy1_out = "surrendered")  (Surrendered)|}@{(combat_enemy1_out = "reserve")  (Not arrived)|} (AC ${combat_enemy1_ac})][/b]
+  [b][${combat_enemy1_name}: HP ${combat_enemy1_hp}/${combat_enemy1_max_hp}@{(combat_enemy1_temp_hp > 0)  (+${combat_enemy1_temp_hp} Temp HP)|}@{((combat_enemy1_hp <= 0) and (combat_enemy1_out = ""))  (Down)|}@{(combat_enemy1_out = "fled")  (Fled)|}@{(combat_enemy1_out = "surrendered")  (Surrendered)|}@{(combat_enemy1_out = "reserve")  (Not arrived)|} (AC ${combat_enemy1_ac})][/b]
   *line_break
   *if (combat_enemy_count >= 2)
-    [b][${combat_enemy2_name}: HP ${combat_enemy2_hp}/${combat_enemy2_max_hp}@{((combat_enemy2_hp <= 0) and (combat_enemy2_out = ""))  (Down)|}@{(combat_enemy2_out = "fled")  (Fled)|}@{(combat_enemy2_out = "surrendered")  (Surrendered)|}@{(combat_enemy2_out = "reserve")  (Not arrived)|} (AC ${combat_enemy2_ac})][/b]
+    [b][${combat_enemy2_name}: HP ${combat_enemy2_hp}/${combat_enemy2_max_hp}@{(combat_enemy2_temp_hp > 0)  (+${combat_enemy2_temp_hp} Temp HP)|}@{((combat_enemy2_hp <= 0) and (combat_enemy2_out = ""))  (Down)|}@{(combat_enemy2_out = "fled")  (Fled)|}@{(combat_enemy2_out = "surrendered")  (Surrendered)|}@{(combat_enemy2_out = "reserve")  (Not arrived)|} (AC ${combat_enemy2_ac})][/b]
     *line_break
   *if (combat_enemy_count >= 3)
-    [b][${combat_enemy3_name}: HP ${combat_enemy3_hp}/${combat_enemy3_max_hp}@{((combat_enemy3_hp <= 0) and (combat_enemy3_out = ""))  (Down)|}@{(combat_enemy3_out = "fled")  (Fled)|}@{(combat_enemy3_out = "surrendered")  (Surrendered)|}@{(combat_enemy3_out = "reserve")  (Not arrived)|} (AC ${combat_enemy3_ac})][/b]
+    [b][${combat_enemy3_name}: HP ${combat_enemy3_hp}/${combat_enemy3_max_hp}@{(combat_enemy3_temp_hp > 0)  (+${combat_enemy3_temp_hp} Temp HP)|}@{((combat_enemy3_hp <= 0) and (combat_enemy3_out = ""))  (Down)|}@{(combat_enemy3_out = "fled")  (Fled)|}@{(combat_enemy3_out = "surrendered")  (Surrendered)|}@{(combat_enemy3_out = "reserve")  (Not arrived)|} (AC ${combat_enemy3_ac})][/b]
     *line_break
   *if (combat_enemy_count >= 4)
-    [b][${combat_enemy4_name}: HP ${combat_enemy4_hp}/${combat_enemy4_max_hp}@{((combat_enemy4_hp <= 0) and (combat_enemy4_out = ""))  (Down)|}@{(combat_enemy4_out = "fled")  (Fled)|}@{(combat_enemy4_out = "surrendered")  (Surrendered)|}@{(combat_enemy4_out = "reserve")  (Not arrived)|} (AC ${combat_enemy4_ac})][/b]
+    [b][${combat_enemy4_name}: HP ${combat_enemy4_hp}/${combat_enemy4_max_hp}@{(combat_enemy4_temp_hp > 0)  (+${combat_enemy4_temp_hp} Temp HP)|}@{((combat_enemy4_hp <= 0) and (combat_enemy4_out = ""))  (Down)|}@{(combat_enemy4_out = "fled")  (Fled)|}@{(combat_enemy4_out = "surrendered")  (Surrendered)|}@{(combat_enemy4_out = "reserve")  (Not arrived)|} (AC ${combat_enemy4_ac})][/b]
     *line_break
   *if (combat_enemy_count >= 5)
-    [b][${combat_enemy5_name}: HP ${combat_enemy5_hp}/${combat_enemy5_max_hp}@{((combat_enemy5_hp <= 0) and (combat_enemy5_out = ""))  (Down)|}@{(combat_enemy5_out = "fled")  (Fled)|}@{(combat_enemy5_out = "surrendered")  (Surrendered)|}@{(combat_enemy5_out = "reserve")  (Not arrived)|} (AC ${combat_enemy5_ac})][/b]
+    [b][${combat_enemy5_name}: HP ${combat_enemy5_hp}/${combat_enemy5_max_hp}@{(combat_enemy5_temp_hp > 0)  (+${combat_enemy5_temp_hp} Temp HP)|}@{((combat_enemy5_hp <= 0) and (combat_enemy5_out = ""))  (Down)|}@{(combat_enemy5_out = "fled")  (Fled)|}@{(combat_enemy5_out = "surrendered")  (Surrendered)|}@{(combat_enemy5_out = "reserve")  (Not arrived)|} (AC ${combat_enemy5_ac})][/b]
     *line_break
   *if (combat_enemy_count >= 6)
-    [b][${combat_enemy6_name}: HP ${combat_enemy6_hp}/${combat_enemy6_max_hp}@{((combat_enemy6_hp <= 0) and (combat_enemy6_out = ""))  (Down)|}@{(combat_enemy6_out = "fled")  (Fled)|}@{(combat_enemy6_out = "surrendered")  (Surrendered)|}@{(combat_enemy6_out = "reserve")  (Not arrived)|} (AC ${combat_enemy6_ac})][/b]
+    [b][${combat_enemy6_name}: HP ${combat_enemy6_hp}/${combat_enemy6_max_hp}@{(combat_enemy6_temp_hp > 0)  (+${combat_enemy6_temp_hp} Temp HP)|}@{((combat_enemy6_hp <= 0) and (combat_enemy6_out = ""))  (Down)|}@{(combat_enemy6_out = "fled")  (Fled)|}@{(combat_enemy6_out = "surrendered")  (Surrendered)|}@{(combat_enemy6_out = "reserve")  (Not arrived)|} (AC ${combat_enemy6_ac})][/b]
     *line_break
   [b][You: HP ${hp_current}/${hp_max}@{(temp_hp > 0)  (+${temp_hp} Temp HP)|} (AC ${ac_shown}@{shield_active  (Shield)|})][/b]
 *if (rebuke_armed)
@@ -3345,6 +3445,19 @@
     [b][👁️ Blinded (1 round)][/b]
   *else
     [b][👁️ Blinded (${combat_player_blinded} rounds)][/b]
+*if ((combat_player_bane_expires_round > 0) and (combat_player_bane_expires_round >= combat_round))
+  *line_break
+  *temp chb_left ((combat_player_bane_expires_round - combat_round) + 1)
+  *if (chb_left = 1)
+    [b][🔻 Baned (1 round)][/b]
+  *else
+    [b][🔻 Baned (${chb_left} rounds)][/b]
+*if (combat_player_frightened > 0)
+  *line_break
+  *if (combat_player_frightened = 1)
+    [b][😨 Frightened (1 round)][/b]
+  *else
+    [b][😨 Frightened (${combat_player_frightened} rounds)][/b]
 *if (combat_player_bonus_left < combat_player_bonus_max)
   *line_break
   [b][⚡ Bonus action used | ${combat_player_bonus_left} left this round][/b]
@@ -3593,9 +3706,11 @@
 *comment target's own range band, so the gate only has to ask about the target itself -- resolve_cast_grease finds the rest.
 *temp combat_can_grease false
 *if (((known_grease) and (slot_left_1 > 0)) and (combat_player_actions_left > 0))
-  *temp cgr_now {(("combat_enemy" & combat_active_target) & "_greased")}
   *temp cgr_hp {(("combat_enemy" & combat_active_target) & "_hp")}
-  *if ((cgr_now <= 0) and (cgr_hp > 0))
+  *comment Since 3.9a: not while a patch already lies under the target (grease_at).
+  *temp gat_pos_1 {(("combat_enemy" & combat_active_target) & "_position")}
+  *gosub_scene combat_spells grease_at gat_pos_1
+  *if ((not(combat_grease_here)) and (cgr_hp > 0))
     *set combat_can_grease true
 *comment Thunderwave (Wizard or Bard, 2026-11-04): a slot of the caster's own pool, an unspent action, and a living enemy Engaged with the caster -- the same emanation Arms of Hadar needs, so it asks
 *comment combat_hadar_check rather than walking the slots a second time.
@@ -4042,6 +4157,14 @@
   *if (combat_lane_player_position < combat_lane_max_position)
     *set combat_can_push_forward true
     *set combat_push_past true
+*comment FRIGHTENED (3.6 step 4): no willing step closer to the source of the fear while it is in sight. Forward is toward a foe standing ahead, back toward one behind.
+*gosub_scene combat_dice player_fear_source
+*if (combat_player_fear_slot > 0)
+  *temp cfr_pos {(("combat_enemy" & combat_player_fear_slot) & "_position")}
+  *if (cfr_pos > combat_lane_player_position)
+    *set combat_can_push_forward false
+  *if (cfr_pos < combat_lane_player_position)
+    *set combat_can_fall_back false
 *temp combat_engaged_epithet "the enemy"
 *if (combat_engaged_slot > 0)
   *set combat_engaged_epithet {(("combat_enemy" & combat_engaged_slot) & "_epithet")}
@@ -4430,10 +4553,12 @@
     *set combat_why_cause_fear_2 combat_why_res
 *temp combat_why_grease "unowned"
 *if (((((held_grease) or (race_cantrip = "grease")) or (race_cantrip_2 = "grease")) and ((not(class_prepares)) or (prepared_grease))) or (known_grease))
-  *temp cw_gr_now {(("combat_enemy" & combat_active_target) & "_greased")}
+  *comment Since 3.9a: "already greased" means a patch already lies under the target (grease_at).
+  *temp gat_pos_2 {(("combat_enemy" & combat_active_target) & "_position")}
+  *gosub_scene combat_spells grease_at gat_pos_2
   *temp cw_gr_hp {(("combat_enemy" & combat_active_target) & "_hp")}
   *temp cw_gr_spec ""
-  *if ((cw_gr_now > 0) or (cw_gr_hp <= 0))
+  *if ((combat_grease_here) or (cw_gr_hp <= 0))
     *set cw_gr_spec "already_greased"
   *gosub combat_eval_spell_why "action" cw_slot_1 false cw_gr_spec spell_reach_ok_grease
   *set combat_why_grease combat_why_res
@@ -4467,11 +4592,12 @@
 *temp combat_why_bane "unowned"
 *temp combat_why_bane_2 "unowned"
 *if (((((held_bane) or (race_cantrip = "bane")) or (race_cantrip_2 = "bane")) and ((not(class_prepares)) or (prepared_bane))) or (known_bane))
+  *comment Medium reach (decision #2, the user, 2026-11-18): offered only while a living foe stands within Mid-Range, and only those foes are Baned (resolve_cast_bane).
   *if ((combat_has_pool_1) or (pact_slots_max = 0))
-    *gosub combat_eval_spell_why "action" cw_slot_1 true "" true
+    *gosub combat_eval_spell_why "action" cw_slot_1 true "" combat_in_medium
     *set combat_why_bane combat_why_res
   *if ((combat_has_pool_2) or (slot_left_2 > 0))
-    *gosub combat_eval_spell_why "action" cw_slot_2 true "" true
+    *gosub combat_eval_spell_why "action" cw_slot_2 true "" combat_in_medium
     *set combat_why_bane_2 combat_why_res
 *temp combat_why_healing_word "unowned"
 *temp combat_why_healing_word_2 "unowned"
@@ -4880,7 +5006,7 @@
       *goto fight_move_spent
 
   *comment Slowed (an enemy's Ray of Frost, 3.6 step 2): no Dash until the player has taken their next turn, as for an enemy.
-  *if (((((combat_player_actions_left > 0) or (combat_cunning)) and (not(combat_player_on_difficult_terrain))) and (combat_player_restrained <= 0)) and (combat_player_slowed <= 0))
+  *if ((((((combat_player_actions_left > 0) or (combat_cunning)) and (not(combat_player_on_difficult_terrain))) and (combat_player_restrained <= 0)) and (combat_player_slowed <= 0)) and (not(combat_player_stood_round = combat_round)))
     # [b][@{combat_cunning BONUS ACTION|ACTION}][/b] [b][Dash][/b] Push yourself for extra ground this turn@{combat_cunning .|, giving up anything else.}
       *comment Dash, RAW (2026-09-28): spends the action, grants ONE extra combat_player_moves_left, so a player
       *comment starting more than one tier out can close/open two tiers this turn -- at the cost of the action, so
@@ -6044,6 +6170,8 @@ You pull the stopper and hurl the philter at ${combat_enemy_epithet}.
   *set {(ftp_p & "stunned")} combat_philter_turns
   *set {(ftp_p & "stun_kind")} "memory"
   *set {(ftp_p & "stun_page")} 0
+  *comment Stunned is incapacitated: the enemy's concentration ends with no save (3.9).
+  *gosub_scene combat_dice concentration_end_incapacitated ftp_p
 *if (combat_throw_failed)
   The flask bursts, and pink-and-violet vapor curls up around ${combat_throw_epithet}'s head. They breathe it in and stop, eyes unfocused, as if a door has opened on a warm afternoon.
   *line_break
@@ -6072,6 +6200,11 @@ You pull the stopper and hurl the philter at ${combat_enemy_epithet}.
 *rand combat_throw_v 1 3
 *temp ftf_p (("combat_enemy" & combat_active_target) & "_")
 *temp ftf_greased {(ftf_p & "greased")}
+*comment Standing on a Grease patch counts too (3.9a, flammable as in BG3).
+*temp gat_pos_3 {(ftf_p & "position")}
+*gosub_scene combat_spells grease_at gat_pos_3
+*if (combat_grease_here)
+  *set ftf_greased 1
 *set combat_throw_greased false
 *if (ftf_greased > 0)
   *set combat_throw_greased true
@@ -6371,7 +6504,10 @@ A sharp, ringing cadence leaves your lips. Warmth rushes through your marrow, kn
 *return
 
 *label fight_read_can_bane
-*set combat_read_ok combat_player_can_see
+*comment Medium reach (decision #2): a foe within Mid-Range, as for the spell.
+*gosub fight_read_foe_in_medium
+*if (not(combat_player_can_see))
+  *set combat_read_ok false
 *return
 
 *label fight_read_can_grease
@@ -7540,6 +7676,11 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *rand caa_die 1 4
 *if (combat_arrow_used = "fire")
   *temp caa_greased {(caa_p & "greased")}
+  *comment Standing on a Grease patch counts too (3.9a, flammable as in BG3).
+  *temp gat_pos_4 {(caa_p & "position")}
+  *gosub_scene combat_spells grease_at gat_pos_4
+  *if (combat_grease_here)
+    *set caa_greased 1
   *if (caa_greased > 0)
     *set caa_die + 2
     *set combat_arrow_grease true
@@ -8407,10 +8548,9 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *set {(gg_p & "greased")} 0
   *rand gg_v 1 3
   *if (gg_prone)
+    *comment Prone (3.9a): standing costs half its movement, not the turn. It acts as normal, with no Dash (combat_grease_stood), and a greased one tests its footing only on a later turn.
     *set {(gg_p & "prone")} false
-    *set gg_res 2
-    *if (gg_wants)
-      *set gg_res 1
+    *set gg_res 5
   *elseif ((gg_greased > 0) and (gg_wants))
     *temp gg_dex {(gg_p & "dexterity")}
     *gosub_scene startup score_to_mod gg_dex
@@ -8427,6 +8567,11 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *set {(gg_p & "grease_roll")} gg_roll
   *set {(gg_p & "grease_v")} gg_v
   *set {(gg_p & "grease_page")} page_id
+*set combat_grease_stood false
+*if (gg_res = 5)
+  [b][🧎 ${combat_enemy_name} gets back up][/b]
+  *line_break
+  *set combat_grease_stood true
 *if (gg_res = 3)
   *if (gg_v = 1)
     $!{combat_enemy_epithet} takes a step, and the grease takes the foot out from under them. They go down hard.
@@ -8545,6 +8690,16 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *gosub_scene combat_ai fight_pick_enemy_spell
 *if (not(combat_enemy_cast_spell = ""))
   *gosub_scene combat_spells spell_facts_load combat_enemy_cast_spell
+  *comment Bane (3.6 step 4): several targets on the player's side, a save, and an effect that is not a shared condition; its own label.
+  *if (combat_enemy_cast_spell = "bane")
+    *gosub_scene combat_spells resolve_npc_cast_bane cepa_p combat_enemy_cast_place
+    *set combat_turn_advanced_this_page true
+    *return
+  *comment Grease (3.9a): a patch at the player's spot (resolve_npc_cast_grease).
+  *if (combat_enemy_cast_spell = "grease")
+    *gosub_scene combat_spells resolve_npc_cast_grease cepa_p combat_enemy_cast_place "combat_player_"
+    *set combat_turn_advanced_this_page true
+    *return
   *comment A save-or-condition spell (3.6 step 4: Blindness), from the data.
   *if (((spell_fact_resolution = "save") and (spell_fact_dice_sides <= 0)) and (not(spell_fact_condition = "")))
     *set combat_caster_name combat_enemy_name
@@ -8553,7 +8708,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *set combat_turn_advanced_this_page true
     *return
   *comment An attack-roll spell, or a save-for-damage one (3.6 step 3: Burning Hands; half or none on a save, from the data), cast at the player.
-  *if ((spell_fact_resolution = "attack") or ((spell_fact_resolution = "save") and (spell_fact_dice_sides > 0)))
+  *if (((spell_fact_resolution = "attack") or (spell_fact_resolution = "auto")) or ((spell_fact_resolution = "save") and (spell_fact_dice_sides > 0)))
     *gosub fight_enemy_cast_attack cepa_p
     *set combat_turn_advanced_this_page true
     *return
@@ -8562,26 +8717,86 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *gosub_scene combat_prose fight_narrate_enemy_turn
 *return
 
+*comment Scorching Ray's other rays at an ally (spell_fact_projectiles, still loaded), each on its own page as at the player, while the ally stands.
+*comment ALLY CASTERS (3.8, 2026-11-19): an ally casts its picked spell at the enemy it fights (fight_pick_ally_cast_spell), in place of its attack and its move. A condition
+*comment spell goes through resolve_npc_cast_condition (the caster's line, the save and the banner, its concentration); a damage spell through resolve_ally_cast_damage and
+*comment the ally-attack lines (fight_narrate_ally_attack, keyed by combat_ally_cast_spell). Area spells hit only the one foe for now.
+*label fight_ally_cast
+*params fac_a fac_e
+*temp fac_ap (("combat_ally" & fac_a) & "_")
+*gosub_scene combat_spells spell_facts_load combat_ally_cast_spell
+*if (((spell_fact_resolution = "save") and (spell_fact_dice_sides <= 0)) and (not(spell_fact_condition = "")))
+  *gosub_scene combat_spells resolve_npc_cast_condition fac_ap (("combat_enemy" & fac_e) & "_") fac_e combat_ally_cast_place combat_ally_cast_spell
+*else
+  *gosub_scene combat_spells spend_npc_spell_use fac_ap combat_ally_cast_place
+  *gosub_scene combat_dice resolve_ally_cast_damage fac_a fac_e
+  *set combat_ally_break_deferred true
+  *gosub_scene combat_prose fight_narrate_ally_attack "ally" fac_a "enemy" fac_e combat_ally_atk_hit
+  *set combat_ally_break_deferred false
+  *comment The condition branch's narration (fight_narrate_npc_cast) ends on its own break; the attack lines do not.
+  *line_break
+*set combat_enemy_save_halved false
+*set combat_ally_cast_spell ""
+*set combat_ally_cast_place 0
+*set combat_turn_advanced_this_page true
+*return
+
+*label fight_enemy_ally_more_rays
+*params femr_slot femr_ally
+*temp femr_n spell_fact_projectiles
+*comment Magic Missile's darts are one packet (load_enemy_spell_profile): no more pages.
+*if (combat_enemy_atk_auto)
+  *set femr_n 1
+*temp femr_i 2
+*label fight_enemy_ally_more_rays_loop
+*if ((femr_i <= femr_n) and ({(("combat_ally" & femr_ally) & "_hp")} > 0))
+  *page_break Another ray follows…
+  *gosub_scene combat_dice resolve_enemy_attack_on_ally femr_ally
+  *gosub_scene combat_prose fight_narrate_ally_attack "enemy" femr_slot "ally" femr_ally combat_enemy_atk_on_ally_hit
+  *set femr_i + 1
+  *goto fight_enemy_ally_more_rays_loop
+*return
+
 *label fight_enemy_ally_attack
-*comment Shared enemy-vs-intercepting-ally attack dispatcher (Step 3c-2): lets an enemy in melee reach cast an assigned save-for-damage spell with enemy lines (Burning Hands; 3.6 step 3, from the data) before falling back to sidearm quick-draw and normal melee/ranged ally attack.
+*comment Shared enemy-vs-ally attack dispatcher (Step 3c-2): the enemy's target is an ally (combat_intercepting_ally). It casts an assigned spell worth casting at that ally
+*comment (fight_pick_ally_intercept_spell, from the data; 3.6 step 5: any shape, melee or ranged caster) before falling back to sidearm quick-draw and its normal attack.
+*comment The shapes go as they do at the player (combat_enemy_player_action): Bane its own label (it reaches the player too), a save-or-condition spell through
+*comment resolve_npc_cast_condition at the ally, and an attack-roll or save-for-damage spell through resolve_enemy_attack_on_ally, one page per projectile, then the area pass.
 *params feaa_slot
 *temp feaa_p (("combat_enemy" & feaa_slot) & "_")
+*temp feaa_ally combat_intercepting_ally
 *set combat_enemy_cast_spell ""
 *set combat_enemy_cast_place 0
-*if ((combat_ranged_cornered) or (not(combat_enemy_weapon_type = "ranged")))
-  *gosub_scene combat_ai fight_pick_ally_intercept_spell
+*gosub_scene combat_ai fight_pick_ally_intercept_spell feaa_ally
 *if (not(combat_enemy_cast_spell = ""))
+  *gosub_scene combat_spells spell_facts_load combat_enemy_cast_spell
+  *if (combat_enemy_cast_spell = "bane")
+    *gosub_scene combat_spells resolve_npc_cast_bane feaa_p combat_enemy_cast_place
+    *goto feaa_tail
+  *if (combat_enemy_cast_spell = "grease")
+    *gosub_scene combat_spells resolve_npc_cast_grease feaa_p combat_enemy_cast_place (("combat_ally" & feaa_ally) & "_")
+    *goto feaa_tail
+  *if (((spell_fact_resolution = "save") and (spell_fact_dice_sides <= 0)) and (not(spell_fact_condition = "")))
+    *gosub_scene combat_spells resolve_npc_cast_condition feaa_p (("combat_ally" & feaa_ally) & "_") feaa_ally combat_enemy_cast_place combat_enemy_cast_spell
+    *goto feaa_tail
   *gosub_scene combat_spells spend_npc_spell_use feaa_p combat_enemy_cast_place
   *gosub_scene combat_spells load_enemy_spell_profile feaa_p combat_enemy_cast_spell
 *elseif ((combat_enemy_weapon_type = "ranged") and (combat_ranged_cornered))
   *gosub fight_enemy_quickdraw
-*gosub_scene combat_dice resolve_enemy_attack_on_ally combat_intercepting_ally
-*gosub_scene combat_prose fight_narrate_ally_attack "enemy" feaa_slot "ally" combat_intercepting_ally combat_enemy_atk_on_ally_hit
+*gosub_scene combat_dice resolve_enemy_attack_on_ally feaa_ally
+*gosub_scene combat_prose fight_narrate_ally_attack "enemy" feaa_slot "ally" feaa_ally combat_enemy_atk_on_ally_hit
+*if (not(combat_enemy_cast_spell = ""))
+  *gosub fight_enemy_ally_more_rays feaa_slot feaa_ally
+  *comment An area spell (3.6 step 5) catches everyone else in its area too, the player among them.
+  *gosub fight_enemy_cast_area feaa_ally
+  *set combat_enemy_atk_auto false
+  *gosub fight_sync_target_in
 *comment An extra_attack ability (3.4a) follows the first blow at the intercepting ally too, as it does at the player (fight_enemy_extra_attack). Not after a cast.
 *if (combat_enemy_cast_spell = "")
   *gosub_scene combat_abilities ability_extra_attacks feaa_slot
   *if (ability_extra_attack_n > 0)
     *gosub fight_enemy_ally_extra_attack feaa_slot
+*label feaa_tail
 *set combat_enemy_cast_spell ""
 *set combat_enemy_cast_place 0
 *set combat_enemy_used_sidearm false
@@ -8609,6 +8824,8 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *comment that dispatches straight to the player with nothing having happened yet (round 1's first entry, most
 *comment commonly) reads with no break at all, exactly as it always did.
 *comment replay-ok: the turn chain advances once per page; checked in a real browser (Menu then Return left combat_current_turn_index unchanged on every page of a fight).
+*comment An enemy's concentration save and "ends" line from the turn just ended (3.9; concentration_pending_print, combat_dice.txt).
+*gosub_scene combat_dice concentration_pending_print
 *set combat_current_turn_index + 1
 *if (combat_current_turn_index > combat_turn_count)
   *set combat_current_turn_index 1
@@ -8680,6 +8897,10 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *comment Where this enemy began its turn, for Web's "walked into the webs" save at the end of it.
     *temp cnt_web_from {(("combat_enemy" & cnt_slot) & "_position")}
     *set {("combat_turn_first_pass_" & combat_current_turn_index)} false
+    *comment Shield, Absorb Elements and Blade Ward last until the start of its own turn (3.9a 4c/4d).
+    *set {(("combat_enemy" & cnt_slot) & "_shield_on")} false
+    *set {(("combat_enemy" & cnt_slot) & "_absorb_type")} ""
+    *set {(("combat_enemy" & cnt_slot) & "_blade_ward")} false
     *comment cnt_rv: shared by both branches below that roll a 3-way flavor variant, declared once here instead
     *comment of once per branch.
     *temp cnt_rv 0
@@ -8724,11 +8945,20 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *comment CASTING FROM RANGE (3.6, closing 3.9's gap): a melee enemy still out of reach with an assigned spell worth casting from there (an attack-roll spell whose reach
     *comment holds the player, or Blindness) casts it instead of closing. The pick is cached per slot per page, so combat_enemy_player_action reads the same one.
     *temp cnt_cast_from_range false
-    *if ((((not(combat_enemy_weapon_type = "ranged")) and (combat_enemy_range > 0)) and ((combat_intercepting_ally = 0) and (cnt_throw_place = 0))) and ((not(combat_player_hidden)) and (not((combat_player_surprise) and (cnt_first_pass)))))
+    *comment Only while the player is its goal: the pick is cached per slot per page, so a pick made for the player must not stand for an ally below.
+    *if ((((not(combat_enemy_weapon_type = "ranged")) and (combat_enemy_range > 0)) and ((combat_intercepting_ally = 0) and (cnt_throw_place = 0))) and (((not(combat_player_hidden)) and (combat_enemy_goal_ally = 0)) and (not((combat_player_surprise) and (cnt_first_pass)))))
       *gosub_scene combat_ai fight_pick_enemy_spell
       *if (not(combat_enemy_cast_spell = ""))
         *set cnt_cast_from_range true
         *set cnt_web_balk false
+    *comment The same when the enemy is closing on an ally (combat_enemy_goal_ally, 3.6 step 5): a spell worth casting at that ally from here is cast instead (the goal-ally branch below).
+    *temp cnt_cast_at_goal false
+    *if (((not(combat_enemy_weapon_type = "ranged")) and (combat_enemy_goal_ally > 0)) and ((combat_intercepting_ally = 0) and (cnt_throw_place = 0)))
+      *if (not((combat_player_surprise) and (cnt_first_pass)))
+        *gosub_scene combat_ai fight_pick_ally_intercept_spell combat_enemy_goal_ally
+        *if (not(combat_enemy_cast_spell = ""))
+          *set cnt_cast_at_goal true
+          *set cnt_web_balk false
     *comment GREASE (2026-10-12, the user's call): a greased enemy that tries to MOVE must pass a DC 10 Dexterity check or fall prone and lose its turn; a prone one spends its next turn standing. Standing still and swinging never trips it.
     *comment Whether this enemy would move this turn is worked out here from the same facts the branches below use (close on the player or an ally, back off from a corner, take a terrain step); combat_grease_gate does the rest.
     *comment REACH (2026-10-12): a ranged enemy whose weapon does not reach you from where it stands must close first (a slinger is medium, an archer long). cnt_e_out is true when it is out of its own reach.
@@ -8738,6 +8968,12 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *temp cnt_e_out false
     *if ((combat_enemy_weapon_type = "ranged") and (combat_enemy_range > cnt_e_tier))
       *set cnt_e_out true
+    *comment POSITIONING (3.9, 2026-11-19): a ranged caster that still has a spell with a shorter reach than its own attack (a Fire Bolt caster with Ray of Sickness) edges in
+    *comment to that reach, one step a turn, and acts from there: the branch below Dashes only while it is out of its own attack's reach (cnt_e_tier), as before.
+    *if (((combat_enemy_weapon_type = "ranged") and (not(cnt_e_out))) and (not(combat_player_hidden)))
+      *gosub_scene combat_ai enemy_spell_want_tier cnt_slot
+      *if (combat_enemy_range > combat_ai_spell_want_tier)
+        *set cnt_e_out true
     *comment A cornered caster weighs the opportunity attack its retreat would draw (combat_cornered_decide above): the profile's combat_behavior_oa_weight says whether it does.
     *set combat_cornered_choice "retreat_shoot"
     *if (((combat_enemy_weapon_type = "ranged") and (combat_ranged_cornered)) and ((combat_enemy_can_retreat) and (cnt_e_room)))
@@ -8765,7 +9001,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
         *set cnt_wants_move true
       *elseif (((combat_enemy_range > 0) and (cnt_frightened <= 0)) and (not((combat_ai_terrain_hold_position) and (combat_ai_terrain_step_reason = "chokepoint"))))
         *set cnt_wants_move true
-    *if (((cnt_web_balk) or (cnt_throw_place > 0)) or (cnt_cast_from_range))
+    *if ((((cnt_web_balk) or (cnt_throw_place > 0)) or (cnt_cast_from_range)) or (cnt_cast_at_goal))
       *set cnt_wants_move false
     *comment ENSNARING STRIKE: a held enemy takes the thorns and either struggles (if it meant to move) or fights from where it stands. The hold runs out after the spell's last round.
     *comment STUN (2026-11-01): a stunned enemy loses its turn before anything else is rolled for it (combat_stun_gate prints it and counts it down once per page).
@@ -8803,6 +9039,9 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *if (((((cnt_prone) or (cnt_greased > 0)) and (not(cnt_restrain_stop))) and (not(cnt_stun_stop))) and (not((combat_player_surprise) and (cnt_first_pass))))
       *gosub combat_grease_gate cnt_slot cnt_wants_move
       *set cnt_grease_stop combat_grease_stop
+      *comment Prone (3.9a): standing up took half its movement, so no Dash this turn, as a Slowed foe gets none.
+      *if (combat_grease_stood)
+        *set cnt_slowed 1
     *comment MORALE (2026-11-03): the triggers are checked, and a broken nerve acted on, before anything else it would do this turn (see MORALE).
     *temp cnt_morale_stop false
     *if ((((not(cnt_stun_stop)) and (not(cnt_restrain_stop))) and (not(cnt_grease_stop))) and (not((combat_player_surprise) and (cnt_first_pass))))
@@ -8810,6 +9049,16 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
       *set cnt_morale_stop combat_morale_stop
       *if (combat_boom_killed)
         *goto cnt_boom_tail
+    *comment ENEMY HEALING (3.9a 4b): a healer that can act looks after its side first (enemy_try_heal). Cure Wounds takes the turn (cnt_heal_stop); Healing Word, a bonus action, leaves it the rest of its turn.
+    *temp cnt_heal_stop false
+    *if (((((not(cnt_stun_stop)) and (not(cnt_restrain_stop))) and (not(cnt_grease_stop))) and (not(cnt_morale_stop))) and (not((combat_player_surprise) and (cnt_first_pass))))
+      *if (combat_enemy_hp > 0)
+        *gosub_scene combat_spells enemy_try_heal cnt_slot
+        *set cnt_heal_stop combat_enemy_heal_took_action
+        *comment BLADE WARD (3.9a 4d): an Engaged, badly hurt caster with it wards itself, which takes its action.
+        *if (not(cnt_heal_stop))
+          *gosub_scene combat_spells enemy_try_blade_ward cnt_slot
+          *set cnt_heal_stop combat_enemy_heal_took_action
     *if (combat_player_surprise) and (cnt_first_pass)
       *comment Three variants, via *rand -- none lead with combat_enemy_epithet (usually a lowercase "the X"),
       *comment so the printed sentence never opens on an uncapitalized word.
@@ -8835,6 +9084,9 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
       *set combat_turn_advanced_this_page true
     *elseif (cnt_morale_stop)
       *comment Broken: it surrendered, fled a step, or left the field (combat_enemy_broken_act); the turn is spent.
+      *set combat_turn_advanced_this_page true
+    *elseif (cnt_heal_stop)
+      *comment Cure Wounds took its action (enemy_try_heal printed it); the turn is spent.
       *set combat_turn_advanced_this_page true
     *elseif (((((combat_enemy_weapon_type = "ranged") and (combat_ranged_cornered)) and (combat_enemy_can_retreat)) and (cnt_e_room)) and (not(combat_cornered_choice = "stay")))
       *comment (2026-10-11) Cornered now means ANY opponent shares this enemy's lane tile (combat_ranged_cornered, choose_ranged_enemy_target), not "engaged with the player and a player's ally nearby".
@@ -8955,6 +9207,10 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
         *if (combat_boom_killed)
           *goto cnt_boom_tail
       *comment A cornered ranged enemy (the ally it picked shares its tile) cannot back off, so it draws its sidearm or casts a close-range spell against the intercepting ally (Step 3c-2).
+      *gosub fight_enemy_ally_attack cnt_slot
+    *elseif ((combat_enemy_goal_ally > 0) and (cnt_cast_at_goal))
+      *comment Casting at the ally it was closing on, from where it stands (3.6 step 5).
+      *set combat_intercepting_ally combat_enemy_goal_ally
       *gosub fight_enemy_ally_attack cnt_slot
     *elseif (combat_enemy_goal_ally > 0)
       *comment NEAREST-TARGET CLOSING (2026-10-11): the nearest opponent is an ally that is not in reach yet, so this enemy closes on IT, not on the player. Same tempo as closing on the player: a free step, and
@@ -9255,6 +9511,8 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
         *gosub_scene combat_movement combat_web_at cnt_web_to
         *if (combat_web_here)
           *gosub_scene combat_spells web_catch cnt_slot
+      *comment GREASE (3.9a): ending the turn on a patch is a Dexterity save or Prone.
+      *gosub_scene combat_spells grease_end_turn cnt_cp cnt_slot
       *gosub_scene combat_dice condition_tick cnt_cp cnt_slot
     *gosub_scene combat_dice concentration_reconcile
 *if (cnt_kind = "ally")
@@ -9279,6 +9537,14 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *gosub combat_stun_gate "ally" cnt_slot
     *if (combat_stun_stop)
       *goto cnt_ally_tail
+    *comment PRONE (3.9a): a prone ally gets back up, which costs half its movement: no Dash this turn (cnt_a_stood, read by its closing step below).
+    *temp cnt_a_stood false
+    *if ({(("combat_ally" & cnt_slot) & "_prone")})
+      *set {(("combat_ally" & cnt_slot) & "_prone")} false
+      *set cnt_a_stood true
+      *temp cnt_pr_name {(("combat_ally" & cnt_slot) & "_name")}
+      [b][🧎 ${cnt_pr_name} gets back up][/b]
+      *line_break
     *comment PARALYZED (3.5): a held ally loses the whole turn too; its end-of-turn Wisdom save runs in cnt_ally_tail (condition_tick).
     *if ({(("combat_ally" & cnt_slot) & "_paralyzed")} > 0)
       *temp cnt_pa_ep {(("combat_ally" & cnt_slot) & "_epithet")}
@@ -9435,9 +9701,12 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
         *temp cnt_a_weapon {(("combat_ally" & cnt_slot) & "_weapon_type")}
         *temp cnt_a_range {(("combat_ally" & cnt_slot) & "_range")}
         *temp cnt_a_target_position {(("combat_enemy" & combat_active_target) & "_position")}
+        *comment ALLY CASTERS (3.8): a spell worth casting at its foe from where it stands takes the turn (fight_ally_cast, below), in place of stepping and attacking.
+        *gosub_scene combat_ai fight_pick_ally_cast_spell cnt_slot combat_active_target
+        *temp cnt_a_cast (not(combat_ally_cast_spell = ""))
         *comment Ranged allies may step onto a better adjacent terrain coordinate before shooting. The shared chooser
         *comment enforces capacity and keeps them outside their target's coordinate; this is not a second attack or Dash.
-        *if (cnt_a_weapon = "ranged")
+        *if ((cnt_a_weapon = "ranged") and (not(cnt_a_cast)))
           *gosub_scene combat_ai combat_choose_ranged_tactical_step "ally" cnt_slot cnt_a_target_position
           *if (combat_ai_terrain_step_direction != "none")
             *gosub_scene combat_movement combat_lane_move_ally_to_position cnt_slot combat_active_target combat_ai_terrain_step_destination
@@ -9453,7 +9722,12 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
             *line_break
         *if (not(cnt_a_weapon = "ranged"))
           *gosub_scene combat_ai combat_choose_terrain_step "ally" cnt_slot cnt_a_target_position true false
-        *if (((not(cnt_a_weapon = "ranged")) and (combat_ai_terrain_hold_position)) and (combat_ai_terrain_step_reason = "chokepoint"))
+        *if (cnt_a_cast)
+          *gosub fight_ally_cast cnt_slot combat_active_target
+          *gosub fight_check_all_dead
+          *if (combat_all_enemies_dead)
+            *goto fight_victory
+        *elseif (((not(cnt_a_weapon = "ranged")) and (combat_ai_terrain_hold_position)) and (combat_ai_terrain_step_reason = "chokepoint"))
           [b][🛡️ ${combat_attacker_name} Holds the Chokepoint][/b]
           *line_break
           *set combat_turn_advanced_this_page true
@@ -9474,6 +9748,11 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
           *if (combat_all_enemies_dead)
             *goto fight_victory
           *line_break
+        *elseif ((({(("combat_ally" & cnt_slot) & "_frightened")} > 0) and ({(("combat_ally" & cnt_slot) & "_frightened_src")} = (("combat_enemy" & combat_active_target) & "_cause_fear"))) and ({(("combat_ally" & cnt_slot) & "_blinded")} <= 0))
+          *comment Frightened (3.6 step 5): a melee ally will not step closer to the foe that frightened it while it can see that foe (the player's rule, combat.txt's movement gate), so it holds.
+          [b][😨 ${combat_attacker_name} Holds Back — Frightened][/b]
+          *line_break
+          *set combat_turn_advanced_this_page true
         *else
           *comment Free movement + Dash (2026-09-28, mirrors the player's own Push Forward/Dash and the enemy
           *comment branch just above): closes its OWN combat_ally<N>_range one tier for free, independent of
@@ -9503,7 +9782,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
               *set cnt_a_next_dash_position (cnt_a_after_first_step - 1)
             *gosub_scene combat_movement combat_difficult_terrain_crossing_query cnt_a_after_first_step cnt_a_next_dash_position
             *temp cnt_a_difficult_dash_path combat_difficult_terrain_blocks_dash
-            *if ((cnt_a_range > 0) and ((not(cnt_a_difficult_after_first_step)) and (not(cnt_a_difficult_dash_path))))
+            *if (((cnt_a_range > 0) and (not(cnt_a_stood))) and ((not(cnt_a_difficult_after_first_step)) and (not(cnt_a_difficult_dash_path))))
               *gosub_scene combat_movement combat_lane_step_ally_from_position cnt_slot combat_active_target "toward"
               *set cnt_a_range {(("combat_ally" & cnt_slot) & "_range")}
               *set cnt_a_dashed true
@@ -9555,6 +9834,8 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
         *goto fight_victory_quiet
     *if ({(("combat_ally" & cnt_slot) & "_hp")} > 0)
       *temp cnt_ap (("combat_ally" & cnt_slot) & "_")
+      *comment GREASE (3.9a): ending the turn on a patch is a Dexterity save or Prone.
+      *gosub_scene combat_spells grease_end_turn cnt_ap cnt_slot
       *gosub_scene combat_dice condition_tick cnt_ap 0
     *gosub_scene combat_dice concentration_reconcile
 *goto combat_next_turn
@@ -9968,6 +10249,95 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *comment Range: explicitly Close (1), same reason as fight_dev_ally_ranged_test's own comment -- left at the
 *comment default 0 here would show Kess fighting at the new close-range disadvantage for no in-fiction reason.
 *set combat_ally2_range 1
+*goto fight_library
+
+*label fight_dev_caster_war
+*comment Dev-hub only (3.9a 6, 2026-11-19): casters on both sides at once. A swordsman holds the front while a Battle-Mage (Scorching Ray, Web, Shield) and a
+*comment Field Healer (Cure Wounds, Healing Word, False Life already up) stand back; the player has Wren, an ally caster (Hold Person, Shatter, Ray of Frost), and Kess
+*comment the archer. Shows enemy healing and reactions, ally casting, area spells and concentration all in one fight.
+*set combat_is_nonlethal false
+*set combat_range_mode "expanded6"
+*set combat_terrain_layout "random_standard"
+*set combat_lib_1 "swordsman"
+*set combat_enemy_name_override "Vanguard Swordsman"
+*set combat_enemy_range 1
+*set combat_lib_2 "hedge_mage"
+*set combat_enemy2_name_override "Battle-Mage"
+*set combat_enemy2_epithet_override "the battle-mage"
+*set combat_enemy2_range 3
+*set combat_enemy2_cast_spell_1_override "scorching_ray"
+*set combat_enemy2_cast_uses_1_override 2
+*set combat_enemy2_cast_chance_1_override 60
+*set combat_enemy2_cast_spell_2_override "web"
+*set combat_enemy2_cast_uses_2_override 1
+*set combat_enemy2_cast_chance_2_override 50
+*set combat_enemy2_cast_spell_3_override "shield"
+*set combat_enemy2_cast_uses_3_override 2
+*set combat_enemy2_cast_chance_3_override 100
+*set combat_lib_3 "hedge_mage"
+*set combat_enemy3_name_override "Field Healer"
+*set combat_enemy3_epithet_override "the field healer"
+*set combat_enemy3_range 3
+*set combat_enemy3_cast_spell_1_override "cure_wounds"
+*set combat_enemy3_cast_uses_1_override 2
+*set combat_enemy3_cast_chance_1_override 100
+*set combat_enemy3_cast_spell_2_override "healing_word"
+*set combat_enemy3_cast_uses_2_override 2
+*set combat_enemy3_cast_chance_2_override 100
+*set combat_enemy3_cast_spell_3_override "false_life"
+*set combat_enemy3_cast_uses_3_override 1
+*set combat_enemy3_cast_chance_3_override 100
+*set combat_ally_lib_1 "guard"
+*set combat_ally1_name_override "Wren"
+*set combat_ally1_epithet_override "Wren"
+*set combat_ally1_range 2
+*set combat_ally_cast_spell_1_override "hold_person"
+*set combat_ally_cast_uses_1_override 1
+*set combat_ally_cast_chance_1_override 60
+*set combat_ally_cast_spell_2_override "shatter"
+*set combat_ally_cast_uses_2_override 2
+*set combat_ally_cast_chance_2_override 60
+*set combat_ally_cast_spell_3_override "ray_of_frost"
+*set combat_ally_cast_uses_3_override 9
+*set combat_ally_cast_chance_3_override 100
+*set combat_ally_cast_dc_override 13
+*set combat_ally_lib_2 "archer"
+*set combat_ally2_name_override "Kess"
+*set combat_ally2_epithet_override "Kess"
+*set combat_ally2_range 1
+*goto fight_library
+
+*label fight_dev_grease_brawl
+*comment Dev-hub only (3.9a 6, 2026-11-19): Prone and the area spells in a crowd. An Oil-Mage (Grease, Thunderwave, Arms of Hadar) fights beside two swordsmen,
+*comment everyone close together; the player has Rook, a guard. Grease patches, falls and standing up, the engaged-area spells catching the player and Rook
+*comment together, and the riders, all at once.
+*set combat_is_nonlethal false
+*set combat_range_mode "expanded6"
+*set combat_lib_1 "swordsman"
+*set combat_enemy_name_override "Left Swordsman"
+*set combat_enemy_epithet_override "the left swordsman"
+*set combat_enemy_range 1
+*set combat_lib_2 "swordsman"
+*set combat_enemy2_name_override "Right Swordsman"
+*set combat_enemy2_epithet_override "the right swordsman"
+*set combat_enemy2_range 1
+*set combat_lib_3 "hedge_mage"
+*set combat_enemy3_name_override "Oil-Mage"
+*set combat_enemy3_epithet_override "the oil-mage"
+*set combat_enemy3_range 2
+*set combat_enemy3_cast_spell_1_override "grease"
+*set combat_enemy3_cast_uses_1_override 2
+*set combat_enemy3_cast_chance_1_override 70
+*set combat_enemy3_cast_spell_2_override "thunderwave"
+*set combat_enemy3_cast_uses_2_override 2
+*set combat_enemy3_cast_chance_2_override 80
+*set combat_enemy3_cast_spell_3_override "arms_of_hadar"
+*set combat_enemy3_cast_uses_3_override 1
+*set combat_enemy3_cast_chance_3_override 80
+*set combat_ally_lib_1 "guard"
+*set combat_ally1_name_override "Rook"
+*set combat_ally1_epithet_override "Rook"
+*set combat_ally1_range 1
 *goto fight_library
 
 *label fight_dev_layout_preview

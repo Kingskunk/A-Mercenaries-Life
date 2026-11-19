@@ -266,6 +266,20 @@
     *elseif (combat_cantrip_rider = "shocking_grasp")
       *line_break
       [b][⚡ Jolted — no reactions until your turn][/b]
+    *elseif (combat_cantrip_rider = "thunderwave")
+      *line_break
+      *gosub_scene combat_movement combat_range_name combat_enemy_range
+      [b][🌊 Thrown back to ${combat_range_display_name}][/b]
+    *elseif (combat_cantrip_rider = "arms_of_hadar")
+      *line_break
+      [b][🖤 Gripped — no reactions until your turn][/b]
+    *elseif (combat_cantrip_rider = "vicious_mockery")
+      *line_break
+      [b][🗯️ Rattled — disadvantage on your next attack][/b]
+    *elseif (combat_cantrip_rider = "dissonant_whispers")
+      *line_break
+      *gosub_scene combat_movement combat_range_name combat_enemy_range
+      [b][👂 Driven back to ${combat_range_display_name} — reaction spent][/b]
     *if (combat_conc_save_triggered)
       *line_break
       ${combat_conc_save_banner}
@@ -341,8 +355,13 @@
 *temp fnaa_v 1
 *rand fnaa_v 1 5
 *temp fnaa_line ""
+*comment The spell being cast, keyed by id: an enemy's leveled spell at an ally (3.6), or an ally's spell at an enemy (3.8). Both directions share the lines, which name the two sides by epithet.
+*temp fnaa_spell ""
 *if ((fnaa_attacker_kind = "enemy") and ((not(combat_enemy_cast_spell = "")) and (not(combat_enemy_cast_spell = "ability"))))
-  *comment An enemy casting a leveled spell at an ally (3.6 step 3: Burning Hands), keyed by spell id.
+  *set fnaa_spell combat_enemy_cast_spell
+*if ((fnaa_attacker_kind = "ally") and (not(combat_ally_cast_spell = "")))
+  *set fnaa_spell combat_ally_cast_spell
+*if (not(fnaa_spell = ""))
   *gosub flavor_npc_ally_spell
 *elseif ((fnaa_knife) and (not(fnaa_has_ps)))
   *gosub flavor_ally_dagger
@@ -994,6 +1013,149 @@
 *params fncs_id
 *if (fncs_id = "blindness")
   *gosub flavor_npc_blindness
+*elseif (fncs_id = "cause_fear")
+  *gosub flavor_npc_cause_fear
+*elseif (fncs_id = "bane")
+  *gosub flavor_npc_bane
+*elseif (fncs_id = "hold_person")
+  *gosub flavor_npc_hold_person
+*elseif (fncs_id = "web")
+  *gosub flavor_npc_web
+*elseif (fncs_id = "grease")
+  *gosub flavor_npc_grease
+*return
+
+*label flavor_npc_grease
+*comment Non-player Grease cast (sets fsh), read whether the player keeps their feet or not. Second-person, the caster through ${combat_caster_epithet}; no gear, weather, light or weapon.
+*temp fngr_v 1
+*rand fngr_v 1 3
+*if (fngr_v = 1)
+  *set fsh "$!{combat_caster_epithet} flicks a hand at the ground under you, and a slick of thick, greasy oil spreads out beneath your feet."
+*elseif (fngr_v = 2)
+  *set fsh "$!{combat_caster_epithet} spits a word, and the ground where you stand turns slick and shining in a heartbeat."
+*else
+  *set fsh "$!{combat_caster_epithet} sweeps a palm low, and a sheet of slippery grease wells up around your feet."
+*return
+
+*label flavor_npc_web
+*comment Non-player Web cast (sets fsh), read whether the player saves or not. Second-person, the caster through ${combat_caster_epithet}; no gear, weather, light or weapon.
+*temp fnwb_v 1
+*rand fnwb_v 1 3
+*if (fnwb_v = 1)
+  *set fsh "$!{combat_caster_epithet} flings a hand toward you, and thick grey strands burst out around you, sticky as tar."
+*elseif (fnwb_v = 2)
+  *set fsh "$!{combat_caster_epithet} draws a quick spiral in the air, and a mass of clinging threads blooms around you and snaps tight."
+*else
+  *set fsh "$!{combat_caster_epithet} spits a word, and ropes of pale webbing lash out across the space where you stand."
+*return
+
+*label flavor_npc_heal
+*comment An enemy's healing spell (3.9a 4b), sets fsh: the caster through ${combat_caster_epithet}, the healed friend through ${combat_defender_epithet}, or the caster itself
+*comment (fnh_self). Cure Wounds is a touch, Healing Word a spoken word at range. No worn piece or place.
+*params fnh_id fnh_self
+*temp fnh_v 1
+*rand fnh_v 1 2
+*if (fnh_id = "cure_wounds")
+  *if (fnh_self)
+    *if (fnh_v = 1)
+      *set fsh "$!{combat_caster_epithet} presses a hand to their own wound, and a soft warm light knits the torn flesh closed."
+    *else
+      *set fsh "$!{combat_caster_epithet} mutters a quick prayer over their own hurts, and the bleeding slows and stops under their palm."
+  *else
+    *if (fnh_v = 1)
+      *set fsh "$!{combat_caster_epithet} lays a glowing hand on ${combat_defender_epithet}, and the wound closes beneath it."
+    *else
+      *set fsh "$!{combat_caster_epithet} grips ${combat_defender_epithet}'s shoulder and murmurs, and warm light seeps into their hurts."
+*else
+  *if (fnh_self)
+    *if (fnh_v = 1)
+      *set fsh "$!{combat_caster_epithet} speaks a single bright word, and their own cuts stop bleeding."
+    *else
+      *set fsh "$!{combat_caster_epithet} breathes a quick word of power, and color comes back into their face."
+  *else
+    *if (fnh_v = 1)
+      *set fsh "$!{combat_caster_epithet} calls a single bright word to ${combat_defender_epithet}, who straightens as their wounds ease."
+    *else
+      *set fsh "$!{combat_caster_epithet} snaps a word of power toward ${combat_defender_epithet}, and their bleeding slows."
+*return
+
+*label flavor_npc_cast_spell_at_ally
+*comment A non-player caster's save-or-condition spell at an ally (3.6 step 5), or an ally's at an enemy (3.8), keyed by spell id: sets fsh, third person, the caster through ${combat_caster_epithet} and the
+*comment ally through ${combat_defender_epithet}; one line read whether the ally saves or not (the banner says which).
+*params fncsa_id
+*temp fncsa_v 1
+*rand fncsa_v 1 3
+*if (fncsa_id = "blindness")
+  *if (fncsa_v = 1)
+    *set fsh "$!{combat_caster_epithet} flicks two fingers toward ${combat_defender_epithet}'s face, and a cold shadow surges across their eyes."
+  *elseif (fncsa_v = 2)
+    *set fsh "$!{combat_caster_epithet} snaps a sharp word at ${combat_defender_epithet}, and they flinch as darkness blooms behind their eyes."
+  *else
+    *set fsh "$!{combat_caster_epithet} traces a tight crook in the air, and ${combat_defender_epithet} blinks hard against a sudden, heavy dimness."
+*elseif (fncsa_id = "cause_fear")
+  *if (fncsa_v = 1)
+    *set fsh "$!{combat_caster_epithet} fixes ${combat_defender_epithet} with a flat stare and murmurs a single word, and they go pale."
+  *elseif (fncsa_v = 2)
+    *set fsh "$!{combat_caster_epithet} points two fingers at ${combat_defender_epithet} and hisses, and their shoulders hunch as if bracing to run."
+  *else
+    *set fsh "$!{combat_caster_epithet} whispers something low and ugly at ${combat_defender_epithet}, and they stumble half a step back, breathing fast."
+*elseif (fncsa_id = "hold_person")
+  *if (fncsa_v = 1)
+    *set fsh "$!{combat_caster_epithet} closes a fist toward ${combat_defender_epithet} and speaks one hard word, and every muscle in their body locks tight."
+  *elseif (fncsa_v = 2)
+    *set fsh "$!{combat_caster_epithet} holds up an open palm and slowly curls the fingers shut, and ${combat_defender_epithet} stiffens as if caught in iron."
+  *else
+    *set fsh "$!{combat_caster_epithet} fixes their eyes on ${combat_defender_epithet} and chants low and steady, and their joints stiffen mid-step."
+*elseif (fncsa_id = "grease")
+  *if (fncsa_v = 1)
+    *set fsh "$!{combat_caster_epithet} flicks a hand at the ground under ${combat_defender_epithet}, and a slick of thick, greasy oil spreads out around them."
+  *elseif (fncsa_v = 2)
+    *set fsh "$!{combat_caster_epithet} spits a word, and the ground where ${combat_defender_epithet} stands turns slick and shining."
+  *else
+    *set fsh "$!{combat_caster_epithet} sweeps a palm low, and a sheet of slippery grease wells up around ${combat_defender_epithet}."
+*elseif (fncsa_id = "web")
+  *if (fncsa_v = 1)
+    *set fsh "$!{combat_caster_epithet} flings a hand toward ${combat_defender_epithet}, and thick grey strands burst out around them, sticky as tar."
+  *elseif (fncsa_v = 2)
+    *set fsh "$!{combat_caster_epithet} draws a quick spiral in the air, and a mass of clinging threads blooms around ${combat_defender_epithet}."
+  *else
+    *set fsh "$!{combat_caster_epithet} spits a word, and ropes of pale webbing lash out across the space where ${combat_defender_epithet} stands."
+*return
+
+*label flavor_npc_hold_person
+*comment Non-player Hold Person cast (sets fsh), read whether the player saves or not. Second-person, the caster through ${combat_caster_epithet}; no gear, weather, light or weapon.
+*temp fnhp_v 1
+*rand fnhp_v 1 3
+*if (fnhp_v = 1)
+  *set fsh "$!{combat_caster_epithet} closes a fist toward you and speaks one hard word, and every muscle in your body locks tight at once."
+*elseif (fnhp_v = 2)
+  *set fsh "$!{combat_caster_epithet} holds up an open palm and slowly curls the fingers shut, and a stiff, iron pressure clamps around your arms and legs."
+*else
+  *set fsh "$!{combat_caster_epithet} fixes their eyes on you and chants low and steady, and your joints stiffen as if the air had set solid around you."
+*return
+
+*label flavor_npc_bane
+*comment Non-player Bane cast (sets fsh), read whether anyone saves or not. Second-person, the caster through ${combat_caster_epithet}; no gear, weather, light or weapon.
+*temp fnbn_v 1
+*rand fnbn_v 1 3
+*if (fnbn_v = 1)
+  *set fsh "$!{combat_caster_epithet} spits a string of harsh syllables, and a sour, crawling ill luck reaches out across the gap toward you."
+*elseif (fnbn_v = 2)
+  *set fsh "$!{combat_caster_epithet} draws a crooked sign in the air, and for a moment your grip and your footing both feel a half-beat wrong."
+*else
+  *set fsh "$!{combat_caster_epithet} mutters a curse under their breath, and a dull weight tugs at your limbs and your nerve."
+*return
+
+*label flavor_npc_cause_fear
+*comment Non-player Cause Fear cast (sets fsh), read whether the player saves or not. Second-person, the caster through ${combat_caster_epithet}; no gear, weather, light or weapon.
+*temp fncf_v 1
+*rand fncf_v 1 3
+*if (fncf_v = 1)
+  *set fsh "$!{combat_caster_epithet} fixes you with a flat stare and murmurs a single word, and a cold dread crawls up the back of your neck."
+*elseif (fncf_v = 2)
+  *set fsh "$!{combat_caster_epithet} points two fingers at your chest and hisses, and for a heartbeat your legs want nothing more than to run."
+*else
+  *set fsh "$!{combat_caster_epithet} whispers something low and ugly across the gap, and your stomach drops as if the ground had opened under you."
 *return
 
 *label flavor_npc_blindness
@@ -1788,6 +1950,18 @@
   *gosub flavor_npc_scorching_ray
 *if (fft_type = "burning_hands")
   *gosub flavor_npc_burning_hands
+*if (fft_type = "shatter")
+  *gosub flavor_npc_shatter
+*if (fft_type = "thunderwave")
+  *gosub flavor_npc_thunderwave
+*if (fft_type = "arms_of_hadar")
+  *gosub flavor_npc_arms_of_hadar
+*if (fft_type = "vicious_mockery")
+  *gosub flavor_npc_vicious_mockery
+*if (fft_type = "magic_missile")
+  *gosub flavor_npc_magic_missile
+*if (fft_type = "dissonant_whispers")
+  *gosub flavor_npc_dissonant_whispers
 *if (fft_type = "twig_blight")
   *gosub flavor_type_twig_blight
 *if (fft_type = "zombie")
@@ -2430,8 +2604,197 @@
 
 *comment The ally-target lines of an enemy's at-will attack cantrip (combat.txt apply_enemy_spell_base), by its id. Poison Spray's are inline in fight_narrate_ally_attack.
 *label flavor_npc_ally_spell
-*if (combat_enemy_cast_spell = "burning_hands")
+*comment Keyed by fnaa_spell (fight_narrate_ally_attack). A cantrip falls through to the at-will lines (flavor_npc_ally_cantrip).
+*if ((((fnaa_spell = "fire_bolt") or (fnaa_spell = "ray_of_frost")) or ((fnaa_spell = "eldritch_blast") or (fnaa_spell = "chill_touch"))) or (((fnaa_spell = "shocking_grasp") or (fnaa_spell = "poison_spray")) or (fnaa_spell = "vicious_mockery")))
+  *set fnaa_base_id fnaa_spell
+  *gosub flavor_npc_ally_cantrip
+  *return
+*if (fnaa_spell = "burning_hands")
   *gosub flavor_npc_ally_burning_hands
+*elseif (fnaa_spell = "shatter")
+  *gosub flavor_npc_ally_shatter
+*elseif (fnaa_spell = "thunderwave")
+  *gosub flavor_npc_ally_thunderwave
+*elseif (fnaa_spell = "arms_of_hadar")
+  *gosub flavor_npc_ally_arms_of_hadar
+*elseif (fnaa_spell = "ray_of_sickness")
+  *gosub flavor_npc_ally_ray_of_sickness
+*elseif (fnaa_spell = "scorching_ray")
+  *gosub flavor_npc_ally_scorching_ray
+*elseif (fnaa_spell = "dissonant_whispers")
+  *gosub flavor_npc_ally_dissonant_whispers
+*elseif (fnaa_spell = "magic_missile")
+  *gosub flavor_npc_ally_magic_missile
+*return
+
+*label flavor_npc_ally_magic_missile
+*comment An enemy's Magic Missile at an ally (three darts of force that never miss): five lines, all hits.
+*if (fnaa_v = 1)
+  *set fnaa_line "$!{combat_attacker_epithet} flicks three fingers, and three glowing darts curve through the air and slam into ${combat_defender_epithet}."
+*if (fnaa_v = 2)
+  *set fnaa_line "Three bolts of blue-white light leap from ${combat_attacker_epithet}'s hand and strike ${combat_defender_epithet} one after another."
+*if (fnaa_v = 3)
+  *set fnaa_line "$!{combat_attacker_epithet} snaps a word, and a burst of glowing darts streaks at ${combat_defender_epithet}, each one punching home."
+*if (fnaa_v = 4)
+  *set fnaa_line "A trio of humming darts flies from ${combat_attacker_epithet}'s palm and swerves into ${combat_defender_epithet}'s chest."
+*if (fnaa_v = 5)
+  *set fnaa_line "$!{combat_attacker_epithet} sweeps a hand, and three bright darts chase ${combat_defender_epithet} down and strike in quick succession."
+*return
+
+*label flavor_npc_ally_dissonant_whispers
+*comment An enemy's Dissonant Whispers at an ally (3d6 psychic, Wisdom save, half on a save): the first five lines are a save, the rest a failed one. No forced step on an ally yet.
+*if (combat_enemy_save_halved) or (not(fnaa_hit))
+  *if (fnaa_v = 1)
+    *set fnaa_line "$!{combat_attacker_epithet} hisses a jagged melody at ${combat_defender_epithet}, who grits their teeth through the pain in their skull."
+  *if (fnaa_v = 2)
+    *set fnaa_line "A discordant whisper from ${combat_attacker_epithet} claws at ${combat_defender_epithet}'s mind, and they shake it off with a grimace."
+  *if (fnaa_v = 3)
+    *set fnaa_line "$!{combat_attacker_epithet} murmurs a grating tune, and ${combat_defender_epithet} presses a hand to their temple but holds their ground."
+  *if (fnaa_v = 4)
+    *set fnaa_line "A sour, buzzing hum from ${combat_attacker_epithet} stabs at ${combat_defender_epithet}, who blinks it away, jaw tight."
+  *if (fnaa_v = 5)
+    *set fnaa_line "$!{combat_attacker_epithet} breathes a twisted whisper at ${combat_defender_epithet}, and they wince but stay put."
+*else
+  *if (fnaa_v = 1)
+    *set fnaa_line "$!{combat_attacker_epithet} hisses a jagged melody at ${combat_defender_epithet}, who clutches their head and reels from the sound."
+  *if (fnaa_v = 2)
+    *set fnaa_line "A discordant whisper from ${combat_attacker_epithet} rakes through ${combat_defender_epithet}'s mind, and their eyes water with the pain."
+  *if (fnaa_v = 3)
+    *set fnaa_line "$!{combat_attacker_epithet} murmurs a grating tune, and ${combat_defender_epithet} cries out, pain splitting across their skull."
+  *if (fnaa_v = 4)
+    *set fnaa_line "A sour, buzzing hum from ${combat_attacker_epithet} drills into ${combat_defender_epithet}, who doubles over, gasping."
+  *if (fnaa_v = 5)
+    *set fnaa_line "$!{combat_attacker_epithet} breathes a twisted whisper at ${combat_defender_epithet}, and they flinch as if burned."
+*return
+
+*label flavor_npc_ally_ray_of_sickness
+*comment An enemy's Ray of Sickness at an ally (a ranged spell attack, 2d8 poison; a hit poisons): five hit lines, five miss lines.
+*if (fnaa_hit)
+  *if (fnaa_v = 1)
+    *set fnaa_line "$!{combat_attacker_epithet} levels a finger, and a sickly green ray strikes ${combat_defender_epithet} in the chest, doubling them over."
+  *if (fnaa_v = 2)
+    *set fnaa_line "A thin yellow-green beam leaps from ${combat_attacker_epithet}'s hand and hits ${combat_defender_epithet}'s side, and they retch."
+  *if (fnaa_v = 3)
+    *set fnaa_line "$!{combat_attacker_epithet} flicks a wrist, and a pale green ray catches ${combat_defender_epithet}, who sways, grey in the face."
+  *if (fnaa_v = 4)
+    *set fnaa_line "A sour green light streaks from ${combat_attacker_epithet} and sinks into ${combat_defender_epithet}'s shoulder, and they gag."
+  *if (fnaa_v = 5)
+    *set fnaa_line "$!{combat_attacker_epithet} spits a word, and a sickly ray hits ${combat_defender_epithet} square, leaving them shaking and sweating."
+*else
+  *if (fnaa_v = 1)
+    *set fnaa_line "$!{combat_attacker_epithet} levels a finger, but the sickly green ray streaks past ${combat_defender_epithet}'s shoulder."
+  *if (fnaa_v = 2)
+    *set fnaa_line "A thin yellow-green beam leaps from ${combat_attacker_epithet}'s hand, and ${combat_defender_epithet} twists aside from it."
+  *if (fnaa_v = 3)
+    *set fnaa_line "$!{combat_attacker_epithet} flicks a wrist, and a pale green ray flies wide of ${combat_defender_epithet}."
+  *if (fnaa_v = 4)
+    *set fnaa_line "A sour green light streaks from ${combat_attacker_epithet}, and ${combat_defender_epithet} ducks under it."
+  *if (fnaa_v = 5)
+    *set fnaa_line "$!{combat_attacker_epithet} spits a word, and a sickly ray hisses past ${combat_defender_epithet}, close enough to smell."
+*return
+
+*label flavor_npc_ally_scorching_ray
+*comment An enemy's Scorching Ray at an ally (each ray a ranged spell attack, 2d6 fire, one call per ray): five hit lines, five miss lines.
+*if (fnaa_hit)
+  *if (fnaa_v = 1)
+    *set fnaa_line "A streak of fire lances from ${combat_attacker_epithet}'s hand and burns into ${combat_defender_epithet}'s side."
+  *if (fnaa_v = 2)
+    *set fnaa_line "$!{combat_attacker_epithet} snaps a finger forward, and a ray of flame scorches across ${combat_defender_epithet}'s chest."
+  *if (fnaa_v = 3)
+    *set fnaa_line "A bright line of fire leaps from ${combat_attacker_epithet} and sears ${combat_defender_epithet}'s arm."
+  *if (fnaa_v = 4)
+    *set fnaa_line "$!{combat_attacker_epithet} flicks a wrist, and a burning ray catches ${combat_defender_epithet} in the shoulder, and they hiss in pain."
+  *if (fnaa_v = 5)
+    *set fnaa_line "A ray of fire from ${combat_attacker_epithet} strikes ${combat_defender_epithet}'s leg, and they stagger."
+*else
+  *if (fnaa_v = 1)
+    *set fnaa_line "A streak of fire lances from ${combat_attacker_epithet}'s hand, and ${combat_defender_epithet} sidesteps it."
+  *if (fnaa_v = 2)
+    *set fnaa_line "$!{combat_attacker_epithet} snaps a finger forward, but the ray of flame flies wide of ${combat_defender_epithet}."
+  *if (fnaa_v = 3)
+    *set fnaa_line "A bright line of fire leaps from ${combat_attacker_epithet}, and ${combat_defender_epithet} ducks as it burns past."
+  *if (fnaa_v = 4)
+    *set fnaa_line "$!{combat_attacker_epithet} flicks a wrist, and a burning ray hisses by ${combat_defender_epithet}'s head."
+  *if (fnaa_v = 5)
+    *set fnaa_line "A ray of fire from ${combat_attacker_epithet} cuts the air beside ${combat_defender_epithet} and gutters out."
+*return
+
+*label flavor_npc_ally_thunderwave
+*comment An enemy casting Thunderwave at an engaged ally (2d8 thunder, Constitution save, half on a save): the first five lines are a save (braced), the rest a failed one. No push on an ally yet, so the failed lines stagger rather than throw.
+*if (combat_enemy_save_halved) or (not(fnaa_hit))
+  *if (fnaa_v = 1)
+    *set fnaa_line "$!{combat_attacker_epithet} thrusts both palms out, and a wave of thunder rolls over ${combat_defender_epithet}, who leans into it and holds."
+  *if (fnaa_v = 2)
+    *set fnaa_line "A booming pulse bursts from ${combat_attacker_epithet}, and ${combat_defender_epithet} digs in their heels as it shoves past."
+  *if (fnaa_v = 3)
+    *set fnaa_line "$!{combat_attacker_epithet} stamps and shouts, and a rolling crack of force rattles ${combat_defender_epithet}, who stays braced."
+  *if (fnaa_v = 4)
+    *set fnaa_line "A ripple of thunder breaks off ${combat_attacker_epithet}'s outstretched hands, and ${combat_defender_epithet} ducks a shoulder into it."
+  *if (fnaa_v = 5)
+    *set fnaa_line "$!{combat_attacker_epithet} sweeps an arm wide, and a dull boom washes over ${combat_defender_epithet}, who sets their feet and takes it."
+*else
+  *if (fnaa_v = 1)
+    *set fnaa_line "$!{combat_attacker_epithet} thrusts both palms out, and a wave of thunder slams into ${combat_defender_epithet}, rocking them on their heels."
+  *if (fnaa_v = 2)
+    *set fnaa_line "A booming pulse bursts from ${combat_attacker_epithet} and catches ${combat_defender_epithet} square, knocking the wind out of them."
+  *if (fnaa_v = 3)
+    *set fnaa_line "$!{combat_attacker_epithet} stamps and shouts, and a rolling crack of force hammers ${combat_defender_epithet} off balance."
+  *if (fnaa_v = 4)
+    *set fnaa_line "A ripple of thunder breaks off ${combat_attacker_epithet}'s outstretched hands and pounds through ${combat_defender_epithet}'s chest."
+  *if (fnaa_v = 5)
+    *set fnaa_line "$!{combat_attacker_epithet} sweeps an arm wide, and a heavy boom bowls into ${combat_defender_epithet}, who reels away, shaking their head."
+*return
+
+*label flavor_npc_ally_arms_of_hadar
+*comment An enemy casting Arms of Hadar at an engaged ally (2d6 necrotic, Strength save, half on a save): the first five lines are a save (torn free), the rest a failed one. No lost reaction on an ally yet.
+*if (combat_enemy_save_halved) or (not(fnaa_hit))
+  *if (fnaa_v = 1)
+    *set fnaa_line "Black tendrils burst out around ${combat_attacker_epithet}, and ${combat_defender_epithet} wrenches free as one rakes cold across their arm."
+  *if (fnaa_v = 2)
+    *set fnaa_line "$!{combat_attacker_epithet} spreads their arms, and inky limbs lash out; ${combat_defender_epithet} tears loose with only a chill left behind."
+  *if (fnaa_v = 3)
+    *set fnaa_line "Dark shapes uncoil from ${combat_attacker_epithet}'s shadow and grab at ${combat_defender_epithet}, who shoves them off before they take hold."
+  *if (fnaa_v = 4)
+    *set fnaa_line "A ring of writhing black arms surges up around ${combat_attacker_epithet}, and ${combat_defender_epithet} twists out of their grip, gasping at the cold."
+  *if (fnaa_v = 5)
+    *set fnaa_line "$!{combat_attacker_epithet} hisses a word, and tendrils of shadow whip at ${combat_defender_epithet}, who breaks their hold with a hard pull."
+*else
+  *if (fnaa_v = 1)
+    *set fnaa_line "Black tendrils burst out around ${combat_attacker_epithet} and coil tight around ${combat_defender_epithet}, draining warmth from their limbs."
+  *if (fnaa_v = 2)
+    *set fnaa_line "$!{combat_attacker_epithet} spreads their arms, and inky limbs lash around ${combat_defender_epithet}, squeezing until they gasp."
+  *if (fnaa_v = 3)
+    *set fnaa_line "Dark shapes uncoil from ${combat_attacker_epithet}'s shadow and clamp onto ${combat_defender_epithet}, and a deep, aching cold sinks in."
+  *if (fnaa_v = 4)
+    *set fnaa_line "A ring of writhing black arms surges up around ${combat_attacker_epithet} and drags at ${combat_defender_epithet}, who shudders in their grip."
+  *if (fnaa_v = 5)
+    *set fnaa_line "$!{combat_attacker_epithet} hisses a word, and tendrils of shadow wrap ${combat_defender_epithet}'s legs and chest, numbing everything they touch."
+*return
+
+*label flavor_npc_ally_shatter
+*comment An enemy casting Shatter at an ally (3d8 thunder, Constitution save, half on a save): the first five lines are a save (braced against the edge of the blast), the rest a failed one.
+*if (combat_enemy_save_halved) or (not(fnaa_hit))
+  *if (fnaa_v = 1)
+    *set fnaa_line "$!{combat_attacker_epithet} snaps a word that bursts into a ringing crack beside ${combat_defender_epithet}, who sets their feet and rides out the shock."
+  *if (fnaa_v = 2)
+    *set fnaa_line "A sharp boom goes off at ${combat_defender_epithet}'s shoulder as ${combat_attacker_epithet} flicks a hand, and they stagger but stay upright."
+  *if (fnaa_v = 3)
+    *set fnaa_line "$!{combat_attacker_epithet} claps a single note into the air, and the blast rattles ${combat_defender_epithet} as they hunch down against it."
+  *if (fnaa_v = 4)
+    *set fnaa_line "A burst of sound breaks over ${combat_defender_epithet} at ${combat_attacker_epithet}'s command, and they grit their teeth through the ringing."
+  *if (fnaa_v = 5)
+    *set fnaa_line "$!{combat_attacker_epithet} points and shouts, and a thunderclap jolts ${combat_defender_epithet}, who shakes their head clear of the worst of it."
+*else
+  *if (fnaa_v = 1)
+    *set fnaa_line "$!{combat_attacker_epithet} snaps a word, and a deafening crack bursts right on top of ${combat_defender_epithet}, rocking them off their feet."
+  *if (fnaa_v = 2)
+    *set fnaa_line "A painful boom erupts at ${combat_defender_epithet}'s chest as ${combat_attacker_epithet} flicks a hand, and they double over, ears ringing."
+  *if (fnaa_v = 3)
+    *set fnaa_line "$!{combat_attacker_epithet} claps a single note into the air, and the blast slams through ${combat_defender_epithet} like a blow from every side."
+  *if (fnaa_v = 4)
+    *set fnaa_line "A burst of sound tears through ${combat_defender_epithet} at ${combat_attacker_epithet}'s command, and they reel back, clutching their head."
+  *if (fnaa_v = 5)
+    *set fnaa_line "$!{combat_attacker_epithet} points and shouts, and a thunderclap hammers ${combat_defender_epithet} hard enough to drive the air from their lungs."
 *return
 
 *label flavor_npc_ally_burning_hands
@@ -2499,6 +2862,34 @@
   *gosub flavor_npc_ally_shocking_grasp
 *elseif (fnaa_base_id = "eldritch_blast")
   *gosub flavor_npc_ally_eldritch_blast
+*elseif (fnaa_base_id = "vicious_mockery")
+  *gosub flavor_npc_ally_vicious_mockery
+*return
+
+*label flavor_npc_ally_vicious_mockery
+*comment An enemy's Vicious Mockery at an ally (1d4 psychic, Wisdom save, none on a save): a hit is a failed save. No rider on an ally yet.
+*if (fnaa_hit)
+  *if (fnaa_v = 1)
+    *set fnaa_line "$!{combat_attacker_epithet} sneers a string of cutting words at ${combat_defender_epithet}, and they wince as if slapped."
+  *if (fnaa_v = 2)
+    *set fnaa_line "$!{combat_attacker_epithet} laughs at ${combat_defender_epithet} in a voice laced with magic, and the jeer sinks in like a needle behind the eyes."
+  *if (fnaa_v = 3)
+    *set fnaa_line "A sharp, mocking rhyme from ${combat_attacker_epithet} lands on ${combat_defender_epithet}, who flinches and loses their rhythm."
+  *if (fnaa_v = 4)
+    *set fnaa_line "$!{combat_attacker_epithet} spits an insult at ${combat_defender_epithet}, and the words bite hard enough to make them stagger."
+  *if (fnaa_v = 5)
+    *set fnaa_line "$!{combat_attacker_epithet} mimics ${combat_defender_epithet}'s stance with a cruel grin, and the taunt stings them like a blow."
+*else
+  *if (fnaa_v = 1)
+    *set fnaa_line "$!{combat_attacker_epithet} sneers a string of cutting words at ${combat_defender_epithet}, who shrugs them off."
+  *if (fnaa_v = 2)
+    *set fnaa_line "$!{combat_attacker_epithet} laughs at ${combat_defender_epithet} in a voice laced with magic, but they set their jaw and ignore it."
+  *if (fnaa_v = 3)
+    *set fnaa_line "A sharp, mocking rhyme from ${combat_attacker_epithet} washes over ${combat_defender_epithet}, who barely blinks."
+  *if (fnaa_v = 4)
+    *set fnaa_line "$!{combat_attacker_epithet} spits an insult at ${combat_defender_epithet}, and they answer it with a hard stare."
+  *if (fnaa_v = 5)
+    *set fnaa_line "$!{combat_attacker_epithet} mimics ${combat_defender_epithet}'s stance with a cruel grin, and they let the taunt slide past."
 *return
 
 *label flavor_npc_ray_of_frost
@@ -2801,6 +3192,175 @@
 *if (fft_v = 8)
   *set fft_hit "$!{combat_enemy_epithet} snaps their wrists together and looses a crackling arc of flame that wraps your torso in blinding heat."
   *set fft_miss "$!{combat_enemy_epithet} snaps their wrists together and looses a crackling arc of flame, and you duck clear of the core while the outer sparks singe your shoulder."
+*return
+
+*label flavor_npc_shatter
+*comment An assigned caster's Shatter (3d8 thunder, CON save against cast_dc, half on a save), keyed by spell id. fft_hit is a failed save (caught in the heart of the blast); fft_miss is a successful save (braced, taking half). No move 2; no worn piece or place.
+*if (fft_v = 1)
+  *set fft_hit "$!{combat_enemy_epithet} snaps a single word at you, and a deafening crack bursts right beside your head, and the world rings and tilts."
+  *set fft_miss "$!{combat_enemy_epithet} snaps a single word at you, and a crack bursts beside your head, but you set your jaw and ride out the shock."
+*if (fft_v = 2)
+  *set fft_hit "$!{combat_enemy_epithet} flicks a hand toward you, and a painful boom erupts against your chest, driving the breath out of you."
+  *set fft_miss "$!{combat_enemy_epithet} flicks a hand toward you, and a boom erupts at your chest, but you brace through it with only a dull ache behind your ribs."
+*if (fft_v = 3)
+  *set fft_hit "A ringing note leaves ${combat_enemy_epithet}'s lips and swells into a blast that slams into you from every side at once."
+  *set fft_miss "A ringing note leaves ${combat_enemy_epithet}'s lips and swells into a blast, and you hunch down so it rattles your bones instead of breaking them."
+*if (fft_v = 4)
+  *set fft_hit "$!{combat_enemy_epithet} claps their hands once, and a thunderclap bursts on top of you, so loud your knees buckle."
+  *set fft_miss "$!{combat_enemy_epithet} claps their hands once, and a thunderclap bursts over you, but you lock your knees and stay standing through the ringing."
+*if (fft_v = 5)
+  *set fft_hit "$!{combat_enemy_epithet} points at you and shouts, and a burst of sound tears through you, leaving your teeth aching and your ears buzzing."
+  *set fft_miss "$!{combat_enemy_epithet} points at you and shouts, and a burst of sound breaks over you, but you turn your head and catch only the edge of it."
+*if (fft_v = 6)
+  *set fft_hit "A sharp crack splits the air around you at ${combat_enemy_epithet}'s command, and the shock hits you like a hammer on a bell."
+  *set fft_miss "A sharp crack splits the air around you at ${combat_enemy_epithet}'s command, and you grit your teeth as the shock rolls past, leaving a sting in your ears."
+*if (fft_v = 7)
+  *set fft_hit "$!{combat_enemy_epithet} twists their fingers sharply, and a jarring blast of noise rocks you back a step, your vision swimming."
+  *set fft_miss "$!{combat_enemy_epithet} twists their fingers sharply, and a blast of noise jars you, but you shake your head clear and hold your footing."
+*if (fft_v = 8)
+  *set fft_hit "With a low hum that climbs to a shriek, ${combat_enemy_epithet} looses a burst of thunder that pounds straight through your chest."
+  *set fft_miss "With a low hum that climbs to a shriek, ${combat_enemy_epithet} looses a burst of thunder, and you throw your arms up and take it as a hard, shuddering jolt."
+*return
+
+*label flavor_npc_thunderwave
+*comment An assigned caster's Thunderwave (2d8 thunder, CON save against cast_dc, half on a save; a failure throws the player one step back, banner from the rider), keyed by spell id. fft_hit is a failed save, fft_miss a successful one (braced, half). No move 2; no worn piece or place.
+*if (fft_v = 1)
+  *set fft_hit "$!{combat_enemy_epithet} thrusts both palms at you, and a wave of thunder slams into your chest and hurls you backward."
+  *set fft_miss "$!{combat_enemy_epithet} thrusts both palms at you, and a wave of thunder slams into you, but you lean into it and keep your feet."
+*if (fft_v = 2)
+  *set fft_hit "A booming pulse bursts out of ${combat_enemy_epithet}, and it lifts you off your heels and throws you clear of them."
+  *set fft_miss "A booming pulse bursts out of ${combat_enemy_epithet}, and you dig in your heels as it shoves past, ears ringing."
+*if (fft_v = 3)
+  *set fft_hit "$!{combat_enemy_epithet} stamps hard and shouts, and a rolling crack of force bowls you over backward."
+  *set fft_miss "$!{combat_enemy_epithet} stamps hard and shouts, and a rolling crack of force rattles your teeth, but you stay planted."
+*if (fft_v = 4)
+  *set fft_hit "A ripple of thunder breaks off ${combat_enemy_epithet}'s outstretched hands and pounds into you, driving you back several stumbling steps."
+  *set fft_miss "A ripple of thunder breaks off ${combat_enemy_epithet}'s outstretched hands, and you drop a shoulder into it and only slide back an inch."
+*if (fft_v = 5)
+  *set fft_hit "$!{combat_enemy_epithet} sweeps an arm wide, and a heavy boom catches you full and flings you back off your feet."
+  *set fft_miss "$!{combat_enemy_epithet} sweeps an arm wide, and a heavy boom washes over you, and you brace through it with your jaw clenched."
+*if (fft_v = 6)
+  *set fft_hit "With a sharp clap, ${combat_enemy_epithet} sends out a ring of thunder that smashes into you and knocks you reeling back."
+  *set fft_miss "With a sharp clap, ${combat_enemy_epithet} sends out a ring of thunder, and you hunch low so it batters you without moving you."
+*if (fft_v = 7)
+  *set fft_hit "$!{combat_enemy_epithet} barks a word at point-blank range, and the blast of sound shoves you back hard, your head swimming."
+  *set fft_miss "$!{combat_enemy_epithet} barks a word at point-blank range, and the blast of sound jars you, but you shake it off where you stand."
+*if (fft_v = 8)
+  *set fft_hit "A wall of force rolls out from ${combat_enemy_epithet} with a deep boom, and it hammers you backward before you can brace."
+  *set fft_miss "A wall of force rolls out from ${combat_enemy_epithet} with a deep boom, and you set your feet in time to take it as a hard shove."
+*return
+
+*label flavor_npc_arms_of_hadar
+*comment An assigned caster's Arms of Hadar (2d6 necrotic, STR save against cast_dc, half on a save; a failure spends the player's reaction, banner from the rider), keyed by spell id. fft_hit is a failed save (held), fft_miss a successful one (torn free, half). No move 2; no worn piece or place.
+*if (fft_v = 1)
+  *set fft_hit "Black tendrils burst up around ${combat_enemy_epithet} and coil tight around your legs, and a deep cold soaks into your bones."
+  *set fft_miss "Black tendrils burst up around ${combat_enemy_epithet} and snatch at your legs, but you wrench free as one rakes cold across your shin."
+*if (fft_v = 2)
+  *set fft_hit "$!{combat_enemy_epithet} spreads their arms, and inky limbs lash around your chest, squeezing the warmth out of you."
+  *set fft_miss "$!{combat_enemy_epithet} spreads their arms, and inky limbs lash at you, but you tear loose with only a chill left on your skin."
+*if (fft_v = 3)
+  *set fft_hit "Dark shapes uncoil from ${combat_enemy_epithet}'s shadow and clamp onto your arms, and your strength drains away under their grip."
+  *set fft_miss "Dark shapes uncoil from ${combat_enemy_epithet}'s shadow and grab at your arms, and you shove them off before they get a firm hold."
+*if (fft_v = 4)
+  *set fft_hit "A ring of writhing black arms surges up around ${combat_enemy_epithet}, and they drag at you until you shudder in their grip."
+  *set fft_miss "A ring of writhing black arms surges up around ${combat_enemy_epithet}, and you twist out of their reach, gasping at the cold."
+*if (fft_v = 5)
+  *set fft_hit "$!{combat_enemy_epithet} hisses a word, and shadow tendrils wrap your waist and shoulders, numbing everything they touch."
+  *set fft_miss "$!{combat_enemy_epithet} hisses a word, and shadow tendrils whip at your waist, but you break their hold with a hard pull."
+*if (fft_v = 6)
+  *set fft_hit "Grasping darkness spills from ${combat_enemy_epithet}'s feet, closes around your knees and holds fast."
+  *set fft_miss "Grasping darkness spills from ${combat_enemy_epithet}'s feet, and you stamp free of it as an icy ache bites your knee."
+*if (fft_v = 7)
+  *set fft_hit "Cold, rubbery arms of shadow spill out of ${combat_enemy_epithet} and wind around you, leaching the heat from your body."
+  *set fft_miss "Cold, rubbery arms of shadow spill out of ${combat_enemy_epithet} and brush over you, and you rip away before they can wind tight."
+*if (fft_v = 8)
+  *set fft_hit "$!{combat_enemy_epithet} clenches both fists, and black tendrils lunge out and lock around your arms, aching like frostbite."
+  *set fft_miss "$!{combat_enemy_epithet} clenches both fists, and black tendrils lunge at you, but you yank your arms clear and only feel the cold."
+*return
+
+*label flavor_npc_magic_missile
+*comment An assigned caster's Magic Missile (three darts of 1d4+1 force that never miss, one packet), keyed by spell id. fft_hit: the darts strike. fft_miss is printed only
+*comment when the player's Shield stops them all, so it may name the barrier. No move 2; no worn piece or place.
+*if (fft_v = 1)
+  *set fft_hit "$!{combat_enemy_epithet} flicks three fingers, and three glowing darts curve through the air and slam into your chest one after another."
+  *set fft_miss "$!{combat_enemy_epithet} flicks three fingers, and three glowing darts curve toward you and burst harmlessly against your shimmering barrier."
+*if (fft_v = 2)
+  *set fft_hit "Three bolts of blue-white light leap from ${combat_enemy_epithet}'s hand, bend around your guard, and strike your shoulder, ribs and side."
+  *set fft_miss "Three bolts of blue-white light leap from ${combat_enemy_epithet}'s hand and splash into sparks against your barrier."
+*if (fft_v = 3)
+  *set fft_hit "$!{combat_enemy_epithet} snaps a word, and a burst of glowing darts streaks at you, each one punching home with a hard jolt."
+  *set fft_miss "$!{combat_enemy_epithet} snaps a word, and a burst of glowing darts streaks at you and winks out on your barrier."
+*if (fft_v = 4)
+  *set fft_hit "A trio of humming darts flies from ${combat_enemy_epithet}'s palm, swerves past every attempt to dodge, and hammers into you."
+  *set fft_miss "A trio of humming darts flies from ${combat_enemy_epithet}'s palm and shatters against the barrier in front of you."
+*if (fft_v = 5)
+  *set fft_hit "$!{combat_enemy_epithet} sweeps a hand, and three bright darts chase you down and strike in quick succession."
+  *set fft_miss "$!{combat_enemy_epithet} sweeps a hand, and three bright darts chase you down, only to break apart on your barrier."
+*if (fft_v = 6)
+  *set fft_hit "Darts of pale force spring from ${combat_enemy_epithet}'s fingertips and drive into you, each hit a sharp, numbing punch."
+  *set fft_miss "Darts of pale force spring from ${combat_enemy_epithet}'s fingertips and fizzle out against your barrier."
+*if (fft_v = 7)
+  *set fft_hit "$!{combat_enemy_epithet} points, and three glowing streaks arc out and find you no matter how you twist."
+  *set fft_miss "$!{combat_enemy_epithet} points, and three glowing streaks arc out and scatter off your barrier."
+*if (fft_v = 8)
+  *set fft_hit "With a sharp hiss, ${combat_enemy_epithet} looses a spray of glowing darts that strike you in a tight, stinging cluster."
+  *set fft_miss "With a sharp hiss, ${combat_enemy_epithet} looses a spray of glowing darts that pop like sparks on your barrier."
+*return
+
+*label flavor_npc_vicious_mockery
+*comment An enemy's Vicious Mockery as its at-will attack (1d4 psychic, WIS save against cast_dc, nothing on a save; a failure also puts disadvantage on your next attack, banner from the rider), keyed by spell id. fft_hit is a failed save, fft_miss a successful one. The words are described, never quoted, so they assume nothing about the player. No move 2.
+*if (fft_v = 1)
+  *set fft_hit "$!{combat_enemy_epithet} sneers a string of cutting words at you, and they land like a slap, leaving your head ringing."
+  *set fft_miss "$!{combat_enemy_epithet} sneers a string of cutting words at you, and you let them roll off without a flinch."
+*if (fft_v = 2)
+  *set fft_hit "$!{combat_enemy_epithet} laughs at you in a voice laced with magic, and the jeer sinks in like a needle behind your eyes."
+  *set fft_miss "$!{combat_enemy_epithet} laughs at you in a voice laced with magic, but you set your jaw and shut it out."
+*if (fft_v = 3)
+  *set fft_hit "A sharp, mocking rhyme from ${combat_enemy_epithet} slips past your guard, and your focus scatters with a stab of pain."
+  *set fft_miss "A sharp, mocking rhyme from ${combat_enemy_epithet} washes over you, and you keep your focus."
+*if (fft_v = 4)
+  *set fft_hit "$!{combat_enemy_epithet} spits an insult at you, and the words bite hard enough to make you stagger."
+  *set fft_miss "$!{combat_enemy_epithet} spits an insult at you, and you answer it with a hard stare."
+*if (fft_v = 5)
+  *set fft_hit "$!{combat_enemy_epithet} mimics your stance with a cruel grin, and the taunt stings like a blow to the temple."
+  *set fft_miss "$!{combat_enemy_epithet} mimics your stance with a cruel grin, and you let the taunt slide past."
+*if (fft_v = 6)
+  *set fft_hit "$!{combat_enemy_epithet} hisses a mocking word, and a hot flush of shame and pain sends your thoughts reeling."
+  *set fft_miss "$!{combat_enemy_epithet} hisses a mocking word, and you shake it off with a snort."
+*if (fft_v = 7)
+  *set fft_hit "$!{combat_enemy_epithet} cackles a cruel little verse, and it echoes in your skull until you wince."
+  *set fft_miss "$!{combat_enemy_epithet} cackles a cruel little verse, and it falls flat against your calm."
+*if (fft_v = 8)
+  *set fft_hit "$!{combat_enemy_epithet} jeers in a voice that cuts like broken glass, and you grit your teeth against the sting."
+  *set fft_miss "$!{combat_enemy_epithet} jeers in a voice that cuts like broken glass, and you tune it out."
+*return
+
+*label flavor_npc_dissonant_whispers
+*comment An assigned caster's Dissonant Whispers (3d6 psychic, WIS save against cast_dc, half on a save; a failure spends your reaction on a step away, banner from the rider), keyed by spell id. fft_hit is a failed save, fft_miss a successful one. No move 2; no worn piece or place.
+*if (fft_v = 1)
+  *set fft_hit "$!{combat_enemy_epithet} hisses a jagged melody only you can hear, and pain splits your skull until your feet carry you back from them."
+  *set fft_miss "$!{combat_enemy_epithet} hisses a jagged melody only you can hear, and you grit your teeth through the ache and hold your ground."
+*if (fft_v = 2)
+  *set fft_hit "A discordant whisper from ${combat_enemy_epithet} claws through your mind, and you stumble away from the sound before you can stop yourself."
+  *set fft_miss "A discordant whisper from ${combat_enemy_epithet} claws at your mind, and you shake it off with a grimace."
+*if (fft_v = 3)
+  *set fft_hit "$!{combat_enemy_epithet} murmurs a grating tune, and a spike of pain drives you back a step, hands at your temples."
+  *set fft_miss "$!{combat_enemy_epithet} murmurs a grating tune, and you press through the throbbing in your head."
+*if (fft_v = 4)
+  *set fft_hit "A sour, buzzing hum from ${combat_enemy_epithet} drills into your head, and every instinct tells you to get away."
+  *set fft_miss "A sour, buzzing hum from ${combat_enemy_epithet} stabs at your thoughts, and you blink it away, jaw tight."
+*if (fft_v = 5)
+  *set fft_hit "$!{combat_enemy_epithet} breathes a twisted whisper, and your legs carry you backward as the pain blooms behind your eyes."
+  *set fft_miss "$!{combat_enemy_epithet} breathes a twisted whisper, and you wince but stay where you are."
+*if (fft_v = 6)
+  *set fft_hit "Words that are almost words slither from ${combat_enemy_epithet}, and you lurch away from them, head pounding."
+  *set fft_miss "Words that are almost words slither from ${combat_enemy_epithet}, and you force them out of your head."
+*if (fft_v = 7)
+  *set fft_hit "$!{combat_enemy_epithet} sings a single sour note, and it scrapes along your nerves until you back off, gasping."
+  *set fft_miss "$!{combat_enemy_epithet} sings a single sour note, and you let it grate past without giving an inch."
+*if (fft_v = 8)
+  *set fft_hit "A chorus of whispers swells from ${combat_enemy_epithet}, and you reel away from it, ears roaring."
+  *set fft_miss "A chorus of whispers swells from ${combat_enemy_epithet}, and you shut it out with a shake of your head."
 *return
 
 *label flavor_type_twig_blight

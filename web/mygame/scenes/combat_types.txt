@@ -1050,6 +1050,28 @@
     *gosub apply_ally_type
   *set aar_i + 1
   *goto apply_ally_roster_loop
+*comment ALLY CASTERS (3.8): slot 1's assigned spells from the overrides, with its spell DC and attack bonus worked out from its own scores (compute_cast_dc), then the overrides are cleared.
+*if ((combat_ally_count >= 1) and (not(combat_ally_cast_spell_1_override = "")))
+  *set combat_ally1_cast_spell_1 combat_ally_cast_spell_1_override
+  *set combat_ally1_cast_spell_2 combat_ally_cast_spell_2_override
+  *set combat_ally1_cast_spell_3 combat_ally_cast_spell_3_override
+  *set combat_ally1_cast_uses_1 combat_ally_cast_uses_1_override
+  *set combat_ally1_cast_uses_2 combat_ally_cast_uses_2_override
+  *set combat_ally1_cast_uses_3 combat_ally_cast_uses_3_override
+  *set combat_ally1_cast_chance_1 combat_ally_cast_chance_1_override
+  *set combat_ally1_cast_chance_2 combat_ally_cast_chance_2_override
+  *set combat_ally1_cast_chance_3 combat_ally_cast_chance_3_override
+  *gosub_scene combat compute_cast_dc "combat_ally1_" "" combat_ally_cast_dc_override
+*set combat_ally_cast_spell_1_override ""
+*set combat_ally_cast_spell_2_override ""
+*set combat_ally_cast_spell_3_override ""
+*set combat_ally_cast_uses_1_override 0
+*set combat_ally_cast_uses_2_override 0
+*set combat_ally_cast_uses_3_override 0
+*set combat_ally_cast_chance_1_override 0
+*set combat_ally_cast_chance_2_override 0
+*set combat_ally_cast_chance_3_override 0
+*set combat_ally_cast_dc_override 0
 *return
 
 *label apply_ally_type
@@ -1062,6 +1084,11 @@
 *if (combat_apply_ally_type = "blight_twig")
   *gosub apply_allytype_blight_twig
 *gosub assign_ally_behavior_profile combat_apply_ally_slot combat_apply_ally_type
+*comment Creature type (3.9a 5): the blight twig is a plant, every other ally a person.
+*temp aat_ctype "humanoid"
+*if (combat_apply_ally_type = "blight_twig")
+  *set aat_ctype "plant"
+*set {((("combat_ally" & combat_apply_ally_slot) & "_creature_type"))} aat_ctype
 *comment MORALE (2026-11-03): a guard is steady, a summoned blight twig fearless, everyone else normal (see combat.txt MORALE).
 *temp aat_morale "normal"
 *if (combat_apply_ally_type = "guard")

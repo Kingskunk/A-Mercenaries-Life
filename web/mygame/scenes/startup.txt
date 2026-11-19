@@ -2858,6 +2858,10 @@
 *create combat_save_locked_7 false
 *create combat_save_success_7 false
 *create combat_save_banner_7 ""
+*comment Lock 8: an enemy's or ally's concentration save (concentration_damage_check), kept apart so it never reuses a spell save's roll on the same page.
+*create combat_save_locked_8 false
+*create combat_save_success_8 false
+*create combat_save_banner_8 ""
 *create combat_player_hit_locked false
 *create locked_combat_player_hit_page_id 0
 *create locked_combat_enemy_atk_page_id 0
@@ -3296,6 +3300,141 @@
 *create combat_terrain_open_slot 0
 *create combat_terrain_position_available false
 *create combat_terrain_type_present false
+*comment Who cast a terrain piece (3.9, 2026-11-19): an enemy's Web is a "foe_web" piece owned by its caster's prefix, cleared when that caster's concentration ends.
+*comment The last round a timed terrain piece stands (Grease: cast round + 10), cleared in combat_begin_round. 0 = no limit.
+*create combat_terrain1_until 0
+*create combat_terrain2_until 0
+*create combat_terrain3_until 0
+*create combat_terrain4_until 0
+*comment Grease (3.9a): the owner's DC and whether a patch is here (grease_at), and the banner lines its landing made (grease_land).
+*create combat_grease_here false
+*create combat_grease_owner ""
+*create combat_grease_dc 10
+*create combat_grease_land_banner ""
+*create combat_terrain1_owner ""
+*create combat_terrain2_owner ""
+*create combat_terrain3_owner ""
+*create combat_terrain4_owner ""
+*comment The player's start-of-turn save in an enemy's Web: the round it was rolled, and its banner and page for a refresh.
+*comment PRONE (3.9a, 2026-11-19, BG3's rules adapted; enemies' combat_enemyN_prone already existed): the player's and each ally's flag, and the round the player stood up (no Dash that round).
+*comment ENEMY TEMP HP (3.9a 4a, 2026-11-19): False Life's and Armor of Agathys's pool on an enemy, soaked first by every packet that reaches it (adjust_damage_packet).
+*create combat_enemy0_temp_hp 0
+*create combat_enemy1_temp_hp 0
+*create combat_enemy2_temp_hp 0
+*create combat_enemy3_temp_hp 0
+*create combat_enemy4_temp_hp 0
+*create combat_enemy5_temp_hp 0
+*create combat_enemy6_temp_hp 0
+*comment ENEMY HEALING (3.9a 4b, 2026-11-19): each slot's heal this page (enemy_try_heal), kept so a refresh prints the same and heals nothing twice.
+*create combat_enemy0_heal_page ""
+*create combat_enemy0_heal_banner ""
+*create combat_enemy0_heal_action false
+*create combat_enemy1_heal_page ""
+*create combat_enemy1_heal_banner ""
+*create combat_enemy1_heal_action false
+*create combat_enemy2_heal_page ""
+*create combat_enemy2_heal_banner ""
+*create combat_enemy2_heal_action false
+*create combat_enemy3_heal_page ""
+*create combat_enemy3_heal_banner ""
+*create combat_enemy3_heal_action false
+*create combat_enemy4_heal_page ""
+*create combat_enemy4_heal_banner ""
+*create combat_enemy4_heal_action false
+*create combat_enemy5_heal_page ""
+*create combat_enemy5_heal_banner ""
+*create combat_enemy5_heal_action false
+*create combat_enemy6_heal_page ""
+*create combat_enemy6_heal_banner ""
+*create combat_enemy6_heal_action false
+*comment Set by enemy_try_heal: the heal took this enemy's action (Cure Wounds), so it makes no attack.
+*create combat_enemy_heal_took_action false
+*comment ENEMY REACTIONS AND WARDS (3.9a 4c/4d, 2026-11-19): Shield (+5 AC until its next turn, kept per page for a refresh), Absorb Elements (the type it resists until its next turn), Blade Ward (attack rolls against it lose 1d4 until its next turn).
+*create combat_enemy0_shield_on false
+*create combat_enemy0_shield_page ""
+*create combat_enemy0_shield_banner ""
+*create combat_enemy0_absorb_type ""
+*create combat_enemy0_blade_ward false
+*create combat_enemy0_bw_page ""
+*create combat_enemy0_bw_banner ""
+*create combat_enemy1_shield_on false
+*create combat_enemy1_shield_page ""
+*create combat_enemy1_shield_banner ""
+*create combat_enemy1_absorb_type ""
+*create combat_enemy1_blade_ward false
+*create combat_enemy1_bw_page ""
+*create combat_enemy1_bw_banner ""
+*create combat_enemy2_shield_on false
+*create combat_enemy2_shield_page ""
+*create combat_enemy2_shield_banner ""
+*create combat_enemy2_absorb_type ""
+*create combat_enemy2_blade_ward false
+*create combat_enemy2_bw_page ""
+*create combat_enemy2_bw_banner ""
+*create combat_enemy3_shield_on false
+*create combat_enemy3_shield_page ""
+*create combat_enemy3_shield_banner ""
+*create combat_enemy3_absorb_type ""
+*create combat_enemy3_blade_ward false
+*create combat_enemy3_bw_page ""
+*create combat_enemy3_bw_banner ""
+*create combat_enemy4_shield_on false
+*create combat_enemy4_shield_page ""
+*create combat_enemy4_shield_banner ""
+*create combat_enemy4_absorb_type ""
+*create combat_enemy4_blade_ward false
+*create combat_enemy4_bw_page ""
+*create combat_enemy4_bw_banner ""
+*create combat_enemy5_shield_on false
+*create combat_enemy5_shield_page ""
+*create combat_enemy5_shield_banner ""
+*create combat_enemy5_absorb_type ""
+*create combat_enemy5_blade_ward false
+*create combat_enemy5_bw_page ""
+*create combat_enemy5_bw_banner ""
+*create combat_enemy6_shield_on false
+*create combat_enemy6_shield_page ""
+*create combat_enemy6_shield_banner ""
+*create combat_enemy6_absorb_type ""
+*create combat_enemy6_blade_ward false
+*create combat_enemy6_bw_page ""
+*create combat_enemy6_bw_banner ""
+*comment The enemy slot the player's attack roll is aimed at (combat_hidden_attack_roll), for its Shield and Blade Ward inside roll_d20_check; 0 otherwise.
+*create combat_atk_vs_enemy 0
+*comment Set by enemy_shield_react: the enemy's Shield is up for this attack (already, or raised just now).
+*create combat_enemy_shield_fired false
+*comment An ally's next attack roll has disadvantage (3.9a 5, 2026-11-19): a condition-on-hit from an enemy (Poisoned from Ray of Sickness, Off-Guard and the rest) or Vicious Mockery; the name is for the label. Spent by resolve_ally_attack.
+*create combat_ally0_atk_disadv false
+*create combat_ally0_atk_disadv_name ""
+*create combat_ally1_atk_disadv false
+*create combat_ally1_atk_disadv_name ""
+*create combat_ally2_atk_disadv false
+*create combat_ally2_atk_disadv_name ""
+*create combat_ally3_atk_disadv false
+*create combat_ally3_atk_disadv_name ""
+*create combat_ally4_atk_disadv false
+*create combat_ally4_atk_disadv_name ""
+*comment An ally's creature type (3.9a 5, 2026-11-19), for Hold Person's "humanoid": set by apply_ally_type.
+*create combat_ally0_creature_type ""
+*create combat_ally1_creature_type ""
+*create combat_ally2_creature_type ""
+*create combat_ally3_creature_type ""
+*create combat_ally4_creature_type ""
+*create combat_player_prone false
+*create combat_ally0_prone false
+*create combat_ally1_prone false
+*create combat_ally2_prone false
+*create combat_ally3_prone false
+*create combat_ally4_prone false
+*create combat_player_stood_round 0
+*comment The round the player fell prone on their own turn (their own Grease): they stand only on a later turn.
+*create combat_player_fell_round 0
+*comment Set by combat_grease_gate when a prone enemy stands this turn: no Dash for it (combat_next_turn reads it as Slowed's no-Dash).
+*create combat_grease_stood false
+*create combat_player_stood_page ""
+*create combat_player_web_check_round 0
+*create combat_player_web_check_banner ""
+*create combat_player_web_check_page ""
 *create combat_terrain1_type "none"
 *create combat_terrain1_position 0
 *create combat_terrain1_capacity 0
@@ -3501,9 +3640,9 @@
 *comment off your feet), not just a generic sting -- see combat.txt's resolve_enemy_attack call site for how this
 *comment gets set, and fight_round_hub for what it gates (Break off and disengage). The other five condition
 *comment names (Off-Guard, Bleeding, Poisoned, Dazed, Blinded) keep the plain disadvantage-only effect; nothing
-*comment about them is actually about movement, so they don't set this. Round-scoped like combat_enemy_disadvantage
-*comment (cleared by combat_begin_round), not roll-scoped like the player's own disadvantage flag -- you're pinned
-*comment for the rest of the round it lands in, not just until your very next attack.
+*comment about them is actually about movement, so they don't set this. Lasts until the end of the player's next turn
+*comment (cleared in combat.txt fight_end_player_turn since 3.9, 2026-11-19; it used to be cleared at round start, which
+*comment wiped it before the player's turn whenever the enemy acted after them), not just until your very next attack.
 *create player_movement_restricted false
 *comment Stunned/Paralyzed: same opt-in pattern as the condition-on-hit
 *comment above, but costs the player their whole next turn instead of just
@@ -4531,6 +4670,40 @@
 *create combat_atk_blinded false
 *comment The player is Restrained (3.4): their attack roll has disadvantage, and dice_engine names the cause. Set by the caller before the roll, cleared on every roll.
 *create combat_atk_restrained false
+*create combat_atk_frightened false
+*create combat_atk_baned false
+*comment An enemy's always-hitting spell this attack (Magic Missile, 3.6 step 5): resolve_enemy_attack skips the roll.
+*create combat_enemy_atk_auto false
+*comment ALLY CASTERS (3.8, 2026-11-19): slot 1's assigned spells for a fight (as combat_enemy_cast_*_override is for enemy slot 1), applied and cleared in combat_types apply_ally_roster.
+*create combat_ally_cast_spell_1_override ""
+*create combat_ally_cast_spell_2_override ""
+*create combat_ally_cast_spell_3_override ""
+*create combat_ally_cast_uses_1_override 0
+*create combat_ally_cast_uses_2_override 0
+*create combat_ally_cast_uses_3_override 0
+*create combat_ally_cast_chance_1_override 0
+*create combat_ally_cast_chance_2_override 0
+*create combat_ally_cast_chance_3_override 0
+*create combat_ally_cast_dc_override 0
+*comment The spell the acting ally is casting this turn ("" when none), for its lines (fight_narrate_ally_attack) and resolve_ally_cast_damage.
+*create combat_ally_cast_spell ""
+*create combat_ally_cast_place 0
+*comment The closest reach tier an enemy's remaining spells want (combat_ai enemy_spell_want_tier, 3.9 positioning).
+*create combat_ai_spell_want_tier 99
+*comment Each ally's pick for this page (fight_pick_ally_cast_spell), so a refresh casts the same spell.
+*create locked_combat_ally_cast_page_id ""
+*create combat_ally_cast_locked_1 false
+*create combat_ally_cast_locked_2 false
+*create combat_ally_cast_locked_3 false
+*create combat_ally_cast_locked_4 false
+*create combat_ally1_cast_picked_spell ""
+*create combat_ally2_cast_picked_spell ""
+*create combat_ally3_cast_picked_spell ""
+*create combat_ally4_cast_picked_spell ""
+*create combat_ally1_cast_picked_place 0
+*create combat_ally2_cast_picked_place 0
+*create combat_ally3_cast_picked_place 0
+*create combat_ally4_cast_picked_place 0
 *comment Pool-neutral slots spendable on a 1st-level (slot_left_1) or 2nd-level (slot_left_2) casting,
 *comment recomputed by refresh_slot_left (combat_spells.txt) before combat.txt reads them.
 *create slot_left_1 0
@@ -5737,6 +5910,11 @@
 *create combat_conc_save_triggered false
 *create combat_conc_save_banner ""
 *create combat_conc_ended_banner ""
+*comment An enemy's concentration save and "ends" lines, waiting for the next print point on this page (concentration_pending_add / _print, combat_dice.txt).
+*create combat_conc_pending ""
+*create combat_conc_pending_page 0
+*comment The enemy slot whose spell has the player Frightened and in sight (player_fear_source, combat_dice.txt), or 0.
+*create combat_player_fear_slot 0
 *comment Enemy type library: which library type fills each slot ("" for a hand-authored slot), and the scratch fields
 *comment flavor_from_type (combat.txt) reads and writes. Plain variables rather than *params, like advance_time.
 *comment combat_lib_1/2/3: what a scene sets to call combat.txt fight_library (a library type id per slot); cleared by fight_cleanup.
@@ -6921,6 +7099,7 @@
 *create spell_fact_reach ""
 *comment True when the spell has enemy-voiced lines (spell_book.json combat.npc_lines), so an enemy may cast it.
 *create spell_fact_npc_lines false
+*create spell_fact_concentration false
 *comment The rider an enemy's at-will cantrip put on the player with this hit (resolve_enemy_attack): "ray_of_frost", "shocking_grasp" or "". Read by the hit banner.
 *create combat_cantrip_rider ""
 *comment The dice of the last roll_spell_dice as "3+5" (roll_spell_damage keeps them for a caller that prints them in a banner of its own, Hellish Rebuke), and their sum.

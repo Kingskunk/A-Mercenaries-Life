@@ -365,6 +365,8 @@ function collectCombatSpell(id, sp, expectedLevel) {
     only_type: c.only_type || "",
     reach: (!c.target || c.target === "self") ? "" : reachOf(sp),
     npc_lines: c.npc_lines === true,
+    // Top-level "concentration" (the spellbook's own field): an enemy caster concentrates on it (3.9).
+    concentration: sp.concentration === true,
     scale: scale
   });
 }
@@ -407,7 +409,8 @@ function genFactsLookup() {
     "*set spell_fact_condition \"\"",
     "*set spell_fact_only_type \"\"",
     "*set spell_fact_reach \"\"",
-    "*set spell_fact_npc_lines false"
+    "*set spell_fact_npc_lines false",
+    "*set spell_fact_concentration false"
   ];
   combatSpells.forEach(function (s) {
     L.push("*if (sfl_id = " + q(s.id) + ")");
@@ -437,6 +440,7 @@ function genFactsLookup() {
     if (s.only_type) L.push("  *set spell_fact_only_type " + q(s.only_type));
     if (s.reach) L.push("  *set spell_fact_reach " + q(s.reach));
     if (s.npc_lines) L.push("  *set spell_fact_npc_lines true");
+    if (s.concentration) L.push("  *set spell_fact_concentration true");
     // Cantrip scaling: the counts that hold at the caster's character level, worked out here from the tiers.
     ["hit", "move", "extra"].forEach(function (kind) {
       if (s.scale.sides[kind] > 0) L.push("  *set spell_fact_" + kind + "_sides " + s.scale.sides[kind]);
