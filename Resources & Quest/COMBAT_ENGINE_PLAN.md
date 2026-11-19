@@ -151,13 +151,6 @@ Not needed until a character can reach level 5 (no quest goes past level 3 yet).
 
 None open. Add a row (the question, and the options with a recommendation) when one comes up.
 
---- | --- | --- |
-| 1 | The Grease Brawl's Oil-Mage rarely casts Grease now, because its own swordsmen stand on the player's tile (3.1). | (a) Let a patch spell through when it would catch more of the player's side than its own. (b) Start the swordsmen further out in that fight. (c) Leave it. |
-| 2 | Hellish Rebuke can only be armed while an action is left. | Intended, or a leftover? |
-| 3 | A weapon's damage die comes from its category (finesse 1d4, ranged 1d6, two-handed 1d12, other 1d8), not from each weapon's own listed die. | Keep, or read each weapon's die? |
-| 4 | Burning Hands needs an Engaged foe to be offered. | Keep, or offer it at Close? |
-| 5 | Ten utility spells (Alarm, Charm Person, Comprehend Languages, Detect Magic, Disguise Self, Feather Fall, Identify, Jump, Speak with Animals, Unseen Servant) carry a `combat` entry but have no fight option. | Harmless: the entry feeds the hover card. Leave unless a card looks wrong. |
-
 ---
 
 ## 5. Known small things
