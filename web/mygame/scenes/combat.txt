@@ -1550,6 +1550,7 @@
 *set combat_player_prone false
 *set combat_player_stood_round 0
 *set combat_player_fell_round 0
+*set combat_player_step_pending false
 *set combat_player_moves_held 0
 *set combat_player_paralyzed 0
 *set combat_player_paralyzed_dc 0
@@ -3344,6 +3345,8 @@
   *line_break
 *comment AN ENEMY'S WEB (3.9, 2026-11-19): a player who starts their turn in one and is not already held makes the Dexterity save (foe_web_player_check).
 *gosub_scene combat_spells foe_web_player_check
+*comment STEPPING IN (3.9a 5): a move into an enemy's Web or onto Grease this turn is a save now (player_step_in_check).
+*gosub_scene combat_spells player_step_in_check
 *comment Shield's +5 reaches the player's printed AC only after the reaction has actually fired. While it is
 *comment merely armed, the caster is still on their ordinary AC and is waiting to see a hit that the +5 can
 *comment deflect. This keeps the round banner and sidebar honest without writing the temporary bonus into
@@ -7567,7 +7570,20 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *if (combat_all_enemies_dead)
   *goto fight_victory
 *comment WEB BURNS (3.4): fire this option dealt to a webbed enemy burns the patch, and that fire can finish the fight.
-*gosub_scene combat_spells web_burn_check
+*gosub_scene combat_spells web_burn_check "player"
+*comment An enemy's Armor of Agathys answering the player's melee hit on this page (resolve_player_weapon_hit) can drop them too (3.9a 5).
+*gosub_scene combat_spells enemy_agathys_print "player"
+*if (combat_enemy_agathys_page = page_id)
+  *if (combat_player_can_die) and (hp_current <= 0)
+    *goto fight_player_died
+  *if (not(combat_player_can_die)) and (hp_current <= 1)
+    *goto fight_rescued
+*comment An enemy's Web burning can catch the player in its fire (3.9a 5).
+*if ((combat_web_burned) and (combat_foe_web_burn_hit_player))
+  *if (combat_player_can_die) and (hp_current <= 0)
+    *goto fight_player_died
+  *if (not(combat_player_can_die)) and (hp_current <= 1)
+    *goto fight_rescued
 *if (combat_web_burned)
   *gosub fight_check_all_dead
   *if (combat_all_enemies_dead)
@@ -7805,7 +7821,10 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *else
   *comment The escape DC was stored when the restraint landed. Cached with the tick's other results, since tearing free clears the condition (and its DC) before the banner prints.
   *set crt_dc {(crt_p & "restrained_dc")}
-  *set crt_web ({(crt_p & "restrained_src")} = "combat_player_web")
+  *comment The player's Web or an enemy's (3.9a 5): both hold without thorns.
+  *temp crt_src {(crt_p & "restrained_src")}
+  *gosub_scene combat_spells web_src_test crt_src
+  *set crt_web combat_web_src_is
   *rand crt_v 1 3
   *comment The thorns' die and damage type come from the Ensnaring Strike data (tools/spell_book.json).
   *gosub_scene combat_spells spell_facts_load "ensnaring_strike"
@@ -8679,6 +8698,12 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *temp cepa_p (("combat_enemy" & cepa_slot) & "_")
 *set combat_enemy_cast_spell ""
 *set combat_enemy_cast_place 0
+*comment STEPPING IN (3.9a 5): a move into a Web or onto Grease this turn is a save now; a fall to Prone costs the action. Marked like an ability, so no extra attack follows.
+*gosub_scene combat_spells enemy_step_in_check cepa_slot
+*if (combat_enemy_step_fell)
+  *set combat_enemy_cast_spell "prone"
+  *set combat_turn_advanced_this_page true
+  *return
 *comment ACTION ABILITIES (3.4a): an action ability (the Net) comes before an assigned spell and before a plain attack. It takes the whole attack, so it is marked in combat_enemy_cast_spell
 *comment ("ability") like a cast: the callers' extra-attack check reads that and skips, and they clear it after.
 *gosub_scene combat_abilities ability_pick_action cepa_slot combat_enemy_range
@@ -8767,6 +8792,10 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *temp feaa_ally combat_intercepting_ally
 *set combat_enemy_cast_spell ""
 *set combat_enemy_cast_place 0
+*comment STEPPING IN (3.9a 5), as at the player (combat_enemy_player_action).
+*gosub_scene combat_spells enemy_step_in_check feaa_slot
+*if (combat_enemy_step_fell)
+  *goto feaa_tail
 *gosub_scene combat_ai fight_pick_ally_intercept_spell feaa_ally
 *if (not(combat_enemy_cast_spell = ""))
   *gosub_scene combat_spells spell_facts_load combat_enemy_cast_spell
@@ -8896,6 +8925,10 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *temp cnt_frightened {(("combat_enemy" & cnt_slot) & "_frightened")}
     *comment Where this enemy began its turn, for Web's "walked into the webs" save at the end of it.
     *temp cnt_web_from {(("combat_enemy" & cnt_slot) & "_position")}
+    *comment The same, for stepping into a Web or onto Grease before its action (combat_spells.txt enemy_step_in_check).
+    *set combat_enemy_turn_from_slot cnt_slot
+    *set combat_enemy_turn_from_pos cnt_web_from
+    *set combat_enemy_step_checked false
     *set {("combat_turn_first_pass_" & combat_current_turn_index)} false
     *comment Shield, Absorb Elements and Blade Ward last until the start of its own turn (3.9a 4c/4d).
     *set {(("combat_enemy" & cnt_slot) & "_shield_on")} false
@@ -8983,7 +9016,13 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *if ((cnt_burning > 0) and (not((combat_player_surprise) and (cnt_first_pass))))
       *gosub combat_burn_tick cnt_slot
       *comment WEB BURNS (3.4): a burning foe in the webs sets them alight, so the patch is gone before it tries to tear free.
-      *gosub_scene combat_spells web_burn_check
+      *gosub_scene combat_spells web_burn_check ("tick" & cnt_slot)
+      *comment An enemy's Web burning can catch the player in its fire (3.9a 5).
+      *if ((combat_web_burned) and (combat_foe_web_burn_hit_player))
+        *if (combat_player_can_die) and (hp_current <= 0)
+          *goto fight_player_died
+        *if (not(combat_player_can_die)) and (hp_current <= 1)
+          *goto fight_rescued
       *comment Dead of the fire, or the turn spent putting it out: nothing more this turn.
       *if ((combat_burn_killed) or (combat_burn_doused))
         *goto cnt_boom_tail
@@ -9028,6 +9067,9 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
       *temp cnt_web_held {(("combat_enemy" & cnt_slot) & "_restrained")}
       *if ((combat_web_here) and (cnt_web_held <= 0))
         *gosub_scene combat_spells web_catch cnt_slot
+      *comment An enemy's Web catches its own side too (3.9a 5).
+      *temp cnt_web_pfx (("combat_enemy" & cnt_slot) & "_")
+      *gosub_scene combat_spells foe_web_turn_check cnt_web_pfx cnt_slot cnt_web_from
     *temp cnt_restrained {(("combat_enemy" & cnt_slot) & "_restrained")}
     *if (((cnt_restrained > 0) and (not(cnt_stun_stop))) and (not((combat_player_surprise) and (cnt_first_pass))))
       *gosub combat_restrain_tick cnt_slot cnt_wants_move
@@ -9494,7 +9536,20 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *comment A move that killed the enemy (Booming Blade, fight_booming_trigger) jumps here, skipping the attack it would have made. Win the fight if that was the last one.
     *label cnt_boom_tail
     *comment WEB BURNS (3.4): fire dealt during this turn (a Hellish Rebuke) burns the patch.
-    *gosub_scene combat_spells web_burn_check
+    *gosub_scene combat_spells web_burn_check ("enemy" & cnt_slot)
+    *comment An opportunity attack's Armor of Agathys bite (3.9a 5), and the player's death from it.
+    *gosub_scene combat_spells enemy_agathys_print ("enemy" & cnt_slot)
+    *if ((combat_enemy_agathys_page = page_id) and (combat_enemy_agathys_site = ("enemy" & cnt_slot)))
+      *if (combat_player_can_die) and (hp_current <= 0)
+        *goto fight_player_died
+      *if (not(combat_player_can_die)) and (hp_current <= 1)
+        *goto fight_rescued
+    *comment An enemy's Web burning can catch the player in its fire (3.9a 5).
+    *if ((combat_web_burned) and (combat_foe_web_burn_hit_player))
+      *if (combat_player_can_die) and (hp_current <= 0)
+        *goto fight_player_died
+      *if (not(combat_player_can_die)) and (hp_current <= 1)
+        *goto fight_rescued
     *gosub fight_check_all_dead
     *if (combat_all_enemies_dead)
       *goto fight_victory_quiet
@@ -9507,10 +9562,12 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
       *comment WEB: a foe that moved into the webs this turn makes its Dexterity save once it stops there (difficult terrain ends the move on the patch).
       *temp cnt_web_to {(cnt_cp & "position")}
       *temp cnt_web_held2 {(cnt_cp & "restrained")}
-      *if ((not(cnt_web_to = cnt_web_from)) and (cnt_web_held2 <= 0))
+      *comment Skipped when it already saved on stepping in, before its action (enemy_step_in_check).
+      *if (((not(cnt_web_to = cnt_web_from)) and (cnt_web_held2 <= 0)) and (not(combat_enemy_step_checked)))
         *gosub_scene combat_movement combat_web_at cnt_web_to
         *if (combat_web_here)
           *gosub_scene combat_spells web_catch cnt_slot
+        *gosub_scene combat_spells foe_web_turn_check cnt_cp cnt_slot cnt_web_to
       *comment GREASE (3.9a): ending the turn on a patch is a Dexterity save or Prone.
       *gosub_scene combat_spells grease_end_turn cnt_cp cnt_slot
       *gosub_scene combat_dice condition_tick cnt_cp cnt_slot
@@ -9545,6 +9602,12 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
       *temp cnt_pr_name {(("combat_ally" & cnt_slot) & "_name")}
       [b][🧎 ${cnt_pr_name} gets back up][/b]
       *line_break
+    *comment AN ENEMY'S WEB (3.9a 5): an ally that starts its turn in one, not already held, saves; one that moves in saves as its turn ends (cnt_ally_tail, read
+    *comment only for this slot, since some turns reach the tail before this line).
+    *set combat_ally_turn_from_slot cnt_slot
+    *set combat_ally_turn_from_pos {(("combat_ally" & cnt_slot) & "_position")}
+    *temp cnt_a_web_p (("combat_ally" & cnt_slot) & "_")
+    *gosub_scene combat_spells foe_web_turn_check cnt_a_web_p cnt_slot combat_ally_turn_from_pos
     *comment PARALYZED (3.5): a held ally loses the whole turn too; its end-of-turn Wisdom save runs in cnt_ally_tail (condition_tick).
     *if ({(("combat_ally" & cnt_slot) & "_paralyzed")} > 0)
       *temp cnt_pa_ep {(("combat_ally" & cnt_slot) & "_epithet")}
@@ -9827,16 +9890,27 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
               *line_break
     *label cnt_ally_tail
     *comment WEB BURNS (3.4): an ally's fire on a webbed enemy burns the patch, and that fire can finish the fight.
-    *gosub_scene combat_spells web_burn_check
+    *gosub_scene combat_spells web_burn_check ("ally" & cnt_slot)
+    *comment An enemy's Web burning can catch the player in its fire (3.9a 5).
+    *if ((combat_web_burned) and (combat_foe_web_burn_hit_player))
+      *if (combat_player_can_die) and (hp_current <= 0)
+        *goto fight_player_died
+      *if (not(combat_player_can_die)) and (hp_current <= 1)
+        *goto fight_rescued
     *if (combat_web_burned)
       *gosub fight_check_all_dead
       *if (combat_all_enemies_dead)
         *goto fight_victory_quiet
     *if ({(("combat_ally" & cnt_slot) & "_hp")} > 0)
       *temp cnt_ap (("combat_ally" & cnt_slot) & "_")
+      *if (combat_ally_turn_from_slot = cnt_slot)
+        *temp cnt_a_web_to {(cnt_ap & "position")}
+        *if (not(cnt_a_web_to = combat_ally_turn_from_pos))
+          *gosub_scene combat_spells foe_web_turn_check cnt_ap cnt_slot cnt_a_web_to
       *comment GREASE (3.9a): ending the turn on a patch is a Dexterity save or Prone.
       *gosub_scene combat_spells grease_end_turn cnt_ap cnt_slot
       *gosub_scene combat_dice condition_tick cnt_ap 0
+    *set combat_ally_turn_from_slot 0
     *gosub_scene combat_dice concentration_reconcile
 *goto combat_next_turn
 

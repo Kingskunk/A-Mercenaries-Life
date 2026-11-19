@@ -1260,7 +1260,7 @@ ${combat_blindness_banner}
 *comment Shared by the cast and the enemy's turn (starting in the webs, or ending its move in them). The save lock is opened first, since another save may already have used this slot's lock on the page.
 *comment AN ENEMY'S WEB PATCH (3.9, 2026-11-19): resolve_npc_cast_condition lays a "foe_web" terrain piece at the spell's spot, owned by the caster, in the first open
 *comment slot; it is difficult terrain (combat_difficult_terrain_crossing_query), and it lasts while the caster concentrates (concentration_reconcile keeps that going while
-*comment the patch stands; concentration_end clears it). Enemies are not caught in their own side's web (a simplification), and fire does not burn it yet.
+*comment the patch stands; concentration_end clears it). Its own side is caught as anyone is (foe_web_catch, 3.9a 5), and fire burns it (foe_web_burn_check).
 *label foe_web_place
 *params fwp_owner fwp_pos
 *if (combat_terrain1_type = "none")
@@ -1303,33 +1303,11 @@ ${combat_blindness_banner}
 *set combat_player_web_check_round combat_round
 *if (combat_player_restrained > 0)
   *return
-*temp fwpc_owner ""
-*if ((combat_terrain1_type = "foe_web") and (combat_terrain1_position = combat_lane_player_position))
-  *set fwpc_owner combat_terrain1_owner
-*elseif ((combat_terrain2_type = "foe_web") and (combat_terrain2_position = combat_lane_player_position))
-  *set fwpc_owner combat_terrain2_owner
-*elseif ((combat_terrain3_type = "foe_web") and (combat_terrain3_position = combat_lane_player_position))
-  *set fwpc_owner combat_terrain3_owner
-*elseif ((combat_terrain4_type = "foe_web") and (combat_terrain4_position = combat_lane_player_position))
-  *set fwpc_owner combat_terrain4_owner
+*gosub foe_web_at combat_lane_player_position
+*temp fwpc_owner combat_foe_web_owner
 *if (fwpc_owner = "")
   *return
-*comment The owner's DC from its slot, each named outright (quicktest walks every branch, so a name built from an empty owner would not exist).
-*temp fwpc_dc 0
-*if (fwpc_owner = "combat_enemy1_")
-  *set fwpc_dc combat_enemy1_cast_dc
-*elseif (fwpc_owner = "combat_enemy2_")
-  *set fwpc_dc combat_enemy2_cast_dc
-*elseif (fwpc_owner = "combat_enemy3_")
-  *set fwpc_dc combat_enemy3_cast_dc
-*elseif (fwpc_owner = "combat_enemy4_")
-  *set fwpc_dc combat_enemy4_cast_dc
-*elseif (fwpc_owner = "combat_enemy5_")
-  *set fwpc_dc combat_enemy5_cast_dc
-*elseif (fwpc_owner = "combat_enemy6_")
-  *set fwpc_dc combat_enemy6_cast_dc
-*if (fwpc_dc <= 0)
-  *set fwpc_dc 10
+*temp fwpc_dc combat_foe_web_dc
 *set combat_save_locked_7 false
 *set combat_save_quiet true
 *gosub_scene combat_dice resolve_save "combat_player_" "dexterity" "Dexterity" fwpc_dc 7
@@ -1359,13 +1337,322 @@ ${combat_player_web_check_banner}
 *line_break
 *return
 
+*comment AN ENEMY'S WEB, WHOSE AND HOW HARD (3.9a 5, 2026-11-19): combat_foe_web_owner is the caster prefix of the enemy Web patch at fwa_pos ("" when there is none),
+*comment combat_foe_web_dc its caster's DC. Each slot is named outright (quicktest walks every branch, so a name built from an empty owner would not exist).
+*comment STEPPING IN (3.9a 5, 2026-11-19): a creature that moves into an enemy's Web or onto Grease on its own turn makes the save then, as RAW has it, not only at a
+*comment turn's start or end. The player: combat_shift_all_ranges marks a step (combat_player_step_pending), and the next menu runs this, kept per page for a replay.
+*comment A fall to Prone on the player's own turn ends that turn, as Grease's landing does (resolve_cast_grease).
+*label player_step_in_check
+*if (combat_player_step_page = page_id)
+  *if (not(combat_player_step_banner = ""))
+    ${combat_player_step_banner}
+    *line_break
+  *return
+*if (not(combat_player_step_pending))
+  *return
+*set combat_player_step_pending false
+*set combat_player_step_page page_id
+*set combat_player_step_banner ""
+*temp psic_pos combat_lane_player_position
+*gosub foe_web_at psic_pos
+*if ((not(combat_foe_web_owner = "")) and (combat_player_restrained <= 0))
+  *temp psic_dc combat_foe_web_dc
+  *temp psic_owner combat_foe_web_owner
+  *set combat_save_locked_7 false
+  *set combat_save_quiet true
+  *gosub_scene combat_dice resolve_save "combat_player_" "dexterity" "Dexterity" psic_dc 7
+  *set combat_save_quiet false
+  *if (check_success)
+    *gosub_scene combat_dice condition_apply "combat_player_" "restrained" 10 psic_dc (psic_owner & "web")
+    *set combat_player_step_banner ((combat_save_banner_7 & "[n/]") & "[b][🕸️ You are Restrained in the web][/b]")
+  *else
+    *set combat_player_step_banner ((combat_save_banner_7 & "[n/]") & "[b][💨 You keep free of the strands][/b]")
+*gosub grease_at psic_pos
+*if ((combat_grease_here) and (not(combat_player_prone)))
+  *set combat_grease_land_banner ""
+  *gosub grease_save "combat_player_" 7
+  *if (combat_player_step_banner = "")
+    *set combat_player_step_banner combat_grease_land_banner
+  *else
+    *set combat_player_step_banner ((combat_player_step_banner & "[n/]") & combat_grease_land_banner)
+  *if (combat_player_prone)
+    *set combat_player_fell_round combat_round
+    *set combat_player_actions_left 0
+    *set combat_player_bonus_left 0
+    *set combat_player_attacks_left 0
+    *set combat_player_moves_left 0
+*if (not(combat_player_step_banner = ""))
+  ${combat_player_step_banner}
+  *line_break
+*return
+
+*comment An enemy that moved this turn, at the start of its action (combat_enemy_player_action, fight_enemy_ally_attack): stepping into a Web (the player's or an enemy's) is a
+*comment Dexterity save or Restrained, and onto Grease a Dexterity save or Prone. Once a turn (combat_enemy_step_checked); combat_enemy_turn_from_slot and _pos are set at the
+*comment top of its turn. A fall sets combat_enemy_step_fell, and its action is lost (it can take none while Prone).
+*label enemy_step_in_check
+*params esic_slot
+*set combat_enemy_step_fell false
+*if (not(combat_enemy_turn_from_slot = esic_slot))
+  *return
+*if (combat_enemy_step_checked)
+  *return
+*temp esic_p (("combat_enemy" & esic_slot) & "_")
+*temp esic_pos {(esic_p & "position")}
+*if (esic_pos = combat_enemy_turn_from_pos)
+  *return
+*set combat_enemy_step_checked true
+*gosub_scene combat_movement combat_web_at esic_pos
+*if ((combat_web_here) and ({(esic_p & "restrained")} <= 0))
+  *gosub web_catch esic_slot
+*gosub foe_web_turn_check esic_p esic_slot esic_pos
+*gosub grease_at esic_pos
+*if ((combat_grease_here) and (not({(esic_p & "prone")})))
+  *set combat_grease_land_banner ""
+  *gosub grease_save esic_p esic_slot
+  ${combat_grease_land_banner}
+  *line_break
+  *set combat_enemy_step_fell {(esic_p & "prone")}
+*return
+
+*comment AN ENEMY'S ARMOR OF AGATHYS, PRINTED (3.9a 5): the cold a warded enemy sent back at the player's melee hit this page (resolve_player_weapon_hit), after the blow's
+*comment lines. Called where the player's blow ends (fight_check_enemy_hp) and at the end of an enemy's turn (an opportunity attack); the first call on the page claims it
+*comment (eap_site), so a replay prints it there again and nowhere else.
+*label enemy_agathys_print
+*params eap_site
+*if (not(combat_enemy_agathys_page = page_id))
+  *return
+*if (combat_enemy_agathys_site = "")
+  *set combat_enemy_agathys_site eap_site
+*if (not(combat_enemy_agathys_site = eap_site))
+  *return
+${combat_enemy_agathys_banner}
+*line_break
+*return
+
+*label foe_web_at
+*params fwa_pos
+*set combat_foe_web_owner ""
+*if ((combat_terrain1_type = "foe_web") and (combat_terrain1_position = fwa_pos))
+  *set combat_foe_web_owner combat_terrain1_owner
+*elseif ((combat_terrain2_type = "foe_web") and (combat_terrain2_position = fwa_pos))
+  *set combat_foe_web_owner combat_terrain2_owner
+*elseif ((combat_terrain3_type = "foe_web") and (combat_terrain3_position = fwa_pos))
+  *set combat_foe_web_owner combat_terrain3_owner
+*elseif ((combat_terrain4_type = "foe_web") and (combat_terrain4_position = fwa_pos))
+  *set combat_foe_web_owner combat_terrain4_owner
+*set combat_foe_web_dc 0
+*if (combat_foe_web_owner = "combat_enemy1_")
+  *set combat_foe_web_dc combat_enemy1_cast_dc
+*elseif (combat_foe_web_owner = "combat_enemy2_")
+  *set combat_foe_web_dc combat_enemy2_cast_dc
+*elseif (combat_foe_web_owner = "combat_enemy3_")
+  *set combat_foe_web_dc combat_enemy3_cast_dc
+*elseif (combat_foe_web_owner = "combat_enemy4_")
+  *set combat_foe_web_dc combat_enemy4_cast_dc
+*elseif (combat_foe_web_owner = "combat_enemy5_")
+  *set combat_foe_web_dc combat_enemy5_cast_dc
+*elseif (combat_foe_web_owner = "combat_enemy6_")
+  *set combat_foe_web_dc combat_enemy6_cast_dc
+*if (combat_foe_web_dc <= 0)
+  *set combat_foe_web_dc 10
+*return
+
+*comment An enemy or an ally in an enemy's Web patch (foe_web_at already run for its spot), not already held, makes its Dexterity save against the owner's DC; a failure
+*comment leaves it Restrained by that Web (source <owner>web, so the owner's concentration ending frees it). An enemy is caught by its own side's Web as anyone is (RAW).
+*comment Sets combat_foe_web_catch_line (the save and its banner) and prints nothing. The lock is the slot's, opened first, as web_catch does.
+*label foe_web_catch
+*params fwc_prefix fwc_lock
+*set combat_foe_web_catch_line ""
+*if (combat_foe_web_owner = "")
+  *return
+*if ({(fwc_prefix & "restrained")} > 0)
+  *return
+*temp fwc_name {(fwc_prefix & "name")}
+*set {("combat_save_locked_" & fwc_lock)} false
+*set combat_save_quiet true
+*gosub_scene combat_dice resolve_save fwc_prefix "dexterity" "Dexterity" combat_foe_web_dc fwc_lock
+*set combat_save_quiet false
+*temp fwc_save {("combat_save_banner_" & fwc_lock)}
+*if (check_success)
+  *gosub_scene combat_dice condition_apply fwc_prefix "restrained" 10 combat_foe_web_dc (combat_foe_web_owner & "web")
+  *set combat_foe_web_catch_line "${fwc_save}[n/][b][🕸️ ${fwc_name} is Restrained in the web][/b]"
+*else
+  *set combat_foe_web_catch_line "${fwc_save}[n/][b][💨 ${fwc_name} keeps free of the strands][/b]"
+*return
+
+*comment The cast's share: every living enemy standing at fwce_pos when an enemy's Web lands there, its caster included, saves (foe_web_catch). Their lines join
+*comment combat_foe_web_catch_all, each after a line break.
+*label foe_web_catch_enemies
+*params fwce_pos
+*set combat_foe_web_catch_all ""
+*gosub foe_web_at fwce_pos
+*temp fwce_i 1
+*label foe_web_catch_enemies_loop
+*if (fwce_i <= combat_enemy_slot_cap)
+  *temp fwce_p (("combat_enemy" & fwce_i) & "_")
+  *if (({(fwce_p & "hp")} > 0) and ({(fwce_p & "position")} = fwce_pos))
+    *gosub foe_web_catch fwce_p fwce_i
+    *if (not(combat_foe_web_catch_line = ""))
+      *set combat_foe_web_catch_all ((combat_foe_web_catch_all & "[n/]") & combat_foe_web_catch_line)
+  *set fwce_i + 1
+  *goto foe_web_catch_enemies_loop
+*return
+
+*comment A turn's share: an enemy or ally that starts its turn in an enemy's Web, or ends its turn there after moving in, saves (foe_web_catch) and its lines print.
+*label foe_web_turn_check
+*params fwtc_prefix fwtc_lock fwtc_pos
+*gosub foe_web_at fwtc_pos
+*gosub foe_web_catch fwtc_prefix fwtc_lock
+*if (not(combat_foe_web_catch_line = ""))
+  ${combat_foe_web_catch_line}
+  *line_break
+*return
+
+*comment Is this restraint a Web's (the player's, source combat_player_web, or an enemy's, combat_enemyN_web)? Sets combat_web_src_is. For the tear-free lines and the no-thorns rule.
+*label web_src_test
+*params wst_src
+*set combat_web_src_is false
+*if ((wst_src = "combat_player_web") or (wst_src = "combat_enemy1_web"))
+  *set combat_web_src_is true
+*elseif ((wst_src = "combat_enemy2_web") or (wst_src = "combat_enemy3_web"))
+  *set combat_web_src_is true
+*elseif ((wst_src = "combat_enemy4_web") or (wst_src = "combat_enemy5_web"))
+  *set combat_web_src_is true
+*elseif (wst_src = "combat_enemy6_web")
+  *set combat_web_src_is true
+*return
+
+*comment AN ENEMY'S WEB BURNS (3.9a 5, 2026-11-19): fire on anyone standing in an enemy's patch (adjust_damage_packet sets combat_foe_web_burn_pending and the spot) burns it away.
+*comment Everyone living on that spot takes one shared 2d4 fire, resisted or doubled per creature: the player, each ally, each enemy. Then the owner's concentration ends, which
+*comment clears the patch and frees everyone it held. Called through web_burn_check, so it runs wherever the player's Web burns. Sets combat_web_burned when it burns, and
+*comment combat_foe_web_burn_hit_player when the player took some of it (the callers check for a death). Kept against combat_foe_web_burn_page for a replay of the page.
+*label foe_web_burn_check
+*set combat_web_burned false
+*if ((combat_foe_web_burn_page = page_id) and (combat_foe_web_burn_site = combat_web_burn_site_now))
+  *set combat_foe_web_burn_pending false
+  *set combat_web_burned true
+*elseif (combat_foe_web_burn_pending)
+  *set combat_foe_web_burn_pending false
+  *gosub foe_web_at combat_foe_web_burn_pos
+  *if (combat_foe_web_owner = "")
+    *return
+  *temp fwb_owner combat_foe_web_owner
+  *temp fwb_pos combat_foe_web_burn_pos
+  *temp fwb_a 0
+  *temp fwb_b 0
+  *rand fwb_a 1 4
+  *rand fwb_b 1 4
+  *set combat_foe_web_burn_roll (fwb_a + fwb_b)
+  *rand combat_foe_web_burn_v 1 3
+  *set combat_foe_web_burn_hit_player false
+  *comment The web is gone first, so its holder makes no concentration save for the fire.
+  *gosub_scene combat_dice concentration_end fwb_owner
+  *gosub_scene combat_dice concentration_format_ended_banner fwb_owner "web"
+  *temp fwb_conc combat_conc_ended_banner
+  *set combat_web_burning true
+  *set combat_foe_web_burn_lines ""
+  *if ((combat_lane_player_position = fwb_pos) and (hp_current > 0))
+    *gosub_scene combat_dice adjust_incoming_damage_packet combat_foe_web_burn_roll "fire"
+    *temp fwb_pdmg combat_packet_damage
+    *set hp_current - fwb_pdmg
+    *if (hp_current < 0)
+      *set hp_current 0
+    *if ((not(combat_player_can_die)) and (hp_current < 1))
+      *set hp_current 1
+    *set combat_foe_web_burn_hit_player (fwb_pdmg > 0)
+    *set combat_foe_web_burn_lines "${combat_foe_web_burn_lines} | You: ${fwb_pdmg} Fire damage${combat_packet_suffix}"
+  *gosub foe_web_burn_allies fwb_pos
+  *gosub foe_web_burn_enemies fwb_pos
+  *set combat_web_burning false
+  *set combat_foe_web_burn_banner "[b][🔥 The web burns away (2d4: ${fwb_a} + ${fwb_b} = ${combat_foe_web_burn_roll})${combat_foe_web_burn_lines}][/b][n/]${fwb_conc}"
+  *set combat_foe_web_burn_page page_id
+  *set combat_foe_web_burn_site combat_web_burn_site_now
+  *set combat_web_burned true
+*else
+  *set combat_foe_web_burn_hit_player false
+*if (not(combat_web_burned))
+  *return
+*if (combat_foe_web_burn_v = 1)
+  The fire catches the strands, and the whole web goes up in one bright sheet.
+*elseif (combat_foe_web_burn_v = 2)
+  Flame runs along the sticky threads faster than the eye can follow, and the web shrivels away in a rush of heat.
+*else
+  The webbing flares where the fire touches it, and in a breath the patch is a mass of burning threads, then smoke.
+*line_break
+${combat_foe_web_burn_banner}
+*line_break
+*return
+
+*comment foe_web_burn_check's allies: each living ally on the spot takes the shared fire (shares its roll and lines).
+*label foe_web_burn_allies
+*params fwba_pos
+*temp fwba_i 1
+*label foe_web_burn_allies_loop
+*if (fwba_i <= combat_ally_slot_cap)
+  *temp fwba_p (("combat_ally" & fwba_i) & "_")
+  *if (({(fwba_p & "hp")} > 0) and ({(fwba_p & "position")} = fwba_pos))
+    *gosub_scene combat_dice adjust_damage_packet fwba_p combat_foe_web_burn_roll "fire" 0
+    *temp fwba_dmg combat_packet_damage
+    *temp fwba_name {(fwba_p & "name")}
+    *set {(fwba_p & "hp")} - fwba_dmg
+    *if ({(fwba_p & "hp")} <= 0)
+      *set {(fwba_p & "hp")} 0
+      *gosub_scene combat_dice concentration_end fwba_p
+    *else
+      *gosub_scene combat_dice concentration_damage_check fwba_p fwba_dmg 8
+    *set combat_foe_web_burn_lines "${combat_foe_web_burn_lines} | ${fwba_name}: ${fwba_dmg} Fire damage${combat_packet_suffix}"
+  *set fwba_i + 1
+  *goto foe_web_burn_allies_loop
+*return
+
+*comment foe_web_burn_check's enemies: each living enemy on the spot takes the shared fire, through the active-target scratch as web_burn_check does.
+*label foe_web_burn_enemies
+*params fwbe_pos
+*temp fwbe_prev combat_active_target
+*gosub_scene combat fight_sync_target_out
+*temp fwbe_i 1
+*label foe_web_burn_enemies_loop
+*if (fwbe_i <= combat_enemy_count)
+  *temp fwbe_p (("combat_enemy" & fwbe_i) & "_")
+  *if (({(fwbe_p & "hp")} > 0) and ({(fwbe_p & "position")} = fwbe_pos))
+    *set combat_active_target fwbe_i
+    *gosub_scene combat fight_sync_target_in
+    *set combat_player_dmg_type "fire"
+    *set combat_player_dmg_dealt combat_foe_web_burn_roll
+    *gosub_scene combat_dice apply_outgoing_damage_resist_vuln
+    *set combat_enemy_hp - combat_player_dmg_dealt
+    *if (combat_enemy_hp < 0)
+      *set combat_enemy_hp 0
+    *gosub_scene combat fight_sync_target_out
+    *temp fwbe_line "${combat_enemy_name}: ${combat_player_dmg_dealt} Fire damage${combat_outgoing_dmg_suffix}"
+    *if (combat_enemy_hp <= 0)
+      *set fwbe_line "${combat_enemy_name} @{combat_is_nonlethal Beaten|Defeated}: ${combat_player_dmg_dealt} Fire damage${combat_outgoing_dmg_suffix}"
+    *set combat_foe_web_burn_lines "${combat_foe_web_burn_lines} | ${fwbe_line}"
+  *set fwbe_i + 1
+  *goto foe_web_burn_enemies_loop
+*set combat_active_target fwbe_prev
+*gosub_scene combat fight_sync_target_in
+*return
+
 *comment WEB BURNS (3.4, 2026-11-18): fire damage to an enemy on the patch (adjust_damage_packet sets combat_web_burn_pending) burns the whole web away. Every living enemy on a web coordinate takes one shared 2d4 fire,
 *comment resisted or doubled per creature, and the Web's concentration ends, which clears the patch and frees everyone it held (concentration_end). Enemies only, like Web itself. Called after a blow's banners:
 *comment fight_check_enemy_hp (the player's damage options), after an enemy's burn tick and at the end of its turn (cnt_boom_tail), and at the end of an ally's turn. Sets combat_web_burned; the caller checks for deaths.
 *comment Replay: the roll, prose variant and banner are stored against combat_web_burn_page, so a replay of the page prints the same burn without dealing it again.
 *label web_burn_check
+*comment The player's Web, then an enemy's (foe_web_burn_check): either burning sets combat_web_burned for the caller. wbc_site names the call (the place and the
+*comment turn's slot): several turns can pass the same call on one page, so a burn is printed again on a replay only at the call that made it.
+*params wbc_site
+*set combat_web_burn_site_now wbc_site
+*gosub player_web_burn_check
+*temp wbc_mine combat_web_burned
+*gosub foe_web_burn_check
+*if (wbc_mine)
+  *set combat_web_burned true
+*return
+
+*label player_web_burn_check
 *set combat_web_burned false
-*if (combat_web_burn_page = page_id)
+*if ((combat_web_burn_page = page_id) and (combat_web_burn_site = combat_web_burn_site_now))
   *set combat_web_burn_pending false
   *set combat_web_burned true
 *elseif (combat_web_burn_pending)
@@ -1411,6 +1698,7 @@ ${combat_player_web_check_banner}
   *set combat_web_burn_banner "[b][🔥 The web burns away (2d4: ${wbc_roll_a} + ${wbc_roll_b} = ${wbc_roll})${wbc_lines}][/b]"
   *gosub_scene combat_dice concentration_end "combat_player_"
   *set combat_web_burn_page page_id
+  *set combat_web_burn_site combat_web_burn_site_now
   *set combat_web_burned true
 *if (not(combat_web_burned))
   *return
@@ -1626,6 +1914,9 @@ ${combat_web_burn_banner}
 *if ((rncb_spell = "web") and (not(rncb_is_ally)))
   *gosub foe_web_place rncb_caster rncb_center
   *set rncb_any true
+  *comment Its own side is caught too (3.9a 5): every living enemy at the spot, the caster included, saves.
+  *gosub foe_web_catch_enemies rncb_center
+  *set rncb_extra (rncb_extra & combat_foe_web_catch_all)
 *comment A concentration spell (Cause Fear, 3.9): the caster concentrates on it once it takes hold on anyone. A save leaves nothing to hold, so no concentration starts.
 *if ((spell_fact_concentration) and (rncb_any))
   *gosub_scene combat_dice concentration_begin rncb_caster rncb_spell
@@ -1638,13 +1929,19 @@ ${combat_web_burn_banner}
 
 *comment ENEMY BUFFS ALREADY UP (3.9a 4a, 2026-11-19): an enemy given Mage Armor, False Life or Armor of Agathys has cast it before the fight, as a prepared caster would
 *comment have an hour-long buff running, and spends that use. Mage Armor: AC becomes 13 + its Dexterity modifier when that is higher. False Life: 2d4 + 4 temp HP.
-*comment Armor of Agathys: 5 temp HP (its cold retaliation on a melee attacker is not built for enemies yet). Called from fight_setup before initiative.
+*comment Armor of Agathys: 5 temp HP, and 5 cold to a creature that hits it with a melee attack while any of them is left (combat_enemyN_agathys, read by resolve_player_weapon_hit
+*comment and resolve_ally_attack in combat_dice.txt). Called from fight_setup before initiative.
 *label enemy_precast_buffs
+*comment Once per page: a refresh of the fight's first page replays fight_setup, and the uses this spends would then be gone, wiping the buffs.
+*if (combat_precast_page = page_id)
+  *return
+*set combat_precast_page page_id
 *temp epb_i 1
 *label enemy_precast_buffs_loop
 *if (epb_i <= combat_enemy_slot_cap)
   *temp epb_p (("combat_enemy" & epb_i) & "_")
   *set {(epb_p & "temp_hp")} 0
+  *set {(epb_p & "agathys")} 0
   *if ({(epb_p & "hp")} > 0)
     *temp epb_k 1
     *gosub enemy_precast_buffs_places
@@ -1676,6 +1973,7 @@ ${combat_web_burn_banner}
     *elseif (epb_id = "armor_of_agathys")
       *if ({(epb_p & "temp_hp")} < 5)
         *set {(epb_p & "temp_hp")} 5
+      *set {(epb_p & "agathys")} 5
       *set {(epb_p & ("cast_uses_" & epb_k))} (epb_uses - 1)
   *set epb_k + 1
   *goto enemy_precast_buffs_places

@@ -179,6 +179,24 @@
   *gosub_scene combat_movement combat_web_at adp_web_pos
   *if (combat_web_here)
     *set combat_web_burn_pending true
+*comment AN ENEMY'S WEB BURNS (3.9a 5): fire that reaches anyone standing on an enemy's patch (the player, an ally, an enemy) sets that patch alight; combat_spells.txt
+*comment foe_web_burn_check resolves it once the blow's banners have printed. An ally's position is named per slot (quicktest walks every branch).
+*if (((adp_type = "fire") and (adp_amount > 0)) and (not(combat_web_burning)))
+  *temp adp_fw_pos combat_lane_player_position
+  *if (adp_slot > 0)
+    *set adp_fw_pos {(("combat_enemy" & adp_slot) & "_position")}
+  *elseif (adp_prefix = "combat_ally1_")
+    *set adp_fw_pos combat_ally1_position
+  *elseif (adp_prefix = "combat_ally2_")
+    *set adp_fw_pos combat_ally2_position
+  *elseif (adp_prefix = "combat_ally3_")
+    *set adp_fw_pos combat_ally3_position
+  *elseif (adp_prefix = "combat_ally4_")
+    *set adp_fw_pos combat_ally4_position
+  *gosub_scene combat_spells foe_web_at adp_fw_pos
+  *if (not(combat_foe_web_owner = ""))
+    *set combat_foe_web_burn_pending true
+    *set combat_foe_web_burn_pos adp_fw_pos
 *if (adp_wet > 0)
   *if (adp_type = "fire")
     *set adp_resisted true
@@ -382,6 +400,10 @@ ${combat_player_dmg_roll_banner}
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 *label resolve_player_weapon_hit
 *if (not(combat_weapon_hit_locked)) or (not(locked_combat_weapon_hit_page_id = page_id))
+  *comment AN ENEMY'S ARMOR OF AGATHYS (3.9a 5): read before the blow, since the blow may take the temp HP that keeps the ward up.
+  *temp cwh_agathys 0
+  *if (({(("combat_enemy" & combat_active_target) & "_temp_hp")} > 0) and (not(weapon_type = "ranged")))
+    *set cwh_agathys {(("combat_enemy" & combat_active_target) & "_agathys")}
   *comment CRITICAL HIT (crit_check): a natural 20, or a paralyzed target the player is Engaged with. Every die of the hit is rolled twice: the weapon's, Sneak Attack, Hex, Hunter's Mark, an item's extra packet, True Strike's and Booming Blade's on-hit dice.
   *gosub crit_check
   *set combat_hit_nat20 combat_player_crit
@@ -563,6 +585,25 @@ ${combat_player_dmg_roll_banner}
   *if (not(combat_fort_banner = ""))
     *set combat_fort_shown true
     *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} ${combat_fort_banner}"
+  *comment The ward answers a melee hit with cold (its data type), resisted as any blow on the player is; a fight the player cannot die in stops at 1 HP.
+  *if (cwh_agathys > 0)
+    *gosub adjust_incoming_damage_packet cwh_agathys "cold"
+    *temp cwh_ag_dmg combat_packet_damage
+    *set hp_current - cwh_ag_dmg
+    *if (hp_current < 0)
+      *set hp_current 0
+    *if ((not(combat_player_can_die)) and (hp_current < 1))
+      *set hp_current 1
+    *comment Printed after the blow's own lines (combat_spells.txt enemy_agathys_print); a second hit on the same page adds its line.
+    *if (not(combat_enemy_agathys_page = page_id))
+      *set combat_enemy_agathys_banner ""
+      *set combat_enemy_agathys_site ""
+    *set combat_enemy_agathys_page page_id
+    *temp cwh_ag_line "[b][❄️ ${combat_enemy_name}'s Armor of Agathys bites back: ${cwh_ag_dmg} cold damage${combat_packet_suffix} | HP: ${hp_current} / ${hp_max}][/b]"
+    *if (combat_enemy_agathys_banner = "")
+      *set combat_enemy_agathys_banner cwh_ag_line
+    *else
+      *set combat_enemy_agathys_banner ((combat_enemy_agathys_banner & "[n/]") & cwh_ag_line)
   *set combat_weapon_hit_locked true
   *set locked_combat_weapon_hit_page_id page_id
 *if (not(combat_save_quiet))
@@ -683,6 +724,11 @@ ${combat_player_dmg_roll_banner}
     *if (condition_result)
       *set combat_enemy_disadvantage true
       *set cea_atk_blinded true
+    *comment A restrained attacker (a Web, a net, Ensnaring's vines) has disadvantage (RAW).
+    *temp cea_atk_restrained false
+    *if ({(("combat_enemy" & combat_active_target) & "_restrained")} > 0)
+      *set combat_enemy_disadvantage true
+      *set cea_atk_restrained true
     *temp cea_def_blinded false
     *gosub condition_has "combat_player_" "blinded"
     *if (condition_result)
@@ -730,6 +776,8 @@ ${combat_player_dmg_roll_banner}
         *set cea_adv_label " (Disadvantage — in reach)"
       *elseif (cea_atk_blinded)
         *set cea_adv_label " (Disadvantage — Blinded)"
+      *elseif (cea_atk_restrained)
+        *set cea_adv_label " (Disadvantage — Restrained)"
       *else
         *set cea_adv_label " (Disadvantage)"
     *if (cea_adv)
@@ -1179,6 +1227,11 @@ ${combat_player_dmg_roll_banner}
     *if (condition_result)
       *set combat_enemy_disadvantage true
       *set reao_atk_blinded true
+    *comment A restrained attacker (a Web, a net, Ensnaring's vines) has disadvantage (RAW).
+    *temp reao_atk_restrained false
+    *if ({(("combat_enemy" & combat_active_target) & "_restrained")} > 0)
+      *set combat_enemy_disadvantage true
+      *set reao_atk_restrained true
     *temp reao_def_blinded false
     *gosub condition_has reao_ap "blinded"
     *if (condition_result)
@@ -1221,6 +1274,8 @@ ${combat_player_dmg_roll_banner}
         *set reao_adv_label " (Disadvantage — in reach)"
       *elseif (reao_atk_blinded)
         *set reao_adv_label " (Disadvantage — Blinded)"
+      *elseif (reao_atk_restrained)
+        *set reao_adv_label " (Disadvantage — Restrained)"
       *else
         *set reao_adv_label " (Disadvantage)"
     *if ((combat_enemy_advantage) and ((not(combat_enemy_disadvantage)) and (not(reao_pinned))))
@@ -1707,6 +1762,10 @@ ${combat_player_dmg_roll_banner}
     *temp raa_type {(raa_ap & "dmg_type")}
     *if (raa_knifed)
       *set raa_type {(raa_ap & "sidearm_dmg_type")}
+    *comment AN ENEMY'S ARMOR OF AGATHYS (3.9a 5): a melee hit while its temp HP lasts (read before the blow soaks them) brings the cold back on the ally.
+    *temp raa_agathys 0
+    *if (({(raa_ep & "temp_hp")} > 0) and ((raa_knifed) or (not({(raa_ap & "weapon_type")} = "ranged"))))
+      *set raa_agathys {(raa_ep & "agathys")}
     *set combat_atk_magical {(raa_ap & "magical")}
     *set combat_atk_silvered {(raa_ap & "silvered")}
     *set combat_atk_adamantine {(raa_ap & "adamantine")}
@@ -1729,6 +1788,19 @@ ${combat_player_dmg_roll_banner}
     *else
       *comment An enemy hit by an ally makes its concentration save (3.9), lock 8.
       *gosub concentration_damage_check raa_ep raa_dmg_after 8
+    *if (raa_agathys > 0)
+      *gosub adjust_damage_packet raa_ap raa_agathys "cold" 0
+      *temp raa_ag_dmg combat_packet_damage
+      *temp raa_ag_suffix combat_packet_suffix
+      *temp raa_ag_ename {(raa_ep & "name")}
+      *set {(raa_ap & "hp")} - raa_ag_dmg
+      *if ({(raa_ap & "hp")} <= 0)
+        *set {(raa_ap & "hp")} 0
+        *gosub concentration_end raa_ap
+      *else
+        *gosub concentration_damage_check raa_ap raa_ag_dmg 8
+      *temp raa_db {(raa_dmg_bannername)}
+      *set {(raa_dmg_bannername)} "${raa_db}[n/][b][❄️ ${raa_ag_ename}'s Armor of Agathys bites back: ${raa_ag_dmg} cold damage to ${raa_name}${raa_ag_suffix}][/b]"
   *set {(raa_lockname)} true
 *comment No trailing *line_break after the last banner here, deliberately -- fight_narrate_ally_attack (combat.txt),
 *comment the only caller, already opens with its own leading break. A break here too would stack into a full
