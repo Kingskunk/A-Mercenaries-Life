@@ -46,7 +46,7 @@ const ART = global.window.OVERWORLD_ART || {};
   if (!/^[a-z]+$/.test(f.kind) || !new RegExp("\\.ow-f-" + f.kind + "\\b").test(css)) fail("feature " + f.id + " has kind \"" + f.kind + "\", which overworldmap.css has no .ow-f- colour for");
   const art = ART[f.art];
   if (!art) fail("feature " + f.id + " has art \"" + f.art + "\", which is not in overworld-art.js (draw web/mygame/overworld-art/" + f.art + ".svg and run node tools/gen_overworld_art.js)");
-  else if (!art.paths || !art.paths.length || !(art.unit > 0) || !Array.isArray(art.bbox) || art.bbox.length !== 4 || !art.bbox.every(Number.isFinite)) fail("the art of feature " + f.id + " has no paths, no unit or no bounding box");
+  else if (!(art.baked ? (window.OVERWORLD_RASTER && window.OVERWORLD_RASTER.src) : (art.paths && art.paths.length)) || !(art.unit > 0) || !Array.isArray(art.bbox) || art.bbox.length !== 4 || !art.bbox.every(Number.isFinite)) fail("the art of feature " + f.id + " has no paths, no unit or no bounding box");
   if (!Array.isArray(f.label) || f.label.length !== 2 || !f.label.every(Number.isFinite)) fail("feature " + f.id + " has a label that is not [x, y]");
 });
 const ids = Object.keys(O.nodes);

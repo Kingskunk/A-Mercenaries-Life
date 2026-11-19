@@ -23,7 +23,8 @@
   var KIND_NAME = { city: "City", town: "Town", village: "Village", fort: "Fort", road: "Road", woodroad: "Wooded road", hills: "Hills", forest: "Forest" };
   var FEATURE_KIND = { range: "Mountain range" };
   var SCALE = 130;          // SVG units per map unit
-  var MIN_W = 220;          // closest zoom: this many SVG units across
+  var MIN_W = 450;          // closest zoom: this many SVG units across. Not nearer, because the drawn terrain is a picture (OVERWORLD_RASTER, 1.5 px per unit): at 450 across a panel of
+                            // ~1000 px it is stretched about 1.5 times, which still looks like ink; at the old 220 it was over four times, and blurred
   var FAR_W = 1500;         // past this width the names of tiles you are not on or selecting are hidden
   var selected = null;      // the tile whose card is showing (null: the tile the player stands on)
   var selectedFeature = null;   // the drawn feature (a mountain range) whose card is showing, instead of a tile's; null for none
@@ -241,6 +242,20 @@
 
   /* ---------------------------------------------------------------- drawing */
 
+  // The raster's address, made once. The map rewrites its whole innerHTML on every tile click and view change, and a 1.3 MB data: URI would be parsed again each time; a blob: URL
+  // is a short string the browser can look up in its image cache. If a blob cannot be made the data: URI itself is used, which is slower but identical to look at.
+  var rasterHref = null;
+  function rasterUrl(rs) {
+    if (rasterHref) return rasterHref;
+    rasterHref = rs.src;
+    try {
+      var bin = window.atob(rs.src.slice(rs.src.indexOf(",") + 1)), bytes = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      rasterHref = window.URL.createObjectURL(new window.Blob([bytes], { type: "image/webp" }));
+    } catch (e) { rasterHref = rs.src; }
+    return rasterHref;
+  }
+
   function svg(here, sel) {
     var ids = Object.keys(OW.nodes).filter(OW.isOpen), onRoute = {}, defs = "";
     if (sel && sel !== here) {
@@ -251,9 +266,21 @@
     // Features first, so the roads and tiles sit on top of them. The art is drawn in its own units (130 to a map unit), so the group scales it to the panel and turns it with the map (a quarter turn
     // is rotate(90), the same turn P() gives a tile); the paths come straight from the SVG file (tools/gen_overworld_art.js). The name sits on the range, upright. The Terrain button (controls(),
     // below) skips this whole block: the drawn art is the heaviest thing the map paints, so switching it off is the one lever that can tell GPU-bound jank apart from everything else.
+    // THE RASTER (2026-11-19). Every feature that is scenery or "Click: off" is drawn into ONE transparent WebP by tools/gen_overworld_art.js, from the same paths and the same
+    // CSS the loop below used to apply live, and laid here as a single <image>: the GPU moves a picture on a pan or zoom instead of re-rasterising ~1.4 MB of path data every
+    // frame (about a third of the frame time in a headless comparison). Such a feature has art.baked and no paths; only its NAME is still written below. A clickable feature
+    // would keep its paths and be drawn as before, on top of the picture.
+    if (terrainOn && window.OVERWORLD_RASTER) {
+      var rs = window.OVERWORLD_RASTER;
+      out += "<g class=\"ow-decor ow-raster\" aria-hidden=\"true\" transform=\"rotate(" + (90 * rot) + ") scale(" + (SCALE / rs.unit) + ")\"><image href=\"" + rasterUrl(rs) + "\" x=\"" + rs.x + "\" y=\"" + rs.y + "\" width=\"" + rs.w + "\" height=\"" + rs.h + "\" preserveAspectRatio=\"none\"/></g>";
+    }
     if (terrainOn) featureList().forEach(function (f) {
       var art = (window.OVERWORLD_ART || {})[f.art];
       if (!art) return;
+      if (art.baked) {
+        if (f.label && !f.decor) { var bp = P({ x: f.label[0], y: f.label[1] }); out += "<text class=\"ow-feature-name\" x=\"" + bp.x + "\" y=\"" + bp.y + "\" text-anchor=\"middle\">" + esc(f.name) + "</text>"; }
+        return;
+      }
             // scenery, and a feature with "Click: off" in its Description, take no part in any of it: no data-ow-feature for the click handler to find, no tabindex to tab onto,
       // no aria-label to read out, and the CSS takes its pointer away as well, so it cannot even swallow a hover meant for the map underneath it. "Click: off" still
       // draws the name below (that is gated on f.decor alone, not on this), so a range can be seen and named without being a thing to poke at.
