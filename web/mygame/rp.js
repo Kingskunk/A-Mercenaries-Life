@@ -317,7 +317,7 @@
       "Output ONLY 4 lines, one option per line, using this exact format:",
       "Short Label || Complete 1-sentence player action or dialogue direction.",
       "- Short Label: 2 to 4 words for a UI button (e.g. 'Trace her collarbone', 'Let her lead', 'Ask about the scar').",
-      "- Action direction: 1 concise, vivid sentence written for the player's next turn (no preamble, no numbering, no extra commentary).",
+      "- Action direction: 1 concise, vivid sentence under 16 words written for the player's next turn (no preamble, no numbering, no extra commentary).",
       ""
     ];
     return lines.concat(buildContextBlocks(cfg, s, memBlock)).join("\n");
@@ -435,9 +435,9 @@
     if (!baseUrl || !threadId) return Promise.resolve("");
     var s = statsNow();
     var currentDay = Number(s.campaign_day) || 1;
-    // During an active encounter, s.intimate_encounters has already been incremented by 1 for THIS visit,
-    // so past completed visits have order <= (intimate_encounters - 1).
-    var maxVisit = Math.max(0, (Number(s.intimate_encounters) || 1) - 1);
+    // s.intimate_encounters counts completed encounters (incremented after the act finishes),
+    // so during an active visit past completed visits have order <= s.intimate_encounters.
+    var maxVisit = Math.max(0, Number(s.intimate_encounters) || 0);
     return fetch(baseUrl + "/get_npc_memories", {
       method: "POST",
       headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
@@ -625,7 +625,7 @@
     if (memBtn && session.cfg && session.cfg.memory !== false) {
       var threadId = resolveThreadId(session.cfg, statsNow());
       if (threadId) {
-        var maxV = Math.max(0, (Number(statsNow().intimate_encounters) || 1) - 1);
+        var maxV = Math.max(0, Number(statsNow().intimate_encounters) || 0);
         fetch(baseUrl + "/get_npc_memories", {
           method: "POST",
           headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
@@ -705,16 +705,6 @@
           '</div>' +
           '<div class="rp-mem-list"></div>' +
         '</div>' +
-        '<div class="rp-drawer rp-edit-drawer" hidden>' +
-          '<div class="rp-drawer-head">' +
-            '<span>Edit Last Response</span>' +
-            '<button type="button" class="rp-btn rp-btn-sm" data-act="cancel-edit">\u00D7 Cancel</button>' +
-          '</div>' +
-          '<textarea class="rp-edit-textarea"></textarea>' +
-          '<div class="rp-actions-left">' +
-            '<button type="button" class="rp-btn rp-btn-primary rp-btn-sm" data-act="save-edit">Save Changes</button>' +
-          '</div>' +
-        '</div>' +
         '<div class="rp-typing" hidden>' +
           '<div class="rp-typing-dots"><span></span><span></span><span></span></div>' +
           '<span class="rp-typing-text">Writing response...</span>' +
@@ -726,9 +716,7 @@
           '<div class="rp-actions-left">' +
             '<button type="button" class="rp-btn rp-btn-primary" data-act="send">Send / Continue</button>' +
             '<button type="button" class="rp-btn rp-btn-advise" data-act="advise" title="Ask the AI to advise context-aware choices for this moment (replaces static chips)">\u2726 Advise</button>' +
-            '<button type="button" class="rp-btn" data-act="edit" disabled title="Edit the last turn text in-place">\u270E Edit</button>' +
             '<button type="button" class="rp-btn" data-act="reroll" disabled title="Regenerate the last AI response">\u21BB Reroll</button>' +
-            '<button type="button" class="rp-btn" data-act="undo" disabled title="Remove the last exchange">\u232B Undo</button>' +
           '</div>' +
           '<div class="rp-actions-right">' +
             (hasMem ? '<label class="rp-mem-check" title="When checked, this scene will be distilled into a memory for this companion when you leave"><input type="checkbox" class="rp-save-mem-cb" checked><span>Save as memory</span></label>' : '') +
@@ -743,16 +731,13 @@
     var statusEl = box.querySelector(".rp-status");
     var sendBtn = box.querySelector('[data-act="send"]');
     var adviseBtn = box.querySelector('[data-act="advise"]');
-    var editBtn = box.querySelector('[data-act="edit"]');
     var rerollBtn = box.querySelector('[data-act="reroll"]');
-    var undoBtn = box.querySelector('[data-act="undo"]');
     var modeSel = box.querySelector(".rp-mode-select");
     var modelSel = box.querySelector(".rp-model-select");
     var starterWrap = box.querySelector(".rp-starters");
     var beatsWrap = box.querySelector(".rp-beats");
     var typingEl = box.querySelector(".rp-typing");
     var typingTextEl = box.querySelector(".rp-typing-text");
-    var editDrawer = box.querySelector(".rp-edit-drawer");
     var memDrawer = box.querySelector(".rp-mem-drawer");
     var memList = box.querySelector(".rp-mem-list");
     var saveMemCb = box.querySelector(".rp-save-mem-cb");
@@ -802,9 +787,7 @@
       var hasTurns = session.turns.length > 0;
       sendBtn.disabled = session.busy;
       if (adviseBtn) adviseBtn.disabled = session.busy;
-      if (editBtn) editBtn.disabled = session.busy || !hasTurns;
       rerollBtn.disabled = session.busy || !hasTurns;
-      undoBtn.disabled = session.busy || !hasTurns;
       Array.prototype.forEach.call(box.querySelectorAll(".rp-chip"), function (c) {
         c.disabled = session.busy;
       });
@@ -869,7 +852,7 @@
         return;
       }
       memList.innerHTML = '<div class="rp-status">Loading memories...</div>';
-      var maxV = Math.max(0, (Number(statsNow().intimate_encounters) || 1) - 1);
+      var maxV = Math.max(0, Number(statsNow().intimate_encounters) || 0);
       fetch(baseUrl + "/get_npc_memories", {
         method: "POST",
         headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
@@ -944,7 +927,6 @@
 
     function runGeneration(playerText, isReroll) {
       if (session.busy) return;
-      editDrawer.hidden = true;
       session.busy = true;
       session.adviseSeq += 1;
       session.advisedStarters = null;
@@ -1000,7 +982,6 @@
 
     function runAdviseChoices() {
       if (session.busy) return;
-      editDrawer.hidden = true;
       session.busy = true;
       var mySeq = ++session.adviseSeq;
       var targetIsStarter = session.turns.length === 0;
@@ -1109,11 +1090,6 @@
         var val = inputEl.value.trim();
         inputEl.value = "";
         runGeneration(val || "Continue the moment naturally, letting the companion take the lead.", false);
-      } else if (actName === "edit") {
-        if (session.busy || !session.turns.length) return;
-        var lastTurn = session.turns[session.turns.length - 1];
-        var editBtnInLast = lastTurn.wrap ? lastTurn.wrap.querySelector('[data-tact="edit"]') : null;
-        if (editBtnInLast) editBtnInLast.click();
       } else if (actName === "memories") {
         memDrawer.hidden = !memDrawer.hidden;
         if (!memDrawer.hidden) renderMemoriesDrawer();
@@ -1155,7 +1131,6 @@
         });
       } else if (actName === "reroll") {
         if (session.busy || !session.turns.length) return;
-        editDrawer.hidden = true;
         if (session.turns[session.turns.length - 1].role === "ai") {
           var poppedAi = session.turns.pop();
           if (poppedAi.wrap && poppedAi.wrap.parentNode) poppedAi.wrap.parentNode.removeChild(poppedAi.wrap);
@@ -1164,25 +1139,6 @@
           ? session.turns[session.turns.length - 1].text
           : "Continue the moment naturally.";
         runGeneration(lastUser, true);
-      } else if (actName === "undo") {
-        if (session.busy || !session.turns.length) return;
-        editDrawer.hidden = true;
-        if (session.turns[session.turns.length - 1].role === "ai") {
-          var aiTurn = session.turns.pop();
-          if (aiTurn.wrap && aiTurn.wrap.parentNode) aiTurn.wrap.parentNode.removeChild(aiTurn.wrap);
-        }
-        if (session.turns.length && session.turns[session.turns.length - 1].role === "user") {
-          var userTurn = session.turns.pop();
-          if (userTurn.wrap && userTurn.wrap.parentNode) userTurn.wrap.parentNode.removeChild(userTurn.wrap);
-          inputEl.value = userTurn.text;
-        }
-        session.adviseSeq += 1;
-        session.advisedStarters = null;
-        session.advisedBeats = null;
-        renderChips();
-        saveActiveSession(inputEl.value);
-        updateButtons();
-        setStatus("Last exchange undone.");
       }
     });
 

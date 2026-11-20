@@ -68,7 +68,7 @@
       starters: [
         "Let her take the lead and draw you down onto the wool mattress.",
         "Catch her by the waist, pull her flush against your chest, and kiss her throat.",
-        "Guide her to sit on the edge of the bed while you trace her jaw and shoulders.",
+        "Guide her onto the bed's edge and trace her jaw and shoulders.",
         "Tell her to shed her linen smock slowly in the candlelight."
       ],
       beats: [

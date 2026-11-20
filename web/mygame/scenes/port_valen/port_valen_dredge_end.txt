@@ -2806,7 +2806,7 @@ From your bench, you can see several women attending to patrons across the parlo
       *set rp_active_scene "none"
       *goto cut_corve_encounter
 
-    # [1 Silver Mark | Roleplay] Go upstairs to a private chamber and take your time with Sable. [~45 min]
+    # [1 Silver Mark | Roleplay] Take Sable to a private chamber. [~45 min]
       *set corve_approach_name "Sable"
       *set corve_stay_overnight false
       *set rp_active_scene "corve_sable"
@@ -2819,7 +2819,7 @@ From your bench, you can see several women attending to patrons across the parlo
       *set rp_active_scene "none"
       *goto cut_corve_encounter
 
-    # [2 Silver Marks | Roleplay] Spend the night upstairs in a private chamber with Sable. [~8 Hours]
+    # [2 Silver Marks | Roleplay] Spend the night upstairs with Sable. [~8 Hours]
       *set corve_approach_name "Sable"
       *set corve_stay_overnight true
       *set rp_active_scene "corve_sable"
@@ -2895,7 +2895,7 @@ From your bench, you can see several women attending to patrons across the parlo
       *set rp_active_scene "none"
       *goto cut_corve_encounter
 
-    # [1 Silver Mark | Roleplay] Go upstairs to a private chamber and take your time with Brinna. [~45 min]
+    # [1 Silver Mark | Roleplay] Take Brinna to a private chamber. [~45 min]
       *set corve_approach_name "Brinna"
       *set corve_stay_overnight false
       *set rp_active_scene "corve_brinna"
@@ -2908,7 +2908,7 @@ From your bench, you can see several women attending to patrons across the parlo
       *set rp_active_scene "none"
       *goto cut_corve_encounter
 
-    # [2 Silver Marks | Roleplay] Spend the night upstairs in a private chamber with Brinna. [~8 Hours]
+    # [2 Silver Marks | Roleplay] Spend the night upstairs with Brinna. [~8 Hours]
       *set corve_approach_name "Brinna"
       *set corve_stay_overnight true
       *set rp_active_scene "corve_brinna"
@@ -2977,7 +2977,7 @@ You glance around the benches, and ${corve_generic_desc} catches your eye, setti
       *set rp_active_scene "none"
       *goto cut_corve_encounter
 
-    # [1 Silver Mark | Roleplay] Go upstairs to a private chamber and take your time with her. [~45 min]
+    # [1 Silver Mark | Roleplay] Take her to a private chamber. [~45 min]
       *set corve_approach_name "she"
       *set corve_stay_overnight false
       *set rp_active_scene "corve_generic"
@@ -2990,7 +2990,7 @@ You glance around the benches, and ${corve_generic_desc} catches your eye, setti
       *set rp_active_scene "none"
       *goto cut_corve_encounter
 
-    # [2 Silver Marks | Roleplay] Spend the night upstairs in a private chamber and roleplay the evening with her. [~8 Hours]
+    # [2 Silver Marks | Roleplay] Spend the night upstairs with her. [~8 Hours]
       *set corve_approach_name "she"
       *set corve_stay_overnight true
       *set rp_active_scene "corve_generic"
@@ -3014,56 +3014,6 @@ You glance around the benches, and ${corve_generic_desc} catches your eye, setti
   *gosub_scene economy currency_add
   *set currency_txn_locked true
   *set locked_currency_txn_page_id page_id
-
-*if (corve_stay_overnight)
-  *set hours_to_pass 8
-  *set minutes_to_pass 0
-  *set time_advance_call_id "cut_corve_overnight"
-*else
-  *set hours_to_pass 0
-  *set minutes_to_pass 45
-  *set time_advance_call_id "cut_corve_private_time"
-*gosub_scene calendar advance_time
-*gosub_scene calendar recalc_hp_from_neglect
-
-*if (hp_current <= 0)
-  *set death_cause "starvation"
-  *if (neglect_damage_fatigue > neglect_damage_hunger)
-    *set death_cause "exhaustion"
-  *goto_scene death death_screen
-
-*if (corve_stay_overnight)
-  *set sleep_location_id "corve_chamber"
-  *set sleep_is_shared false
-  *set sleep_is_permanent_home false
-  *set sleep_is_paid_inn false
-  *set sleep_tier_name "none"
-  *set sleep_tier_stat1 "none"
-  *set sleep_tier_bonus1 0
-  *set sleep_tier_stat2 "none"
-  *set sleep_tier_bonus2 0
-  *gosub_scene calendar resolve_sleep
-
-*set unique_buff_input_name "Carnal Warmth"
-*set unique_buff_input_desc "+1 CHA (Relaxed & Confident)"
-*set unique_buff_input_stat "cha"
-*set unique_buff_input_bonus 1
-*set unique_buff_input_minutes 640
-*comment Lasts a third longer than the Conduit Baths' 8-hour boon (it costs 1 silver against 3 copper). The
-*comment two bathing boons never stack: the longer one wins (see apply_grooming_buff in economy.txt).
-*gosub_scene economy apply_grooming_buff
-
-*comment The scene ends with a wash at the basin, so it also resets hygiene (same as the Conduit Baths and
-*comment the Terrace Lodgings basin). Reset after advance_time, which re-derives the stage. Fixed-value
-*comment sets, so a refreshed page cannot double-apply them.
-*set minutes_since_wash 0
-*set hygiene_stage "Clean"
-*gosub_scene calendar update_hub_condition
-
-*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
-  *set intimate_encounters + 1
-  *set stat_bump_locked true
-  *set locked_stat_bump_page_id page_id
 
 *if (corve_stay_overnight)
   You leave two silver marks on the side tray, and ${corve_approach_name} leads you away from the parlor tables toward the narrow timber staircase behind the tapestry.
@@ -3143,6 +3093,56 @@ followed by the rest of your kit, leaving you bare to the dim candlelight.
 *page_break Rest together…
 *set ambience_intimacy false
 *set rp_active_scene "none"
+*if (corve_stay_overnight)
+  *set hours_to_pass 8
+  *set minutes_to_pass 0
+  *set time_advance_call_id "cut_corve_overnight"
+*else
+  *set hours_to_pass 0
+  *set minutes_to_pass 45
+  *set time_advance_call_id "cut_corve_private_time"
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+
+*if (corve_stay_overnight)
+  *set sleep_location_id "corve_chamber"
+  *set sleep_is_shared false
+  *set sleep_is_permanent_home false
+  *set sleep_is_paid_inn false
+  *set sleep_tier_name "none"
+  *set sleep_tier_stat1 "none"
+  *set sleep_tier_bonus1 0
+  *set sleep_tier_stat2 "none"
+  *set sleep_tier_bonus2 0
+  *gosub_scene calendar resolve_sleep
+
+*set unique_buff_input_name "Carnal Warmth"
+*set unique_buff_input_desc "+1 CHA (Relaxed & Confident)"
+*set unique_buff_input_stat "cha"
+*set unique_buff_input_bonus 1
+*set unique_buff_input_minutes 640
+*comment Lasts a third longer than the Conduit Baths' 8-hour boon (it costs 1 silver against 3 copper). The
+*comment two bathing boons never stack: the longer one wins (see apply_grooming_buff in economy.txt).
+*gosub_scene economy apply_grooming_buff
+
+*comment The scene ends with a wash at the basin, so it also resets hygiene (same as the Conduit Baths and
+*comment the Terrace Lodgings basin). Reset after advance_time, which re-derives the stage. Fixed-value
+*comment sets, so a refreshed page cannot double-apply them.
+*set minutes_since_wash 0
+*set hygiene_stage "Clean"
+*gosub_scene calendar update_hub_condition
+
+*if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+  *set intimate_encounters + 1
+  *set stat_bump_locked true
+  *set locked_stat_bump_page_id page_id
+
 *if (not(corve_stay_overnight))
   Afterward, the room settles into thick, cooling stillness, broken only by the sound of heavy breathing and the distant wash of the canal against the stone kerb below. You wash at the basin with the cloth and a cake of plain soap, scrubbing off the road grime along with the sweat, and pull your garments back over your skin. Your muscles feel loose, the grinding tension has left your spine, and you carry an easy, grounded confidence as you unbolt the door and make your way back down the stairs to the parlor.
 
