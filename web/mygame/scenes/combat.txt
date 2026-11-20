@@ -224,6 +224,7 @@
 *comment is preserved.
 *set hex_active false
 *set hex_target_slot 0
+*set hex_ability ""
 *set agathys_active false
 *set shield_armed false
 *set shield_active false
@@ -1131,6 +1132,7 @@
 *set combat_inspired_self false
 *set hex_active false
 *set hex_target_slot 0
+*set hex_ability ""
 *set agathys_active false
 *set shield_armed false
 *set shield_active false
@@ -2200,6 +2202,10 @@
   *if (chd_hp > 0)
     *temp chd_wis {(("combat_enemy" & chd_i) & "_wisdom")}
     *gosub_scene startup score_to_mod chd_wis
+    *comment Hex on its Wisdom: its passive Perception takes -5.
+    *gosub hex_check_disadv chd_i "wisdom"
+    *if (combat_hex_check_dis)
+      *set sm_mod - 5
     *if (sm_mod > chd_best)
       *set chd_best sm_mod
     *temp chd_range {(("combat_enemy" & chd_i) & "_range")}
@@ -2437,6 +2443,16 @@
       *set combat_hm_name {(("combat_enemy" & favored_foe_target_slot) & "_name")}
     *else
       *set combat_hm_orphaned true
+*return
+
+*comment HEX'S CHECK PENALTY (RAW): does Hex give enemy slot hcd_slot disadvantage on a check with hcd_ability? Into combat_hex_check_dis. A rolled check
+*comment rolls twice and keeps the lower; a fixed DC built from its score (a passive check: Shove, Hide, Intimidate) takes -5, the passive rule.
+*label hex_check_disadv
+*params hcd_slot hcd_ability
+*set combat_hex_check_dis false
+*if (((hex_active) and (hex_target_slot = hcd_slot)) and (hex_ability = hcd_ability))
+  *if ({(("combat_enemy" & hcd_slot) & "_hp")} > 0)
+    *set combat_hex_check_dis true
 *return
 
 *label combat_hex_state
@@ -3792,7 +3808,8 @@
   [b][🌿 Ensnaring Strike ready: your next weapon hit may bind its target][/b]
 *if (combat_hex_live)
   *line_break
-  [b][🔮 Hex on ${combat_hex_name} — +1d6 Necrotic Damage when you hit it with an attack][/b]
+  *gosub_scene combat_prose hex_ability_name
+  [b][🔮 Hex on ${combat_hex_name} — +1d6 Necrotic Damage when you hit it with an attack | Disadvantage on its ${combat_hex_ability_name} checks][/b]
 *elseif (combat_hex_orphaned)
   *line_break
   [b][🔮 Hex has no target: move it with a bonus action][/b]
@@ -5253,8 +5270,15 @@
         *set combat_shove_from_name combat_range_display_name
         *gosub_scene startup score_to_mod combat_enemy_strength
         *set combat_shove_dc (10 + sm_mod)
+        *comment Hex on its Strength or Dexterity: that side of its defense is a passive check, so it takes -5.
+        *gosub hex_check_disadv combat_active_target "strength"
+        *if (combat_hex_check_dis)
+          *set combat_shove_dc - 5
         *gosub_scene startup score_to_mod combat_enemy_dexterity
         *temp csh_dex_dc (10 + sm_mod)
+        *gosub hex_check_disadv combat_active_target "dexterity"
+        *if (combat_hex_check_dis)
+          *set csh_dex_dc - 5
         *if (csh_dex_dc > combat_shove_dc)
           *set combat_shove_dc csh_dex_dc
         *gosub_scene dice_engine roll_skill_check combat_shove_dc "athletics" "" "" "" "" ""
@@ -5830,17 +5854,26 @@
       *set combat_mm_darts_6 0
       *goto fight_target_magic_missile
 
+  *comment HEX (RAW, the user, 2026-11-20): one option per ability, chosen again when the curse moves (fight_cast_hex).
   *if (combat_why_hex = "")
-    # [b][BONUS ACTION][/b] [b][Hex][/b] @{combat_hex_orphaned Move your curse to|Lay a baleful eldritch curse upon} ${combat_med_epithet}.
-      *gosub_scene combat_movement fight_pick_target
-      *gosub_scene combat_movement fight_retarget_by_class "medium"
-      *gosub_scene combat_spells resolve_cast_hex
-      You whisper a guttural syllable of ancient ruin. Dark, spectral runes flare briefly across ${combat_enemy_epithet} and sink in, binding the foe's fate to your will—every attack you land against them will tear in with extra necrotic fury!
-      *comment No banner here -- the hub's own "Hex" status line (fight_round_hub) says the same thing the
-      *comment instant this reopens it, so a second copy here would just repeat it on the very same page.
-      *line_break
-      *gosub_scene combat_prose print_concentration_ended_banner
-      *goto fight_bonus_spent
+    # [b][BONUS ACTION][/b] [b][Hex: Strength][/b] @{combat_hex_orphaned Move your curse to|Lay a baleful eldritch curse upon} ${combat_med_epithet}, souring its Strength.
+      *set hex_ability "strength"
+      *goto fight_cast_hex
+    # [b][BONUS ACTION][/b] [b][Hex: Dexterity][/b] @{combat_hex_orphaned Move your curse to|Lay a baleful eldritch curse upon} ${combat_med_epithet}, souring its Dexterity.
+      *set hex_ability "dexterity"
+      *goto fight_cast_hex
+    # [b][BONUS ACTION][/b] [b][Hex: Constitution][/b] @{combat_hex_orphaned Move your curse to|Lay a baleful eldritch curse upon} ${combat_med_epithet}, souring its Constitution.
+      *set hex_ability "constitution"
+      *goto fight_cast_hex
+    # [b][BONUS ACTION][/b] [b][Hex: Intelligence][/b] @{combat_hex_orphaned Move your curse to|Lay a baleful eldritch curse upon} ${combat_med_epithet}, souring its Intelligence.
+      *set hex_ability "intelligence"
+      *goto fight_cast_hex
+    # [b][BONUS ACTION][/b] [b][Hex: Wisdom][/b] @{combat_hex_orphaned Move your curse to|Lay a baleful eldritch curse upon} ${combat_med_epithet}, souring its Wisdom.
+      *set hex_ability "wisdom"
+      *goto fight_cast_hex
+    # [b][BONUS ACTION][/b] [b][Hex: Charisma][/b] @{combat_hex_orphaned Move your curse to|Lay a baleful eldritch curse upon} ${combat_med_epithet}, souring its Charisma.
+      *set hex_ability "charisma"
+      *goto fight_cast_hex
 
   *if (combat_why_armor_of_agathys = "")
     # [b][ACTION][/b] [b][Armor of Agathys][/b] Sheathe yourself in spectral frost that punishes melee strikes.
@@ -6828,6 +6861,24 @@ You hold the counter-working coiled at your fingertips, waiting for the air itse
 
 *comment BANE (upcast 2026-11-17): the 1st and 2nd level hub options set combat_cast_at_level and come here. No fight_pick_target re-sync: Bane doesn't act on the
 *comment single "active" target; resolve_cast_bane picks its own targets (three, one more per slot level above 1st) and clears the level.
+*comment HEX (RAW): +1d6 necrotic on the player's hits on the target, and disadvantage on its checks with hex_ability (set by the option). Moving it
+*comment after the target falls (combat_hex_orphaned) costs a bonus action and no slot, and the ability is chosen again.
+*label fight_cast_hex
+*temp fch_moved combat_hex_orphaned
+*gosub_scene combat_movement fight_pick_target
+*gosub_scene combat_movement fight_retarget_by_class "medium"
+*gosub_scene combat_spells resolve_cast_hex
+*if (fch_moved)
+  You draw the curse off the fallen and drive it into ${combat_enemy_epithet}. Dark runes flare across it and sink in.
+*else
+  You whisper a guttural syllable of ancient ruin. Dark, spectral runes flare briefly across ${combat_enemy_epithet} and sink in, binding the foe's fate to your will—every attack you land against them will tear in with extra necrotic fury!
+*gosub_scene combat_prose flavor_hex_ability
+*comment No banner here -- the hub's own "Hex" status line (fight_round_hub) says the same thing the
+*comment instant this reopens it, so a second copy here would just repeat it on the very same page.
+*line_break
+*gosub_scene combat_prose print_concentration_ended_banner
+*goto fight_bonus_spent
+
 *label fight_cast_bane
 You let the curse spill out low and wide, ill fortune threading itself around throat after throat in the same breath.
 *line_break
@@ -8322,6 +8373,13 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
       *temp crt_str {(crt_p & "strength")}
       *gosub_scene startup score_to_mod crt_str
       *rand crt_roll 1 20
+      *comment Hex on its Strength: the check is rolled twice and the lower kept.
+      *gosub hex_check_disadv crt_slot "strength"
+      *if (combat_hex_check_dis)
+        *temp crt_roll2 1
+        *rand crt_roll2 1 20
+        *if (crt_roll2 < crt_roll)
+          *set crt_roll crt_roll2
       *set crt_roll (crt_roll + sm_mod)
       *if (crt_roll >= crt_dc)
         *set crt_res 2
@@ -8337,6 +8395,10 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *set {(crt_p & "restrain_web")} crt_web
   *set {(crt_p & "restrain_dc")} crt_dc
   *set {(crt_p & "restrain_page")} page_id
+*set combat_hex_tag ""
+*gosub hex_check_disadv crt_slot "strength"
+*if (combat_hex_check_dis)
+  *set combat_hex_tag " (Disadvantage — Hex)"
 *if (crt_web)
   *if (crt_res = 1)
     *if (crt_v = 1)
@@ -8346,7 +8408,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *if (crt_v = 3)
       The web clings tight, and ${combat_enemy_epithet} spends the turn twisting against it.
     *line_break
-    [b][🕸️ ${combat_enemy_name} fails to break free (Strength check ${crt_roll} vs DC ${crt_dc}) — turn spent][/b]
+    [b][🕸️ ${combat_enemy_name} fails to break free (Strength check ${crt_roll}${combat_hex_tag} vs DC ${crt_dc}) — turn spent][/b]
     *line_break
     *set combat_restrain_stop true
   *elseif (crt_res = 2)
@@ -8357,7 +8419,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *if (crt_v = 3)
       The strands snap one after another, and ${combat_enemy_epithet} staggers free.
     *line_break
-    [b][🕸️ ${combat_enemy_name} breaks free of the web (Strength check ${crt_roll} vs DC ${crt_dc}) — turn spent][/b]
+    [b][🕸️ ${combat_enemy_name} breaks free of the web (Strength check ${crt_roll}${combat_hex_tag} vs DC ${crt_dc}) — turn spent][/b]
     *line_break
     *set combat_restrain_stop true
   *else
@@ -8380,7 +8442,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *if (crt_v = 3)
       The vines hold, and ${combat_enemy_epithet} spends the turn straining against them.
     *line_break
-    [b][🌿 ${combat_enemy_name} fails to break free (Strength check ${crt_roll} vs DC ${crt_dc}) — turn spent][/b]
+    [b][🌿 ${combat_enemy_name} fails to break free (Strength check ${crt_roll}${combat_hex_tag} vs DC ${crt_dc}) — turn spent][/b]
     *line_break
     *set combat_restrain_stop true
   *elseif (crt_res = 2)
@@ -8391,7 +8453,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *if (crt_v = 3)
       The thorns give way at last, and ${combat_enemy_epithet} stumbles free.
     *line_break
-    [b][🌿 ${combat_enemy_name} breaks free of the vines (Strength check ${crt_roll} vs DC ${crt_dc}) — turn spent][/b]
+    [b][🌿 ${combat_enemy_name} breaks free of the vines (Strength check ${crt_roll}${combat_hex_tag} vs DC ${crt_dc}) — turn spent][/b]
     *line_break
     *set combat_restrain_stop true
   *else
@@ -8762,6 +8824,12 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *set cid_dc - 2
   *set cid_note "${cid_note}${cid_sep}badly hurt -2"
   *set cid_sep ", "
+*comment Hex on its Wisdom: the DC is its passive Wisdom check, so it takes -5.
+*gosub hex_check_disadv cid_slot "wisdom"
+*if (combat_hex_check_dis)
+  *set cid_dc - 5
+  *set cid_note "${cid_note}${cid_sep}Hex -5"
+  *set cid_sep ", "
 *temp cid_total 0
 *temp cid_down 0
 *temp cid_tougher false
@@ -9064,6 +9132,15 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *temp cec_b 1
 *rand cec_a 1 20
 *rand cec_b 1 20
+*comment Hex on its Dexterity: its side of the contest is rolled twice, the lower kept.
+*temp cec_hex ""
+*gosub hex_check_disadv cec_slot "dexterity"
+*if (combat_hex_check_dis)
+  *temp cec_a2 1
+  *rand cec_a2 1 20
+  *if (cec_a2 < cec_a)
+    *set cec_a cec_a2
+  *set cec_hex " (Disadvantage — Hex)"
 *temp cec_them ((cec_a + cec_prof) + cec_dex)
 *temp cec_you ((cec_b + prof_bonus) + cec_pdex)
 *set combat_escape_ok (cec_them > cec_you)
@@ -9076,7 +9153,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *temp cec_verdict "CUT OFF"
 *if (combat_escape_ok)
   *set cec_verdict "GETS AWAY"
-[b][🎲 ${combat_enemy_name} Escape: ${cec_a} +${cec_prof} prof ${cec_dex_str} DEX = ${cec_them} vs your ${cec_b} +${prof_bonus} prof ${cec_pdex_str} DEX = ${cec_you} — ${cec_verdict}][/b]
+[b][🎲 ${combat_enemy_name} Escape: ${cec_a}${cec_hex} +${cec_prof} prof ${cec_dex_str} DEX = ${cec_them} vs your ${cec_b} +${prof_bonus} prof ${cec_pdex_str} DEX = ${cec_you} — ${cec_verdict}][/b]
 *line_break
 *set combat_turn_advanced_this_page true
 *return
@@ -9112,6 +9189,13 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *temp gg_dex {(gg_p & "dexterity")}
     *gosub_scene startup score_to_mod gg_dex
     *rand gg_roll 1 20
+    *comment Hex on its Dexterity: rolled twice, the lower kept.
+    *gosub hex_check_disadv gg_slot "dexterity"
+    *if (combat_hex_check_dis)
+      *temp gg_roll2 1
+      *rand gg_roll2 1 20
+      *if (gg_roll2 < gg_roll)
+        *set gg_roll gg_roll2
     *set gg_roll (gg_roll + sm_mod)
     *if (gg_roll >= 10)
       *set gg_res 4
@@ -9137,7 +9221,11 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *if (gg_v = 3)
     $!{combat_enemy_epithet} lunges forward, finds nothing to push against, and goes sprawling.
   *line_break
-  [b][🧴 ${combat_enemy_name} slips and falls prone (Dexterity check ${gg_roll} vs DC 10) — turn lost][/b]
+  *set combat_hex_tag ""
+  *gosub hex_check_disadv gg_slot "dexterity"
+  *if (combat_hex_check_dis)
+    *set combat_hex_tag " (Disadvantage — Hex)"
+  [b][🧴 ${combat_enemy_name} slips and falls prone (Dexterity check ${gg_roll}${combat_hex_tag} vs DC 10) — turn lost][/b]
   *line_break
   *set combat_grease_stop true
 *elseif (gg_res = 1)

@@ -46,7 +46,7 @@ const RENAMES = {
   // "Spell/" prefixes are relative to ICONS/, not ICONS/Spell/ -- see findSpellIcon step 1.
   ensnaring_strike: "Action/Ensnaring_Strands_Icon.webp",  // STAND-IN: the library has Ensnaring Strands, a different spell, but the same thorned vines
   command: "Action/Voice_of_Command_Icon.webp",          // the library has art only for each of Command's five words (the HUD fly-out wears those, gen_action_icons.js)
-  hex: "Spell/Hex_Charisma_Icon.webp",                   // library also has Hex_Conjure
+  hex: "Spell/Hex_Icon.webp",                             // the plain curse; each ability's own art is on the HUD fly-out (gen_action_icons.js)
   disguise_self: "Spell/Disguise_Self_Femme_Dragonborn_Icon.webp",  // library variants are race-specific
 
   // The library's newer DDS-derived batch uses a Spell_<School>_<Name> convention, which the fuzzy

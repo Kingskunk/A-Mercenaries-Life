@@ -313,6 +313,7 @@
     function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "mw_inn_stable_yard" ? "generic_town_stable" : undefined; }, // the Wagoner's Rest stable yard, shared with the Split Pine and Drowned Oar
     function (s) { return s.sceneName === "port_valen/port_valen_holdings" && s.scenery_subplace === "mw_holding_floor" ? "7_lantern_lane" : undefined; }, // No. 7 Lantern Lane's own interior
     function (s) { return /^port_valen\/black_oath\//.test(s.sceneName) ? BLACK_OATH_PLACES[s.scenery_subplace] : undefined; }, // the handler's upstairs room and the Black Oath Dredge-End stops
+    function (s) { return s.sceneName === "port_valen/lyra_quests/lyra_nine_court" && s.scenery_subplace ? s.scenery_subplace : undefined; }, // Lyra's Nine Court quest: uses subplace when set, otherwise falls through to current_district
     function (s) { return s.sceneName === "port_valen/port_valen_dredge_end" && s.scenery_subplace === "dredge_duckboard_market" ? "dredge_duckboard_market" : undefined; }, // market lane and stalls
     function (s) { return s.sceneName === "port_valen/port_valen_dredge_end" && s.scenery_subplace === "dredge_upper_gangways" ? "dredge_upper_gangways" : undefined; }, // elevated tenant walkways
     function (s) { return s.sceneName === "port_valen/port_valen_dredge_end" && s.scenery_subplace === "dredge_boat_sheds" ? "dredge_boat_sheds" : undefined; }, // boatwrights' work-bank and scrap yard

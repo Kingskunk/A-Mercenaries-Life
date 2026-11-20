@@ -33,6 +33,19 @@ const MAP = {
   shove: "Action/Shove_Icon.webp",
   throw: "Action/Throw_Icon.webp",   // the one Throw button on the bar; its fly-out shows each item in its own art (below)
   // Each thrown item's own art, keyed throw_<slug of its title>: battlehud.js variantArt reads "Throw: Grease Flask" as throw_grease_flask.
+  // Hex's six abilities (battlehud.js variantArt: "Hex: Strength" reads hex_strength, or reapply_hex_strength while the curse waits to move).
+  hex_strength: "Spell/Hex_Strength_Icon.webp",
+  hex_dexterity: "Spell/Hex_Dexterity_Icon.webp",
+  hex_constitution: "Spell/Hex_Constitution_Icon.webp",
+  hex_intelligence: "Spell/Hex_Intelligence_Icon.webp",
+  hex_wisdom: "Spell/Hex_Wisdom_Icon.webp",
+  hex_charisma: "Spell/Hex_Charisma_Icon.webp",
+  reapply_hex_strength: "Spell/Reapply_Hex_Strength_Icon.webp",
+  reapply_hex_dexterity: "Spell/Reapply_Hex_Dexterity_Icon.webp",
+  reapply_hex_constitution: "Spell/Reapply_Hex_Constitution_Icon.webp",
+  reapply_hex_intelligence: "Spell/Reapply_Hex_Intelligence_Icon.webp",
+  reapply_hex_wisdom: "Spell/Reapply_Hex_Wisdom_Icon.webp",
+  reapply_hex_charisma: "Spell/Reapply_Hex_Charisma_Icon.webp",
   // Command's five words, each fly-out choice in its own art (battlehud.js variantArt reads "Command: Grovel" as command_grovel).
   command_approach: "Spell/Command_Approach_Icon.webp",
   command_drop: "Spell/Command_Drop_Icon.webp",

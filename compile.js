@@ -365,6 +365,7 @@ function compile(){
   verifyFileName("port_valen/MiddlewardQuest/dry_lion.txt");
   verifyFileName("port_valen/MiddlewardQuest/a_key_for_every_door.txt");
   verifyFileName("port_valen/varren_quests/varren_errand.txt");
+  verifyFileName("port_valen/lyra_quests/lyra_nine_court.txt");
   // The Black Oath's Night List: the Dredge-End rope-and-oil house hands the player to it by *goto_scene after dark, once Hask has put their name up, so it is never in *scene_list.
   verifyFileName("port_valen/black_oath/black_oath_night_list.txt");
   // The Black Oath's Second Named Work: The Short Purse (investigating the boat-shed slip fund deficit).

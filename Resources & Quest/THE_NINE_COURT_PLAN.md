@@ -19,23 +19,16 @@
 
 ---
 
-## 3. The Hask Connection (The Bridge)
+## 3. Quest Hook & Initial Foundation
 
-* **Hask's Friendship:** Hask, the chandler and fence in Dredge-End, was a close friend of Lyra's aunt for years. He knew her craft, traded with her, and knew her death was no accident.
-* **The Bad Blood with Lyra:** Lyra cannot speak with Hask. When Lyra fled the Black Oath three winters ago and took *"something they wanted back,"* she made herself a traitor to the syndicate. If Lyra enters Hask's shop, Hask will order her out or call street muscle.
-* **The Player's Role:** Hask will not discuss his friend's murder with just anyone. The player must earn Hask's confidence (through scrap trades, courier tasks, or achieving associate standing). Once trusted, Hask can reveal what he salvaged from the aunt's room before the stewards cleared it—or the description of the strange courier who visited her.
-
----
-
-## 4. Quest Hook & Initial Foundation
-
-### **The Broken Thread (The Hask Junction)**
-* **Requirement:** Lyra's *Five Silver* debt repaid; player has established trust with Hask in Dredge-End.
-* **Setup:** The player brings an inquiry to Hask regarding Lyra's aunt. Hask reveals his friendship with her and shares what he knows—or what she left with him—opening the door for Lyra to begin unravelling the mystery.
+### **The Barracks Hook (`nine_court_hook`)**
+* **Requirement:** Lyra's *Five Silver* debt repaid (`lyra_repaid = true`).
+* **Setup:** When the player visits Lyra in the Vanguard barracks, she admits she has been digging into her aunt's death and turned up troubling leads that point to something far bigger than ordinary street trouble. She says she cannot handle it alone and asks for the player's help.
+* **Meetup Point:** If the player agrees, Lyra tells them to meet her at **the Pawn Shop in Dredge-End** (The Open Hand, off Lamp Stair).
 
 ---
 
-## 5. Narrative & Design Guardrails
+## 4. Narrative & Design Guardrails
 
-1. **No Black Oath Villainization:** Ensure dialogues clearly separate the Black Oath's street crime from the Nine Court's archaic patrician atrocities. The Black Oath are transactional crooks; the Nine Court are an elite, esoteric bloodline cult.
+1. **No Black Oath Connection:** Lyra's aunt's death and the Nine Court are completely separate from the Black Oath syndicate. The Black Oath are transactional street crooks; the Nine Court are an elite, esoteric bloodline cult.
 2. **Lyra's Agency:** Lyra remains an archer and a survivor driven by protecting her family and discovering the truth behind her aunt's death.

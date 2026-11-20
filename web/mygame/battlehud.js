@@ -166,7 +166,18 @@
         { id: "magic_missile_2nd_level", label: "2nd level", whyKey: "combat_why_magic_missile_2", blurb: "Loose " + dartWord(2) + " darts of force, spending a 2nd-level slot." }
       ]
     },
-    { id: "hex", group: "bonus", name: "Hex", whyKey: "combat_why_hex", blurb: "Lay a baleful eldritch curse upon a foe." },
+    {
+      // Hex (RAW): the ability its target has disadvantage on checks with, chosen at each cast or move; each wears its own art (variantArt).
+      id: "hex", group: "bonus", name: "Hex", blurb: "Lay a baleful eldritch curse upon a foe.",
+      variants: [
+        { id: "hex_strength", label: "Strength", whyKey: "combat_why_hex", blurb: "Curse a foe and sour its Strength." },
+        { id: "hex_dexterity", label: "Dexterity", whyKey: "combat_why_hex", blurb: "Curse a foe and sour its Dexterity." },
+        { id: "hex_constitution", label: "Constitution", whyKey: "combat_why_hex", blurb: "Curse a foe and sour its Constitution." },
+        { id: "hex_intelligence", label: "Intelligence", whyKey: "combat_why_hex", blurb: "Curse a foe and sour its Intelligence." },
+        { id: "hex_wisdom", label: "Wisdom", whyKey: "combat_why_hex", blurb: "Curse a foe and sour its Wisdom." },
+        { id: "hex_charisma", label: "Charisma", whyKey: "combat_why_hex", blurb: "Curse a foe and sour its Charisma." }
+      ]
+    },
     { id: "armor_of_agathys", group: "action", name: "Armor of Agathys", whyKey: "combat_why_armor_of_agathys", blurb: "Sheathe yourself in spectral frost that punishes melee strikes." },
     { id: "mage_armor", group: "action", name: "Mage Armor", whyKey: "combat_why_mage_armor", blurb: "Lay a ward of unseen force over yourself: base AC 13 + Dexterity for 24 hours, while you wear no armor." },
     {
@@ -639,6 +650,8 @@
     if (e.id === "potions") return (window.ACTION_ICONS || {})["potions_" + slug(v.label)] || "";
     // Read: Magic Missile Scroll / Bane Scroll ... -- each spell scroll wears its own art (ACTION_ICONS read_<slug of its title>).
     if (e.id === "read") return (window.ACTION_ICONS || {})["read_" + slug(v.label)] || "";
+    // Hex: Strength .. Charisma -- each ability wears its own art, the Reapply art while the curse waits to be moved (combat_hex_orphaned).
+    if (e.id === "hex") return (window.ACTION_ICONS || {})[(truthy(statsNow().combat_hex_orphaned) ? "reapply_hex_" : "hex_") + slug(v.label)] || "";
     // Command: Approach / Drop / Flee / Grovel / Halt -- each word wears its own art (ACTION_ICONS command_<word>).
     if (e.id === "command") return (window.ACTION_ICONS || {})["command_" + slug(v.label)] || "";
     if (e.id !== "booming_blade") return "";
