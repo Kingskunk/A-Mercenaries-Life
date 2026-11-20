@@ -659,6 +659,9 @@
     session.pageId = currentPageKey(sceneId);
     session.cfg = cfg;
     session.turns = [];
+    session.advisedStarters = null;
+    session.advisedBeats = null;
+    session.adviseSeq += 1;
     session.saveMemory = cfg.memory !== false;
     session.busy = false;
     session.openingText = collectOpeningNarrative(textEl, markerParagraph);
@@ -669,17 +672,9 @@
 
     var title = evalField(cfg.title, s) || "Roleplay Session";
     var subtitle = evalField(cfg.subtitle, s) || "";
-    var starters = cfg.starters || [];
-    var beats = cfg.beats || DEFAULT_BEATS;
+    var staticStarters = cfg.starters || [];
+    var staticBeats = cfg.beats || DEFAULT_BEATS;
     var hasMem = cfg.memory !== false;
-
-    var startersHtml = starters.map(function (st) {
-      return '<button type="button" class="rp-chip" data-starter="' + esc(st) + '">' + esc(st) + '</button>';
-    }).join("");
-
-    var beatsHtml = '<span class="rp-beats-label">Next Beat:</span>' + beats.map(function (b) {
-      return '<button type="button" class="rp-chip rp-chip-beat" data-beat="' + esc(b.prompt) + '">' + esc(b.label) + '</button>';
-    }).join("");
 
     box.innerHTML =
       '<div class="rp-head">' +
@@ -724,12 +719,13 @@
           '<div class="rp-typing-dots"><span></span><span></span><span></span></div>' +
           '<span class="rp-typing-text">Writing response...</span>' +
         '</div>' +
-        (startersHtml ? '<div class="rp-starters">' + startersHtml + '</div>' : '') +
-        '<div class="rp-beats" style="display:none">' + beatsHtml + '</div>' +
+        '<div class="rp-starters"></div>' +
+        '<div class="rp-beats" style="display:none"></div>' +
         '<textarea class="rp-input" placeholder="Write what you do or say (or click a prompt chip above)..."></textarea>' +
         '<div class="rp-foot">' +
           '<div class="rp-actions-left">' +
             '<button type="button" class="rp-btn rp-btn-primary" data-act="send">Send / Continue</button>' +
+            '<button type="button" class="rp-btn rp-btn-advise" data-act="advise" title="Ask the AI to advise context-aware choices for this moment (replaces static chips)">\u2726 Advise</button>' +
             '<button type="button" class="rp-btn" data-act="edit" disabled title="Edit the last turn text in-place">\u270E Edit</button>' +
             '<button type="button" class="rp-btn" data-act="reroll" disabled title="Regenerate the last AI response">\u21BB Reroll</button>' +
             '<button type="button" class="rp-btn" data-act="undo" disabled title="Remove the last exchange">\u232B Undo</button>' +
@@ -746,6 +742,7 @@
     var inputEl = box.querySelector(".rp-input");
     var statusEl = box.querySelector(".rp-status");
     var sendBtn = box.querySelector('[data-act="send"]');
+    var adviseBtn = box.querySelector('[data-act="advise"]');
     var editBtn = box.querySelector('[data-act="edit"]');
     var rerollBtn = box.querySelector('[data-act="reroll"]');
     var undoBtn = box.querySelector('[data-act="undo"]');
@@ -756,20 +753,55 @@
     var typingEl = box.querySelector(".rp-typing");
     var typingTextEl = box.querySelector(".rp-typing-text");
     var editDrawer = box.querySelector(".rp-edit-drawer");
-    var editArea = box.querySelector(".rp-edit-textarea");
     var memDrawer = box.querySelector(".rp-mem-drawer");
     var memList = box.querySelector(".rp-mem-list");
     var saveMemCb = box.querySelector(".rp-save-mem-cb");
 
+    function renderChips() {
+      if (starterWrap) {
+        var useAdvisedStarters = Array.isArray(session.advisedStarters) && session.advisedStarters.length > 0;
+        if (useAdvisedStarters) {
+          starterWrap.innerHTML =
+            '<span class="rp-beats-label rp-beats-label-adv">Advised:</span>' +
+            session.advisedStarters.map(function (c) {
+              return '<button type="button" class="rp-chip rp-chip-advised" data-starter="' + esc(c.prompt) + '" title="' + esc(c.prompt) + '">' + esc(c.prompt) + '</button>';
+            }).join("") +
+            '<button type="button" class="rp-chip rp-chip-reset" data-act="reset-chips" title="Restore the static fallback choices">\u21A9 Default</button>';
+        } else {
+          starterWrap.innerHTML = staticStarters.map(function (st) {
+            return '<button type="button" class="rp-chip" data-starter="' + esc(st) + '">' + esc(st) + '</button>';
+          }).join("");
+        }
+      }
+
+      if (beatsWrap) {
+        var useAdvisedBeats = Array.isArray(session.advisedBeats) && session.advisedBeats.length > 0;
+        var list = useAdvisedBeats ? session.advisedBeats : staticBeats;
+        var heading = useAdvisedBeats
+          ? '<span class="rp-beats-label rp-beats-label-adv">Advised:</span>'
+          : '<span class="rp-beats-label">Next Beat:</span>';
+        var chipsHtml = list.map(function (b) {
+          var cls = "rp-chip rp-chip-beat" + (useAdvisedBeats ? " rp-chip-advised" : "");
+          return '<button type="button" class="' + cls + '" data-beat="' + esc(b.prompt) + '" title="' + esc(b.prompt) + '">' + esc(b.label) + '</button>';
+        }).join("");
+        var resetHtml = useAdvisedBeats
+          ? '<button type="button" class="rp-chip rp-chip-beat rp-chip-reset" data-act="reset-chips" title="Restore the static fallback choices">\u21A9 Default</button>'
+          : "";
+        beatsWrap.innerHTML = heading + chipsHtml + resetHtml;
+      }
+    }
+
     function updateChipsVisibility() {
       var hasTurns = session.turns.length > 0;
-      if (starterWrap) starterWrap.style.display = hasTurns ? "none" : "";
+      var hasStarters = (Array.isArray(session.advisedStarters) && session.advisedStarters.length > 0) || staticStarters.length > 0;
+      if (starterWrap) starterWrap.style.display = (!hasTurns && hasStarters) ? "" : "none";
       if (beatsWrap) beatsWrap.style.display = hasTurns ? "flex" : "none";
     }
 
     function updateButtons() {
       var hasTurns = session.turns.length > 0;
       sendBtn.disabled = session.busy;
+      if (adviseBtn) adviseBtn.disabled = session.busy;
       if (editBtn) editBtn.disabled = session.busy || !hasTurns;
       rerollBtn.disabled = session.busy || !hasTurns;
       undoBtn.disabled = session.busy || !hasTurns;
@@ -782,6 +814,50 @@
 
     function setStatus(msg) {
       if (statusEl) statusEl.textContent = msg;
+    }
+
+    function resolveActiveMode() {
+      if (settings.mode === "auto") {
+        return session.workerConnected ? "perchance" : "openrouter";
+      }
+      return settings.mode;
+    }
+
+    function dispatchRpGenerate(chosenMode, sysPrompt, buildPromptForMode, maxTokens, actionLabel) {
+      var baseUrl = getServerUrl();
+      var usrPrompt = buildPromptForMode(chosenMode, settings.model);
+      return fetch(baseUrl + "/rp_generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+        body: JSON.stringify({
+          mode: chosenMode,
+          model: settings.model,
+          raw_mode: true,
+          max_tokens: maxTokens,
+          system: sysPrompt,
+          prompt: usrPrompt
+        })
+      }).then(function (r) { return r.json(); })
+        .then(function (res) {
+          if (res.status !== "SUCCESS" && settings.mode === "auto" && chosenMode === "perchance") {
+            setStatus("Perchance tab asleep — falling back to OpenRouter...");
+            if (typingTextEl) typingTextEl.textContent = actionLabel + " (OpenRouter fallback)...";
+            var fallbackPrompt = buildPromptForMode("openrouter", settings.model);
+            return fetch(baseUrl + "/rp_generate", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+              body: JSON.stringify({
+                mode: "openrouter",
+                model: settings.model,
+                raw_mode: true,
+                max_tokens: maxTokens,
+                system: sysPrompt,
+                prompt: fallbackPrompt
+              })
+            }).then(function (r2) { return r2.json(); });
+          }
+          return res;
+        });
     }
 
     function renderMemoriesDrawer() {
@@ -829,7 +905,7 @@
         });
     }
 
-    // Restore turns and draft if the page was refreshed or returned to from Show Stats / Menu
+    // Restore turns, advised chips, and draft if the page was refreshed or returned to from Show Stats / Menu
     var restored = loadActiveSession(sceneId);
     if (restored && Array.isArray(restored.turns) && restored.turns.length > 0) {
       restored.turns.forEach(function (t) {
@@ -838,6 +914,12 @@
       });
       setStatus("Session restored (" + Math.ceil(session.turns.length / 2) + " exchange(s)).");
     }
+    if (restored && Array.isArray(restored.advisedStarters)) {
+      session.advisedStarters = restored.advisedStarters;
+    }
+    if (restored && Array.isArray(restored.advisedBeats)) {
+      session.advisedBeats = restored.advisedBeats;
+    }
     if (restored && restored.draft) {
       inputEl.value = restored.draft;
     }
@@ -845,6 +927,7 @@
       session.saveMemory = restored.saveMemory;
       if (saveMemCb) saveMemCb.checked = restored.saveMemory;
     }
+    renderChips();
     updateButtons();
 
     if (saveMemCb) {
@@ -863,6 +946,10 @@
       if (session.busy) return;
       editDrawer.hidden = true;
       session.busy = true;
+      session.adviseSeq += 1;
+      session.advisedStarters = null;
+      session.advisedBeats = null;
+      renderChips();
       updateButtons();
 
       if (!isReroll && playerText) {
@@ -871,11 +958,7 @@
         saveActiveSession(inputEl.value);
       }
 
-      var chosenMode = settings.mode;
-      if (chosenMode === "auto") {
-        chosenMode = session.workerConnected ? "perchance" : "openrouter";
-      }
-
+      var chosenMode = resolveActiveMode();
       var waitMsg = chosenMode === "perchance" ? "Generating via Perchance AI..." : "Generating via OpenRouter...";
       setStatus(waitMsg);
       if (typingTextEl) typingTextEl.textContent = waitMsg;
@@ -884,40 +967,15 @@
 
       fetchMemories(threadId, playerText || "Continue the scene").then(function (memBlock) {
         var sysPrompt = buildSystemPrompt(cfg, statsNow(), memBlock);
-        var usrPrompt = buildUserPrompt(playerText || "Continue the scene naturally from where it left off.");
-        var baseUrl = getServerUrl();
-
-        return fetch(baseUrl + "/rp_generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
-          body: JSON.stringify({
-            mode: chosenMode,
-            model: settings.model,
-            raw_mode: true,
-            max_tokens: 600,
-            system: sysPrompt,
-            prompt: usrPrompt
-          })
-        }).then(function (r) { return r.json(); })
-          .then(function (res) {
-            if (res.status !== "SUCCESS" && settings.mode === "auto" && chosenMode === "perchance") {
-              setStatus("Perchance tab asleep — falling back to OpenRouter...");
-              if (typingTextEl) typingTextEl.textContent = "Falling back to OpenRouter...";
-              return fetch(baseUrl + "/rp_generate", {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
-                body: JSON.stringify({
-                  mode: "openrouter",
-                  model: settings.model,
-                  raw_mode: true,
-                  max_tokens: 600,
-                  system: sysPrompt,
-                  prompt: usrPrompt
-                })
-              }).then(function (r2) { return r2.json(); });
-            }
-            return res;
-          });
+        return dispatchRpGenerate(
+          chosenMode,
+          sysPrompt,
+          function (m, mid) {
+            return buildUserPrompt(playerText || "Continue the scene naturally from where it left off.", sysPrompt, m, mid);
+          },
+          600,
+          "Generating"
+        );
       }).then(function (res) {
         session.busy = false;
         if (res && res.status === "SUCCESS" && res.text && res.text !== "...") {
@@ -940,6 +998,62 @@
       });
     }
 
+    function runAdviseChoices() {
+      if (session.busy) return;
+      editDrawer.hidden = true;
+      session.busy = true;
+      var mySeq = ++session.adviseSeq;
+      var targetIsStarter = session.turns.length === 0;
+      updateButtons();
+
+      var chosenMode = resolveActiveMode();
+      var waitMsg = chosenMode === "perchance" ? "Advising choices via Perchance AI..." : "Advising choices via OpenRouter...";
+      setStatus(waitMsg);
+      if (typingTextEl) typingTextEl.textContent = waitMsg;
+
+      var threadId = resolveThreadId(cfg, statsNow());
+      var recentHint = session.turns.slice(-2).map(function (t) { return t.text; }).join(" ").slice(0, 300);
+
+      fetchMemories(threadId, recentHint || "Advise choices for this scene").then(function (memBlock) {
+        if (mySeq !== session.adviseSeq) return null;
+        var sysPrompt = buildAdvisorSystemPrompt(cfg, statsNow(), memBlock);
+        return dispatchRpGenerate(
+          chosenMode,
+          sysPrompt,
+          function (m, mid) {
+            return buildAdvisorUserPrompt(sysPrompt, m, mid);
+          },
+          260,
+          "Advising choices"
+        );
+      }).then(function (res) {
+        if (mySeq !== session.adviseSeq) return;
+        session.busy = false;
+        if (res && res.status === "SUCCESS" && res.text && res.text !== "...") {
+          var choices = parseAdvisedChoices(res.text);
+          if (choices.length > 0) {
+            if (targetIsStarter) session.advisedStarters = choices;
+            else session.advisedBeats = choices;
+            renderChips();
+            saveActiveSession(inputEl.value);
+            var engineLabel = res.mode === "perchance" ? "Perchance AI" : settings.model.split("/").pop();
+            setStatus("Advised " + choices.length + " choices (" + engineLabel + "). Click one or press \u21A9 Default.");
+          } else {
+            setStatus("Could not parse advised choices — keeping static fallback.");
+          }
+        } else {
+          var errMsg = (res && (res.error || res.reason)) || "Advice failed";
+          setStatus("Advise error: " + errMsg + " (keeping static fallback).");
+        }
+        updateButtons();
+      }).catch(function (err) {
+        if (mySeq !== session.adviseSeq) return;
+        session.busy = false;
+        setStatus("Network error: " + (err && err.message ? err.message : String(err)) + " (keeping static fallback).");
+        updateButtons();
+      });
+    }
+
     modeSel.addEventListener("change", function () {
       settings.mode = modeSel.value;
       modelSel.style.display = settings.mode === "perchance" ? "none" : "";
@@ -953,6 +1067,26 @@
 
     box.addEventListener("click", function (ev) {
       var target = ev.target;
+      var actBtn = target.closest ? target.closest("[data-act]") : null;
+      if (actBtn) {
+        var act = actBtn.getAttribute("data-act");
+        if (act === "reset-chips") {
+          if (session.busy) return;
+          session.adviseSeq += 1;
+          session.advisedStarters = null;
+          session.advisedBeats = null;
+          renderChips();
+          saveActiveSession(inputEl.value);
+          updateButtons();
+          setStatus("Static fallback choices restored.");
+          return;
+        }
+        if (act === "advise") {
+          runAdviseChoices();
+          return;
+        }
+      }
+
       var starterBtn = target.closest ? target.closest("[data-starter]") : null;
       if (starterBtn && !session.busy) {
         var stText = starterBtn.getAttribute("data-starter");
@@ -968,25 +1102,24 @@
         return;
       }
 
-      var actBtn = target.closest ? target.closest("[data-act]") : null;
       if (!actBtn) return;
-      var act = actBtn.getAttribute("data-act");
+      var actName = actBtn.getAttribute("data-act");
 
-      if (act === "send") {
+      if (actName === "send") {
         var val = inputEl.value.trim();
         inputEl.value = "";
         runGeneration(val || "Continue the moment naturally, letting the companion take the lead.", false);
-      } else if (act === "edit") {
+      } else if (actName === "edit") {
         if (session.busy || !session.turns.length) return;
         var lastTurn = session.turns[session.turns.length - 1];
         var editBtnInLast = lastTurn.wrap ? lastTurn.wrap.querySelector('[data-tact="edit"]') : null;
         if (editBtnInLast) editBtnInLast.click();
-      } else if (act === "memories") {
+      } else if (actName === "memories") {
         memDrawer.hidden = !memDrawer.hidden;
         if (!memDrawer.hidden) renderMemoriesDrawer();
-      } else if (act === "close-memories") {
+      } else if (actName === "close-memories") {
         memDrawer.hidden = true;
-      } else if (act === "save-mem") {
+      } else if (actName === "save-mem") {
         var memId = actBtn.getAttribute("data-id");
         var itemEl = actBtn.closest(".rp-mem-item");
         var ta = itemEl ? itemEl.querySelector(".rp-mem-textarea") : null;
@@ -1006,7 +1139,7 @@
           actBtn.disabled = false;
           actBtn.textContent = "Error";
         });
-      } else if (act === "del-mem") {
+      } else if (actName === "del-mem") {
         var delId = actBtn.getAttribute("data-id");
         var delThreadId = resolveThreadId(cfg, statsNow());
         if (!delId || !delThreadId) return;
@@ -1020,7 +1153,7 @@
         }).catch(function () {
           actBtn.disabled = false;
         });
-      } else if (act === "reroll") {
+      } else if (actName === "reroll") {
         if (session.busy || !session.turns.length) return;
         editDrawer.hidden = true;
         if (session.turns[session.turns.length - 1].role === "ai") {
@@ -1031,7 +1164,7 @@
           ? session.turns[session.turns.length - 1].text
           : "Continue the moment naturally.";
         runGeneration(lastUser, true);
-      } else if (act === "undo") {
+      } else if (actName === "undo") {
         if (session.busy || !session.turns.length) return;
         editDrawer.hidden = true;
         if (session.turns[session.turns.length - 1].role === "ai") {
@@ -1043,6 +1176,10 @@
           if (userTurn.wrap && userTurn.wrap.parentNode) userTurn.wrap.parentNode.removeChild(userTurn.wrap);
           inputEl.value = userTurn.text;
         }
+        session.adviseSeq += 1;
+        session.advisedStarters = null;
+        session.advisedBeats = null;
+        renderChips();
         saveActiveSession(inputEl.value);
         updateButtons();
         setStatus("Last exchange undone.");
@@ -1161,6 +1298,9 @@
         commitSessionToMemPalace();
         session.active = false;
         session.turns = [];
+        session.advisedStarters = null;
+        session.advisedBeats = null;
+        session.adviseSeq += 1;
         clearActiveSession();
       }
     }
@@ -1174,8 +1314,6 @@
       }
     }
   }
-
-  RP.getServerUrl = getServerUrl;
 
   var obs = new MutationObserver(function () {
     scanForMarker();
