@@ -2198,7 +2198,7 @@ button#statSidebar .turnRow,
   }
   // Active conditions on one combatant, read from per-slot "rounds left" variables (0 = none). To show a new
   // condition, add its variable suffix and label here; the game writes the value, this only reads it.
-  var CONDITION_KEYS = [["slowed", "Slowed"], ["frightened", "Frightened"], ["greased", "Greased"], ["prone", "Prone"], ["burning", "Burning"], ["wet", "Wet"], ["blinded", "Blinded"], ["paralyzed", "Paralyzed"]];
+  var CONDITION_KEYS = [["slowed", "Slowed"], ["frightened", "Frightened"], ["greased", "Greased"], ["prone", "Prone"], ["burning", "Burning"], ["wet", "Wet"], ["blinded", "Blinded"], ["paralyzed", "Paralyzed"], ["off_guard", "Off-Guard"], ["pinned", "Pinned"], ["hobbled", "Hobbled"], ["poisoned", "Poisoned"]];
   // ── Statuses (2026-11-04): every condition and effect on a combatant, for the stage's token icons and the hover card's condition line,
   // so the two never disagree. Each reads the state combat.txt keeps; nothing here decides a rule. A round-limited effect counts while
   // combat_round has not passed its last round (bane_expires_round, favored_foe_expires_round), as the hub reads them. Restrained is a
@@ -2209,7 +2209,9 @@ button#statSidebar .turnRow,
     greased: ["\u25d0", "amber", "Greased: may slip and fall"], prone: ["\u2193", "grey", "Prone: knocked down"],
     burning: ["\u2739", "fire", "Burning: takes fire damage each turn"], wet: ["\u223f", "cold", "Wet: soaked through"],
     blinded: ["\u2298", "grey", "Blinded: its attacks have disadvantage; attacks against it have advantage"],
-    paralyzed: ["‖", "gold", "Paralyzed: loses its turns and reactions, fails Strength and Dexterity saves; attacks against it have advantage"]
+    paralyzed: ["‖", "gold", "Paralyzed: loses its turns and reactions, fails Strength and Dexterity saves; attacks against it have advantage"],
+    off_guard: ["\u2020", "fear", "Off-Guard: the next attack against it has advantage"], pinned: ["\u2295", "grey", "Pinned: cannot move on its next turn"],
+    hobbled: ["\u2193", "cold", "Hobbled: no Dash or Disengage"], poisoned: ["\u2620", "good", "Poisoned: disadvantage on attacks and checks"]
   };
   // How a combatant at 0 HP left the fight: "Fled" or "Surrendered" when its morale broke (combat.txt MORALE), "Not arrived" for a reinforcement still on its way (REINFORCEMENTS), else "Down".
   function outLabel(s, kind, slot) {
@@ -2235,6 +2237,7 @@ button#statSidebar .turnRow,
       if (Number(s.poisoned_minutes_left) > 0) add("Poisoned", "\u2620", "good", "Poisoned: your d20 rolls have disadvantage");
       // Blinded and concentration (2026-11-15): the rules live here, on the hover, so the fight's own banners only have to name the state.
       var pb = Number(s.combat_player_blinded) || 0;
+      ["off_guard", "pinned", "hobbled", "poisoned"].forEach(function (k) { var n = Number(s["combat_player_" + k]) || 0; if (n > 0) add(STATUS_GLYPHS[k][2].split(":")[0], STATUS_GLYPHS[k][0], STATUS_GLYPHS[k][1], STATUS_GLYPHS[k][2]); });
       if (pb > 0) add("Blinded", "⊘", "grey", "Blinded (" + pb + (pb === 1 ? " round" : " rounds") + "): your attacks have disadvantage, attacks against you have advantage, and spells that need a target you can see are out");
       var pc = concentrationOf(s, "combat_player_");
       if (pc) add("Concentrating", "❂", "gold", "Concentrating on " + pc + ": damage or a stun can break it, and another concentration spell replaces it");

@@ -798,6 +798,12 @@ ${combat_player_dmg_roll_banner}
     *if ((combat_player_prone) and (combat_enemy_range <= 0))
       *set combat_enemy_advantage true
       *set cea_def_prone true
+    *comment OFF-GUARD (3.3): the next attack roll against the player has advantage, and spends it.
+    *temp cea_def_off_guard false
+    *if (combat_player_off_guard > 0)
+      *set combat_enemy_advantage true
+      *set cea_def_off_guard true
+      *gosub condition_end "combat_player_" "off_guard"
     *comment SHOCKING GRASP (RAW): advantage against a player in metal armour (the studded brigandine and scale mail, the mail shirt, the plate harness), as the player's has
     *comment against a foe in metal (combat_enemy_metal_armor). The spell is the slot's cast, or its at-will cantrip when it is not using its sidearm.
     *temp cea_def_metal false
@@ -853,6 +859,8 @@ ${combat_player_dmg_roll_banner}
         *set cea_adv_label " (Advantage — Restrained)"
       *elseif (cea_def_metal)
         *set cea_adv_label " (Advantage — Metal Armor)"
+      *elseif (cea_def_off_guard)
+        *set cea_adv_label " (Advantage — Off-Guard)"
       *else
         *set cea_adv_label " (Advantage)"
     *comment Consumed on this actual roll (2026-09-28): reset both the bare scratch AND the per-slot field this
@@ -989,12 +997,15 @@ ${combat_player_dmg_roll_banner}
   *set combat_conc_save_banner ""
   *set combat_conc_ended_banner ""
   *if (((combat_enemy_hit_success) and (cea_save_failed)) and (combat_enemy_inflicts_condition))
-    *set disadvantage true
     *set combat_condition_inflicted true
+    *comment A converted condition (3.3: Off-Guard, Pinned, Hobbled, Poisoned) is applied for real; the rest still give the old disadvantage on the next d20.
+    *gosub move_cond_apply "combat_player_" combat_enemy_condition_name combat_active_target
+    *if (not(move_cond_applied))
+      *set disadvantage true
     *comment Movement conditions (2026-09-27): see the create comment (startup.txt) for which three names these
     *comment are and why only these three. combat_enemy_condition_name is already synced for the active target by
     *comment this point (fight_sync_target_in, combat.txt), same as every other field this label reads.
-    *if (((combat_enemy_condition_name = "Pinned") or (combat_enemy_condition_name = "Hobbled")) or (combat_enemy_condition_name = "Off-Balance"))
+    *if (combat_enemy_condition_name = "Off-Balance")
       *set player_movement_restricted true
   *if (combat_enemy_hit_success)
     *gosub record_last_hit "player" 0 "enemy" combat_active_target
@@ -1327,6 +1338,12 @@ ${combat_player_dmg_roll_banner}
     *if (({(reao_ap & "prone")}) and ({(reao_ap & "position")} = {(("combat_enemy" & combat_active_target) & "_position")}))
       *set combat_enemy_advantage true
       *set reao_def_prone true
+    *comment OFF-GUARD (3.3): the next attack roll against the ally has advantage, and spends it.
+    *temp reao_def_off_guard false
+    *if ({(reao_ap & "off_guard")} > 0)
+      *set combat_enemy_advantage true
+      *set reao_def_off_guard true
+      *gosub condition_end reao_ap "off_guard"
     *temp reao_roll 0
     *rand reao_roll 1 20
     *temp reao_adv_label ""
@@ -1366,6 +1383,8 @@ ${combat_player_dmg_roll_banner}
         *set reao_adv_label " (Advantage — Prone)"
       *elseif (reao_def_restrained)
         *set reao_adv_label " (Advantage — Restrained)"
+      *elseif (reao_def_off_guard)
+        *set reao_adv_label " (Advantage — Off-Guard)"
       *else
         *set reao_adv_label " (Advantage)"
     *comment Consumed on this actual roll (2026-09-28): reset both the bare scratch AND the per-slot field this
@@ -1473,9 +1492,16 @@ ${combat_player_dmg_roll_banner}
         *set reao_cond_name "Rattled"
         *set reao_cond_icon "🗯️"
       *if (not(reao_cond_name = ""))
-        *set {(reao_ap & "atk_disadv")} true
-        *set {(reao_ap & "atk_disadv_name")} reao_cond_name
-        *set reao_rider "${reao_cond_icon} ${reao_cond_name}: disadvantage on its next attack"
+        *comment A converted condition (3.3) is applied for real; the rest still leave the next attack at disadvantage.
+        *set move_cond_applied false
+        *if (not(reao_cond_name = "Rattled"))
+          *gosub move_cond_apply reao_ap reao_cond_name combat_active_target
+        *if (move_cond_applied)
+          *set reao_rider "${reao_cond_icon} ${reao_cond_name}"
+        *else
+          *set {(reao_ap & "atk_disadv")} true
+          *set {(reao_ap & "atk_disadv_name")} reao_cond_name
+          *set reao_rider "${reao_cond_icon} ${reao_cond_name}: disadvantage on its next attack"
     *if ((reao_save_failed) and ((reao_is_save) and ({(reao_ap & "hp")} > 0)))
       *if (combat_enemy_cast_spell = "thunderwave")
         *gosub enemy_push_ally reao_a_slot combat_active_target
@@ -1716,7 +1742,8 @@ ${combat_player_dmg_roll_banner}
   *temp raa_next_dis {(raa_ap & "atk_disadv")}
   *temp raa_next_name {(raa_ap & "atk_disadv_name")}
   *set {(raa_ap & "atk_disadv")} false
-  *temp raa_dis (((((raa_ranged_pinned) or (raa_blinded)) or (raa_restrained)) or (raa_frightened)) or (raa_next_dis))
+  *temp raa_poisoned ({(raa_ap & "poisoned")} > 0)
+  *temp raa_dis ((((((raa_ranged_pinned) or (raa_blinded)) or (raa_restrained)) or (raa_frightened)) or (raa_next_dis)) or (raa_poisoned))
   *if (raa_dis)
     *temp raa_roll_2 0
     *rand raa_roll_2 1 20
@@ -1730,6 +1757,8 @@ ${combat_player_dmg_roll_banner}
       *set raa_adv_label " (Disadvantage — Restrained)"
     *elseif (raa_frightened)
       *set raa_adv_label " (Disadvantage — Frightened)"
+    *elseif (raa_poisoned)
+      *set raa_adv_label " (Disadvantage — Poisoned)"
     *else
       *set raa_adv_label " (Disadvantage — ${raa_next_name})"
   *comment Advantage from the target (prone/stunned/restrained/greased/blinded, combat_attack_edge): it takes the better of two d20s, and cancels disadvantage above if both apply.
@@ -2439,6 +2468,58 @@ ${combat_player_dmg_roll_banner}
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 *comment ca_src names who caused it, for a concentration spell that must end only its own effects: the caster's prefix and the spell id ("combat_player_cause_fear"), or "" when nothing needs to find it again (condition_end_by_source).
+*comment SPECIAL-MOVE CONDITIONS (COMBAT_ENGINE_PLAN 3.3, 2026-11-19): a special move's or a spell's condition-on-hit, by its name, as a real shared condition. Sets
+*comment move_cond_id (the condition field, "" for a name not converted yet, which keeps the old next-d20 disadvantage) and move_cond_rounds (taken off at the end of the
+*comment bearer's turns, condition_tick). Off-Guard keeps the attacker's prefix as its source and the round as its DC, and ends at the end of that attacker's next turn
+*comment (move_cond_clear_off_guard) or on the next attack roll against the bearer.
+*label move_cond_lookup
+*params mcl_name
+*set move_cond_id ""
+*set move_cond_rounds 0
+*if (mcl_name = "Off-Guard")
+  *set move_cond_id "off_guard"
+  *set move_cond_rounds 99
+*elseif (mcl_name = "Pinned")
+  *set move_cond_id "pinned"
+  *set move_cond_rounds 1
+*elseif (mcl_name = "Hobbled")
+  *set move_cond_id "hobbled"
+  *set move_cond_rounds 2
+*elseif (mcl_name = "Poisoned")
+  *set move_cond_id "poisoned"
+  *set move_cond_rounds 2
+*return
+
+*comment Applies a condition-on-hit to the bearer mca_prefix, from enemy slot mca_slot. Sets move_cond_applied (false for a name not converted yet).
+*label move_cond_apply
+*params mca_prefix mca_name mca_slot
+*gosub move_cond_lookup mca_name
+*set move_cond_applied (not(move_cond_id = ""))
+*if (not(move_cond_applied))
+  *return
+*temp mca_dc 0
+*if (move_cond_id = "off_guard")
+  *set mca_dc combat_round
+*gosub condition_apply mca_prefix move_cond_id move_cond_rounds mca_dc (("combat_enemy" & mca_slot) & "_")
+*return
+
+*comment OFF-GUARD ends at the end of the attacker's next turn: called at the end of enemy slot mcco_slot's turn, it clears every Off-Guard that slot put on in an earlier
+*comment round (the player and each ally, named outright).
+*label move_cond_clear_off_guard
+*params mcco_slot
+*temp mcco_src (("combat_enemy" & mcco_slot) & "_")
+*if ((combat_player_off_guard > 0) and ((combat_player_off_guard_src = mcco_src) and (combat_player_off_guard_dc < combat_round)))
+  *gosub condition_end "combat_player_" "off_guard"
+*if ((combat_ally1_off_guard > 0) and ((combat_ally1_off_guard_src = mcco_src) and (combat_ally1_off_guard_dc < combat_round)))
+  *gosub condition_end "combat_ally1_" "off_guard"
+*if ((combat_ally2_off_guard > 0) and ((combat_ally2_off_guard_src = mcco_src) and (combat_ally2_off_guard_dc < combat_round)))
+  *gosub condition_end "combat_ally2_" "off_guard"
+*if ((combat_ally3_off_guard > 0) and ((combat_ally3_off_guard_src = mcco_src) and (combat_ally3_off_guard_dc < combat_round)))
+  *gosub condition_end "combat_ally3_" "off_guard"
+*if ((combat_ally4_off_guard > 0) and ((combat_ally4_off_guard_src = mcco_src) and (combat_ally4_off_guard_dc < combat_round)))
+  *gosub condition_end "combat_ally4_" "off_guard"
+*return
+
 *label condition_apply
 *params ca_prefix ca_name ca_rounds ca_dc ca_src
 *temp ca_field (ca_prefix & ca_name)
@@ -2585,6 +2666,20 @@ ${combat_player_dmg_roll_banner}
     *gosub condition_end ct_prefix "slowed"
   *else
     *set {(ct_prefix & "slowed")} ct_slow_left
+*comment PINNED, HOBBLED, POISONED (3.3): no save; one round off at the end of each of the bearer's turns (Off-Guard ends with its attacker's turn instead).
+*gosub condition_tick_down ct_prefix "pinned"
+*gosub condition_tick_down ct_prefix "hobbled"
+*gosub condition_tick_down ct_prefix "poisoned"
+*return
+
+*label condition_tick_down
+*params ctd_prefix ctd_name
+*temp ctd_left ({(ctd_prefix & ctd_name)} - 1)
+*if ({(ctd_prefix & ctd_name)} > 0)
+  *if (ctd_left <= 0)
+    *gosub condition_end ctd_prefix ctd_name
+  *else
+    *set {(ctd_prefix & ctd_name)} ctd_left
 *return
 
 *comment Shared spell effect: Blindness (Step 3c, 2026-11-15). Caller handles cast payment, prose, and cast-level replay lock.

@@ -100,9 +100,7 @@ In the order I would take it. Each item is one hand-off, sized to review in one 
 
 The user wants as much of the D&D system working as possible before subclasses start (agreed 2026-11-19).
 
-1. **More Dev Hub fights** (`dev_hub.txt`, beside 🔮 Caster War and 🧴 Grease Brawl): group fights that put the mechanics together, casters and fighters on both sides, as each mechanic lands. Each gets a `dev_<name>_runs` script.
-2. **A story fight with a real caster.** Dubhar (`fight_dubhar`, Longshade) is the only story enemy with spells.
-3. **A review of the fight AI**, last, once the two items above and the gaps in 3.2 are in. A great deal was added in a short time (enemy casting by shape, buffs, heals and reactions, ally casters, patches, abilities), each with its own worth-it rule. Play the Dev Hub fights and read the choices as a player would: where a side wastes its turn, picks a poor spell or target, stands where it should not, or ignores something it should use. List the findings first, then fix them one at a time. One seen already: a badly hurt melee ally whose foe is out of reach at Long Range spends its turn doing nothing, with no line (a guard against a kiting archer).
+1. **A review of the fight AI**, after the condition rebalance (3.3), so it judges the final rules. Dev Hub fights are added only to test or review the AI (the user, 2026-11-19); no new story content just to test a fight. A great deal was added in a short time (enemy casting by shape, buffs, heals and reactions, ally casters, patches, abilities), each with its own worth-it rule. Play the Dev Hub fights and read the choices as a player would: where a side wastes its turn, picks a poor spell or target, stands where it should not, or ignores something it should use. List the findings first, then fix them one at a time. One seen already: a badly hurt melee ally whose foe is out of reach at Long Range spends its turn doing nothing, with no line (a guard against a kiting archer).
 
 ### 3.2 Gaps in what exists
 
@@ -110,18 +108,29 @@ None open. Add one here when a play-through finds it.
 
 ### 3.3 Real conditions for the special moves
 
-The eight special moves (`feint`, `bleeding_cut` and the rest, in `tools/ability_book.json`) all do the same thing today: disadvantage on the player's next d20, plus `player_movement_restricted` for Pinned, Hobbled and Off-Balance. The names are labels, not engine conditions. A balance pass turns them into real conditions. The designer's targets, after Baldur's Gate 3 (2026-11-18; Daze was an early design and is to be redone):
+The eight special moves (`tools/ability_book.json`, each a type's default) all do the same thing today: disadvantage on the victim's next d20, plus `player_movement_restricted` for Pinned, Hobbled and Off-Balance. The names are labels, not engine conditions, which is also why a swordsman's feint can spoil a Break Free roll. This pass makes each a real shared condition (`condition_apply` and friends), on the player and on allies, the moves' targets.
 
-| Condition | Effect | Ends |
-| --- | --- | --- |
-| Dazed | Disadvantage on Wisdom saves, no reactions, loses its Dexterity bonus to AC | An ally Helps it |
-| Stunned | Cannot move or take actions, bonus actions or reactions; fails Strength and Dexterity saves; attacks against it have advantage; breaks concentration when applied | (its duration) |
-| Off-Balance | Disadvantage on Strength and Dexterity ability checks; attacks against it have advantage | It takes damage, or is Helped |
-| Blinded | Disadvantage on attack rolls; its attacks and spells reach only 10 ft (Engaged); attacks against it have advantage | (its duration) |
-| Poisoned | Disadvantage on attack rolls and ability checks | (its duration) |
-| Bleeding | 2 slashing at the start of each of its turns; disadvantage on Constitution saves | Any healing |
+**The design (the designer, 2026-11-18 and 2026-11-19, after Baldur's Gate 3).** "Its next turn" is the victim's.
 
-Off-Guard, Pinned and Hobbled have no target yet. A "Help" action (one ally ends Dazed or Off-Balance on another) comes with this pass. It also settles a known oddity: a "next d20" condition spoils the player's next skill check too, so a swordsman's feint can spoil a Break Free roll.
+| Move (type) | Condition | Effect | Ends |
+| --- | --- | --- | --- |
+| Feint (swordsman) | Off-Guard | The next attack roll against it, from anyone, has advantage | After that attack, or at the end of the feinter's next turn |
+| Bleeding Cut (axeman) | Bleeding | 2 slashing at the start of each of its turns; disadvantage on Constitution saves | Any healing, or after 3 of its turns (default) |
+| Poisoned Blade (knifeman) | Poisoned | Disadvantage on attack rolls and ability checks | After 2 of its turns (default) |
+| Dazing Blow (maceman) | Dazed | Disadvantage on Wisdom saves, no reactions, loses its Dexterity bonus to AC | Helped, or the end of its next turn |
+| Pinning Thrust (spearman) | Pinned | Cannot move on its next turn (it can still attack and act) | The end of its next turn |
+| Hook and Pull (hookman) | Off-Balance | Disadvantage on Strength and Dexterity ability checks; attacks against it have advantage | It takes damage, is Helped, or the end of its next turn (default) |
+| Hobbling Shot (archer) | Hobbled | No Dash and no Disengage | After 2 of its turns |
+| Blinding Stone (slinger) | Blinded | The shared Blinded condition (disadvantage on attacks, its reach drops to Engaged, attacks against it have advantage) | The end of its next turn (default) |
+
+Stunned (the `stunning_blow` rider) already exists and is unchanged. "(default)" marks a duration the table left open, filled in on 2026-11-19: change it if it plays wrong.
+
+**Help** (the designer, 2026-11-19): an action that ends Dazed or Off-Balance on someone beside you (the same lane tile). The player can Help an ally; an ally beside a Dazed or Off-Balance player spends its turn helping when it is not in danger itself.
+
+**Order of work**, each its own piece, each checked by transcript diffs:
+1. Dazed, Off-Balance, Bleeding, Blinded, through the same routines (`move_cond_lookup` maps a condition name to its field and rounds; one not listed there still gives the old next-d20 disadvantage). Off-Guard, Pinned, Hobbled and Poisoned are done (2026-11-19).
+2. Help, the player's action and the ally AI.
+3. The old flags retired (`disadvantage` from a condition-on-hit, `player_movement_restricted`, `combat_allyN_atk_disadv`), and the menu's condition lines.
 
 ### 3.4 Subclasses
 
