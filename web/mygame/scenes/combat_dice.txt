@@ -804,6 +804,11 @@ ${combat_player_dmg_roll_banner}
       *set combat_enemy_advantage true
       *set cea_def_off_guard true
       *gosub condition_end "combat_player_" "off_guard"
+    *comment OFF-BALANCE (3.3): attacks against the player have advantage while it lasts.
+    *temp cea_def_off_balance false
+    *if (combat_player_off_balance > 0)
+      *set combat_enemy_advantage true
+      *set cea_def_off_balance true
     *comment SHOCKING GRASP (RAW): advantage against a player in metal armour (the studded brigandine and scale mail, the mail shirt, the plate harness), as the player's has
     *comment against a foe in metal (combat_enemy_metal_armor). The spell is the slot's cast, or its at-will cantrip when it is not using its sidearm.
     *temp cea_def_metal false
@@ -861,6 +866,8 @@ ${combat_player_dmg_roll_banner}
         *set cea_adv_label " (Advantage — Metal Armor)"
       *elseif (cea_def_off_guard)
         *set cea_adv_label " (Advantage — Off-Guard)"
+      *elseif (cea_def_off_balance)
+        *set cea_adv_label " (Advantage — Off-Balance)"
       *else
         *set cea_adv_label " (Advantage)"
     *comment Consumed on this actual roll (2026-09-28): reset both the bare scratch AND the per-slot field this
@@ -909,6 +916,22 @@ ${combat_player_dmg_roll_banner}
     *if (combat_enemy_weapon_type = "ranged")
       *gosub_scene combat_movement combat_get_cover_ranged_defense_bonus "player" 0
     *temp cea_dc (armor_class + combat_cover_ranged_defense_bonus)
+    *comment DAZED (3.3): the player loses the Dexterity bonus their armour lets into AC (none in a plate harness, at most 2 in brigandine or a mail shirt), never
+    *comment below Barkskin's floor of 16.
+    *temp cea_dazed_dex 0
+    *if (combat_player_dazed > 0)
+      *set cea_dazed_dex dex_mod
+      *if (armor_type = "plate_harness")
+        *set cea_dazed_dex 0
+      *elseif (((armor_type = "brigandine") or (armor_type = "chain_jack")) and (cea_dazed_dex > 2))
+        *set cea_dazed_dex 2
+      *if (cea_dazed_dex < 0)
+        *set cea_dazed_dex 0
+      *if ((barkskin_minutes_left > 0) and ((armor_class - cea_dazed_dex) < 16))
+        *set cea_dazed_dex (armor_class - 16)
+        *if (cea_dazed_dex < 0)
+          *set cea_dazed_dex 0
+      *set cea_dc (cea_dc - cea_dazed_dex)
     *if (dodge_active)
       *set cea_dc (cea_dc + 5)
     *comment A Shield that already fired this round (shield_active) is simply +5 AC for this attack too (RAW: until the start of the caster's next turn).
@@ -972,10 +995,12 @@ ${combat_player_dmg_roll_banner}
     *comment ("AC 17 +5 Shield" read as 22, because the 17 already includes the +5). An armed Shield that did not
     *comment fire says whether the attack already missed or was too high for +5 to deflect.
     *temp cea_ac_str ""
-    *if ((combat_cover_ranged_defense_bonus > 0) or ((dodge_active) or (shield_active)))
+    *if (((combat_cover_ranged_defense_bonus > 0) or (cea_dazed_dex > 0)) or ((dodge_active) or (shield_active)))
       *set cea_ac_str " (${armor_class}"
       *if (combat_cover_ranged_defense_bonus > 0)
         *set cea_ac_str "${cea_ac_str} +2 Cover"
+      *if (cea_dazed_dex > 0)
+        *set cea_ac_str "${cea_ac_str} -${cea_dazed_dex} Dazed"
       *if (dodge_active)
         *set cea_ac_str "${cea_ac_str} +5 Dodge"
       *if (shield_active)
@@ -996,17 +1021,16 @@ ${combat_player_dmg_roll_banner}
   *set combat_conc_save_triggered false
   *set combat_conc_save_banner ""
   *set combat_conc_ended_banner ""
+  *comment OFF-BALANCE (3.3) ends when the bearer takes damage: a hit ends one already standing, before this hit's own condition goes on.
+  *if ((combat_enemy_hit_success) and (combat_player_off_balance > 0))
+    *gosub condition_end "combat_player_" "off_balance"
   *if (((combat_enemy_hit_success) and (cea_save_failed)) and (combat_enemy_inflicts_condition))
     *set combat_condition_inflicted true
-    *comment A converted condition (3.3: Off-Guard, Pinned, Hobbled, Poisoned) is applied for real; the rest still give the old disadvantage on the next d20.
+    *comment The condition is applied for real (3.3, move_cond_lookup). A name the lookup does not know falls back to disadvantage on the next d20, so a new type
+    *comment with an unlisted condition still does something until it is added there.
     *gosub move_cond_apply "combat_player_" combat_enemy_condition_name combat_active_target
     *if (not(move_cond_applied))
       *set disadvantage true
-    *comment Movement conditions (2026-09-27): see the create comment (startup.txt) for which three names these
-    *comment are and why only these three. combat_enemy_condition_name is already synced for the active target by
-    *comment this point (fight_sync_target_in, combat.txt), same as every other field this label reads.
-    *if (combat_enemy_condition_name = "Off-Balance")
-      *set player_movement_restricted true
   *if (combat_enemy_hit_success)
     *gosub record_last_hit "player" 0 "enemy" combat_active_target
   *set combat_stun_inflicted false
@@ -1048,7 +1072,7 @@ ${combat_player_dmg_roll_banner}
       *comment Dissonant Whispers (RAW): the player spends their reaction to move one step away from the caster, if they have it to spend (not Stunned or Paralyzed). It is
       *comment a real move (combat_shift_all_ranges, as Fall Back), so it provokes: the foe that gets the swing is picked now, while the ranges are still the old ones
       *comment (find_opportunity_attacker), and swings once the caster's lines have printed (fight_enemy_cast_attack, on a page of its own).
-      *if ((((not(player_oa_used)) and (not(player_stunned))) and (combat_player_paralyzed <= 0)) and (combat_enemy_range < combat_max_range))
+      *if (((((not(player_oa_used)) and (not(player_stunned))) and (combat_player_paralyzed <= 0)) and (combat_enemy_range < combat_max_range)) and (combat_player_dazed <= 0))
         *set player_oa_used true
         *temp cea_dw_caster combat_active_target
         *gosub_scene combat find_opportunity_attacker
@@ -1344,6 +1368,11 @@ ${combat_player_dmg_roll_banner}
       *set combat_enemy_advantage true
       *set reao_def_off_guard true
       *gosub condition_end reao_ap "off_guard"
+    *comment OFF-BALANCE (3.3): attacks against the ally have advantage while it lasts.
+    *temp reao_def_off_balance false
+    *if ({(reao_ap & "off_balance")} > 0)
+      *set combat_enemy_advantage true
+      *set reao_def_off_balance true
     *temp reao_roll 0
     *rand reao_roll 1 20
     *temp reao_adv_label ""
@@ -1385,6 +1414,8 @@ ${combat_player_dmg_roll_banner}
         *set reao_adv_label " (Advantage — Restrained)"
       *elseif (reao_def_off_guard)
         *set reao_adv_label " (Advantage — Off-Guard)"
+      *elseif (reao_def_off_balance)
+        *set reao_adv_label " (Advantage — Off-Balance)"
       *else
         *set reao_adv_label " (Advantage)"
     *comment Consumed on this actual roll (2026-09-28): reset both the bare scratch AND the per-slot field this
@@ -1405,6 +1436,17 @@ ${combat_player_dmg_roll_banner}
     *if (combat_enemy_weapon_type = "ranged")
       *gosub_scene combat_movement combat_get_cover_ranged_defense_bonus "ally" reao_a_slot
     *set reao_target_ac (reao_target_ac + combat_cover_ranged_defense_bonus)
+    *comment DAZED (3.3): an ally loses its Dexterity bonus to AC, taken as at most 2 (an ally's AC is an authored number, and they wear medium armour or lighter).
+    *temp reao_dazed_dex 0
+    *if ({(reao_ap & "dazed")} > 0)
+      *temp reao_dex_score {(reao_ap & "dexterity")}
+      *gosub_scene startup score_to_mod reao_dex_score
+      *set reao_dazed_dex sm_mod
+      *if (reao_dazed_dex > 2)
+        *set reao_dazed_dex 2
+      *if (reao_dazed_dex < 0)
+        *set reao_dazed_dex 0
+      *set reao_target_ac (reao_target_ac - reao_dazed_dex)
     *temp reao_total ((reao_roll + combat_enemy_atk_bonus) + combat_high_ground_attack_bonus)
     *temp reao_bonus_str ""
     *if (combat_enemy_atk_bonus >= 0)
@@ -1434,8 +1476,13 @@ ${combat_player_dmg_roll_banner}
     *elseif (reao_roll = 1)
       *set reao_verdict "MISS (Natural 1)"
     *temp reao_ac_str ""
-    *if (combat_cover_ranged_defense_bonus > 0)
-      *set reao_ac_str " (${reao_base_target_ac} +2 Cover)"
+    *if ((combat_cover_ranged_defense_bonus > 0) or (reao_dazed_dex > 0))
+      *set reao_ac_str " (${reao_base_target_ac}"
+      *if (combat_cover_ranged_defense_bonus > 0)
+        *set reao_ac_str "${reao_ac_str} +2 Cover"
+      *if (reao_dazed_dex > 0)
+        *set reao_ac_str "${reao_ac_str} -${reao_dazed_dex} Dazed"
+      *set reao_ac_str "${reao_ac_str})"
     *set {(reao_atk_bannername)} "[b][🎲 ${combat_enemy_name} Attack Roll: ${reao_roll} ${reao_bonus_str}${combat_high_ground_attack_label}${reao_adv_label}${reao_bane_str} = ${reao_total} vs AC ${reao_target_ac}${reao_ac_str} — ${reao_verdict}][/b]"
   *set {(reao_bannername)} ""
   *set combat_enemy_dmg_on_ally_dealt 0
@@ -1470,6 +1517,9 @@ ${combat_player_dmg_roll_banner}
         *set {(reao_bannername)} "[b][🎲 ${combat_enemy_name} Damage${combat_enemy_crit_tag}: ${reao_dmg_total}${reao_tag} | ${combat_enemy_stun_icon} ${combat_enemy_stun_name}][/b]"
     *set combat_enemy_dmg_on_ally_dealt reao_dmg_total
     *gosub record_last_hit "ally" reao_a_slot "enemy" combat_active_target
+    *comment OFF-BALANCE (3.3) ends when the ally takes damage, before this hit's own condition goes on.
+    *if ({(reao_ap & "off_balance")} > 0)
+      *gosub condition_end reao_ap "off_balance"
     *set {(reao_ap & "hp")} - reao_dmg_total
     *if ({(reao_ap & "hp")} <= 0)
       *set {(reao_ap & "hp")} 0
@@ -1492,7 +1542,8 @@ ${combat_player_dmg_roll_banner}
         *set reao_cond_name "Rattled"
         *set reao_cond_icon "🗯️"
       *if (not(reao_cond_name = ""))
-        *comment A converted condition (3.3) is applied for real; the rest still leave the next attack at disadvantage.
+        *comment The condition is applied for real (3.3). Vicious Mockery's Rattled (RAW: disadvantage on the next attack roll) and a name move_cond_lookup does not
+        *comment know leave the ally's next attack at disadvantage (_atk_disadv, spent in resolve_ally_attack).
         *set move_cond_applied false
         *if (not(reao_cond_name = "Rattled"))
           *gosub move_cond_apply reao_ap reao_cond_name combat_active_target
@@ -1510,7 +1561,7 @@ ${combat_player_dmg_roll_banner}
         *set {(reao_ap & "oa_used")} true
         *set reao_rider "🖤 no reactions until its turn"
       *elseif (combat_enemy_cast_spell = "dissonant_whispers")
-        *if (((not({(reao_ap & "oa_used")})) and ({(reao_ap & "stunned")} <= 0)) and ({(reao_ap & "paralyzed")} <= 0))
+        *if ((((not({(reao_ap & "oa_used")})) and ({(reao_ap & "stunned")} <= 0)) and ({(reao_ap & "paralyzed")} <= 0)) and ({(reao_ap & "dazed")} <= 0))
           *set {(reao_ap & "oa_used")} true
           *gosub enemy_push_ally reao_a_slot combat_active_target
           *set reao_rider "👂 driven back, reaction spent"
@@ -1609,7 +1660,8 @@ ${combat_player_dmg_roll_banner}
 *params ccr_kind ccr_slot
 *set combat_can_react_ok false
 *if (ccr_kind = "player")
-  *if (((((hp_current > 0) and (not(player_oa_used))) and (not(player_stunned))) and (combat_player_paralyzed <= 0)) and (not(combat_player_prone)))
+  *comment Dazed (3.3): no reactions.
+  *if ((((((hp_current > 0) and (not(player_oa_used))) and (not(player_stunned))) and (combat_player_paralyzed <= 0)) and (not(combat_player_prone))) and (combat_player_dazed <= 0))
     *set combat_can_react_ok true
 *else
   *comment Fixed prefixes, not one built from ccr_kind: quicktest walks every branch whatever the values, and "combat_player0_" names nothing.
@@ -1621,7 +1673,8 @@ ${combat_player_dmg_roll_banner}
   *temp ccr_stun {(ccr_p & "stunned")}
   *temp ccr_para {(ccr_p & "paralyzed")}
   *temp ccr_prone {(ccr_p & "prone")}
-  *if (((((ccr_hp > 0) and (not(ccr_used))) and (ccr_stun <= 0)) and (ccr_para <= 0)) and (not(ccr_prone)))
+  *temp ccr_dazed {(ccr_p & "dazed")}
+  *if ((((((ccr_hp > 0) and (not(ccr_used))) and (ccr_stun <= 0)) and (ccr_para <= 0)) and (not(ccr_prone))) and (ccr_dazed <= 0))
     *set combat_can_react_ok true
 *return
 
@@ -2321,6 +2374,18 @@ ${combat_player_dmg_roll_banner}
     *if ((res_prone) and (not(res_dis)))
       *set res_dis true
       *set res_prone_dis true
+  *comment Dazed (3.3): Wisdom saves with disadvantage. Bleeding (3.3): Constitution saves with disadvantage.
+  *temp res_cond_dis ""
+  *if (res_stat = "wisdom")
+    *temp res_dazed {(res_cond_p & "dazed")}
+    *if ((res_dazed > 0) and (not(res_dis)))
+      *set res_dis true
+      *set res_cond_dis "Dazed"
+  *if (res_stat = "constitution")
+    *temp res_bleeding {(res_cond_p & "bleeding")}
+    *if ((res_bleeding > 0) and (not(res_dis)))
+      *set res_dis true
+      *set res_cond_dis "Bleeding"
   *temp res_roll 0
   *rand res_roll 1 20
   *temp res_roll_b 0
@@ -2340,6 +2405,8 @@ ${combat_player_dmg_roll_banner}
       *set res_dis_note " (disadvantage, Restrained)"
     *if (res_prone_dis)
       *set res_dis_note " (disadvantage, Prone)"
+    *if (not(res_cond_dis = ""))
+      *set res_dis_note " (disadvantage, ${res_cond_dis})"
   *temp res_total (res_roll + res_mod)
   *temp res_bane_str ""
   *temp res_bane_expires {(res_prefix & "bane_expires_round")}
@@ -2470,8 +2537,9 @@ ${combat_player_dmg_roll_banner}
 *comment ca_src names who caused it, for a concentration spell that must end only its own effects: the caster's prefix and the spell id ("combat_player_cause_fear"), or "" when nothing needs to find it again (condition_end_by_source).
 *comment SPECIAL-MOVE CONDITIONS (COMBAT_ENGINE_PLAN 3.3, 2026-11-19): a special move's or a spell's condition-on-hit, by its name, as a real shared condition. Sets
 *comment move_cond_id (the condition field, "" for a name not converted yet, which keeps the old next-d20 disadvantage) and move_cond_rounds (taken off at the end of the
-*comment bearer's turns, condition_tick). Off-Guard keeps the attacker's prefix as its source and the round as its DC, and ends at the end of that attacker's next turn
-*comment (move_cond_clear_off_guard) or on the next attack roll against the bearer.
+*comment bearer's turns, condition_tick). Off-Guard, Dazed and Off-Balance keep the attacker's prefix as their source and the round as their DC, and end at the end of
+*comment that attacker's next turn (move_cond_clear_by_attacker); Off-Guard also on the next attack roll against the bearer, Off-Balance on damage, Dazed and
+*comment Off-Balance on Help (combat.txt fight_help, the ally's help in combat_next_turn).
 *label move_cond_lookup
 *params mcl_name
 *set move_cond_id ""
@@ -2488,6 +2556,19 @@ ${combat_player_dmg_roll_banner}
 *elseif (mcl_name = "Poisoned")
   *set move_cond_id "poisoned"
   *set move_cond_rounds 2
+*elseif (mcl_name = "Dazed")
+  *set move_cond_id "dazed"
+  *set move_cond_rounds 99
+*elseif (mcl_name = "Off-Balance")
+  *set move_cond_id "off_balance"
+  *set move_cond_rounds 99
+*elseif (mcl_name = "Bleeding")
+  *set move_cond_id "bleeding"
+  *set move_cond_rounds 3
+*elseif (mcl_name = "Blinded")
+  *comment The shared Blinded condition (as the Blindness spell's, with no save to end it early): one round off at the end of the bearer's turn.
+  *set move_cond_id "blinded"
+  *set move_cond_rounds 1
 *return
 
 *comment Applies a condition-on-hit to the bearer mca_prefix, from enemy slot mca_slot. Sets move_cond_applied (false for a name not converted yet).
@@ -2498,26 +2579,42 @@ ${combat_player_dmg_roll_banner}
 *if (not(move_cond_applied))
   *return
 *temp mca_dc 0
-*if (move_cond_id = "off_guard")
+*if (((move_cond_id = "off_guard") or (move_cond_id = "dazed")) or (move_cond_id = "off_balance"))
   *set mca_dc combat_round
+  *comment A fresh hit restarts it: the old copy (and its round and attacker) goes first, since condition_apply keeps the longer of two.
+  *gosub condition_end mca_prefix move_cond_id
 *gosub condition_apply mca_prefix move_cond_id move_cond_rounds mca_dc (("combat_enemy" & mca_slot) & "_")
 *return
 
-*comment OFF-GUARD ends at the end of the attacker's next turn: called at the end of enemy slot mcco_slot's turn, it clears every Off-Guard that slot put on in an earlier
-*comment round (the player and each ally, named outright).
-*label move_cond_clear_off_guard
-*params mcco_slot
+*comment OFF-GUARD, DAZED, OFF-BALANCE end at the end of the attacker's next turn: called at the end of enemy slot mcco_slot's turn, this clears each of the three that slot
+*comment put on in an earlier round, on the player and every ally. With mcco_dead true (combat_begin_round, for a fallen slot, which has no next turn) it clears them all.
+*label move_cond_clear_by_attacker
+*params mcco_slot mcco_dead
 *temp mcco_src (("combat_enemy" & mcco_slot) & "_")
-*if ((combat_player_off_guard > 0) and ((combat_player_off_guard_src = mcco_src) and (combat_player_off_guard_dc < combat_round)))
-  *gosub condition_end "combat_player_" "off_guard"
-*if ((combat_ally1_off_guard > 0) and ((combat_ally1_off_guard_src = mcco_src) and (combat_ally1_off_guard_dc < combat_round)))
-  *gosub condition_end "combat_ally1_" "off_guard"
-*if ((combat_ally2_off_guard > 0) and ((combat_ally2_off_guard_src = mcco_src) and (combat_ally2_off_guard_dc < combat_round)))
-  *gosub condition_end "combat_ally2_" "off_guard"
-*if ((combat_ally3_off_guard > 0) and ((combat_ally3_off_guard_src = mcco_src) and (combat_ally3_off_guard_dc < combat_round)))
-  *gosub condition_end "combat_ally3_" "off_guard"
-*if ((combat_ally4_off_guard > 0) and ((combat_ally4_off_guard_src = mcco_src) and (combat_ally4_off_guard_dc < combat_round)))
-  *gosub condition_end "combat_ally4_" "off_guard"
+*gosub move_cond_clear_three "combat_player_" mcco_src mcco_dead
+*temp mcco_i 1
+*label move_cond_clear_by_attacker_loop
+*if (mcco_i <= combat_ally_slot_cap)
+  *gosub move_cond_clear_three (("combat_ally" & mcco_i) & "_") mcco_src mcco_dead
+  *set mcco_i + 1
+  *goto move_cond_clear_by_attacker_loop
+*return
+
+*label move_cond_clear_three
+*params mct_p mct_src mct_dead
+*gosub move_cond_clear_one mct_p "off_guard" mct_src mct_dead
+*gosub move_cond_clear_one mct_p "dazed" mct_src mct_dead
+*gosub move_cond_clear_one mct_p "off_balance" mct_src mct_dead
+*return
+
+*label move_cond_clear_one
+*params mco_p mco_c mco_src mco_dead
+*temp mco_v {(mco_p & mco_c)}
+*if (mco_v > 0)
+  *temp mco_have {((mco_p & mco_c) & "_src")}
+  *temp mco_round {((mco_p & mco_c) & "_dc")}
+  *if ((mco_have = mco_src) and ((mco_dead) or (mco_round < combat_round)))
+    *gosub condition_end mco_p mco_c
 *return
 
 *label condition_apply
@@ -2670,6 +2767,8 @@ ${combat_player_dmg_roll_banner}
 *gosub condition_tick_down ct_prefix "pinned"
 *gosub condition_tick_down ct_prefix "hobbled"
 *gosub condition_tick_down ct_prefix "poisoned"
+*comment BLEEDING (3 rounds; its damage is at the start of the bearer's turn, combat.txt). Dazed and Off-Balance end with their attacker's turn instead.
+*gosub condition_tick_down ct_prefix "bleeding"
 *return
 
 *label condition_tick_down

@@ -108,29 +108,7 @@ None open. Add one here when a play-through finds it.
 
 ### 3.3 Real conditions for the special moves
 
-The eight special moves (`tools/ability_book.json`, each a type's default) all do the same thing today: disadvantage on the victim's next d20, plus `player_movement_restricted` for Pinned, Hobbled and Off-Balance. The names are labels, not engine conditions, which is also why a swordsman's feint can spoil a Break Free roll. This pass makes each a real shared condition (`condition_apply` and friends), on the player and on allies, the moves' targets.
-
-**The design (the designer, 2026-11-18 and 2026-11-19, after Baldur's Gate 3).** "Its next turn" is the victim's.
-
-| Move (type) | Condition | Effect | Ends |
-| --- | --- | --- | --- |
-| Feint (swordsman) | Off-Guard | The next attack roll against it, from anyone, has advantage | After that attack, or at the end of the feinter's next turn |
-| Bleeding Cut (axeman) | Bleeding | 2 slashing at the start of each of its turns; disadvantage on Constitution saves | Any healing, or after 3 of its turns (default) |
-| Poisoned Blade (knifeman) | Poisoned | Disadvantage on attack rolls and ability checks | After 2 of its turns (default) |
-| Dazing Blow (maceman) | Dazed | Disadvantage on Wisdom saves, no reactions, loses its Dexterity bonus to AC | Helped, or the end of its next turn |
-| Pinning Thrust (spearman) | Pinned | Cannot move on its next turn (it can still attack and act) | The end of its next turn |
-| Hook and Pull (hookman) | Off-Balance | Disadvantage on Strength and Dexterity ability checks; attacks against it have advantage | It takes damage, is Helped, or the end of its next turn (default) |
-| Hobbling Shot (archer) | Hobbled | No Dash and no Disengage | After 2 of its turns |
-| Blinding Stone (slinger) | Blinded | The shared Blinded condition (disadvantage on attacks, its reach drops to Engaged, attacks against it have advantage) | The end of its next turn (default) |
-
-Stunned (the `stunning_blow` rider) already exists and is unchanged. "(default)" marks a duration the table left open, filled in on 2026-11-19: change it if it plays wrong.
-
-**Help** (the designer, 2026-11-19): an action that ends Dazed or Off-Balance on someone beside you (the same lane tile). The player can Help an ally; an ally beside a Dazed or Off-Balance player spends its turn helping when it is not in danger itself.
-
-**Order of work**, each its own piece, each checked by transcript diffs:
-1. Dazed, Off-Balance, Bleeding, Blinded, through the same routines (`move_cond_lookup` maps a condition name to its field and rounds; one not listed there still gives the old next-d20 disadvantage). Off-Guard, Pinned, Hobbled and Poisoned are done (2026-11-19).
-2. Help, the player's action and the ally AI.
-3. The old flags retired (`disadvantage` from a condition-on-hit, `player_movement_restricted`, `combat_allyN_atk_disadv`), and the menu's condition lines.
+Done (2026-11-19). The rules are in `GAMEPLAY_MECHANICS_RULES.md`, "Special-move conditions".
 
 ### 3.4 Subclasses
 

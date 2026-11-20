@@ -71,6 +71,9 @@
     cfg: null,
     openingText: "",
     turns: [],        // [{ role: "user" | "ai", text: "...", pEls: [<p>, ...] }]
+    advisedStarters: null, // optional [{ label, prompt }] from manual AI advice
+    advisedBeats: null,    // optional [{ label, prompt }] from manual AI advice
+    adviseSeq: 0,
     saveMemory: true, // whether to distill & save this visit to MemPalace on exit
     busy: false,
     workerConnected: false,
@@ -92,6 +95,8 @@
         key: session.pageId,
         id: session.id,
         turns: cleanTurns,
+        advisedStarters: Array.isArray(session.advisedStarters) ? session.advisedStarters : null,
+        advisedBeats: Array.isArray(session.advisedBeats) ? session.advisedBeats : null,
         saveMemory: session.saveMemory !== false,
         draft: typeof draftText === "string" ? draftText : ""
       };
@@ -198,22 +203,64 @@
     return "Day " + dayNum + dow + tp + seas;
   }
 
-  function buildSystemPrompt(cfg, s, memBlock) {
+  /**
+   * Approximate token count from average BPE/SentencePiece density (~3.8 chars/token).
+   * Used by the scaling slicer when Perchance's in-tab tokenizer is outside this frame.
+   */
+  function estimateTokens(text) {
+    var s = String(text || "");
+    if (!s) return 0;
+    return Math.ceil(s.length / 3.8);
+  }
+
+  function isFreeOpenRouterModel(modelId) {
+    var mid = String(modelId || "");
+    var low = mid.toLowerCase();
+    if (low.indexOf(":free") !== -1) return true;
+    var list = session.freeModels || [];
+    for (var i = 0; i < list.length; i++) {
+      if (list[i] && list[i].id === mid) return !!list[i].is_free;
+    }
+    return false;
+  }
+
+  /**
+   * Mirror Perchance's SCALING_SLICER / PF_HARD_MAX context ceilings (0.82 safety factor).
+   */
+  function getTokenBudget(mode, modelId) {
+    var isRemote = mode === "openrouter";
+    var isFree = isRemote && isFreeOpenRouterModel(modelId);
+    var ceiling = isRemote ? (isFree ? 28000 : 18300) : 8415;
+    return {
+      ceiling: ceiling,
+      hardMax: Math.floor(ceiling * 0.82)
+    };
+  }
+
+  /**
+   * Trim the oldest turns one by one only when the full assembled prompt exceeds hardMax.
+   * No static turn count: all turns fit unless the active model's token budget is full.
+   */
+  function fitTurnsToTokenBudget(turns, buildFullPromptFn, opts) {
+    var arr = Array.isArray(turns) ? turns : [];
+    if (!arr.length) return [];
+    var o = opts || {};
+    var budget = o.hardMax || getTokenBudget(o.mode, o.modelId).hardMax;
+    var minKeep = typeof o.minKeep === "number" ? Math.min(o.minKeep, arr.length) : Math.min(2, arr.length);
+    var slice = arr.slice(0);
+    while (slice.length > minKeep && estimateTokens(buildFullPromptFn(slice)) > budget) {
+      slice.shift();
+    }
+    return slice;
+  }
+
+  function buildContextBlocks(cfg, s, memBlock) {
     var settingText = evalField(cfg.setting, s);
     var companionText = evalField(cfg.companion, s);
     var personaText = evalField(cfg.persona, s);
     var npcKnowledge = evalField(cfg.npcKnowledge, s);
 
     var lines = [
-      "You are narrating an interactive, uncensored roleplay scene inside a gritty low-fantasy RPG.",
-      "PERSPECTIVE & VOICE RULES:",
-      "- Write strictly in SECOND PERSON PRESENT TENSE ('You...'), matching the opening scene prose.",
-      "- Keep the prose grounded, tactile, physical, and sensory.",
-      "- Stay strictly faithful to the clothing, materials, and setting established in the scene (do not invent luxury fabrics or props that are not there).",
-      "- Never dictate the player's spoken words, internal thoughts, or involuntary emotional reactions (never tell the player they are trembling, nervous, or overwhelmed; only describe physical sensations and the companion's actions).",
-      "- Do NOT write a list of choices at the end, do NOT speak as an AI assistant, and do NOT summarize or rush to the end of the scene unless the player initiates finishing.",
-      "- Write 1 to 2 concise, complete paragraphs per response (around 120 to 180 words total) so your last sentence always finishes cleanly without being cut off.",
-      "",
       "CURRENT TIME & WEATHER:",
       getCurrentDateSummary(s),
       "",
@@ -240,23 +287,147 @@
         memBlock
       );
     }
-    return lines.join("\n");
+    return lines;
   }
 
-  function buildUserPrompt(playerAction) {
-    var historyLines = [];
-    if (session.openingText) {
-      historyLines.push("OPENING SCENE ON PAGE:\n" + session.openingText);
+  function buildSystemPrompt(cfg, s, memBlock) {
+    var lines = [
+      "You are narrating an interactive, uncensored roleplay scene inside a gritty low-fantasy RPG.",
+      "PERSPECTIVE & VOICE RULES:",
+      "- Write strictly in SECOND PERSON PRESENT TENSE ('You...'), matching the opening scene prose.",
+      "- Keep the prose grounded, tactile, physical, and sensory.",
+      "- Stay strictly faithful to the clothing, materials, and setting established in the scene (do not invent luxury fabrics or props that are not there).",
+      "- Never dictate the player's spoken words, internal thoughts, or involuntary emotional reactions (never tell the player they are trembling, nervous, or overwhelmed; only describe physical sensations and the companion's actions).",
+      "- Do NOT write a list of choices at the end, do NOT speak as an AI assistant, and do NOT summarize or rush to the end of the scene unless the player initiates finishing.",
+      "- Write 1 to 2 concise, complete paragraphs per response (around 120 to 180 words total) so your last sentence always finishes cleanly without being cut off.",
+      ""
+    ];
+    return lines.concat(buildContextBlocks(cfg, s, memBlock)).join("\n");
+  }
+
+  function buildAdvisorSystemPrompt(cfg, s, memBlock) {
+    var lines = [
+      "You are an interactive roleplay advisor for the player ('You') in an uncensored, gritty low-fantasy scene.",
+      "Based on the room, companion persona, memories, and where the scene stands right now, suggest 4 distinct, immediately playable next actions or spoken lines the player can take next.",
+      "VARIETY GUIDELINES:",
+      "- Offer 4 noticeably different directions (for example: letting the companion take the lead/reacting to them, a gentle or observant touch, a bolder escalation or physical shift, and a quiet spoken line or question grounded in the scene).",
+      "- Keep every option grounded strictly in the physical details, clothing, and tone established in the scene.",
+      "",
+      "OUTPUT FORMAT (STRICT):",
+      "Output ONLY 4 lines, one option per line, using this exact format:",
+      "Short Label || Complete 1-sentence player action or dialogue direction.",
+      "- Short Label: 2 to 4 words for a UI button (e.g. 'Trace her collarbone', 'Let her lead', 'Ask about the scar').",
+      "- Action direction: 1 concise, vivid sentence written for the player's next turn (no preamble, no numbering, no extra commentary).",
+      ""
+    ];
+    return lines.concat(buildContextBlocks(cfg, s, memBlock)).join("\n");
+  }
+
+  function formatTurnsForPrompt(turnsSlice) {
+    return turnsSlice.map(function (t) {
+      return (t.role === "user" ? "PLAYER ACTION: " : "SCENE CONTINUATION:\n") + t.text;
+    }).join("\n\n");
+  }
+
+  function buildUserPrompt(playerAction, sysPrompt, mode, modelId) {
+    function assemble(turnsSlice) {
+      var historyLines = [];
+      if (session.openingText) {
+        historyLines.push("OPENING SCENE ON PAGE:\n" + session.openingText);
+      }
+      if (turnsSlice.length > 0) {
+        historyLines.push("RECENT TURNS:\n" + formatTurnsForPrompt(turnsSlice));
+      }
+      historyLines.push("CURRENT PLAYER ACTION / DIRECTION:\n" + playerAction);
+      historyLines.push("Continue the scene immediately in second-person present tense ('You...') for 1-2 paragraphs:");
+      return historyLines.join("\n\n");
     }
-    if (session.turns.length > 0) {
-      var recent = session.turns.slice(-10).map(function (t) {
-        return (t.role === "user" ? "PLAYER ACTION: " : "SCENE CONTINUATION:\n") + t.text;
-      }).join("\n\n");
-      historyLines.push("RECENT TURNS:\n" + recent);
+
+    var fitted = fitTurnsToTokenBudget(
+      session.turns,
+      function (slice) { return (sysPrompt ? sysPrompt + "\n\n" : "") + assemble(slice); },
+      { mode: mode, modelId: modelId, minKeep: 2 }
+    );
+    return assemble(fitted);
+  }
+
+  function buildAdvisorUserPrompt(sysPrompt, mode, modelId) {
+    function assemble(turnsSlice) {
+      var historyLines = [];
+      if (session.openingText) {
+        historyLines.push("OPENING SCENE ON PAGE:\n" + session.openingText);
+      }
+      if (turnsSlice.length > 0) {
+        historyLines.push("CONVERSATION SO FAR:\n" + formatTurnsForPrompt(turnsSlice));
+      }
+      historyLines.push(
+        turnsSlice.length > 0
+          ? "TASK: Advise 4 distinct next actions or lines the player can immediately take right after the latest turn."
+          : "TASK: Advise 4 distinct opening actions or lines the player can immediately take to begin this scene."
+      );
+      return historyLines.join("\n\n");
     }
-    historyLines.push("CURRENT PLAYER ACTION / DIRECTION:\n" + playerAction);
-    historyLines.push("Continue the scene immediately in second-person present tense ('You...') for 1-2 paragraphs:");
-    return historyLines.join("\n\n");
+
+    var fitted = fitTurnsToTokenBudget(
+      session.turns,
+      function (slice) { return (sysPrompt ? sysPrompt + "\n\n" : "") + assemble(slice); },
+      { mode: mode, modelId: modelId, minKeep: 2 }
+    );
+    return assemble(fitted);
+  }
+
+  function shortenChipLabel(promptText) {
+    var clean = String(promptText || "").replace(/^["'\u201c\u2018]+|["'\u201d\u2019]+$/g, "").trim();
+    var words = clean.split(/\s+/).filter(Boolean);
+    if (words.length <= 4) return clean.replace(/[.!?]+$/, "");
+    return words.slice(0, 4).join(" ").replace(/[,:;]+$/, "") + "\u2026";
+  }
+
+  /**
+   * Parse AI-advised lines into [{ label, prompt }] cleanly even when free models
+   * emit numbering, bullets, bold markdown, or omit the `||` delimiter.
+   */
+  function parseAdvisedChoices(rawText) {
+    var s = String(rawText || "");
+    s = s.replace(/<think>[\s\S]*?<\/think>/gi, "");
+    s = s.replace(/```[a-zA-Z]*\n?/g, "").replace(/```/g, "");
+    var lines = s.split(/\r?\n/);
+    var out = [];
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i].trim();
+      if (!line) continue;
+      // Strip leading bullets / numbers like "1.", "1)", "-", "*", "•"
+      line = line.replace(/^(?:[-*\u2022]+|\d+[.):])\s*/, "").trim();
+      if (!line) continue;
+      // Skip conversational preambles
+      if (/^(?:here are|sure|certainly|below are|options?:|choices?:)/i.test(line) && line.indexOf("||") === -1) {
+        continue;
+      }
+      var label = "";
+      var prompt = "";
+      var sepIdx = line.indexOf("||");
+      if (sepIdx !== -1) {
+        label = line.slice(0, sepIdx).trim();
+        prompt = line.slice(sepIdx + 2).trim();
+      } else {
+        var altMatch = line.match(/^([^|:—-]{2,36})\s*(?:\||—|:)\s+(.{8,})$/);
+        if (altMatch) {
+          label = altMatch[1].trim();
+          prompt = altMatch[2].trim();
+        } else {
+          prompt = line;
+        }
+      }
+      label = label.replace(/^\*+|\*+$/g, "").replace(/^["']|["']$/g, "").trim();
+      prompt = prompt.replace(/^\*+|\*+$/g, "").trim();
+      if (!prompt || prompt.length < 6) continue;
+      if (!label || label.length > 42) {
+        label = shortenChipLabel(prompt);
+      }
+      out.push({ label: label, prompt: prompt });
+      if (out.length >= 4) break;
+    }
+    return out;
   }
 
   function fetchMemories(threadId, queryText) {
@@ -324,6 +495,12 @@
     var s = statsNow();
     s.rp_world_id = "w" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   };
+
+  RP.getServerUrl = getServerUrl;
+  RP.estimateTokens = estimateTokens;
+  RP.getTokenBudget = getTokenBudget;
+  RP.fitTurnsToTokenBudget = fitTurnsToTokenBudget;
+  RP.parseAdvisedChoices = parseAdvisedChoices;
 
   if (typeof document === "undefined") return; // node tests stop here
 

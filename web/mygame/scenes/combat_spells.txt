@@ -712,6 +712,9 @@
   *set hp_current + combat_cast_result
   *if (hp_current > hp_max)
     *set hp_current hp_max
+  *comment Bleeding (3.3) ends with any healing (not a Chilled 0).
+  *if (combat_cast_result > 0)
+    *gosub_scene combat_dice condition_end "combat_player_" "bleeding"
 *else
   *temp rshl_hp {(("combat_ally" & combat_friendly_target) & "_hp")}
   *temp rshl_max {(("combat_ally" & combat_friendly_target) & "_max_hp")}
@@ -719,6 +722,7 @@
   *if (rshl_hp > rshl_max)
     *set rshl_hp rshl_max
   *set {(("combat_ally" & combat_friendly_target) & "_hp")} rshl_hp
+  *gosub_scene combat_dice condition_end (("combat_ally" & combat_friendly_target) & "_") "bleeding"
 *return
 
 *comment The shared temporary hit points roll: what a cast of rtp_id gives, from its data (temp_hp_dice, temp_hp_flat, and temp_hp_flat more for each slot level above the spell's own), into spell_roll_temp_hp. The caller decides whether it replaces the temporary hit points already held (they never stack).

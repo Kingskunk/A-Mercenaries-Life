@@ -114,6 +114,15 @@
     *set {(("combat_enemy" & fss_i) & "_poisoned")} 0
     *set {(("combat_enemy" & fss_i) & "_poisoned_dc")} 0
     *set {(("combat_enemy" & fss_i) & "_poisoned_src")} ""
+    *set {(("combat_enemy" & fss_i) & "_dazed")} 0
+    *set {(("combat_enemy" & fss_i) & "_dazed_dc")} 0
+    *set {(("combat_enemy" & fss_i) & "_dazed_src")} ""
+    *set {(("combat_enemy" & fss_i) & "_off_balance")} 0
+    *set {(("combat_enemy" & fss_i) & "_off_balance_dc")} 0
+    *set {(("combat_enemy" & fss_i) & "_off_balance_src")} ""
+    *set {(("combat_enemy" & fss_i) & "_bleeding")} 0
+    *set {(("combat_enemy" & fss_i) & "_bleeding_dc")} 0
+    *set {(("combat_enemy" & fss_i) & "_bleeding_src")} ""
     *set {(("combat_enemy" & fss_i) & "_slowed_dc")} 0
     *set {(("combat_enemy" & fss_i) & "_frightened")} 0
     *set {(("combat_enemy" & fss_i) & "_frightened_dc")} 0
@@ -165,6 +174,15 @@
     *set {(("combat_ally" & fss_i) & "_poisoned")} 0
     *set {(("combat_ally" & fss_i) & "_poisoned_dc")} 0
     *set {(("combat_ally" & fss_i) & "_poisoned_src")} ""
+    *set {(("combat_ally" & fss_i) & "_dazed")} 0
+    *set {(("combat_ally" & fss_i) & "_dazed_dc")} 0
+    *set {(("combat_ally" & fss_i) & "_dazed_src")} ""
+    *set {(("combat_ally" & fss_i) & "_off_balance")} 0
+    *set {(("combat_ally" & fss_i) & "_off_balance_dc")} 0
+    *set {(("combat_ally" & fss_i) & "_off_balance_src")} ""
+    *set {(("combat_ally" & fss_i) & "_bleeding")} 0
+    *set {(("combat_ally" & fss_i) & "_bleeding_dc")} 0
+    *set {(("combat_ally" & fss_i) & "_bleeding_src")} ""
     *set {(("combat_ally" & fss_i) & "_slowed_dc")} 0
     *set {(("combat_ally" & fss_i) & "_frightened")} 0
     *set {(("combat_ally" & fss_i) & "_frightened_dc")} 0
@@ -1166,7 +1184,6 @@
 *set ensnaring_armed false
 *set ensnaring_expires_round 0
 *set combat_hide_free_round 0
-*set player_movement_restricted false
 *set combat_shove_success false
 *set combat_shove_dc 10
 *set combat_shove_target_name "the enemy"
@@ -1563,6 +1580,15 @@
   *set {(("combat_ally" & fc_a_i) & "_poisoned")} 0
   *set {(("combat_ally" & fc_a_i) & "_poisoned_dc")} 0
   *set {(("combat_ally" & fc_a_i) & "_poisoned_src")} ""
+  *set {(("combat_ally" & fc_a_i) & "_dazed")} 0
+  *set {(("combat_ally" & fc_a_i) & "_dazed_dc")} 0
+  *set {(("combat_ally" & fc_a_i) & "_dazed_src")} ""
+  *set {(("combat_ally" & fc_a_i) & "_off_balance")} 0
+  *set {(("combat_ally" & fc_a_i) & "_off_balance_dc")} 0
+  *set {(("combat_ally" & fc_a_i) & "_off_balance_src")} ""
+  *set {(("combat_ally" & fc_a_i) & "_bleeding")} 0
+  *set {(("combat_ally" & fc_a_i) & "_bleeding_dc")} 0
+  *set {(("combat_ally" & fc_a_i) & "_bleeding_src")} ""
   *set {(("combat_ally" & fc_a_i) & "_slowed_dc")} 0
   *set {(("combat_ally" & fc_a_i) & "_frightened")} 0
   *set {(("combat_ally" & fc_a_i) & "_frightened_dc")} 0
@@ -1604,6 +1630,15 @@
 *set combat_player_poisoned 0
 *set combat_player_poisoned_dc 0
 *set combat_player_poisoned_src ""
+*set combat_player_dazed 0
+*set combat_player_dazed_dc 0
+*set combat_player_dazed_src ""
+*set combat_player_off_balance 0
+*set combat_player_off_balance_dc 0
+*set combat_player_off_balance_src ""
+*set combat_player_bleeding 0
+*set combat_player_bleeding_dc 0
+*set combat_player_bleeding_src ""
 *set combat_player_slowed_dc 0
 *set combat_player_frightened 0
 *set combat_player_frightened_dc 0
@@ -3183,9 +3218,16 @@
 *if (combat_player_no_heal_slot > 0)
   *if ({(("combat_enemy" & combat_player_no_heal_slot) & "_hp")} <= 0)
     *set combat_player_no_heal_slot 0
+*comment The same for Off-Guard, Dazed and Off-Balance (3.3) from a foe that has fallen.
+*temp cbr_mc_i 1
+*label combat_begin_round_mc_loop
+*if (cbr_mc_i <= combat_enemy_slot_cap)
+  *if ({(("combat_enemy" & cbr_mc_i) & "_hp")} <= 0)
+    *gosub_scene combat_dice move_cond_clear_by_attacker cbr_mc_i true
+  *set cbr_mc_i + 1
+  *goto combat_begin_round_mc_loop
 *comment Opportunity attacks (2026-09-28): each enemy regains its one reaction for the new round, exactly like
-*comment the advantage/disadvantage reset below -- same per-slot loop, and deliberately NOT the round-start
-*comment player_movement_restricted clear, which is a condition expiring rather than a budget refreshing.
+*comment the advantage/disadvantage reset below -- same per-slot loop.
 *temp cbr_oa_i 1
 *label combat_begin_round_oa_loop
 *if (cbr_oa_i <= combat_enemy_count)
@@ -3208,8 +3250,7 @@
 *comment (combat_enemy<N>_disadvantage/_advantage, see fight_sync_target_in/apply_enemy_type/resolve_enemy_attack),
 *comment it's tied to that specific enemy's own next attack roll, RAW, and is consumed there instead -- a fight
 *comment where the targeted enemy spends a round or two just closing distance (the range-tier system) no longer
-*comment loses the debuff before that enemy ever actually attacks. player_movement_restricted is no longer cleared here
-*comment (3.9, 2026-11-19): it lasts until the end of the player's next turn (fight_end_player_turn), so a rider landed after the player's turn still holds on the next one.
+*comment loses the debuff before that enemy ever actually attacks.
 *set combat_player_actions_left combat_player_actions_max
 *set combat_player_bonus_left combat_player_bonus_max
 *set combat_player_attacks_left combat_player_attacks_max
@@ -3316,8 +3357,6 @@
 *gosub_scene combat_dice condition_tick "combat_player_" 7
 *comment GREASE (3.9a): ending the turn on a patch is a Dexterity save or Prone.
 *gosub_scene combat_spells grease_end_turn "combat_player_" 7
-*comment Pinned / Hobbled / Off-Balance (player_movement_restricted) end with the turn they held, as Slowed does (3.9, 2026-11-19). Cleared before the chain, so one landed in it holds next turn.
-*set player_movement_restricted false
 *goto combat_next_turn
 
 *label combat_spend_attack
@@ -3353,6 +3392,54 @@
   *set combat_attack_grant_locked true
   *set locked_combat_attack_grant_page_id page_id
 *return
+
+*comment HELP (3.3): what an ally at slot chn_slot needs from the player's Help, into combat_help_need_kind ("daze" for Dazed or Off-Balance, "free" for Restrained,
+*comment "up" for Prone, "" for nothing or out of reach: it must stand on the player's tile) and its option text, combat_help_text.
+*label combat_help_need
+*params chn_slot
+*set combat_help_need_kind ""
+*set combat_help_text ""
+*temp chn_p (("combat_ally" & chn_slot) & "_")
+*if (chn_slot > combat_ally_slot_cap)
+  *return
+*if (({(chn_p & "hp")} <= 0) or (not({(chn_p & "position")} = combat_lane_player_position)))
+  *return
+*if (({(chn_p & "dazed")} > 0) or ({(chn_p & "off_balance")} > 0))
+  *set combat_help_need_kind "daze"
+  *set combat_help_text "Grab them and pull them back into the fight."
+*elseif ({(chn_p & "restrained")} > 0)
+  *set combat_help_need_kind "free"
+  *set combat_help_text "Haul at whatever holds them until it gives."
+*elseif ({(chn_p & "prone")})
+  *set combat_help_need_kind "up"
+  *set combat_help_text "Get them back on their feet."
+*return
+
+*comment The player's Help (the hub's option): ends what combat_help_need found on ally combat_help_slot, and spends the action. condition_end and the flag are the
+*comment same on a replay, so it needs no lock of its own.
+*label fight_help
+*gosub combat_help_need combat_help_slot
+*temp fh_p (("combat_ally" & combat_help_slot) & "_")
+*temp fh_name {(fh_p & "name")}
+*temp fh_ep {(fh_p & "epithet")}
+*if (combat_help_need_kind = "daze")
+  *gosub_scene combat_dice condition_end fh_p "dazed"
+  *gosub_scene combat_dice condition_end fh_p "off_balance"
+  You catch ${fh_ep} by the shoulder and pull them square, and their eyes find the fight again.
+  *line_break
+  [b][🤝 Help: ${fh_name} is steady again][/b]
+*elseif (combat_help_need_kind = "free")
+  *gosub_scene combat_dice condition_end fh_p "restrained"
+  You dig your fingers into what holds ${fh_ep} and drag at it until it tears loose.
+  *line_break
+  [b][🤝 Help: ${fh_name} is free][/b]
+*elseif (combat_help_need_kind = "up")
+  *set {(fh_p & "prone")} false
+  You hook ${fh_ep} under the arm and haul them upright.
+  *line_break
+  [b][🤝 Help: ${fh_name} is back on their feet][/b]
+*line_break
+*goto fight_action_spent
 
 *label fight_action_spent
 *comment Every option that costs an action ends here (Brace, spells, items, Agathys, False Life). Always returns
@@ -3610,6 +3697,15 @@
 *if (combat_player_poisoned > 0)
   *line_break
   [b][🤢 Poisoned][/b]
+*if (combat_player_dazed > 0)
+  *line_break
+  [b][😵 Dazed — no reactions][/b]
+*if (combat_player_off_balance > 0)
+  *line_break
+  [b][🌀 Off-Balance][/b]
+*if (combat_player_bleeding > 0)
+  *line_break
+  [b][🩸 Bleeding][/b]
 *if (combat_player_bonus_left < combat_player_bonus_max)
   *line_break
   [b][⚡ Bonus action used | ${combat_player_bonus_left} left this round][/b]
@@ -3980,17 +4076,17 @@
 *comment and a flat three-way `and` chain is a parse error, not a wrong answer.
 *comment Restrained (3.4): no Disengage while held, since there is no movement to protect.
 *comment Pinned and Hobbled (3.3): no Disengage either.
-*if (((((combat_player_actions_left > 0) or (combat_cunning)) and (not(combat_player_disengaged))) and (not(player_movement_restricted))) and (((combat_player_restrained <= 0) and (combat_player_pinned <= 0)) and (combat_player_hobbled <= 0)))
+*if ((((combat_player_actions_left > 0) or (combat_cunning)) and (not(combat_player_disengaged))) and (((combat_player_restrained <= 0) and (combat_player_pinned <= 0)) and (combat_player_hobbled <= 0)))
   *set combat_can_disengage true
 *temp combat_can_break_off false
 *comment A fight that cannot be left (combat_no_flee, the Burning Grove) never offers Break off.
-*if (((combat_player_moves_left > 0) and (not(player_movement_restricted))) and (not(combat_no_flee)))
+*if ((combat_player_moves_left > 0) and (not(combat_no_flee)))
   *set combat_can_break_off true
 *comment Dodge (2026-09-28, RAW): +5 AC for the current turn AND "you cannot move". The movement half is
 *comment enforced through ONE flag rather than by editing each movement gate separately, so it cannot be
-*comment half-applied later -- every movement option below tests combat_can_move. movement-restricted
-*comment (Pinned/Hobbled/Off-Balance) already hides the options; this hides them for a different reason and
-*comment keeps the button text honest about why, so combat_can_move is true whenever neither applies.
+*comment half-applied later -- every movement option below tests combat_can_move. Pinned, Hobbled and
+*comment Restrained hide options on their own (3.3); this hides them for a different reason and keeps the button
+*comment text honest about why.
 *temp combat_can_move false
 *if (not(dodge_active))
   *set combat_can_move true
@@ -4016,6 +4112,21 @@
 *if (combat_player_actions_left > 0)
   *if (not(dodge_active))
     *set combat_can_dodge true
+*comment HELP (3.3, the designer, 2026-11-19): an action for an ally on the player's tile that is Dazed or Off-Balance, Restrained, or Prone (combat_help_need, in that
+*comment order); fight_help ends it. chh_t1..4 hold each ally's option text, "" when it cannot be helped.
+*temp chh_t1 ""
+*temp chh_t2 ""
+*temp chh_t3 ""
+*temp chh_t4 ""
+*if (combat_player_actions_left > 0)
+  *gosub combat_help_need 1
+  *set chh_t1 combat_help_text
+  *gosub combat_help_need 2
+  *set chh_t2 combat_help_text
+  *gosub combat_help_need 3
+  *set chh_t3 combat_help_text
+  *gosub combat_help_need 4
+  *set chh_t4 combat_help_text
 *comment Hide (2026-10-01): an unspent action, not already hidden, and no living enemy at Close or Engaged. An
 *comment enemy range is read per slot by combat_check_hide, so a far-off group does not block it.
 *temp combat_can_hide false
@@ -4306,7 +4417,7 @@
 *if (combat_lane_player_position <= combat_lane_min_position)
   *set combat_can_fall_back false
 *comment ADVANCE PAST (the user's call, 2026-10-12): with an enemy in reach and nothing farther to close on, Push Forward still works, as a step past it. Leaving reach gives the same free swing as falling back (see the Push Forward option).
-*if ((combat_engaged_slot > 0) and ((not(player_movement_restricted)) and (not(combat_choke_player_blocked))))
+*if ((combat_engaged_slot > 0) and (not(combat_choke_player_blocked)))
   *if (combat_lane_player_position < combat_lane_max_position)
     *set combat_can_push_forward true
     *set combat_push_past true
@@ -5839,6 +5950,22 @@
       *goto fight_read_scorching_ray
   *comment GEN:END combat_read_options
 
+  *if (not(chh_t1 = ""))
+    # [b][ACTION][/b] [b][Help ${combat_ally1_name}][/b] ${chh_t1}
+      *set combat_help_slot 1
+      *goto fight_help
+  *if (not(chh_t2 = ""))
+    # [b][ACTION][/b] [b][Help ${combat_ally2_name}][/b] ${chh_t2}
+      *set combat_help_slot 2
+      *goto fight_help
+  *if (not(chh_t3 = ""))
+    # [b][ACTION][/b] [b][Help ${combat_ally3_name}][/b] ${chh_t3}
+      *set combat_help_slot 3
+      *goto fight_help
+  *if (not(chh_t4 = ""))
+    # [b][ACTION][/b] [b][Help ${combat_ally4_name}][/b] ${chh_t4}
+      *set combat_help_slot 4
+      *goto fight_help
   *if (combat_can_dodge)
     # [b][ACTION][/b] [b][Dodge][/b] +5 AC until your next turn; you cannot move.
       *comment DODGE, RAW 2014 "Actions in Combat": +5 AC for the current turn, and you cannot move. Replaces
@@ -7925,6 +8052,12 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *temp cart_str {(cart_p & "strength")}
   *gosub_scene startup score_to_mod cart_str
   *rand cart_roll 1 20
+  *comment Off-Balance and Poisoned (3.3): the Strength check is made with disadvantage.
+  *if (({(cart_p & "off_balance")} > 0) or ({(cart_p & "poisoned")} > 0))
+    *temp cart_roll_b 0
+    *rand cart_roll_b 1 20
+    *if (cart_roll_b < cart_roll)
+      *set cart_roll cart_roll_b
   *set cart_roll (cart_roll + sm_mod)
   *set cart_res 1
   *if (cart_roll >= cart_dc)
@@ -8170,6 +8303,71 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *line_break
     [b][💨 ${combat_enemy_name} puts out the fire — turn spent][/b]
     *line_break
+*set combat_turn_advanced_this_page true
+*return
+
+*comment BLEEDING (3.3, an axeman's Bleeding Cut): 2 slashing at the start of each of the bearer's turns, resistances applied, with a concentration save for it. The damage
+*comment ends Off-Balance. Stored against the page id (_bleed_page, _bleed_dealt, and the player's _bleed_conc), so a replay prints the same lines and never bleeds twice.
+*label combat_player_bleed_tick
+*if (not(combat_player_bleed_page = page_id))
+  *gosub_scene combat_dice adjust_incoming_damage_packet 2 "slashing"
+  *set combat_player_bleed_dealt combat_packet_damage
+  *set hp_current - combat_player_bleed_dealt
+  *if (hp_current < 0)
+    *set hp_current 0
+  *if ((not(combat_player_can_die)) and (hp_current < 1))
+    *set hp_current 1
+  *set combat_player_bleed_conc ""
+  *if (combat_player_bleed_dealt > 0)
+    *gosub_scene combat_dice condition_end "combat_player_" "off_balance"
+    *set combat_conc_save_triggered false
+    *set combat_conc_save_banner ""
+    *set combat_conc_ended_banner ""
+    *temp cpbt_quiet combat_save_quiet
+    *set combat_save_quiet true
+    *gosub_scene combat_dice concentration_damage_check "combat_player_" combat_player_bleed_dealt 7
+    *set combat_save_quiet cpbt_quiet
+    *if (combat_conc_save_triggered)
+      *set combat_player_bleed_conc combat_conc_save_banner
+    *if (not(combat_conc_ended_banner = ""))
+      *set combat_player_bleed_conc ((combat_player_bleed_conc & "[n/]") & combat_conc_ended_banner)
+  *set combat_player_bleed_page page_id
+[b][🩸 You bleed: ${combat_player_bleed_dealt} Slashing damage | HP: ${hp_current} / ${hp_max}][/b]
+*line_break
+*if (not(combat_player_bleed_conc = ""))
+  ${combat_player_bleed_conc}
+  *line_break
+*set combat_turn_advanced_this_page true
+*return
+
+*label combat_ally_bleed_tick
+*params cabt_slot
+*temp cabt_p (("combat_ally" & cabt_slot) & "_")
+*temp cabt_name {(cabt_p & "name")}
+*if (not({(cabt_p & "bleed_page")} = page_id))
+  *set combat_packet_is_weapon false
+  *gosub_scene combat_dice adjust_damage_packet cabt_p 2 "slashing" 0
+  *temp cabt_dealt combat_packet_damage
+  *temp cabt_hp ({(cabt_p & "hp")} - cabt_dealt)
+  *if (cabt_hp < 0)
+    *set cabt_hp 0
+  *set {(cabt_p & "hp")} cabt_hp
+  *if (cabt_dealt > 0)
+    *gosub_scene combat_dice condition_end cabt_p "off_balance"
+    *if (cabt_hp <= 0)
+      *gosub_scene combat_dice concentration_end cabt_p
+    *else
+      *gosub_scene combat_dice concentration_damage_check cabt_p cabt_dealt 8
+  *set {(cabt_p & "bleed_dealt")} cabt_dealt
+  *set {(cabt_p & "bleed_page")} page_id
+*temp cabt_shown {(cabt_p & "bleed_dealt")}
+*temp cabt_hp_now {(cabt_p & "hp")}
+*temp cabt_max {(cabt_p & "max_hp")}
+*if (cabt_hp_now <= 0)
+  [b][🩸 ${cabt_name} bleeds: ${cabt_shown} Slashing damage | Down][/b]
+*else
+  [b][🩸 ${cabt_name} bleeds: ${cabt_shown} Slashing damage | HP: ${cabt_hp_now} / ${cabt_max}][/b]
+*line_break
 *set combat_turn_advanced_this_page true
 *return
 
@@ -9044,6 +9242,13 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *set shield_active false
   *comment Dodge ends here too (2026-11-15): it was only ever cleared by fight setup and cleanup, so one Dodge gave +5 AC, and no movement, for the rest of the fight.
   *set dodge_active false
+  *comment BLEEDING (3.3): the player bleeds at the start of their turn, and may drop from it.
+  *if (combat_player_bleeding > 0)
+    *gosub combat_player_bleed_tick
+    *if (combat_player_can_die) and (hp_current <= 0)
+      *goto fight_player_died
+    *if (not(combat_player_can_die)) and (hp_current <= 1)
+      *goto fight_rescued
   *gosub_scene combat_movement fight_pick_target
   *comment The chain hands back to the player here (see REPLAY-SAFE TURN CHAINS).
   *gosub combat_chain_end
@@ -9748,7 +9953,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
       *gosub_scene combat_spells grease_end_turn cnt_cp cnt_slot
       *gosub_scene combat_dice condition_tick cnt_cp cnt_slot
       *comment Off-Guard this enemy put on ends at the end of its next turn (3.3).
-      *gosub_scene combat_dice move_cond_clear_off_guard cnt_slot
+      *gosub_scene combat_dice move_cond_clear_by_attacker cnt_slot false
       *comment Chilled ends at the end of the caster's next turn (a turn in a later round than the hit).
       *if ((combat_player_no_heal_slot = cnt_slot) and (combat_round > combat_player_no_heal_round))
         *set combat_player_no_heal_slot 0
@@ -9771,6 +9976,11 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
       *else
         [b][👁️ ${cnt_aname} is Blinded (${cnt_ab} rounds)][/b]
       *line_break
+    *comment BLEEDING (3.3): the ally bleeds at the start of its turn, stunned or not; one that drops from it has no turn.
+    *if ({(("combat_ally" & cnt_slot) & "_bleeding")} > 0)
+      *gosub combat_ally_bleed_tick cnt_slot
+      *if ({(("combat_ally" & cnt_slot) & "_hp")} <= 0)
+        *goto cnt_ally_tail
     *comment STUN, ally side (2026-11-03): a stunned ally loses the turn before anything else, through the same gate as an enemy.
     *gosub combat_stun_gate "ally" cnt_slot
     *if (combat_stun_stop)
@@ -9812,6 +10022,29 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *gosub combat_morale_turn "ally" cnt_slot
     *if (combat_morale_stop)
       *goto cnt_ally_tail
+    *comment HELP (3.3): an ally on the player's tile, above half its hit points, spends its turn on the player when they are Dazed, Off-Balance or Restrained.
+    *temp cnt_h_hp {(("combat_ally" & cnt_slot) & "_hp")}
+    *temp cnt_h_max {(("combat_ally" & cnt_slot) & "_max_hp")}
+    *if ((((cnt_h_hp * 2) > cnt_h_max) and ({(("combat_ally" & cnt_slot) & "_position")} = combat_lane_player_position)) and (hp_current > 0))
+      *temp cnt_h_ep {(("combat_ally" & cnt_slot) & "_epithet")}
+      *temp cnt_h_name {(("combat_ally" & cnt_slot) & "_name")}
+      *if ((combat_player_dazed > 0) or (combat_player_off_balance > 0))
+        *gosub_scene combat_dice condition_end "combat_player_" "dazed"
+        *gosub_scene combat_dice condition_end "combat_player_" "off_balance"
+        $!{cnt_h_ep} grabs your arm and pulls you square, and the fight swims back into focus.
+        *line_break
+        [b][🤝 ${cnt_h_name} helps — you are steady again][/b]
+        *line_break
+        *set combat_turn_advanced_this_page true
+        *goto cnt_ally_tail
+      *elseif (combat_player_restrained > 0)
+        *gosub_scene combat_dice condition_end "combat_player_" "restrained"
+        $!{cnt_h_ep} tears at what holds you until it gives.
+        *line_break
+        [b][🤝 ${cnt_h_name} helps — you are free][/b]
+        *line_break
+        *set combat_turn_advanced_this_page true
+        *goto cnt_ally_tail
     *temp cnt_a_chase_target {(("combat_ally" & cnt_slot) & "_chase_target")}
     *comment Ally-side rows 3-4 mirror (2026-09-29, on request): read fresh, before the chase check, since a
     *comment retreat/disengage decision needs this ally's OWN weapon/range/can_retreat -- unlike the shot-resolution

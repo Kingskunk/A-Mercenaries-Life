@@ -4239,12 +4239,21 @@ You fill the empty @{(jug_fill_n = 1) jug|jugs} from ${jug_refill_source}, then 
           *set uc_sum (uc_sum + uc_die)
           *set uc_i (uc_i + 1)
           *goto uc_heal_loop
+        *comment Chilled (an enemy's Chill Touch, combat_player_no_heal_slot): the dose is spent and no HP comes back, as with a spell or Second Wind.
+        *temp uc_chilled ((use_in_combat) and (combat_player_no_heal_slot > 0))
+        *if (uc_chilled)
+          *set uc_sum 0
         *set hp_current (hp_current + uc_sum)
         *if (hp_current > hp_max)
           *set hp_current hp_max
+        *comment Bleeding (a fight's condition, 3.3) ends with any healing.
+        *if ((use_in_combat) and (uc_sum > 0))
+          *gosub_scene combat_dice condition_end "combat_player_" "bleeding"
         *if (not(use_in_combat))
           *set last_mundane_treatment_day campaign_day
         *set use_banner (((((("🧪 " & gear_title) & ": Restored +") & uc_sum) & " HP | HP: ") & hp_current) & (" / " & hp_max))
+        *if (uc_chilled)
+          *set use_banner (((((("🧪 " & gear_title) & ": Restored +0 HP (Chilled) | HP: ") & hp_current) & " / ") & hp_max))
     *if (gear_effect = "boon")
       *set unique_buff_input_name gear_eff_name
       *set unique_buff_input_desc gear_eff_desc
