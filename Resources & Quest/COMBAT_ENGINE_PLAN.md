@@ -98,9 +98,9 @@ In the order I would take it. Each item is one hand-off, sized to review in one 
 
 ### 3.1 Before subclasses: what is left of 3.9a
 
-The user wants as much of the D&D system working as possible before subclasses start (agreed 2026-11-19).
+The user wants as much of the D&D system working as possible before subclasses start (agreed 2026-11-19). Done (2026-11-20).
 
-1. **A review of the fight AI**, after the condition rebalance (3.3), so it judges the final rules. Dev Hub fights are added only to test or review the AI (the user, 2026-11-19); no new story content just to test a fight. A great deal was added in a short time (enemy casting by shape, buffs, heals and reactions, ally casters, patches, abilities), each with its own worth-it rule. Play the Dev Hub fights and read the choices as a player would: where a side wastes its turn, picks a poor spell or target, stands where it should not, or ignores something it should use. List the findings first, then fix them one at a time. One seen already: a badly hurt melee ally whose foe is out of reach at Long Range spends its turn doing nothing, with no line (a guard against a kiting archer).
+1. **A review of the fight AI**, after the condition rebalance (3.3), so it judges the final rules. Dev Hub fights are added only to test or review the AI (the user, 2026-11-19); no new story content just to test a fight. A great deal was added in a short time (enemy casting by shape, buffs, heals and reactions, ally casters, patches, abilities), each with its own worth-it rule. Play the Dev Hub fights and read the choices as a player would: where a side wastes its turn, picks a poor spell or target, stands where it should not, or ignores something it should use. List the findings first, then fix them one at a time. Review played 2026-11-20 (7 fights, seeds 1-3); fixed: an ally dropped to 0 HP with no line, casters with three leveled spells walked into melee (each enemy slot now has its own cantrip), an archer swapped between high ground and long range every turn. Not reproduced in 32 runs: the idle badly hurt guard against a kiting archer seen earlier.
 
 ### 3.2 Gaps in what exists
 
@@ -113,6 +113,25 @@ Done (2026-11-19). The rules are in `GAMEPLAY_MECHANICS_RULES.md`, "Special-move
 ### 3.4 Subclasses
 
 Feats are separate (3.5): they come at level 4, and no quest goes past level 3 yet.
+
+One subclass per class, the best for solo play (the user, 2026-11-20), level 3 features only. Each gets its own discussion of how its mechanics adapt before it is built.
+
+| Class | Subclass | State |
+| --- | --- | --- |
+| Wizard | Abjurer | Built and play-tested |
+| Warlock | The Fiend | In progress |
+| Fighter | Champion | Not started |
+| Barbarian | Path of the Wild Heart | Not started |
+| Bard | College of Valor | Not started |
+| Ranger | Gloom Stalker | Not started |
+| Rogue | Thief | Not started |
+
+**The Fiend** (agreed 2026-11-20). The patron is still chosen at creation; Archfey and The Vast stay flavor only and show nothing at level 3. The Fiend's features switch on at warlock level 3.
+1. Done (2026-11-20; `fiend_blessing_*` scripts). Dark One's Blessing: on dropping a foe to 0 HP (a foe beaten into surrender counts; one that gives up or flees on morale does not), temp HP = CHA mod + warlock level (min 1). An ally's kill counts when the foe was within 10 ft of you. Temp HP does not stack (the higher stays); replacing Armor of Agathys's temp HP ends Agathys.
+2. Fiend Spells: Burning Hands and Scorching Ray join the list at level 3, outside the known-spell slots.
+3. Command: a new spell, its own piece (an icon may exist already). Suggestion is left out.
+
+Hand edits the Fiend needed so far (the route list for the other subclasses): a hook in `fight_check_all_dead` (combat.txt) for an on-kill feature; a per-enemy flag in `startup_parts/31_combat_engine_state.txt` and `mygame.js`, cleared in the stale-slot loop and `fight_cleanup`; the feature's line on the Abilities page (`choicescript_stats.txt`, under the patron). The class gate is `character_class`, the patron and `character_level >= 3`; no level-up page was needed, since the patron is chosen at creation.
 
 Not yet built or tested end to end. The fight has places meant for them (for example the comment in `concentration_damage_check` where War Caster would add advantage), but nobody has proved the route. Take one subclass as the pilot, and write down every place that needed a hand edit. That list is the real plan for the rest.
 

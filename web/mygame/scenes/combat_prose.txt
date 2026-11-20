@@ -219,13 +219,15 @@
     [b][🛡️ Arcane Ward: ${arcane_ward_hp} / ${arcane_ward_max} HP][/b]
 *else
   *if (combat_enemy_hit_success)
+    *comment The line is skipped when empty (an enemy with no type has no flavor lines), so it leaves no blank line.
+    *temp fnet_line fnet_hit
     *if (combat_incoming_blocked)
-      ${combat_flavor_incoming_blocked}
+      *set fnet_line combat_flavor_incoming_blocked
     *elseif (combat_enemy_save_halved)
-      ${fnet_miss}
-    *else
-      ${fnet_hit}
-    *line_break
+      *set fnet_line fnet_miss
+    *if (not(fnet_line = ""))
+      ${fnet_line}
+      *line_break
     *if (combat_agathys_triggered)
       *if (combat_agathys_shattered)
         As the blow lands, your frost-sheathe shatters violently in a burst of crystalline rime, driving shards of biting cold deep into ${combat_enemy_epithet}!
@@ -313,8 +315,9 @@
       *line_break
       ${combat_rebuke_banner}
   *else
-    ${fnet_miss}
-    *line_break
+    *if (not(fnet_miss = ""))
+      ${fnet_miss}
+      *line_break
     [b][💨 ${combat_enemy_name} Misses][/b]
 *comment Trailing line_break (2026-09-28): this label's last printed line is always a bracketed banner (a
 *comment hit, a condition/stun tag, or a miss), never followed by one of its own -- and combat_next_turn's
@@ -460,6 +463,19 @@
     *set fnaa_line "$!{combat_attacker_epithet} strikes true, and ${combat_defender_epithet} shrugs the blow away like a drop of rain."
   *else
     *set fnaa_line "The blow from ${combat_attacker_epithet} sinks into ${combat_defender_epithet} and fades, leaving the hide whole."
+*comment An ally this hit dropped to 0 HP falls in the line too, whatever the attack was, so no line has it reel away or shake it off.
+*if ((fnaa_attacker_kind = "enemy") and (fnaa_defender_kind = "ally"))
+  *if ({(fnaa_dp & "hp")} <= 0)
+    *if (fnaa_v = 1)
+      *set fnaa_line "$!{combat_defender_epithet} takes the hit full on, staggers a step, and goes down."
+    *if (fnaa_v = 2)
+      *set fnaa_line "$!{combat_defender_epithet}'s legs give way, and they drop where they stand."
+    *if (fnaa_v = 3)
+      *set fnaa_line "$!{combat_defender_epithet} folds around the hurt and falls."
+    *if (fnaa_v = 4)
+      *set fnaa_line "$!{combat_defender_epithet} sways, reaches for something to hold, and falls."
+    *if (fnaa_v = 5)
+      *set fnaa_line "That hit is one too many, and ${combat_defender_epithet} crumples to the ground."
 *set combat_fnaa_last_line fnaa_line
 *comment Trailing line_break (2026-09-28, same reasoning as fight_narrate_enemy_turn above): this label's
 *comment last print is always the bare prose sentence, never followed by one of its own, and whatever
@@ -638,6 +654,8 @@
   *gosub flavor_spell_magic_missile
 *elseif (combat_current_spell_id = "dissonant_whispers")
   *gosub flavor_spell_dissonant_whispers
+*elseif (combat_current_spell_id = "ray_of_sickness")
+  *gosub flavor_spell_ray_of_sickness
 *return
 
 *label flavor_spell_fire_bolt
@@ -1503,6 +1521,8 @@
   *gosub flavor_spell_end_dissonant_whispers
 *elseif (combat_current_spell_id = "armor_of_agathys")
   *gosub flavor_spell_end_armor_of_agathys
+*elseif (combat_current_spell_id = "ray_of_sickness")
+  *gosub flavor_spell_end_ray_of_sickness
 *else
   *gosub flavor_spell_end_generic
 *return
@@ -1745,6 +1765,64 @@
 *if (fsp_v = 8)
   *set fsh "Your muttered word thickens the air into a stinging fog, and ${combat_enemy_epithet} cries out and claws at the eyes."
   *set fsm "Your muttered word thickens the air into a stinging fog, but ${combat_enemy_epithet} is already moving, and it closes on empty air."
+*return
+
+*label flavor_spell_ray_of_sickness
+*comment Ray of Sickness (a ray: an attack roll, poison damage, Poisoned on a hit).
+*temp fsp_v 1
+*rand fsp_v 1 8
+*if (fsp_v = 1)
+  *set fsh "A sickly yellow-green ray leaps from your finger and strikes ${combat_enemy_epithet} in the chest, and ${combat_enemy_epithet} doubles forward, gut heaving."
+  *set fsm "The sickly ray streaks past ${combat_enemy_epithet}'s shoulder and thins to nothing."
+*if (fsp_v = 2)
+  *set fsh "The ray takes ${combat_enemy_epithet} across the shoulder, and a grey pallor spreads out from the spot as the sickness sinks in."
+  *set fsm "$!{combat_enemy_epithet} jerks aside, and the ray slides past and fades."
+*if (fsp_v = 3)
+  *set fsh "You point low, and the ray hits ${combat_enemy_epithet} in the leg, and the knee sags as nausea rolls up through them."
+  *set fsm "You point low, but ${combat_enemy_epithet} steps across the ray, and it flickers out."
+*if (fsp_v = 4)
+  *set fsh "The beam catches ${combat_enemy_epithet} high on the head, and their eyes swim as the color drains from their face."
+  *set fsm "The beam goes high over ${combat_enemy_epithet}'s head and gutters out."
+*if (fsp_v = 5)
+  *set fsh "A thin, oily green line joins your hand to ${combat_enemy_epithet}'s flank, and ${combat_enemy_epithet} lurches, sweating and pale."
+  *set fsm "The oily green line wavers as you speak the word, and it misses ${combat_enemy_epithet} by a hand's width."
+*if (fsp_v = 6)
+  *set fsh "The ray strikes ${combat_enemy_epithet}'s reaching arm and crawls up it, and ${combat_enemy_epithet} shudders, sick to the stomach."
+  *set fsm "$!{combat_enemy_epithet} drops a shoulder, and the ray slips past, harmless."
+*if (fsp_v = 7)
+  *set fsh "You loose the ray at close quarters, and it soaks into ${combat_enemy_epithet}'s chest like a spreading bruise, and ${combat_enemy_epithet} gags and stumbles."
+  *set fsm "You loose the ray a beat too early, and it dies out short of ${combat_enemy_epithet}."
+*if (fsp_v = 8)
+  *set fsh "Sickness pours down the beam into ${combat_enemy_epithet}, and ${combat_enemy_epithet} sways, skin clammy, fighting to keep their feet."
+  *set fsm "The beam flickers across ${combat_enemy_epithet} without taking hold, and the sickly light fades."
+*return
+
+*label flavor_spell_end_ray_of_sickness
+*comment Finishing blow of Ray of Sickness: five lethal lines, five for a foe beaten into surrender.
+*temp fse_v 1
+*rand fse_v 1 5
+*if (combat_is_nonlethal)
+  *if (fse_v = 1)
+    *set fdh "The sickness hollows ${combat_enemy_epithet} out, and ${combat_enemy_epithet} sinks to the knees, too ill to lift a hand."
+  *if (fse_v = 2)
+    *set fdh "$!{combat_enemy_epithet} sways, clutches at their stomach, and sits down hard, beaten."
+  *if (fse_v = 3)
+    *set fdh "The last of ${combat_enemy_epithet}'s strength drains away with their color, and ${combat_enemy_epithet} lets the weapon fall and raises open hands."
+  *if (fse_v = 4)
+    *set fdh "Doubled over and shaking, ${combat_enemy_epithet} waves you off, done."
+  *if (fse_v = 5)
+    *set fdh "The ray leaves ${combat_enemy_epithet} pale and sweating on all fours, in no state to fight on."
+*else
+  *if (fse_v = 1)
+    *set fdh "The ray drives the sickness deep, and ${combat_enemy_epithet} folds and goes still."
+  *if (fse_v = 2)
+    *set fdh "$!{combat_enemy_epithet} shudders as the poison takes hold, and drops."
+  *if (fse_v = 3)
+    *set fdh "The grey spreads across ${combat_enemy_epithet}'s face, and ${combat_enemy_epithet} topples and does not move again."
+  *if (fse_v = 4)
+    *set fdh "A last spasm runs through ${combat_enemy_epithet}, and then the poison has finished."
+  *if (fse_v = 5)
+    *set fdh "$!{combat_enemy_epithet} sags at the middle and falls, and does not rise."
 *return
 
 *label flavor_spell_end_poison_spray

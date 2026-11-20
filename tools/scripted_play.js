@@ -141,8 +141,14 @@ var D = { mode: "boot", steps: [], stepIdx: 0, rand: 0, events: [], log: [], exi
   Scene.prototype.line_break = function () {
     var acc = this.accumulatedParagraph;
     if (D.mode === "drive" && (!acc.length || acc[acc.length - 1] === "[n/]")) D.deadSpace.push(this.name + " line " + this.lineNum + (acc.length ? " (a second line break in a row)" : " (nothing before it on the paragraph)"));
+    // Also an empty line made of blank text only: a ${variable} that printed "" (or spaces) on its own line, then this break (2026-11-19, seen in play).
+    else if (D.mode === "drive" && acc.length) {
+      var lastBr = acc.lastIndexOf("[n/]"), tail = acc.slice(lastBr + 1);
+      if (tail.length && tail.join("").trim() === "") D.deadSpace.push(this.name + " line " + this.lineNum + " (only blank text before it, an empty ${} on its own line)");
+    }
     return real.apply(this, arguments);
   };
+  // A paragraph that ENDS on a *line_break no longer prints an empty line: web/scene.js paragraph drops the trailing break (2026-11-19).
 })();
 
 function parseRand(v) {

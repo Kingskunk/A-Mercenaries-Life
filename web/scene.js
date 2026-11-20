@@ -281,7 +281,11 @@ Scene.prototype.replaceVariables = function (line) {
 };
 
 Scene.prototype.paragraph = function paragraph() {
-    printParagraph(this.accumulatedParagraph.join(""));
+    // A paragraph that ends on a *line_break would print as <p>text<br></p>, an empty line under the text before the paragraph gap (2026-11-19, seen after
+    // a fight's Morale banner and turn divider). The trailing break never means anything, so it is dropped.
+    var acc = this.accumulatedParagraph;
+    while (acc.length && (acc[acc.length - 1] === "[n/]" || (String(acc[acc.length - 1]).trim() === "" && acc.length > 1 && acc[acc.length - 2] === "[n/]"))) acc.pop();
+    printParagraph(acc.join(""));
     this.accumulatedParagraph = [];
     this.prevLine = "empty";
 };

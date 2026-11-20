@@ -136,6 +136,8 @@
     *set {(("combat_enemy" & fss_i) & "_paralyzed_dc")} 0
     *set {(("combat_enemy" & fss_i) & "_paralyzed_src")} ""
     *set {(("combat_enemy" & fss_i) & "_cast_spell_1")} ""
+    *set {(("combat_enemy" & fss_i) & "_cantrip")} ""
+    *set {(("combat_enemy" & fss_i) & "_blessed")} false
     *set {(("combat_enemy" & fss_i) & "_cast_spell_2")} ""
     *set {(("combat_enemy" & fss_i) & "_cast_spell_3")} ""
     *set {(("combat_enemy" & fss_i) & "_cast_uses_1")} 0
@@ -342,6 +344,8 @@
 *set combat_enemy_size_override ""
 *set combat_enemy_creature_type_override ""
 *comment Slot 1 assigned spells (Step 3c): apply overrides only when set, matching the hp/ac/atk override guard so Stats-screen replay after fight_setup clears the overrides cannot wipe assigned spells. Unassigned fights start clean because fight_cleanup clears cast_* at the end of every fight and fight_setup_stale_loop clears unused slots.
+*if (not(combat_enemy_cantrip_override = ""))
+  *set combat_enemy1_cantrip combat_enemy_cantrip_override
 *if (not(combat_enemy_cast_spell_1_override = ""))
   *set combat_enemy1_cast_spell_1 combat_enemy_cast_spell_1_override
 *if (not(combat_enemy_cast_spell_2_override = ""))
@@ -362,6 +366,7 @@
   *set combat_enemy1_cast_chance_3 combat_enemy_cast_chance_3_override
 *temp fso_c1_stat combat_enemy_cast_stat_override
 *temp fso_c1_dc combat_enemy_cast_dc_override
+*set combat_enemy_cantrip_override ""
 *set combat_enemy_cast_spell_1_override ""
 *set combat_enemy_cast_spell_2_override ""
 *set combat_enemy_cast_spell_3_override ""
@@ -582,6 +587,8 @@
 *set {(aso_p & "atk_override")} 999
 *set {(aso_p & "size_override")} ""
 *set {(aso_p & "creature_type_override")} ""
+*if (not({(aso_p & "cantrip_override")} = ""))
+  *set {(aso_p & "cantrip")} {(aso_p & "cantrip_override")}
 *if (not({(aso_p & "cast_spell_1_override")} = ""))
   *set {(aso_p & "cast_spell_1")} {(aso_p & "cast_spell_1_override")}
 *if (not({(aso_p & "cast_spell_2_override")} = ""))
@@ -602,6 +609,7 @@
   *set {(aso_p & "cast_chance_3")} {(aso_p & "cast_chance_3_override")}
 *temp aso_cstat {(aso_p & "cast_stat_override")}
 *temp aso_cdc {(aso_p & "cast_dc_override")}
+*set {(aso_p & "cantrip_override")} ""
 *set {(aso_p & "cast_spell_1_override")} ""
 *set {(aso_p & "cast_spell_2_override")} ""
 *set {(aso_p & "cast_spell_3_override")} ""
@@ -669,9 +677,16 @@
 *comment or a save for damage (Poison Spray: since 3.6 step 3 a save, as for the player; load_enemy_base_save sets the save on each sync). Its reach class becomes the slot's, so a caster with a
 *comment long-reach cantrip keeps its distance as an archer does; a touch cantrip makes it a melee attacker. The id goes in spell_base_id for the prose and the
 *comment spell picker. Damage is one die, as at character level 1 (an enemy's cantrip does not scale with the player's level).
+*comment The slot's own cantrip field (cantrip, set by cantrip_override, 2026-11-20) is read first and takes none of the three cast slots, so a caster
+*comment can carry three leveled spells and still have an at-will attack to fall back on. A cantrip in a cast slot still works as before.
 *params aesb_slot
 *temp aesb_p (("combat_enemy" & aesb_slot) & "_")
 *temp aesb_id ""
+*temp aesb_own {(aesb_p & "cantrip")}
+*if (not(aesb_own = ""))
+  *gosub_scene combat_spells spell_facts_load aesb_own
+  *if (((spell_fact_slot_level = 0) and (spell_fact_npc_lines)) and ((spell_fact_resolution = "attack") or ((spell_fact_resolution = "save") and (spell_fact_dice_sides > 0))))
+    *set aesb_id aesb_own
 *temp aesb_k 1
 *label apply_enemy_spell_base_loop
 *if ((aesb_k <= 3) and (aesb_id = ""))
@@ -1477,6 +1492,8 @@
   *set {(fc_p & "wisdom_override")} 0
   *set {(fc_p & "charisma_override")} 0
   *set {(fc_p & "cast_spell_1")} ""
+  *set {(fc_p & "cantrip")} ""
+  *set {(fc_p & "blessed")} false
   *set {(fc_p & "cast_spell_2")} ""
   *set {(fc_p & "cast_spell_3")} ""
   *set {(fc_p & "cast_uses_1")} 0
@@ -1489,6 +1506,7 @@
   *set {(fc_p & "cast_atk_bonus")} 0
   *gosub_scene combat_abilities ability_clear_slot fc_p
   *set {(fc_p & "cast_spell_1_override")} ""
+  *set {(fc_p & "cantrip_override")} ""
   *set {(fc_p & "cast_spell_2_override")} ""
   *set {(fc_p & "cast_spell_3_override")} ""
   *set {(fc_p & "cast_uses_1_override")} 0
@@ -1672,6 +1690,7 @@
 *set combat_enemy_cast_spell ""
 *set combat_enemy_cast_place 0
 *set combat_spell_worth_it false
+*set combat_enemy_cantrip_override ""
 *set combat_enemy_cast_spell_1_override ""
 *set combat_enemy_cast_spell_2_override ""
 *set combat_enemy_cast_spell_3_override ""
@@ -2846,6 +2865,8 @@
   *temp fcd_hp {(("combat_enemy" & fcd_i) & "_hp")}
   *if (fcd_hp > 0)
     *set combat_all_enemies_dead false
+  *else
+    *gosub fiend_blessing_check fcd_i
   *set fcd_i + 1
   *goto fight_check_all_dead_loop
 *comment A fight with a leader (combat_leader_slot) is won when the leader falls, whoever else is still on their feet.
@@ -2861,6 +2882,41 @@
     *set combat_all_enemies_dead false
 *if (fcd_leader_down)
   *set combat_all_enemies_dead true
+*return
+
+*comment DARK ONE'S BLESSING (the Fiend warlock, level 3, PHB'24; 2026-11-20). An enemy that has just dropped to 0 HP, seen once here by fight_check_all_dead,
+*comment which runs after every blow. Killed by the player (its last hit, record_last_hit), or by an ally while it stood on the player's tile (10 feet: the
+*comment tile, as Arms of Hadar's radius is): temp HP = CHA mod + warlock level, at least 1. Temp HP never stack, so it is kept only when it is more than
+*comment what is held, and replacing Armor of Agathys's temp HP ends Agathys. One that surrendered on morale or fled was never reduced to 0 by a blow.
+*comment Once per enemy per fight (_blessed). The line prints once, when it is granted, after the blow's own banner on the same line; no replay
+*comment reprints it (a fight page is never resumed from its start). It prints no line break: the caller's tail adds one, or the victory page opens with one.
+*label fiend_blessing_check
+*params fbc_slot
+*temp fbc_p (("combat_enemy" & fbc_slot) & "_")
+*if ({(fbc_p & "blessed")})
+  *return
+*set {(fbc_p & "blessed")} true
+*if (((not(character_class = "warlock")) or (not(warlock_patron = "fiend"))) or (character_level < 3))
+  *return
+*temp fbc_out {(fbc_p & "out")}
+*if ((fbc_out = "surrendered") or (fbc_out = "fled"))
+  *return
+*temp fbc_kind {(fbc_p & "last_hit_kind")}
+*temp fbc_ok (fbc_kind = "player")
+*if ((fbc_kind = "ally") and ({(fbc_p & "position")} = combat_lane_player_position))
+  *set fbc_ok true
+*if (not(fbc_ok))
+  *return
+*temp fbc_amount (cha_mod + character_level)
+*if (fbc_amount < 1)
+  *set fbc_amount 1
+*if (temp_hp < fbc_amount)
+  *temp fbc_ends ""
+  *if ((agathys_active) and (temp_hp > 0))
+    *set agathys_active false
+    *set fbc_ends " | Armor of Agathys ends"
+  *set temp_hp fbc_amount
+  [b][😈 Dark One's Blessing: ${fbc_amount} temp HP${fbc_ends}][/b]
 *return
 
 *label do_enemy_chase_step
@@ -10762,6 +10818,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *set combat_enemy2_name_override "Battle-Mage"
 *set combat_enemy2_epithet_override "the battle-mage"
 *set combat_enemy2_range 3
+*set combat_enemy2_cantrip_override "fire_bolt"
 *set combat_enemy2_cast_spell_1_override "scorching_ray"
 *set combat_enemy2_cast_uses_1_override 2
 *set combat_enemy2_cast_chance_1_override 60
@@ -10775,6 +10832,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *set combat_enemy3_name_override "Field Healer"
 *set combat_enemy3_epithet_override "the field healer"
 *set combat_enemy3_range 3
+*set combat_enemy3_cantrip_override "ray_of_frost"
 *set combat_enemy3_cast_spell_1_override "cure_wounds"
 *set combat_enemy3_cast_uses_1_override 2
 *set combat_enemy3_cast_chance_1_override 100
@@ -10816,6 +10874,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *set combat_enemy_name_override "Oil-Mage"
 *set combat_enemy_epithet_override "the oil-mage"
 *set combat_enemy_range 2
+*set combat_enemy_cantrip_override "fire_bolt"
 *set combat_enemy_cast_spell_1_override "grease"
 *set combat_enemy_cast_uses_1_override 2
 *set combat_enemy_cast_chance_1_override 70

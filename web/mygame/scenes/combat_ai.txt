@@ -331,6 +331,15 @@
   *gosub combat_assess_melee_threat ccrts_actor_kind ccrts_actor_slot ccrts_current_position
   *temp ccrts_current_threat combat_ai_melee_threat_level
   *temp ccrts_threat_position combat_ai_melee_threat_position
+  *comment SAFE STAYS SAFE (2026-11-20, AI review): a profile standing out of every melee foe's reach turns down a terrain step that brings it back
+  *comment into reach. Without this an archer stepped onto high ground in a foe's Dash range, fled it the next turn, and took it again, every turn.
+  *if ((ccrts_current_threat < combat_behavior_avoid_melee_threat) and (combat_ai_terrain_step_direction != "none"))
+    *gosub combat_assess_melee_threat ccrts_actor_kind ccrts_actor_slot combat_ai_terrain_step_destination
+    *if (combat_ai_melee_threat_level >= combat_behavior_avoid_melee_threat)
+      *set combat_ai_terrain_step_direction "none"
+      *set combat_ai_terrain_step_destination ccrts_current_position
+      *set combat_ai_terrain_step_reason "none"
+      *set combat_ai_terrain_hold_position false
   *if (ccrts_current_threat >= combat_behavior_avoid_melee_threat)
     *temp ccrts_keep_terrain_step false
     *temp ccrts_found_safe_step false
