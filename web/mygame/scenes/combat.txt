@@ -138,6 +138,7 @@
     *set {(("combat_enemy" & fss_i) & "_cast_spell_1")} ""
     *set {(("combat_enemy" & fss_i) & "_cantrip")} ""
     *set {(("combat_enemy" & fss_i) & "_blessed")} false
+    *set {(("combat_enemy" & fss_i) & "_commanded")} ""
     *set {(("combat_enemy" & fss_i) & "_cast_spell_2")} ""
     *set {(("combat_enemy" & fss_i) & "_cast_spell_3")} ""
     *set {(("combat_enemy" & fss_i) & "_cast_uses_1")} 0
@@ -1494,6 +1495,7 @@
   *set {(fc_p & "cast_spell_1")} ""
   *set {(fc_p & "cantrip")} ""
   *set {(fc_p & "blessed")} false
+  *set {(fc_p & "commanded")} ""
   *set {(fc_p & "cast_spell_2")} ""
   *set {(fc_p & "cast_spell_3")} ""
   *set {(fc_p & "cast_uses_1")} 0
@@ -2012,6 +2014,8 @@
   *set spell_range_tag "ranged"
 *if (check_skill = "Cause Fear")
   *set spell_range_tag "ranged"
+*if (check_skill = "Command")
+  *set spell_range_tag "ranged"
 *if (check_skill = "Bane")
   *set spell_range_tag "ranged"
 *if (check_skill = "Dissonant Whispers")
@@ -2050,6 +2054,9 @@
   *if (spell_range_at > combat_reach_medium)
     *set spell_in_range false
 *if (check_skill = "Cause Fear")
+  *if (spell_range_at > combat_reach_medium)
+    *set spell_in_range false
+*if (check_skill = "Command")
   *if (spell_range_at > combat_reach_medium)
     *set spell_in_range false
 *if (check_skill = "Bane")
@@ -2856,6 +2863,88 @@
   *set ccd_spell_stay (csv_exp * 100)
 *return
 
+*comment COMMAND, THE TURN IT OBEYS (2026-11-20, 2024 rules). fight_sync_target_in has already loaded this slot. Prints one line and one banner.
+*comment   approach  one step toward the player (its move, no Dash, no attack); none if already beside them
+*comment   drop      drops what it holds; the turn ends (RAW it picks the weapon up for free next turn, so nothing lasts)
+*comment   flee      Dashes away from the player, two steps (one if it had to stand up first)
+*comment   grovel    falls Prone (prone_apply); the turn ends
+*comment   halt      no move, no action; the turn ends
+*comment A restrained or held foe cannot move, so Approach and Flee only strain against it. Leaving the reach of the player or an ally on its tile provokes an
+*comment opportunity attack (find_opportunity_attacker_against), as a retreat does. The caller ends the turn at cnt_boom_tail if the foe died on the way.
+*label fight_enemy_obey_command
+*params feoc_slot feoc_word
+*temp feoc_p (("combat_enemy" & feoc_slot) & "_")
+*gosub_scene combat_prose command_word_name feoc_word
+*temp feoc_word_name combat_command_word_name
+*temp feoc_moves ((feoc_word = "approach") or (feoc_word = "flee"))
+*temp feoc_held (({(feoc_p & "restrained")} > 0) or ({(feoc_p & "pinned")} > 0))
+*if ((feoc_moves) and (feoc_held))
+  *gosub_scene combat_prose flavor_command_obey "held"
+  *line_break
+  [b][👑 ${combat_enemy_name} obeys Command: ${feoc_word_name} — held fast, turn lost][/b]
+  *line_break
+  *return
+*if ((feoc_word = "approach") and (combat_enemy_range <= 0))
+  *gosub_scene combat_prose flavor_command_obey "beside"
+  *line_break
+  [b][👑 ${combat_enemy_name} obeys Command: Approach — already beside you, turn lost][/b]
+  *line_break
+  *return
+*if (feoc_moves)
+  *comment Someone in its reach: an ally on its tile, or the player when it flees from beside them.
+  *temp feoc_ally_here false
+  *temp feoc_i 1
+  *label fight_enemy_obey_command_ally_loop
+  *if (feoc_i <= combat_ally_slot_cap)
+    *if (({(("combat_ally" & feoc_i) & "_hp")} > 0) and ({(("combat_ally" & feoc_i) & "_position")} = {(feoc_p & "position")}))
+      *set feoc_ally_here true
+    *set feoc_i + 1
+    *goto fight_enemy_obey_command_ally_loop
+  *if ((feoc_ally_here) or ((feoc_word = "flee") and (combat_enemy_range <= 0)))
+    *gosub find_opportunity_attacker_against
+    *if (combat_oa_against_kind = "player")
+      *set player_oa_used true
+      *gosub resolve_reverse_oa_player
+      *gosub fight_sync_target_out
+    *elseif (combat_oa_against_kind = "ally")
+      *set {(("combat_ally" & combat_oa_against_slot) & "_oa_used")} true
+      *gosub resolve_reverse_oa_ally combat_oa_against_slot
+      *gosub fight_sync_target_in
+    *if (combat_enemy_hp <= 0)
+      *return
+  *temp feoc_steps 1
+  *if ((feoc_word = "flee") and (not({(feoc_p & "prone")})))
+    *set feoc_steps 2
+  *set {(feoc_p & "prone")} false
+  *if (feoc_word = "approach")
+    *gosub_scene combat_movement combat_lane_move_enemy_relative_to_player feoc_slot "toward"
+  *else
+    *gosub_scene combat_movement combat_lane_move_enemy_relative_to_player feoc_slot "away"
+    *if (feoc_steps > 1)
+      *gosub_scene combat_movement combat_lane_move_enemy_relative_to_player feoc_slot "away"
+  *gosub_scene combat_movement combat_range_name combat_enemy_range
+  *gosub_scene combat_prose flavor_command_obey feoc_word
+  *line_break
+  *if ((feoc_word = "approach") and (combat_enemy_range <= 0))
+    [b][👑 ${combat_enemy_name} obeys Command: Approach — comes to you][/b]
+  *else
+    [b][👑 ${combat_enemy_name} obeys Command: ${feoc_word_name} — ${combat_range_display_name}][/b]
+  *line_break
+  *gosub fight_booming_trigger
+  *return
+*if (feoc_word = "grovel")
+  *gosub_scene combat_dice prone_apply feoc_p
+  *gosub_scene combat_prose flavor_command_obey feoc_word
+  *line_break
+  [b][👑 ${combat_enemy_name} obeys Command: Grovel — falls prone, turn lost][/b]
+  *line_break
+  *return
+*gosub_scene combat_prose flavor_command_obey feoc_word
+*line_break
+[b][👑 ${combat_enemy_name} obeys Command: ${feoc_word_name} — turn lost][/b]
+*line_break
+*return
+
 *label fight_check_all_dead
 *comment A bounded loop over combat_enemy_count, via indirection, instead of one hand-written branch per slot.
 *set combat_all_enemies_dead true
@@ -2888,15 +2977,15 @@
 *comment which runs after every blow. Killed by the player (its last hit, record_last_hit), or by an ally while it stood on the player's tile (10 feet: the
 *comment tile, as Arms of Hadar's radius is): temp HP = CHA mod + warlock level, at least 1. Temp HP never stack, so it is kept only when it is more than
 *comment what is held, and replacing Armor of Agathys's temp HP ends Agathys. One that surrendered on morale or fled was never reduced to 0 by a blow.
-*comment Once per enemy per fight (_blessed). The line prints once, when it is granted, after the blow's own banner on the same line; no replay
-*comment reprints it (a fight page is never resumed from its start). It prints no line break: the caller's tail adds one, or the victory page opens with one.
+*comment Once per enemy per fight (_blessed). The line waits in the end-of-action queue (concentration_pending_add, combat_dice.txt) and prints on its own
+*comment line when the turn ends (combat_next_turn, the hub) or the fight is won (fight_victory, fight_victory_quiet), so it never joins whatever prints next.
 *label fiend_blessing_check
 *params fbc_slot
 *temp fbc_p (("combat_enemy" & fbc_slot) & "_")
 *if ({(fbc_p & "blessed")})
   *return
 *set {(fbc_p & "blessed")} true
-*if (((not(character_class = "warlock")) or (not(warlock_patron = "fiend"))) or (character_level < 3))
+*if (not(feature_dark_ones_blessing))
   *return
 *temp fbc_out {(fbc_p & "out")}
 *if ((fbc_out = "surrendered") or (fbc_out = "fled"))
@@ -2916,7 +3005,8 @@
     *set agathys_active false
     *set fbc_ends " | Armor of Agathys ends"
   *set temp_hp fbc_amount
-  [b][😈 Dark One's Blessing: ${fbc_amount} temp HP${fbc_ends}][/b]
+  *temp fbc_line "[b][😈 Dark One's Blessing: ${fbc_amount} temp HP${fbc_ends}][/b]"
+  *gosub_scene combat_dice concentration_pending_add fbc_line
 *return
 
 *label do_enemy_chase_step
@@ -3202,6 +3292,8 @@
 
 *label fight_victory
 *line_break
+*comment A line still waiting from the last blow (Dark One's Blessing, a concentration "ends" line) prints before the fight closes.
+*gosub_scene combat_dice concentration_pending_print
 *set combat_enemy_hp 0
 *set combat_outcome "victory"
 *gosub fight_cleanup
@@ -3209,6 +3301,7 @@
 
 *comment The same win, for a fight that ended at the close of an ENEMY's turn (combat_next_turn's end-of-turn check): every banner an enemy's turn prints, a surrender or flight, a burn or a Booming Blade kill, already ends with its own line break, so opening with another would print an empty line. Blows by the player and by allies end without one and use fight_victory.
 *label fight_victory_quiet
+*gosub_scene combat_dice concentration_pending_print
 *set combat_enemy_hp 0
 *set combat_outcome "victory"
 *gosub fight_cleanup
@@ -4343,6 +4436,7 @@
 *temp spell_reach_ok_shocking_grasp combat_melee_reach
 *temp spell_reach_ok_ray_of_sickness combat_in_medium
 *temp spell_reach_ok_cause_fear combat_in_medium
+*temp spell_reach_ok_command combat_in_medium
 *temp spell_reach_ok_bane combat_in_medium
 *temp spell_reach_ok_dissonant_whispers combat_in_medium
 *temp spell_reach_ok_grease combat_in_medium
@@ -4870,6 +4964,11 @@
   *if ((combat_has_pool_2) or (slot_left_2 > 0))
     *gosub combat_eval_spell_why "action" cw_slot_2 true "" true
     *set combat_why_cause_fear_2 combat_why_res
+*comment COMMAND (2026-11-20): one reason for all five words; a warlock casts it at its pact slot's level, anyone else at 1st. Targets are picked in the sidebar.
+*temp combat_why_command "unowned"
+*if (((((held_command) or (race_cantrip = "command")) or (race_cantrip_2 = "command")) and ((not(class_prepares)) or (prepared_command))) or (known_command))
+  *gosub combat_eval_spell_why "action" cw_slot_any true "" spell_reach_ok_command
+  *set combat_why_command combat_why_res
 *temp combat_why_grease "unowned"
 *if (((((held_grease) or (race_cantrip = "grease")) or (race_cantrip_2 = "grease")) and ((not(class_prepares)) or (prepared_grease))) or (known_grease))
   *comment Since 3.9a: "already greased" means a patch already lies under the target (grease_at).
@@ -5823,6 +5922,23 @@
       *set combat_mm_darts_5 0
       *set combat_mm_darts_6 0
       *goto fight_target_cause_fear
+
+  *if (combat_why_command = "")
+    # [b][ACTION][/b] [b][Command: Approach][/b] Order a foe to come to you.@{show_stat_hints  [Wisdom Save]|}
+      *set combat_command_word "approach"
+      *goto fight_arm_command
+    # [b][ACTION][/b] [b][Command: Drop][/b] Order a foe to drop what it holds.@{show_stat_hints  [Wisdom Save]|}
+      *set combat_command_word "drop"
+      *goto fight_arm_command
+    # [b][ACTION][/b] [b][Command: Flee][/b] Order a foe to run from you.@{show_stat_hints  [Wisdom Save]|}
+      *set combat_command_word "flee"
+      *goto fight_arm_command
+    # [b][ACTION][/b] [b][Command: Grovel][/b] Order a foe to throw itself to the ground.@{show_stat_hints  [Wisdom Save]|}
+      *set combat_command_word "grovel"
+      *goto fight_arm_command
+    # [b][ACTION][/b] [b][Command: Halt][/b] Order a foe to stand still.@{show_stat_hints  [Wisdom Save]|}
+      *set combat_command_word "halt"
+      *goto fight_arm_command
 
   *if (combat_why_blindness = "")
     # [b][ACTION][/b] [b][Blindness][/b] Strike ${combat_enemy_epithet} blind.@{show_stat_hints  [Constitution Save]|}
@@ -7358,6 +7474,18 @@ ${combat_dw_dmg_banner}
 *set combat_mm_spell "eldritch_blast"
 *goto fight_target_multi
 
+*comment COMMAND (2026-11-20): one creature, and one more per slot level above 1st (a warlock casts at its pact slot's level), all given the same word.
+*comment A mark is "command this one"; resolve_cast_command reads each slot for more than 0, never how many.
+*label fight_arm_command
+*set combat_cast_at_level 1
+*if (character_class = "warlock")
+  *gosub_scene combat_spells pact_cast_level
+*set combat_mm_targeting_active true
+*set combat_mm_darts_max combat_cast_at_level
+*gosub fight_target_multi_clear
+*set combat_mm_spell "command"
+*goto fight_target_multi
+
 *label fight_target_multi
 *temp ftm_name "Magic Missile"
 *if (combat_mm_spell = "scorching_ray")
@@ -7366,13 +7494,16 @@ ${combat_dw_dmg_banner}
   *set ftm_name "Cause Fear"
 *elseif (combat_mm_spell = "eldritch_blast")
   *set ftm_name "Eldritch Blast"
+*elseif (combat_mm_spell = "command")
+  *gosub_scene combat_prose command_word_name combat_command_word
+  *set ftm_name "Command: ${combat_command_word_name}"
 *choice
   # Cast ${ftm_name}.
     *gosub combat_mm_recount_darts
     *if (combat_mm_darts_total <= 0)
       *if (combat_mm_spell = "scorching_ray")
         None of the rays has a target yet.
-      *elseif (combat_mm_spell = "cause_fear")
+      *elseif ((combat_mm_spell = "cause_fear") or (combat_mm_spell = "command"))
         No targets are chosen yet. Click an enemy in the sidebar to mark it, then cast.
       *elseif (combat_mm_spell = "eldritch_blast")
         None of the beams has a target yet.
@@ -7385,6 +7516,8 @@ ${combat_dw_dmg_banner}
       *gosub fight_resolve_scorching_ray
     *elseif (combat_mm_spell = "cause_fear")
       *gosub_scene combat_spells resolve_cast_cause_fear
+    *elseif (combat_mm_spell = "command")
+      *gosub_scene combat_spells resolve_cast_command
     *elseif (combat_mm_spell = "eldritch_blast")
       *gosub fight_resolve_eldritch_blast
     *else
@@ -7394,12 +7527,13 @@ ${combat_dw_dmg_banner}
       *gosub_scene combat_spells resolve_magic_missile
     *comment Clear every slot's allocation now that the cast has resolved: the sidebar's (N) tags must not linger once targeting is off.
     *gosub fight_target_multi_clear
-    *if (combat_mm_spell = "cause_fear")
+    *if ((combat_mm_spell = "cause_fear") or (combat_mm_spell = "command"))
       *goto fight_action_spent
     *goto fight_check_enemy_hp
   # Cancel targeting.
     *set combat_mm_targeting_active false
     *gosub fight_target_multi_clear
+    *set combat_cast_at_level 1
     You let the working dissolve, unspent.
     *line_break
     *goto fight_round_hub
@@ -9501,6 +9635,18 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
         *line_break
         *set combat_turn_advanced_this_page true
         *set cnt_stun_stop true
+    *comment COMMAND (2026-11-20): a foe that failed its save obeys the word on this turn, and the word is used up whether it could obey or not (a stunned or
+    *comment held foe loses it). Obeying is the whole turn, so it counts as a stop like a stun: every later step of the turn is skipped.
+    *if (not((combat_player_surprise) and (cnt_first_pass)))
+      *temp cnt_cmd {(("combat_enemy" & cnt_slot) & "_commanded")}
+      *if (not(cnt_cmd = ""))
+        *set {(("combat_enemy" & cnt_slot) & "_commanded")} ""
+        *if (not(cnt_stun_stop))
+          *gosub fight_enemy_obey_command cnt_slot cnt_cmd
+          *set combat_turn_advanced_this_page true
+          *set cnt_stun_stop true
+          *if ((combat_boom_killed) or (combat_enemy_hp <= 0))
+            *goto cnt_boom_tail
     *temp cnt_restrain_stop false
     *comment Ensnaring Strike's 10-round ceiling ends its concentration, and that clears the restraint (concentration_reconcile), so it runs before the read.
     *gosub_scene combat_dice concentration_reconcile

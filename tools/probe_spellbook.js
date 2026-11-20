@@ -8,7 +8,7 @@
 // It plays a real character with tools/scripted_play.js (a Dev Hub preset, levelled up through the real level-up), seeds those stats into the real game,
 // opens the Spellbook, reads the rows off each level tab, and checks every held spell is on one of them. It also screenshots the open section.
 //
-// Run (after `node compile.js`):  node tools/probe_spellbook.js [bard2|warlock2|wizard|all]     (CHROME=... if Chrome is not in the usual place)
+// Run (after `node compile.js`):  node tools/probe_spellbook.js [bard2|warlock2|fiend3|wizard|all]     (CHROME=... if Chrome is not in the usual place)
 // It starts its own Chrome profile and stops only its own processes.
 const { spawn } = require("child_process");
 const fs = require("fs"), os = require("os"), path = require("path");
@@ -43,6 +43,17 @@ const SCENARIOS = {
     },
     expect: ["Hellish Rebuke", "Mage Armor"],       // warlock_spell_3, and the invocation's grant
     origin: { spell: "Mage Armor", match: "pact", clipped: false }
+  },
+  // The Fiend's patron spells (2026-11-20): granted at warlock level 3 by feature_fiend_spells, held in no slot, so the panel lists them from the flag.
+  fiend3: {
+    what: "Fiend warlock, level 3 (Burning Hands, Scorching Ray and Command from the patron)",
+    script: {
+      scene: "dev_hub", label: "dev_combat_test_hub", preset: "Cadre Dread Warlock",
+      weather: "Clear", time: "Morning", day: "Ironday",
+      stats: { character_level: 2, warlock_patron: "fiend", warlock_patron_title: "The Fiend" },
+      steps: [{ pick: "Take Level 3" }, { pick: "Armor of Agathys" }]
+    },
+    expect: ["Burning Hands", "Scorching Ray", "Command"]
   },
   wizard: {
     what: "Wizard, level 2 (four spells in the book)",

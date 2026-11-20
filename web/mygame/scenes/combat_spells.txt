@@ -46,6 +46,11 @@
 *label spend_spell_slot
 *params ssl_level
 *comment SHARED POOLS (2026-11-14): wizard, bard and ranger spend from one pool per slot level; warlocks use spend_pact_slot below.
+*comment A character with Pact Magic has no shared pools, so a spell that calls this for a warlock spends a pact slot (2026-11-20: Scorching Ray and
+*comment Burning Hands, granted to the Fiend, called this and cost a warlock nothing).
+*if (pact_slots_max > 0)
+  *gosub spend_pact_slot
+  *return
 *if (ssl_level >= 2)
   *set spell_slots_2 - 1
 *else
@@ -385,6 +390,15 @@
   *set spell_fact_reach "medium"
   *set spell_fact_npc_lines true
   *set spell_fact_concentration true
+*if (sfl_id = "command")
+  *set spell_fact_found true
+  *set spell_fact_name "Command"
+  *set spell_fact_resolution "save"
+  *set spell_fact_save_ability "wisdom"
+  *set spell_fact_slot_level 1
+  *set spell_fact_upcast_targets 1
+  *set spell_fact_target "one"
+  *set spell_fact_reach "medium"
 *if (sfl_id = "armor_of_agathys")
   *set spell_fact_found true
   *set spell_fact_name "Armor of Agathys"
@@ -1189,6 +1203,48 @@ You pull the stopper with your teeth and hurl the flask at ${combat_enemy_epithe
     *set rcf_pi + 1
     *goto resolve_cast_cause_fear_print_loop
 *gosub_scene combat_prose print_concentration_ended_banner
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SPELL: COMMAND (2024 rules; the Fiend warlock's patron spell, 2026-11-20). Action, Wisdom save. Each foe marked in the sidebar
+*comment (combat_mm_darts_N, up to combat_cast_at_level of them, fight_arm_command) that fails obeys combat_command_word on its next turn
+*comment (<slot>_commanded, read in combat_next_turn, fight_enemy_obey_command). Any creature can be commanded (2024 has no undead or language
+*comment exception). A marked foe that has fallen or stands beyond Mid-Range is skipped. Not concentration.
+*label resolve_cast_command
+*if (character_class = "warlock")
+  *gosub spend_pact_slot
+*else
+  *gosub spend_spell_slot combat_cast_at_level
+*gosub_scene combat_prose command_word_name combat_command_word
+*temp rcc_word_name combat_command_word_name
+*gosub_scene combat_prose flavor_command_cast combat_command_word
+*line_break
+*temp rcc_i 1
+*label resolve_cast_command_loop
+*if (rcc_i <= combat_enemy_slot_cap)
+  *temp rcc_n {(("combat_mm_darts_" & rcc_i))}
+  *if (rcc_n > 0)
+    *set combat_active_target rcc_i
+    *gosub_scene combat fight_sync_target_in
+    *temp rcc_p (("combat_enemy" & rcc_i) & "_")
+    *if ({(rcc_p & "hp")} <= 0)
+      [b][— ${combat_enemy_name} is no longer a valid target][/b]
+      *line_break
+    *elseif ({(rcc_p & "range")} > combat_reach_medium)
+      [b][— ${combat_enemy_name} is too far away to hear the word][/b]
+      *line_break
+    *else
+      *gosub_scene combat_dice resolve_save rcc_p "wisdom" "Wisdom" spell_save_dc rcc_i
+      *comment check_success is inverted here (resolve_save: true = the enemy FAILED the save).
+      *if (check_success)
+        *set {(rcc_p & "commanded")} combat_command_word
+        [b][👑 ${combat_enemy_name} is Commanded: ${rcc_word_name} — on its next turn][/b]
+      *else
+        [b][💨 ${combat_enemy_name} shakes off the command][/b]
+      *line_break
+  *set rcc_i + 1
+  *goto resolve_cast_command_loop
+*set combat_cast_at_level 1
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

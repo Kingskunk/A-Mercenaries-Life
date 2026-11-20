@@ -1,0 +1,77 @@
+*comment ====================================================================================
+*comment LYRA: THE NINE COURT — The Hask Junction & Investigation
+*comment
+*comment Standalone until wired into port_valen.txt and port_valen_dredge_end.txt.
+*comment Currently entered via dev_hub.txt (dev_menu_quests) for testing; returns to
+*comment dev_hub and resets all quest flags when nine_court_dev_mode is true.
+*comment ====================================================================================
+
+*label nine_court_hook
+*set nine_court_hook_seen true
+
+Lyra sits on the edge of her end cot in the Vanguard barracks, her dark wool cloak still damp at the hem and dried canal mud crusted up the heels of her boots. Her recurve bow lies unstrung across her knees while she rubs an oiled rag slowly down one limb.
+
+She hears your footsteps on the floorboards and looks up. "You're back," she says, setting the rag aside. "I tried Dredge-End."
+
+You pull up an empty crate beside her bunk. "Any luck?"
+
+"None." She folds the rag over her knee, her jaw tight. "The tenants along the lower terraces shut their doors the second I start asking about my aunt's last week. Half of them are scared of their own shadows, and the other half pretend they never saw her."
+
+She glances down the barracks aisle to make sure the nearest bunks are empty, then drops her voice. "There's one man who knows. Hask. He runs the scrap yard down by the boat-sheds on the canal bank."
+
+"You know him?"
+
+"He and my aunt went back twenty years," Lyra says quietly. "Traded copper, swapped favors, looked out for the kids when winter hit hard. If anyone saw who was bringing her piecework, or what was in her workbox before someone cleared it out, it's him." Her fingers tighten on the unstrung bow. "I walked up to his fence this afternoon. Before I got three words out, he picked up a rusted iron bar off his sorting bench and told me to clear off his yard."
+
+"Because of the Oath."
+
+"Because I walked out and took what wasn't mine." She meets your eyes squarely. "He won't hear a word from me, ${name}. You, though, aren't on his blacklist. If you go down to the boat-sheds and ask about his old friend, he might actually answer."
+
+*label nine_court_hook_choice
+*choice
+  # "I'll go down to the boat-sheds and talk to Hask."
+    *set nine_court_stage "active"
+    *set nine_court_hask_asked true
+    "I'll head down to the scrap yard and see what he knows," you say.
+
+    Some of the tension leaves her shoulders, though her gaze stays sharp. "Don't lead with my name," she warns, reaching for her bowstring. "He'll shut down on the spot if he thinks I sent you. Ask about the spinner who died in the lower tenements, his old friend. Once he starts talking, see if he kept anything from her room, or saw who paid her."
+
+    She slips the bowstring loop over the top tip and sets the wood aside. "I owe you another one for this. Find me when you have something."
+
+    *page_break Return to Dev Hub (flags will reset)...
+    *goto nine_court_return
+
+  *if (not(nine_court_hask_told))
+    # "If he hates turncoats that much, why would he open up to a stranger?"
+      *set nine_court_hask_told true
+      "Hask doesn't hand out favors to anyone off the street," you point out. "Why would he talk to me?"
+
+      "He wouldn't, if you walk in empty-handed and start prying," Lyra says flatly. "He's a fence and a salvage dealer. He respects people who bring him clean iron, keep their mouths shut, and do steady work without bringing the Watch down on his yard. If you've dealt with him, or if you earn a nod from him first, he'll listen. He cared about my aunt. Whatever happened to her is eating at him too."
+      *goto nine_court_hook_choice
+
+  # "I have other business to settle first. Give me some time."
+    "I'm stretched thin right now," you tell her. "Give me a little time before I head down to the sheds."
+
+    Lyra nods once, picking the oiled rag back up. "Fair enough. You've already done more than most in this company. Whenever you've got an hour to spare, Hask is at the boat-sheds every day."
+
+    *page_break Return to Dev Hub (flags will reset)...
+    *goto nine_court_return
+
+*comment ====================================================================================
+*comment DEV RETURN & FLAG RESET
+*comment ====================================================================================
+
+*label nine_court_return
+*if (nine_court_dev_mode)
+  *gosub dev_reset_nine_court
+  *goto_scene dev_hub dev_menu_quests
+*goto_scene port_valen/port_valen port_valen_hub
+
+*label dev_reset_nine_court
+*set nine_court_stage "unstarted"
+*set nine_court_resolution "none"
+*set nine_court_hook_seen false
+*set nine_court_hask_asked false
+*set nine_court_hask_told false
+*set nine_court_dev_mode false
+*return

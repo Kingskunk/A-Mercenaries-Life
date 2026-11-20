@@ -100,7 +100,7 @@
     "control_flames", "blade_ward", "fire_bolt", "ray_of_frost", "ray_of_sickness",
     "shocking_grasp", "eldritch_blast", "chill_touch", "vicious_mockery", "poison_spray",
     "magic_missile", "hex", "armor_of_agathys", "mage_armor", "false_life",
-    "dissonant_whispers", "cause_fear", "blindness", "web", "hold_person", "shatter", "scorching_ray", "grease", "burning_hands",
+    "dissonant_whispers", "cause_fear", "command", "blindness", "web", "hold_person", "shatter", "scorching_ray", "grease", "burning_hands",
     "thunderwave", "arms_of_hadar", "bane", "healing_word", "cure_wounds",
     "read", "dodge", "intimidate", "hide",
     "shield", "hellish_rebuke", "absorb_elements", "second_wind", "hunters_mark",
@@ -188,6 +188,17 @@
       variants: [
         { id: "cause_fear_1st_level", label: "1st level", whyKey: "combat_why_cause_fear", blurb: "Plant a whispered dread in a foe." },
         { id: "cause_fear_2nd_level", label: "2nd level", whyKey: "combat_why_cause_fear_2", blurb: "Plant a whispered dread in up to two creatures you choose in the sidebar." }
+      ]
+    },
+    {
+      // Command's five words share one reason (combat_why_command); each wears its own art (variantArt, ACTION_ICONS command_<word>).
+      id: "command", group: "action", name: "Command", blurb: "Speak one word a foe must obey on its next turn.",
+      variants: [
+        { id: "command_approach", label: "Approach", whyKey: "combat_why_command", blurb: "Order a foe to come to you." },
+        { id: "command_drop", label: "Drop", whyKey: "combat_why_command", blurb: "Order a foe to drop what it holds." },
+        { id: "command_flee", label: "Flee", whyKey: "combat_why_command", blurb: "Order a foe to run from you." },
+        { id: "command_grovel", label: "Grovel", whyKey: "combat_why_command", blurb: "Order a foe to throw itself to the ground." },
+        { id: "command_halt", label: "Halt", whyKey: "combat_why_command", blurb: "Order a foe to stand still." }
       ]
     },
     { id: "blindness", group: "action", name: "Blindness", whyKey: "combat_why_blindness", blurb: "Strike a foe blind." },
@@ -628,6 +639,8 @@
     if (e.id === "potions") return (window.ACTION_ICONS || {})["potions_" + slug(v.label)] || "";
     // Read: Magic Missile Scroll / Bane Scroll ... -- each spell scroll wears its own art (ACTION_ICONS read_<slug of its title>).
     if (e.id === "read") return (window.ACTION_ICONS || {})["read_" + slug(v.label)] || "";
+    // Command: Approach / Drop / Flee / Grovel / Halt -- each word wears its own art (ACTION_ICONS command_<word>).
+    if (e.id === "command") return (window.ACTION_ICONS || {})["command_" + slug(v.label)] || "";
     if (e.id !== "booming_blade") return "";
     var st = statsNow(), art = window.ACTION_ICONS || {}, lab = String(v.label).toLowerCase();
     if (st.weapon && lab === String(st.weapon).toLowerCase()) return art.primary_melee || "";

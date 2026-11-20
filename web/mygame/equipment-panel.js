@@ -158,6 +158,7 @@
       s[k] = !blocked && KNOWN_SLOTS.some(function (slot) { return s[slot] === id; });
     });
     if (truthy(s.inv_otherworldly_leap) && !blocked) s.known_jump = true;
+    if (truthy(s.feature_fiend_spells) && !blocked) { s.known_burning_hands = true; s.known_scorching_ray = true; s.known_command = true; }
     if (s.item_cantrip && s.item_cantrip !== "none" && ("known_" + s.item_cantrip) in s) s["known_" + s.item_cantrip] = true;
   };
 

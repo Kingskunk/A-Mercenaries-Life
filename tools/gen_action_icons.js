@@ -33,6 +33,12 @@ const MAP = {
   shove: "Action/Shove_Icon.webp",
   throw: "Action/Throw_Icon.webp",   // the one Throw button on the bar; its fly-out shows each item in its own art (below)
   // Each thrown item's own art, keyed throw_<slug of its title>: battlehud.js variantArt reads "Throw: Grease Flask" as throw_grease_flask.
+  // Command's five words, each fly-out choice in its own art (battlehud.js variantArt reads "Command: Grovel" as command_grovel).
+  command_approach: "Spell/Command_Approach_Icon.webp",
+  command_drop: "Spell/Command_Drop_Icon.webp",
+  command_flee: "Spell/Command_Flee_Icon.webp",
+  command_grovel: "Spell/Command_Grovel_Icon.webp",
+  command_halt: "Spell/Command_Halt_Icon.webp",
   shoot: "Action/Arcane_Shot_Piercing_Arrow_Icon.webp",   // the one Shoot button on the bar (the special arrows); its fly-out shows each arrow in its own art (below)
   shoot_fire_arrow: "Item/Consumable/Arrow/Arrow_of_Fire_Unfaded_Icon.png",
   shoot_ice_arrow: "Item/Consumable/Arrow/Arrow_of_Ice_Unfaded_Icon.png",

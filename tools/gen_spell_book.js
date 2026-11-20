@@ -62,7 +62,8 @@ ids.forEach(function (id) {
   var sp = BOOK.learnable[id];
   if (!sp.name) throw new Error("spell " + id + " needs a name (the display text)");
   if (!(sp.level >= 1)) throw new Error("spell " + id + " needs a level of 1 or more");
-  if (!sp.lists || !sp.lists.length) throw new Error("spell " + id + " needs a lists array naming the classes that may learn it");
+  // A spell no class may pick, only granted by a feature (Command, the Fiend's patron spell), says so with granted_only and has an empty lists.
+  if (!sp.lists || (!sp.lists.length && !sp.granted_only)) throw new Error("spell " + id + " needs a lists array naming the classes that may learn it (or granted_only: true and an empty lists)");
   sp.lists.forEach(function (c) { if (classes.indexOf(c) < 0) throw new Error("spell " + id + " lists unknown class " + c); });
   if (!sp.pitch) throw new Error("spell " + id + " needs a pitch (the short line a pick menu shows)");
   // desc is the long book entry, passed to learn_spell and shown when a copying class writes the spell in. Usually one string

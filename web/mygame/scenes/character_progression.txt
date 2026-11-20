@@ -210,6 +210,8 @@
 *set feature_magical_cunning false
 *set feature_jack_of_all_trades false
 *set feature_arcane_ward false
+*set feature_dark_ones_blessing false
+*set feature_fiend_spells false
 *set feature_save_prof_strength false
 *set feature_save_prof_dexterity false
 *set feature_save_prof_constitution false
@@ -250,6 +252,10 @@
 *comment 3. From subclass. Test class and subclass together.
 *if ((character_class = "wizard") and (wizard_subclass = "abjurer"))
   *set feature_arcane_ward true
+*comment The Fiend: the patron is chosen at creation, its features come at warlock level 3 (PHB'24). The other patrons have none.
+*if (((character_class = "warlock") and (warlock_patron = "fiend")) and (character_level >= 3))
+  *set feature_dark_ones_blessing true
+  *set feature_fiend_spells true
 *comment 4. From feats, origin and items.
 *comment A grant from a chosen feat is written here as a test of the feat_ variable; this routine never sets or resets a feat_.
 *return
@@ -709,6 +715,7 @@
 *set held_arms_of_hadar false
 *set held_hellish_rebuke false
 *set held_cause_fear false
+*set held_command false
 *set held_armor_of_agathys false
 *set held_bane false
 *set held_charm_person false
@@ -749,6 +756,7 @@
 *set known_arms_of_hadar (((((held_arms_of_hadar) or (race_cantrip = "arms_of_hadar")) or (race_cantrip_2 = "arms_of_hadar")) and ((not(class_prepares)) or (prepared_arms_of_hadar))) and (not(spells_blocked)))
 *set known_hellish_rebuke (((((held_hellish_rebuke) or (race_cantrip = "hellish_rebuke")) or (race_cantrip_2 = "hellish_rebuke")) and ((not(class_prepares)) or (prepared_hellish_rebuke))) and (not(spells_blocked)))
 *set known_cause_fear (((((held_cause_fear) or (race_cantrip = "cause_fear")) or (race_cantrip_2 = "cause_fear")) and ((not(class_prepares)) or (prepared_cause_fear))) and (not(spells_blocked)))
+*set known_command (((((held_command) or (race_cantrip = "command")) or (race_cantrip_2 = "command")) and ((not(class_prepares)) or (prepared_command))) and (not(spells_blocked)))
 *set known_armor_of_agathys (((((held_armor_of_agathys) or (race_cantrip = "armor_of_agathys")) or (race_cantrip_2 = "armor_of_agathys")) and ((not(class_prepares)) or (prepared_armor_of_agathys))) and (not(spells_blocked)))
 *set known_bane (((((held_bane) or (race_cantrip = "bane")) or (race_cantrip_2 = "bane")) and ((not(class_prepares)) or (prepared_bane))) and (not(spells_blocked)))
 *set known_charm_person (((((held_charm_person) or (race_cantrip = "charm_person")) or (race_cantrip_2 = "charm_person")) and ((not(class_prepares)) or (prepared_charm_person))) and (not(spells_blocked)))
@@ -782,6 +790,12 @@
 *comment Otherworldly Leap lets the Warlock cast Jump, so the Warlock knows it.
 *if ((inv_otherworldly_leap) and (not(spells_blocked)))
   *set known_jump true
+*comment FIEND SPELLS (the Fiend warlock, level 3): Burning Hands and Scorching Ray are always known and take none of the warlock's spell slots; they are
+*comment cast with Pact Magic like any warlock spell; so is Command, which no class picks (granted_only in spell_book.json). Suggestion is left out (the user, 2026-11-20).
+*if ((feature_fiend_spells) and (not(spells_blocked)))
+  *set known_burning_hands true
+  *set known_scorching_ray true
+  *set known_command true
 *comment WORN ITEMS THAT GRANT A CANTRIP. item_cantrip is the one slot for it (the spellbook and the ability page read it like any class slot). A fixed-value set from what is worn, so equip_ring can call this on every swap and a replay changes nothing.
 *comment A character who already knows the cantrip gets nothing from the item: no second copy in the spellbook, no stacking. A new item is one more branch below.
 *set item_cantrip "none"
@@ -826,6 +840,8 @@
   *set held_hellish_rebuke true
 *if (hm_id = "cause_fear")
   *set held_cause_fear true
+*if (hm_id = "command")
+  *set held_command true
 *if (hm_id = "armor_of_agathys")
   *set held_armor_of_agathys true
 *if (hm_id = "bane")
@@ -945,6 +961,7 @@
 *set prepared_arms_of_hadar false
 *set prepared_hellish_rebuke false
 *set prepared_cause_fear false
+*set prepared_command false
 *set prepared_armor_of_agathys false
 *set prepared_bane false
 *set prepared_charm_person false
@@ -1013,6 +1030,11 @@
     *set prepared_count + 1
   *else
     *set prepared_cause_fear false
+*if (prepared_command)
+  *if (held_command)
+    *set prepared_count + 1
+  *else
+    *set prepared_command false
 *if (prepared_armor_of_agathys)
   *if (held_armor_of_agathys)
     *set prepared_count + 1
@@ -1233,6 +1255,17 @@
           *set prepare_result "full"
       *else
         *set prepared_cause_fear false
+        *set prepare_result "cleared"
+  *if (ps_id = "command")
+    *if (held_command)
+      *if (ps_on)
+        *if ((prepared_command) or (prepared_count < prepared_max))
+          *set prepared_command true
+          *set prepare_result "set"
+        *else
+          *set prepare_result "full"
+      *else
+        *set prepared_command false
         *set prepare_result "cleared"
   *if (ps_id = "armor_of_agathys")
     *if (held_armor_of_agathys)
@@ -1586,6 +1619,9 @@
     *set prepared_count + 1
   *if (((not(prepared_cause_fear)) and (held_cause_fear)) and (prepared_count < prepared_max))
     *set prepared_cause_fear true
+    *set prepared_count + 1
+  *if (((not(prepared_command)) and (held_command)) and (prepared_count < prepared_max))
+    *set prepared_command true
     *set prepared_count + 1
   *if (((not(prepared_armor_of_agathys)) and (held_armor_of_agathys)) and (prepared_count < prepared_max))
     *set prepared_armor_of_agathys true
