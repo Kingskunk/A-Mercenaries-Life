@@ -232,6 +232,7 @@
 *set absorb_elements_armed false
 *set booming_armed false
 *set booming_side false
+*set combat_maneuver_armed ""
 *set true_strike_on false
 *set true_strike_radiant false
 *set combat_save_quiet false
@@ -1145,6 +1146,7 @@
 *set absorb_elements_armed false
 *set booming_armed false
 *set booming_side false
+*set combat_maneuver_armed ""
 *set true_strike_on false
 *set true_strike_radiant false
 *set combat_save_quiet false
@@ -2645,7 +2647,8 @@
     *set check_stat "dex"
 *else
   *set check_stat "str"
-*set check_skill "Opportunity Attack"
+*comment Riposte (combat_dice.txt player_riposte_check) runs this same counter under its own name, with its own lines below.
+*set check_skill combat_reaction_skill
 *set check_dc combat_enemy_ac
 *set check_add_prof_bonus true
 *gosub combat_apply_weapon_magic_attack
@@ -2702,17 +2705,31 @@
   *set combat_roa_last_dmg_roll_banner combat_player_dmg_roll_banner
   *if (combat_enemy_hp <= 0)
     *comment A non-lethal foe yields here, as every finishing blow does in a non-lethal fight.
-    *if (combat_is_nonlethal)
+    *if (combat_reaction_skill = "Riposte")
+      *if (combat_is_nonlethal)
+        *set combat_roa_last_line "The miss leaves ${combat_enemy_epithet} open, and your answer takes the fight out of them. They stumble back and show you empty hands."
+      *else
+        *set combat_roa_last_line "The miss leaves ${combat_enemy_epithet} open, and your answer drops them where they stand."
+    *elseif (combat_is_nonlethal)
       *set combat_roa_last_line "You catch ${combat_enemy_epithet} pulling back, and the blow takes the fight out of them. They stumble to a halt and show you empty hands."
     *else
       *set combat_roa_last_line "You catch ${combat_enemy_epithet} pulling back, and the blow drops them mid-retreat."
     *set combat_roa_last_banner "[b][@{combat_is_nonlethal 🏳️|💀} ${combat_enemy_name} @{combat_is_nonlethal Beaten|Defeated}: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]"
   *elseif (combat_weapon_blocked)
-    *set combat_roa_last_line "You catch ${combat_enemy_epithet} pulling back and land a clean blow with your ${weapon}, but the hit glances away as though you had struck stone."
+    *if (combat_reaction_skill = "Riposte")
+      *set combat_roa_last_line "You answer the miss with a clean blow of your ${weapon}, but the hit glances away as though you had struck stone."
+    *else
+      *set combat_roa_last_line "You catch ${combat_enemy_epithet} pulling back and land a clean blow with your ${weapon}, but the hit glances away as though you had struck stone."
     *set combat_roa_last_banner "[b][🚫 ${combat_enemy_name} is immune to ${combat_weapon_defense_text} | ${combat_player_dmg_dealt} damage][/b]"
+  *elseif (combat_reaction_skill = "Riposte")
+    *set combat_roa_last_line "The miss leaves ${combat_enemy_epithet} open, and you answer before they can recover."
+    *set combat_roa_last_banner "[b][🩸 Riposte Hits: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]"
   *else
     *set combat_roa_last_line "You catch ${combat_enemy_epithet} pulling back, and the opening costs them."
     *set combat_roa_last_banner "[b][🩸 Opportunity Attack Hits: ${combat_player_dmg_dealt} damage${combat_outgoing_dmg_suffix}][/b]"
+*elseif (combat_reaction_skill = "Riposte")
+  *set combat_roa_last_line "You answer the miss at once, but ${combat_enemy_epithet} is already back out of line."
+  *set combat_roa_last_banner "[b][💨 Riposte Misses][/b]"
 *else
   *set combat_roa_last_line "$!{combat_enemy_epithet} breaks away before you can make the opening count."
   *set combat_roa_last_banner "[b][💨 Opportunity Attack Misses][/b]"
@@ -3626,6 +3643,8 @@
 *set true_strike_radiant false
 *set booming_armed false
 *set booming_side false
+*comment A maneuver (the Battle Master) is armed for one swing only; a miss leaves the die unspent.
+*set combat_maneuver_armed ""
 *goto fight_round_hub
 
 *label fight_bonus_spent
@@ -4485,6 +4504,12 @@
 *comment Booming Blade: a cantrip and an ACTION, one MELEE weapon attack (the 2024 rule). One variant per melee weapon that can reach an enemy: the weapon in hand, and the sidearm. A ranged weapon cannot carry it, and it takes the place of a weapon attack, so it needs one to spend (combat_can_attack).
 *temp combat_can_booming false
 *temp combat_can_booming_side false
+*comment MANEUVERS (the Battle Master, fighter level 3, PHB'24; 2026-11-21): Trip Attack and Menacing Attack ride on one attack with the weapon in hand, melee or ranged,
+*comment while a superiority die is left. Chosen before the swing; the die is spent only on a hit (combat_dice.txt resolve_player_weapon_hit, combat_maneuver_apply below).
+*temp combat_can_maneuver false
+*if ((((feature_combat_superiority) and (fighter_superiority_uses > 0)) and (combat_can_attack)) and (not(equipped_weapon_id = "none")))
+  *if ((combat_wpn_far_ok) or (combat_primary_reach))
+    *set combat_can_maneuver true
 *if ((combat_can_attack) and (known_booming_blade))
   *if (((not(equipped_weapon_id = "none")) and (not(weapon_type = "ranged"))) and (combat_primary_reach))
     *set combat_can_booming true
@@ -5150,6 +5175,13 @@
       *set booming_armed true
       *set booming_side true
       *goto fight_booming_go
+  *if (combat_can_maneuver)
+    # [b][ACTION][/b] [b][Trip Attack][/b] Strike at ${combat_med_epithet}'s footing: a superiority die of extra damage, and they fall prone unless they keep their feet.@{show_stat_hints  [Strength Save, Prone | 1 Superiority Die on a hit]|}
+      *set combat_maneuver_armed "trip"
+      *goto fight_maneuver_go
+    # [b][ACTION][/b] [b][Menacing Attack][/b] Strike to cow ${combat_med_epithet}: a superiority die of extra damage, and they are frightened of you unless they hold their nerve.@{show_stat_hints  [Wisdom Save, Frightened | 1 Superiority Die on a hit]|}
+      *set combat_maneuver_armed "menacing"
+      *goto fight_maneuver_go
 
   *if (combat_why_true_strike = "")
     *comment Two options for one cantrip: the battle bar folds every "True Strike: X" pair into one slot and opens the variants on a click (battlehud.js). The Classic list shows both lines.
@@ -7772,6 +7804,28 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *line_break
 *goto resolve_weapon_attack_choice
 
+*label fight_maneuver_go
+*comment Entry for both maneuvers: the plain attack's reach test, a line, then the shared weapon attack. A refused reach check leaves the hub with the action and the die untouched.
+*if (not(weapon_type = "ranged"))
+  *gosub_scene combat_movement fight_weapon_reach_check
+  *if (not(combat_reach_ok))
+    ${combat_reach_msg}
+    *line_break
+    *set combat_maneuver_armed ""
+    *goto fight_round_hub
+*if (combat_maneuver_armed = "trip")
+  *if (weapon_type = "ranged")
+    You drop your aim low, to ${combat_enemy_epithet}'s legs.
+  *else
+    You set your feet and go low, at ${combat_enemy_epithet}'s legs.
+*else
+  *if (weapon_type = "ranged")
+    You hold ${combat_enemy_epithet}'s gaze down the line of your shot.
+  *else
+    You close with a snarl, putting everything into the blow.
+*line_break
+*goto resolve_weapon_attack_choice
+
 *label resolve_weapon_attack_choice
 *comment Whole-body replay lock (2026-09-30, real bug caught live via refresh_fuzz_test.js): fight_pick_target's
 *comment kill-priority scan, pick_weapon_flavor's *rand pick, the roll, the damage, and the Hunter's Mark bookkeeping were
@@ -7913,6 +7967,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *if (combat_weapon_blocked)
       *gosub_scene combat_prose pick_weapon_blocked_flavor
     *gosub combat_ensnare_apply
+    *gosub combat_maneuver_apply
     *gosub combat_arrow_apply
     *if ((not(combat_sneak_attack_triggered)) and (combat_enemy_hp <= 0))
       *gosub_scene combat_prose pick_weapon_death_flavor
@@ -8050,6 +8105,45 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     [b][🌿 ${combat_enemy_name} is restrained: 1d6 piercing at the start of each of its turns, attacks against it have advantage, until it tears free (up to 10 rounds)][/b]
   *else
     [b][💨 ${combat_enemy_name} tears clear of the vines][/b]
+*if ((check_success) and (combat_maneuver_result > 0))
+  *line_break
+  *if (combat_maneuver_result = 3)
+    $!{combat_enemy_epithet} is too massive to topple.
+    *line_break
+    [b][🦶 ${combat_enemy_name} is too big to trip][/b]
+  *else
+    ${combat_maneuver_banner}
+    *line_break
+    *if (combat_maneuver_used = "trip")
+      *if (combat_maneuver_result = 2)
+        *if (combat_maneuver_v = 1)
+          The blow takes ${combat_enemy_epithet}'s legs out, and they go down hard.
+        *else
+          $!{combat_enemy_epithet} stumbles, loses their footing and crashes to the ground.
+        *line_break
+        [b][🦶 ${combat_enemy_name} is knocked Prone][/b]
+      *else
+        *if (combat_maneuver_v = 1)
+          $!{combat_enemy_epithet} staggers but catches their balance.
+        *else
+          $!{combat_enemy_epithet} lurches sideways and stays upright.
+        *line_break
+        [b][💨 ${combat_enemy_name} keeps their feet][/b]
+    *else
+      *if (combat_maneuver_result = 2)
+        *if (combat_maneuver_v = 1)
+          $!{combat_enemy_epithet} flinches back, eyes wide.
+        *else
+          $!{combat_enemy_epithet} recoils from you, shaken.
+        *line_break
+        [b][😨 ${combat_enemy_name} is Frightened of you until the end of your next turn][/b]
+      *else
+        *if (combat_maneuver_v = 1)
+          $!{combat_enemy_epithet} shakes off the menace and comes on.
+        *else
+          $!{combat_enemy_epithet} grits their teeth and holds their ground.
+        *line_break
+        [b][💪 ${combat_enemy_name} holds their nerve][/b]
 *comment The attack's last banner ends here with a break, unless this blow ended the fight: fight_victory opens with its own break, so a second one would print an empty line. The sync and the dead check are
 *comment repeated by fight_check_enemy_hp below and change nothing a second time.
 *gosub fight_sync_target_out
@@ -8189,6 +8283,49 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
       *gosub_scene combat_dice condition_apply cea_p "restrained" 1 spell_save_dc "combat_player_ensnaring_strike"
     *set check_success cea_cs
   *gosub_scene combat_dice concentration_reconcile
+*return
+
+*label combat_maneuver_apply
+*comment MANEUVERS (the Battle Master, 2026-11-21): called inside the weapon-hit lock right after the hit, like combat_ensnare_apply. resolve_player_weapon_hit has already spent the
+*comment die and added it to the damage (combat_maneuver_used names the maneuver). A target still standing saves against 8 + proficiency + the higher of STR and DEX mods:
+*comment Trip Attack, Strength, or Prone (no save for Huge or larger: it cannot be tripped); Menacing Attack, Wisdom, or Frightened of the player until the end of the
+*comment player's next turn (1 round, no repeat save: condition_tick ends it at the end of the foe's own next turn, which always falls before the player's next turn ends).
+*comment The save banner is kept (combat_save_quiet) for the attack's report; check_success is the ATTACK's result and is put back.
+*set combat_maneuver_result 0
+*if (combat_maneuver_used = "")
+  *return
+*if (combat_enemy_hp <= 0)
+  *return
+*temp cma_cs check_success
+*temp cma_p (("combat_enemy" & combat_active_target) & "_")
+*temp cma_mod str_mod
+*if (dex_mod > cma_mod)
+  *set cma_mod dex_mod
+*temp cma_dc ((8 + prof_bonus) + cma_mod)
+*rand combat_maneuver_v 1 2
+*if (combat_maneuver_used = "trip")
+  *gosub combat_size_rank combat_enemy_size
+  *if (combat_size_rank_value >= 4)
+    *set combat_maneuver_result 3
+  *else
+    *set combat_save_quiet true
+    *gosub_scene combat_dice resolve_save cma_p "strength" "Strength" cma_dc 0
+    *set combat_save_quiet false
+    *set combat_maneuver_banner {("combat_save_banner_0")}
+    *set combat_maneuver_result 1
+    *if (check_success)
+      *set combat_maneuver_result 2
+      *gosub_scene combat_dice prone_apply cma_p
+*else
+  *set combat_save_quiet true
+  *gosub_scene combat_dice resolve_save cma_p "wisdom" "Wisdom" cma_dc 0
+  *set combat_save_quiet false
+  *set combat_maneuver_banner {("combat_save_banner_0")}
+  *set combat_maneuver_result 1
+  *if (check_success)
+    *set combat_maneuver_result 2
+    *gosub_scene combat_dice condition_apply cma_p "frightened" 1 0 "combat_player_menacing_attack"
+*set check_success cma_cs
 *return
 
 *comment SPECIAL ARROWS (2026-10-15, Fire Arrow and Ice Arrow). Called inside the weapon-hit lock right after the weapon's own hit is resolved. combat_arrow_used is the arrow loosed ("fire", "ice" or ""). On a hit that leaves the target standing it adds 1d4 of its

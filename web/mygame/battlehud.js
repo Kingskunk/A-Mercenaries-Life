@@ -94,7 +94,7 @@
   ];
   // Canonical fight_round_hub option order so seeded unoffered spells land where the hub places them once offered.
   var HUB_ORDER = [
-    "primary_attack", "shoot", "booming_blade", "true_strike", "bardic_inspiration",
+    "primary_attack", "shoot", "booming_blade", "true_strike", "trip_attack", "menacing_attack", "bardic_inspiration",
     "swap_weapons", "reckless_attack", "dual_shot", "sidearm_attack", "shove",
     "push_forward", "fall_back", "dash",
     "control_flames", "blade_ward", "fire_bolt", "ray_of_frost", "ray_of_sickness",
@@ -304,7 +304,10 @@
 
   function iconFor(name) {
     var key = slug(name);
-    return (window.SPELL_ICONS || {})[key] || (window.ACTION_ICONS || {})[key] || "";
+    var acts = window.ACTION_ICONS || {};
+    // A weapon action drawn twice (the Battle Master's Trip and Menacing Attack, 2026-11-21) wears the melee or the ranged art by the weapon in hand: <key>_melee / <key>_ranged.
+    var kind = statsNow().weapon_type === "ranged" ? "ranged" : "melee";
+    return (window.SPELL_ICONS || {})[key] || acts[key] || acts[key + "_" + kind] || "";
   }
 
   // Reads one option label into {group, name, blurb}. The label text is the rendered page text, so [b] has already become bold and the

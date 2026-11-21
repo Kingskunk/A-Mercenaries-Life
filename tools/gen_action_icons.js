@@ -101,6 +101,12 @@ const MAP = {
   magical_cunning: "Skill/Natural_Recovery_Icon.webp",   // Warlock level 2 (PHB'24 p154): no dedicated art in the library, this reads close enough
   arcane_ward: "Passive_feature/Arcane_Ward_Icon.webp",   // Abjurer's bonus-action ward recharge ("Arcane Ward: 1st level" / "2nd level" share this slot)
   dual_shot: "Weapon_action/Volley_Icon.webp",           // stand-in: a volley of arrows for loosing two shots at once
+  // The Battle Master's maneuvers (2026-11-21): battlehud.js iconFor picks _melee or _ranged by the weapon in hand.
+  trip_attack_melee: "Weapon_action/Trip_Attack_Melee_Icon.webp",
+  trip_attack_ranged: "Weapon_action/Trip_Attack_Ranged_Icon.webp",
+  menacing_attack_melee: "Weapon_action/Menacing_Attack_Melee_Icon.webp",
+  menacing_attack_ranged: "Weapon_action/Menacing_Attack_Ranged_Icon.webp",
+  riposte: "Weapon_action/Riposte_Icon.webp",
 
   // The two weapon buttons at the left of the bar. Keyed by hand and attack kind, not by an action name, because the label is the weapon's own name ("Attack with your
   // falchion"); battlehud.js picks the key from weapon_type / sidearm_type. These are the framed "Unfaded" 64px tiles, which fill the button on their own, so the button

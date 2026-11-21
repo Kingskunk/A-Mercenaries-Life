@@ -537,6 +537,26 @@ ${combat_player_dmg_roll_banner}
     *set combat_player_dmg_dealt + cwh_sneak_sum
     *set cwh_extra_str "${cwh_extra_str} +${cwh_sneak_sum} (${cwh_sneak_label})"
     *set cwh_running + cwh_sneak_sum
+  *comment Riposte (the reaction, player_riposte_check) spends its die the same way, on the counter's hit.
+  *comment MANEUVERS (the Battle Master, 2026-11-21): an armed Trip or Menacing Attack spends one superiority die on this hit and adds it to the weapon's damage (doubled on
+  *comment a critical, as every damage die is). Inside the hit lock, so a replay spends nothing again. combat_maneuver_used tells combat.txt combat_maneuver_apply to roll the save.
+  *set combat_maneuver_used ""
+  *if ((not(combat_maneuver_armed = "")) and (fighter_superiority_uses > 0))
+    *set fighter_superiority_uses - 1
+    *set combat_maneuver_used combat_maneuver_armed
+    *temp cwh_man_n 1
+    *if (combat_player_crit)
+      *set cwh_man_n 2
+    *gosub_scene combat_spells roll_spell_dice cwh_man_n fighter_superiority_die
+    *set combat_maneuver_roll spell_roll_total
+    *set combat_player_dmg_dealt + spell_roll_total
+    *set cwh_running + spell_roll_total
+    *if (combat_maneuver_used = "trip")
+      *set cwh_extra_str "${cwh_extra_str} +${spell_roll_total} (Trip Attack)"
+    *elseif (combat_maneuver_used = "riposte")
+      *set cwh_extra_str "${cwh_extra_str} +${spell_roll_total} (Riposte)"
+    *else
+      *set cwh_extra_str "${cwh_extra_str} +${spell_roll_total} (Menacing Attack)"
   *comment HEX AND HUNTER'S MARK are not part of the weapon's damage (the user approved the split, 2026-10-31, RAW): each is its own packet, rolled below after the weapon's, with its own type (Hex necrotic, Hunter's Mark force in the 2024 rules this game follows), so a target that is immune to
   *comment the weapon's damage still takes them. Sneak Attack IS the weapon's damage type and stays in its packet.
   *set combat_player_dmg_roll_banner "[b][🎲 Weapon Damage${combat_crit_tag}: ${cwh_roll_str} ${cwh_bonus_str}${cwh_extra_str} = ${cwh_running}][/b]"
@@ -1016,6 +1036,7 @@ ${combat_player_dmg_roll_banner}
   *set combat_agathys_triggered false
   *set combat_agathys_shattered false
   *set combat_rebuke_triggered false
+  *set combat_riposte_triggered false
   *set combat_absorb_triggered false
   *set combat_condition_inflicted false
   *set combat_conc_save_triggered false
@@ -1085,6 +1106,9 @@ ${combat_player_dmg_roll_banner}
         *gosub_scene combat_movement combat_shift_all_ranges cea_dw_dir
         *set combat_enemy_range {(("combat_enemy" & cea_dw_caster) & "_range")}
         *set combat_cantrip_rider combat_enemy_cast_spell
+  *comment RIPOSTE (the Battle Master, 2026-11-21): a melee weapon attack that misses the player draws the counter, inside this attack's own lock (player_riposte_check).
+  *if (not(combat_enemy_hit_success))
+    *gosub player_riposte_check
   *set {(cea_bannername)} ""
   *if (combat_enemy_hit_success)
     *gosub roll_enemy_base_dmg cea_bannername
@@ -1650,6 +1674,55 @@ ${combat_player_dmg_roll_banner}
 *comment concentration at once (its "ends" line waits with the others, concentration_pending_print). The caller ends the turn when it fell on its own turn. While prone: no
 *comment reactions (combat_can_react), disadvantage on Strength and Dexterity saves (resolve_save), advantage on attacks against it from Engaged. It stands at the start of its
 *comment next turn, which costs half its movement: no Dash that turn.
+*comment RIPOSTE (the Battle Master, fighter level 3, PHB'24; 2026-11-21). Called from resolve_enemy_attack, inside that attack's lock, when the attack missed the player.
+*comment It fires on its own when every condition holds: the attack was a melee WEAPON attack (no spell, no at-will cantrip; a ranged type's quick-drawn sidearm counts), the
+*comment attacker is within the reach of the player's weapon in hand (Engaged, or one step for a reach weapon), that weapon is a melee one, a superiority die is left, and the
+*comment player can react. The counter is the opportunity attack's roll (combat.txt resolve_reverse_oa_player, which names it "Riposte"), with the die added to its damage on a
+*comment hit (resolve_player_weapon_hit); a miss spends the reaction but not the die. The player's own roll locks are opened first, since this attack's lock already guards the
+*comment page against a replay. Its lines are kept for fight_narrate_enemy_turn (combat_prose.txt), which prints them under the miss.
+*label player_riposte_check
+*if ((not(feature_combat_superiority)) or (fighter_superiority_uses <= 0))
+  *return
+*if ((equipped_weapon_id = "none") or (weapon_type = "ranged"))
+  *return
+*if (not(combat_enemy_cast_spell = ""))
+  *return
+*temp prc_melee false
+*if (combat_enemy_used_sidearm)
+  *set prc_melee true
+*elseif ((not(combat_enemy_weapon_type = "ranged")) and ({(("combat_enemy" & combat_active_target) & "_spell_base_id")} = ""))
+  *set prc_melee true
+*if (not(prc_melee))
+  *return
+*temp prc_reach 0
+*if (weapon_type = "reach")
+  *set prc_reach 1
+*if (combat_enemy_range > prc_reach)
+  *return
+*gosub combat_can_react "player" 0
+*if (not(combat_can_react_ok))
+  *return
+*set player_oa_used true
+*set combat_riposte_triggered true
+*temp prc_cs check_success
+*temp prc_quiet combat_save_quiet
+*set roll_locked false
+*set combat_player_hit_locked false
+*set combat_maneuver_armed "riposte"
+*set combat_reaction_skill "Riposte"
+*set combat_save_quiet true
+*gosub_scene combat resolve_reverse_oa_player
+*set combat_save_quiet prc_quiet
+*set combat_reaction_skill "Opportunity Attack"
+*set combat_maneuver_armed ""
+*set combat_maneuver_used ""
+*set combat_riposte_roll_banner combat_roa_last_roll_banner
+*set combat_riposte_dmg_banner combat_roa_last_dmg_roll_banner
+*set combat_riposte_line combat_roa_last_line
+*set combat_riposte_banner combat_roa_last_banner
+*set check_success prc_cs
+*return
+
 *label prone_apply
 *params pra_prefix
 *set {(pra_prefix & "prone")} true
