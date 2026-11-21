@@ -1,12 +1,17 @@
 *comment ====================================================================================
 *comment LYRA: THE NINE COURT
 *comment
-*comment Standalone until finished. Move the commented-out hub option below into
-*comment port_valen/port_valen.txt (port_valen_hub) when ready to wire into the live game:
+*comment Standalone until finished. Move the commented-out hub options below into their
+*comment respective scene files when ready to wire into the live game:
 *comment
+*comment 1. In port_valen/port_valen.txt (port_valen_hub):
 *comment *if ((lyra_repaid) and (nine_court_stage = "unstarted"))
 *comment   # Lyra at the end cot, back from Dredge-End.
 *comment     *goto_scene port_valen/lyra_quests/lyra_nine_court nine_court_hook
+*comment
+*comment 2. In port_valen/port_valen_dredge_end.txt (cut_lamp_hub, inside the Open Hand options):
+*comment *if (nine_court_stage = "active")
+*comment   *goto_scene port_valen/lyra_quests/lyra_nine_court nine_court_pawn_meet
 *comment
 *comment Currently entered via dev_hub.txt (dev_menu_quests) for testing; returns to
 *comment dev_hub and resets all quest flags when nine_court_dev_mode is true.
@@ -25,7 +30,7 @@ You pull up an empty crate beside her cot. "What happened?"
 
 "I've been digging into my aunt's death since I squared up with you," she says, resting her forearms on her knees. "Asking around the lower terraces, checking what was left of her things, following up on who was bringing her work before she died." She pauses, her jaw setting. "I found some troubling stuff, ${name}. Whatever she got tangled up in, it isn't ordinary slum trouble, and it's bigger than one street crew."
 
-She meets your eyes squarely. "I can't do this alone. Not without getting myself cornered. I need another pair of hands, someone I can trust to watch my back."
+She meets your eyes squarely. "I can't do this alone. Not without getting myself cornered before I know who I'm dealing with. I need another pair of hands, someone I can trust to watch my back."
 
 *label nine_court_hook_choice
 *choice
@@ -33,9 +38,9 @@ She meets your eyes squarely. "I can't do this alone. Not without getting myself
     *set nine_court_stage "active"
     "You've got my help," you tell her. "Where do we start?"
 
-    Some of the tension leaves her shoulders. "Dredge-End," she says, reaching down to buckle her satchel. "The Open Hand, the pawn shop just off Lamp Stair. Meet me there when you're ready. Don't tell anyone in the company."
+    Some of the tension leaves her shoulders. "Dredge-End," she says, reaching down to buckle her satchel. "The Open Hand, the pawn shop just off Lamp Stair. Meet me there while it's open. Don't tell anyone in the company where we're going."
 
-    She stands and slings the satchel over her shoulder. "I'll wait for you outside the shop."
+    She stands and slings the satchel over her shoulder. "I'll wait for you there."
 
     *page_break Return to Dev Hub (flags will reset)...
     *goto nine_court_return
@@ -45,13 +50,90 @@ She meets your eyes squarely. "I can't do this alone. Not without getting myself
       *set nine_court_asked_details true
       "What did you turn up?" you ask, keeping your voice low.
 
-      Lyra glances toward the barracks door before answering. "Her workbox was cleared out before the sun came up the morning she died, and the neighbors are too scared to even say who paid her for the last batch of spinning. What little I did trace leads straight to something that I'd rather not speak out in the open. We'll talk when you meet me at the Pawn Shop"
+      Lyra glances toward the barracks door before answering. "Her workbox was cleared out before the sun came up the morning she died. What little I did trace leads straight to things my aunt shouldn't have had. I'll show you when we're out of earshot of the bunks."
       *goto nine_court_hook_choice
 
   # "I'm tied up right now. Give me some time."
     "I can't drop everything this instant," you say. "Give me some time to clear my plate first."
 
     Lyra nods once, keeping her face level. "Fair enough. You've already done more than most here would. Find me when you're free."
+
+    *page_break Return to Dev Hub (flags will reset)...
+    *goto nine_court_return
+
+*comment ====================================================================================
+*comment BEAT 1: THE OPEN HAND (Dredge-End Pawn Shop, Daytime)
+*comment ====================================================================================
+
+*label nine_court_pawn_meet
+*set current_district "dredge_end"
+*set scenery_subplace "generic_trade_shop"
+*set nine_court_pawn_seen true
+
+The brass bell over the blue door gives a dry click as you step off Lamp Stair into the Open Hand. Inside, daylight filters across clean woven mats and cedar shelves stacked with tagged tools, wrapped bundles, and a small pair of child's boots hung by their laces.
+
+Lyra is leaning one elbow on the felted counter beside the balance and black touchstone, speaking in a low voice with the woman behind it. The shopkeeper wears a tailored plum velvet waistcoat over cream silk, her glossy raven curls pinned up with a pierced brass comb. Both of them look toward the door as you step inside.
+
+"There you are," Lyra says, straightening up.
+
+*if (hale_ring_stage = "sold")
+  Angel's eyes flick over you, and a slow, knowing smile touches her lips. "Well. Look who brought a shadow into my shop." She rests one hand lightly near the brass handbell. "I remember someone who brings real gold and doesn't waste my time with speeches. Good to see you again, ${name}."
+*elseif (cut_pawn_angel_met)
+  *if (cut_pawn_stock_seen)
+    Angel looks you over and gives a faint, dimpled smile. "Back again? Last time you were curious about what people leave on my shelves. Today, I gather you're looking for what someone took off them."
+  *else
+    Angel inclines her head with a practiced, knowing smile. "A familiar face," she remarks, her amber-hazel eyes sharp. "Lyra told me she was bringing someone reliable. I didn't realize it was one of my own customers."
+*else
+  *set cut_pawn_angel_met true
+  The woman behind the counter studies you from head to toe with sharp amber-hazel eyes before offering a quick, dimpled smile. "You can call me Angel," she says smoothly. "Lyra tells me you're the steady sort who doesn't panic when things turn ugly. I hope she's right."
+
+Lyra glances toward the street, then back at Angel. "Anyone watching?"
+
+"Not since the carts rolled past," Angel says, stepping out from behind the counter. She walks past you, drops the brass latch across the door, and turns the wooden sign in the window. "Still, no sense holding court where any dockhand with a broken chisel can wander in."
+
+She lifts a wool curtain behind the shelves, revealing a narrow flight of wood steps leading down beneath the floorboards. "Come on down, both of you. We can talk where it's safe."
+
+*page_break Follow Angel into the backroom...
+
+*label nine_court_pawn_backroom
+*set scenery_subplace "generic_domestic_cellar"
+
+The stairs drop into a dry, stone-walled cellar room beneath the shop. Unlike the clutter upstairs, this room is spare and orderly: a broad oak sorting table sits under a shaded oil lamp, flanked by locked iron chests and racks of sealed wooden cases. The air smells of cedar oil, lamp smoke, and old paper.
+
+Angel takes a seat on the edge of the table and folds her arms, while Lyra unbuckles her leather satchel and lays a small, oilcloth wrapped bundle onto the wood between you.
+
+Lyra peels back the cloth. Inside lies a half-wound wooden spool of coarse, dark-grey cord that smells faintly of bitter resin and cold ash, beside a thin disk of tarnished bronze stamped with nine interlocking rings.
+
+"I pulled the spool out of a loose floorboard beneath my aunt's loom," Lyra says quietly. "The bronze piece was wedged in the crack behind it. I brought both to Angel because if anyone in this city knows what strange goods are worth, it's her."
+
+Angel taps one manicured nail against the bronze disk. "The cord isn't dock hemp or wool," Angel says, her usual warmth cooling into crisp business. "And that stamp isn't a merchant guild mark. I've seen that nine-ring seal pass through private hands up on the Avenue twice in the last five years. Old families."
+
+*label nine_court_backroom_choice
+*choice
+  *if (not(nine_court_backroom_asked_item))
+    # "What was Lyra's aunt doing with something from the upper city?"
+      *set nine_court_backroom_asked_item true
+      "Why would a spinner in Dredge-End have high-born bronze and treated cord under her floorboards?" you ask.
+
+      "That's the troubling part," Angel replies, leaning forward slightly. "She wasn't selling to them. Someone was paying her to spin that cord in tiny batches, isolated from whatever else they're putting together. No names, no context, just piecework."
+
+      Lyra's jaw tightens. "She was sharp, ${name}. If she noticed the resin or asked one wrong question about the bronze, whoever was running that line wouldn't blink at putting her in the ground."
+      *goto nine_court_backroom_choice
+
+  *if (not(nine_court_backroom_asked_angel))
+    # "How do you two know each other?"
+      *set nine_court_backroom_asked_angel true
+      You glance between Lyra and the pawnbroker. "You two seem well acquainted."
+
+      Angel lets out a quiet, amused breath. "A thief who doesn't break things needs a fence who doesn't ask questions. Lyra brought me clean goods for years before she took the Carrion's silver." She waves a hand lightly. "Whatever trouble she left behind with the Oath is her business, not mine. Coin and good sense are all I care about."
+
+      "And she's the only person in Dredge-End who won't sell me out for a copper," Lyra adds flatly.
+      *goto nine_court_backroom_choice
+
+  # "So where does that leave us? Who do we trace next?"
+    "Old families on the Avenue don't walk into Dredge-End themselves," you say. "They must have used someone in between."
+
+    Angel nods once. "They did. And if you two are going to poke at people with that seal on their wax, you'll need to know who's carrying their bundles before you go knocking on doors."
 
     *page_break Return to Dev Hub (flags will reset)...
     *goto nine_court_return
@@ -71,5 +153,8 @@ She meets your eyes squarely. "I can't do this alone. Not without getting myself
 *set nine_court_resolution "none"
 *set nine_court_hook_seen false
 *set nine_court_asked_details false
+*set nine_court_pawn_seen false
+*set nine_court_backroom_asked_item false
+*set nine_court_backroom_asked_angel false
 *set nine_court_dev_mode false
 *return
