@@ -105,6 +105,19 @@
     *set fighter_action_surge_max 1
   *if (character_level >= 17)
     *set fighter_action_surge_max 2
+  *comment Superiority dice (the Battle Master, PHB'24): 4 d8s from level 3, 5 from level 7, 6 from level 15; the die is a d10 from level 10, a d12 from 18.
+  *set fighter_superiority_max 0
+  *set fighter_superiority_die 8
+  *if (character_level >= 3)
+    *set fighter_superiority_max 4
+  *if (character_level >= 7)
+    *set fighter_superiority_max 5
+  *if (character_level >= 10)
+    *set fighter_superiority_die 10
+  *if (character_level >= 15)
+    *set fighter_superiority_max 6
+  *if (character_level >= 18)
+    *set fighter_superiority_die 12
 *if (character_class = "barbarian")
   *set barbarian_rage_max 2
   *if (character_level >= 3)
@@ -211,6 +224,7 @@
 *set feature_jack_of_all_trades false
 *set feature_arcane_ward false
 *set feature_dark_ones_blessing false
+*set feature_combat_superiority false
 *set feature_fiend_spells false
 *set feature_save_prof_strength false
 *set feature_save_prof_dexterity false
@@ -256,6 +270,9 @@
 *if ((character_class = "warlock") and (character_level >= 3))
   *set feature_dark_ones_blessing true
   *set feature_fiend_spells true
+*comment The Battle Master (the fighter subclass, PHB'24; 2026-11-21): every fighter gets it at level 3.
+*if ((character_class = "fighter") and (character_level >= 3))
+  *set feature_combat_superiority true
 *comment 4. From feats, origin and items.
 *comment A grant from a chosen feat is written here as a test of the feat_ variable; this routine never sets or resets a feat_.
 *return
@@ -276,6 +293,7 @@
 *if (character_class = "fighter")
   *set fighter_second_wind_uses fighter_second_wind_max
   *set fighter_action_surge_uses fighter_action_surge_max
+  *set fighter_superiority_uses fighter_superiority_max
 *if (character_class = "barbarian")
   *set barbarian_rage_uses barbarian_rage_max
 *if (character_class = "warlock")
@@ -330,6 +348,9 @@
     *gosub short_rest_add_piece
   *if (fighter_action_surge_uses < fighter_action_surge_max)
     *set sr_piece "Action Surge"
+    *gosub short_rest_add_piece
+  *if (fighter_superiority_uses < fighter_superiority_max)
+    *set sr_piece "Superiority Dice"
     *gosub short_rest_add_piece
 *if ((character_class = "warlock") and (pact_slots < pact_slots_max))
   *set sr_piece "Pact Magic slots"
@@ -399,6 +420,7 @@
   *if (fighter_second_wind_uses < fighter_second_wind_max)
     *set fighter_second_wind_uses + 1
   *set fighter_action_surge_uses fighter_action_surge_max
+  *set fighter_superiority_uses fighter_superiority_max
 *if (character_class = "warlock")
   *set pact_slots pact_slots_max
 *if (character_class = "bard")
@@ -473,7 +495,7 @@
 *label short_rest_pools_banner
 *if (character_class = "fighter")
   *line_break
-  [b][🕐 Short Rest | Second Wind ${fighter_second_wind_uses} / ${fighter_second_wind_max}@{(fighter_action_surge_max > 0)  · Action Surge ${fighter_action_surge_uses} / ${fighter_action_surge_max}|}][/b]
+  [b][🕐 Short Rest | Second Wind ${fighter_second_wind_uses} / ${fighter_second_wind_max}@{(fighter_action_surge_max > 0)  · Action Surge ${fighter_action_surge_uses} / ${fighter_action_surge_max}|}@{(fighter_superiority_max > 0)  · Superiority Dice ${fighter_superiority_uses} / ${fighter_superiority_max}|}][/b]
 *if (character_class = "warlock")
   *line_break
   *if (pact_slot_level >= 2)
@@ -654,6 +676,7 @@
 *label do_level_up
 *temp old_sw fighter_second_wind_max
 *temp old_as fighter_action_surge_max
+*temp old_sup fighter_superiority_max
 *temp old_rage barbarian_rage_max
 *temp old_pact pact_slots_max
 *temp old_slots_1 spell_slots_max_1
@@ -670,6 +693,7 @@
 *gosub_scene character_stats update_dnd_stats
 *set fighter_second_wind_uses (fighter_second_wind_uses + (fighter_second_wind_max - old_sw))
 *set fighter_action_surge_uses (fighter_action_surge_uses + (fighter_action_surge_max - old_as))
+*set fighter_superiority_uses (fighter_superiority_uses + (fighter_superiority_max - old_sup))
 *set barbarian_rage_uses (barbarian_rage_uses + (barbarian_rage_max - old_rage))
 *set pact_slots (pact_slots + (pact_slots_max - old_pact))
 *set spell_slots_1 (spell_slots_1 + (spell_slots_max_1 - old_slots_1))
@@ -3121,7 +3145,7 @@ And a second.
 *label level_up_banner
 *if (character_class = "fighter")
   *line_break
-  [b][Second Wind ${fighter_second_wind_uses} / ${fighter_second_wind_max}@{(fighter_action_surge_max > 0)  · Action Surge ${fighter_action_surge_uses} / ${fighter_action_surge_max}|}][/b]
+  [b][Second Wind ${fighter_second_wind_uses} / ${fighter_second_wind_max}@{(fighter_action_surge_max > 0)  · Action Surge ${fighter_action_surge_uses} / ${fighter_action_surge_max}|}@{(fighter_superiority_max > 0)  · Superiority Dice ${fighter_superiority_uses} / ${fighter_superiority_max} (d${fighter_superiority_die})|}][/b]
 *if (character_class = "barbarian")
   *line_break
   [b][Rage ${barbarian_rage_uses} / ${barbarian_rage_max}][/b]

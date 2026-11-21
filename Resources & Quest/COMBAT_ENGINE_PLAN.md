@@ -119,8 +119,8 @@ One subclass per class, the best for solo play (the user, 2026-11-20), level 3 f
 | Class | Subclass | State |
 | --- | --- | --- |
 | Wizard | Abjurer | Built and play-tested |
-| Warlock | The Fiend | In progress |
-| Fighter | Champion | Not started |
+| Warlock | The Fiend | Built (2026-11-21) |
+| Fighter | Battle Master | In progress |
 | Barbarian | Path of the Wild Heart | Not started |
 | Bard | College of Valor | Not started |
 | Ranger | Gloom Stalker | Not started |
@@ -131,6 +131,12 @@ One subclass per class, the best for solo play (the user, 2026-11-20), level 3 f
 2. Done (2026-11-20; `fiend_spells_*` scripts). Fiend Spells: Burning Hands and Scorching Ray join the list at level 3, outside the known-spell slots.
 3. Done (2026-11-20; `command_*` scripts). Command (2024 RAW, the user, 2026-11-20): Approach, Drop, Flee, Grovel, Halt, all five kept; works on any creature (no 2014 undead or language exception); one extra target per slot level above 1st, same word for all. One "Command" hotbar button (Voice_of_Command icon) whose fly-out holds the five words, each with its own icon. Suggestion is left out.
 4. Done (2026-11-20; `hex_*` scripts). Hex made fully RAW (the user, 2026-11-20). On the cast, pick one ability (a fly-out, Hex_<Ability> icons); the target has disadvantage on ability checks with it (no score drop, no save penalty). Moving the curse to a new target when the old one drops uses the Reapply_Hex_* icons.
+
+**The Battle Master** (agreed 2026-11-21, in place of the Champion, which is all passive and weak solo). Every fighter gets it at fighter level 3. Three maneuvers, fixed for everyone (more can come with feats at level 4): Trip Attack, Menacing Attack, Riposte. Student of War is replaced by Tactician's Lore (homebrew: one proficiency of History, Insight or Investigation; the game has no tool proficiencies). Icons: `ICONS/Weapon_action` (Trip_Attack and Menacing_Attack, Melee and Ranged versions; Riposte), `ICONS/Resource/Superiority_Die_d8_Icon.png`.
+1. Done (2026-11-21; `level_up_battle_master_3_superiority_dice`, `oneshot_rest_returns_superiority_dice`). Superiority dice: 4 d8 from level 3 (5 at 7, 6 at 15; d10 at 10, d12 at 18), every one back on a short or long rest; on the level-up banner, the short-rest banner, the sidebar and the Abilities page.
+2. Trip Attack and Menacing Attack: two hotbar buttons (each shows its Melee or Ranged icon by the weapon in hand), chosen before the attack, the die spent only on a hit. Trip: Strength save or Prone (Large or smaller). Menacing: Wisdom save or Frightened until the end of the player's next turn. The die adds to the damage.
+3. Riposte: when a foe misses the player with a melee attack, the player's reaction makes a melee attack adding the die to the damage, automatically while a die and the reaction are left.
+4. The fighter level 3 page: the feature lines and the Tactician's Lore pick (only skills not already held).
 
 Hand edits the Fiend needed so far (the route list for the other subclasses): a hook in `fight_check_all_dead` (combat.txt) for an on-kill feature; a per-enemy flag in `startup_parts/31_combat_engine_state.txt` and `mygame.js`, cleared in the stale-slot loop and `fight_cleanup`; the feature's line on the Abilities page (`choicescript_stats.txt`, under the patron); `feature_*` flags set in `refresh_features` (`character_progression.txt`), declared in `startup_parts/07_class_path.txt` and `mygame.js`; a granted spell set known in `refresh_known_spells`, mirrored in `equipment-panel.js`, and listed by the spellbook panel (`INVOCATION_SPELLS` in `spellbook.js` and `index.html`, both copies); a line printed from a shared check goes through the end-of-action queue (`concentration_pending_add`), which the victory labels now print too. The class gate is `character_class` and `character_level >= 3`; no choice page, since each class has one subclass.
 
