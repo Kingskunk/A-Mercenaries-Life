@@ -575,6 +575,9 @@
 *comment   soft      10 for a spellcaster or a ranged fighter
 *comment   isolated  10 when none of its own side stands within one step of it
 *comment   current   10 for the target this actor went for last time, so nobody switches every turn on a near tie
+*comment   opening   10 when an attack on it would have advantage (2026-11-21: combat_attack_edge for an enemy target; blinded, restrained, paralyzed,
+*comment             off-guard, off-balance, or prone from its own tile for the player or an ally), and another 10 for an ally with Sneak Attack when
+*comment             someone of its side stands beside the target (combat_dice.txt ally_sneak_beside), since only Sneak Attack gains from that
 *comment A tie goes to the nearer, then the one with fewer HP, then the first found (the player, then allies or enemies by slot).
 *comment The callers keep their own limits: a ranged actor only considers opponents within its reach (cst_tier) and, when cornered, only those on its
 *comment own tile (cst_cornered); a hidden player is never a candidate. With nobody eligible the result is empty and the caller does what it always did.
@@ -628,6 +631,33 @@
       *gosub combat_score_one "enemy" cst_i
     *set cst_i + 1
     *goto combat_score_targets_enemy_loop
+*return
+
+*comment OPENING for combat_score_one (same scene, reads combat_score_targets' cst_* temps): candidate cop_kind/cop_slot at lane distance cop_d. Reads only,
+*comment never spends a condition (off-guard is spent by the attack itself). Sets combat_score_opening_v (0, 10 or 20).
+*label combat_score_opening
+*params cop_kind cop_slot cop_d
+*set combat_score_opening_v 0
+*temp cop_adv false
+*if (cop_kind = "enemy")
+  *gosub_scene combat_dice combat_attack_edge cop_d cop_slot ""
+  *set cop_adv combat_edge_adv
+  *if (cst_kind = "ally")
+    *if ({(("combat_ally" & cst_slot) & "_sneak_dice")} > 0)
+      *gosub_scene combat_dice ally_sneak_beside cst_slot cop_slot
+      *if (combat_sneak_beside)
+        *set combat_score_opening_v 10
+*elseif (cop_kind = "player")
+  *gosub_scene combat_dice condition_has "combat_player_" "blinded"
+  *if ((((condition_result) or (combat_player_restrained > 0)) or ((combat_player_paralyzed > 0) or (combat_player_off_guard > 0))) or ((combat_player_off_balance > 0) or ((combat_player_prone) and (cop_d <= 0))))
+    *set cop_adv true
+*else
+  *temp cop_p (("combat_ally" & cop_slot) & "_")
+  *gosub_scene combat_dice condition_has cop_p "blinded"
+  *if ((((condition_result) or ({(cop_p & "restrained")} > 0)) or (({(cop_p & "paralyzed")} > 0) or ({(cop_p & "off_guard")} > 0))) or (({(cop_p & "off_balance")} > 0) or (({(cop_p & "prone")}) and (cop_d <= 0))))
+    *set cop_adv true
+*if (cop_adv)
+  *set combat_score_opening_v + 10
 *return
 
 *comment The record of who last hurt the combatant with prefix csho_p, as it stood before this page.
@@ -744,6 +774,9 @@
 *temp cso_current 0
 *if ((cst_cur_kind = cso_kind) and (cst_cur_slot = cso_slot))
   *set cso_current 10
+*comment opening
+*gosub combat_score_opening cso_kind cso_slot cso_d
+*temp cso_opening combat_score_opening_v
 *comment The total, each factor times the profile's weight for it.
 *temp cso_t_close (cso_close * combat_behavior_tw_close)
 *temp cso_t_wounded (cso_wounded * combat_behavior_tw_wounded)
@@ -752,7 +785,8 @@
 *temp cso_t_soft (cso_softv * combat_behavior_tw_soft)
 *temp cso_t_isolated (cso_isolated * combat_behavior_tw_isolated)
 *temp cso_t_current (cso_current * combat_behavior_tw_current)
-*temp cso_score ((((cso_t_close + cso_t_wounded) + (cso_t_drop + cso_t_payback)) + (cso_t_soft + cso_t_isolated)) + cso_t_current)
+*temp cso_t_opening (cso_opening * combat_behavior_tw_opening)
+*temp cso_score (((((cso_t_close + cso_t_wounded) + (cso_t_drop + cso_t_payback)) + (cso_t_soft + cso_t_isolated)) + cso_t_current) + cso_t_opening)
 *if (((cso_score > cst_best_score) or ((cso_score = cst_best_score) and (cso_d < combat_score_best_d))) or (((cso_score = cst_best_score) and (cso_d = combat_score_best_d)) and (cso_hp < cst_best_hp)))
   *set cst_best_score cso_score
   *set cst_best_hp cso_hp
@@ -767,6 +801,9 @@
     *set cso_sep ", "
   *if (cso_t_drop > 0)
     *set combat_score_reason "${combat_score_reason}${cso_sep}can drop ${cso_t_drop}"
+    *set cso_sep ", "
+  *if (cso_t_opening > 0)
+    *set combat_score_reason "${combat_score_reason}${cso_sep}opening ${cso_t_opening}"
     *set cso_sep ", "
   *if (cso_t_isolated > 0)
     *set combat_score_reason "${combat_score_reason}${cso_sep}isolated ${cso_t_isolated}"

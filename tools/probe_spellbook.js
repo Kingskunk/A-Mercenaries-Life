@@ -46,7 +46,7 @@ const SCENARIOS = {
   },
   // The Fiend's patron spells (2026-11-20): granted at warlock level 3 by feature_fiend_spells, held in no slot, so the panel lists them from the flag.
   fiend3: {
-    what: "Fiend warlock, level 3 (Burning Hands, Scorching Ray and Command from the patron)",
+    what: "Fiend warlock, level 3 (Burning Hands, Scorching Ray and Command from the Fiend)",
     script: {
       scene: "dev_hub", label: "dev_combat_test_hub", preset: "Cadre Dread Warlock",
       weather: "Clear", time: "Morning", day: "Ironday",

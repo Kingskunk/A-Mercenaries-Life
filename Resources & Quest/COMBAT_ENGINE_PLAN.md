@@ -126,7 +126,7 @@ One subclass per class, the best for solo play (the user, 2026-11-20), level 3 f
 | Ranger | Gloom Stalker | Not started |
 | Rogue | Thief | Not started |
 
-**The Fiend** (agreed 2026-11-20; changed 2026-11-21). Every warlock gets the Fiend's features at warlock level 3. The patron chosen at creation (Archfey, Fiend, The Vast, or a preset's) is flavor only.
+**The Fiend** (agreed 2026-11-20; changed 2026-11-21). Every warlock's patron is the Fiend; character creation no longer offers a patron choice (Archfey and The Vast are gone). The Fiend's features come at warlock level 3.
 1. Done (2026-11-20; `fiend_blessing_*` scripts). Dark One's Blessing: on dropping a foe to 0 HP (a foe beaten into surrender counts; one that gives up or flees on morale does not), temp HP = CHA mod + warlock level (min 1). An ally's kill counts when the foe was within 10 ft of you. Temp HP does not stack (the higher stays); replacing Armor of Agathys's temp HP ends Agathys.
 2. Done (2026-11-20; `fiend_spells_*` scripts). Fiend Spells: Burning Hands and Scorching Ray join the list at level 3, outside the known-spell slots.
 3. Done (2026-11-20; `command_*` scripts). Command (2024 RAW, the user, 2026-11-20): Approach, Drop, Flee, Grovel, Halt, all five kept; works on any creature (no 2014 undead or language exception); one extra target per slot level above 1st, same word for all. One "Command" hotbar button (Voice_of_Command icon) whose fly-out holds the five words, each with its own icon. Suggestion is left out.

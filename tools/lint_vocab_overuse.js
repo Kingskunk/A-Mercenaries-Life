@@ -81,6 +81,12 @@ let minCount = 5;
 let clusterWindow = 8;
 let clusterMin = 4; // Only show tight clusters with > 3 uses (4+)
 let updateBaseline = false;
+let warnOnly = false;
+
+const MIN_WORDS_FOR_RATE = 800;
+const CRUTCH_RATE_LIMIT = 2.0;
+const WATCH_RATE_LIMIT = 3.0;
+const OVER_RATE_LIMIT = 5.0;
 
 for (const arg of process.argv.slice(2)) {
   if (arg === '--update-baseline') {
@@ -92,6 +98,7 @@ for (const arg of process.argv.slice(2)) {
   else if (name === 'minCount') minCount = Number(value);
   else if (name === 'clusterWindow') clusterWindow = Number(value);
   else if (name === 'clusterMin') clusterMin = Number(value);
+  else if (name === 'warnOnly') warnOnly = value === 'true' || value === '1';
   else if (!arg.startsWith('--')) target = path.resolve(arg);
 }
 
@@ -124,6 +131,22 @@ const STOPWORDS = new Set([
   'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such',
   'only', 'own', 'same', 'too', 'very', 'just', 'still', 'even',
   'there', 'here', 'now', 'once',
+  "i'm", "i've", "i'll", "i'd", "you're", "you've", "you'll", "you'd",
+  "he's", "she's", "it's", "we're", "we've", "we'll", "they're", "they've", "they'll",
+  "that's", "there's", "here's", "what's", "who's", "where's", "how's",
+  "don't", "doesn't", "didn't", "won't", "wouldn't", "can't", "couldn't", "shouldn't",
+  "isn't", "aren't", "wasn't", "weren't", "haven't", "hasn't", "hadn't", "let's",
+  'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
+]);
+
+// Descriptive/manner crutches that stand out faster than plain nouns (warn at >= 2.0/1000 words).
+const CRUTCH_WORDS = new Set([
+  'dark', 'narrow', 'sharp', 'quiet', 'quietly', 'slow', 'slowly', 'suddenly',
+  'slightly', 'faint', 'faintly', 'tight', 'tightly', 'cold', 'coldly',
+  'glances', 'glance', 'glanced', 'murmurs', 'murmur', 'murmured',
+  'mutters', 'mutter', 'muttered', 'nods', 'nod', 'nodded',
+  'shrugs', 'shrug', 'shrugged', 'sighs', 'sigh', 'sighed',
+  'grimly', 'flatly', 'softly', 'simply', 'almost',
 ]);
 
 function isBlank(line) {
@@ -248,16 +271,49 @@ if (trendAlerts.length > 0) {
 }
 
 // --- Report 2: global overuse ------------------------------------------
-console.log(`GLOBAL OVERUSE — top ${Math.min(top, candidates.length)} word(s) with ${minCount}+ uses, ranked by count:\n`);
-for (const c of candidates.slice(0, top)) {
-  const rate = ((c.total / totalWords) * 1000).toFixed(2);
-  const topFiles = [...c.byFile.entries()]
-    .sort((a, b) => b[1].length - a[1].length)
-    .slice(0, 3)
-    .map(([f, lines]) => `${path.basename(f)} (${lines.length})`)
-    .join(', ');
-  
-  console.log(`  ${c.word.padEnd(18)} ${String(c.total).padStart(4)}  (${rate}/1000 words)  ${topFiles}`);
+function rateTag(word, rateNum) {
+  if (totalWords < MIN_WORDS_FOR_RATE) return '';
+  if (CRUTCH_WORDS.has(word) && rateNum >= CRUTCH_RATE_LIMIT) {
+    return `  [CRUTCH OVER >=${CRUTCH_RATE_LIMIT}]`;
+  }
+  if (rateNum >= OVER_RATE_LIMIT) return `  [OVER >=${OVER_RATE_LIMIT}]`;
+  if (rateNum >= WATCH_RATE_LIMIT) return `  [WATCH >=${WATCH_RATE_LIMIT}]`;
+  return '';
+}
+
+const displayedCandidates = warnOnly
+  ? candidates.filter((c) => rateTag(c.word, (c.total / totalWords) * 1000) !== '')
+  : candidates.slice(0, top);
+
+const overOrCrutchCount = displayedCandidates.filter((c) => {
+  const tag = rateTag(c.word, (c.total / totalWords) * 1000);
+  return tag.includes('[OVER') || tag.includes('[CRUTCH');
+}).length;
+
+if (warnOnly) {
+  console.log(`GLOBAL OVERUSE WARNINGS (${displayedCandidates.length} flagged; min ${MIN_WORDS_FOR_RATE} words):\n`);
+} else {
+  console.log(`GLOBAL OVERUSE — top ${Math.min(top, candidates.length)} word(s) with ${minCount}+ uses, ranked by count:\n`);
+}
+if (overOrCrutchCount > 0) {
+  console.log(`  NOTICE: The user requested that [OVER >=${OVER_RATE_LIMIT}] and [CRUTCH OVER >=${CRUTCH_RATE_LIMIT}] warnings be fixed by varying vocabulary rather than ignored. ([WATCH >=${WATCH_RATE_LIMIT}] is advisory for scene-anchor nouns and "says".)\n`);
+}
+
+if (displayedCandidates.length === 0 && warnOnly) {
+  console.log('  No global rate warnings (all words under thresholds).');
+} else {
+  for (const c of displayedCandidates) {
+    const rateNum = (c.total / totalWords) * 1000;
+    const rate = rateNum.toFixed(2);
+    const tag = rateTag(c.word, rateNum);
+    const topFiles = [...c.byFile.entries()]
+      .sort((a, b) => b[1].length - a[1].length)
+      .slice(0, 3)
+      .map(([f, lines]) => `${path.basename(f)} (${lines.length})`)
+      .join(', ');
+
+    console.log(`  ${c.word.padEnd(18)} ${String(c.total).padStart(4)}  (${rate}/1000 words)  ${topFiles}${tag}`);
+  }
 }
 
 // --- Report 3: tight clusters --------------------------------------------
@@ -282,6 +338,9 @@ for (const [word, entry] of stats) {
 clusters.sort((a, b) => b.lines.length - a.lines.length);
 
 console.log(`\nTIGHT CLUSTERS — same word used >3 times (${clusterMin}+) within ${clusterWindow} lines, same file (${clusters.length} found):\n`);
+if (clusters.length > 0) {
+  console.log('  NOTICE: The user requested that repetition-echo clusters be fixed by varying adjacent wording rather than ignored.\n');
+}
 for (const c of clusters.slice(0, top)) {
   console.log(`  ${path.relative(process.cwd(), c.file)}:${c.lines.join(',')} "${c.word}" (${c.lines.length}x) [WARNING: REPETITION ECHO]`);
 }

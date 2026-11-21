@@ -265,7 +265,7 @@ Prices live in one place: `equipment.txt` `gear_sale_value` (retail in copper, p
 |---|---|---|---|
 | Halda (smith) | Halda's Forge, Middle Ward | **50% of retail** | studded gambeson, mail shirt, hewing axe, stiletto, iron skullcap, iron prybar, and scrap steel (5c a piece) |
 | Angel (pawnbroker) | The Open Hand, Dredge-End's Lamp Stair (daytime) | **35% of retail** for ordinary gear; **40%** for loose gems, no questions | everything Halda buys except scrap steel, plus the hide cap, signet ring (fixed **8s**), and the loose gems in section 16 |
-| Cassia Rell (jeweler) | The Bright Setting, Upper Wharves | **75% of retail** | loose gems only (section 16); she tests and weighs each one before buying |
+| Cassia Rell (jeweler) | The Bright Setting, Patrician Quarter | **75% of retail** | loose gems only (section 16); she tests and weighs each one before buying |
 | Fenwick (tailor) | The Gilt Needle, Patrician Quarter (Morning to Afternoon, needs a writ) | **40% of retail** | only what he stocks (section 15); Angel does not list these |
 | Hollis (general store) | Hollis & Daughters, Lantern Lane (Morning to Afternoon) | **50% of retail** | only what he stocks: rope, torch, lamp oil, hooded lantern, repair kit, shovel, tinderbox, water jug, chalk, camp kit, waxed oilcloth, lye soap and trail rations (buyer `general`; a 1c item like the torch pays 1c, since each price is floored) |
 | Edda Roan (Roan's Wheel Shop, Timbermouth Workshops) | The Woodworkers' Workshops, Timbermouth (Morning to Afternoon, closed on the rest day) | **50% of retail** | only what she stocks: the ash quarterstaff, the Longshade spear, the Longshade shortbow and wooden clogs (buyer `general`) |

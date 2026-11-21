@@ -1728,6 +1728,24 @@ ${combat_player_dmg_roll_banner}
     *set combat_edge_label "Blinded"
 *return
 
+*comment SNEAK ATTACK'S SECOND TRIGGER for ally asb_a against enemy asb_e (resolve_ally_attack; target scoring, combat_ai.txt, asks it too): someone else on
+*comment the ally's side within 5 ft of the target, the player Engaged with it (its range 0) or another living ally at range 0. Sets combat_sneak_beside.
+*label ally_sneak_beside
+*params asb_a asb_e
+*set combat_sneak_beside false
+*if (({(("combat_enemy" & asb_e) & "_range")} <= 0) and (hp_current > 0))
+  *set combat_sneak_beside true
+  *return
+*temp asb_i 1
+*label ally_sneak_beside_loop
+*if (asb_i <= combat_ally_slot_cap)
+  *if (not(asb_i = asb_a))
+    *if (({(("combat_ally" & asb_i) & "_hp")} > 0) and ({(("combat_ally" & asb_i) & "_range")} <= 0))
+      *set combat_sneak_beside true
+  *set asb_i + 1
+  *goto ally_sneak_beside_loop
+*return
+
 *label resolve_ally_attack
 *params raa_a_slot raa_e_slot
 *temp raa_ap (("combat_ally" & raa_a_slot) & "_")
@@ -1917,6 +1935,26 @@ ${combat_player_dmg_roll_banner}
     *else
       *set raa_dmg_bonus_str "${raa_dmg_bonus}"
     *temp raa_dmg_total (raa_dmg + raa_dmg_bonus)
+    *comment AN ALLY'S SNEAK ATTACK (2026-11-21, PHB'24 rogue): an ally with sneak_dice (Lyra; every one of its weapons is ranged or finesse) adds that many d6 to a hit
+    *comment that had advantage, or that had no disadvantage while someone else on its side stands within 5 ft of the target: the player Engaged with it (the
+    *comment target's range 0), or another living ally at range 0 (find_flanking_ally's approximation, as the player's own Sneak Attack uses). Advantage and
+    *comment disadvantage that cancel leave neither. Once per turn needs no tracking: an ally makes one attack on its own turn, and an opportunity attack is
+    *comment on someone else's turn. A critical hit doubles the dice. Same damage type as the weapon, so it rides in the weapon's packet.
+    *temp raa_sneak_n {(raa_ap & "sneak_dice")}
+    *temp raa_sneak_str ""
+    *if (raa_sneak_n > 0)
+      *temp raa_eff_adv ((combat_edge_adv) and (not(raa_dis)))
+      *temp raa_eff_dis ((raa_dis) and (not(combat_edge_adv)))
+      *temp raa_sneak_ok raa_eff_adv
+      *if ((not(raa_sneak_ok)) and (not(raa_eff_dis)))
+        *gosub ally_sneak_beside raa_a_slot raa_e_slot
+        *set raa_sneak_ok combat_sneak_beside
+      *if (raa_sneak_ok)
+        *if (raa_crit)
+          *set raa_sneak_n (raa_sneak_n * 2)
+        *gosub_scene combat_spells roll_spell_dice raa_sneak_n 6
+        *set raa_dmg_total + spell_roll_total
+        *set raa_sneak_str " +${spell_roll_total} (Sneak Attack)"
     *comment An ally's blow meets the enemy's defenses like any other (2026-10-31): its damage type (the sidearm's when it quick-drew the knife), as a weapon packet, with the ally's own magical, silvered and adamantine flags.
     *temp raa_type {(raa_ap & "dmg_type")}
     *if (raa_knifed)
@@ -1937,7 +1975,7 @@ ${combat_player_dmg_roll_banner}
     *temp raa_dmg_after combat_packet_damage
     *set combat_ally_blow_blocked combat_packet_blocked
     *temp raa_dmg_tag combat_packet_suffix
-    *set {(raa_dmg_bannername)} "[b][🎲 ${raa_name} Damage${raa_crit_tag}: ${raa_dmg_str} ${raa_dmg_bonus_str} = ${raa_dmg_total}${raa_dmg_tag}][/b]"
+    *set {(raa_dmg_bannername)} "[b][🎲 ${raa_name} Damage${raa_crit_tag}: ${raa_dmg_str} ${raa_dmg_bonus_str}${raa_sneak_str} = ${raa_dmg_total}${raa_dmg_tag}][/b]"
     *set combat_ally_dmg_dealt raa_dmg_after
     *gosub record_last_hit "enemy" raa_e_slot "ally" raa_a_slot
     *set {(raa_ep & "hp")} - raa_dmg_after

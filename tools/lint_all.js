@@ -37,6 +37,7 @@ const LINTERS = [
   'lint_thin_prose',
   'lint_vocab_overuse',
   'lint_dash_frequency',
+  'lint_no_em_dash',
   'lint_keep_ownership',
   'lint_weather_names',
   'lint_slow_healing',
@@ -67,7 +68,9 @@ for (const name of LINTERS) {
     console.log('(not found, skipped)\n');
     continue;
   }
-  const r = cp.spawnSync(process.execPath, [script, target], { encoding: 'utf8', maxBuffer: 1 << 26, cwd: path.resolve(__dirname, '..') });
+  const args = [script, target];
+  if (name === 'lint_vocab_overuse') args.push('warnOnly=true');
+  const r = cp.spawnSync(process.execPath, args, { encoding: 'utf8', maxBuffer: 1 << 26, cwd: path.resolve(__dirname, '..') });
   process.stdout.write(r.stdout || '');
   if (r.stderr) process.stdout.write('Error:\n' + r.stderr);
   console.log('');

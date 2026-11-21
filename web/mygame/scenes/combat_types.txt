@@ -30,6 +30,8 @@
 *set combat_behavior_tw_isolated 0
 *set combat_behavior_tw_current 1
 *set combat_behavior_tw_guard 0
+*comment opening (2026-11-21): the same for every profile; no profile block below sets it. Advantage is worth having whoever attacks.
+*set combat_behavior_tw_opening 2
 *if (rbp_profile = "bruiser")
   *set combat_behavior_tw_close 2
   *set combat_behavior_tw_wounded 1
@@ -159,7 +161,7 @@
 *label assign_ally_behavior_profile
 *params aab_slot aab_type
 *temp aab_profile "guardian"
-*if ((aab_type = "archer") or (aab_type = "slinger"))
+*if (((aab_type = "archer") or (aab_type = "slinger")) or (aab_type = "lyra"))
   *set aab_profile "sharpshooter"
 *if (aab_type = "hedge_mage")
   *set aab_profile "caster"
@@ -1031,7 +1033,7 @@
 *comment calling fight_library to open a melee ally away from Engaged, same as combat_enemy_range 3 in
 *comment fight_dev_range_test.
 *comment Available types: "archer" and "slinger" (both ranged, keep their distance, both quick-draw a dagger when a
-*comment target closes to range 0), and "guard" (melee, closes and strikes).
+*comment target closes to range 0), and "guard" (melee, closes and strikes). Unique allies, one named person each: "lyra".
 *comment combat_ally_lib_* is cleared by fight_cleanup.
 *comment ============================================================================
 
@@ -1086,6 +1088,8 @@
 *return
 
 *label apply_ally_type
+*comment Sneak Attack dice (resolve_ally_attack): none unless the type sets them, so a slot never keeps a rogue's dice from an earlier fight.
+*set {(("combat_ally" & combat_apply_ally_slot) & "_sneak_dice")} 0
 *if (combat_apply_ally_type = "archer")
   *gosub apply_allytype_archer
 *if (combat_apply_ally_type = "slinger")
@@ -1096,15 +1100,17 @@
   *gosub apply_allytype_hedge_mage
 *if (combat_apply_ally_type = "blight_twig")
   *gosub apply_allytype_blight_twig
+*if (combat_apply_ally_type = "lyra")
+  *gosub apply_allytype_lyra
 *gosub assign_ally_behavior_profile combat_apply_ally_slot combat_apply_ally_type
 *comment Creature type (3.9a 5): the blight twig is a plant, every other ally a person.
 *temp aat_ctype "humanoid"
 *if (combat_apply_ally_type = "blight_twig")
   *set aat_ctype "plant"
 *set {((("combat_ally" & combat_apply_ally_slot) & "_creature_type"))} aat_ctype
-*comment MORALE (2026-11-03): a guard is steady, a summoned blight twig fearless, everyone else normal (see combat.txt MORALE).
+*comment MORALE (2026-11-03): a guard and Lyra are steady, a summoned blight twig fearless, everyone else normal (see combat.txt MORALE).
 *temp aat_morale "normal"
-*if (combat_apply_ally_type = "guard")
+*if ((combat_apply_ally_type = "guard") or (combat_apply_ally_type = "lyra"))
   *set aat_morale "steady"
 *if (combat_apply_ally_type = "blight_twig")
   *set aat_morale "fearless"
@@ -1120,6 +1126,36 @@
 *if (not(aat_epi_ov = ""))
   *set {(aat_p & "epithet")} aat_epi_ov
   *set {(aat_p & "epithet_override")} ""
+*return
+
+*label apply_allytype_lyra
+*comment LYRA (2026-11-21): the first unique ally, a named person rather than a generic type, so a quest sets combat_ally_lib_N "lyra" and nothing else.
+*comment A level 2 rogue (PHB'24): fixed scores (min = max, so a per-fight score override still wins), HP 17 (d8: 8 + 5, plus CON +2 twice), AC 14
+*comment (leather 11 + DEX), her recurve bow as a shortbow (1d6 piercing), a narrow dagger quick-drawn when a foe is at range 0 (1d4), proficiency +2.
+*comment Steady morale (a Vanguard soldier; apply_ally_type), the sharpshooter profile (assign_ally_behavior_profile) as the archer has.
+*temp aly_p (("combat_ally" & combat_apply_ally_slot) & "_")
+*set {(aly_p & "name")} "Lyra"
+*set {(aly_p & "epithet")} "Lyra"
+*set {(aly_p & "hp")} 17
+*set {(aly_p & "max_hp")} 17
+*set {(aly_p & "ac")} 14
+*set {(aly_p & "dmg_dice_sides")} 6
+*set {(aly_p & "dmg_type")} "piercing"
+*set {(aly_p & "weapon_type")} "ranged"
+*gosub apply_ability_score_range aly_p "strength" 10 10
+*gosub apply_ability_score_range aly_p "dexterity" 16 16
+*gosub apply_ability_score_range aly_p "constitution" 14 14
+*gosub apply_ability_score_range aly_p "intelligence" 12 12
+*gosub apply_ability_score_range aly_p "wisdom" 13 13
+*gosub apply_ability_score_range aly_p "charisma" 10 10
+*gosub apply_derived_combat_bonuses aly_p
+*set {(aly_p & "sidearm_weapon_type")} "melee"
+*set {(aly_p & "sidearm_atk_bonus")} {(aly_p & "atk_bonus")}
+*set {(aly_p & "sidearm_dmg_dice_sides")} 4
+*set {(aly_p & "sidearm_dmg_bonus")} {(aly_p & "dmg_bonus")}
+*set {(aly_p & "sidearm_dmg_type")} "piercing"
+*comment Sneak Attack 1d6 (a level 2 rogue), resolve_ally_attack.
+*set {(aly_p & "sneak_dice")} 1
 *return
 
 *label apply_allytype_blight_twig
