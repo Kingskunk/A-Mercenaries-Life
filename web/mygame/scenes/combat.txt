@@ -455,7 +455,12 @@
 *comment back to 0 the first time fight_sync_target_in reads combat_enemy1_range, since nothing would ever have
 *comment written it. Every existing non-Engaged start (the three Slinger fights) uses slot 2, which never hit
 *comment this gap; a slot-1 enemy opened away from Engaged needs it.
-*set combat_enemy1_range combat_enemy_range
+*comment A replay of the fight's first page (2026-11-21) keeps slot 1's own range: the page re-runs on top of its own results, so the bare combat_enemy_range
+*comment then holds whichever slot was synced in last (an enemy archer's 3), and slot 1's lane position was derived from that wrong distance. Every other
+*comment field here is rewritten by slot 1's type on the replay; the range is the caller's, so the type never resets it. Same whole-fight lock as
+*comment apply_ability_score_range's.
+*if (not(combat_init_locked)) or (not(locked_combat_init_page_id = page_id))
+  *set combat_enemy1_range combat_enemy_range
 *comment Ability scores: already rolled/overridden onto the bare names by apply_type_X (or set directly by a
 *comment hand-authored fight), same snapshot treatment as every field above.
 *set combat_enemy1_strength combat_enemy_strength
@@ -9921,6 +9926,10 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
           [b][🏃 ${combat_enemy_name} Keeps Distance — ${combat_range_display_name}][/b]
         *if (combat_ai_terrain_step_reason = "kite")
           [b][🏃 ${combat_enemy_name} Keeps Distance — ${combat_range_display_name}][/b]
+        *if (combat_ai_terrain_step_reason = "leave_web")
+          [b][🕸️ ${combat_enemy_name} Steps Clear of the Web — ${combat_range_display_name}][/b]
+        *if (combat_ai_terrain_step_reason = "leave_grease")
+          [b][🛢️ ${combat_enemy_name} Steps Off the Grease — ${combat_range_display_name}][/b]
         *line_break
         *gosub fight_booming_trigger
         *if (combat_boom_killed)
@@ -10163,6 +10172,10 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
           [b][🏃 ${combat_enemy_name} Keeps Distance — ${combat_range_display_name}][/b]
         *if (combat_ai_terrain_step_reason = "kite")
           [b][🏃 ${combat_enemy_name} Keeps Distance — ${combat_range_display_name}][/b]
+        *if (combat_ai_terrain_step_reason = "leave_web")
+          [b][🕸️ ${combat_enemy_name} Steps Clear of the Web — ${combat_range_display_name}][/b]
+        *if (combat_ai_terrain_step_reason = "leave_grease")
+          [b][🛢️ ${combat_enemy_name} Steps Off the Grease — ${combat_range_display_name}][/b]
         *line_break
         *gosub fight_booming_trigger
         *if (combat_boom_killed)
@@ -10490,6 +10503,10 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
               [b][🚪 ${combat_attacker_name} Takes the Chokepoint][/b]
             *if (combat_ai_terrain_step_reason = "avoid_melee_threat")
               [b][🏃 ${combat_attacker_name} Keeps Distance][/b]
+            *if (combat_ai_terrain_step_reason = "leave_web")
+              [b][🕸️ ${combat_attacker_name} Steps Clear of the Web][/b]
+            *if (combat_ai_terrain_step_reason = "leave_grease")
+              [b][🛢️ ${combat_attacker_name} Steps Off the Grease][/b]
             *line_break
         *if (not(cnt_a_weapon = "ranged"))
           *gosub_scene combat_ai combat_choose_terrain_step "ally" cnt_slot cnt_a_target_position true false

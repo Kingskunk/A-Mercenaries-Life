@@ -263,6 +263,22 @@
   *goto combat_get_cover_ranged_defense_bonus_loop
 *return
 
+*comment Whether ANY Web patch lies on one lane coordinate, whoever cast it (the player's "web", an enemy caster's "foe_web", an ally caster's "ally_web"),
+*comment into combat_web_here. Read-only. For the AI (2026-11-21: combat_ai_web_balk), which must not walk into anyone's webs; the rules for each kind stay with their own callers.
+*label combat_any_web_at
+*params cawa_position
+*set combat_web_here false
+*temp cawa_i 1
+*label combat_any_web_at_loop
+*if (cawa_i <= combat_terrain_slot_cap)
+  *temp cawa_type {("combat_terrain" & cawa_i) & "_type"}
+  *temp cawa_pos {("combat_terrain" & cawa_i) & "_position"}
+  *if ((((cawa_type = "web") or (cawa_type = "foe_web")) or (cawa_type = "ally_web")) and (cawa_pos = cawa_position))
+    *set combat_web_here true
+  *set cawa_i + 1
+  *goto combat_any_web_at_loop
+*return
+
 *comment Whether a Web patch (the spell) lies on one lane coordinate, into combat_web_here. Read-only.
 *label combat_web_at
 *params cwa_position
