@@ -1002,6 +1002,20 @@ ${combat_player_dmg_roll_banner}
       *set combat_shield_triggered true
       *set cea_dc (cea_dc + 5)
       *set combat_enemy_hit_success (((combat_enemy_atk_total >= cea_dc) or (cea_nat20)) and (not(cea_nat1)))
+    *comment COMBAT INSPIRATION, DEFENSE, ON THE BARD'S OWN DIE (the College of Valor, level 3; 2026-11-22, the user). The solo self-inspiration is the game's own rule
+    *comment (RAW the die goes to another creature); Valor's Defense rides on it. When this attack roll hits, the die could still turn it into a miss (no natural 20),
+    *comment the player can react and has not held it (combat_inspiration_held, the hub's Combat Inspiration: Hold / Ready), the reaction and the die are spent and
+    *comment the die is added to the AC. After Shield, which is the surer block. No automatic Offense: the die otherwise waits for a failed roll (dice_engine.txt).
+    *temp cea_insp_ac 0
+    *if ((((feature_combat_inspiration) and (combat_inspired_self)) and (not(combat_inspiration_held))) and ((combat_enemy_hit_success) and (not(cea_nat20))))
+      *if (combat_enemy_atk_total < (cea_dc + bard_inspiration_die_sides))
+        *gosub combat_can_react "player" 0
+        *if (combat_can_react_ok)
+          *set combat_inspired_self false
+          *set player_oa_used true
+          *rand cea_insp_ac 1 bard_inspiration_die_sides
+          *set cea_dc (cea_dc + cea_insp_ac)
+          *set combat_enemy_hit_success (combat_enemy_atk_total >= cea_dc)
     *if (combat_enemy_hit_success)
       *if ((cea_nat20) or ((combat_player_paralyzed > 0) and (combat_enemy_range <= 0)))
         *set combat_enemy_crit true
@@ -1019,7 +1033,7 @@ ${combat_player_dmg_roll_banner}
     *comment ("AC 17 +5 Shield" read as 22, because the 17 already includes the +5). An armed Shield that did not
     *comment fire says whether the attack already missed or was too high for +5 to deflect.
     *temp cea_ac_str ""
-    *if (((combat_cover_ranged_defense_bonus > 0) or (cea_dazed_dex > 0)) or ((dodge_active) or (shield_active)))
+    *if ((((combat_cover_ranged_defense_bonus > 0) or (cea_dazed_dex > 0)) or ((dodge_active) or (shield_active))) or (cea_insp_ac > 0))
       *set cea_ac_str " (${armor_class}"
       *if (combat_cover_ranged_defense_bonus > 0)
         *set cea_ac_str "${cea_ac_str} +2 Cover"
@@ -1029,6 +1043,8 @@ ${combat_player_dmg_roll_banner}
         *set cea_ac_str "${cea_ac_str} +5 Dodge"
       *if (shield_active)
         *set cea_ac_str "${cea_ac_str} +5 Shield"
+      *if (cea_insp_ac > 0)
+        *set cea_ac_str "${cea_ac_str} +${cea_insp_ac} Inspiration"
       *set cea_ac_str "${cea_ac_str})"
     *elseif ((shield_armed) and (not(combat_shield_triggered)))
       *if (cea_shield_cannot_block)
@@ -1492,6 +1508,19 @@ ${combat_player_dmg_roll_banner}
       *set reao_bane_str " -${reao_bane_die} (Bane)"
     *comment A natural 20 always hits, and is a critical hit. A natural 1 always misses.
     *set combat_enemy_atk_on_ally_hit (((reao_total >= reao_target_ac) or (reao_roll = 20)) and (not(reao_roll = 1)))
+    *comment COMBAT INSPIRATION, DEFENSE (the College of Valor bard, level 3, PHB'24; 2026-11-22): an ally holding the player's Bardic Inspiration die, hit by this
+    *comment attack roll, spends its reaction and the die to add the die to its AC, but only when the die could still turn the hit into a miss (a natural 20 hits
+    *comment whatever the AC). Inside this attack's lock, so a replay rolls nothing new.
+    *temp reao_insp_ac 0
+    *if (((feature_combat_inspiration) and (combat_inspired_ally = reao_a_slot)) and ((combat_enemy_atk_on_ally_hit) and (not(reao_roll = 20))))
+      *if (reao_total < (reao_target_ac + bard_inspiration_die_sides))
+        *gosub combat_can_react "ally" reao_a_slot
+        *if (combat_can_react_ok)
+          *set combat_inspired_ally 0
+          *set {(reao_ap & "oa_used")} true
+          *rand reao_insp_ac 1 bard_inspiration_die_sides
+          *set reao_target_ac + reao_insp_ac
+          *set combat_enemy_atk_on_ally_hit (reao_total >= reao_target_ac)
     *if (reao_roll = 20)
       *set combat_enemy_crit true
       *set combat_enemy_crit_tag " (Critical)"
@@ -1504,12 +1533,14 @@ ${combat_player_dmg_roll_banner}
     *elseif (reao_roll = 1)
       *set reao_verdict "MISS (Natural 1)"
     *temp reao_ac_str ""
-    *if ((combat_cover_ranged_defense_bonus > 0) or (reao_dazed_dex > 0))
+    *if (((combat_cover_ranged_defense_bonus > 0) or (reao_dazed_dex > 0)) or (reao_insp_ac > 0))
       *set reao_ac_str " (${reao_base_target_ac}"
       *if (combat_cover_ranged_defense_bonus > 0)
         *set reao_ac_str "${reao_ac_str} +2 Cover"
       *if (reao_dazed_dex > 0)
         *set reao_ac_str "${reao_ac_str} -${reao_dazed_dex} Dazed"
+      *if (reao_insp_ac > 0)
+        *set reao_ac_str "${reao_ac_str} +${reao_insp_ac} Inspiration"
       *set reao_ac_str "${reao_ac_str})"
     *set {(reao_atk_bannername)} "[b][🎲 ${combat_enemy_name} Attack Roll: ${reao_roll} ${reao_bonus_str}${combat_high_ground_attack_label}${reao_adv_label}${reao_bane_str} = ${reao_total} vs AC ${reao_target_ac}${reao_ac_str} — ${reao_verdict}][/b]"
   *set {(reao_bannername)} ""
@@ -2047,6 +2078,14 @@ ${combat_player_dmg_roll_banner}
         *gosub_scene combat_spells roll_spell_dice raa_sneak_n 6
         *set raa_dmg_total + spell_roll_total
         *set raa_sneak_str " +${spell_roll_total} (Sneak Attack)"
+    *comment COMBAT INSPIRATION, OFFENSE (the College of Valor bard, level 3, PHB'24; 2026-11-22): an ally still holding the player's Bardic Inspiration die (a miss
+    *comment would have spent it above) adds it to this hit's damage, and the die is spent. It is not a weapon die, so a critical hit does not double it.
+    *if ((feature_combat_inspiration) and (combat_inspired_ally = raa_a_slot))
+      *set combat_inspired_ally 0
+      *temp raa_insp_dmg 0
+      *rand raa_insp_dmg 1 bard_inspiration_die_sides
+      *set raa_dmg_total + raa_insp_dmg
+      *set raa_sneak_str "${raa_sneak_str} +${raa_insp_dmg} (Inspiration)"
     *comment An ally's blow meets the enemy's defenses like any other (2026-10-31): its damage type (the sidearm's when it quick-drew the knife), as a weapon packet, with the ally's own magical, silvered and adamantine flags.
     *temp raa_type {(raa_ap & "dmg_type")}
     *if (raa_knifed)

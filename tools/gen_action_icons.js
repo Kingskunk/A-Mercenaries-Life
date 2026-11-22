@@ -107,6 +107,7 @@ const MAP = {
   menacing_attack_melee: "Weapon_action/Menacing_Attack_Melee_Icon.webp",
   menacing_attack_ranged: "Weapon_action/Menacing_Attack_Ranged_Icon.webp",
   riposte: "Weapon_action/Riposte_Icon.webp",
+  combat_inspiration: "Passive_feature/Bardic_Defence_Icon.webp",   // the College of Valor's Combat Inspiration toggle (BG3's Bardic Defence art)
   // The Wild Heart's Rage of the Wilds (2026-11-21): one heart per animal in the Rage fly-out (battlehud.js variantArt).
   rage_bear: "Action/Rage_Bear_Heart_Icon.webp",
   rage_eagle: "Action/Rage_Eagle_Heart_Icon.webp",

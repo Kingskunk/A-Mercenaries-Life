@@ -103,7 +103,7 @@
     "dissonant_whispers", "cause_fear", "command", "blindness", "web", "hold_person", "shatter", "scorching_ray", "grease", "burning_hands",
     "thunderwave", "arms_of_hadar", "bane", "healing_word", "cure_wounds",
     "read", "dodge", "intimidate", "hide",
-    "shield", "hellish_rebuke", "absorb_elements", "riposte", "second_wind", "hunters_mark",
+    "shield", "hellish_rebuke", "absorb_elements", "riposte", "combat_inspiration", "second_wind", "hunters_mark",
     "ensnaring_strike", "action_surge", "rage", "eagles_flight", "arcane_ward", "magical_cunning",
     "throw", "potions", "items", "flee", "end_turn"
   ];
@@ -218,6 +218,14 @@
       variants: [
         { id: "riposte_ready", label: "Ready", whyKey: "combat_why_riposte_ready", blurb: "Stand ready to answer any melee attack that misses you." },
         { id: "riposte_hold", label: "Hold", whyKey: "combat_why_riposte_hold", blurb: "Keep your counter back, saving your superiority dice and your reaction." }
+      ]
+    },
+    {
+      // Combat Inspiration's toggle (the College of Valor): the bard's own die on their AC, Riposte's pattern (combat.txt combat_why_insp_*).
+      id: "combat_inspiration", group: "free", name: "Combat Inspiration", blurb: "Turn a blow aside with your own inspiration.",
+      variants: [
+        { id: "combat_inspiration_ready", label: "Ready", whyKey: "combat_why_insp_ready", blurb: "Stand ready to turn a blow aside with your inspiration." },
+        { id: "combat_inspiration_hold", label: "Hold", whyKey: "combat_why_insp_hold", blurb: "Keep your inspiration for a roll that fails, and let the blows come." }
       ]
     },
     { id: "blindness", group: "action", name: "Blindness", whyKey: "combat_why_blindness", blurb: "Strike a foe blind." },
@@ -666,6 +674,7 @@
     // Command: Approach / Drop / Flee / Grovel / Halt -- each word wears its own art (ACTION_ICONS command_<word>).
     if (e.id === "command") return (window.ACTION_ICONS || {})["command_" + slug(v.label)] || "";
     if (e.id === "riposte") return (window.ACTION_ICONS || {}).riposte || "";
+    if (e.id === "combat_inspiration") return (window.ACTION_ICONS || {}).combat_inspiration || "";
     // The Wild Heart's Rage of the Wilds: "Rage: Bear" wears rage_bear (ACTION_ICONS).
     if (e.id === "rage") return (window.ACTION_ICONS || {})["rage_" + slug(v.label)] || "";
     if (e.id !== "booming_blade") return "";

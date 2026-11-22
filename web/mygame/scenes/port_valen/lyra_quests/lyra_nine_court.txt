@@ -9,9 +9,13 @@
 *comment   # Lyra at the end cot, back from Dredge-End.
 *comment     *goto_scene port_valen/lyra_quests/lyra_nine_court nine_court_hook
 *comment
-*comment 2. In port_valen/port_valen_dredge_end.txt (cut_lamp_hub, inside the Open Hand options):
+*comment 2. In port_valen/port_valen_dredge_end.txt (cut_pawn / cut_pawn_hub):
 *comment *if (nine_court_stage = "active")
 *comment   *goto_scene port_valen/lyra_quests/lyra_nine_court nine_court_pawn_meet
+*comment *if (nine_court_stage = "appraising")
+*comment   (Angel's greeting notes Lyra is upstairs; cut_pawn_hub offers:)
+*comment   # Head upstairs to check in with Lyra.
+*comment     *goto_scene port_valen/lyra_quests/lyra_nine_court nine_court_angel_upstairs
 *comment
 *comment Currently entered via dev_hub.txt (dev_menu_quests) for testing; returns to
 *comment dev_hub and resets all quest flags when nine_court_dev_mode is true.
@@ -117,7 +121,7 @@ Angel picks up the spool, rolling a length of the stiff thread between her thumb
 
       "That's the troubling part," Angel replies, setting the spool onto the oak table. "She wasn't selling to them. Someone was paying her to spin that yarn in tiny batches, isolated from whatever else they're putting together. No names, no context, just piecework."
 
-      Lyra's jaw tightens. "She was observant, ${name}. If she noticed the ash or asked one wrong question about what it was for, whoever was running that line wouldn't blink at putting her in the ground."
+      Lyra stares at the grey spool, her jaw tight. "She worked that loom past midnight just to keep two little mouths fed," she says in a flat voice, her fingers curling against the oak edge. "If she noticed the ash or asked one wrong question about what it was for, whoever was running that line wouldn't blink at putting her in the ground."
       *goto nine_court_backroom_choice
 
   *if (not(nine_court_backroom_asked_angel))
@@ -135,7 +139,7 @@ Angel picks up the spool, rolling a length of the stiff thread between her thumb
 
     Angel nods once. "Someone, or ten different people. You'll need more information first, and you have to figure out what you're dealing with here before you go kicking doors. Luckily, I know just the person to talk to."
 
-    She reaches under the sorting table, tears off a strip of scrap parchment, and scratches an address beside Lantern Lane in Middle Ward. "Simeon Penn. He runs a cramped appraisal room two doors down from the tinker's alley. Used to be an estate archivist up in the Patrician Quarter until a dispute over cooked shipping manifests got him blackballed. Now he appraises old-empire silver and odd heirlooms for me without asking where they came from."
+    She reaches under the sorting table, tears off a strip of scrap parchment, and scratches an address beside Lantern Lane in Middle Ward. "Simeon Penn. He runs a cramped appraisal room two doors down from the tinker's alley. Used to be a customs clerk down on the Cargo Quay until a dispute over cooked shipping manifests got him blackballed. Now he appraises old-empire silver and odd heirlooms for me without asking where they came from."
 
     She slides the paper across to Lyra, then nods toward the cellar stairs. "One more thing, Lyra. The barracks are packed to the rafters, and half of Vane's recruits gossip like fishwives. I have a spare room above the shop. Move your pack in here while you're poking at this. Nobody watches my roof."
 
@@ -153,8 +157,10 @@ Angel picks up the spool, rolling a length of the stiff thread between her thumb
 *set current_district "middle_ward"
 *set scenery_subplace "generic_trade_shop"
 *set nine_court_simeon_met true
+*temp simeon_checked_lore false
+*temp simeon_asked_risk false
 
-The address leads you and Lyra off Lantern Lane into a tight flagstone cut squeezed between a cobbler's loft and a tallow-shed. A faded wooden sign bearing a brass magnifying glass hangs crooked above a heavy oak door.
+The address leads you and Lyra off Lantern Lane into a narrow flagstone cut squeezed between a cobbler's loft and a shed. A faded wooden sign bearing a brass magnifying glass hangs crooked above a heavy oak door.
 
 Inside, the shop smells of dry paper, lamp oil, and old wool. Glass-fronted cabinets crowd the walls, crammed with tarnished silver plate, chipped clay seals, and stacks of mildewed estate inventories. At a scarred workbench sits a stooped man in his late fifties with thinning sandy-grey hair, ink-stained knuckles, and thick brass-rimmed spectacles perched on a crooked nose. He wears a frayed brown wool coat with leather elbow patches and a heavy ring of iron keys at his waist.
 
@@ -174,27 +180,61 @@ His bored clerk's posture stiffens. For a long moment, the only sound in the roo
 
 "A dead woman's floorboards in Dredge-End," Lyra replies. "What is it?"
 
-Simeon straightens slowly, pushing his spectacles up his nose. "The flax is reverse-twisted around a core of cured bone ash and bitter myrrh-gum. That's not guild work, and it isn't from the Meridian Empire either, not the one we fought thirty years ago." He taps the bench lightly with one ink-stained finger. "This is First Dynasty technique. Dawn-era binding work. Even the old legions banned these rites as barbaric centuries before the Collapse."
+Simeon straightens slowly, pushing his spectacles up his nose. "The flax is reverse-twisted around a core of cured bone ash and bitter myrrh-gum. That's not guild work, and it isn't from the Meridian Empire either, not the one we fought thirty years ago." He taps the bench lightly with one ink-stained finger. "This is First Dynasty technique. Dawn-era binding work."
 
-"People in Port Valen are still making it," you say.
+"People in the city are still making it," you say.
 
-"Someone is paying to have it made," Simeon corrects grimly. "And I can't tell you who from a single spool. I'll need a couple of days to boil down the resin residue and quietly cross-check import manifests with an old contact near the archives. If a household in the Patrician Quarter is importing this grade of gum, it'll leave a paper trail."
+"Someone is paying to have it made," Simeon corrects grimly. "And I can't tell you who from a single spool. I'll need a little time to boil down the resin residue and discreetly cross-check import manifests with an old contact at the customs tower. If anyone is importing something like this, it'll leave a paper trail."
 
-He slips the clipped sample into a tin box and locks it inside a desk drawer. "Leave the spool with me. Return in two days, after midday. And don't tell anyone you were here."
+*label nine_court_appraiser_visit_choice
+*choice
+  *if (not(simeon_checked_lore))
+    # Lean over the loupe to examine the treated thread yourself.@{show_stat_hints  [Arcana or Religion DC 12]|}
+      *set simeon_checked_lore true
+      *gosub_scene dice_engine roll_skill_check 12 "arcana" "" "religion" "" "" ""
+      *if (check_success)
+        You lean close beside the brass arm, catching the sharp, acrid bite of the resin beneath the solvent. In old dawn-era funerary and oath-binding texts, cured bone ash and dark myrrh were never mixed for trade goods or battlefield wards. They were burned and braided into ancestral binding cords, meant to seal a bloodline pact or consecrate a private house altar.
+
+        Simeon notices your expression and gives a slow, grim nod. "You know the old texts, then. That should tell you how far from ordinary smuggling this is."
+        *line_break
+        *gosub_scene dice_engine heroic_award "nine_court_simeon_thread_lore"
+      *else
+        You lean in over the glass, but the solvent fumes sting your eyes. Beyond the acrid resin and coarse grey ash, the weave tells you nothing you didn't already hear.
+      *goto nine_court_appraiser_visit_choice
+
+  *if (not(simeon_asked_risk))
+    # "If it's that dangerous, why stick your neck out for Angel's errand?"
+      *set simeon_asked_risk true
+      Simeon sets his tweezers down with a dry, wry half-smile. "Twenty years ago, the high houses blackballed me out of the customs tower for refusing to cook a shipping ledger. Angel kept my stove lit when nobody else in this city would look my way." He taps the tin box on his desk. "Besides, if old families are importing banned First Dynasty gum under my nose, I'd like to know which bastard is signing the paper."
+      *goto nine_court_appraiser_visit_choice
+
+  # "Tell us when you have a name."
+    "Do what you need to," you tell him. "Just let us know the moment you have a name."
+
+He slips the clipped sample into a tin box and locks it inside a desk drawer. "Leave the spool with me. Keep out of sight, and wait at Angel's until I send a runner. When my contact pulls the manifest, I'll have word slipped under her door."
 
 *set nine_court_drop_day campaign_day
 *set nine_court_stage "appraising"
+*gosub_scene calendar ensure_navigable_weather
 
-Outside in the flagstone cut, Lyra pulls her cloak tighter against the wind. "Forty-eight hours," she mutters. "I'll move my gear into Angel's upstairs room tonight so I'm off the compound roster. Meet me here when Simeon's ready."
+*if (weather_wet)
+  Outside in the flagstone cut, Lyra flips her oiled hood up against the rain.
+*elseif (weather_cold)
+  Outside in the flagstone cut, Lyra pulls her wool cloak closer against the biting chill.
+*else
+  Outside in the flagstone cut, Lyra pulls her cloak closer against the harbour wind.
+"I'll move my gear into Angel's upstairs room tonight so I'm off the compound roster," she mutters. "Come check on me at The Open Hand when you can. Once his runner shows, we come straight back here."
 
 *if (nine_court_dev_mode)
   *choice
-    # [Dev] Advance two days and return to Simeon Penn's shop.
+    # [Dev] Visit Lyra upstairs at Angel's (before Simeon's word).
+      *goto nine_court_angel_upstairs
+    # [Dev] Advance two days and visit Lyra upstairs (runner arrived).
       *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
         *set campaign_day +2
         *set stat_bump_locked true
         *set locked_stat_bump_page_id page_id
-      *goto nine_court_appraiser_return
+      *goto nine_court_angel_upstairs
     # Return to Dev Hub (flags will reset).
       *goto nine_court_return
 
@@ -202,26 +242,95 @@ Outside in the flagstone cut, Lyra pulls her cloak tighter against the wind. "Fo
 *goto nine_court_return
 
 *comment ====================================================================================
-*comment BEAT 2b: TWO DAYS LATER — THE ATTACK & RESCUE
+*comment BEAT 2.5: ANGEL'S UPSTAIRS ROOM (Daytime Check-in & Runner Arrival)
+*comment ====================================================================================
+
+*label nine_court_angel_upstairs
+*set current_district "dredge_end"
+*set scenery_subplace "generic_town_inn_room"
+*temp upstairs_asked_room false
+*temp upstairs_asked_word false
+
+You climb the steep wooden steps behind Angel's wool curtain into a small loft room above The Open Hand. Low cedar rafters slant over a straw pallet beside the brick chimney, Lyra's cased recurve hangs on two wall pegs, and a shuttered casement overlooks Lamp Stair.
+*if (weather_wet)
+  Rain taps steadily against the slate roof above your head, and damp air seeps around the shutter latch.
+*elseif (weather_cold)
+  A thin draft slips around the shuttered casement, though the chimney wall holds a trace of warmth from the shop below.
+*else
+  Thin bars of daylight slant through the shutter slats across the floorboards.
+
+*if (campaign_day < (nine_court_drop_day + 2))
+  Lyra is perched on a pine crate beside the window with a small whetstone and an oilcloth, drawing broadhead tips across the stone. She looks up as the latch clicks and sets the steel aside.
+
+  "Wasn't expecting company," she says, a flicker of relief softening her face. "Thought it might be Angel sending up tea."
+
+  *label nine_court_upstairs_wait_choice
+  *choice
+    *if (not(upstairs_asked_room))
+      # "How are you holding up out of the barracks?"
+        *set upstairs_asked_room true
+        "Quiet," Lyra admits, glancing toward the wall pegs where her pack hangs. "No forty recruits snoring beside my ear, and no Varren barking before dawn. Still feels strange, though, sitting still above a shop while whoever killed my aunt walks free."
+        *goto nine_court_upstairs_wait_choice
+
+    *if (not(upstairs_asked_word))
+      # "Any word from Simeon yet?"
+        *set upstairs_asked_word true
+        She shakes her head. "Not yet. No runner has come up Lamp Stair, and I haven't risked showing my face near Lantern Lane in daylight. Give him another day or two."
+        *goto nine_court_upstairs_wait_choice
+
+    *if (nine_court_dev_mode)
+      # [Dev] Advance to when Simeon's runner arrives.
+        *if (not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id))
+          *set campaign_day +2
+          *set stat_bump_locked true
+          *set locked_stat_bump_page_id page_id
+        *goto nine_court_angel_upstairs
+
+    # "Keep your head down. I'll check back soon."
+      "Stay off the street," you tell her. "I'll come back once he's had time to dig."
+
+      Lyra nods once and picks up her whetstone again as you head back down the stairs.
+      *goto nine_court_return
+*else
+  Lyra is already on her feet when you push the door open, buckling her leather quiver over a dark wool tunic and testing the string of her recurve.
+
+  She holds out a folded, grease-spotted scrap of paper. "A boy slipped this under Angel's door at first light," she says, her voice taut. "Found the manifest. Come at midday."
+
+  She checks the shutter, slings her cloak over her shoulders, and nods toward the stairs. "Sun's near high. Let's get up to Middle Ward."
+
+  *page_break Head to Simeon Penn's shop in Middle Ward...
+  *goto nine_court_appraiser_return
+
+*comment ====================================================================================
+*comment BEAT 2b: THE ATTACK & RESCUE
 *comment ====================================================================================
 
 *label nine_court_appraiser_return
 *set current_district "middle_ward"
 *set scenery_subplace "middle_ward_city_street"
+*gosub_scene calendar ensure_navigable_weather
 
-When you and Lyra turn into the cramped flagstone cut off Lantern Lane, the air carries the normal clatter of the ward.
+You and Lyra turn off Lantern Lane into the flagstone alley toward Simeon's door.
+*if (weather_wet)
+  Slick rain runs off the eaves and pools between the stones, muting the noon bustle.
+*elseif (weather_visibility = "poor")
+  Thick sea mist hangs between the overhanging gables, softening the midday noise along the lane.
+*elseif (weather_cold)
+  Crisp winter air carries the rattle of iron-rimmed carts and voices down the street.
+*else
+  The street carries the normal noon clatter of the ward.
 
 Before you reach the crooked sign, glass shatters within Simeon's shop. The crash of an overturned cabinet follows, then the harsh scrape of wood across stone and Simeon's ragged shout for help.
 
-Lyra's hand drops immediately to her unslung recurve, nocking a black-fletched bodkin arrow in one practiced motion. "Someone found out he was asking," she hisses, pressing flat against the brick corner. "How do we hit them?"
+Lyra's hand drops immediately to her unslung recurve, nocking a black-fletched bodkin arrow in one practiced motion. "Someone found out he was asking," she hisses, pressing flat against the brick corner. "Watch'll take ten minutes to climb these stairs, and he doesn't have two. How do we hit them?"
 
 *choice
-  # Slip down the side alley to the rear shutter while Lyra covers the street. [DEX Check (DC 11)]
+  # Slip down the side alley to the rear shutter.@{show_stat_hints  [Stealth or Acrobatics DC 11]|}
     *gosub_scene dice_engine roll_skill_check 11 "stealth" "" "acrobatics" "" "" ""
     *if (check_success)
       *set nine_court_rescue_approach "flank"
       *set combat_player_surprise true
-      You dart silently down the tight service passage past the cobbler's wall, vaulting a stacked barrel to pry open Simeon's unlatched rear casement. Within the room, two armed men in black travel cloaks have Simeon pinned against his overturned workbench, while a third figure in a high-collared grey coat stands by the ransacked ledger-table holding a lit tinder-stick over his papers.
+      You dart silently down the cramped service passage past the cobbler's wall, vaulting a stacked barrel to pry open Simeon's unlatched rear casement. Within the room, two armed men in black travel cloaks have Simeon pinned against his overturned workbench, while a third figure in a high-collared grey coat stands by the ransacked ledger-table holding a lit tinder-stick over his papers.
 
       Just as you drop into the shop at their backs, Lyra looses an arrow straight through the shattered street pane, splintering the wood beside the mage's sleeve and catching all three off guard.
     *else
@@ -247,9 +356,7 @@ Lyra's hand drops immediately to her unslung recurve, nocking a black-fletched b
 *set combat_terrain1_position 1
 *set combat_terrain2_type "difficult_terrain"
 *set combat_terrain2_position 2
-*set combat_ally_lib_1 "archer"
-*set combat_ally1_name_override "Lyra"
-*set combat_ally1_epithet_override "Lyra"
+*set combat_ally_lib_1 "lyra"
 *set combat_lib_1 "hedge_mage"
 *set combat_enemy_name_override "Grey-Coated Mage"
 *set combat_enemy_epithet_override "the grey-coated mage"

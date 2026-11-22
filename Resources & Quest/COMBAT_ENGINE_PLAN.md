@@ -122,7 +122,7 @@ One subclass per class, the best for solo play (the user, 2026-11-20), level 3 f
 | Warlock | The Fiend | Built (2026-11-21) |
 | Fighter | Battle Master | Built (2026-11-21) |
 | Barbarian | Path of the Wild Heart | Built (2026-11-21) |
-| Bard | College of Valor | Not started |
+| Bard | College of Valor | Built (2026-11-22) |
 | Ranger | Gloom Stalker | Not started |
 | Rogue | Thief | Not started |
 
@@ -143,6 +143,13 @@ One subclass per class, the best for solo play (the user, 2026-11-20), level 3 f
 2. Done (2026-11-21; `wh_eagle_*` scripts). Eagle: entering the Rage also takes Dash and Disengage; while it lasts, a bonus action takes both (icon `Passive_feature/Aspect_of_the_Beast_Eagle_Icon.webp`).
 3. Done (2026-11-21; `wh_wolf_ally_advantage`). Wolf: allies have advantage on attacks against an enemy within 5 ft of the player (`resolve_ally_attack`, and the AI's opening factor).
 4. Done (2026-11-21; `level_up_wild_heart_3_features`). Animal Speaker (Speak with Animals granted at level 3, no slot) and the level 3 page.
+
+**The College of Valor** (agreed 2026-11-22). Every bard gets it at bard level 3. Martial Training's weapon half waits for weapon proficiency (below), and its weapon-as-focus is left out (the game tracks no material components or casting hands).
+1. Done (2026-11-22; `valor_martial_training_level_3`, `valor_untrained_below_level_3`). Martial Training: trained in medium armor and shields (`feature_martial_training`), so neither blocks casting nor gives disadvantage; the level 3 page and Abilities lines.
+2. Done (2026-11-22; `valor_ally_inspiration_*` scripts). Combat Inspiration for allies. An inspired ally spends its die on the first of: its miss (the current rule), its hit (the die added to the damage), or an attack hitting it that the die could still turn into a miss (its reaction, the die added to its AC).
+3. Done (2026-11-22; `valor_self_inspiration_*` scripts). Combat Inspiration for the bard's own die (the solo self-inspiration is the game's own rule). Defense only, on its own when a hit lands that the die could turn into a miss and the reaction is free, with a Hold / Ready toggle like Riposte's. No automatic Offense: the die stays for a failed roll.
+
+**Weapon proficiency (later, with the first batch of martial weapons).** Of the 12 catalog weapons only the hewing axe (a battleaxe) is martial, so it is not worth building yet. The route: a `category: "simple" | "martial"` on each catalog weapon, a `weapon_prof_check` beside `armor_prof_check` (untrained: no proficiency bonus to hit), and Valor's martial weapons as one line in it.
 
 Hand edits the Fiend needed so far (the route list for the other subclasses): a hook in `fight_check_all_dead` (combat.txt) for an on-kill feature; a per-enemy flag in `startup_parts/31_combat_engine_state.txt` and `mygame.js`, cleared in the stale-slot loop and `fight_cleanup`; the feature's line on the Abilities page (`choicescript_stats.txt`, under the patron); `feature_*` flags set in `refresh_features` (`character_progression.txt`), declared in `startup_parts/07_class_path.txt` and `mygame.js`; a granted spell set known in `refresh_known_spells`, mirrored in `equipment-panel.js`, and listed by the spellbook panel (`INVOCATION_SPELLS` in `spellbook.js` and `index.html`, both copies); a line printed from a shared check goes through the end-of-action queue (`concentration_pending_add`), which the victory labels now print too. The class gate is `character_class` and `character_level >= 3`; no choice page, since each class has one subclass.
 

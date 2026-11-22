@@ -3811,11 +3811,11 @@
   [b][🛡️ Blade Warded (@{(blade_ward_rounds = 1) 1 round|${blade_ward_rounds} rounds})][/b]
 *if (combat_inspired_self)
   *line_break
-  [b][🎵 Inspired: a 1d${bard_inspiration_die_sides} waits to save a failed roll][/b]
+  [b][🎵 Inspired: a 1d${bard_inspiration_die_sides} waits to save a failed roll@{((feature_combat_inspiration) and (not(combat_inspiration_held))) , or turn a blow aside|}][/b]
 *if (combat_inspired_ally > 0)
   *line_break
   *temp cbi_aname {(("combat_ally" & combat_inspired_ally) & "_name")}
-  [b][🎵 ${cbi_aname} is inspired: a 1d${bard_inspiration_die_sides} waits to save a missed attack][/b]
+  [b][🎵 ${cbi_aname} is inspired: a 1d${bard_inspiration_die_sides} waits @{feature_combat_inspiration to save a miss, add to a hit, or turn a blow aside|to save a missed attack}][/b]
 *if (combat_reckless_active)
   *line_break
   [b][⚔️ Reckless: advantage on your Strength attacks, and advantage against you, until your next turn][/b]
@@ -3835,6 +3835,11 @@
 *if ((feature_combat_superiority) and (riposte_held))
   *line_break
   [b][🤺 Riposte held][/b]
+*if ((feature_combat_inspiration) and (combat_inspiration_held))
+  *gosub combat_inspire_pick
+  *if (combat_inspire_ally_pick = 0)
+    *line_break
+    [b][🎵 Combat Inspiration held][/b]
 *if ((is_raging) and (rage_animal = "bear"))
   *line_break
   [b][🐻 Bear Heart: resistant to all damage but Force, Necrotic, Psychic and Radiant][/b]
@@ -4534,6 +4539,19 @@
   *else
     *set combat_why_riposte_hold ""
     *set combat_why_riposte_ready "already_active"
+*comment COMBAT INSPIRATION'S TOGGLE (the College of Valor, 2026-11-22): the bard's own die turns a blow aside on its own unless held (combat_inspiration_held, kept
+*comment across fights). Riposte's pattern: two fixed-value options, one battle bar fly-out. Offered only to a bard standing alone, the one case the die is their own.
+*temp combat_why_insp_hold "unowned"
+*temp combat_why_insp_ready "unowned"
+*if (feature_combat_inspiration)
+  *gosub combat_inspire_pick
+  *if (combat_inspire_ally_pick = 0)
+    *if (combat_inspiration_held)
+      *set combat_why_insp_hold "already_active"
+      *set combat_why_insp_ready ""
+    *else
+      *set combat_why_insp_hold ""
+      *set combat_why_insp_ready "already_active"
 *if ((((feature_combat_superiority) and (fighter_superiority_uses > 0)) and (combat_can_attack)) and (not(equipped_weapon_id = "none")))
   *if ((combat_wpn_far_ok) or (combat_primary_reach))
     *set combat_can_maneuver true
@@ -5209,6 +5227,14 @@
   *if (combat_why_riposte_ready = "")
     # [b][NO COST][/b] [b][Riposte: Ready][/b] Stand ready to answer any melee attack that misses you.
       *set riposte_held false
+      *goto fight_round_hub
+  *if (combat_why_insp_hold = "")
+    # [b][NO COST][/b] [b][Combat Inspiration: Hold][/b] Keep your inspiration for a roll that fails, and let the blows come.
+      *set combat_inspiration_held true
+      *goto fight_round_hub
+  *if (combat_why_insp_ready = "")
+    # [b][NO COST][/b] [b][Combat Inspiration: Ready][/b] Stand ready to turn a blow aside with your inspiration.
+      *set combat_inspiration_held false
       *goto fight_round_hub
   *if (combat_can_maneuver)
     # [b][ACTION][/b] [b][Trip Attack][/b] Strike at ${combat_med_epithet}'s footing: a superiority die of extra damage, and they fall prone unless they keep their feet.@{show_stat_hints  [Strength Save, Prone | 1 Superiority Die on a hit]|}
