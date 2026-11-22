@@ -295,6 +295,9 @@
 *set combat_dual_shot_active false
 *set combat_dual_second_slot 0
 *set combat_reckless_active false
+*set combat_steady_armed false
+*set combat_steady_round 0
+*set combat_player_moved_round 0
 *set combat_inspired_self false
 *set combat_inspired_ally 0
 *set combat_friendly_targeting_active false
@@ -816,6 +819,12 @@
   *set combat_init_dex_1 dexterity
   *temp cri_roll 1
   *rand cri_roll 1 20
+  *comment Assassinate (the Assassin, rogue level 3, PHB'24; 2026-11-22): advantage on initiative, the higher of two d20s. It counts only in an ambush; any other fight opens on the player.
+  *if (feature_assassinate)
+    *temp cri_roll_b 1
+    *rand cri_roll_b 1 20
+    *if (cri_roll_b > cri_roll)
+      *set cri_roll cri_roll_b
   *gosub_scene startup score_to_mod dexterity
   *set combat_init_score_1 (cri_roll + sm_mod)
   *comment Dread Ambusher's Initiative Bonus (the Gloom Stalker, ranger level 3): the Wisdom modifier too. It counts only in an ambush; any other fight opens on the player.
@@ -1189,6 +1198,9 @@
 *set combat_dual_shot_active false
 *set combat_dual_second_slot 0
 *set combat_reckless_active false
+*set combat_steady_armed false
+*set combat_steady_round 0
+*set combat_player_moved_round 0
 *set combat_inspired_self false
 *set combat_inspired_ally 0
 *set combat_friendly_targeting_active false
@@ -1417,6 +1429,7 @@
   *set {(fc_p & "morale_half")} false
   *set {(fc_p & "out")} ""
   *set {(fc_p & "arrives")} 0
+  *set {(fc_p & "enters_at")} 99
   *set {(fc_p & "reserve_hp")} 0
   *set {(fc_p & "intimidated")} false
   *set {(fc_p & "dodging")} false
@@ -2199,6 +2212,20 @@
   *if (not(disadvantage))
     [b][🎯 ${combat_enemy_name}: ${combat_edge_label}. Your attack has advantage.][/b]
     *line_break
+*comment ASSASSINATE (the Assassin, rogue level 3, PHB'24; 2026-11-22): in the first round, advantage against a foe that has not taken its turn yet.
+*if ((feature_assassinate) and (combat_round = 1))
+  *gosub assassinate_unacted combat_active_target
+  *if (combat_assassinate_open)
+    *set advantage true
+    *if (not(disadvantage))
+      [b][🗡️ Assassinate: ${combat_enemy_name} has not acted yet. Your attack has advantage.][/b]
+      *line_break
+*comment STEADY AIM (rogue level 3, PHB'24; 2026-11-22): the steadied attack rolls with advantage, and the aim is spent on it, hit or miss.
+*if (combat_steady_armed)
+  *set combat_steady_armed false
+  *set advantage true
+  [b][🎯 Your steadied aim gives this attack advantage.][/b]
+  *line_break
 *if (combat_player_hidden)
   *set combat_player_hidden false
   *set advantage true
@@ -2207,6 +2234,24 @@
   *set combat_hide_free_round (combat_round + 2)
   [b][👤 You strike from hiding, and your cover breaks.][/b]
   *line_break
+*return
+
+*label assassinate_unacted
+*comment Assassinate's test: has the enemy in slot aun_slot taken a turn yet this fight? Only asked in round 1, where the turn order positions before the
+*comment current one (combat_current_turn_index) are the turns already taken. In a fight the player opens, that is none. Writes combat_assassinate_open.
+*params aun_slot
+*set combat_assassinate_open true
+*temp aun_i 1
+*temp aun_kind ""
+*temp aun_s 0
+*label assassinate_unacted_loop
+*if (aun_i < combat_current_turn_index)
+  *set aun_kind {("combat_turn_kind_" & aun_i)}
+  *set aun_s {("combat_turn_slot_" & aun_i)}
+  *if ((aun_kind = "enemy") and (aun_s = aun_slot))
+    *set combat_assassinate_open false
+  *set aun_i + 1
+  *goto assassinate_unacted_loop
 *return
 
 *label combat_hide_dc_calc
@@ -3206,7 +3251,8 @@
 *comment     "reserve", its HP kept in _reserve_hp and set to 0, so targeting, the AI and every "who is still standing" check pass over it. The
 *comment     morale and Intimidate checks leave it out of its side altogether.
 *comment   ARRIVAL (combat_reinforcements_arrive): at the start of its round (combat_next_turn, as the round turns over), on its own edge of the
-*comment     lane with its HP back. If everyone else on its side is down first (fight_check_all_dead), every one still on its way arrives at
+*comment     lane with its HP back. ENTERS AT (2026-11-22, the user): combat_enemyN_enters_at, a range tier from the player (0 Engaged to the fight's
+*comment     combat_max_range; an encounter template's "enters_at"), puts it there on its own side instead; 99 (the default) keeps the edge. If everyone else on its side is down first (fight_check_all_dead), every one still on its way arrives at
 *comment     once and the fight goes on, unless the fight's leader fell (that still ends it).
 *comment   A reinforcement that never arrived (you fled first) counts as "standing" in the FIGHT RESULTS.
 *comment ============================================================================
@@ -3238,6 +3284,11 @@
     *temp cra_edge combat_lane_max_position
     *if ({(cra_p & "side")} = (0 - 1))
       *set cra_edge combat_lane_min_position
+    *temp cra_at {(cra_p & "enters_at")}
+    *if (cra_at < 99)
+      *if (cra_at > combat_max_range)
+        *set cra_at combat_max_range
+      *set cra_edge (combat_lane_player_position + ({(cra_p & "side")} * cra_at))
     *gosub_scene combat_movement combat_lane_move_enemy_to_position cra_i cra_edge
     *if (combat_active_target = cra_i)
       *gosub fight_sync_target_in
@@ -3246,12 +3297,17 @@
     *temp cra_range {(cra_p & "range")}
     *gosub_scene combat_movement combat_range_name cra_range
     *temp cra_v (cra_i modulo 3)
-    *line_break
-    *if (cra_v = 0)
+    *comment A paragraph break, not a *line_break: the turn before ends on a line break, so a *line_break here printed an empty line (dead space).
+
+    *if ((cra_at < 99) and (cra_range = 0))
+      $!{cra_epithet} lunges in from somewhere you were not watching, close enough to strike.
+    *elseif ((cra_at < 99) and (cra_range = 1))
+      $!{cra_epithet} appears a few strides off, out of somewhere you were not watching.
+    *elseif (cra_v = 0)
       $!{cra_epithet} comes up from behind the others, late but ready to fight.
-    *if (cra_v = 1)
+    *elseif (cra_v = 1)
       There is movement at the far edge, and ${cra_epithet} joins the fight.
-    *if (cra_v = 2)
+    *else
       $!{cra_epithet} arrives at a run and throws in with the rest.
     *line_break
     [b][⚔️ ${cra_name} Joins the Fight — at ${combat_range_display_name}][/b]
@@ -3554,6 +3610,8 @@
 *comment The chain of enemy and ally turns starts here (see REPLAY-SAFE TURN CHAINS above).
 *gosub combat_chain_begin
 *gosub blade_ward_tick
+*comment Steady Aim's advantage lasts only for the turn it was taken in (a fixed-value set, replay-safe).
+*set combat_steady_armed false
 *gosub_scene combat_dice condition_tick "combat_player_" 7
 *comment GREASE (3.9a): ending the turn on a patch is a Dexterity save or Prone.
 *gosub_scene combat_spells grease_end_turn "combat_player_" 7
@@ -3669,6 +3727,8 @@
 *comment Push Forward/Fall Back end here (2026-09-28), not fight_action_spent -- movement is its own budget now,
 *comment not the action. Always returns to the hub, same as every other _spent label.
 *gosub combat_spend_move
+*comment Steady Aim needs a turn with no movement yet (a fixed-value set, replay-safe).
+*set combat_player_moved_round combat_round
 *comment Difficult Terrain does not prevent the ordinary step that just happened. It consumes the entire movement
 *comment allowance afterwards, which removes Dash's extra step without introducing a second movement-point economy.
 *if (combat_move_touched_difficult_terrain)
@@ -3781,6 +3841,9 @@
 *comment PINNED (3.3): no movement at all this turn (the round's movement is spent, not held: Pinned lasts only this turn).
 *if (combat_player_pinned > 0)
   *set combat_player_moves_left 0
+*comment STEADY AIM (rogue level 3, PHB'24; 2026-11-22): after it, Speed 0 until the turn ends, so this round's movement is gone.
+*if ((combat_steady_round > 0) and (combat_steady_round = combat_round))
+  *set combat_player_moves_left 0
 *if ((combat_player_restrained > 0) and (combat_player_moves_left > 0))
   *set combat_player_moves_held combat_player_moves_left
   *set combat_player_moves_left 0
@@ -3842,6 +3905,9 @@
 *if (combat_reckless_active)
   *line_break
   [b][⚔️ Reckless: advantage on your Strength attacks, and advantage against you, until your next turn][/b]
+*if (combat_steady_armed)
+  *line_break
+  [b][🎯 Steady Aim: your next attack this turn has advantage][/b]
 *gosub_scene combat_movement combat_refresh_ally_distances
 *gosub_scene combat_dice concentration_reconcile
 *gosub combat_hm_state
@@ -3953,6 +4019,9 @@
 *if (combat_player_restrained > 0)
   *line_break
   [b][🪢 Restrained — you cannot move][/b]
+*elseif ((combat_steady_round > 0) and (combat_steady_round = combat_round))
+  *line_break
+  [b][🎯 Holding your ground: no movement this turn][/b]
 *elseif (combat_player_moves_left < combat_player_moves_max)
   *line_break
   [b][👟 Movement used | ${combat_player_moves_left} left this round][/b]
@@ -4274,6 +4343,11 @@
 *temp combat_can_magical_cunning false
 *if (((feature_magical_cunning) and (not(magical_cunning_used))) and (pact_slots < pact_slots_max))
   *set combat_can_magical_cunning true
+*comment STEADY AIM (rogue level 3, PHB'24; 2026-11-22): a bonus action, only on a turn with no movement yet (combat_player_moved_round), with an attack still
+*comment to make and none already steadied; it gives the next attack roll this turn advantage (combat_hidden_attack_roll) and sets Speed 0 for the turn.
+*temp combat_can_steady_aim false
+*if ((((feature_steady_aim) and (combat_player_bonus_left > 0)) and (combat_can_attack)) and ((not(combat_steady_armed)) and (not((combat_player_moved_round > 0) and (combat_player_moved_round = combat_round)))))
+  *set combat_can_steady_aim true
 *temp combat_bonus_available false
 *comment Lists every usable bonus-action feature so the auto-end check knows when a bonus action can still be spent.
 *if (((combat_can_hex) or (combat_can_healing_word)) or ((combat_can_second_wind) or (combat_can_rage)))
@@ -4289,6 +4363,8 @@
 *if ((combat_can_arcane_ward) or (combat_can_arcane_ward_2))
   *set combat_bonus_available true
 *if (combat_can_magical_cunning)
+  *set combat_bonus_available true
+*if (combat_can_steady_aim)
   *set combat_bonus_available true
 *comment Movement option availability (2026-09-28): whether Push Forward/Fall Back should even show, checked
 *comment against EVERY living enemy, not just whichever one fight_pick_target (kill-priority, above) happened to
@@ -5579,7 +5655,7 @@
       *goto fight_move_spent
 
   *comment Slowed (an enemy's Ray of Frost, 3.6 step 2): no Dash until the player has taken their next turn, as for an enemy.
-  *if ((((((combat_player_actions_left > 0) or (combat_cunning)) and (not(combat_player_on_difficult_terrain))) and (combat_player_restrained <= 0)) and (((combat_player_slowed <= 0) and (combat_player_pinned <= 0)) and (combat_player_hobbled <= 0))) and (not(combat_player_stood_round = combat_round)))
+  *if ((((((combat_player_actions_left > 0) or (combat_cunning)) and (not(combat_player_on_difficult_terrain))) and (combat_player_restrained <= 0)) and (((combat_player_slowed <= 0) and (combat_player_pinned <= 0)) and (combat_player_hobbled <= 0))) and ((not(combat_player_stood_round = combat_round)) and (not((combat_steady_round > 0) and (combat_steady_round = combat_round)))))
     # [b][@{combat_cunning BONUS ACTION|ACTION}][/b] [b][Dash][/b] Push yourself for extra ground this turn@{combat_cunning .|, giving up anything else.}
       *comment Dash, RAW (2026-09-28): spends the action, grants ONE extra combat_player_moves_left, so a player
       *comment starting more than one tier out can close/open two tiers this turn -- at the cost of the action, so
@@ -6397,6 +6473,14 @@
     # [b][Absorb Elements: 2nd level][/b] An empowered ward: your next melee hit adds 2d6 instead of 1d6.
       *set absorb_elements_level 2
       *goto fight_arm_absorb_elements
+
+  *if (combat_can_steady_aim)
+    # [b][BONUS ACTION][/b] [b][Steady Aim][/b] Hold your ground and pick your moment against ${combat_med_epithet}.@{show_stat_hints  [Advantage on your next attack this turn | No more movement this turn]|}
+      *set combat_steady_armed true
+      *set combat_steady_round combat_round
+      You plant your feet, let your breathing slow, and wait for the opening.
+      *line_break
+      *goto fight_bonus_spent
 
   *if ((combat_can_second_wind) and (combat_player_bonus_left > 0))
     # [b][BONUS ACTION][/b] [b][Second Wind][/b] Grit your teeth through the pain, and keep going.

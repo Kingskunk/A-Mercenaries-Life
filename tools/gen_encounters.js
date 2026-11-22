@@ -70,6 +70,8 @@ var encounters = (catalog.encounters || []).map(function (enc) {
     ["hp", "ac", "atk", "resolve"].forEach(function (k) { if (e[k] !== undefined && !isInt(e[k])) fail(ew, k + " must be a whole number"); });
     if (e.hp !== undefined && e.hp < 1) fail(ew, "hp must be 1 or more");
     if (e.arrives !== undefined && (!isInt(e.arrives) || e.arrives < 2)) fail(ew, "arrives must be a round number, 2 or later");
+    if (e.enters_at !== undefined && e.arrives === undefined) fail(ew, "enters_at is for a reinforcement; give it an arrives round too");
+    if (e.enters_at !== undefined && (!isInt(e.enters_at) || e.enters_at < 0 || e.enters_at > 5)) fail(ew, "enters_at must be a range tier, 0 (Engaged) to 3 (Long Range), or up to 5 in an expanded fight");
     var ranges = Array.isArray(e.range) ? e.range : null;
     if (ranges && ranges.length !== count) fail(ew, "range lists " + ranges.length + " tiers for " + count + " enemies");
     var name = e.name || t.name;
@@ -116,7 +118,7 @@ var encounters = (catalog.encounters || []).map(function (enc) {
       var epithet;
       if (e.epithet) epithet = count > 1 ? e.epithet.replace(/^the /, "the " + ORDINALS[i] + " ") : e.epithet;
       else epithet = count > 1 ? "the " + ORDINALS[i] + " " + name.toLowerCase() : "the " + name.toLowerCase();
-      slots.push({ type: e.type, name: slotName, epithet: epithet, group: group, hp: e.hp, ac: e.ac, atk: e.atk, resolve: e.resolve, range: range, arrives: e.arrives, spells: spells, cast_stat: e.cast_stat, cast_dc: e.cast_dc });
+      slots.push({ type: e.type, name: slotName, epithet: epithet, group: group, hp: e.hp, ac: e.ac, atk: e.atk, resolve: e.resolve, range: range, arrives: e.arrives, enters_at: e.enters_at, spells: spells, cast_stat: e.cast_stat, cast_dc: e.cast_dc });
     }
   });
   if (slots.length && slots[0].arrives !== undefined) fail(where, "the first enemy is there from the start; put a reinforcement later in the list");
@@ -155,6 +157,7 @@ function genLabel(x) {
     if (s.atk !== undefined) out.push("*set " + field(n, "atk_override") + " " + s.atk);
     if (s.resolve !== undefined) out.push("*set " + field(n, "resolve_override") + " " + s.resolve);
     if (s.arrives !== undefined) out.push("*set combat_enemy" + n + "_arrives " + s.arrives);
+    if (s.enters_at !== undefined) out.push("*set combat_enemy" + n + "_enters_at " + s.enters_at);
     if (s.range !== undefined) out.push("*set " + (n === 1 ? "combat_enemy_range" : "combat_enemy" + n + "_range") + " " + s.range);
     if (s.spells && s.spells.length) {
       s.spells.forEach(function (sp, si) {

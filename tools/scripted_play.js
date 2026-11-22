@@ -76,8 +76,34 @@ var path = require("path"), fs = require("fs"), vm = require("vm");
 var ROOT = path.resolve(__dirname, "..");
 global.require = require;
 global.fs = fs; global.vm = vm; global.path = path;
-function load(f) { vm.runInThisContext(fs.readFileSync(path.join(ROOT, f)), f); }
+// SPEED (2026-11-22): every run is its own process, so each one compiled the engine's scripts from scratch (about 10% of a short run). V8's code cache
+// for each file is kept in the system temp folder, keyed by the file's own text, so an edited file simply compiles afresh. Set VM_CACHE_OFF=1 to skip it.
+var VM_CACHE_DIR = path.join(require("os").tmpdir(), "cs_scripted_play_vm_cache");
+function load(f) {
+  var src = fs.readFileSync(path.join(ROOT, f), "utf8");
+  if (process.env.VM_CACHE_OFF) { vm.runInThisContext(src, f); return; }
+  var key = path.join(VM_CACHE_DIR, f.replace(/[\\\/]/g, "_") + "." + require("crypto").createHash("sha1").update(src).digest("hex") + ".bin");
+  var cached; try { cached = fs.readFileSync(key); } catch (e) { cached = undefined; }
+  var script = new vm.Script(src, { filename: f, cachedData: cached });
+  if (!cached || script.cachedDataRejected) {
+    try { fs.mkdirSync(VM_CACHE_DIR, { recursive: true }); var tmp = key + "." + process.pid; fs.writeFileSync(tmp, script.createCachedData()); fs.renameSync(tmp, key); } catch (e) { /* a cache that cannot be written only costs speed */ }
+  }
+  script.runInThisContext();
+}
 load("web/scene.js"); load("web/navigator.js"); load("web/util.js"); load("headless.js");
+// SPEED (2026-11-22, profiled): the engine's crc32 (web/util.js) walks a scene's text a character at a time through string lookups and hex parsing, about
+// a quarter of a short run spent on each scene's first load. This is the same CRC-32 (polynomial 0xEDB88320, same signed result) from a number table.
+// tools/check_fast_crc.js proves the two agree on every scene file. Set FAST_CRC_OFF=1 to use the engine's own.
+if (!process.env.FAST_CRC_OFF) (function () {
+  var T = new Int32Array(256);
+  for (var n = 0; n < 256; n++) { var c = n; for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); T[n] = c; }
+  global.crc32 = function crc32(str, crc) {
+    if (!crc) crc = 0;
+    crc = crc ^ (-1);
+    for (var i = 0, iTop = str.length; i < iTop; i++) crc = (crc >>> 8) ^ T[(crc ^ str.charCodeAt(i)) & 0xFF];
+    return crc ^ (-1);
+  };
+})();
 // The name generator lives in a browser data file; *script in names.txt reads it from the global scope.
 load("web/mygame/names-data.js");
 load("web/mygame/overworld-data.js");

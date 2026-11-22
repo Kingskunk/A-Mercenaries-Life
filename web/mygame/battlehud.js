@@ -103,7 +103,7 @@
     "dissonant_whispers", "cause_fear", "command", "blindness", "web", "hold_person", "shatter", "scorching_ray", "grease", "burning_hands",
     "thunderwave", "arms_of_hadar", "bane", "healing_word", "cure_wounds",
     "read", "dodge", "intimidate", "hide",
-    "shield", "hellish_rebuke", "absorb_elements", "riposte", "combat_inspiration", "second_wind", "hunters_mark",
+    "shield", "hellish_rebuke", "absorb_elements", "riposte", "combat_inspiration", "steady_aim", "second_wind", "hunters_mark",
     "ensnaring_strike", "action_surge", "rage", "eagles_flight", "arcane_ward", "magical_cunning",
     "throw", "potions", "items", "flee", "end_turn"
   ];

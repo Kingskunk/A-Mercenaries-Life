@@ -307,7 +307,7 @@ You climb the steep wooden steps behind Angel's wool curtain into a small loft r
 
 *label nine_court_appraiser_return
 *set current_district "middle_ward"
-*set scenery_subplace "middle_ward_city_street"
+*set scenery_subplace "generic_city_street"
 *gosub_scene calendar ensure_navigable_weather
 
 You and Lyra turn off Lantern Lane into the flagstone alley toward Simeon's door.
@@ -324,6 +324,30 @@ Before you reach the crooked sign, glass shatters within Simeon's shop. The cras
 
 Lyra's hand drops immediately to her unslung recurve, nocking a black-fletched bodkin arrow in one practiced motion. "Someone found out he was asking," she hisses, pressing flat against the brick corner. "Watch'll take ten minutes to climb these stairs, and he doesn't have two. How do we hit them?"
 
+*temp nc_cleaner_fled false
+*temp nc_mage_hp 18
+*temp nc_cleaner_range 1
+*gosub_scene dungeon dg_spell_source "disguise_self" "Disguise Self" 0 "spell"
+*temp nc_can_disguise dg_ss_can
+*temp nc_word_disguise dg_ss_word
+*gosub_scene dungeon dg_spell_source "minor_illusion" "Minor Illusion" 0 "cantrip"
+*temp nc_can_lure dg_ss_can
+*temp nc_word_lure dg_ss_word
+*temp nc_lure_id "minor_illusion"
+*temp nc_lure_name "Minor Illusion"
+*if (not(nc_can_lure))
+  *gosub_scene dungeon dg_spell_source "thaumaturgy" "Thaumaturgy" 0 "cantrip"
+  *set nc_can_lure dg_ss_can
+  *set nc_word_lure dg_ss_word
+  *set nc_lure_id "thaumaturgy"
+  *set nc_lure_name "Thaumaturgy"
+*gosub_scene dungeon dg_spell_source "control_flames" "Control Flames" 0 "cantrip"
+*temp nc_can_flames dg_ss_can
+*temp nc_word_flames dg_ss_word
+*gosub_scene dungeon dg_spell_source "jump" "Jump" 0 "spell"
+*temp nc_can_jump dg_ss_can
+*temp nc_word_jump dg_ss_word
+
 *choice
   # Slip down the side alley to the rear shutter.@{show_stat_hints  [Stealth or Acrobatics DC 11]|}
     *gosub_scene dice_engine roll_skill_check 11 "stealth" "" "acrobatics" "" "" ""
@@ -337,6 +361,71 @@ Lyra's hand drops immediately to her unslung recurve, nocking a black-fletched b
       *set nine_court_rescue_approach "alerted"
       You sprint down the side passage toward the rear window, but your ${feet_prose} clip a stacked timber crate in the gloom, sending it crashing against the brick. By the time you force the wood panel open, the two cloaked killers have already spun around with drawn steel while the slate-coated mage by the writing table raises a staff, ready for you as Lyra rushes the main door.
     *goto nine_court_appraiser_fight
+
+  *if (nc_can_disguise)
+    # [${nc_word_disguise}: Disguise Self] Bluff them as a Watch patrol.@{show_stat_hints  [Deception or Intimidation DC 10]|}
+      *gosub_scene dungeon dg_spell_source "disguise_self" "Disguise Self" 0 "spell"
+      *gosub_scene dungeon dg_spell_cast "disguise_self"
+      You step back behind the brick corner, flick your fingers, and let an illusion wash over your shoulders: a Port Watchman's grey-trimmed tabard, brass badge, and peaked iron cap. You stride straight into the broken doorway, barking a sharp patrol challenge.
+      *gosub_scene dice_engine roll_skill_check 10 "deception" "" "intimidation" "" "" ""
+      *if (check_success)
+        *set nine_court_rescue_approach "disguise_bluff"
+        *set nc_cleaner_fled true
+        The younger killer by the workbench freezes, takes one look at the Watch tabard, and bolts straight out the rear casement into the alley before his partner can stop him. The mage and the remaining enforcer catch the glint of Lyra's bow behind you an instant too late to run, spinning to face you with drawn blades and raised staff.
+      *else
+        *set nine_court_rescue_approach "breach"
+        The grey-coated mage takes one sharp look at your ${feet_prose} beneath the illusory cloak and snaps, "Fake!" All three turn toward the doorway at once, blades and staff already rising as Lyra rushes in beside you.
+      *goto nine_court_appraiser_fight
+
+  *if (nc_can_lure)
+    # [${nc_word_lure}: ${nc_lure_name}] Lure them to the door, then flank.@{show_stat_hints  [Stealth/Acrobatics DC 9]|}
+      *gosub_scene dungeon dg_spell_source nc_lure_id nc_lure_name 0 "cantrip"
+      *gosub_scene dungeon dg_spell_cast nc_lure_id
+      *if (nc_lure_id = "minor_illusion")
+        You weave a sharp phantom sound just outside the broken shopfront: heavy Watchman boots ringing on the flagstones and the shrill double-blast of a brass whistle.
+      *else
+        You murmur a quick incantation, sending the heavy thud of Watchman boots and a rattling door-knock echoing off the cobbles outside the shopfront.
+      *gosub_scene dice_engine roll_skill_check 9 "stealth" "" "acrobatics" "" "" ""
+      *if (check_success)
+        *set nine_court_rescue_approach "lure_flank"
+        *set combat_player_surprise true
+        *set nc_cleaner_range 2
+        The enforcer curses and steps toward the street threshold with his blade up while the leaner cleaner hangs back by the counter. While their eyes are fixed on the empty doorway, you slip silently down the service passage, pry open the rear casement, and drop in behind them just as Lyra looses an arrow through the shattered pane.
+      *else
+        *set nine_court_rescue_approach "alerted"
+        They hesitate at the sound, giving you a clean start down the alley, but your ${feet_prose} clip a stacked timber crate near the rear shutter. By the time you force the casement, all three have spun back with steel and staff ready as Lyra rushes the front door.
+      *goto nine_court_appraiser_fight
+
+  *if (nc_can_flames)
+    # [${nc_word_flames}: Control Flames] Flare the mage's tinder-stick.@{show_stat_hints  [Stealth or Arcana DC 9]|}
+      *gosub_scene dungeon dg_spell_source "control_flames" "Control Flames" 0 "cantrip"
+      *gosub_scene dungeon dg_spell_cast "control_flames"
+      Peering past the brick corner through the shattered front pane, you catch sight of the grey-coated mage standing over Simeon's ledger-table with a lit pine taper, and you snap your fingers to wrench the flame outward and snuff the shop's oil lamp in the same breath.
+      *gosub_scene dice_engine roll_skill_check 9 "stealth" "" "arcana" "" "" ""
+      *if (check_success)
+        *set nine_court_rescue_approach "flames_breach"
+        *set combat_player_surprise true
+        *set nc_mage_hp 14
+        The brand erupts in a blinding tongue of fire across the mage's sleeve as the lamp dies into gloom. He yelps and stumbles back from the desk, beating at his scorched cuff while the two cloaked killers spin blindly in the dark, caught flat-footed as you and Lyra burst through the doorway.
+      *else
+        *set nine_court_rescue_approach "breach"
+        The lamp gutters and the flame flares, but the mage jerks his wrist clear in time and shouts a warning. You and Lyra charge straight through the oak doorway into three ready blades.
+      *goto nine_court_appraiser_fight
+
+  *if (nc_can_jump)
+    # [${nc_word_jump}: Jump] Bound up to the rear casement.@{show_stat_hints  [Stealth DC 8]|}
+      *gosub_scene dungeon dg_spell_source "jump" "Jump" 0 "spell"
+      *gosub_scene dungeon dg_spell_cast "jump"
+      You whisper the spell as you dart into the service alley, clearing the stacked barrel in one effortless spring straight up to Simeon's high rear casement without brushing a single crate.
+      *gosub_scene dice_engine roll_skill_check 8 "stealth" "" "" "" "" ""
+      *if (check_success)
+        *set nine_court_rescue_approach "jump_flank"
+        *set combat_player_surprise true
+        You unlatch the wooden panel without a sound and drop lightly inside behind the ledger-table. Just as your ${feet_prose} touch the floor, Lyra looses an arrow through the shattered street pane, catching all three off guard.
+      *else
+        *set nine_court_rescue_approach "alerted"
+        You clear the alley silently, but the dry casement latch snaps loud as iron when you force it open. All three spin around with drawn steel and raised staff as Lyra charges the front door.
+      *goto nine_court_appraiser_fight
 
   # Kick the front door in immediately to draw their blades off Simeon. [Direct Breach]
     *set nine_court_rescue_approach "breach"
@@ -353,14 +442,18 @@ Lyra's hand drops immediately to her unslung recurve, nocking a black-fletched b
 *set combat_no_morale true
 *set combat_terrain_layout "fixed"
 *set combat_terrain1_type "cover"
-*set combat_terrain1_position 1
+*set combat_terrain1_position 2
 *set combat_terrain2_type "difficult_terrain"
-*set combat_terrain2_position 2
+*set combat_terrain2_position 4
 *set combat_ally_lib_1 "lyra"
+*set combat_ally1_range 3
 *set combat_lib_1 "hedge_mage"
+*set combat_enemy_range 2
+*set combat_enemy1_range 2
+*set combat_enemy2_range 1
 *set combat_enemy_name_override "Grey-Coated Mage"
 *set combat_enemy_epithet_override "the grey-coated mage"
-*set combat_enemy_hp_override 18
+*set combat_enemy_hp_override nc_mage_hp
 *set combat_enemy_ac_override 12
 *set combat_enemy_cast_dc_override 12
 *set combat_enemy_cast_spell_1_override "burning_hands"
@@ -378,12 +471,14 @@ Lyra's hand drops immediately to her unslung recurve, nocking a black-fletched b
 *set combat_enemy2_hp_override 16
 *set combat_enemy2_ac_override 13
 *set combat_enemy2_atk_override 5
-*set combat_lib_3 "knifeman"
-*set combat_enemy3_name_override "Lean Cleaner"
-*set combat_enemy3_epithet_override "the lean cleaner"
-*set combat_enemy3_hp_override 12
-*set combat_enemy3_ac_override 12
-*set combat_enemy3_atk_override 4
+*if (not(nc_cleaner_fled))
+  *set combat_lib_3 "knifeman"
+  *set combat_enemy3_range nc_cleaner_range
+  *set combat_enemy3_name_override "Lean Cleaner"
+  *set combat_enemy3_epithet_override "the lean cleaner"
+  *set combat_enemy3_hp_override 12
+  *set combat_enemy3_ac_override 12
+  *set combat_enemy3_atk_override 4
 *gosub_scene combat fight_library
 *set scenery_combat_place ""
 *set combat_player_can_die false
@@ -395,7 +490,10 @@ Lyra's hand drops immediately to her unslung recurve, nocking a black-fletched b
 *if (combat_outcome = "victory")
   *set nine_court_simeon_saved true
   *set nine_court_stage "rescued"
-  The enforcer crashes backward across a shattered display case and lies still, while the cleaner crumples beside the counter. Against the wall, the grey-coated mage slumps down with a black-fletched arrow buried to the feathers in his shoulder.
+  *if (nc_cleaner_fled)
+    The enforcer crashes backward across a shattered display case and lies still. Against the wall, the grey-coated mage slumps down with a black-fletched arrow buried to the feathers in his shoulder.
+  *else
+    The enforcer crashes backward across a shattered display case and lies still, while the cleaner crumples beside the counter. Against the wall, the grey-coated mage slumps down with a black-fletched arrow buried to the feathers in his shoulder.
 
   Lyra lowers her bow slowly, breathing hard in the quiet that follows, watching the doorway for any sign of reinforcements before stepping over the broken glass.
 

@@ -124,7 +124,7 @@ One subclass per class, the best for solo play (the user, 2026-11-20), level 3 f
 | Barbarian | Path of the Wild Heart | Built (2026-11-21) |
 | Bard | College of Valor | Built (2026-11-22) |
 | Ranger | Gloom Stalker | Built (2026-11-22) |
-| Rogue | Thief | Not started |
+| Rogue | Assassin (in place of the Thief, 2026-11-22) | Built (2026-11-22) |
 
 **The Fiend** (agreed 2026-11-20; changed 2026-11-21). Every warlock's patron is the Fiend; character creation no longer offers a patron choice (Archfey and The Vast are gone). The Fiend's features come at warlock level 3.
 1. Done (2026-11-20; `fiend_blessing_*` scripts). Dark One's Blessing: on dropping a foe to 0 HP (a foe beaten into surrender counts; one that gives up or flees on morale does not), temp HP = CHA mod + warlock level (min 1). An ally's kill counts when the foe was within 10 ft of you. Temp HP does not stack (the higher stays); replacing Armor of Agathys's temp HP ends Agathys.
@@ -154,6 +154,15 @@ One subclass per class, the best for solo play (the user, 2026-11-20), level 3 f
 2. Done (2026-11-22; `gs_ambushers_leap_*`, `gs_no_leap_below_level_3`, `gs_initiative_adds_wisdom`). Ambusher's Leap (adapted, the user, 2026-11-22): on round 1, one free extra move (a free Dash), under the Dash's own bars. Initiative Bonus: WIS mod added to the player's initiative roll (it only counts in an ambush, the one fight the player does not open).
 3. Done (2026-11-22; `level_up_gloom_stalker_3_page`, `gs_no_umbral_sight_below_level_3`). Umbral Sight's darkvision (`sees_in_dark`), Gloom Stalker Spells (Disguise Self granted, no slot) and the ranger level 3 page. The spellbook probe has a `gloom3` scenario, not yet run (it needs a compiled `play_game.html`).
 Deferred: Umbral Sight's invisibility in darkness. It needs a "this fight is in darkness" state (today `dg_dark` means only "you cannot see") and enemy senses (blindsight, truesight).
+
+**The Assassin** (agreed 2026-11-22, chosen over the Thief for solo play: the player opens almost every fight, so Assassinate fires every round 1). Every rogue gets it at rogue level 3.
+0. Done (2026-11-22; `rogue_steady_aim_*`, `rogue_no_steady_aim_below_level_3`). Steady Aim, the rogue's own level 3 class feature (not the subclass): what makes Sneak Attack reliable solo after round 1.
+1. Done (2026-11-22; `assassin_*` scripts). Assassinate: advantage on initiative (counts only in an ambush); advantage on attacks against a foe that has not taken a turn yet (a per-enemy "acted" flag); a round 1 Sneak Attack adds the rogue level as extra damage of the same type (not doubled on a crit).
+2. Done (2026-11-22; `level_up_assassin_3_page`). Tradecraft (renamed from Assassin's Tools, the user, 2026-11-22): proficiency in Deception and Survival; one already held gives nothing extra. Level 3 page, character sheet, docs. No poisoner's kit (alchemy covers it). A disguise kit waits until a scene uses disguises (sold by the Gilt Needle tailor or a fence; the user has an icon).
+
+Checked (2026-11-22): the replay differences on an ambush's opening page are a test-harness artifact, not a game bug. A script that starts at `fight_library` sets `combat_enemy_advantage` once, and `fight_setup` clears it (`combat.txt`, the "Pre-fight ambush advantage" reset), so the harness's replay of that first page re-runs the fight as no ambush. In the game the calling scene sets the flag on the same page, before `*gosub_scene combat`, so a replay sets it again. `assassin_ambush_foe_already_acted` runs with refresh off; a harness option that re-applies a script's caller-set stats on the opening page's replay would cover it.
+
+**Reinforcement entry point** (built 2026-11-22; `reinforcement_enters_at_*`): an encounter template's `enters_at` (a range tier, with `arrives`) sets where a late enemy enters, on its own side; without it, its edge of the lane.
 
 **Weapon proficiency (later, with the first batch of martial weapons).** Of the 12 catalog weapons only the hewing axe (a battleaxe) is martial, so it is not worth building yet. The route: a `category: "simple" | "martial"` on each catalog weapon, a `weapon_prof_check` beside `armor_prof_check` (untrained: no proficiency bonus to hit), and Valor's martial weapons as one line in it.
 
