@@ -321,6 +321,19 @@
       see: ["middle_ward", "vael", "marda", "ambrose", "kess"]
     },
     {
+      id: "simeon_penn", category: "people", title: "Simeon Penn",
+      sub: "Appraiser, off Lantern Lane",
+      role: "Appraiser, off Lantern Lane (Middle Ward)",
+      link: ["Simeon Penn", "Simeon"],
+      tags: ["Middle Ward", "Trade"], aliases: ["Simeon", "Simeon Penn", "appraiser"],
+      unlock: "nine_court_simeon_met",
+      body: [
+        "A stooped, gaunt human appraiser in his late fifties with weathered pale skin, deep-set squinting grey eyes behind thick brass-rimmed spectacles perched on a crooked nose, thinning sandy-grey hair swept back from a high forehead, and clipped salt-and-pepper stubble. In a frayed brown wool coat with leather elbow patches over a high-collared linen shirt, ink-stained knuckles, and a heavy ring of iron keys at his waist, he works behind a faded brass magnifying-glass sign off Lantern Lane.",
+        "Twenty years ago he was blackballed from his post as a customs clerk down on the Cargo Quay for refusing to cook a shipping ledger. Now he tests old-empire silver and odd heirlooms for Angel beneath a swing-arm brass loupe without asking where they came from."
+      ],
+      see: ["middle_ward", "angel"]
+    },
+    {
       id: "halda", category: "people", title: "Master Halda",
       sub: "Smith, Smiths' Row",
       role: "Smith, Halda's Forge (Smiths' Row)",

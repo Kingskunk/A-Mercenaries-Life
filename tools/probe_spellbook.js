@@ -8,7 +8,7 @@
 // It plays a real character with tools/scripted_play.js (a Dev Hub preset, levelled up through the real level-up), seeds those stats into the real game,
 // opens the Spellbook, reads the rows off each level tab, and checks every held spell is on one of them. It also screenshots the open section.
 //
-// Run (after `node compile.js`):  node tools/probe_spellbook.js [bard2|warlock2|fiend3|wildheart3|wizard|all]     (CHROME=... if Chrome is not in the usual place)
+// Run (after `node compile.js`):  node tools/probe_spellbook.js [bard2|warlock2|fiend3|wildheart3|gloom3|wizard|all]     (CHROME=... if Chrome is not in the usual place)
 // It starts its own Chrome profile and stops only its own processes.
 const { spawn } = require("child_process");
 const fs = require("fs"), os = require("os"), path = require("path");
@@ -65,6 +65,17 @@ const SCENARIOS = {
       steps: [{ pick: "Take Level 3" }]
     },
     expect: ["Speak with Animals"]
+  },
+  // Gloom Stalker Spells (2026-11-22): the ranger's Disguise Self, granted at level 3 by feature_dread_ambusher, held in no slot.
+  gloom3: {
+    what: "Gloom Stalker ranger, level 3 (Disguise Self from Gloom Stalker Spells)",
+    script: {
+      scene: "dev_hub", label: "dev_combat_test_hub", preset: "Scout Company Ranger",
+      weather: "Clear", time: "Morning", day: "Ironday",
+      stats: { character_level: 2 },
+      steps: [{ pick: "Take Level 3" }]
+    },
+    expect: ["Disguise Self"]
   },
   wizard: {
     what: "Wizard, level 2 (four spells in the book)",

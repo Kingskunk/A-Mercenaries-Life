@@ -233,6 +233,10 @@
 *set booming_armed false
 *set booming_side false
 *set combat_maneuver_armed ""
+*set combat_dreadful_armed false
+*set ranger_dreadful_round 0
+*set combat_leap_granted false
+*set combat_leap_page 0
 *set true_strike_on false
 *set true_strike_radiant false
 *set combat_save_quiet false
@@ -814,6 +818,9 @@
   *rand cri_roll 1 20
   *gosub_scene startup score_to_mod dexterity
   *set combat_init_score_1 (cri_roll + sm_mod)
+  *comment Dread Ambusher's Initiative Bonus (the Gloom Stalker, ranger level 3): the Wisdom modifier too. It counts only in an ambush; any other fight opens on the player.
+  *if (feature_dread_ambusher)
+    *set combat_init_score_1 + wis_mod
   *comment THE PLAYER ACTS FIRST UNLESS AMBUSHED (2026-10-02, from the fight log: a level-1 wizard with 7 HP lost 8 of 11 fights, often to damage taken before the first action;
   *comment two bad initiative rolls took the whole HP pool before a turn). A fight the story marks as an ambush (combat_enemy_advantage, set by the calling scene or by the
   *comment dungeon's darkness) keeps the honest roll, so an ambush still hurts; every other fight opens on the player's turn. Allies and enemies still sort among themselves.
@@ -1148,6 +1155,10 @@
 *set booming_armed false
 *set booming_side false
 *set combat_maneuver_armed ""
+*set combat_dreadful_armed false
+*set ranger_dreadful_round 0
+*set combat_leap_granted false
+*set combat_leap_page 0
 *set true_strike_on false
 *set true_strike_radiant false
 *set combat_save_quiet false
@@ -3647,6 +3658,7 @@
 *set booming_side false
 *comment A maneuver (the Battle Master) is armed for one swing only; a miss leaves the die unspent.
 *set combat_maneuver_armed ""
+*set combat_dreadful_armed false
 *goto fight_round_hub
 
 *label fight_bonus_spent
@@ -3755,6 +3767,17 @@
 *comment STEPPING IN (3.9a 5): a move into an enemy's Web or onto Grease this turn is a save now (player_step_in_check).
 *gosub_scene combat_spells player_step_in_check
 *comment Caught by either check: the movement is held now, as at the top of the hub, so the menu offers no step.
+*comment AMBUSHER'S LEAP (the Gloom Stalker, ranger level 3; adapted 2026-11-22, the user: RAW +10 ft on the first turn, but a move is the engine's smallest unit, so it is
+*comment one free extra move, a free Dash). Once per fight at the first menu of round 1 (combat_leap_granted), under the Dash's own bars. The banner prints on the page that
+*comment granted it (combat_leap_page), so a replay of that page prints it again without granting twice.
+*if (((feature_dread_ambusher) and (combat_round = 1)) and (not(combat_leap_granted)))
+  *set combat_leap_granted true
+  *if (((((not(combat_player_on_difficult_terrain)) and (combat_player_restrained <= 0)) and (combat_player_slowed <= 0)) and ((combat_player_pinned <= 0) and (combat_player_hobbled <= 0))) and (not(combat_player_stood_round = combat_round)))
+    *set combat_player_moves_left + 1
+    *set combat_leap_page page_id
+*if (combat_leap_page = page_id)
+  [b][🌑 Ambusher's Leap: one extra move this turn][/b]
+  *line_break
 *comment PINNED (3.3): no movement at all this turn (the round's movement is spent, not held: Pinned lasts only this turn).
 *if (combat_player_pinned > 0)
   *set combat_player_moves_left 0
@@ -4555,6 +4578,12 @@
 *if ((((feature_combat_superiority) and (fighter_superiority_uses > 0)) and (combat_can_attack)) and (not(equipped_weapon_id = "none")))
   *if ((combat_wpn_far_ok) or (combat_primary_reach))
     *set combat_can_maneuver true
+*comment DREADFUL STRIKE (the Gloom Stalker, ranger level 3, PHB'24; 2026-11-22): armed before the swing, like a maneuver, since the attack cannot stop to ask on the hit.
+*comment A use left, an attack left, the weapon in hand reaching, and none spent on a hit this turn (once per turn, ranger_dreadful_round).
+*temp combat_can_dreadful false
+*if ((((feature_dread_ambusher) and (ranger_dreadful_uses > 0)) and (combat_can_attack)) and ((not(equipped_weapon_id = "none")) and (not(ranger_dreadful_round = combat_round))))
+  *if ((combat_wpn_far_ok) or (combat_primary_reach))
+    *set combat_can_dreadful true
 *if ((combat_can_attack) and (known_booming_blade))
   *if (((not(equipped_weapon_id = "none")) and (not(weapon_type = "ranged"))) and (combat_primary_reach))
     *set combat_can_booming true
@@ -5243,6 +5272,10 @@
     # [b][ACTION][/b] [b][Menacing Attack][/b] Strike to cow ${combat_med_epithet}: a superiority die of extra damage, and they are frightened of you unless they hold their nerve.@{show_stat_hints  [Wisdom Save, Frightened | 1 Superiority Die on a hit]|}
       *set combat_maneuver_armed "menacing"
       *goto fight_maneuver_go
+  *if (combat_can_dreadful)
+    # [b][ACTION][/b] [b][Dreadful Strike][/b] Strike from the edge of ${combat_med_epithet}'s sight, with a wash of dread that bites at the mind.@{show_stat_hints  [+2d6 Psychic on a hit | ${ranger_dreadful_uses} left]|}
+      *set combat_dreadful_armed true
+      *goto fight_dreadful_go
 
   *if (combat_why_true_strike = "")
     *comment Two options for one cantrip: the battle bar folds every "True Strike: X" pair into one slot and opens the variants on a click (battlehud.js). The Classic list shows both lines.
@@ -7928,6 +7961,22 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     You hold ${combat_enemy_epithet}'s gaze down the line of your shot.
   *else
     You close with a snarl, putting everything into the blow.
+*line_break
+*goto resolve_weapon_attack_choice
+
+*label fight_dreadful_go
+*comment Dreadful Strike's entry: the plain attack's reach test, a line, then the shared weapon attack. A refused reach check leaves the hub with the action and the use untouched.
+*if (not(weapon_type = "ranged"))
+  *gosub_scene combat_movement fight_weapon_reach_check
+  *if (not(combat_reach_ok))
+    ${combat_reach_msg}
+    *line_break
+    *set combat_dreadful_armed false
+    *goto fight_round_hub
+*if (weapon_type = "ranged")
+  You let the dark gather behind your aim and loose it at ${combat_enemy_epithet}.
+*else
+  You come at ${combat_enemy_epithet} from the edge of their sight, dread riding the blow.
 *line_break
 *goto resolve_weapon_attack_choice
 

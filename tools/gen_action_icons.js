@@ -106,6 +106,9 @@ const MAP = {
   trip_attack_ranged: "Weapon_action/Trip_Attack_Ranged_Icon.webp",
   menacing_attack_melee: "Weapon_action/Menacing_Attack_Melee_Icon.webp",
   menacing_attack_ranged: "Weapon_action/Menacing_Attack_Ranged_Icon.webp",
+  // Dreadful Strike (the Gloom Stalker, 2026-11-22): BG3's Dread Ambusher art, by the weapon in hand (battlehud.js iconFor).
+  dreadful_strike_melee: "Weapon_action/Dread_Ambusher_Melee_Icon.webp",
+  dreadful_strike_ranged: "Weapon_action/Dread_Ambusher_Ranged_Icon.webp",
   riposte: "Weapon_action/Riposte_Icon.webp",
   combat_inspiration: "Passive_feature/Bardic_Defence_Icon.webp",   // the College of Valor's Combat Inspiration toggle (BG3's Bardic Defence art)
   // The Wild Heart's Rage of the Wilds (2026-11-21): one heart per animal in the Rage fly-out (battlehud.js variantArt).

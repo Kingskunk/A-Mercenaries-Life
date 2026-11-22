@@ -123,7 +123,7 @@ One subclass per class, the best for solo play (the user, 2026-11-20), level 3 f
 | Fighter | Battle Master | Built (2026-11-21) |
 | Barbarian | Path of the Wild Heart | Built (2026-11-21) |
 | Bard | College of Valor | Built (2026-11-22) |
-| Ranger | Gloom Stalker | Not started |
+| Ranger | Gloom Stalker | Built (2026-11-22) |
 | Rogue | Thief | Not started |
 
 **The Fiend** (agreed 2026-11-20; changed 2026-11-21). Every warlock's patron is the Fiend; character creation no longer offers a patron choice (Archfey and The Vast are gone). The Fiend's features come at warlock level 3.
@@ -148,6 +148,12 @@ One subclass per class, the best for solo play (the user, 2026-11-20), level 3 f
 1. Done (2026-11-22; `valor_martial_training_level_3`, `valor_untrained_below_level_3`). Martial Training: trained in medium armor and shields (`feature_martial_training`), so neither blocks casting nor gives disadvantage; the level 3 page and Abilities lines.
 2. Done (2026-11-22; `valor_ally_inspiration_*` scripts). Combat Inspiration for allies. An inspired ally spends its die on the first of: its miss (the current rule), its hit (the die added to the damage), or an attack hitting it that the die could still turn into a miss (its reaction, the die added to its AC).
 3. Done (2026-11-22; `valor_self_inspiration_*` scripts). Combat Inspiration for the bard's own die (the solo self-inspiration is the game's own rule). Defense only, on its own when a hit lands that the die could turn into a miss and the reaction is free, with a Hold / Ready toggle like Riposte's. No automatic Offense: the die stays for a failed roll.
+
+**The Gloom Stalker** (agreed 2026-11-22). Every ranger gets it at ranger level 3 (`feature_dread_ambusher`).
+1. Done (2026-11-22; `gs_*` scripts, `level_up_gloom_stalker_3_dreadful_pool`). Dreadful Strike: uses = WIS mod (min 1), all back on a long rest; armed from the hub before the attack like a maneuver (icons `Weapon_action/Dread_Ambusher_Melee_Icon.webp` / `_Ranged`), 2d6 psychic on a hit as its own packet (4d6 on a crit), once per turn; a miss spends nothing.
+2. Done (2026-11-22; `gs_ambushers_leap_*`, `gs_no_leap_below_level_3`, `gs_initiative_adds_wisdom`). Ambusher's Leap (adapted, the user, 2026-11-22): on round 1, one free extra move (a free Dash), under the Dash's own bars. Initiative Bonus: WIS mod added to the player's initiative roll (it only counts in an ambush, the one fight the player does not open).
+3. Done (2026-11-22; `level_up_gloom_stalker_3_page`, `gs_no_umbral_sight_below_level_3`). Umbral Sight's darkvision (`sees_in_dark`), Gloom Stalker Spells (Disguise Self granted, no slot) and the ranger level 3 page. The spellbook probe has a `gloom3` scenario, not yet run (it needs a compiled `play_game.html`).
+Deferred: Umbral Sight's invisibility in darkness. It needs a "this fight is in darkness" state (today `dg_dark` means only "you cannot see") and enemy senses (blindsight, truesight).
 
 **Weapon proficiency (later, with the first batch of martial weapons).** Of the 12 catalog weapons only the hewing axe (a battleaxe) is martial, so it is not worth building yet. The route: a `category: "simple" | "martial"` on each catalog weapon, a `weapon_prof_check` beside `armor_prof_check` (untrained: no proficiency bonus to hit), and Valor's martial weapons as one line in it.
 

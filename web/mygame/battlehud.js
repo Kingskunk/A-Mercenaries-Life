@@ -94,7 +94,7 @@
   ];
   // Canonical fight_round_hub option order so seeded unoffered spells land where the hub places them once offered.
   var HUB_ORDER = [
-    "primary_attack", "shoot", "booming_blade", "true_strike", "trip_attack", "menacing_attack", "bardic_inspiration",
+    "primary_attack", "shoot", "booming_blade", "true_strike", "trip_attack", "menacing_attack", "dreadful_strike", "bardic_inspiration",
     "swap_weapons", "reckless_attack", "dual_shot", "sidearm_attack", "shove",
     "push_forward", "fall_back", "dash",
     "control_flames", "blade_ward", "fire_bolt", "ray_of_frost", "ray_of_sickness",

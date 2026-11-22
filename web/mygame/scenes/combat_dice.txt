@@ -605,6 +605,19 @@ ${combat_player_dmg_roll_banner}
     *gosub adjust_outgoing_damage_packet cwh_ff_die spell_fact_dmg_type
     *set combat_player_dmg_dealt + combat_packet_damage
     *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} [b][+ ${cwh_ff_die} ${spell_fact_dmg_type} (Hunter's Mark) = ${combat_packet_damage}${combat_packet_suffix}][/b]"
+  *comment DREADFUL STRIKE (the Gloom Stalker, PHB'24; 2026-11-22): an armed one spends a use on this hit for 2d6 psychic (4d6 on a critical), its own packet like
+  *comment Hunter's Mark's, and marks the round so it cannot land twice in one turn. Inside the hit lock, so a replay spends nothing again.
+  *if ((combat_dreadful_armed) and (ranger_dreadful_uses > 0))
+    *set ranger_dreadful_uses - 1
+    *set ranger_dreadful_round combat_round
+    *temp cwh_dread_n 2
+    *if (combat_player_crit)
+      *set cwh_dread_n 4
+    *gosub_scene combat_spells roll_spell_dice cwh_dread_n 6
+    *temp cwh_dread spell_roll_total
+    *gosub adjust_outgoing_damage_packet cwh_dread "psychic"
+    *set combat_player_dmg_dealt + combat_packet_damage
+    *set combat_player_dmg_roll_banner "${combat_player_dmg_roll_banner} [b][+ ${cwh_dread} psychic (Dreadful Strike) = ${combat_packet_damage}${combat_packet_suffix}][/b]"
   *comment The only current source of this rider, Absorb Elements, is melee-only, RAW -- not(weapon_type = "ranged")
   *comment keeps a ranged weapon hit from spending it, so it survives to wait for an actual melee swing. One-shot:
   *comment sides resets to 0 the instant it fires, so it never carries past the single hit it was meant for.

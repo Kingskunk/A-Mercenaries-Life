@@ -46,9 +46,9 @@
   function num(v) { var n = Number(v); return isFinite(n) ? n : 0; }
   function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
   function statsNow() { return window.stats || {}; }
-  // Can the walker keep going after dark? A lit lantern or torch does it, and so does seeing in the dark (race darkvision, Devil's Sight or the Night-Eye Ring). The worn rings are read here, not
+  // Can the walker keep going after dark? A lit lantern or torch does it, and so does seeing in the dark (race darkvision, Devil's Sight, the Gloom Stalker's Umbral Sight or the Night-Eye Ring). The worn rings are read here, not
   // from sees_in_dark, because the inventory panel swaps rings without running any ChoiceScript. The scene's trip script (overworld.txt ow_travel) must say the same thing. Poor visibility still halts everyone.
-  function nightLight(s) { return (truthy(s.has_hooded_lantern) && truthy(s.has_lamp_oil)) || (truthy(s.has_pitch_torch) && truthy(s.has_tinderbox)) || truthy(s.race_darkvision) || truthy(s.inv_devils_sight) || s.equipped_ring1_id === "night_eye_ring" || s.equipped_ring2_id === "night_eye_ring"; }
+  function nightLight(s) { return (truthy(s.has_hooded_lantern) && truthy(s.has_lamp_oil)) || (truthy(s.has_pitch_torch) && truthy(s.has_tinderbox)) || truthy(s.race_darkvision) || truthy(s.inv_devils_sight) || truthy(s.feature_dread_ambusher) || s.equipped_ring1_id === "night_eye_ring" || s.equipped_ring2_id === "night_eye_ring"; }
   function clockText(m) { m = ((Math.floor(m) % 1440) + 1440) % 1440; return (m < 600 ? "0" : "") + Math.floor(m / 60) + ":" + (m % 60 < 10 ? "0" : "") + (m % 60); }
   function suffix(d) { return (d % 10 === 1 && d !== 11) ? "st" : (d % 10 === 2 && d !== 12) ? "nd" : (d % 10 === 3 && d !== 13) ? "rd" : "th"; }
   function arrivalDate(s, plusDays) {

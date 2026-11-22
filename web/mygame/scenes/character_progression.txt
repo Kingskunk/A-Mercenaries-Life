@@ -190,6 +190,12 @@
   *set favored_foe_max prof_bonus
   *comment Hunter's Mark is always 1d6 (2024 rules), so there is no die ladder any more.
   *set favored_foe_die_sides 6
+  *comment Dreadful Strike (the Gloom Stalker's Dread Ambusher, PHB'24; 2026-11-22): from level 3, uses equal to the Wisdom modifier (at least 1), all back on a long rest.
+  *set ranger_dreadful_max 0
+  *if (character_level >= 3)
+    *set ranger_dreadful_max wis_mod
+    *if (ranger_dreadful_max < 1)
+      *set ranger_dreadful_max 1
   *comment Spell slots (half caster): none at level 1, 2 at level 2, 3 at level 3.
   *set spell_slots_max_1 0
   *if (character_level >= 2)
@@ -230,6 +236,7 @@
 *set feature_animal_speaker false
 *set feature_martial_training false
 *set feature_combat_inspiration false
+*set feature_dread_ambusher false
 *set feature_fiend_spells false
 *set feature_save_prof_strength false
 *set feature_save_prof_dexterity false
@@ -287,6 +294,9 @@
 *if ((character_class = "bard") and (character_level >= 3))
   *set feature_martial_training true
   *set feature_combat_inspiration true
+*comment The Gloom Stalker (the ranger subclass, PHB'24; 2026-11-22): every ranger gets it at level 3.
+*if ((character_class = "ranger") and (character_level >= 3))
+  *set feature_dread_ambusher true
 *comment 4. From feats, origin and items.
 *comment A grant from a chosen feat is written here as a test of the feat_ variable; this routine never sets or resets a feat_.
 *return
@@ -324,6 +334,7 @@
   *set bard_inspiration_uses bard_inspiration_max
 *if (character_class = "ranger")
   *set favored_foe_uses favored_foe_max
+  *set ranger_dreadful_uses ranger_dreadful_max
 *if (race = "hexblood")
   *set hexblood_hex_used false
 *comment A long rest is when a preparing class chooses what it carries. Until the player has a way to choose, this carries as much of the book as
@@ -691,6 +702,7 @@
 *temp old_sw fighter_second_wind_max
 *temp old_as fighter_action_surge_max
 *temp old_sup fighter_superiority_max
+*temp old_dread ranger_dreadful_max
 *temp old_rage barbarian_rage_max
 *temp old_pact pact_slots_max
 *temp old_slots_1 spell_slots_max_1
@@ -708,6 +720,7 @@
 *set fighter_second_wind_uses (fighter_second_wind_uses + (fighter_second_wind_max - old_sw))
 *set fighter_action_surge_uses (fighter_action_surge_uses + (fighter_action_surge_max - old_as))
 *set fighter_superiority_uses (fighter_superiority_uses + (fighter_superiority_max - old_sup))
+*set ranger_dreadful_uses (ranger_dreadful_uses + (ranger_dreadful_max - old_dread))
 *set barbarian_rage_uses (barbarian_rage_uses + (barbarian_rage_max - old_rage))
 *set pact_slots (pact_slots + (pact_slots_max - old_pact))
 *set spell_slots_1 (spell_slots_1 + (spell_slots_max_1 - old_slots_1))
@@ -837,6 +850,9 @@
 *comment ANIMAL SPEAKER (the Wild Heart barbarian, level 3, PHB'24; 2026-11-21): Speak with Animals as a ritual, so always known and no slot. Beast Sense is left out (nothing in the game uses it).
 *if ((feature_animal_speaker) and (not(spells_blocked)))
   *set known_speak_with_animals true
+*comment GLOOM STALKER SPELLS (the Gloom Stalker ranger, level 3, PHB'24; 2026-11-22): Disguise Self is always prepared and takes no place among the chosen spells. It is cast with a ranger slot like any ranger spell.
+*if ((feature_dread_ambusher) and (not(spells_blocked)))
+  *set known_disguise_self true
 *comment WORN ITEMS THAT GRANT A CANTRIP. item_cantrip is the one slot for it (the spellbook and the ability page read it like any class slot). A fixed-value set from what is worn, so equip_ring can call this on every swap and a replay changes nothing.
 *comment A character who already knows the cantrip gets nothing from the item: no second copy in the spellbook, no stacking. A new item is one more branch below.
 *set item_cantrip "none"
@@ -2001,8 +2017,8 @@
 *set inv_mask_of_many_faces (((warlock_invocation_1 = "mask_of_many_faces") or (warlock_invocation_2 = "mask_of_many_faces")) or (warlock_invocation_3 = "mask_of_many_faces"))
 *set inv_devils_sight (((warlock_invocation_1 = "devils_sight") or (warlock_invocation_2 = "devils_sight")) or (warlock_invocation_3 = "devils_sight"))
 *set inv_otherworldly_leap (((warlock_invocation_1 = "otherworldly_leap") or (warlock_invocation_2 = "otherworldly_leap")) or (warlock_invocation_3 = "otherworldly_leap"))
-*comment A Night-Eye Ring worn in either slot gives it too (2026-10-02).
-*set sees_in_dark (((race_darkvision) or (inv_devils_sight)) or ((equipped_ring1_id = "night_eye_ring") or (equipped_ring2_id = "night_eye_ring")))
+*comment A Night-Eye Ring worn in either slot gives it too (2026-10-02), and so does the Gloom Stalker's Umbral Sight (feature_dread_ambusher, ranger level 3; 2026-11-22).
+*set sees_in_dark ((((race_darkvision) or (inv_devils_sight)) or (feature_dread_ambusher)) or ((equipped_ring1_id = "night_eye_ring") or (equipped_ring2_id = "night_eye_ring")))
 *return
 
 *comment INVOCATION NAMES AND DESCRIPTIONS: fills inv_label and inv_desc for the invocation id passed in ("" for none). One place for the dossier.
@@ -2289,6 +2305,13 @@ And the second.
   [b][⭐ New: Path of the Wild Heart — Rage of the Wilds][/b] Each Rage now takes an animal's heart: the Bear's toughness against almost every kind of harm, the Eagle's speed to Dash and Disengage, or the Wolf's pack sense, which opens the foes beside you to your allies.
   *line_break
   [b][⭐ New: Animal Speaker][/b] You can speak with animals, as the spell, whenever you take the time; it costs nothing.
+*if ((character_class = "ranger") and (character_level = 3))
+  *line_break
+  [b][⭐ New: Gloom Stalker, Dread Ambusher][/b] You strike first and from the dark. Your Wisdom quickens you when a fight opens, you cover extra ground on its first round, and ${ranger_dreadful_max}@{(ranger_dreadful_max = 1)  time| times} between long rests a weapon hit can carry a wash of dread for extra Psychic damage.@{show_stat_hints  [+2d6 Psychic]|}
+  *line_break
+  [b][⭐ New: Umbral Sight][/b] Your eyes take to the dark. You see in it as well as in dim light.
+  *line_break
+  [b][⭐ New: Gloom Stalker Spells][/b] Disguise Self is always yours, and it takes no place among the spells you choose.
 *gosub refresh_known_spells
 *set spell_learn_result "none"
 *return
@@ -3221,7 +3244,7 @@ And a second.
   [b][Spell slots ${spell_slots_1} / ${spell_slots_max_1}@{(spell_slots_max_2 > 0)  · + 2nd ${spell_slots_2} / ${spell_slots_max_2}|}][/b]
 *if ((character_class = "ranger") and (spell_slots_max_1 > 0))
   *line_break
-  [b][Spell slots ${spell_slots_1} / ${spell_slots_max_1}][/b]
+  [b][Spell slots ${spell_slots_1} / ${spell_slots_max_1}@{(ranger_dreadful_max > 0)  · Dreadful Strike ${ranger_dreadful_uses} / ${ranger_dreadful_max}|}][/b]
 *return
 
 *comment Consumables (the Saint Althea's Water phial, Ambrose's liniment and draught) are catalog items used through

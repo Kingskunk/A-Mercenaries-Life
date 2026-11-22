@@ -55,7 +55,9 @@
     { flag: "feature_fiend_spells", id: "scorching_ray", desc: "Fiend Spells: your patron grants you Scorching Ray. It is always known and takes no place among your chosen spells." },
     { flag: "feature_fiend_spells", id: "command", desc: "Fiend Spells: your patron grants you Command. It is always known and takes no place among your chosen spells." },
     // Animal Speaker (the Wild Heart barbarian, level 3): a ritual, granted, in no slot.
-    { flag: "feature_animal_speaker", id: "speak_with_animals", desc: "Animal Speaker: you can cast Speak with Animals as a ritual, with no spell slot." }
+    { flag: "feature_animal_speaker", id: "speak_with_animals", desc: "Animal Speaker: you can cast Speak with Animals as a ritual, with no spell slot." },
+    // Gloom Stalker Spells (the Gloom Stalker ranger, level 3): always prepared, in no slot, but cast with a ranger spell slot (origin overrides the pact line).
+    { flag: "feature_dread_ambusher", id: "disguise_self", desc: "Gloom Stalker Spells: Disguise Self is always prepared and takes no place among your chosen spells.", origin: "Granted by the Gloom Stalker's path. It is always prepared." }
   ];
 
   // Spells that can be cast outside a fight, and the dossier label that does it (choicescript_stats.txt).
@@ -79,7 +81,7 @@
       var meta = window.spellById && window.spellById(g.id);
       if (!meta) return;
       seen[g.id] = true;
-      out.push({ id: g.id, meta: meta, desc: g.desc, source: "pact" });
+      out.push({ id: g.id, meta: meta, desc: g.desc, source: "pact", origin: g.origin });
     });
     return out;
   }
@@ -305,7 +307,7 @@
       }
       // A spell that is not the character's own says so, under the entry: it is the item's, and it leaves with the item.
       var origin = pick.source === "item" ? "<div class=\"sb-origin sb-clipped\">Clipped in, not written: this working is the item's, and goes with it.</div>"
-                 : pick.source === "pact" ? "<div class=\"sb-origin\">Granted by your pact. It costs you no spell slot.</div>" : "";
+                 : pick.source === "pact" ? "<div class=\"sb-origin\">" + esc(pick.origin || "Granted by your pact. It costs you no spell slot.") + "</div>" : "";
       right = "<div class=\"sb-read" + (pick.source === "item" ? " sb-readClipped" : "") + "\">" + art(pick.id, "sb-art") +
                 "<h3>" + esc(pick.meta.name) + "</h3>" +
                 "<div class=\"sb-meta\">" + esc(levelWord(pick.meta.level)) + (pick.meta.schools ? " · " + esc(pick.meta.schools) : "") + "</div>" +
