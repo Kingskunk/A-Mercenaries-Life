@@ -103,8 +103,8 @@
     "dissonant_whispers", "cause_fear", "command", "blindness", "web", "hold_person", "shatter", "scorching_ray", "grease", "burning_hands",
     "thunderwave", "arms_of_hadar", "bane", "healing_word", "cure_wounds",
     "read", "dodge", "intimidate", "hide",
-    "shield", "hellish_rebuke", "absorb_elements", "second_wind", "hunters_mark",
-    "ensnaring_strike", "action_surge", "rage", "arcane_ward", "magical_cunning",
+    "shield", "hellish_rebuke", "absorb_elements", "riposte", "second_wind", "hunters_mark",
+    "ensnaring_strike", "action_surge", "rage", "eagles_flight", "arcane_ward", "magical_cunning",
     "throw", "potions", "items", "flee", "end_turn"
   ];
   var HUB_RANK = {};
@@ -210,6 +210,14 @@
         { id: "command_flee", label: "Flee", whyKey: "combat_why_command", blurb: "Order a foe to run from you." },
         { id: "command_grovel", label: "Grovel", whyKey: "combat_why_command", blurb: "Order a foe to throw itself to the ground." },
         { id: "command_halt", label: "Halt", whyKey: "combat_why_command", blurb: "Order a foe to stand still." }
+      ]
+    },
+    {
+      // Riposte's toggle (the Battle Master): one slot, the setting it is not already on is the live choice (combat.txt combat_why_riposte_*).
+      id: "riposte", group: "free", name: "Riposte", blurb: "Answer a melee attack that misses you.",
+      variants: [
+        { id: "riposte_ready", label: "Ready", whyKey: "combat_why_riposte_ready", blurb: "Stand ready to answer any melee attack that misses you." },
+        { id: "riposte_hold", label: "Hold", whyKey: "combat_why_riposte_hold", blurb: "Keep your counter back, saving your superiority dice and your reaction." }
       ]
     },
     { id: "blindness", group: "action", name: "Blindness", whyKey: "combat_why_blindness", blurb: "Strike a foe blind." },
@@ -657,6 +665,9 @@
     if (e.id === "hex") return (window.ACTION_ICONS || {})[(truthy(statsNow().combat_hex_orphaned) ? "reapply_hex_" : "hex_") + slug(v.label)] || "";
     // Command: Approach / Drop / Flee / Grovel / Halt -- each word wears its own art (ACTION_ICONS command_<word>).
     if (e.id === "command") return (window.ACTION_ICONS || {})["command_" + slug(v.label)] || "";
+    if (e.id === "riposte") return (window.ACTION_ICONS || {}).riposte || "";
+    // The Wild Heart's Rage of the Wilds: "Rage: Bear" wears rage_bear (ACTION_ICONS).
+    if (e.id === "rage") return (window.ACTION_ICONS || {})["rage_" + slug(v.label)] || "";
     if (e.id !== "booming_blade") return "";
     var st = statsNow(), art = window.ACTION_ICONS || {}, lab = String(v.label).toLowerCase();
     if (st.weapon && lab === String(st.weapon).toLowerCase()) return art.primary_melee || "";

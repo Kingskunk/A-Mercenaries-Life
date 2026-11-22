@@ -69,6 +69,7 @@
 
 *label end_rage
 *set is_raging false
+*set rage_animal ""
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -225,6 +226,8 @@
 *set feature_arcane_ward false
 *set feature_dark_ones_blessing false
 *set feature_combat_superiority false
+*set feature_rage_of_the_wilds false
+*set feature_animal_speaker false
 *set feature_fiend_spells false
 *set feature_save_prof_strength false
 *set feature_save_prof_dexterity false
@@ -273,6 +276,10 @@
 *comment The Battle Master (the fighter subclass, PHB'24; 2026-11-21): every fighter gets it at level 3.
 *if ((character_class = "fighter") and (character_level >= 3))
   *set feature_combat_superiority true
+*comment The Wild Heart (the barbarian subclass, PHB'24; 2026-11-21): every barbarian gets it at level 3.
+*if ((character_class = "barbarian") and (character_level >= 3))
+  *set feature_rage_of_the_wilds true
+  *set feature_animal_speaker true
 *comment 4. From feats, origin and items.
 *comment A grant from a chosen feat is written here as a test of the feat_ variable; this routine never sets or resets a feat_.
 *return
@@ -820,6 +827,9 @@
   *set known_burning_hands true
   *set known_scorching_ray true
   *set known_command true
+*comment ANIMAL SPEAKER (the Wild Heart barbarian, level 3, PHB'24; 2026-11-21): Speak with Animals as a ritual, so always known and no slot. Beast Sense is left out (nothing in the game uses it).
+*if ((feature_animal_speaker) and (not(spells_blocked)))
+  *set known_speak_with_animals true
 *comment WORN ITEMS THAT GRANT A CANTRIP. item_cantrip is the one slot for it (the spellbook and the ability page read it like any class slot). A fixed-value set from what is worn, so equip_ring can call this on every swap and a replay changes nothing.
 *comment A character who already knows the cantrip gets nothing from the item: no second copy in the spellbook, no stacking. A new item is one more branch below.
 *set item_cantrip "none"
@@ -2267,6 +2277,11 @@ And the second.
   *gosub level_up_warlock_3
 *if ((character_class = "fighter") and (character_level = 3))
   *gosub level_up_fighter_3
+*if ((character_class = "barbarian") and (character_level = 3))
+  *line_break
+  [b][⭐ New: Path of the Wild Heart — Rage of the Wilds][/b] Each Rage now takes an animal's heart: the Bear's toughness against almost every kind of harm, the Eagle's speed to Dash and Disengage, or the Wolf's pack sense, which opens the foes beside you to your allies.
+  *line_break
+  [b][⭐ New: Animal Speaker][/b] You can speak with animals, as the spell, whenever you take the time; it costs nothing.
 *gosub refresh_known_spells
 *set spell_learn_result "none"
 *return

@@ -268,6 +268,7 @@
 *set blade_ward_just_cast false
 *set dodge_active false
 *set is_raging false
+*set rage_animal ""
 *set combat_agathys_triggered false
 *set combat_agathys_shattered false
 *set combat_mm_targeting_active false
@@ -1154,6 +1155,7 @@
 *set blade_ward_just_cast false
 *set dodge_active false
 *set is_raging false
+*set rage_animal ""
 *set combat_agathys_triggered false
 *set combat_agathys_shattered false
 *set combat_mm_targeting_active false
@@ -3830,6 +3832,18 @@
 *if ((ensnaring_armed) and (ensnaring_expires_round >= combat_round))
   *line_break
   [b][🌿 Ensnaring Strike ready: your next weapon hit may bind its target][/b]
+*if ((feature_combat_superiority) and (riposte_held))
+  *line_break
+  [b][🤺 Riposte held][/b]
+*if ((is_raging) and (rage_animal = "bear"))
+  *line_break
+  [b][🐻 Bear Heart: resistant to all damage but Force, Necrotic, Psychic and Radiant][/b]
+*if ((is_raging) and (rage_animal = "eagle"))
+  *line_break
+  [b][🦅 Eagle Heart: a bonus action Dashes and Disengages][/b]
+*if ((is_raging) and (rage_animal = "wolf"))
+  *line_break
+  [b][🐺 Wolf Heart: your allies have advantage against foes beside you][/b]
 *if (combat_hex_live)
   *line_break
   *gosub_scene combat_prose hex_ability_name
@@ -4194,6 +4208,8 @@
 *else
   *set chm_cost_text ", spending a spell slot (${spell_slots_1} left)"
 *temp combat_can_rage false
+*comment EAGLE HEART (the Wild Heart, 2026-11-21): whether a Dash is allowed right now (the plain Dash's own bars, less its action cost), for the Eagle Rage and its bonus action.
+*temp combat_eagle_dash_ok (((((not(combat_player_on_difficult_terrain)) and (combat_player_restrained <= 0)) and (combat_player_slowed <= 0)) and ((combat_player_pinned <= 0) and (combat_player_hobbled <= 0))) and (not(combat_player_stood_round = combat_round)))
 *if (((character_class = "barbarian") and (not(is_raging))) and (barbarian_rage_uses > 0))
   *set combat_can_rage true
 *comment Blade Ward (2024 rules): an action cantrip with concentration up to 1 minute (10 rounds).
@@ -4507,6 +4523,17 @@
 *comment MANEUVERS (the Battle Master, fighter level 3, PHB'24; 2026-11-21): Trip Attack and Menacing Attack ride on one attack with the weapon in hand, melee or ranged,
 *comment while a superiority die is left. Chosen before the swing; the die is spent only on a hit (combat_dice.txt resolve_player_weapon_hit, combat_maneuver_apply below).
 *temp combat_can_maneuver false
+*comment RIPOSTE'S TOGGLE (2026-11-21, the user): Riposte fires on its own unless held (riposte_held, kept across fights). Two fixed-value options, never a flip, so a replay
+*comment of the page sets the same value. The battle bar folds both into one Riposte fly-out (battlehud.js); the one matching the current setting reads already_active.
+*temp combat_why_riposte_hold "unowned"
+*temp combat_why_riposte_ready "unowned"
+*if (feature_combat_superiority)
+  *if (riposte_held)
+    *set combat_why_riposte_hold "already_active"
+    *set combat_why_riposte_ready ""
+  *else
+    *set combat_why_riposte_hold ""
+    *set combat_why_riposte_ready "already_active"
 *if ((((feature_combat_superiority) and (fighter_superiority_uses > 0)) and (combat_can_attack)) and (not(equipped_weapon_id = "none")))
   *if ((combat_wpn_far_ok) or (combat_primary_reach))
     *set combat_can_maneuver true
@@ -5175,6 +5202,14 @@
       *set booming_armed true
       *set booming_side true
       *goto fight_booming_go
+  *if (combat_why_riposte_hold = "")
+    # [b][NO COST][/b] [b][Riposte: Hold][/b] Keep your counter back, saving your superiority dice and your reaction.
+      *set riposte_held true
+      *goto fight_round_hub
+  *if (combat_why_riposte_ready = "")
+    # [b][NO COST][/b] [b][Riposte: Ready][/b] Stand ready to answer any melee attack that misses you.
+      *set riposte_held false
+      *goto fight_round_hub
   *if (combat_can_maneuver)
     # [b][ACTION][/b] [b][Trip Attack][/b] Strike at ${combat_med_epithet}'s footing: a superiority die of extra damage, and they fall prone unless they keep their feet.@{show_stat_hints  [Strength Save, Prone | 1 Superiority Die on a hit]|}
       *set combat_maneuver_armed "trip"
@@ -6349,7 +6384,51 @@
       *line_break
       *goto fight_round_hub
 
-  *if ((combat_can_rage) and (combat_player_bonus_left > 0))
+  *comment RAGE OF THE WILDS (the Wild Heart, barbarian level 3, PHB'24; 2026-11-21): each Rage takes one animal's heart (rage_animal), chosen as it starts, so the plain
+  *comment Rage gives way to one option per animal. The battle bar folds every "Rage: X" into one fly-out (battlehud.js).
+  *if (((combat_can_rage) and (combat_player_bonus_left > 0)) and (feature_rage_of_the_wilds))
+    # [b][BONUS ACTION][/b] [b][Rage: Bear][/b] Let the fury take you, with a bear's endurance against almost every kind of harm.@{show_stat_hints  [Resistance to all damage but Force, Necrotic, Psychic and Radiant]|}
+      *gosub_scene character_progression activate_rage
+      *set rage_animal "bear"
+      A hot, roaring pressure floods your chest, and with it a bear's heavy, stubborn weight settles into your shoulders.
+      *comment No banner: the hub's own Bear Heart status line says it the instant it reopens.
+      *line_break
+      *goto fight_bonus_spent
+    # [b][BONUS ACTION][/b] [b][Rage: Eagle][/b] Let the fury take you, light and quick as a hunting bird: you Dash and Disengage as it starts.@{show_stat_hints  [Dash and Disengage now, and as a bonus action while it lasts]|}
+      *gosub_scene character_progression activate_rage
+      *set rage_animal "eagle"
+      *comment RAW: the Dash and the Disengage ride on the Rage's own bonus action. A bar that stops a Dash (difficult ground, Slowed, Restrained, Pinned) still lets the Rage start; Hobbled stops both.
+      *if (combat_eagle_dash_ok)
+        *gosub combat_grant_move
+      *if (combat_player_hobbled <= 0)
+        *set combat_player_disengaged true
+      A hot, roaring pressure floods your chest, and your feet go light under you, quick to carry you out of reach.
+      *line_break
+      *if ((combat_eagle_dash_ok) and (combat_player_hobbled <= 0))
+        [b][🦅 Eagle Heart: you Dash and Disengage — one extra move, and nothing can strike you as you move this round][/b]
+        *line_break
+      *elseif (combat_player_hobbled <= 0)
+        [b][🦅 Eagle Heart: you Disengage — nothing can strike you as you move this round][/b]
+        *line_break
+      *goto fight_bonus_spent
+    # [b][BONUS ACTION][/b] [b][Rage: Wolf][/b] Let the fury take you, a pack hunter's fury: your allies strike more surely at any foe beside you.@{show_stat_hints  [Allies have advantage against foes within 5 ft of you]|}
+      *gosub_scene character_progression activate_rage
+      *set rage_animal "wolf"
+      A hot, roaring pressure floods your chest, and you feel the fight around you sharpen, every foe at your side laid open for those who fight with you.
+      *comment No banner: the hub's own Wolf Heart status line says it the instant it reopens.
+      *line_break
+      *goto fight_bonus_spent
+  *comment EAGLE HEART: while it lasts, a bonus action takes both the Dash and the Disengage.
+  *if ((((is_raging) and (rage_animal = "eagle")) and (combat_player_bonus_left > 0)) and (combat_eagle_dash_ok))
+    # [b][BONUS ACTION][/b] [b][Eagle's Flight][/b] Dash and Disengage at once: one extra move, and nothing can strike you as you move this round.
+      *gosub combat_grant_move
+      *set combat_player_disengaged true
+      You drop low and spring away, the fury carrying you clear before anyone can turn on you.
+      *line_break
+      [b][🦅 Eagle's Flight: one extra move, and nothing can strike you as you move this round][/b]
+      *line_break
+      *goto fight_bonus_spent
+  *if (((combat_can_rage) and (combat_player_bonus_left > 0)) and (not(feature_rage_of_the_wilds)))
     # [b][BONUS ACTION][/b] [b][Rage][/b] Let the fury take you.
       *gosub_scene character_progression activate_rage
       A hot, roaring pressure floods your chest, dulling the pain and the fear to nothing at all.

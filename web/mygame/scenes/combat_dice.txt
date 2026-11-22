@@ -88,6 +88,10 @@
 *if ((character_class = "barbarian") and (is_raging))
   *if (((aidp_type = "bludgeoning") or (aidp_type = "piercing")) or (aidp_type = "slashing"))
     *set combat_extra_resist true
+  *comment Bear Heart (the Wild Heart's Rage of the Wilds, PHB'24): every type but Force, Necrotic, Psychic and Radiant.
+  *if (rage_animal = "bear")
+    *if ((((not(aidp_type = "force")) and (not(aidp_type = "necrotic"))) and (not(aidp_type = "psychic"))) and (not(aidp_type = "radiant")))
+      *set combat_extra_resist true
 *if ((aidp_type = "poison") and (brine_minutes_left > 0))
   *set combat_extra_resist true
 *comment The herbalists' Fire and Cold Resistance Potions (2026-11-01, the user): one hour of resistance to that type, as Brine Antivenom does for poison.
@@ -1683,6 +1687,9 @@ ${combat_player_dmg_roll_banner}
 *label player_riposte_check
 *if ((not(feature_combat_superiority)) or (fighter_superiority_uses <= 0))
   *return
+*comment Held by the player's toggle (the hub's Riposte: Hold / Ready).
+*if (riposte_held)
+  *return
 *if ((equipped_weapon_id = "none") or (weapon_type = "ranged"))
   *return
 *if (not(combat_enemy_cast_spell = ""))
@@ -1801,6 +1808,16 @@ ${combat_player_dmg_roll_banner}
     *set combat_edge_label "Blinded"
 *return
 
+*comment WOLF HEART (2026-11-21): adds advantage to combat_edge_adv (label "Wolf Heart") for an ally attacking enemy awhe_e while the player rages with the Wolf Heart and is
+*comment Engaged with that enemy. resolve_ally_attack and target scoring's opening factor (combat_ai.txt) both ask it, so the AI's idea of the opening matches the roll.
+*label ally_wolf_heart_edge
+*params awhe_e
+*if (((is_raging) and (rage_animal = "wolf")) and (hp_current > 0))
+  *if (({(("combat_enemy" & awhe_e) & "_range")} <= 0) and (not(combat_edge_adv)))
+    *set combat_edge_adv true
+    *set combat_edge_label "Wolf Heart"
+*return
+
 *comment SNEAK ATTACK'S SECOND TRIGGER for ally asb_a against enemy asb_e (resolve_ally_attack; target scoring, combat_ai.txt, asks it too): someone else on
 *comment the ally's side within 5 ft of the target, the player Engaged with it (its range 0) or another living ally at range 0. Sets combat_sneak_beside.
 *label ally_sneak_beside
@@ -1910,6 +1927,8 @@ ${combat_player_dmg_roll_banner}
       *set raa_adv_label " (Disadvantage — ${raa_next_name})"
   *comment Advantage from the target (prone/stunned/restrained/greased/blinded, combat_attack_edge): it takes the better of two d20s, and cancels disadvantage above if both apply.
   *gosub combat_attack_edge raa_range raa_e_slot ""
+  *comment WOLF HEART (the Wild Heart's Rage of the Wilds, 2026-11-21): while the player rages with it, an ally's attack has advantage on a foe within 5 ft of the player (Engaged with them, its range 0).
+  *gosub ally_wolf_heart_edge raa_e_slot
   *if (combat_edge_adv)
     *if (raa_dis)
       *comment Advantage and disadvantage cancel: one plain d20, so the lower of the two dice rolled above is thrown away.

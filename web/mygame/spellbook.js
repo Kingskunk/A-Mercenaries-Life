@@ -53,7 +53,9 @@
     // Fiend Spells (the Fiend warlock, level 3): granted by the patron, not chosen, so they sit in no slot either.
     { flag: "feature_fiend_spells", id: "burning_hands", desc: "Fiend Spells: your patron grants you Burning Hands. It is always known and takes no place among your chosen spells." },
     { flag: "feature_fiend_spells", id: "scorching_ray", desc: "Fiend Spells: your patron grants you Scorching Ray. It is always known and takes no place among your chosen spells." },
-    { flag: "feature_fiend_spells", id: "command", desc: "Fiend Spells: your patron grants you Command. It is always known and takes no place among your chosen spells." }
+    { flag: "feature_fiend_spells", id: "command", desc: "Fiend Spells: your patron grants you Command. It is always known and takes no place among your chosen spells." },
+    // Animal Speaker (the Wild Heart barbarian, level 3): a ritual, granted, in no slot.
+    { flag: "feature_animal_speaker", id: "speak_with_animals", desc: "Animal Speaker: you can cast Speak with Animals as a ritual, with no spell slot." }
   ];
 
   // Spells that can be cast outside a fight, and the dossier label that does it (choicescript_stats.txt).

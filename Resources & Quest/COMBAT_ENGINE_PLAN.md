@@ -121,7 +121,7 @@ One subclass per class, the best for solo play (the user, 2026-11-20), level 3 f
 | Wizard | Abjurer | Built and play-tested |
 | Warlock | The Fiend | Built (2026-11-21) |
 | Fighter | Battle Master | Built (2026-11-21) |
-| Barbarian | Path of the Wild Heart | Not started |
+| Barbarian | Path of the Wild Heart | Built (2026-11-21) |
 | Bard | College of Valor | Not started |
 | Ranger | Gloom Stalker | Not started |
 | Rogue | Thief | Not started |
@@ -135,8 +135,14 @@ One subclass per class, the best for solo play (the user, 2026-11-20), level 3 f
 **The Battle Master** (agreed 2026-11-21, in place of the Champion, which is all passive and weak solo). Every fighter gets it at fighter level 3. Three maneuvers, fixed for everyone (more can come with feats at level 4): Trip Attack, Menacing Attack, Riposte. Student of War is replaced by Tactician's Lore (homebrew: one proficiency of History, Insight or Investigation; the game has no tool proficiencies). Icons: `ICONS/Weapon_action` (Trip_Attack and Menacing_Attack, Melee and Ranged versions; Riposte), `ICONS/Resource/Superiority_Die_d8_Icon.png`.
 1. Done (2026-11-21; `level_up_battle_master_3_superiority_dice`, `oneshot_rest_returns_superiority_dice`). Superiority dice: 4 d8 from level 3 (5 at 7, 6 at 15; d10 at 10, d12 at 18), every one back on a short or long rest; on the level-up banner, the short-rest banner, the sidebar and the Abilities page.
 2. Done (2026-11-21; `bm_*` scripts). Trip Attack and Menacing Attack: two hotbar buttons (each shows its Melee or Ranged icon by the weapon in hand), chosen before the attack, the die spent only on a hit. Trip: Strength save or Prone (Large or smaller). Menacing: Wisdom save or Frightened until the end of the player's next turn. The die adds to the damage.
-3. Done (2026-11-21; `bm_riposte_*` scripts). Riposte: when a foe misses the player with a melee attack, the player's reaction makes a melee attack adding the die to the damage, automatically while a die and the reaction are left.
+3. Done (2026-11-21; `bm_riposte_*` scripts). Riposte: when a foe misses the player with a melee attack, the player's reaction makes a melee attack adding the die to the damage, automatically while a die and the reaction are left. A no-cost toggle (Riposte: Hold / Ready, `riposte_held`, kept across fights; the user, 2026-11-21) holds it.
 4. Done (2026-11-21; `level_up_battle_master_3_*` scripts). The fighter level 3 page (`level_up_fighter_3`): the feature lines and the Tactician's Lore pick (only skills not already held).
+
+**The Wild Heart** (agreed 2026-11-21). Every barbarian gets it at barbarian level 3 (`feature_rage_of_the_wilds`). Beast Sense is left out (nothing in the game uses it).
+1. Done (2026-11-21; `wh_bear_rage_resists_fire`, `wh_plain_rage_below_level_3`). Rage of the Wilds: from level 3 the plain Rage gives way to one "Rage: X" option per animal (the battle bar's Rage fly-out, icons `Action/Rage_<Animal>_Heart_Icon.webp`); `rage_animal` holds the heart, cleared when the Rage ends. Bear: resistance to every damage type but Force, Necrotic, Psychic and Radiant (`adjust_incoming_damage_packet`), and a status line while it lasts.
+2. Done (2026-11-21; `wh_eagle_*` scripts). Eagle: entering the Rage also takes Dash and Disengage; while it lasts, a bonus action takes both (icon `Passive_feature/Aspect_of_the_Beast_Eagle_Icon.webp`).
+3. Done (2026-11-21; `wh_wolf_ally_advantage`). Wolf: allies have advantage on attacks against an enemy within 5 ft of the player (`resolve_ally_attack`, and the AI's opening factor).
+4. Done (2026-11-21; `level_up_wild_heart_3_features`). Animal Speaker (Speak with Animals granted at level 3, no slot) and the level 3 page.
 
 Hand edits the Fiend needed so far (the route list for the other subclasses): a hook in `fight_check_all_dead` (combat.txt) for an on-kill feature; a per-enemy flag in `startup_parts/31_combat_engine_state.txt` and `mygame.js`, cleared in the stale-slot loop and `fight_cleanup`; the feature's line on the Abilities page (`choicescript_stats.txt`, under the patron); `feature_*` flags set in `refresh_features` (`character_progression.txt`), declared in `startup_parts/07_class_path.txt` and `mygame.js`; a granted spell set known in `refresh_known_spells`, mirrored in `equipment-panel.js`, and listed by the spellbook panel (`INVOCATION_SPELLS` in `spellbook.js` and `index.html`, both copies); a line printed from a shared check goes through the end-of-action queue (`concentration_pending_add`), which the victory labels now print too. The class gate is `character_class` and `character_level >= 3`; no choice page, since each class has one subclass.
 

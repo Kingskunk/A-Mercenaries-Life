@@ -107,6 +107,11 @@ const MAP = {
   menacing_attack_melee: "Weapon_action/Menacing_Attack_Melee_Icon.webp",
   menacing_attack_ranged: "Weapon_action/Menacing_Attack_Ranged_Icon.webp",
   riposte: "Weapon_action/Riposte_Icon.webp",
+  // The Wild Heart's Rage of the Wilds (2026-11-21): one heart per animal in the Rage fly-out (battlehud.js variantArt).
+  rage_bear: "Action/Rage_Bear_Heart_Icon.webp",
+  rage_eagle: "Action/Rage_Eagle_Heart_Icon.webp",
+  rage_wolf: "Action/Rage_Wolf_Heart_Icon.webp",
+  eagles_flight: "Passive_feature/Aspect_of_the_Beast_Eagle_Icon.webp",   // Eagle Heart's bonus action, Dash and Disengage together (the user approved, 2026-11-21)
 
   // The two weapon buttons at the left of the bar. Keyed by hand and attack kind, not by an action name, because the label is the weapon's own name ("Attack with your
   // falchion"); battlehud.js picks the key from weapon_type / sidearm_type. These are the framed "Unfaded" 64px tiles, which fill the button on their own, so the button
