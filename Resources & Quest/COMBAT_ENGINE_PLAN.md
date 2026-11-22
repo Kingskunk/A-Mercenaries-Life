@@ -24,8 +24,11 @@ The 2026-11 refactor had one aim: adding a spell, an enemy, an enemy caster or a
 | Enemy casting by spell shape, at the player and at allies | `combat_enemy_player_action`, `fight_enemy_ally_attack`, `spell_worth_casting` (`combat_ai.txt`) |
 | Enemy buffs, heals and reactions | `enemy_precast_buffs`, `enemy_try_heal`, `enemy_try_blade_ward`, `enemy_shield_check` |
 | Ally casters | `combat_ally_cast_spell_*_override`, `fight_ally_cast`, `resolve_ally_cast_damage` |
+| Morale by side HP share (the player counts with the allies) | `combat_morale_check`, `tools/test_morale.js` |
+| Late enemies: an `arrives` round and an `enters_at` range tier | `combat_reinforcements_arrive`, `tools/encounter_catalog.json` |
+| Subclasses, one per class at level 3: Abjurer, Fiend, Battle Master, Wild Heart, Valor, Gloom Stalker, Assassin (and the rogue's Steady Aim) | `refresh_features` (`character_progression.txt`); the rules are under "Subclasses" in `GAMEPLAY_MECHANICS_RULES.md` |
 | Dev Hub test fights | `dev_hub.txt`, `fight_dev_*` (combat.txt) |
-| Test tooling: the whole script folder in about seven minutes | `tools/play_all.js`, `tools/scripted_play.js` |
+| Test tooling: the whole script folder in about six to eight minutes, or only the scripts a change can reach | `tools/play_all.js`, `tools/suite_report.js`, `tools/scripted_play.js` |
 
 What is cheap now: a spell that fits the shared rolls (data entry, generator run, short cast label, one seeded refresh script); an enemy type, a template fight, a hand-written fight with overrides; an enemy caster, when the spell already has its non-player effect routine.
 
@@ -50,6 +53,7 @@ These habits each exist because something went wrong without them.
 13. **Banners name the state only.** No rules text or instructions on screen.
 14. **A lock stays wherever a routine can be reached outside a fight.** The replay guard only runs while `combat_engaged` is true. False Life is the example: it can be cast from the stats screen.
 15. **A disagreement between data and play is listed, not fixed.** The designer decides which side is right.
+16. **`*create` takes no negative literal.** Use a sentinel (99 for "none", as `combat_enemyN_enters_at` does).
 
 ### The checks
 
@@ -60,15 +64,19 @@ node tools/build_startup.js --check
 node tools/gen_spell_book.js --check
 node tools/gen_spells.js --check
 node tools/gen_encounters.js --check
+node tools/test_morale.js
+node tools/test_encounters.js
 
-node tools/play_all.js <name parts>            only scripts whose file name contains one of these
-node tools/play_all.js --out=<new folder>      the whole folder, transcripts saved
+node tools/suite_report.js --touches=combat*   only scripts that ran a combat file (about 650 of 1,900)
+node tools/suite_report.js --changed           only scripts a scene file with uncommitted changes can reach
+node tools/suite_report.js                     the whole folder, against the saved baseline
+node tools/play_all.js combat/ <name parts>    a folder, or scripts whose path contains one of these
 node tools/play_all.js --root=<worktree> --out=<old folder>     the same on the old commit
 
 node quicktest.js mygame startup combat combat_spells combat_movement combat_dice combat_prose combat_ai dice_engine dev_hub equipment choicescript_stats dungeon character_stats
 ```
 
-Every script in the folder passes, so `node tools/play_all.js` exiting 0 is the whole check, and any failure belongs to the change being made.
+Every script in the folder passes, so the full suite exiting 0 is the whole check, and any failure belongs to the change being made. Use `--changed` or `--touches` while working on a piece, and the full suite at the end. Play scripts live in area folders (`combat/`, `character/`, `systems/`, `story/<region>/`); a new one goes in its start scene's folder, and bare file names stay unique.
 
 ### Rules block to paste at the top of a hand-off prompt
 
@@ -91,94 +99,33 @@ RULES FOR THIS SESSION
 
 ---
 
-
 ## 3. Engine work still to do
 
 In the order I would take it. Each item is one hand-off, sized to review in one sitting.
 
-### 3.1 Before subclasses: what is left of 3.9a
-
-The user wants as much of the D&D system working as possible before subclasses start (agreed 2026-11-19). Done (2026-11-20).
-
-1. **A review of the fight AI**, after the condition rebalance (3.3), so it judges the final rules. Dev Hub fights are added only to test or review the AI (the user, 2026-11-19); no new story content just to test a fight. A great deal was added in a short time (enemy casting by shape, buffs, heals and reactions, ally casters, patches, abilities), each with its own worth-it rule. Play the Dev Hub fights and read the choices as a player would: where a side wastes its turn, picks a poor spell or target, stands where it should not, or ignores something it should use. List the findings first, then fix them one at a time. Review played 2026-11-20 (7 fights, seeds 1-3); fixed: an ally dropped to 0 HP with no line, casters with three leveled spells walked into melee (each enemy slot now has its own cantrip), an archer swapped between high ground and long range every turn. Not reproduced in 32 runs: the idle badly hurt guard against a kiting archer seen earlier.
-
-### 3.2 Gaps in what exists
+### 3.1 Gaps in what exists
 
 None open. Add one here when a play-through finds it.
 
-### 3.3 Real conditions for the special moves
+### 3.2 Subclass pieces left out or waiting
 
-Done (2026-11-19). The rules are in `GAMEPLAY_MECHANICS_RULES.md`, "Special-move conditions".
+All seven subclasses are built (table in section 1). What each one left behind:
 
-### 3.4 Subclasses
+- **Weapon proficiency (with the first batch of martial weapons).** Of the 12 catalog weapons only the hewing axe (a battleaxe) is martial, so it is not worth building yet. The route: a `category: "simple" | "martial"` on each catalog weapon, a `weapon_prof_check` beside `armor_prof_check` (untrained: no proficiency bonus to hit), and Valor's Martial Training weapons as one line in it.
+- **Umbral Sight's invisibility in darkness.** It needs a "this fight is in darkness" state (today `dg_dark` means only "you cannot see") and enemy senses (blindsight, truesight).
+- **A disguise kit**, once a scene uses disguises: sold by the Gilt Needle tailor or a fence; the user has an icon.
 
-Feats are separate (3.5): they come at level 4, and no quest goes past level 3 yet.
+### 3.3 Feats (level 4)
 
-One subclass per class, the best for solo play (the user, 2026-11-20), level 3 features only. Each gets its own discussion of how its mechanics adapt before it is built.
+After subclasses, once a quest can take a character to level 4. Take one feat as the pilot and write down every hand edit it needs (War Caster's advantage in `concentration_damage_check` is one known place).
 
-| Class | Subclass | State |
-| --- | --- | --- |
-| Wizard | Abjurer | Built and play-tested |
-| Warlock | The Fiend | Built (2026-11-21) |
-| Fighter | Battle Master | Built (2026-11-21) |
-| Barbarian | Path of the Wild Heart | Built (2026-11-21) |
-| Bard | College of Valor | Built (2026-11-22) |
-| Ranger | Gloom Stalker | Built (2026-11-22) |
-| Rogue | Assassin (in place of the Thief, 2026-11-22) | Built (2026-11-22) |
+The subclasses' route, the likely list for a feat: `feature_*` flags set in `refresh_features` (`character_progression.txt`), declared in `startup_parts/07_class_path.txt` and `mygame.js`; the level-up page line (`level_up_features`); the Abilities page line (`choicescript_stats.txt`); a per-enemy flag in `startup_parts/31_combat_engine_state.txt` and `mygame.js`, cleared in the stale-slot loop and `fight_cleanup`; an on-kill hook in `fight_check_all_dead`; a granted spell set known in `refresh_known_spells`, mirrored in `equipment-panel.js` and listed by the spellbook panel (`INVOCATION_SPELLS` in `spellbook.js` and `index.html`, both copies); a hub button in `battlehud.js` (`HUB_ORDER`) with its icon in `tools/gen_action_icons.js`; a line printed from a shared check goes through the end-of-action queue (`concentration_pending_add`).
 
-**The Fiend** (agreed 2026-11-20; changed 2026-11-21). Every warlock's patron is the Fiend; character creation no longer offers a patron choice (Archfey and The Vast are gone). The Fiend's features come at warlock level 3.
-1. Done (2026-11-20; `fiend_blessing_*` scripts). Dark One's Blessing: on dropping a foe to 0 HP (a foe beaten into surrender counts; one that gives up or flees on morale does not), temp HP = CHA mod + warlock level (min 1). An ally's kill counts when the foe was within 10 ft of you. Temp HP does not stack (the higher stays); replacing Armor of Agathys's temp HP ends Agathys.
-2. Done (2026-11-20; `fiend_spells_*` scripts). Fiend Spells: Burning Hands and Scorching Ray join the list at level 3, outside the known-spell slots.
-3. Done (2026-11-20; `command_*` scripts). Command (2024 RAW, the user, 2026-11-20): Approach, Drop, Flee, Grovel, Halt, all five kept; works on any creature (no 2014 undead or language exception); one extra target per slot level above 1st, same word for all. One "Command" hotbar button (Voice_of_Command icon) whose fly-out holds the five words, each with its own icon. Suggestion is left out.
-4. Done (2026-11-20; `hex_*` scripts). Hex made fully RAW (the user, 2026-11-20). On the cast, pick one ability (a fly-out, Hex_<Ability> icons); the target has disadvantage on ability checks with it (no score drop, no save penalty). Moving the curse to a new target when the old one drops uses the Reapply_Hex_* icons.
-
-**The Battle Master** (agreed 2026-11-21, in place of the Champion, which is all passive and weak solo). Every fighter gets it at fighter level 3. Three maneuvers, fixed for everyone (more can come with feats at level 4): Trip Attack, Menacing Attack, Riposte. Student of War is replaced by Tactician's Lore (homebrew: one proficiency of History, Insight or Investigation; the game has no tool proficiencies). Icons: `ICONS/Weapon_action` (Trip_Attack and Menacing_Attack, Melee and Ranged versions; Riposte), `ICONS/Resource/Superiority_Die_d8_Icon.png`.
-1. Done (2026-11-21; `level_up_battle_master_3_superiority_dice`, `oneshot_rest_returns_superiority_dice`). Superiority dice: 4 d8 from level 3 (5 at 7, 6 at 15; d10 at 10, d12 at 18), every one back on a short or long rest; on the level-up banner, the short-rest banner, the sidebar and the Abilities page.
-2. Done (2026-11-21; `bm_*` scripts). Trip Attack and Menacing Attack: two hotbar buttons (each shows its Melee or Ranged icon by the weapon in hand), chosen before the attack, the die spent only on a hit. Trip: Strength save or Prone (Large or smaller). Menacing: Wisdom save or Frightened until the end of the player's next turn. The die adds to the damage.
-3. Done (2026-11-21; `bm_riposte_*` scripts). Riposte: when a foe misses the player with a melee attack, the player's reaction makes a melee attack adding the die to the damage, automatically while a die and the reaction are left. A no-cost toggle (Riposte: Hold / Ready, `riposte_held`, kept across fights; the user, 2026-11-21) holds it.
-4. Done (2026-11-21; `level_up_battle_master_3_*` scripts). The fighter level 3 page (`level_up_fighter_3`): the feature lines and the Tactician's Lore pick (only skills not already held).
-
-**The Wild Heart** (agreed 2026-11-21). Every barbarian gets it at barbarian level 3 (`feature_rage_of_the_wilds`). Beast Sense is left out (nothing in the game uses it).
-1. Done (2026-11-21; `wh_bear_rage_resists_fire`, `wh_plain_rage_below_level_3`). Rage of the Wilds: from level 3 the plain Rage gives way to one "Rage: X" option per animal (the battle bar's Rage fly-out, icons `Action/Rage_<Animal>_Heart_Icon.webp`); `rage_animal` holds the heart, cleared when the Rage ends. Bear: resistance to every damage type but Force, Necrotic, Psychic and Radiant (`adjust_incoming_damage_packet`), and a status line while it lasts.
-2. Done (2026-11-21; `wh_eagle_*` scripts). Eagle: entering the Rage also takes Dash and Disengage; while it lasts, a bonus action takes both (icon `Passive_feature/Aspect_of_the_Beast_Eagle_Icon.webp`).
-3. Done (2026-11-21; `wh_wolf_ally_advantage`). Wolf: allies have advantage on attacks against an enemy within 5 ft of the player (`resolve_ally_attack`, and the AI's opening factor).
-4. Done (2026-11-21; `level_up_wild_heart_3_features`). Animal Speaker (Speak with Animals granted at level 3, no slot) and the level 3 page.
-
-**The College of Valor** (agreed 2026-11-22). Every bard gets it at bard level 3. Martial Training's weapon half waits for weapon proficiency (below), and its weapon-as-focus is left out (the game tracks no material components or casting hands).
-1. Done (2026-11-22; `valor_martial_training_level_3`, `valor_untrained_below_level_3`). Martial Training: trained in medium armor and shields (`feature_martial_training`), so neither blocks casting nor gives disadvantage; the level 3 page and Abilities lines.
-2. Done (2026-11-22; `valor_ally_inspiration_*` scripts). Combat Inspiration for allies. An inspired ally spends its die on the first of: its miss (the current rule), its hit (the die added to the damage), or an attack hitting it that the die could still turn into a miss (its reaction, the die added to its AC).
-3. Done (2026-11-22; `valor_self_inspiration_*` scripts). Combat Inspiration for the bard's own die (the solo self-inspiration is the game's own rule). Defense only, on its own when a hit lands that the die could turn into a miss and the reaction is free, with a Hold / Ready toggle like Riposte's. No automatic Offense: the die stays for a failed roll.
-
-**The Gloom Stalker** (agreed 2026-11-22). Every ranger gets it at ranger level 3 (`feature_dread_ambusher`).
-1. Done (2026-11-22; `gs_*` scripts, `level_up_gloom_stalker_3_dreadful_pool`). Dreadful Strike: uses = WIS mod (min 1), all back on a long rest; armed from the hub before the attack like a maneuver (icons `Weapon_action/Dread_Ambusher_Melee_Icon.webp` / `_Ranged`), 2d6 psychic on a hit as its own packet (4d6 on a crit), once per turn; a miss spends nothing.
-2. Done (2026-11-22; `gs_ambushers_leap_*`, `gs_no_leap_below_level_3`, `gs_initiative_adds_wisdom`). Ambusher's Leap (adapted, the user, 2026-11-22): on round 1, one free extra move (a free Dash), under the Dash's own bars. Initiative Bonus: WIS mod added to the player's initiative roll (it only counts in an ambush, the one fight the player does not open).
-3. Done (2026-11-22; `level_up_gloom_stalker_3_page`, `gs_no_umbral_sight_below_level_3`). Umbral Sight's darkvision (`sees_in_dark`), Gloom Stalker Spells (Disguise Self granted, no slot) and the ranger level 3 page. The spellbook probe has a `gloom3` scenario, not yet run (it needs a compiled `play_game.html`).
-Deferred: Umbral Sight's invisibility in darkness. It needs a "this fight is in darkness" state (today `dg_dark` means only "you cannot see") and enemy senses (blindsight, truesight).
-
-**The Assassin** (agreed 2026-11-22, chosen over the Thief for solo play: the player opens almost every fight, so Assassinate fires every round 1). Every rogue gets it at rogue level 3.
-0. Done (2026-11-22; `rogue_steady_aim_*`, `rogue_no_steady_aim_below_level_3`). Steady Aim, the rogue's own level 3 class feature (not the subclass): what makes Sneak Attack reliable solo after round 1.
-1. Done (2026-11-22; `assassin_*` scripts). Assassinate: advantage on initiative (counts only in an ambush); advantage on attacks against a foe that has not taken a turn yet (a per-enemy "acted" flag); a round 1 Sneak Attack adds the rogue level as extra damage of the same type (not doubled on a crit).
-2. Done (2026-11-22; `level_up_assassin_3_page`). Tradecraft (renamed from Assassin's Tools, the user, 2026-11-22): proficiency in Deception and Survival; one already held gives nothing extra. Level 3 page, character sheet, docs. No poisoner's kit (alchemy covers it). A disguise kit waits until a scene uses disguises (sold by the Gilt Needle tailor or a fence; the user has an icon).
-
-Checked (2026-11-22): the replay differences on an ambush's opening page are a test-harness artifact, not a game bug. A script that starts at `fight_library` sets `combat_enemy_advantage` once, and `fight_setup` clears it (`combat.txt`, the "Pre-fight ambush advantage" reset), so the harness's replay of that first page re-runs the fight as no ambush. In the game the calling scene sets the flag on the same page, before `*gosub_scene combat`, so a replay sets it again. `assassin_ambush_foe_already_acted` runs with refresh off; a harness option that re-applies a script's caller-set stats on the opening page's replay would cover it.
-
-**Reinforcement entry point** (built 2026-11-22; `reinforcement_enters_at_*`): an encounter template's `enters_at` (a range tier, with `arrives`) sets where a late enemy enters, on its own side; without it, its edge of the lane.
-
-**Weapon proficiency (later, with the first batch of martial weapons).** Of the 12 catalog weapons only the hewing axe (a battleaxe) is martial, so it is not worth building yet. The route: a `category: "simple" | "martial"` on each catalog weapon, a `weapon_prof_check` beside `armor_prof_check` (untrained: no proficiency bonus to hit), and Valor's martial weapons as one line in it.
-
-Hand edits the Fiend needed so far (the route list for the other subclasses): a hook in `fight_check_all_dead` (combat.txt) for an on-kill feature; a per-enemy flag in `startup_parts/31_combat_engine_state.txt` and `mygame.js`, cleared in the stale-slot loop and `fight_cleanup`; the feature's line on the Abilities page (`choicescript_stats.txt`, under the patron); `feature_*` flags set in `refresh_features` (`character_progression.txt`), declared in `startup_parts/07_class_path.txt` and `mygame.js`; a granted spell set known in `refresh_known_spells`, mirrored in `equipment-panel.js`, and listed by the spellbook panel (`INVOCATION_SPELLS` in `spellbook.js` and `index.html`, both copies); a line printed from a shared check goes through the end-of-action queue (`concentration_pending_add`), which the victory labels now print too. The class gate is `character_class` and `character_level >= 3`; no choice page, since each class has one subclass.
-
-Not yet built or tested end to end. The fight has places meant for them (for example the comment in `concentration_damage_check` where War Caster would add advantage), but nobody has proved the route. Take one subclass as the pilot, and write down every place that needed a hand edit. That list is the real plan for the rest.
-
-### 3.5 Feats (level 4)
-
-After subclasses, once a quest can take a character to level 4. The same pilot approach: one feat, every hand edit written down (War Caster's advantage in `concentration_damage_check` is one known place).
-
-### 3.6 Optional: the remaining replay locks
+### 3.4 Optional: the remaining replay locks
 
 Step 6a removed only the spell-layer locks. Still in place: dice, save, attack and last-hit locks; budget spend and grant locks; manoeuvre locks; the banner caches that exist only for replay. A new spell never writes these, so removing them makes nothing cheaper. Do it only as clean-up, one family at a time, and keep every lock that a scene outside a fight can reach (`roll_locked`, `false_life_cast_locked`, anything `choicescript_stats`, `equipment`, `dungeon` or `character_stats` calls).
 
-### 3.7 Level 5 and up: 3rd-level slots and upcasting into them
+### 3.5 Level 5 and up: 3rd-level slots and upcasting into them
 
 Not needed until a character can reach level 5 (no quest goes past level 3 yet). Built ahead only where it saves coming back to a piece later.
 
@@ -198,6 +145,5 @@ None open. Add a row (the question, and the options with a recommendation) when 
 
 - A refresh on a targeting prompt page (Magic Missile darts, a healing target) forgets the clicks. Nothing is rolled on those pages, so the player clicks again.
 - The opening page of a fight entered from another scene is not covered by the replay guard. A refresh resumes at the choice instead of re-running the page. The test tool skips those pages.
-- Test-tool limits, not game bugs: a script that injects fight overrides (`combat_enemy_hp_override` and the rest) as starting stats fails the refresh check on its first page, since a real scene sets them on that page and the injected ones are already spent, so about 90 library-fight scripts run without refresh. And `fight_library` throws "invalid return" when the player kills its enemy, so a script there must not end the fight.
-- Never checked in a real browser: the Web, Enemy Web and Grease art on the lane, and a target click followed by Stats and back.
+- Test-tool limit, not a game bug: `fight_library` throws "invalid return" when the player kills its enemy, so a script there must not end the fight.
 - Other surfaces still use the browser's own `title` tooltip beside the themed card: the sidebar's condition chips (Restless, Poisoned, Wounds dressed), the boons (Mage Armor, Shield, False Life), the darts badge and the range tags.

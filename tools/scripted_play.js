@@ -55,6 +55,7 @@
  *             flag is a debt marker for a script that crosses a page with one not yet fixed, so grep for it. requireNoDeadSpace is now the default and is ignored.
  *   refresh   true: after every page, replay it on a copy (what opening Stats and returning does) and
  *             report any variable that changes; a reward or a time advance that is not guarded shows up here
+ *             (a script starting at combat:fight_library skips its opening page: see OPENING PAGE in refreshCheck)
  *   refreshText  true (with refresh): also report a replay whose printed text differs from the first pass's
  *   sabotage  variables forced false on the replay copy, to prove the refresh check can see a double apply
  *   replaySet object of variables forced to a value on the replay copy, standing for what the dossier wrote before it closed (a spell cast from the sidebar); the
@@ -311,6 +312,11 @@ function refreshCheck(sc, where) {
   // A page that began in another scene (it crossed a *gosub_scene into combat and back) cannot be resumed from its
   // start: the engine itself falls back to a mid-command line number there. Same for every fight in the game.
   if (stats.choice_page_start_scene && stats.choice_page_start_scene !== sc.name) { D.refreshSkipped++; return; }
+  // OPENING PAGE (2026-11-22): a script that starts at combat:fight_library stands in for a story scene that sets the fight's inputs
+  // (combat_enemy_hp_override, combat_enemy_advantage...) and calls *gosub_scene combat on the same page. That page starts in the caller, so the
+  // game never resumes it inside combat, and the check above skips it there. Here the inputs are starting stats the fight has already spent, so a
+  // replay would build a different fight. Skip that one page the same way; every page after it is checked.
+  if (D.skipOpening) { D.skipOpening = false; D.refreshSkipped++; return; }
   var snapStats = deep(stats), snapTemps = deep(sc.temps);
   var startScene = stats.choice_page_start_scene || sc.name;
   var line = (typeof stats.choice_page_start_line === "number" && (!stats.choice_page_start_scene || stats.choice_page_start_scene === sc.name)) ? stats.choice_page_start_line : sc.lineNum;
@@ -320,6 +326,9 @@ function refreshCheck(sc, where) {
   D.sabotage.forEach(function (k) { replayStats[k] = false; });
   Object.keys(D.replaySet).forEach(function (k) { replayStats[k] = D.replaySet[k]; });
   var savedPrinted = printed.slice(), savedTimeout = timeout, savedMode = D.mode, savedStats = stats, savedSeed = SEEDED.a, savedRandom = Math.random;
+  // The game's page guard (web/scene.js pageReplaySeed) keeps its seeded dice in two globals; the replay re-seeds them. Put them back too, or the
+  // first pass's next page would roll from another stream than a run without the check (a browser refresh reloads, so the game never meets this).
+  var savedPR = globalThis.__pageReplayRandom, savedPRO = globalThis.__pageReplayOrigRandom;
   // A choice page has already flushed its text into the last prose event; a page_break page still has it in printed.
   var lastEv = D.events[D.events.length - 1];
   var firstText = savedPrinted.length ? pageText(savedPrinted) : (lastEv && lastEv.type === "prose" ? lastEv.text.replace(/\s+/g, " ").trim() : "");
@@ -331,6 +340,7 @@ function refreshCheck(sc, where) {
   try { rs.execute(); } catch (e) { D.refreshDiffs.push(where + " @ " + startScene + ":" + line + ": EXCEPTION " + e.message); }
   var replayText = pageText(printed);
   D.mode = savedMode; timeout = savedTimeout; stats = savedStats; SEEDED.a = savedSeed; Math.random = savedRandom;
+  globalThis.__pageReplayRandom = savedPR; globalThis.__pageReplayOrigRandom = savedPRO;
   printed.length = 0; Array.prototype.push.apply(printed, savedPrinted);
   if (D.refreshText && replayText !== firstText) {
     var at = 0;
@@ -362,7 +372,7 @@ function runLoop(sc) {
 
 function resetRun() {
   D.steps = []; D.stepIdx = 0; D.rand = 0; D.events = []; D.log = []; D.exits = []; D.errors = []; D.stopped = null;
-  D.refreshAll = false; D.sabotage = []; D.replaySet = {}; D.refreshDiffs = []; D.refreshChecks = 0; D.refreshSkipped = 0; D.deadSpace = [];
+  D.refreshAll = false; D.sabotage = []; D.replaySet = {}; D.refreshDiffs = []; D.refreshChecks = 0; D.refreshSkipped = 0; D.deadSpace = []; D.skipOpening = false;
 }
 
 // Builds a character by picking a dev-menu preset. With no preset, returns the menu's option texts instead.
@@ -442,6 +452,7 @@ function play(scn) {
   TOUCHED = {};   // only what the script itself runs: the boot, the preset and the setup scenes above are not its doing
   D.mode = "drive"; D.steps = scn.steps || []; D.rand = parseRand(scn.rand0 !== undefined ? scn.rand0 : (scn.rand !== undefined ? scn.rand : "mid"));
   D.refreshAll = !!scn.refresh; D.refreshText = !!scn.refreshText; D.sabotage = scn.sabotage || []; D.replaySet = scn.replaySet || {};
+  D.skipOpening = scn.scene === "combat" && scn.label === "fight_library";
   if (scn.seed !== undefined) { SEEDED.a = Number(scn.seed) >>> 0; Math.random = seededRandom; globalThis.__combatFixedRandom = false; }
   else { Math.random = forcedRandom; globalThis.__combatFixedRandom = true; }
   // "gosub": true starts the label as a story scene's *gosub_scene would call it: one return address already on the stack, pointing at the virtual scene

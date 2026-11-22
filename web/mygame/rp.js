@@ -273,6 +273,13 @@
     }
   }
 
+  function resolveSceneProfile(cfg, s) {
+    if (cfg && cfg.profile && Array.isArray(cfg.profile.kinks)) {
+      return cfg.profile;
+    }
+    return parseRolledProfile(s);
+  }
+
   function formatProfileForPrompt(profile) {
     if (!profile) return "";
     var out = [];
@@ -321,8 +328,8 @@
     var companionText = evalField(cfg.companion, s);
     var personaText = evalField(cfg.persona, s);
     var npcKnowledge = evalField(cfg.npcKnowledge, s);
-    var rolledProfile = parseRolledProfile(s);
-    var profileBlock = formatProfileForPrompt(rolledProfile);
+    var activeProfile = resolveSceneProfile(cfg, s);
+    var profileBlock = formatProfileForPrompt(activeProfile);
 
     var lines = [
       "CURRENT TIME & WEATHER:",
@@ -363,7 +370,7 @@
   }
 
   function buildSystemPrompt(cfg, s, memBlock) {
-    var hasProfile = !!parseRolledProfile(s);
+    var hasProfile = !!resolveSceneProfile(cfg, s);
     var lines = [
       "You are narrating an interactive, uncensored roleplay scene inside a gritty low-fantasy RPG.",
       "PERSPECTIVE & VOICE RULES:",
@@ -376,7 +383,7 @@
     ];
     if (hasProfile) {
       lines.push(
-        "- LIVE PREFERENCE & DISLIKE CUES: When untouched or between beats, drop subtle natural physical invitations toward one of her Kinks. If the player does one of her Dislikes, react immediately in-character (stiffening, catching a wrist, pulling back, or murmuring a blunt warning) so an attentive player can adjust mid-scene. If the player asks in-character what she wants, let her answer authentically according to her traits (candid if Candid/Bold, teasingly reserved if Guarded/Stubborn)."
+        "- LIVE PREFERENCE & DISLIKE CUES: When untouched or between beats, weave subtle physical invitations toward one of her Kinks. STRICT BOUNDARY RULE: If the player triggers one of her Dislikes, she MUST visibly resist right away in-character (stiffen, catch or push their hands off, recoil, or give a sharp quiet warning)—never reward or eagerly escalate through an active Dislike unless they soften or adjust. If the player asks in-character what she wants, let her answer authentically according to her traits (candid if Candid/Bold, teasingly reserved if Guarded/Stubborn)."
       );
     }
     lines.push("");
@@ -384,7 +391,7 @@
   }
 
   function buildAdvisorSystemPrompt(cfg, s, memBlock) {
-    var hasProfile = !!parseRolledProfile(s);
+    var hasProfile = !!resolveSceneProfile(cfg, s);
     var lines = [
       "You are an interactive roleplay advisor for the player ('You') in an uncensored, gritty low-fantasy scene.",
       "Based on the room, companion persona, memories, and where the scene stands right now, suggest 4 distinct, immediately playable next actions or spoken lines the player can take next.",
@@ -422,11 +429,11 @@
       "- 16 to 20 (Peak / Unforgettable): Strong sensory progression; hit multiple Kinks naturally, respected every Dislike, navigated her Negative Trait skillfully, and earned deep responsiveness.",
       "- LENGTH & EFFORT RULE: An encounter lasting only 1 to 2 brief turns before ending rarely earns above 10-12 unless extraordinarily on-target.",
       "",
-      "OUTPUT FORMAT (STRICT — ONLY THESE 4 LINES, NO PREAMBLE):",
-      "HITS: <concise comma-separated list of kinks/positive traits landed, or None>",
-      "MISSES: <concise comma-separated list of dislikes triggered or missed cues, or None>",
-      "SUMMARY: <2 concise sentences addressed directly to 'You' explaining what worked well and where you went wrong>",
-      "RATING: <single integer from 1 to 20>"
+      "OUTPUT FORMAT (STRICT — KEEP ANY INTERNAL ANALYSIS BRIEF SO YOU FINISH CLEANLY, THEN OUTPUT ONLY THESE 4 LINES AND END EACH WITH A PERIOD):",
+      "HITS: <concise comma-separated list of kinks/positive traits landed, or None>.",
+      "MISSES: <concise comma-separated list of dislikes triggered or missed cues, or None>.",
+      "RATING: <single integer from 1 to 20>/20.",
+      "SUMMARY: <2 concise sentences addressed directly to 'You' explaining what worked well and where you went wrong>."
     ];
     return lines.join("\n");
   }
@@ -438,7 +445,7 @@
         historyLines.push("OPENING SCENE:\n" + session.openingText);
       }
       historyLines.push("ENCOUNTER TRANSCRIPT:\n" + formatTurnsForPrompt(turnsSlice));
-      historyLines.push("TASK: Grade the player from 1 to 20 using the strict 4-line output format (HITS, MISSES, SUMMARY, RATING).");
+      historyLines.push("TASK: Grade the player from 1 to 20 using the strict 4-line format (HITS, MISSES, RATING, SUMMARY). End every line with a period.");
       return historyLines.join("\n\n");
     }
 
@@ -466,7 +473,7 @@
         historyLines.push("RECENT TURNS:\n" + formatTurnsForPrompt(turnsSlice));
       }
       historyLines.push("CURRENT PLAYER ACTION / DIRECTION:\n" + playerAction);
-      if (turnsSlice.length === 0 && parseRolledProfile(statsNow())) {
+      if (turnsSlice.length === 0 && resolveSceneProfile(session.cfg, statsNow())) {
         historyLines.push(
           "Continue the scene immediately in second-person present tense ('You...') for 1-2 paragraphs. In this opening turn, react naturally to the player's physical build/skin and establish her personality (both positive traits and negative quirk) alongside at least one subtle, in-character physical hint toward one of her Kinks:"
         );
@@ -575,28 +582,34 @@
     var misses = "";
     var summary = "";
     var rating = null;
+    var activeKey = "";
     var lines = s.split(/\r?\n/);
     for (var i = 0; i < lines.length; i++) {
-      var line = lines[i].replace(/^\*+|\*+$/g, "").trim();
+      var line = lines[i].trim().replace(/^(?:[-*\u2022]+|\d+[.):])\s*/, "").trim();
       if (!line) continue;
-      var mHits = line.match(/^(?:\*\*)?HITS(?:\*\*)?\s*:\s*(.*)$/i);
-      if (mHits) { hits = mHits[1].replace(/^\*+|\*+$/g, "").trim(); continue; }
-      var mMiss = line.match(/^(?:\*\*)?MISSES(?:\*\*)?\s*:\s*(.*)$/i);
-      if (mMiss) { misses = mMiss[1].replace(/^\*+|\*+$/g, "").trim(); continue; }
-      var mSum = line.match(/^(?:\*\*)?SUMMARY(?:\*\*)?\s*:\s*(.*)$/i);
-      if (mSum) { summary = mSum[1].replace(/^\*+|\*+$/g, "").trim(); continue; }
-      var mRate = line.match(/^(?:\*\*)?(?:RATING|SCORE)(?:\*\*)?\s*:\s*(\d{1,2})(?:\s*\/\s*20)?\b/i);
+      var mHits = line.match(/^(?:\*\*)?HITS(?:\*\*)?\s*[:-]\s*(.*)$/i);
+      if (mHits) { activeKey = "hits"; hits = mHits[1].replace(/^\*+|\*+$/g, "").trim(); continue; }
+      var mMiss = line.match(/^(?:\*\*)?MISSES(?:\*\*)?\s*[:-]\s*(.*)$/i);
+      if (mMiss) { activeKey = "misses"; misses = mMiss[1].replace(/^\*+|\*+$/g, "").trim(); continue; }
+      var mSum = line.match(/^(?:\*\*)?(?:SUMMARY|REVIEW|VERDICT)(?:\*\*)?\s*[:-]\s*(.*)$/i);
+      if (mSum) { activeKey = "summary"; summary = mSum[1].replace(/^\*+|\*+$/g, "").trim(); continue; }
+      var mRate = line.match(/^(?:\*\*)?(?:RATING|SCORE|GRADE)(?:\*\*)?\s*[:-]\s*\**\s*(\d{1,2})\s*\**(?:\s*(?:\/|out of)\s*20)?\b/i);
       if (mRate) {
+        activeKey = "rating";
         var n = parseInt(mRate[1], 10);
         if (!isNaN(n)) rating = Math.max(1, Math.min(20, n));
+        continue;
+      }
+      if (activeKey === "summary") {
+        summary = (summary ? summary + " " : "") + line.replace(/^\*+|\*+$/g, "").trim();
       }
     }
     if (rating === null) {
-      var alt = s.match(/\b(20|1\d|[1-9])\s*\/\s*20\b/);
+      var alt = s.match(/\b(20|1\d|[1-9])\s*(?:\/|out of)\s*20\b/i);
       if (alt) rating = Math.max(1, Math.min(20, parseInt(alt[1], 10)));
     }
     if (!summary && s && rating !== null) {
-      summary = s.replace(/^(?:\*\*)?(?:HITS|MISSES|RATING|SCORE)[^\n]*$/gim, "").trim().slice(0, 360);
+      summary = s.replace(/^(?:[-*\u2022]+\s*)?(?:\*\*)?(?:HITS|MISSES|RATING|SCORE|GRADE)[^\n]*$/gim, "").trim().slice(0, 360);
     }
     if (rating === null) return null;
     return {
@@ -680,6 +693,7 @@
   RP.parseAdvisedChoices = parseAdvisedChoices;
   RP.parseEvaluationResult = parseEvaluationResult;
   RP.formatWarmthDuration = formatWarmthDuration;
+  RP.resolveSceneProfile = resolveSceneProfile;
 
   if (typeof document === "undefined") return; // node tests stop here
 
@@ -1092,7 +1106,7 @@
 
     function renderEvalCard(result, nextBtn) {
       if (!evalCardEl || !result) return;
-      var profile = parseRolledProfile(statsNow());
+      var profile = resolveSceneProfile(cfg, statsNow());
       var dur = formatWarmthDuration(result.fallback ? 0 : result.rating);
       var scoreText = result.fallback ? "Base Only" : (dur.rating + " / 20");
       var boonText = result.fallback
@@ -1139,8 +1153,11 @@
             '</div>'
           : '') +
         '<div class="rp-eval-foot">' +
-          '<span class="rp-status">Profile and grading saved for this encounter.</span>' +
-          '<button type="button" class="rp-btn rp-btn-primary" data-act="finish-eval">Continue &amp; Rest \u2192</button>' +
+          '<button type="button" class="rp-btn" data-act="resume-rp" title="Return to the scene and keep roleplaying before finishing">\u2190 Continue Roleplay</button>' +
+          '<div class="rp-actions-left">' +
+            '<button type="button" class="rp-btn rp-btn-advise" data-act="retry-eval" title="Re-run the AI evaluation before continuing (works with any engine or model selected above)">\u21BB Re-evaluate</button>' +
+            '<button type="button" class="rp-btn rp-btn-primary" data-act="finish-eval">Continue &amp; Rest \u2192</button>' +
+          '</div>' +
         '</div>';
 
       evalCardEl.hidden = false;
@@ -1157,7 +1174,7 @@
         return;
       }
       if (session.busy) return;
-      var profile = parseRolledProfile(statsNow());
+      var profile = resolveSceneProfile(cfg, statsNow());
       if (!profile || session.turns.length === 0) {
         session.evalBypass = true;
         if (nextBtn) nextBtn.click();
@@ -1179,27 +1196,27 @@
         chosenMode,
         evalSys,
         function (m, mid) { return buildEvaluationUserPrompt(evalSys, m, mid); },
-        320,
+        3200,
         "Grading"
       ).then(function (res) {
         if (mySeq !== session.evalSeq) return;
-        session.busy = false;
         var parsed = (res && res.status === "SUCCESS" && res.text) ? parseEvaluationResult(res.text) : null;
-        if (parsed) {
-          session.evalResult = parsed;
-        } else {
-          var errMsg = (res && (res.error || res.reason)) || "Could not parse AI grade";
-          session.evalResult = {
-            rating: 0,
-            fallback: true,
-            hits: "N/A",
-            misses: "N/A",
-            summary: "Grading could not complete (" + errMsg + "), so Carnal Warmth keeps the standard 10 Hours 40 Minutes base duration."
-          };
+        if (!parsed && settings.mode === "auto" && res && res.mode === "perchance") {
+          if (typingTextEl) typingTextEl.textContent = "Retrying grade via OpenRouter...";
+          setStatus("Perchance grading unparseable — retrying via OpenRouter...");
+          return dispatchRpGenerate(
+            "openrouter",
+            evalSys,
+            function (m, mid) { return buildEvaluationUserPrompt(evalSys, m, mid); },
+            3200,
+            "Grading"
+          ).then(function (res2) {
+            if (mySeq !== session.evalSeq) return;
+            var parsed2 = (res2 && res2.status === "SUCCESS" && res2.text) ? parseEvaluationResult(res2.text) : null;
+            finishEvalResponse(res2, parsed2);
+          });
         }
-        saveActiveSession(inputEl.value);
-        updateButtons();
-        renderEvalCard(session.evalResult, nextBtn);
+        finishEvalResponse(res, parsed);
       }).catch(function (err) {
         if (mySeq !== session.evalSeq) return;
         session.busy = false;
@@ -1214,6 +1231,26 @@
         updateButtons();
         renderEvalCard(session.evalResult, nextBtn);
       });
+
+      function finishEvalResponse(res, parsed) {
+        session.busy = false;
+        if (parsed) {
+          session.evalResult = parsed;
+        } else {
+          var errMsg = (res && (res.error || res.reason)) || "Could not parse AI grade";
+          var rawSnippet = (res && res.text) ? (" Raw reply: \"" + String(res.text).replace(/\s+/g, " ").trim().slice(0, 140) + "\"") : "";
+          session.evalResult = {
+            rating: 0,
+            fallback: true,
+            hits: "N/A",
+            misses: "N/A",
+            summary: "Grading could not complete (" + errMsg + "), so Carnal Warmth keeps the standard 10 Hours 40 Minutes base duration." + rawSnippet
+          };
+        }
+        saveActiveSession(inputEl.value);
+        updateButtons();
+        renderEvalCard(session.evalResult, nextBtn);
+      }
     }
 
     session.triggerEval = runPostSceneEvaluation;
@@ -1341,7 +1378,7 @@
           function (m, mid) {
             return buildAdvisorUserPrompt(sysPrompt, m, mid);
           },
-          260,
+          1400,
           "Advising choices"
         );
       }).then(function (res) {
@@ -1402,6 +1439,34 @@
         if (act === "advise") {
           if (session.evalResult) return;
           runAdviseChoices();
+          return;
+        }
+        if (act === "resume-rp") {
+          if (session.busy) return;
+          session.evalSeq += 1;
+          session.evalResult = null;
+          session.evalBypass = false;
+          if (evalCardEl) {
+            evalCardEl.hidden = true;
+            evalCardEl.innerHTML = "";
+          }
+          if (composerEl) composerEl.hidden = false;
+          var resumeNextBtn = document.querySelector("#main button.next");
+          if (resumeNextBtn) {
+            resumeNextBtn.style.display = "";
+            resumeNextBtn.disabled = false;
+          }
+          saveActiveSession(inputEl.value);
+          updateButtons();
+          setStatus("Roleplay resumed. Click \"Rest together\u2026\" below whenever you wish to finish.");
+          if (inputEl && inputEl.focus) inputEl.focus();
+          return;
+        }
+        if (act === "retry-eval") {
+          if (session.busy) return;
+          session.evalResult = null;
+          if (evalCardEl) evalCardEl.hidden = true;
+          runPostSceneEvaluation(document.querySelector("#main button.next"));
           return;
         }
         if (act === "finish-eval") {
@@ -1596,7 +1661,7 @@
     if (session.evalBypass) return;
     var nextBtn = ev.target && ev.target.closest ? ev.target.closest("#main button.next") : null;
     if (!nextBtn) return;
-    if (!parseRolledProfile(statsNow()) || session.turns.length === 0) return;
+    if (!resolveSceneProfile(session.cfg, statsNow()) || session.turns.length === 0) return;
     ev.preventDefault();
     ev.stopPropagation();
     ev.stopImmediatePropagation();

@@ -258,12 +258,33 @@
 
     corve_sable: {
       id: "corve_sable",
+      supportsEvaluation: true,
       npcName: "Sable",
       title: "Sable — Private Chamber",
       subtitle: "Upstairs at Widow Corve's",
       memory: true,
       threadId: "cs_corve_sable",
       knowsName: false,
+      profile: {
+        kinks: [
+          { id: "eye_stillness", label: "Eye Contact & Stillness", cue: "Gets undone by locked sea-green eyes, slow chest-to-chest grinding, and holding stillness right at the hilt." },
+          { id: "slow_edging", label: "Slow Edging & Teasing", cue: "Craves deliberate, unhurried friction—stopping right at the edge and drawing out tension until her composure cracks." },
+          { id: "neck_breath", label: "Neck, Breath & Throat Closeness", cue: "Melts for hot breath along her pointed ears and jawline, lips pressed to her collarbone, and close warmth." }
+        ],
+        dislikes: [
+          { id: "rushing_no_foreplay", label: "Rushing Without Foreplay", cue: "Cools off fast if shoved into blindly without patience or letting her thaw on her own terms." },
+          { id: "flowery_flattery", label: "Flowery False Flattery", cue: "Sees straight through grand poetic speeches or noble-quarter flattery; respects quiet honesty and action." }
+        ],
+        positiveTraits: [
+          { id: "fiercely_attentive", label: "Fiercely Attentive", cue: "Reads pulse, hitched breath, and posture with silent precision—never misses a deliberate touch." },
+          { id: "dryly_playful", label: "Dryly Playful", cue: "Faint measuring smile and hushed, dry wit when amused; appreciates calm confidence." }
+        ],
+        negativeTrait: {
+          id: "guarded_first",
+          label: "Guarded at First",
+          cue: "Stays poised and measuring early on until unhurried patience and steady attention crack her reserve."
+        }
+      },
       setting: function (s) {
         return window.RP_DATA.corve_generic.setting(s);
       },
@@ -282,7 +303,8 @@
       },
       persona: [
         "Composed, observant, with a faint measuring smile and a hushed, dry voice.",
-        "Beneath her cool, unhurried surface she is lithe, deliberate, and intensely responsive to physical touch."
+        "Beneath her cool, unhurried surface she is lithe, deliberate, and intensely responsive to patient physical touch.",
+        "Express her tastes and boundaries strictly through natural body language, tone, and physical reaction—never name stats or mechanics aloud."
       ].join(" "),
       starters: [
         "Let Sable take the lead as she draws you toward the bed.",
@@ -291,6 +313,7 @@
       ],
       beats: [
         { label: "▸ Let Sable lead", prompt: "Continue the moment naturally, letting Sable take the lead." },
+        { label: "Read her cues", prompt: "Pause close against Sable, gauging her breath and murmuring quietly to ask how she wants tonight." },
         { label: "Slow & deliberate", prompt: "Slow the pace down, savoring every deliberate touch with her." },
         { label: "Deepen the heat", prompt: "Grip her waist firmer and drive the rhythm deeper and more urgent." },
         { label: "Shift position", prompt: "Shift position on the wool mattress, guiding Sable into a new angle." },
@@ -300,12 +323,33 @@
 
     corve_brinna: {
       id: "corve_brinna",
+      supportsEvaluation: true,
       npcName: "Brinna",
       title: "Brinna — Private Chamber",
       subtitle: "Upstairs at Widow Corve's",
       memory: true,
       threadId: "cs_corve_brinna",
       knowsName: false,
+      profile: {
+        kinks: [
+          { id: "taking_charge", label: "Taking Charge (On Top)", cue: "Loves using her forge-built strength and weight—pinning you back into the wool bolsters and driving the grind herself." },
+          { id: "heavy_rhythm", label: "Heavy Rhythm & Bedframe Impact", cue: "Thrives on raw physical power, hard hip-against-hip momentum, and matching strength without holding back." },
+          { id: "rough_hair_pull", label: "Rough Grip & Hair-Pulling", cue: "Wants solid, unhesitating hands gripping her thick shoulders, waist, or braids—hates feeling fragile." }
+        ],
+        dislikes: [
+          { id: "timid_hovering", label: "Timid, Hovering Touch", cue: "Grows restless if handled gingerly or hesitantly, as if you're afraid of her size and strength." },
+          { id: "cold_detachment", label: "Avoidant Silence & No Eye Contact", cue: "Withdraws from stony silence, tense stiffness, or treating the hour like a cold transaction." }
+        ],
+        positiveTraits: [
+          { id: "warm_unhurried", label: "Warm & Unhurried", cue: "Open, good-humored warmth with no coyness—puts you at ease fast and brings deep hearth-like heat." },
+          { id: "competitive_edge", label: "Competitive Streak", cue: "Loves trading leverage and matching physical strength; grins wider when you push back hard." }
+        ],
+        negativeTrait: {
+          id: "heavy_handed",
+          label: "Heavy-Handed & Intense",
+          cue: "Forgets her own forge strength—grips harder and pushes faster than expected unless you brace and meet her force."
+        }
+      },
       setting: function (s) {
         return window.RP_DATA.corve_generic.setting(s);
       },
@@ -324,7 +368,8 @@
       },
       persona: [
         "Warm, deep-voiced, confident, and physically strong.",
-        "Affectionate, uninhibited, and grounded—she enjoys matching strength and heat without holding back."
+        "Affectionate, uninhibited, and grounded—she enjoys matching strength and heat without holding back.",
+        "Express her tastes and boundaries strictly through natural body language, tone, and physical reaction—never name stats or mechanics aloud."
       ].join(" "),
       starters: [
         "Let Brinna take the lead and pin you back against the wool bolsters.",
@@ -333,6 +378,7 @@
       ],
       beats: [
         { label: "▸ Let Brinna lead", prompt: "Continue the moment naturally, letting Brinna take the lead with her strength." },
+        { label: "Read her cues", prompt: "Press flush against Brinna, meeting her amber eyes and asking what she wants tonight." },
         { label: "Match her strength", prompt: "Match her physical power, gripping her heavy frame and pushing back against her." },
         { label: "Slow & warm", prompt: "Slow the pace down into a deep, unhurried grind against the wool blankets." },
         { label: "Shift position", prompt: "Shift position on the bed, trading leverage with her on the mattress." }
