@@ -29,7 +29,7 @@
  *        picks="Kneel by the friar;Follow what he left behind@high;Step inside the knife@high"
  *   node tools/scripted_play.js --presets              list the character presets
  *   node tools/scripted_play.js --labels=<scene>       list a scene's labels and line numbers
- *   Examples: tools/play_scripts/*.json
+ *   Examples: tools/play_scripts/<area>/*.json (area folders: combat, character, systems, story/<region>)
  *
  * Script fields (JSON file, "-" for stdin, or key=value on the command line, which override the file):
  *   scene     scene file without .txt (default port_valen)
@@ -122,6 +122,9 @@ timeout = null;
 var GAME = "mygame";
 var DEFAULT_PRESET = "Vanguard Line Fighter";
 
+// TOUCHED (2026-11-22): every scene file this run entered (the virtual sim* scenes aside). play_all.js sets PLAY_TOUCHES_FILE and gathers them into
+// the play-script index, so a check can pick the scripts that run a scene (all those that walk into a fight, say) whatever folder they start from.
+var TOUCHED = {};
 var SCENE_CACHE = {};   // "game/scene" -> { crc, lines, labels }, filled on a scene's first load (see loadScene)
 
 Scene.prototype.loadScene = function () {
@@ -134,6 +137,7 @@ Scene.prototype.loadScene = function () {
   // constantly, so about 60% of a run went on re-checksumming half-megabyte files and another 20% on re-reading and re-splitting them. The compiled game
   // never pays this: it hands each scene its lines, labels and checksum ready-made (loadLinesFast). This does the same after a scene's first load.
   // Nothing writes to a loaded scene's lines or labels, so one copy is shared. Set SCENE_CACHE_OFF=1 to load the old way.
+  if (!/^sim(flags|features|fight|end)$/.test(this.name)) TOUCHED[this.name] = true;
   var cached = SCENE_CACHE[GAME + "/" + this.name];
   if (cached) {
     this.crc = cached.crc; this.lines = cached.lines; this.labels = cached.labels;
@@ -435,6 +439,7 @@ function play(scn) {
   }
   var purseBefore = purse(), hpBefore = stats.hp_current;
   resetRun();
+  TOUCHED = {};   // only what the script itself runs: the boot, the preset and the setup scenes above are not its doing
   D.mode = "drive"; D.steps = scn.steps || []; D.rand = parseRand(scn.rand0 !== undefined ? scn.rand0 : (scn.rand !== undefined ? scn.rand : "mid"));
   D.refreshAll = !!scn.refresh; D.refreshText = !!scn.refreshText; D.sabotage = scn.sabotage || []; D.replaySet = scn.replaySet || {};
   if (scn.seed !== undefined) { SEEDED.a = Number(scn.seed) >>> 0; Math.random = seededRandom; globalThis.__combatFixedRandom = false; }
@@ -626,5 +631,6 @@ module.exports = { play: play, presets: presets, parsePicks: parsePicks, formatT
 if (require.main === module) {
   var code;
   try { code = main(process.argv.slice(2)); } catch (e) { console.error("scripted_play: " + e.message); code = 2; }
+  if (process.env.PLAY_TOUCHES_FILE) { try { fs.writeFileSync(process.env.PLAY_TOUCHES_FILE, JSON.stringify(Object.keys(TOUCHED).sort())); } catch (e) { /* the index only loses this script's entry */ } }
   process.exit(code);
 }

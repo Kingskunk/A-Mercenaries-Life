@@ -1094,7 +1094,13 @@
         if (temps[tk] != null && temps[tk] !== "unowned") whySig.push(tk + "=" + temps[tk]);
       });
     }
-    var sig = items.map(function (i) { return i.id; }).join("|") + "#" + seen.length + "#" + num(s.combat_player_actions_left) + "/" + num(s.combat_player_bonus_left) + "/" + num(s.combat_player_moves_left) + "/" + (truthy(s.player_oa_used) ? 1 : 0) + "#" + whySig.join(",");
+    // The weapons in hand are part of it (2026-11-22): Swap Weapons costs nothing and leaves the same options, so without them the dock kept the old art.
+    var sig = items.map(function (i) { return i.id; }).join("|") + "#" + seen.length + "#" + num(s.combat_player_actions_left) + "/" + num(s.combat_player_bonus_left) + "/" + num(s.combat_player_moves_left) + "/" + (truthy(s.player_oa_used) ? 1 : 0) + "#" + whySig.join(",") +
+      "#" + s.equipped_weapon_id + "/" + s.equipped_sidearm_id + "/" + s.weapon_type + "/" + s.sidearm_type;
+    // A new page of options is a new form, whatever its signature: the press made on the last page is over, or every button stays dead (a no-cost
+    // option that comes back to an identical hub, like Swap Weapons, left pressed set until a reload).
+    var form = items.length && items[0].radio ? items[0].radio.form : null;
+    if (form !== lastForm) { lastForm = form; pressed = false; }
     var el = document.getElementById(HUD_ID);
     if (el && sig === lastSig) return;
     if (sig !== lastSig) { pressed = false; closeFly(); } // a new page of options: the old press is over
@@ -1111,6 +1117,7 @@
     dockHeight();
   }
 
+  var lastForm = null;   // the hub form the last scan saw (scan): a new one ends the last press
   var queued = false;
   function queueScan() { if (!queued) { queued = true; window.requestAnimationFrame(function () { queued = false; scan(); }); } }
 

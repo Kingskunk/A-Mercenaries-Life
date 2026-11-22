@@ -9065,7 +9065,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *comment   strongest down the strongest of its own side (the most maximum HP, and more than its own) is down; for an ally, the player is below a quarter of their HP
 *comment   half down      half or more of its side is down (out of the fight, by any means)
 *comment and Intimidate (the player's action) can force a check at any time.
-*comment THE CHECK: a Wisdom save, d20 + WIS + proficiency + resolve (an enemy's) against DC 10, with advantage when its side is winning. The type's morale (combat_<side>N_morale, from tools/enemy_catalog.json and the ally
+*comment THE CHECK: a Wisdom save, d20 + WIS + proficiency + resolve (an enemy's) against DC 10, with advantage when its side is winning (the larger share of its side's HP left, both sides counted whole). The type's morale (combat_<side>N_morale, from tools/enemy_catalog.json and the ally
 *comment types in combat_types.txt) decides how it rolls: fearless never checks, steady rolls with advantage, skittish with disadvantage.
 *comment combat_no_morale (a duel, a boss) turns all of it off for the fight. A failed save BREAKS it (_broken):
 *comment   An ENEMY is done fighting. A humanoid that is cornered (an opponent on its tile) or in a non-lethal fight surrenders on the spot. Anything else flees: it Dashes away from the player toward its own edge of the lane, taking the usual free swing
@@ -9110,33 +9110,42 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *if (cmc_side = "enemy")
   *set cmc_resolve {(("combat_enemy" & cmc_slot) & "_resolve")}
 *comment Advantage when its own side is winning (2026-11-03, the user): nobody walks away from a fight they are about to win.
-*comment   An enemy: you are below half your HP, or half or more of your allies are down.
-*comment   An ally: half or more of the enemies on the field are down (a reinforcement still on its way does not count).
+*comment WINNING (2026-11-22, the user): the two sides are compared whole, by the share of their HP left. The player's side is the player and every
+*comment ally (a downed ally adds 0); the enemy side is every enemy on the field (fled or surrendered add 0; a reinforcement still on its way is not
+*comment counted). A side is winning when its share is the larger: cross-multiplied (cmc_ec * cmc_pm against cmc_pc * cmc_em) so no division.
+*comment It replaced "the player below half, or half the allies down" for an enemy, which gave a lone foe at 1 HP advantage over a winning party.
 *temp cmc_winning false
 *temp cmc_i 1
-*temp cmc_tot 0
-*temp cmc_down 0
-*if (cmc_side = "enemy")
-  *if ((hp_current * 2) < hp_max)
+*temp cmc_v 0
+*temp cmc_pc hp_current
+*if (cmc_pc < 0)
+  *set cmc_pc 0
+*temp cmc_pm hp_max
+*label combat_morale_check_ally_loop
+*if (cmc_i <= combat_ally_count)
+  *set cmc_v {(("combat_ally" & cmc_i) & "_hp")}
+  *if (cmc_v > 0)
+    *set cmc_pc + cmc_v
+  *set cmc_pm + {(("combat_ally" & cmc_i) & "_max_hp")}
+  *set cmc_i + 1
+  *goto combat_morale_check_ally_loop
+*temp cmc_ec 0
+*temp cmc_em 0
+*set cmc_i 1
+*label combat_morale_check_enemy_loop
+*if (cmc_i <= combat_enemy_count)
+  *if (not({(("combat_enemy" & cmc_i) & "_out")} = "reserve"))
+    *set cmc_v {(("combat_enemy" & cmc_i) & "_hp")}
+    *if (cmc_v > 0)
+      *set cmc_ec + cmc_v
+    *set cmc_em + {(("combat_enemy" & cmc_i) & "_max_hp")}
+  *set cmc_i + 1
+  *goto combat_morale_check_enemy_loop
+*if ((cmc_pm > 0) and (cmc_em > 0))
+  *if ((cmc_side = "enemy") and ((cmc_ec * cmc_pm) > (cmc_pc * cmc_em)))
     *set cmc_winning true
-  *label combat_morale_check_ally_loop
-  *if (cmc_i <= combat_ally_count)
-    *set cmc_tot + 1
-    *if ({(("combat_ally" & cmc_i) & "_hp")} <= 0)
-      *set cmc_down + 1
-    *set cmc_i + 1
-    *goto combat_morale_check_ally_loop
-*else
-  *label combat_morale_check_enemy_loop
-  *if (cmc_i <= combat_enemy_count)
-    *if (not({(("combat_enemy" & cmc_i) & "_out")} = "reserve"))
-      *set cmc_tot + 1
-      *if ({(("combat_enemy" & cmc_i) & "_hp")} <= 0)
-        *set cmc_down + 1
-    *set cmc_i + 1
-    *goto combat_morale_check_enemy_loop
-*if ((cmc_tot > 0) and ((cmc_down * 2) >= cmc_tot))
-  *set cmc_winning true
+  *if ((cmc_side = "ally") and ((cmc_pc * cmc_em) > (cmc_ec * cmc_pm)))
+    *set cmc_winning true
 *comment Advantage (steady, or winning) and disadvantage (skittish) cancel out, as in 5e.
 *temp cmc_adv ((cmc_kind = "steady") or (cmc_winning))
 *temp cmc_dis (cmc_kind = "skittish")

@@ -113,7 +113,7 @@ The second writes the hidden sidebar options into the scene files, inside `GEN:B
 
 ### 1.6 Write a play script
 
-One script in `tools/play_scripts/`, named `<settlement>_<place>_visit.json`. Copy `oxworth_village_hall_visit.json`. It must have:
+One script in `tools/play_scripts/story/<region>/` (the region folder the settlement's scenes sit under), named `<settlement>_<place>_visit.json`. Copy `story/hartwell/oxworth_village_hall_visit.json`. It must have:
 
 - `"refresh": true` and `"requireNoDeadSpace": true`;
 - `current_district` and the weather zone in `stats`;
