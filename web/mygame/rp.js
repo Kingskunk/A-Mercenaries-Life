@@ -74,6 +74,10 @@
     advisedStarters: null, // optional [{ label, prompt }] from manual AI advice
     advisedBeats: null,    // optional [{ label, prompt }] from manual AI advice
     adviseSeq: 0,
+    evalSeq: 0,
+    evalResult: null,      // optional { rating, hits, misses, summary, fallback, modelLabel }
+    evalBypass: false,
+    boxEl: null,
     saveMemory: true, // whether to distill & save this visit to MemPalace on exit
     busy: false,
     workerConnected: false,
@@ -97,6 +101,7 @@
         turns: cleanTurns,
         advisedStarters: Array.isArray(session.advisedStarters) ? session.advisedStarters : null,
         advisedBeats: Array.isArray(session.advisedBeats) ? session.advisedBeats : null,
+        evalResult: session.evalResult || null,
         saveMemory: session.saveMemory !== false,
         draft: typeof draftText === "string" ? draftText : ""
       };
@@ -254,11 +259,70 @@
     return slice;
   }
 
+  function parseRolledProfile(s) {
+    if (!s) return null;
+    if (typeof window !== "undefined" && window.RP_DATA_HELPERS && window.RP_DATA_HELPERS.parseGenericProfile) {
+      return window.RP_DATA_HELPERS.parseGenericProfile(s);
+    }
+    if (!s.corve_generic_profile || typeof s.corve_generic_profile !== "string") return null;
+    try {
+      var obj = JSON.parse(s.corve_generic_profile);
+      return obj && Array.isArray(obj.kinks) ? obj : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function formatProfileForPrompt(profile) {
+    if (!profile) return "";
+    var out = [];
+    if (Array.isArray(profile.kinks) && profile.kinks.length) {
+      out.push("KINKS / FETISHES (she responds with keen heat when engaged cleanly):");
+      profile.kinks.forEach(function (k) { out.push("- " + k.label + ": " + k.cue); });
+    }
+    if (Array.isArray(profile.dislikes) && profile.dislikes.length) {
+      out.push("DISLIKES (if triggered, show unmistakable physical resistance or a sharp quiet pushback so the player can adjust):");
+      profile.dislikes.forEach(function (d) { out.push("- " + d.label + ": " + d.cue); });
+    }
+    if (Array.isArray(profile.positiveTraits) && profile.positiveTraits.length) {
+      out.push("POSITIVE PERSONALITY TRAITS:");
+      profile.positiveTraits.forEach(function (t) { out.push("- " + t.label + ": " + t.cue); });
+    }
+    if (profile.negativeTrait) {
+      out.push("NEGATIVE PERSONALITY TRAIT (navigable friction/quirk):");
+      out.push("- " + profile.negativeTrait.label + ": " + profile.negativeTrait.cue);
+    }
+    return out.join("\n");
+  }
+
+  function formatWarmthDuration(rating) {
+    var r = Math.max(0, Math.min(20, Math.round(Number(rating) || 0)));
+    var totalMin = 640 + (r * 15);
+    var bonusMin = r * 15;
+    var h = Math.floor(totalMin / 60);
+    var m = totalMin % 60;
+    var label = h + (h === 1 ? " Hour" : " Hours") + (m > 0 ? (" " + m + " Minutes") : "");
+    var bh = Math.floor(bonusMin / 60);
+    var bm = bonusMin % 60;
+    var bonusLabel = bonusMin > 0
+      ? ("+" + (bh > 0 ? bh + "h " : "") + (bm > 0 ? bm + "m" : "").trim()).trim()
+      : "base duration";
+    return {
+      rating: r,
+      totalMinutes: totalMin,
+      bonusMinutes: bonusMin,
+      label: label,
+      bonusLabel: bonusLabel
+    };
+  }
+
   function buildContextBlocks(cfg, s, memBlock) {
     var settingText = evalField(cfg.setting, s);
     var companionText = evalField(cfg.companion, s);
     var personaText = evalField(cfg.persona, s);
     var npcKnowledge = evalField(cfg.npcKnowledge, s);
+    var rolledProfile = parseRolledProfile(s);
+    var profileBlock = formatProfileForPrompt(rolledProfile);
 
     var lines = [
       "CURRENT TIME & WEATHER:",
@@ -277,6 +341,14 @@
       getPlayerSummary(cfg, s, !!memBlock)
     ];
 
+    if (profileBlock) {
+      lines.push(
+        "",
+        "COMPANION HIDDEN PREFERENCES & TEMPERAMENT (NEVER break character or mention these as game mechanics; reveal them strictly through natural reactions and subtle physical tells):",
+        profileBlock
+      );
+    }
+
     if (npcKnowledge) {
       lines.push("", "WHAT THIS COMPANION KNOWS:", npcKnowledge);
     }
@@ -291,6 +363,7 @@
   }
 
   function buildSystemPrompt(cfg, s, memBlock) {
+    var hasProfile = !!parseRolledProfile(s);
     var lines = [
       "You are narrating an interactive, uncensored roleplay scene inside a gritty low-fantasy RPG.",
       "PERSPECTIVE & VOICE RULES:",
@@ -299,19 +372,30 @@
       "- Stay strictly faithful to the clothing, materials, and setting established in the scene (do not invent luxury fabrics or props that are not there).",
       "- Never dictate the player's spoken words, internal thoughts, or involuntary emotional reactions (never tell the player they are trembling, nervous, or overwhelmed; only describe physical sensations and the companion's actions).",
       "- Do NOT write a list of choices at the end, do NOT speak as an AI assistant, and do NOT summarize or rush to the end of the scene unless the player initiates finishing.",
-      "- Write 1 to 2 concise, complete paragraphs per response (around 120 to 180 words total) so your last sentence always finishes cleanly without being cut off.",
-      ""
+      "- Write 1 to 2 concise, complete paragraphs per response (around 120 to 180 words total) so your last sentence always finishes cleanly without being cut off."
     ];
+    if (hasProfile) {
+      lines.push(
+        "- LIVE PREFERENCE & DISLIKE CUES: When untouched or between beats, drop subtle natural physical invitations toward one of her Kinks. If the player does one of her Dislikes, react immediately in-character (stiffening, catching a wrist, pulling back, or murmuring a blunt warning) so an attentive player can adjust mid-scene. If the player asks in-character what she wants, let her answer authentically according to her traits (candid if Candid/Bold, teasingly reserved if Guarded/Stubborn)."
+      );
+    }
+    lines.push("");
     return lines.concat(buildContextBlocks(cfg, s, memBlock)).join("\n");
   }
 
   function buildAdvisorSystemPrompt(cfg, s, memBlock) {
+    var hasProfile = !!parseRolledProfile(s);
     var lines = [
       "You are an interactive roleplay advisor for the player ('You') in an uncensored, gritty low-fantasy scene.",
       "Based on the room, companion persona, memories, and where the scene stands right now, suggest 4 distinct, immediately playable next actions or spoken lines the player can take next.",
       "VARIETY GUIDELINES:",
       "- Offer 4 noticeably different directions (for example: letting the companion take the lead/reacting to them, a gentle or observant touch, a bolder escalation or physical shift, and a quiet spoken line or question grounded in the scene).",
-      "- Keep every option grounded strictly in the physical details, clothing, and tone established in the scene.",
+      "- Keep every option grounded strictly in the physical details, clothing, and tone established in the scene."
+    ];
+    if (hasProfile) {
+      lines.push("- Keep the 4 choices balanced across distinct styles and never name or spoil hidden kink, dislike, or trait labels outright.");
+    }
+    lines.push(
       "",
       "OUTPUT FORMAT (STRICT):",
       "Output ONLY 4 lines, one option per line, using this exact format:",
@@ -319,8 +403,51 @@
       "- Short Label: 2 to 4 words for a UI button (e.g. 'Trace her collarbone', 'Let her lead', 'Ask about the scar').",
       "- Action direction: 1 concise, vivid sentence under 16 words written for the player's next turn (no preamble, no numbering, no extra commentary).",
       ""
-    ];
+    );
     return lines.concat(buildContextBlocks(cfg, s, memBlock)).join("\n");
+  }
+
+  function buildEvaluationSystemPrompt(cfg, s, profile) {
+    var lines = [
+      "You are an impartial post-scene evaluator for an adult low-fantasy RPG encounter.",
+      "Grade how well the player ('You') performed with this companion based strictly on the transcript below and her hidden profile.",
+      "",
+      "COMPANION PROFILE TO GRADE AGAINST:",
+      formatProfileForPrompt(profile),
+      "",
+      "CLEAR 1-20 SCORING RUBRIC (STRICTLY USE THESE BANDS):",
+      "- 1 to 5 (Poor / Mismatched): Rushed, passive/lazy, cold, or triggered her Dislikes repeatedly without noticing or correcting.",
+      "- 6 to 10 (Passable / Routine): Polite or serviceable physical play; avoided offending Dislikes (or recovered clumsily), but missed her specific Kinks and didn't play to her Traits.",
+      "- 11 to 15 (Good / Satisfying): Attentive pacing and chemistry; handled her Positive & Negative Traits well and genuinely engaged at least one of her Kinks cleanly.",
+      "- 16 to 20 (Peak / Unforgettable): Strong sensory progression; hit multiple Kinks naturally, respected every Dislike, navigated her Negative Trait skillfully, and earned deep responsiveness.",
+      "- LENGTH & EFFORT RULE: An encounter lasting only 1 to 2 brief turns before ending rarely earns above 10-12 unless extraordinarily on-target.",
+      "",
+      "OUTPUT FORMAT (STRICT — ONLY THESE 4 LINES, NO PREAMBLE):",
+      "HITS: <concise comma-separated list of kinks/positive traits landed, or None>",
+      "MISSES: <concise comma-separated list of dislikes triggered or missed cues, or None>",
+      "SUMMARY: <2 concise sentences addressed directly to 'You' explaining what worked well and where you went wrong>",
+      "RATING: <single integer from 1 to 20>"
+    ];
+    return lines.join("\n");
+  }
+
+  function buildEvaluationUserPrompt(sysPrompt, mode, modelId) {
+    function assemble(turnsSlice) {
+      var historyLines = [];
+      if (session.openingText) {
+        historyLines.push("OPENING SCENE:\n" + session.openingText);
+      }
+      historyLines.push("ENCOUNTER TRANSCRIPT:\n" + formatTurnsForPrompt(turnsSlice));
+      historyLines.push("TASK: Grade the player from 1 to 20 using the strict 4-line output format (HITS, MISSES, SUMMARY, RATING).");
+      return historyLines.join("\n\n");
+    }
+
+    var fitted = fitTurnsToTokenBudget(
+      session.turns,
+      function (slice) { return (sysPrompt ? sysPrompt + "\n\n" : "") + assemble(slice); },
+      { mode: mode, modelId: modelId, minKeep: 2 }
+    );
+    return assemble(fitted);
   }
 
   function formatTurnsForPrompt(turnsSlice) {
@@ -339,7 +466,17 @@
         historyLines.push("RECENT TURNS:\n" + formatTurnsForPrompt(turnsSlice));
       }
       historyLines.push("CURRENT PLAYER ACTION / DIRECTION:\n" + playerAction);
-      historyLines.push("Continue the scene immediately in second-person present tense ('You...') for 1-2 paragraphs:");
+      if (turnsSlice.length === 0 && parseRolledProfile(statsNow())) {
+        historyLines.push(
+          "Continue the scene immediately in second-person present tense ('You...') for 1-2 paragraphs. In this opening turn, react naturally to the player's physical build/skin and establish her personality (both positive traits and negative quirk) alongside at least one subtle, in-character physical hint toward one of her Kinks:"
+        );
+      } else if (turnsSlice.length === 0) {
+        historyLines.push(
+          "Continue the scene immediately in second-person present tense ('You...') for 1-2 paragraphs, reacting naturally to the player's physical build, skin, and appearance in the room:"
+        );
+      } else {
+        historyLines.push("Continue the scene immediately in second-person present tense ('You...') for 1-2 paragraphs:");
+      }
       return historyLines.join("\n\n");
     }
 
@@ -430,6 +567,46 @@
     return out;
   }
 
+  function parseEvaluationResult(rawText) {
+    var s = String(rawText || "");
+    s = s.replace(/<think>[\s\S]*?<\/think>/gi, "");
+    s = s.replace(/```[a-zA-Z]*\n?/g, "").replace(/```/g, "").trim();
+    var hits = "";
+    var misses = "";
+    var summary = "";
+    var rating = null;
+    var lines = s.split(/\r?\n/);
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i].replace(/^\*+|\*+$/g, "").trim();
+      if (!line) continue;
+      var mHits = line.match(/^(?:\*\*)?HITS(?:\*\*)?\s*:\s*(.*)$/i);
+      if (mHits) { hits = mHits[1].replace(/^\*+|\*+$/g, "").trim(); continue; }
+      var mMiss = line.match(/^(?:\*\*)?MISSES(?:\*\*)?\s*:\s*(.*)$/i);
+      if (mMiss) { misses = mMiss[1].replace(/^\*+|\*+$/g, "").trim(); continue; }
+      var mSum = line.match(/^(?:\*\*)?SUMMARY(?:\*\*)?\s*:\s*(.*)$/i);
+      if (mSum) { summary = mSum[1].replace(/^\*+|\*+$/g, "").trim(); continue; }
+      var mRate = line.match(/^(?:\*\*)?(?:RATING|SCORE)(?:\*\*)?\s*:\s*(\d{1,2})(?:\s*\/\s*20)?\b/i);
+      if (mRate) {
+        var n = parseInt(mRate[1], 10);
+        if (!isNaN(n)) rating = Math.max(1, Math.min(20, n));
+      }
+    }
+    if (rating === null) {
+      var alt = s.match(/\b(20|1\d|[1-9])\s*\/\s*20\b/);
+      if (alt) rating = Math.max(1, Math.min(20, parseInt(alt[1], 10)));
+    }
+    if (!summary && s && rating !== null) {
+      summary = s.replace(/^(?:\*\*)?(?:HITS|MISSES|RATING|SCORE)[^\n]*$/gim, "").trim().slice(0, 360);
+    }
+    if (rating === null) return null;
+    return {
+      rating: rating,
+      hits: hits || "None noted",
+      misses: misses || "None noted",
+      summary: summary || "Evaluation completed."
+    };
+  }
+
   function fetchMemories(threadId, queryText) {
     var baseUrl = getServerUrl();
     if (!baseUrl || !threadId) return Promise.resolve("");
@@ -501,6 +678,8 @@
   RP.getTokenBudget = getTokenBudget;
   RP.fitTurnsToTokenBudget = fitTurnsToTokenBudget;
   RP.parseAdvisedChoices = parseAdvisedChoices;
+  RP.parseEvaluationResult = parseEvaluationResult;
+  RP.formatWarmthDuration = formatWarmthDuration;
 
   if (typeof document === "undefined") return; // node tests stop here
 
@@ -662,6 +841,10 @@
     session.advisedStarters = null;
     session.advisedBeats = null;
     session.adviseSeq += 1;
+    session.evalSeq += 1;
+    session.evalResult = null;
+    session.evalBypass = false;
+    session.triggerEval = null;
     session.saveMemory = cfg.memory !== false;
     session.busy = false;
     session.openingText = collectOpeningNarrative(textEl, markerParagraph);
@@ -669,6 +852,7 @@
     var box = document.createElement("div");
     box.className = "rp-box";
     box.id = "rpConsoleBox";
+    session.boxEl = box;
 
     var title = evalField(cfg.title, s) || "Roleplay Session";
     var subtitle = evalField(cfg.subtitle, s) || "";
@@ -709,18 +893,21 @@
           '<div class="rp-typing-dots"><span></span><span></span><span></span></div>' +
           '<span class="rp-typing-text">Writing response...</span>' +
         '</div>' +
-        '<div class="rp-starters"></div>' +
-        '<div class="rp-beats" style="display:none"></div>' +
-        '<textarea class="rp-input" placeholder="Write what you do or say (or click a prompt chip above)..."></textarea>' +
-        '<div class="rp-foot">' +
-          '<div class="rp-actions-left">' +
-            '<button type="button" class="rp-btn rp-btn-primary" data-act="send">Send / Continue</button>' +
-            '<button type="button" class="rp-btn rp-btn-advise" data-act="advise" title="Ask the AI to advise context-aware choices for this moment (replaces static chips)">\u2726 Advise</button>' +
-            '<button type="button" class="rp-btn" data-act="reroll" disabled title="Regenerate the last AI response">\u21BB Reroll</button>' +
-          '</div>' +
-          '<div class="rp-actions-right">' +
-            (hasMem ? '<label class="rp-mem-check" title="When checked, this scene will be distilled into a memory for this companion when you leave"><input type="checkbox" class="rp-save-mem-cb" checked><span>Save as memory</span></label>' : '') +
-            '<span class="rp-status">Ready. Click "Rest together\u2026" below whenever you wish to finish.</span>' +
+        '<div class="rp-eval-card" hidden></div>' +
+        '<div class="rp-composer">' +
+          '<div class="rp-starters"></div>' +
+          '<div class="rp-beats" style="display:none"></div>' +
+          '<textarea class="rp-input" placeholder="Write what you do or say (or click a prompt chip above)..."></textarea>' +
+          '<div class="rp-foot">' +
+            '<div class="rp-actions-left">' +
+              '<button type="button" class="rp-btn rp-btn-primary" data-act="send">Send / Continue</button>' +
+              '<button type="button" class="rp-btn rp-btn-advise" data-act="advise" title="Ask the AI to advise context-aware choices for this moment (replaces static chips)">\u2726 Advise</button>' +
+              '<button type="button" class="rp-btn" data-act="reroll" disabled title="Regenerate the last AI response">\u21BB Reroll</button>' +
+            '</div>' +
+            '<div class="rp-actions-right">' +
+              (hasMem ? '<label class="rp-mem-check" title="When checked, this scene will be distilled into a memory for this companion when you leave"><input type="checkbox" class="rp-save-mem-cb" checked><span>Save as memory</span></label>' : '') +
+              '<span class="rp-status">Ready. Click "Rest together\u2026" below whenever you wish to finish.</span>' +
+            '</div>' +
           '</div>' +
         '</div>' +
       '</div>';
@@ -734,6 +921,8 @@
     var rerollBtn = box.querySelector('[data-act="reroll"]');
     var modeSel = box.querySelector(".rp-mode-select");
     var modelSel = box.querySelector(".rp-model-select");
+    var composerEl = box.querySelector(".rp-composer");
+    var evalCardEl = box.querySelector(".rp-eval-card");
     var starterWrap = box.querySelector(".rp-starters");
     var beatsWrap = box.querySelector(".rp-beats");
     var typingEl = box.querySelector(".rp-typing");
@@ -888,7 +1077,148 @@
         });
     }
 
-    // Restore turns, advised chips, and draft if the page was refreshed or returned to from Show Stats / Menu
+    function hideChoiceScriptNextBtn(nextBtn) {
+      var nb = nextBtn || document.querySelector("#main button.next");
+      if (nb) nb.style.display = "none";
+    }
+
+    function renderTagRow(titleText, items, clsName) {
+      if (!items || !items.length) return "";
+      var pills = items.map(function (it) {
+        return '<span class="rp-eval-tag ' + clsName + '" title="' + esc(it.cue || "") + '">' + esc(it.label) + '</span>';
+      }).join("");
+      return '<div class="rp-eval-row"><span class="rp-eval-row-label">' + esc(titleText) + '</span><div class="rp-eval-tags">' + pills + '</div></div>';
+    }
+
+    function renderEvalCard(result, nextBtn) {
+      if (!evalCardEl || !result) return;
+      var profile = parseRolledProfile(statsNow());
+      var dur = formatWarmthDuration(result.fallback ? 0 : result.rating);
+      var scoreText = result.fallback ? "Base Only" : (dur.rating + " / 20");
+      var boonText = result.fallback
+        ? "Carnal Warmth: " + dur.label + " (grading unavailable)"
+        : "Carnal Warmth: " + dur.label + " (" + dur.bonusLabel + ")";
+
+      var traitsList = [];
+      if (profile && Array.isArray(profile.positiveTraits)) {
+        profile.positiveTraits.forEach(function (t) { traitsList.push({ label: "+ " + t.label, cue: t.cue }); });
+      }
+      if (profile && profile.negativeTrait) {
+        traitsList.push({ label: "- " + profile.negativeTrait.label, cue: profile.negativeTrait.cue, isNeg: true });
+      }
+
+      var traitTagsHtml = "";
+      if (traitsList.length) {
+        traitTagsHtml =
+          '<div class="rp-eval-row"><span class="rp-eval-row-label">Temperament:</span><div class="rp-eval-tags">' +
+          traitsList.map(function (t) {
+            return '<span class="rp-eval-tag ' + (t.isNeg ? "rp-eval-tag-neg" : "rp-eval-tag-pos") + '" title="' + esc(t.cue || "") + '">' + esc(t.label) + '</span>';
+          }).join("") +
+          '</div></div>';
+      }
+
+      evalCardEl.innerHTML =
+        '<div class="rp-eval-head">' +
+          '<div class="rp-eval-title">\u2726 Post-Scene Review</div>' +
+          '<div class="rp-eval-badges">' +
+            '<span class="rp-eval-score">' + esc(scoreText) + '</span>' +
+            '<span class="rp-eval-boon">' + esc(boonText) + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="rp-eval-summary">' + esc(result.summary || "") + '</div>' +
+        '<div class="rp-eval-feedback">' +
+          (result.hits ? '<div><strong>What landed:</strong> ' + esc(result.hits) + '</div>' : '') +
+          (result.misses ? '<div><strong>Where you slipped:</strong> ' + esc(result.misses) + '</div>' : '') +
+        '</div>' +
+        (profile
+          ? '<div class="rp-eval-profile">' +
+              '<div class="rp-eval-profile-head">Companion Profile Revealed</div>' +
+              renderTagRow("Kinks / Fetishes:", profile.kinks, "rp-eval-tag-kink") +
+              renderTagRow("Dislikes:", profile.dislikes, "rp-eval-tag-dislike") +
+              traitTagsHtml +
+            '</div>'
+          : '') +
+        '<div class="rp-eval-foot">' +
+          '<span class="rp-status">Profile and grading saved for this encounter.</span>' +
+          '<button type="button" class="rp-btn rp-btn-primary" data-act="finish-eval">Continue &amp; Rest \u2192</button>' +
+        '</div>';
+
+      evalCardEl.hidden = false;
+      if (composerEl) composerEl.hidden = true;
+      hideChoiceScriptNextBtn(nextBtn);
+      if (evalCardEl.scrollIntoView) {
+        evalCardEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    }
+
+    function runPostSceneEvaluation(nextBtn) {
+      if (session.evalResult) {
+        renderEvalCard(session.evalResult, nextBtn);
+        return;
+      }
+      if (session.busy) return;
+      var profile = parseRolledProfile(statsNow());
+      if (!profile || session.turns.length === 0) {
+        session.evalBypass = true;
+        if (nextBtn) nextBtn.click();
+        return;
+      }
+
+      session.busy = true;
+      var mySeq = ++session.evalSeq;
+      if (nextBtn) nextBtn.disabled = true;
+      updateButtons();
+
+      var chosenMode = resolveActiveMode();
+      var waitMsg = "Reviewing encounter (" + (chosenMode === "perchance" ? "Perchance AI" : "OpenRouter") + ")...";
+      setStatus(waitMsg);
+      if (typingTextEl) typingTextEl.textContent = waitMsg;
+
+      var evalSys = buildEvaluationSystemPrompt(cfg, statsNow(), profile);
+      dispatchRpGenerate(
+        chosenMode,
+        evalSys,
+        function (m, mid) { return buildEvaluationUserPrompt(evalSys, m, mid); },
+        320,
+        "Grading"
+      ).then(function (res) {
+        if (mySeq !== session.evalSeq) return;
+        session.busy = false;
+        var parsed = (res && res.status === "SUCCESS" && res.text) ? parseEvaluationResult(res.text) : null;
+        if (parsed) {
+          session.evalResult = parsed;
+        } else {
+          var errMsg = (res && (res.error || res.reason)) || "Could not parse AI grade";
+          session.evalResult = {
+            rating: 0,
+            fallback: true,
+            hits: "N/A",
+            misses: "N/A",
+            summary: "Grading could not complete (" + errMsg + "), so Carnal Warmth keeps the standard 10 Hours 40 Minutes base duration."
+          };
+        }
+        saveActiveSession(inputEl.value);
+        updateButtons();
+        renderEvalCard(session.evalResult, nextBtn);
+      }).catch(function (err) {
+        if (mySeq !== session.evalSeq) return;
+        session.busy = false;
+        session.evalResult = {
+          rating: 0,
+          fallback: true,
+          hits: "N/A",
+          misses: "N/A",
+          summary: "Network error during grading (" + (err && err.message ? err.message : String(err)) + "), so Carnal Warmth keeps the standard 10 Hours 40 Minutes base duration."
+        };
+        saveActiveSession(inputEl.value);
+        updateButtons();
+        renderEvalCard(session.evalResult, nextBtn);
+      });
+    }
+
+    session.triggerEval = runPostSceneEvaluation;
+
+    // Restore turns, advised chips, draft, or pending evaluation card if the page was refreshed or returned to from Show Stats / Menu
     var restored = loadActiveSession(sceneId);
     if (restored && Array.isArray(restored.turns) && restored.turns.length > 0) {
       restored.turns.forEach(function (t) {
@@ -910,8 +1240,15 @@
       session.saveMemory = restored.saveMemory;
       if (saveMemCb) saveMemCb.checked = restored.saveMemory;
     }
+    if (restored && restored.evalResult) {
+      session.evalResult = restored.evalResult;
+    }
     renderChips();
     updateButtons();
+    if (session.evalResult) {
+      renderEvalCard(session.evalResult);
+      setTimeout(function () { hideChoiceScriptNextBtn(); }, 0);
+    }
 
     if (saveMemCb) {
       saveMemCb.addEventListener("change", function () {
@@ -1063,7 +1400,20 @@
           return;
         }
         if (act === "advise") {
+          if (session.evalResult) return;
           runAdviseChoices();
+          return;
+        }
+        if (act === "finish-eval") {
+          var ratingVal = (session.evalResult && !session.evalResult.fallback) ? (Number(session.evalResult.rating) || 0) : 0;
+          statsNow().rp_encounter_rating = ratingVal;
+          session.evalBypass = true;
+          var nextBtn = document.querySelector("#main button.next");
+          if (nextBtn) {
+            nextBtn.style.display = "";
+            nextBtn.disabled = false;
+            nextBtn.click();
+          }
           return;
         }
       }
@@ -1153,7 +1503,7 @@
       var tact = btn.getAttribute("data-tact");
 
       if (tact === "del") {
-        if (session.busy) return;
+        if (session.busy || session.evalResult) return;
         var idx = session.turns.indexOf(turn);
         if (idx !== -1) session.turns.splice(idx, 1);
         if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
@@ -1161,6 +1511,7 @@
         updateButtons();
         setStatus("Message deleted.");
       } else if (tact === "edit") {
+        if (session.busy || session.evalResult) return;
         if (wrap.querySelector(".rp-inline-editor")) return;
         turn.content.style.display = "none";
         turn.actions.style.display = "none";
@@ -1238,6 +1589,20 @@
     }
   }, true);
 
+  // Intercept ChoiceScript's "Rest together..." (*page_break) button in capture phase when a
+  // rolled-profile RP scene has active turns, triggering the AI post-scene review card first.
+  document.addEventListener("click", function (ev) {
+    if (!session.active || !session.boxEl || typeof session.triggerEval !== "function") return;
+    if (session.evalBypass) return;
+    var nextBtn = ev.target && ev.target.closest ? ev.target.closest("#main button.next") : null;
+    if (!nextBtn) return;
+    if (!parseRolledProfile(statsNow()) || session.turns.length === 0) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    ev.stopImmediatePropagation();
+    session.triggerEval(nextBtn);
+  }, true);
+
   function scanForMarker() {
     var textEl = liveTextContainer();
     if (!textEl) return;
@@ -1257,6 +1622,11 @@
         session.advisedStarters = null;
         session.advisedBeats = null;
         session.adviseSeq += 1;
+        session.evalSeq += 1;
+        session.evalResult = null;
+        session.evalBypass = false;
+        session.triggerEval = null;
+        session.boxEl = null;
         clearActiveSession();
       }
     }

@@ -3006,6 +3006,9 @@ You glance around the benches, and ${corve_generic_desc} catches your eye, setti
 *label cut_corve_encounter
 *set scenery_subplace "dredge_corve_private_chamber"
 *set ambience_intimacy true
+*set rp_encounter_rating 0
+*if (rp_active_scene = "corve_generic")
+  *script if (window.RP_DATA_HELPERS && window.RP_DATA_HELPERS.ensureGenericProfile) window.RP_DATA_HELPERS.ensureGenericProfile(stats);
 *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
   *if (corve_stay_overnight)
     *set currency_add_amount 0 - 20
@@ -3047,23 +3050,24 @@ She dips a linen cloth into the washstand basin, wringing out the water to wipe 
   untying the corded stays and drawing the damp weave away from your skin until it pools on the floorboards,
 followed by the rest of your kit, leaving you bare to the dim candlelight.
 
-*if (build = "broad")
-  Her palms smooth over the thick, heavy muscle of your shoulders and back, taking in the solid, anvil-dense weight of your frame.
-*elseif (build = "wiry")
-  Her fingers map the lean, corded muscle of your ribs and flanks, feeling the hard, whipcord tension coiled beneath your skin.
-*else
-  Her hands trace the long, clean lines of your torso and shoulders, taking in the reach and imposing height of your frame.
+*if (rp_active_scene = "none")
+  *if (build = "broad")
+    Her palms smooth over the thick, heavy muscle of your shoulders and back, taking in the solid, anvil-dense weight of your frame.
+  *elseif (build = "wiry")
+    Her fingers map the lean, corded muscle of your ribs and flanks, feeling the hard, whipcord tension coiled beneath your skin.
+  *else
+    Her hands trace the long, clean lines of your torso and shoulders, taking in the reach and imposing height of your frame.
 
-*if (skin_tone = "Pale, freckled skin")
-  Her fingertips drift over the freckles spangled across your chest, pale and unmarked, her touch clinical and appraising.
-*elseif (skin_tone = "Sun-darkened, weathered skin")
-  Her palm smooths over the sun-browned, weather-worn grain of your shoulders, warming easily against hide that has already taken a season of this climate.
-*elseif (skin_tone = "Deep brown skin")
-  Her hands trace the smooth, deep brown planes of your torso and shoulders, drinking in the warmth you hold in your skin.
-*elseif (skin_tone = "Ashen grey, faintly luminous")
-  Her touch lingers on the cool, faintly luminous grey of your skin, drawn to it the way a lamp is drawn to a moth, unable to settle for long.
-*else
-  Her touch glides over your unbroken skin, her warm palms banishing the lingering chill of the river from your flesh.
+  *if (skin_tone = "Pale, freckled skin")
+    Across your chest, the pale, freckled skin answers immediately to the draft off the rafters, flushing warm wherever she leans close.
+  *elseif (skin_tone = "Sun-darkened, weathered skin")
+    In the dim amber light, the sun-darkened grain of your hide holds steady warmth, already seasoned by long weeks on the road.
+  *elseif (skin_tone = "Deep brown skin")
+    The candlelight catches the deep brown warmth of your skin as she shifts closer, drawing her mouth near your collarbone.
+  *elseif (skin_tone = "Ashen grey, faintly luminous")
+    That cool, faintly luminous grey along your ribs catches the tallow glow on its own, holding her gaze for a beat before she moves.
+  *else
+    The tallow glow warms the unbroken sweep of your skin, chasing the last chill of the river air from the room.
 
 *temp enc_v 1
 *rand enc_v 1 5
@@ -3093,6 +3097,7 @@ followed by the rest of your kit, leaving you bare to the dim candlelight.
 *page_break Rest together…
 *set ambience_intimacy false
 *set rp_active_scene "none"
+*set corve_generic_profile ""
 *if (corve_stay_overnight)
   *set hours_to_pass 8
   *set minutes_to_pass 0
@@ -3122,11 +3127,26 @@ followed by the rest of your kit, leaving you bare to the dim candlelight.
   *set sleep_tier_bonus2 0
   *gosub_scene calendar resolve_sleep
 
+*temp carnal_bonus_rating rp_encounter_rating
+*if (carnal_bonus_rating < 0)
+  *set carnal_bonus_rating 0
+*if (carnal_bonus_rating > 20)
+  *set carnal_bonus_rating 20
+*temp carnal_total_min (640 + (carnal_bonus_rating * 15))
+*temp carnal_rem_min (carnal_total_min modulo 60)
+*temp carnal_hours ((carnal_total_min - carnal_rem_min) / 60)
+*temp carnal_dur_label "${carnal_hours} Hours"
+*if (carnal_rem_min > 0)
+  *set carnal_dur_label "${carnal_hours} Hours ${carnal_rem_min} Minutes"
+*temp carnal_rate_note ""
+*if (carnal_bonus_rating > 0)
+  *set carnal_rate_note " · Graded ${carnal_bonus_rating}/20"
+
 *set unique_buff_input_name "Carnal Warmth"
 *set unique_buff_input_desc "+1 CHA (Relaxed & Confident)"
 *set unique_buff_input_stat "cha"
 *set unique_buff_input_bonus 1
-*set unique_buff_input_minutes 640
+*set unique_buff_input_minutes carnal_total_min
 *comment Lasts a third longer than the Conduit Baths' 8-hour boon (it costs 1 silver against 3 copper). The
 *comment two bathing boons never stack: the longer one wins (see apply_grooming_buff in economy.txt).
 *gosub_scene economy apply_grooming_buff
@@ -3146,7 +3166,7 @@ followed by the rest of your kit, leaving you bare to the dim candlelight.
 *if (not(corve_stay_overnight))
   Afterward, the room settles into thick, cooling stillness, broken only by the sound of heavy breathing and the distant wash of the canal against the stone kerb below. You wash at the basin with the cloth and a cake of plain soap, scrubbing off the road grime along with the sweat, and pull your garments back over your skin. Your muscles feel loose, the grinding tension has left your spine, and you carry an easy, grounded confidence as you unbolt the door and make your way back down the stairs to the parlor.
 
-  [b][🕯️ Intimate Encounter: Carnal Warmth (+1 CHA for 10 Hours 40 Minutes) | Hygiene Restored to Clean | Encounters: ${intimate_encounters}][/b]
+  [b][🕯️ Intimate Encounter: Carnal Warmth (+1 CHA for ${carnal_dur_label}${carnal_rate_note}) | Hygiene Restored to Clean | Encounters: ${intimate_encounters}][/b]
   *page_break Return to the parlor…
   *goto cut_corve_parlor_menu
 *else
@@ -3188,7 +3208,7 @@ followed by the rest of your kit, leaving you bare to the dim candlelight.
 
   Downstairs, the parlor is shuttered and quiet for the daylight hours. The central stove is banked to low embers, the benches are empty, and only the door-guard stirs by the entrance. He lifts the heavy iron drop-bar with a dull clatter, holding the felt curtain aside to let you step out into the stone terrace of Lamp Stair.
 
-  [b][🛏️ Long Rest Resolved: Class Resources Restored | Rested | Carnal Warmth (+1 CHA for 10 Hours 40 Minutes) | Hygiene Restored to Clean | Encounters: ${intimate_encounters}][/b]
+  [b][🛏️ Long Rest Resolved: Class Resources Restored | Rested | Carnal Warmth (+1 CHA for ${carnal_dur_label}${carnal_rate_note}) | Hygiene Restored to Clean | Encounters: ${intimate_encounters}][/b]
   *set corve_stay_overnight false
 
   *goto cut_lamp_page
