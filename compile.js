@@ -303,6 +303,8 @@ function compile(){
   // Low-frequency, one-shot city-travel encounters. This is reached from port_valen.txt's shared
   // travel primitive and dispatches directly to the selected district, so it is not in *scene_list.
   verifyFileName("port_valen/port_valen_random_encounters.txt");
+  // Vane's debrief: reached from pv_re_roll's escort hook (*goto_scene) and from the three turn-ins' shared check (*gosub_scene), never through *scene_list.
+  verifyFileName("port_valen/vane_debrief.txt");
   // Shared town and village incidents. Local movement helpers gosub this picker after real travel;
   // it returns to the caller after resolving an event, so it does not belong in *scene_list.
   verifyFileName("settlement_events.txt");

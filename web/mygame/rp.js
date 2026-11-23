@@ -695,10 +695,33 @@
     }).catch(function () {});
   }
 
+  function resetMemorySessionState() {
+    session.active = false;
+    session.id = null;
+    session.pageId = null;
+    session.cfg = null;
+    session.openingText = "";
+    session.turns = [];
+    session.advisedStarters = null;
+    session.advisedBeats = null;
+    session.adviseSeq += 1;
+    session.evalSeq += 1;
+    session.evalResult = null;
+    session.evalBypass = false;
+    session.sceneReady = false;
+    session.naturalComplete = false;
+    session.triggerEval = null;
+    session.handleTurnAction = null;
+    session.syncNextBtn = null;
+    session.boxEl = null;
+    session.busy = false;
+  }
+
   // Called on a genuine new game (see restoreGame() in web/util.js).
   // Clears any active RP session cache and assigns a fresh rp_world_id for the new playthrough
   // WITHOUT wiping other save slots' or other devices' MemPalace rooms on the server!
   RP.resetAll = function () {
+    resetMemorySessionState();
     clearActiveSession();
     var s = statsNow();
     s.rp_world_id = "w" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -1028,6 +1051,8 @@
     }
 
     function syncChoiceScriptNextBtn(nextBtn) {
+      var liveBox = document.getElementById("rpConsoleBox");
+      if (!liveBox || liveBox !== session.boxEl) return;
       var nb = nextBtn || document.querySelector("#main button.next");
       if (!nb) return;
       var showNext = !session.evalResult && (!!session.sceneReady || !resolveSceneProfile(cfg, statsNow()));
@@ -1740,10 +1765,12 @@
   }, true);
 
   // Intercept ChoiceScript's "Rest together..." (*page_break) button in capture phase when a
-  // rolled-profile RP scene has active turns, triggering the AI post-scene review card first.
+  // rolled/static-profile RP console is live in the DOM and has active turns (never block Menu/Restart screens).
   document.addEventListener("click", function (ev) {
     if (!session.active || !session.boxEl || typeof session.triggerEval !== "function") return;
     if (session.evalBypass) return;
+    var liveBox = document.getElementById("rpConsoleBox");
+    if (!liveBox || liveBox !== session.boxEl) return;
     var nextBtn = ev.target && ev.target.closest ? ev.target.closest("#main button.next") : null;
     if (!nextBtn) return;
     if (!resolveSceneProfile(session.cfg, statsNow()) || session.turns.length === 0) return;
@@ -1767,20 +1794,7 @@
     if (!isSecondary && (!s.rp_active_scene || s.rp_active_scene === "none") && !document.getElementById("rpConsoleBox")) {
       if (session.active) {
         commitSessionToMemPalace();
-        session.active = false;
-        session.turns = [];
-        session.advisedStarters = null;
-        session.advisedBeats = null;
-        session.adviseSeq += 1;
-        session.evalSeq += 1;
-        session.evalResult = null;
-        session.evalBypass = false;
-        session.sceneReady = false;
-        session.naturalComplete = false;
-        session.triggerEval = null;
-        session.handleTurnAction = null;
-        session.syncNextBtn = null;
-        session.boxEl = null;
+        resetMemorySessionState();
         clearActiveSession();
       }
     }
