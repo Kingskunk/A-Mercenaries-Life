@@ -36,6 +36,7 @@ The write-ups in `quests/` were moved here word for word from the old version of
 | Ambrose's Deep-Wood Order | `ambrose_order` | `port_valen/port_valen_middle_ward.txt` | Master Ambrose, the Still-Room in Herb-Pounder Close | Delivered; repeats by season | `Ambrose's Deep-Wood Order.md` |
 | The Troubled Water | `bark_poisoned_water` | `longshade/longshade_forest.txt` | Bark, the old tree in the Longshade | Finished, or failed by leaving the burning grove | None |
 | Word of Aldis Pellam | `overdue_peddler` | `timbermouth/barleycross/overdue_peddler.txt` | A job board, with the Contractor's Insignia | Resolved | None |
+| A Frying Pan, Spick and Span | `greybank_pan` | `overworld/greybank_frying_pan.txt` | A 10% daytime road event on Greybank Rise (`ar2`) | `returned`, `pocketed` | None |
 
 ## Hiring Hall jobs and parcels the sidebar lists
 

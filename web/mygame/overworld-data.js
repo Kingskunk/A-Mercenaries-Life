@@ -1066,6 +1066,20 @@
     }
     return null;
   }
+  // A Frying Pan, Spick and Span (greybank_frying_pan.txt): a 10% daytime roll whenever a journey reaches or passes Greybank Rise (ar2) while unstarted or declined.
+  function greybankPanPlan(from, to, seed, force, startMinute, hasNightLight, poorVisibility, mounted) {
+    force = String(force || "");
+    if (force && force !== "greybank_pan") return null;
+    var legs = route(from, to).legs || [];
+    var ends = (travelPlan(from, to, Number(startMinute) || 0, hasNightLight !== false, !!poorVisibility, !!mounted).ends) || [];
+    for (var i = 0; i < legs.length; i++) {
+      if (legs[i].to !== "ar2") continue;
+      var period = periodOf(ends[i] === undefined ? 0 : ends[i]);
+      if (!force && period !== "day") continue;
+      if (force || (hash100(seed, 870 + i) % 100) < 10) return { id: "greybank_pan", tile: "ar2", leg: i + 1 };
+    }
+    return null;
+  }
   // Does the trip from -> to meet an event, and where? Returns { id, tile, leg } (tile is the tile the walk ends on, leg its number) or null. seed is any whole number the page keeps fixed (the day and the clock);
   // day and lastDay are the campaign days now and of the last event (the cooldown); force is an event id the developer menu asks for (it ignores the chance and the cooldown, and takes the first eligible tile).
   // startMinute, hasNightLight and poorVisibility are what travelPlan needs to say when each leg ends, so an event can be one that belongs to that hour (a lamp gone out is a dusk or a night event).
@@ -1415,5 +1429,5 @@
     stats.wx_queue = JSON.stringify(queue);
   }
 
-  root.Overworld = { weatherZones: WEATHER_ZONES, weatherProfiles: WEATHER_PROFILES, weatherFields: WEATHER_FIELDS, districtZone: DISTRICT_ZONE, defaultWeatherZone: DEFAULT_WEATHER_ZONE, weatherZoneOf: weatherZoneOf, weatherSync: weatherSync, governmentOf: governmentOf, caravanLine: caravanLine, lotShows: lotShows, caravanYard: caravanYard, caravanYards: CARAVAN_YARDS, caravanLines: CARAVAN_LINES, weatherRollBegin: weatherRollBegin, weatherRollNext: weatherRollNext, isOpen: isOpen, courierCount: courierCount, courierPostings: courierPostings, courierTile: courierTile, haleRingPlan: haleRingPlan, wolvesStartPlan: wolvesStartPlan, MINUTES_PER_MILE: MINUTES_PER_MILE, features: FEATURES, terrains: TERRAIN, nodes: NODES, edges: EDGES, territories: TERRITORIES, convoyPlan: convoyPlan, convoyNight: convoyNight, convoyFee: convoyFee, coinText: coinText, convoyMaxLegs: CONVOY_MAX_LEGS, dangerOf: function (id) { return dangerOf(NODES[id]); }, mountMinutesPerMile: MOUNT_MINUTES_PER_MILE, convoyPace: CONVOY_PACE, haltEvents: HALT_EVENTS, travelEventPlan: travelEventPlan, travelEvents: TRAVEL_EVENTS, campEventPlan: campEventPlan, campEvents: CAMP_EVENTS, campChance: CAMP_CHANCE, travelCooldownDays: TRAVEL_COOLDOWN_DAYS, travelChance: TRAVEL_CHANCE, route: route, duration: duration, span: span, label: label, travelPlan: travelPlan, north: NORTH };
+  root.Overworld = { weatherZones: WEATHER_ZONES, weatherProfiles: WEATHER_PROFILES, weatherFields: WEATHER_FIELDS, districtZone: DISTRICT_ZONE, defaultWeatherZone: DEFAULT_WEATHER_ZONE, weatherZoneOf: weatherZoneOf, weatherSync: weatherSync, governmentOf: governmentOf, caravanLine: caravanLine, lotShows: lotShows, caravanYard: caravanYard, caravanYards: CARAVAN_YARDS, caravanLines: CARAVAN_LINES, weatherRollBegin: weatherRollBegin, weatherRollNext: weatherRollNext, isOpen: isOpen, courierCount: courierCount, courierPostings: courierPostings, courierTile: courierTile, haleRingPlan: haleRingPlan, greybankPanPlan: greybankPanPlan, wolvesStartPlan: wolvesStartPlan, MINUTES_PER_MILE: MINUTES_PER_MILE, features: FEATURES, terrains: TERRAIN, nodes: NODES, edges: EDGES, territories: TERRITORIES, convoyPlan: convoyPlan, convoyNight: convoyNight, convoyFee: convoyFee, coinText: coinText, convoyMaxLegs: CONVOY_MAX_LEGS, dangerOf: function (id) { return dangerOf(NODES[id]); }, mountMinutesPerMile: MOUNT_MINUTES_PER_MILE, convoyPace: CONVOY_PACE, haltEvents: HALT_EVENTS, travelEventPlan: travelEventPlan, travelEvents: TRAVEL_EVENTS, campEventPlan: campEventPlan, campEvents: CAMP_EVENTS, campChance: CAMP_CHANCE, travelCooldownDays: TRAVEL_COOLDOWN_DAYS, travelChance: TRAVEL_CHANCE, route: route, duration: duration, span: span, label: label, travelPlan: travelPlan, north: NORTH };
 })(typeof window !== "undefined" ? window : global);

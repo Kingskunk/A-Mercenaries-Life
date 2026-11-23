@@ -283,6 +283,24 @@
       active: function (s) { return truthy(s.has_ressa_hale_ring) && (s.hale_ring_stage === "found" || s.hale_ring_stage === "owner_known"); }
     },
     {
+      id: "greybank_pan",
+      title: "A Frying Pan, Spick and Span",
+      place: "Greybank Rise",
+      giver: "An elderly cottager by the Grey River",
+      goal: function (s) {
+        return truthy(s.gbp_found_pan) ? "Bring the skillet back to the cottager outside." : "Get inside the locked cottage by the Grey River and recover the woman's skillet.";
+      },
+      clues: function (s) {
+        var c = [];
+        if (truthy(s.gbp_clue_body)) c.push("A dead courier lies behind the table, his throat cut, with a silver ring and coin purse beside him.");
+        if (truthy(s.gbp_clue_papers)) c.push("Burned parchment and scorched red sealing wax sit in the cold grate.");
+        if (truthy(s.gbp_found_pan)) c.push("The skillet's base has been scrubbed clean of soot beside a bowl of dark water.");
+        if (truthy(s.gbp_deduced_soot)) c.push("Someone scraped soot from the pan or washed up after killing the courier.");
+        return c;
+      },
+      active: function (s) { return s.gbp_stage === "active"; }
+    },
+    {
       id: "varren_errand", title: "Varren's Errand", place: "Port Valen",
       giver: "Sergeant Varren, the Carrion Compound",
       goal: function (s) {
