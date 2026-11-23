@@ -58,6 +58,7 @@
   var SCENE_PLACES = {
     "alderford/drowned_oar": "tavern",
     "overworld/valen_reach_alyndra": "generic_tavern_inn",
+    "overworld/greybank_frying_pan": "greybank_cottage_outside",
     "timbermouth/split_pine_inn": "generic_town_inn",
     "Langston/pickled_hen": "generic_town_inn",
     "Langston/cord_and_kettle": "generic_trade_shop",
@@ -208,6 +209,7 @@
     function (s) { return (s.sceneName === "Langston/wolves_of_langston_chapter_4" || s.sceneName === "Langston/westwood") && s.scenery_subplace ? s.scenery_subplace : undefined; }, // Chapter 4 moves between the mayor's office, the western woods, the nymph's clearing, the bandit camp and the mayor's house
     function (s) { return (s.sceneName === "Langston/wolves_of_langston_chapter_3" || s.sceneName === "Langston/roi_grove") && s.scenery_subplace ? s.scenery_subplace : undefined; }, // Chapter 3 moves from the forest track to the clearing, Roi's grove and the home under his rock
     function (s) { return s.sceneName === "overworld/valen_reach_alyndra" && s.scenery_subplace ? s.scenery_subplace : undefined; }, // Alyndra's quest moves between the village inn/gathering hall, hilly road and gorge
+    function (s) { return s.sceneName === "overworld/greybank_frying_pan" && s.scenery_subplace ? s.scenery_subplace : undefined; }, // Greybank cottage encounter moves between outside yard and interior
     function (s) { return s.sceneName === "prologue/battle_black_sinks" && s.scenery_subplace === "black_sinks_causeway_before" ? "black_sinks_causeway_before" : undefined; }, // the ruined causeway during the prologue assault
     function (s) { return s.sceneName === "prologue/battle_black_sinks" && s.scenery_subplace === "black_sinks_bivouac" ? "black_sinks_captured_gatehouse_bivouac" : undefined; }, // the company holds the captured gatehouse overnight
     function (s) { return s.sceneName === "alderford/whitefold/the_weight_of_the_road" && s.weight_road_quest_stage !== "reckoning" && s.weight_road_quest_stage !== "resolved" && s.weight_road_quest_stage !== "failed" ? "whitefold_cut_road_collapse" : undefined; }, // the Cut Road emergency, investigation, wall reading and repair; the Fleecefold reckoning keeps the village backdrop until it has its own art

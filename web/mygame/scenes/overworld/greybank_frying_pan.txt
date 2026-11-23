@@ -1,0 +1,356 @@
+*comment ====================================================================================
+*comment VALEN REACH -- SIDE ENCOUNTER: A FRYING PAN, SPICK AND SPAN
+*comment
+*comment PLANNED LIVE INTEGRATION HOOK (Wire into overworld-data.js + travel_events.txt once scenery & review are done):
+*comment
+*comment   1. overworld-data.js (like haleRingPlan):
+*comment      Add greybankPanPlan checking legs[i].to === "ar2" with periodOf(ends[i]) === "day"
+*comment      and a slight chance (e.g. 10% / hash100 < 10) while gbp_stage is "unstarted" or "declined",
+*comment      returning { id: "greybank_pan", tile: "ar2", leg: i + 1 }.
+*comment   2. overworld/travel_events.txt:
+*comment      *label te_greybank_pan
+*comment      *set gbp_from_dev false
+*comment      *goto_scene overworld/greybank_frying_pan gbp_start
+*comment ====================================================================================
+
+*label gbp_start
+*set ow_on false
+*set scenery_subplace "greybank_cottage_outside"
+*if (gbp_stage = "resolved")
+  The cottage below the highway sits quiet in the river breeze, its door shut fast and no smoke rising from the chimney.
+  *page_break Return to the highway…
+  *goto gbp_exit
+
+*if (gbp_stage = "active")
+  *goto gbp_entry_menu
+
+A narrow shingle track drops off the shoulder of Greybank Rise to the bank of the Grey River, ending at a low cottage tucked under the slope. Even over the damp river wind, a faint, foul smell clings to the yard.
+
+An elderly woman in a faded wool shawl stands a few paces from the bolted door, her silver hair braided neat and her knuckles red from cold water. She clutches a worn wooden spoon in one hand and glares at the shut cottage, muttering under her breath.
+
+*if (gbp_stage = "declined")
+  She glances up as your ${feet_prose} crunch on the shingle, her mouth tightening. "Still locked," she says, nodding at the threshold. "And the smell's no better."
+
+*choice
+  # Step closer and ask what happened.
+    You walk onto the packed earth of the yard, keeping clear of the threshold. "Trouble?" you ask.
+
+    The cottager looks you over, then jabs her wooden spoon at the planks. "A traveler came off the rise yesterday evening, soaking wet and talking polite as a clerk. Asked to dry his cloak by my fire. Soon as I turned to fetch kindling from the shed, he slipped inside and dropped the latch."
+
+    She spits into the weeds. "Hour later, another man in a dark coat came skulking around the side and climbed straight through the shuttered window. Neither of them has come out since. Now there's a foul rot creeping under the sill, and the thief still has my skillet in there."
+
+    *set gbp_stage "active"
+    *goto gbp_hook_choice
+
+  # Leave her to it and climb up to the highway.
+    *if (gbp_stage = "unstarted")
+      *set gbp_stage "declined"
+    You give her a polite nod, turn up the shingle track, and leave the riverside yard behind.
+    *page_break Return to the highway…
+    *goto gbp_exit
+
+*label gbp_hook_choice
+*choice
+  # "I'll get inside and fetch your cookware."
+    "Thank you," she says, stepping aside to the river reeds with her spoon still raised like a club. "Just mind the cookware. It's the only decent piece I own."
+    *goto gbp_entry_menu
+
+  # "That sounds like watch business, not mine."
+    *set gbp_stage "declined"
+    The cottager scowls and turns away. "Fine. Leave me to wait on the patrols, then."
+
+    You climb the shingle track to Greybank Rise.
+    *page_break Return to the highway…
+    *goto gbp_exit
+
+*label gbp_entry_menu
+*set scenery_subplace "greybank_cottage_outside"
+*temp gbp_eb_can false
+*temp gbp_eb_tag ""
+*temp gbp_mh_can false
+*temp gbp_mh_tag ""
+*temp gbp_th_can false
+*temp gbp_th_tag ""
+*temp gbp_fb_can false
+*temp gbp_fb_tag ""
+*temp gbp_us_can false
+*temp gbp_us_tag ""
+*temp gbp_mm_can false
+*temp gbp_mm_tag ""
+*gosub_scene dungeon dg_spell_source "eldritch_blast" "Eldritch Blast" 0 "cantrip"
+*set gbp_eb_can dg_ss_can
+*set gbp_eb_tag dg_ss_tag
+*gosub_scene dungeon dg_spell_source "mage_hand" "Mage Hand" 0 "cantrip"
+*set gbp_mh_can dg_ss_can
+*set gbp_mh_tag dg_ss_tag
+*gosub_scene dungeon dg_spell_source "thaumaturgy" "Thaumaturgy" 0 "cantrip"
+*set gbp_th_can dg_ss_can
+*set gbp_th_tag dg_ss_tag
+*gosub_scene dungeon dg_spell_source "fire_bolt" "Fire Bolt" 0 "cantrip"
+*set gbp_fb_can dg_ss_can
+*set gbp_fb_tag dg_ss_tag
+*gosub_scene dungeon dg_spell_source "unseen_servant" "Unseen Servant" 10 "ritual"
+*set gbp_us_can dg_ss_can
+*set gbp_us_tag dg_ss_tag
+*gosub_scene dungeon dg_spell_source "magic_missile" "Magic Missile" 0 "spell"
+*set gbp_mm_can dg_ss_can
+*set gbp_mm_tag dg_ss_tag
+The cottage entrance is secured from within, and the wooden shutters on the side wall are latched firm against their pegs. The sour stench from inside is sharper now.
+
+*choice
+  # Force the front entrance open.@{show_stat_hints  [STR DC 12]|}@{has_iron_crowbar  [Crowbar: Adv]|}
+    *if (has_iron_crowbar)
+      *set advantage true
+    *gosub_scene dice_engine roll_skill_check 12 "athletics" "" "" "" "" ""
+    *set hours_to_pass 0
+    *set minutes_to_pass 20
+    *set time_advance_call_id "gbp_entry_str"
+    *gosub_scene calendar advance_time
+    *if (check_success)
+      *if (has_iron_crowbar)
+        You wedge your iron crowbar into the seam beside the jamb and heave. The seasoned oak crossbeam snaps with a clean crack, and the planks swing inward.
+      *else
+        You brace your heel on the threshold and drive your shoulder into the planks. With a sharp splinter of dry timber, the inner crossbeam gives way and the entrance flies wide.
+      *goto gbp_inside
+    *else
+      *set gbp_rattled true
+      You throw your weight against the frame, jarring your shoulder hard against the planks without budging the timber. It takes three more bruised, swearing shoves before the old bracket finally tears loose and the door bangs open, leaving your arm aching and your nerves on edge.
+      *goto gbp_inside
+
+  # Slip the latch on the shuttered side window.@{show_stat_hints  [DEX DC 12]|}@{has_lockpick_set  [Lockpicks: Adv]|}
+    *if (has_lockpick_set)
+      *set advantage true
+    *gosub_scene dice_engine roll_skill_check 12 "sleight_of_hand" "" "stealth" "" "acrobatics" ""
+    *set hours_to_pass 0
+    *set minutes_to_pass 20
+    *set time_advance_call_id "gbp_entry_dex"
+    *gosub_scene calendar advance_time
+    *if (check_success)
+      *if (has_lockpick_set)
+        You slide a flat pick through the narrow gap under the shutter, lift the wooden peg cleanly out of its notch, and swing the window wide without a sound.
+      *else
+        You work a flat wedge into the seam of the wood, coaxing the swollen peg up until the catch slips free and you haul yourself over the sill.
+      *goto gbp_inside
+    *else
+      *set gbp_rattled true
+      The swollen shutter jams halfway, then snaps down against your knuckles as you force the peg free. You scramble over the low sill nursing stinging fingers, your pulse jumping at the clatter.
+      *goto gbp_inside
+
+  # Work the crossbeam loose from the gap.@{show_stat_hints  [INT/WIS DC 12]|}
+    *gosub_scene dice_engine roll_skill_check 12 "investigation" "" "perception" "" "" ""
+    *set hours_to_pass 0
+    *set minutes_to_pass 20
+    *set time_advance_call_id "gbp_entry_cunning"
+    *gosub_scene calendar advance_time
+    *if (check_success)
+      Spotting the warped gap beneath the lintel, you thread a thin slat of kindling from the woodpile up under the bracketed beam and lever it smoothly off its rest.
+      *goto gbp_inside
+    *else
+      *set gbp_rattled true
+      Your makeshift slat snaps halfway up the timber, forcing you to fish around blind in the dusty gap until you finally knock the beam free. The delay leaves you dusty, impatient, and tense.
+      *goto gbp_inside
+
+  *if (gbp_eb_can)
+    # Blast the inner bar with Eldritch Blast. [${gbp_eb_tag}]
+      *gosub_scene dungeon dg_spell_source "eldritch_blast" "Eldritch Blast" 0 "cantrip"
+      *gosub_scene dungeon dg_spell_cast "eldritch_blast"
+      *set hours_to_pass 0
+      *set minutes_to_pass 5
+      *set time_advance_call_id "gbp_entry_eb"
+      *gosub_scene calendar advance_time
+      You raise a hand and loose a sharp bolt of crackling force into the seam beside the latch. The oak crossbeam jumps clean out of its brackets, and the planks swing inward.
+      *goto gbp_inside
+
+  *if (gbp_mh_can)
+    # Lift the inner bar with Mage Hand. [${gbp_mh_tag}]
+      *gosub_scene dungeon dg_spell_source "mage_hand" "Mage Hand" 0 "cantrip"
+      *gosub_scene dungeon dg_spell_cast "mage_hand"
+      *set hours_to_pass 0
+      *set minutes_to_pass 5
+      *set time_advance_call_id "gbp_entry_mh"
+      *gosub_scene calendar advance_time
+      You conjure a spectral hand through the warped gap beneath the lintel, take hold of the oak crossbeam, and lift it smoothly off its brackets without a sound.
+      *goto gbp_inside
+
+  *if (gbp_th_can)
+    # Snap the bar free with Thaumaturgy. [${gbp_th_tag}]
+      *gosub_scene dungeon dg_spell_source "thaumaturgy" "Thaumaturgy" 0 "cantrip"
+      *gosub_scene dungeon dg_spell_cast "thaumaturgy"
+      *set hours_to_pass 0
+      *set minutes_to_pass 5
+      *set time_advance_call_id "gbp_entry_th"
+      *gosub_scene calendar advance_time
+      You murmur a word and flick your fingers at the frame. A sudden, resonant shudder runs through the planks, jolting the inner bar out of its brackets so the entrance swings wide.
+      *goto gbp_inside
+
+  *if (gbp_fb_can)
+    # Char the shutter peg loose with Fire Bolt. [${gbp_fb_tag}]
+      *gosub_scene dungeon dg_spell_source "fire_bolt" "Fire Bolt" 0 "cantrip"
+      *gosub_scene dungeon dg_spell_cast "fire_bolt"
+      *set hours_to_pass 0
+      *set minutes_to_pass 10
+      *set time_advance_call_id "gbp_entry_fb"
+      *gosub_scene calendar advance_time
+      You snap a narrow jet of flame onto the swollen wooden peg pinning the side shutter. The dry oak blackens and splits in seconds, letting you pull the window open and climb inside.
+      *goto gbp_inside
+
+  *if (gbp_us_can)
+    # Send an Unseen Servant through the gap to unbar it. [${gbp_us_tag}]
+      *gosub_scene dungeon dg_spell_source "unseen_servant" "Unseen Servant" 10 "ritual"
+      *gosub_scene dungeon dg_spell_cast "unseen_servant"
+      *set hours_to_pass 0
+      *if (dg_ss_cost = "ritual")
+        *set minutes_to_pass 10
+      *else
+        *set minutes_to_pass 5
+      *set time_advance_call_id "gbp_entry_us"
+      *gosub_scene calendar advance_time
+      You shape an invisible servant in the yard and bid it slip through the narrow seam beneath the lintel. A moment later, the oak bar lifts from within and the entrance swings open.
+      *goto gbp_inside
+
+  *if (gbp_mm_can)
+    # Shatter the inner bar with Magic Missile. [${gbp_mm_tag}]
+      *gosub_scene dungeon dg_spell_source "magic_missile" "Magic Missile" 0 "spell"
+      *gosub_scene dungeon dg_spell_cast "magic_missile"
+      *set hours_to_pass 0
+      *set minutes_to_pass 5
+      *set time_advance_call_id "gbp_entry_mm"
+      *gosub_scene calendar advance_time
+      You loose three sharp darts of force straight through the latch seam. They punch into the oak crossbeam inside with a rapid crack-crack-crack, snapping it in two and knocking the entrance wide.
+      *goto gbp_inside
+
+*label gbp_inside
+*set scenery_subplace "greybank_cottage_inside"
+Inside, the room is dim and airless, heavy with the sour stench of a corpse and stale woodsmoke. Thin strips of pale light cut across a pine table, a stone hearth deep in grey ash, and a sprawled shape on the floor behind the bench.
+
+*goto gbp_investigate_menu
+
+*label gbp_investigate_menu
+What do you examine?
+
+*choice
+  *if (not(gbp_clue_body))
+    # Check the body slumped behind the table.
+      *set gbp_clue_body true
+      A lean man in a muddy coat lies crumpled in the rushes, his footwear worn down at the heels from hard riding. His throat has been slit cleanly from ear to ear, and the blood has already darkened and dried into the floor.
+
+      Beside his stiffened fingers lies a cracked silver eyepiece on a broken chain. A small leather purse still hangs tied to his belt, untouched.
+      *goto gbp_investigate_menu
+
+  *if (not(gbp_clue_papers))
+    # Search the hearth.
+      *set gbp_clue_papers true
+      The flagstones are chilled, piled high with dead wood ash and the curled black remains of burned parchment. Whatever was written on the sheets is gone to cinders, though two thick, scorched corners of red sealing wax still cling together at the edge of the grate.
+      *goto gbp_investigate_menu
+
+  *if (not(gbp_found_pan))
+    # Inspect the table and the cooking hook.
+      *set gbp_found_pan true
+      The wall hook beside the chimney hangs empty. Instead, an iron frying pan sits in the middle of the table next to a damp rag and a wooden bowl full of murky black water.
+
+      Stranger still, the underside of the cookware, normally caked black with years of chimney soot, has been scrubbed down to bare, gleaming metal.
+      *goto gbp_investigate_menu
+
+  *if ((gbp_found_pan and (gbp_clue_body or gbp_clue_papers)) and (not(gbp_deduced_soot)))
+    # Piece together why the pan was scrubbed clean.@{show_stat_hints  [Investigation/Insight DC 12]|}@{gbp_rattled  [Disadv]|}
+      *if (gbp_rattled)
+        *set disadvantage true
+      *gosub_scene dice_engine roll_skill_check 12 "investigation" "" "insight" "" "" ""
+      *set gbp_deduced_soot true
+      *set hours_to_pass 0
+      *set minutes_to_pass 15
+      *set time_advance_call_id "gbp_deduce"
+      *gosub_scene calendar advance_time
+      *if (check_success)
+        You tilt the gleaming cookware toward the window seam and glance at the bowl of dark water and the dark grate. Nobody scrubs soot off cooking iron to make supper. Someone scraped it down to mix makeshift ink, or washed away something they didn't want found.
+
+        Between the worn heels, the scorched wax seals, and the broken eyepiece, this wasn't a common tavern brawl. A courier was cornered here, his dispatches burned, and his killer took their time before slipping out into the dark.
+      *else
+        You turn the clean cookware over in your hands and glance at the corpse, but the stench in the close room makes it hard to think straight. Someone clearly washed it here after the killing, though why they bothered escapes you.
+      *goto gbp_investigate_menu
+
+  *if (gbp_found_pan)
+    # Take the frying pan and step outside.
+      *goto gbp_leave_choice
+
+*label gbp_leave_choice
+You lift the iron pan from the table.
+*if (gbp_clue_body)
+  Before you head for the threshold, your eyes catch the leather purse on the courier's belt and the broken silver eyepiece glinting in the rushes.
+
+  *choice
+    # Leave his belongings untouched and go outside with only the cookware.
+      *set gbp_took_loot false
+      *goto gbp_outside_return
+
+    # Pocket the coin purse and silver eyepiece before stepping outside.
+      *set gbp_took_loot true
+      You crouch, untie the leather purse from his belt, and slip both the coins and the fractured eyepiece into your pack before heading out into the air.
+      *goto gbp_outside_return
+*else
+  *set gbp_took_loot false
+  *goto gbp_outside_return
+
+*label gbp_outside_return
+*set scenery_subplace "greybank_cottage_outside"
+*set gbp_stage "resolved"
+*set gbp_finished true
+*if (gbp_took_loot)
+  *set gbp_ending "pocketed"
+*else
+  *set gbp_ending "returned"
+*set hours_to_pass 0
+*set minutes_to_pass 15
+*set time_advance_call_id "gbp_return"
+*gosub_scene calendar advance_time
+
+You step out into the river breeze and hold out the cookware. The cottager hurries over, takes it by the handle, and stops short, turning it over in her hands to stare at the spotless metal underneath.
+
+"Well, I'll be," she mutters, squinting at her own reflection in the base. "Scoured it cleaner than the day my husband bought it." Then her eyes lift past your shoulder to the open doorway, and her face sobers. "What's in there?"
+
+"A dead man," you tell her plainly. "Someone cut his throat by your chimney and slipped out. Don't go inside until you've fetched a patrol from the rise."
+
+She crosses her arms over her shawl and nods slowly. "Aye. I'll walk up to the verge and hail the next Scales wagon."
+
+*if (not(gbp_took_loot))
+  She reaches into the deep pocket of her apron and presses a wrapped bundle into your hands, holding an orchard apple and a barley loaf. "It isn't much, traveler, but take it for your journey."
+
+  *if (not(gbp_reward_claimed))
+    *set gbp_reward_claimed true
+    *gosub_scene equipment grant_gear "orchard_apple" 1
+    *gosub_scene equipment grant_gear "barley_loaf" 1
+    *gosub_scene dice_engine heroic_award "greybank_pan_returned"
+  *set gbp_ending "returned"
+  *set gbp_stage "resolved"
+  *set gbp_finished true
+
+  You tuck the food into your pack and climb the shingle track to Greybank Rise, leaving the fallen courier's secrets where they lie.
+*else
+  She reaches into the deep pocket of her apron and presses a wrapped bundle into your hands, holding an orchard apple and a barley loaf. "It isn't much, traveler, but take it for your journey."
+
+  *if (not(gbp_reward_claimed))
+    *set gbp_reward_claimed true
+    *gosub_scene equipment grant_gear "orchard_apple" 1
+    *gosub_scene equipment grant_gear "barley_loaf" 1
+    *set currency_add_amount 25
+    *gosub_scene economy currency_add
+  *set gbp_ending "pocketed"
+  *set gbp_stage "resolved"
+  *set gbp_finished true
+
+  You nod your thanks, tuck the food beside the heavy coin purse and silver eyepiece, and climb the shingle track to Greybank Rise.
+
+*page_break Return to the highway…
+*goto gbp_exit
+
+*label gbp_exit
+*if (gbp_from_dev)
+  *goto_scene dev_hub dev_menu_quests
+*goto_scene overworld/overworld ow_event_done
+
+*comment Level-up quest pool: resolving A Frying Pan, Spick and Span counts once.
+*comment replay-ok: refresh_quests_finished (character_progression.txt) sets quests_finished to 0 and calls this label.
+*label count_finished_greybank_pan
+*if (gbp_finished)
+  *set quests_finished + 1
+*return

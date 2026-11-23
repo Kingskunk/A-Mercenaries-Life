@@ -262,6 +262,7 @@ The example is The Short Purse (`port_valen/black_oath/black_oath_short_purse.tx
 ### 3.1 Decide before writing
 
 - How the player finds it. A quest giver never singles the player out unprompted.
+- Existing NPCs and chapter flags. When tying into an earlier settlement or cast member, search existing scene flags (`met_`, disposition, prior outcomes) so you reuse them intentionally and avoid name collisions.
 - The spine: three to five beats that every route passes through.
 - The endings, including one where the player loses.
 - What each failed roll costs. A failure never turns into the success it was chasing.
@@ -275,19 +276,23 @@ Read first, in `QUEST_DESIGN_RULES.md`: "Organic Discovery & Table-Facing Delive
 
 ### 3.2 Build it
 
-1. **Its own scene file**, in the folder of the place it starts in. The district or hub file holds only the short hook that sends the player there.Keep file names unique and not generic, ensure no file name shares another.
-2. **Its own file in `startup_parts/`**: a stage variable, a resolution variable, one flag per clue, and one success flag.
-3. **Rewards are guarded.** Outside a fight nothing protects a page from being replayed, so every grant of coin, items or standing sits behind a once-only flag. Coin goes through `economy currency_add`.
-4. **One clock advance per page.** Put a page break between two.
-5. **The world remembers.** One changed line in the place's prose, or one rumour per ending, is enough for a small quest.
+1. **Its own scene file**, in the folder of the place it starts in. The district or hub file holds only the short hook that sends the player there. Keep file names unique and not generic; ensure no file name shares another.
+2. **Build standalone first, wire live last.** While writing beat-by-beat, keep the quest unwired from live hubs: store planned hub options as commented-out notes at the top of the quest file and test via `dev_hub.txt`. When ready to wire live, replace `Return to Dev Hub` exits with returns to the real district or shop hubs (keeping `dev_reset_<quest>` if `dev_hub.txt` calls it) and move the hooks into the live hubs.
+3. **Its own file in `startup_parts/`**: a stage variable, a resolution variable, one flag per clue, and one success flag. Rebuild `startup.txt` with `node tools/build_startup.js` after every edit.
+4. **NPC placement stays mutually exclusive.** If a quest moves an NPC between hubs or shares an NPC with an earlier quest, gate the origin hub button so it hides once the quest advances or the NPC moves, yield to earlier active beats, and place auto-triggering shop beats before the shopkeeper's normal greeting to avoid double-greetings.
+5. **Rewards are guarded.** Outside a fight nothing protects a page from being replayed, so every grant of coin, items or standing sits behind a once-only flag. Coin goes through `economy currency_add`.
+6. **Clocks and weather.** One clock advance per page (put a page break between two). For multi-day waits, check `campaign_day >= start_day + N` so the player is not trapped. Call `calendar ensure_navigable_weather` before outdoor street or ambush beats.
+7. **Fights and pre-initiative spells.** Gate out-of-combat spell prep with `dungeon dg_spell_source` / `dg_spell_cast`. When using `fight_library` with an ally, set `combat_ally1_range` and `combat_enemyN_range` explicitly so combatants do not stack on one tile, and set `combat_no_flee true` when fleeing does not fit.
+8. **The world remembers.** One changed line in the place's prose, or one rumour per ending, is enough for a small quest.
 
 ### 3.3 Register it
 
 | What | Where |
 | --- | --- |
-| Sidebar | One object in `web/mygame/quest-data.js`. `clues` lists only what the player has found. |
+| Sidebar | One object in `web/mygame/quest-data.js`. Keep `title`, `place`, `goal` and `clues` spoiler-free: never name hidden factions or endgame targets before the player learns them, and list only clues already found. |
 | Index | One row in `Resources & Quest/QUESTS.md`, with the same id |
-| Level-up pool | A `count_finished_<name>` label in the quest's file and one line in `refresh_quests_finished` in `character_progression.txt`. It counts a success flag that is set once and never cleared. Search the mechanics rules for "The Level-Up Pool Is Derived From Success Flags". |
+| Level-up pool | A `count_finished_<name>` label in the quest's file and one line in `refresh_quests_finished` in `character_progression.txt`. It counts a success flag that is set once and never cleared (for multi-part quests, use a dedicated boolean rather than a `stage` value that Part 2 will overwrite). Search the mechanics rules for "The Level-Up Pool Is Derived From Success Flags". |
+| Scenery | `SCENE_PLACES` in `web/mygame/scenery.js`. `scenery_subplace` on a standalone quest scene is passed directly without district aliasing. |
 | Lorebook | Every person, place and faction the player learns of, unlocked at the moment they learn it |
 | The scene file | A `verifyFileName("...")` line in `compile.js` |
 | Testing entry | An option in `dev_hub.txt` that sets up the state the quest needs |

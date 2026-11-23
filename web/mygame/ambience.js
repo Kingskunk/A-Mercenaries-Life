@@ -99,6 +99,7 @@
     western_vale_road: "open_road",
     road: "open_road", overworld_hilly_road: "open_road",   // the kind of an overworld tile (Scenery.placeNames ends a tile's names with it)
     the_splitjaw_ravines: "open_road", grey_gorge_rim_camp: "open_road", grey_river_gorge_arch: "open_road", grey_gorge_outlaw_camp: "open_road",
+    greybank_cottage_outside: "open_road", greybank_cottage_inside: "village_room",
     generic_town_street: "village",
     langston: "city",
     longfold_fair_sun_pillar: "village",  // the open market ground: a village by day, a hushed one at night
