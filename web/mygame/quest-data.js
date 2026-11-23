@@ -348,6 +348,41 @@
       active: function (s) { return s.lyra_quest_stage === "active"; }
     },
     {
+      id: "lyra_nine_court", title: "The Silvered Thread",
+      giver: "Lyra",
+      place: function (s) {
+        if (s.nine_court_stage === "alderford_lead") return "Alderford · The River Wharf";
+        if (s.nine_court_stage === "rescued") return "Dredge-End · The Open Hand";
+        if (s.nine_court_stage === "appraising") {
+          if (Number(s.campaign_day) >= Number(s.nine_court_drop_day) + 2) return "Middle Ward · Lantern Lane";
+          return "Dredge-End · The Open Hand";
+        }
+        if (truthy(s.nine_court_pawn_seen)) return "Middle Ward · Lantern Lane";
+        return "Dredge-End · The Open Hand";
+      },
+      goal: function (s) {
+        if (s.nine_court_stage === "alderford_lead") return "Travel upriver to Alderford and investigate how Rennick is clearing House Morvath's cargo onto the barges.";
+        if (s.nine_court_stage === "rescued") return "Bring Simeon Penn back to Angel's cellar beneath The Open Hand in Dredge-End.";
+        if (s.nine_court_stage === "appraising") {
+          if (Number(s.campaign_day) >= Number(s.nine_court_drop_day) + 2) return "A runner arrived from Simeon Penn. Go to his shop on Lantern Lane in the Middle Ward.";
+          return "Give Simeon Penn two days to trace the thread's materials, then check back at The Open Hand.";
+        }
+        if (truthy(s.nine_court_pawn_seen)) return "Carry the sealed thread to Simeon Penn's shop on Lantern Lane in the Middle Ward.";
+        return "Meet Lyra at The Open Hand in Dredge-End to examine what her aunt left behind.";
+      },
+      clues: function (s) {
+        var c = [];
+        if (truthy(s.nine_court_backroom_asked_item)) c.push("The spool from Lyra's aunt is woven with silvered copper wire and stiffened with resinous gum and fine ash.");
+        if (truthy(s.nine_court_simeon_met)) c.push("Simeon Penn, a former customs clerk on Lantern Lane, agreed to trace the thread's materials.");
+        if (s.nine_court_stage === "rescued" || s.nine_court_stage === "alderford_lead") c.push("Three armed men cornered Simeon in his Lantern Lane shop before you and Lyra pulled him clear.");
+        if (s.nine_court_stage === "alderford_lead") c.push("Simeon's manifest scrap logs black myrrh-gum and bone ash to House Morvath, cleared out of Alderford by the wharf tollreeve Rennick.");
+        return c;
+      },
+      active: function (s) {
+        return s.nine_court_stage && s.nine_court_stage !== "unstarted" && s.nine_court_stage !== "resolved" && s.nine_court_stage !== "failed" && s.nine_court_stage !== "declined";
+      }
+    },
+    {
       id: "black_oath_night_list", title: "The Night List",
       giver: function (s) { return truthy(s.black_oath_mara_named) ? "Mara Vey" : "The Woman Upstairs"; },
       place: function (s) {

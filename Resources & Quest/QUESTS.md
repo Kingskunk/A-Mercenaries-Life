@@ -59,6 +59,7 @@ These repeat and are listed under their own heading in the sidebar.
 | The Granary Cellar Infestation | `prologue/alderford.txt` | Alderford side task | `quests/alderford_granary.md` |
 | Crane Three | `port_valen/port_valen.txt` | Repeatable dock labour for Dell Ostrey | `quests/crane_three.md` |
 | Hask's Real Money | `port_valen/port_valen_dredge_end.txt` | Repeatable courier round; leads to the Black Oath | `quests/scrap_yard_courier.md` |
+| Vane's Debrief | `port_valen/vane_debrief.txt` | Vane reviews the three commanders' quests a day after the last is turned in; says he will send for the player again | `quests/vane_debrief.md` |
 
 ## Planned, not built
 

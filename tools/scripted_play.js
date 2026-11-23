@@ -326,9 +326,9 @@ function refreshCheck(sc, where) {
   D.sabotage.forEach(function (k) { replayStats[k] = false; });
   Object.keys(D.replaySet).forEach(function (k) { replayStats[k] = D.replaySet[k]; });
   var savedPrinted = printed.slice(), savedTimeout = timeout, savedMode = D.mode, savedStats = stats, savedSeed = SEEDED.a, savedRandom = Math.random;
-  // The game's page guard (web/scene.js pageReplaySeed) keeps its seeded dice in two globals; the replay re-seeds them. Put them back too, or the
-  // first pass's next page would roll from another stream than a run without the check (a browser refresh reloads, so the game never meets this).
-  var savedPR = globalThis.__pageReplayRandom, savedPRO = globalThis.__pageReplayOrigRandom;
+  // KNOWN (2026-11-22, kept on purpose): the game's page guard (web/scene.js pageReplaySeed) keeps its seeded dice in two globals, and the replay
+  // re-seeds them without this putting them back. So in a "seed" fight, turning refresh on or off changes the later rolls (both streams are fair).
+  // Restoring them was tried: 42 seeded refresh scripts were tuned on this stream and lost the moment they test. Leave it unless those are re-tuned.
   // A choice page has already flushed its text into the last prose event; a page_break page still has it in printed.
   var lastEv = D.events[D.events.length - 1];
   var firstText = savedPrinted.length ? pageText(savedPrinted) : (lastEv && lastEv.type === "prose" ? lastEv.text.replace(/\s+/g, " ").trim() : "");
@@ -340,7 +340,6 @@ function refreshCheck(sc, where) {
   try { rs.execute(); } catch (e) { D.refreshDiffs.push(where + " @ " + startScene + ":" + line + ": EXCEPTION " + e.message); }
   var replayText = pageText(printed);
   D.mode = savedMode; timeout = savedTimeout; stats = savedStats; SEEDED.a = savedSeed; Math.random = savedRandom;
-  globalThis.__pageReplayRandom = savedPR; globalThis.__pageReplayOrigRandom = savedPRO;
   printed.length = 0; Array.prototype.push.apply(printed, savedPrinted);
   if (D.refreshText && replayText !== firstText) {
     var at = 0;

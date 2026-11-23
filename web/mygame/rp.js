@@ -77,7 +77,10 @@
     evalSeq: 0,
     evalResult: null,      // optional { rating, hits, misses, summary, fallback, modelLabel }
     evalBypass: false,
+    sceneReady: false,     // true once AI emits [ACT_COMPLETE] or player runs /end
+    naturalComplete: false,
     boxEl: null,
+    handleTurnAction: null,
     saveMemory: true, // whether to distill & save this visit to MemPalace on exit
     busy: false,
     workerConnected: false,
@@ -102,6 +105,8 @@
         advisedStarters: Array.isArray(session.advisedStarters) ? session.advisedStarters : null,
         advisedBeats: Array.isArray(session.advisedBeats) ? session.advisedBeats : null,
         evalResult: session.evalResult || null,
+        sceneReady: !!session.sceneReady,
+        naturalComplete: !!session.naturalComplete,
         saveMemory: session.saveMemory !== false,
         draft: typeof draftText === "string" ? draftText : ""
       };
@@ -383,7 +388,8 @@
     ];
     if (hasProfile) {
       lines.push(
-        "- LIVE PREFERENCE & DISLIKE CUES: When untouched or between beats, weave subtle physical invitations toward one of her Kinks. STRICT BOUNDARY RULE: If the player triggers one of her Dislikes, she MUST visibly resist right away in-character (stiffen, catch or push their hands off, recoil, or give a sharp quiet warning)—never reward or eagerly escalate through an active Dislike unless they soften or adjust. If the player asks in-character what she wants, let her answer authentically according to her traits (candid if Candid/Bold, teasingly reserved if Guarded/Stubborn)."
+        "- LIVE PREFERENCE & DISLIKE CUES: When untouched or between beats, weave subtle physical invitations toward one of her Kinks. STRICT BOUNDARY RULE: If the player triggers one of her Dislikes, she MUST visibly resist right away in-character (stiffen, catch or push their hands off, recoil, or give a sharp quiet warning)—never reward or eagerly escalate through an active Dislike unless they soften or adjust. If the player asks in-character what she wants, let her answer authentically according to her traits (candid if Candid/Bold, teasingly reserved if Guarded/Stubborn).",
+        "- PACING & CLIMAX SIGNAL: Do NOT rush to finish early. ONLY when the encounter has genuinely reached climax/release and natural afterglow wind-down, append the exact tag [ACT_COMPLETE]. (with the trailing period) at the very end of your response so the player can conclude the scene."
       );
     }
     lines.push("");
@@ -487,8 +493,13 @@
       return historyLines.join("\n\n");
     }
 
+    var historyTurns = session.turns.slice(0);
+    if (historyTurns.length > 0 && historyTurns[historyTurns.length - 1].role === "user" && historyTurns[historyTurns.length - 1].text === playerAction) {
+      historyTurns.pop();
+    }
+
     var fitted = fitTurnsToTokenBudget(
-      session.turns,
+      historyTurns,
       function (slice) { return (sysPrompt ? sysPrompt + "\n\n" : "") + assemble(slice); },
       { mode: mode, modelId: modelId, minKeep: 2 }
     );
@@ -518,6 +529,13 @@
       { mode: mode, modelId: modelId, minKeep: 2 }
     );
     return assemble(fitted);
+  }
+
+  function parseSceneReadyResponse(rawText) {
+    var s = String(rawText || "");
+    var actComplete = /\[{1,2}\s*ACT_COMPLETE\s*\]{1,2}/i.test(s);
+    var cleaned = s.replace(/\s*\[{1,2}\s*ACT_COMPLETE\s*\]{1,2}[.!]*\s*/gi, "\n").trim();
+    return { text: cleaned, actComplete: actComplete };
   }
 
   function shortenChipLabel(promptText) {
@@ -694,6 +712,7 @@
   RP.parseEvaluationResult = parseEvaluationResult;
   RP.formatWarmthDuration = formatWarmthDuration;
   RP.resolveSceneProfile = resolveSceneProfile;
+  RP.parseSceneReadyResponse = parseSceneReadyResponse;
 
   if (typeof document === "undefined") return; // node tests stop here
 
@@ -754,6 +773,7 @@
     actions.className = "rp-turn-actions";
     actions.innerHTML =
       '<button type="button" class="rp-tbtn" data-tact="edit" title="Edit this message">\u270E</button>' +
+      '<button type="button" class="rp-tbtn" data-tact="regen" title="Regenerate AI response from here">\u21BB</button>' +
       '<button type="button" class="rp-tbtn rp-tbtn-del" data-tact="del" title="Delete this message">\u2715</button>';
     wrap.appendChild(actions);
 
@@ -858,7 +878,11 @@
     session.evalSeq += 1;
     session.evalResult = null;
     session.evalBypass = false;
+    session.sceneReady = false;
+    session.naturalComplete = false;
     session.triggerEval = null;
+    session.handleTurnAction = null;
+    session.syncNextBtn = null;
     session.saveMemory = cfg.memory !== false;
     session.busy = false;
     session.openingText = collectOpeningNarrative(textEl, markerParagraph);
@@ -916,11 +940,10 @@
             '<div class="rp-actions-left">' +
               '<button type="button" class="rp-btn rp-btn-primary" data-act="send">Send / Continue</button>' +
               '<button type="button" class="rp-btn rp-btn-advise" data-act="advise" title="Ask the AI to advise context-aware choices for this moment (replaces static chips)">\u2726 Advise</button>' +
-              '<button type="button" class="rp-btn" data-act="reroll" disabled title="Regenerate the last AI response">\u21BB Reroll</button>' +
             '</div>' +
             '<div class="rp-actions-right">' +
               (hasMem ? '<label class="rp-mem-check" title="When checked, this scene will be distilled into a memory for this companion when you leave"><input type="checkbox" class="rp-save-mem-cb" checked><span>Save as memory</span></label>' : '') +
-              '<span class="rp-status">Ready. Click "Rest together\u2026" below whenever you wish to finish.</span>' +
+              '<span class="rp-status">Scene in progress. Type &quot;/end&quot; anytime to wrap up early.</span>' +
             '</div>' +
           '</div>' +
         '</div>' +
@@ -932,7 +955,6 @@
     var statusEl = box.querySelector(".rp-status");
     var sendBtn = box.querySelector('[data-act="send"]');
     var adviseBtn = box.querySelector('[data-act="advise"]');
-    var rerollBtn = box.querySelector('[data-act="reroll"]');
     var modeSel = box.querySelector(".rp-mode-select");
     var modelSel = box.querySelector(".rp-model-select");
     var composerEl = box.querySelector(".rp-composer");
@@ -950,15 +972,34 @@
         var useAdvisedStarters = Array.isArray(session.advisedStarters) && session.advisedStarters.length > 0;
         if (useAdvisedStarters) {
           starterWrap.innerHTML =
-            '<span class="rp-beats-label rp-beats-label-adv">Advised:</span>' +
-            session.advisedStarters.map(function (c) {
-              return '<button type="button" class="rp-chip rp-chip-advised" data-starter="' + esc(c.prompt) + '" title="' + esc(c.prompt) + '">' + esc(c.prompt) + '</button>';
-            }).join("") +
-            '<button type="button" class="rp-chip rp-chip-reset" data-act="reset-chips" title="Restore the static fallback choices">\u21A9 Default</button>';
+            '<div class="rp-chips-head">' +
+              '<span class="rp-beats-label rp-beats-label-adv">\u2726 Advised Moves</span>' +
+              '<button type="button" class="rp-chip rp-chip-reset" data-act="reset-chips" title="Restore the static fallback choices">\u21A9 Default</button>' +
+            '</div>' +
+            '<div class="rp-starters-grid">' +
+              session.advisedStarters.map(function (c) {
+                return (
+                  '<button type="button" class="rp-chip rp-chip-advised rp-chip-card" data-starter="' + esc(c.prompt) + '" title="' + esc(c.prompt) + '">' +
+                    '<span class="rp-card-title">' + esc(c.label) + '</span>' +
+                    '<span class="rp-card-desc">' + esc(c.prompt) + '</span>' +
+                  '</button>'
+                );
+              }).join("") +
+            '</div>';
         } else {
-          starterWrap.innerHTML = staticStarters.map(function (st) {
-            return '<button type="button" class="rp-chip" data-starter="' + esc(st) + '">' + esc(st) + '</button>';
-          }).join("");
+          starterWrap.innerHTML =
+            '<div class="rp-chips-head">' +
+              '<span class="rp-beats-label">Opening Moves</span>' +
+            '</div>' +
+            '<div class="rp-starters-grid">' +
+              staticStarters.map(function (st) {
+                return (
+                  '<button type="button" class="rp-chip rp-chip-card" data-starter="' + esc(st) + '">' +
+                    '<span class="rp-card-desc">' + esc(st) + '</span>' +
+                  '</button>'
+                );
+              }).join("") +
+            '</div>';
         }
       }
 
@@ -966,14 +1007,14 @@
         var useAdvisedBeats = Array.isArray(session.advisedBeats) && session.advisedBeats.length > 0;
         var list = useAdvisedBeats ? session.advisedBeats : staticBeats;
         var heading = useAdvisedBeats
-          ? '<span class="rp-beats-label rp-beats-label-adv">Advised:</span>'
+          ? '<span class="rp-beats-label rp-beats-label-adv">\u2726 Advised:</span>'
           : '<span class="rp-beats-label">Next Beat:</span>';
         var chipsHtml = list.map(function (b) {
           var cls = "rp-chip rp-chip-beat" + (useAdvisedBeats ? " rp-chip-advised" : "");
           return '<button type="button" class="' + cls + '" data-beat="' + esc(b.prompt) + '" title="' + esc(b.prompt) + '">' + esc(b.label) + '</button>';
         }).join("");
         var resetHtml = useAdvisedBeats
-          ? '<button type="button" class="rp-chip rp-chip-beat rp-chip-reset" data-act="reset-chips" title="Restore the static fallback choices">\u21A9 Default</button>'
+          ? '<button type="button" class="rp-chip rp-chip-beat rp-chip-reset rp-chip-reset-end" data-act="reset-chips" title="Restore the static fallback choices">\u21A9 Default</button>'
           : "";
         beatsWrap.innerHTML = heading + chipsHtml + resetHtml;
       }
@@ -986,16 +1027,24 @@
       if (beatsWrap) beatsWrap.style.display = hasTurns ? "flex" : "none";
     }
 
+    function syncChoiceScriptNextBtn(nextBtn) {
+      var nb = nextBtn || document.querySelector("#main button.next");
+      if (!nb) return;
+      var showNext = !session.evalResult && (!!session.sceneReady || !resolveSceneProfile(cfg, statsNow()));
+      nb.style.display = showNext ? "" : "none";
+      if (showNext) nb.disabled = !!session.busy;
+    }
+    session.syncNextBtn = syncChoiceScriptNextBtn;
+
     function updateButtons() {
-      var hasTurns = session.turns.length > 0;
       sendBtn.disabled = session.busy;
       if (adviseBtn) adviseBtn.disabled = session.busy;
-      rerollBtn.disabled = session.busy || !hasTurns;
       Array.prototype.forEach.call(box.querySelectorAll(".rp-chip"), function (c) {
         c.disabled = session.busy;
       });
       if (typingEl) typingEl.hidden = !session.busy;
       updateChipsVisibility();
+      syncChoiceScriptNextBtn();
     }
 
     function setStatus(msg) {
@@ -1091,11 +1140,6 @@
         });
     }
 
-    function hideChoiceScriptNextBtn(nextBtn) {
-      var nb = nextBtn || document.querySelector("#main button.next");
-      if (nb) nb.style.display = "none";
-    }
-
     function renderTagRow(titleText, items, clsName) {
       if (!items || !items.length) return "";
       var pills = items.map(function (it) {
@@ -1162,7 +1206,7 @@
 
       evalCardEl.hidden = false;
       if (composerEl) composerEl.hidden = true;
-      hideChoiceScriptNextBtn(nextBtn);
+      syncChoiceScriptNextBtn(nextBtn);
       if (evalCardEl.scrollIntoView) {
         evalCardEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }
@@ -1280,11 +1324,17 @@
     if (restored && restored.evalResult) {
       session.evalResult = restored.evalResult;
     }
+    if (restored && typeof restored.sceneReady === "boolean") {
+      session.sceneReady = restored.sceneReady;
+    }
+    if (restored && typeof restored.naturalComplete === "boolean") {
+      session.naturalComplete = restored.naturalComplete;
+    }
     renderChips();
     updateButtons();
+    setTimeout(function () { syncChoiceScriptNextBtn(); }, 0);
     if (session.evalResult) {
       renderEvalCard(session.evalResult);
-      setTimeout(function () { hideChoiceScriptNextBtn(); }, 0);
     }
 
     if (saveMemCb) {
@@ -1335,10 +1385,21 @@
       }).then(function (res) {
         session.busy = false;
         if (res && res.status === "SUCCESS" && res.text && res.text !== "...") {
-          var aiTurn = createTurnBlock("ai", res.text, box);
+          var readyInfo = parseSceneReadyResponse(res.text);
+          var aiTextClean = readyInfo.text || res.text;
+          var aiTurn = createTurnBlock("ai", aiTextClean, box);
           if (aiTurn) session.turns.push(aiTurn);
+          if (readyInfo.actComplete) {
+            session.sceneReady = true;
+            session.naturalComplete = true;
+          }
           saveActiveSession(inputEl.value);
-          setStatus("Turn complete (" + (res.mode === "perchance" ? "Perchance AI" : settings.model.split("/").pop()) + ").");
+          var engineTag = res.mode === "perchance" ? "Perchance AI" : settings.model.split("/").pop();
+          if (readyInfo.actComplete) {
+            setStatus("Climax reached (" + engineTag + ") — click \"Rest together\u2026\" below when ready to review & finish.");
+          } else {
+            setStatus("Turn complete (" + engineTag + ").");
+          }
           if (aiTurn && aiTurn.wrap && aiTurn.wrap.scrollIntoView) {
             aiTurn.wrap.scrollIntoView({ behavior: "smooth", block: "nearest" });
           }
@@ -1446,19 +1507,17 @@
           session.evalSeq += 1;
           session.evalResult = null;
           session.evalBypass = false;
+          session.sceneReady = !!session.naturalComplete;
           if (evalCardEl) {
             evalCardEl.hidden = true;
             evalCardEl.innerHTML = "";
           }
           if (composerEl) composerEl.hidden = false;
-          var resumeNextBtn = document.querySelector("#main button.next");
-          if (resumeNextBtn) {
-            resumeNextBtn.style.display = "";
-            resumeNextBtn.disabled = false;
-          }
           saveActiveSession(inputEl.value);
           updateButtons();
-          setStatus("Roleplay resumed. Click \"Rest together\u2026\" below whenever you wish to finish.");
+          setStatus(session.sceneReady
+            ? "Roleplay resumed. Click \"Rest together\u2026\" below whenever you wish to finish."
+            : "Roleplay resumed. Type \"/end\" anytime to wrap up early.");
           if (inputEl && inputEl.focus) inputEl.focus();
           return;
         }
@@ -1504,6 +1563,19 @@
       if (actName === "send") {
         var val = inputEl.value.trim();
         inputEl.value = "";
+        if (/^\/end(?:\s|$)/i.test(val)) {
+          if (session.busy || session.evalResult) return;
+          session.sceneReady = true;
+          saveActiveSession("");
+          updateButtons();
+          var endNextBtn = document.querySelector("#main button.next");
+          if (session.turns.length > 0 && resolveSceneProfile(cfg, statsNow())) {
+            runPostSceneEvaluation(endNextBtn);
+          } else {
+            setStatus("Ended early — click \"Rest together\u2026\" below to continue.");
+          }
+          return;
+        }
         runGeneration(val || "Continue the moment naturally, letting the companion take the lead.", false);
       } else if (actName === "memories") {
         memDrawer.hidden = !memDrawer.hidden;
@@ -1544,24 +1616,11 @@
         }).catch(function () {
           actBtn.disabled = false;
         });
-      } else if (actName === "reroll") {
-        if (session.busy || !session.turns.length) return;
-        if (session.turns[session.turns.length - 1].role === "ai") {
-          var poppedAi = session.turns.pop();
-          if (poppedAi.wrap && poppedAi.wrap.parentNode) poppedAi.wrap.parentNode.removeChild(poppedAi.wrap);
-        }
-        var lastUser = session.turns.length && session.turns[session.turns.length - 1].role === "user"
-          ? session.turns[session.turns.length - 1].text
-          : "Continue the moment naturally.";
-        runGeneration(lastUser, true);
       }
     });
 
-    // Per-turn hover actions: edit or delete ANY individual message (player or AI) in-place
-    textEl.addEventListener("click", function (ev) {
-      var t = ev.target;
-      var btn = t && t.closest ? t.closest("[data-tact]") : null;
-      if (!btn) return;
+    // Per-turn hover actions: edit, regenerate from here, or delete ANY individual message
+    session.handleTurnAction = function (btn) {
       var wrap = btn.closest(".rp-turn");
       if (!wrap || !wrap._rpTurn) return;
       var turn = wrap._rpTurn;
@@ -1575,6 +1634,21 @@
         saveActiveSession(inputEl.value);
         updateButtons();
         setStatus("Message deleted.");
+      } else if (tact === "regen") {
+        if (session.busy || session.evalResult) return;
+        var ridx = session.turns.indexOf(turn);
+        if (ridx === -1) return;
+        var cutFrom = turn.role === "user" ? ridx + 1 : ridx;
+        for (var k = session.turns.length - 1; k >= cutFrom; k--) {
+          var rem = session.turns.pop();
+          if (rem && rem.wrap && rem.wrap.parentNode) rem.wrap.parentNode.removeChild(rem.wrap);
+        }
+        session.sceneReady = false;
+        session.naturalComplete = false;
+        saveActiveSession(inputEl.value);
+        var promptTurn = session.turns.length ? session.turns[session.turns.length - 1] : null;
+        var promptText = (promptTurn && promptTurn.role === "user") ? promptTurn.text : "Continue the moment naturally.";
+        runGeneration(promptText, true);
       } else if (tact === "edit") {
         if (session.busy || session.evalResult) return;
         if (wrap.querySelector(".rp-inline-editor")) return;
@@ -1617,7 +1691,18 @@
           }
         });
       }
-    });
+    };
+
+    if (!textEl._rpTurnActionsWired) {
+      textEl._rpTurnActionsWired = true;
+      textEl.addEventListener("click", function (ev) {
+        var t = ev.target;
+        var btn = t && t.closest ? t.closest("[data-tact]") : null;
+        if (btn && typeof session.handleTurnAction === "function") {
+          session.handleTurnAction(btn);
+        }
+      });
+    }
 
     checkServerAndModels(box);
   }
@@ -1690,10 +1775,17 @@
         session.evalSeq += 1;
         session.evalResult = null;
         session.evalBypass = false;
+        session.sceneReady = false;
+        session.naturalComplete = false;
         session.triggerEval = null;
+        session.handleTurnAction = null;
+        session.syncNextBtn = null;
         session.boxEl = null;
         clearActiveSession();
       }
+    }
+    if (session.active && document.getElementById("rpConsoleBox") && typeof session.syncNextBtn === "function") {
+      session.syncNextBtn();
     }
     var ps = textEl.querySelectorAll("p");
     for (var i = 0; i < ps.length; i++) {

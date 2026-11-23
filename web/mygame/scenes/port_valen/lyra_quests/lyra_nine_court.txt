@@ -5,9 +5,11 @@
 *comment respective scene files when ready to wire into the live game:
 *comment
 *comment 1. In port_valen/port_valen.txt (port_valen_hub):
-*comment *if ((lyra_repaid) and (nine_court_stage = "unstarted"))
-*comment   # Lyra at the end cot, back from Dredge-End.
-*comment     *goto_scene port_valen/lyra_quests/lyra_nine_court nine_court_hook
+*comment (Replaces any separate hook button; disappears once nine_court_stage != "unstarted" or
+*comment nine_court_lyra_moved_in is true, and yields to lyra_b2 / lyra_epi / lyra_repay when active.)
+*comment *if ((nine_court_stage = "unstarted") and ((not(nine_court_lyra_moved_in)) and ((not(lyra_quest_stage = "active")) and ((not((lyra_quest_stage = "resolved") and (not(lyra_epi_seen)))) and (not((lyra_paid) and ((lyra_epi_seen) and ((not(lyra_repaid)) and ((campaign_day - lyra_epi_day) >= lyra_repay_days)))))))))
+*comment   # Visit Lyra.
+*comment     *goto_scene port_valen/lyra_quests/lyra_nine_court nine_court_barracks_visit
 *comment
 *comment 2. In port_valen/port_valen_dredge_end.txt (cut_pawn / cut_pawn_hub):
 *comment *if (nine_court_stage = "active")
@@ -20,6 +22,24 @@
 *comment Currently entered via dev_hub.txt (dev_menu_quests) for testing; returns to
 *comment dev_hub and resets all quest flags when nine_court_dev_mode is true.
 *comment ====================================================================================
+
+*label nine_court_barracks_visit
+*if ((vane_debrief_done) and ((lyra_repaid) and (nine_court_stage = "unstarted")))
+  *goto nine_court_hook
+*set current_district "compound"
+*set scenery_subplace ""
+
+*if (lyra_refused)
+  Lyra sits on her bunk wiping down her bow limbs with a scrap of oiled flannel. She gives you a brief, level nod when you stop nearby, polite enough for someone sharing a company roof, and goes right back to her work.
+*elseif ((lyra_paid) and (not(lyra_repaid)))
+  Lyra is seated by the aisle mending a frayed quiver strap. She glances up and taps her belt pouch lightly. "Still waiting on the paymaster to open Vane's chest," she murmurs. "I haven't forgotten the five marks."
+*elseif ((lyra_repaid) and (not(vane_debrief_done)))
+  Lyra sits with her cloak folded beside her knee, looking tired from a long walk. "Still turning over stones down on the lower terraces," she tells you quietly. "Nothing solid enough to bring you yet. Keep your head down until Vane finishes sorting the company's accounts."
+*else
+  Lyra is checking the serving on her bowstring at the back of the barracks. She looks up as you pass down the aisle. "Quiet watch so far," she remarks with a faint shrug. "Better than mud and cold rain, at least."
+
+*page_break Back to the compound...
+*goto nine_court_return
 
 *label nine_court_hook
 *set current_district "compound"
@@ -513,7 +533,12 @@ Simeon looks down at the scorched edge of his ledger-table, then nods once. "Giv
 
 *choice
   # Search the grey-coated mage's coat while Simeon packs.
-    You kneel beside the slumped mage and pat down his high-collared coat. There is no coin purse, only a folded dockside pass stamped in dark resin-wax with an unfamiliar mark: nine small interlocking rings pressed into the seal. You tuck it away before rising.
+    *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+      *set currency_add_amount 30
+      *gosub_scene economy currency_add
+      *set currency_txn_locked true
+      *set locked_currency_txn_page_id page_id
+    You kneel beside the slumped mage and pat down his high-collared coat. There are no papers on him, only a small leather pouch tucked inside the lining holding three silver marks. You pocket the coins before rising.
   # Help Simeon bind his bleeding forearm and sweep his papers into the bag.
     You tear a clean strip from a bolt of packing linen and tie off the gash along Simeon's arm while he sweeps his tin sample box, brass loupe, and private notebooks into the leather satchel.
   # Keep watch at the broken window and hurry them along.
@@ -541,7 +566,7 @@ Angel looks up from behind the felted counter with her usual composed, dimpled s
 
 "Who did that to him?" she asks sharply, stepping clear of the scale.
 
-"They jumped him in his shop," Lyra says shortly, glancing back through the street glass. "Three of them, including a mage, trying to burn his desk."
+"Some thugs, they jumped him in his shop," Lyra says shortly, glancing back through the street glass. "Three of them, including a mage."
 
 Simeon leans one hand on the counter to steady himself. "They knew I was digging, Angel. If these two hadn't turned up when they did, I'd be ash."
 
@@ -553,15 +578,52 @@ She bolts the street door behind you, draws the curtain across the shopfront gla
 
 *label nine_court_cellar_debrief
 *set scenery_subplace "generic_domestic_cellar"
+*temp cellar_asked_leak false
 
 The steep wooden stairs drop back into the dry, stone-walled cellar beneath the shop. Simeon sinks heavily onto a wooden stool beside the broad oak sorting table, setting his battered satchel on the planks with a dull thud.
 
 Angel lights the shaded oil lamp and folds her arms, waiting in silence while Simeon catches his breath. After a moment, he reaches under his frayed wool coat and pulls out a crumpled, wax-smudged manifest scrap.
 
-"I didn't leave the real ink in a desk drawer," Simeon says quietly, flattening the paper under the lamp. "I found the resin shipment, and I found the name of the house paying for it."
+"I wasn't foolish enough to leave the actual evidence sitting in a desk drawer back at the shop. I kept it on me," Simeon says, flattening the paper under the lamp. "The black myrrh-gum and bone ash were logged at the customs tower under House Morvath, cleared out of Alderford under the seal of a wharf tollreeve named Rennick. The shipments come straight down from there on the river barges."
 
-*page_break Return to Dev Hub (flags will reset)...
-*goto nine_court_return
+*if (met_rennick)
+  The name catches in your ear at once: Rennick, the Gilded Scales tollreeve from Alderford's curing sheds.
+  *if (rennick_reported)
+    You even reported his light scales to Factor Morzan before the company marched south.
+  *if (rennick_disposition = "paid_off")
+    At Talia's shed he pocketed your ten silver marks and walked away thinking you were easy coin.
+  *elseif (rennick_disposition = "intimidated")
+    At Talia's shed he folded when you stood your ground and retreated into the rain.
+  *elseif ((rennick_disposition = "humiliated") or (rennick_disposition = "hostile"))
+    You left him nursing a bruised pride on that wharf, and he is not the kind to forget a face.
+*else
+  You never crossed paths with this Rennick yourself during your time in Alderford, though you know the wharf and the Gilded Scales' toll-posts well enough from the campaign.
+
+Lyra leans over the table, her jaw tight as she studies the two names on the scrap, saying nothing.
+
+Angel keeps her voice level. "House Morvath is here in Port Valen, and Simeon needs to stay off the street until we know who is looking for him. Lyra and I have ties in the city we can pull without tipping our hand. We'll dig into Morvath from this end."
+
+Lyra glances up at you. "I know Alderford well enough from the march, same as you, but I've got obligations here I can't walk away from, and Simeon can't set foot on a river barge looking like that. That leaves you to head upriver and see what Rennick is actually clearing onto those boats."
+
+*label nine_court_cellar_choice
+*choice
+  *if (not(cellar_asked_leak))
+    # "How did they find out you were digging so fast?"
+      *set cellar_asked_leak true
+      Simeon rubs his sore forearm with a grimace. "Either my contact at the customs tower panicked when he saw Morvath's name on the slip and sold me out, or Morvath pays someone at the quay to flag anyone pulling their river manifests. Either way, that clerk isn't safe to lean on again."
+      *goto nine_court_cellar_choice
+
+  # "Simeon, stay under Angel's roof. I'll head upriver to Alderford and pull Rennick's thread."
+    *set nine_court_stage "alderford_lead"
+    *set nine_court_part1_done true
+    "You can't go back to Lantern Lane," you tell Simeon. "Stay out of sight here until we know how deep this goes."
+
+    Angel gives a crisp nod. "He stays downstairs. Nobody on Lamp Stair knows he's here."
+
+    Lyra folds the manifest scrap carefully and tucks it into her belt pouch. "Watch yourself on that wharf, ${name}. If Rennick is clearing cargo for Morvath, he won't be doing it out of kindness. We'll keep digging on the city side while you're upriver."
+
+    *page_break Return to Dev Hub (flags will reset)...
+    *goto nine_court_return
 
 *comment ====================================================================================
 *comment DEV RETURN & FLAG RESET
@@ -586,6 +648,17 @@ Angel lights the shaded oil lamp and folds her arms, waiting in silence while Si
 *set nine_court_drop_day 0
 *set nine_court_rescue_approach "none"
 *set nine_court_simeon_saved false
+*set nine_court_part1_done false
 *set nine_court_dev_mode false
 *set combat_player_surprise false
+*return
+
+*comment ====================================================================================
+*comment QUEST COMPLETION POOL (character_progression.txt refresh_quests_finished)
+*comment ====================================================================================
+
+*comment replay-ok: refresh_quests_finished (character_progression.txt) sets quests_finished to 0 and then calls this label, so the count is rebuilt from flags on every call and a replay cannot double it.
+*label count_finished_nine_court
+*if (nine_court_part1_done)
+  *set quests_finished + 1
 *return

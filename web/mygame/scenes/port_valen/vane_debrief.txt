@@ -1,0 +1,129 @@
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment VANE'S DEBRIEF (2026-11-23, the user; design in Resources & Quest/quests/vane_debrief.md)
+*comment A story beat, not a quest: once the three commanders' quests are turned in (Ysolde's Rotten Rib, Kestrel's Silt-Gate slip, Varren's
+*comment Errand reported), a squad of Carrion soldiers finds the player on a walk between districts the next day or later and brings them to
+*comment Vane, who goes through how each went, gives one verdict, and says he will send for them again. No reward.
+*comment vane_debrief_done is for Vane's next summons to check (not built: its timing and requirement wait on the next main quest).
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*comment THE SHARED CHECK: called by each of the three turn-ins (port_valen.txt pv_workroom_timber_turnin and pv_tower_silt_turnin,
+*comment varren_errand.txt slasher_report). The last of the three sets the due day to the next day; the order does not matter. Set once,
+*comment so a replay of a turn-in page changes nothing.
+*label vane_debrief_check
+*if ((ysolde_timber_turned_in and kestrel_slip_turned_in) and slasher_reported)
+  *if (vane_debrief_due_day = 0)
+    *set vane_debrief_due_day (campaign_day + 1)
+*return
+
+*comment THE ESCORT: from port_valen_random_encounters.txt pv_re_roll, on a walk between districts on or after the due day, not at night.
+*comment The leg already walked is charged; the squad turns the player back to the compound, which costs its own time. It ends in the
+*comment office, and the office ends in the compound yard, not at the leg's destination.
+*label vane_debrief_escort
+*set scenery_subplace "on_the_road"
+[b]◈ ON THE ROAD[/b]
+*line_break
+Four soldiers come up the street toward you at a walk, close to being in step. Each wears the Carrion raven on the shoulder. The one in front, a broad woman with a split lip healing at one corner, raises two fingers when she sees you.
+
+"You're the one off the roster," she says. "Captain's asking for you. We're to bring you in."
+
+"Am I in trouble?"
+
+"Nobody said. Nobody said to put a hand on you either, so I'd guess not." She tips her head up the street, the direction they came from. "Compound."
+
+They fall in around you, two ahead and two behind. Carters take one look at the five of you and pull their wagons to the side of the street, and the walk to the compound goes quicker than it would alone.
+
+*set minutes_to_pass 20
+*set time_advance_call_id "vane_debrief_escort"
+*gosub_scene port_valen/port_valen_random_encounters pv_re_advance_time
+*page_break Into the compound
+*goto vane_debrief_office
+
+*label vane_debrief_office
+*set scenery_subplace "vane_contract_office"
+*set vane_debrief_done true
+*comment How many of the three came out clean: the Rotten Rib won with no strike, the Silt-Gate slip taken unseen, Trent arrested. The
+*comment mixed verdict names a loss first (Trent loose, then the timber still held) and only then a blemish (a strike, a face seen).
+*temp vd_clean 0
+*if ((rotten_rib_resolution = "blackmail") and (rotten_rib_strikes = 0))
+  *set vd_clean + 1
+*if (not(silt_gate_face_seen))
+  *set vd_clean + 1
+*if (slasher_resolution = "arrested")
+  *set vd_clean + 1
+[b]◈ THE CONTRACT OFFICE[/b]
+*line_break
+The soldier with the split lip knocks once on Vane's door, opens it for you, and waits outside in the corridor.
+
+Vane is at the trestle desk where you last saw him. Two sheets of paper and a scrap folded small lie in a row in front of him. He finishes the line he is reading before he looks up.
+
+"Sit." He waits until you do.
+
+"I sent you to see Ysolde, climb Kestrel's tower and hear Varren out. You did all three, and each of them has been in this room since, about you." He lays his palm flat on the first sheet.
+
+*if ((rotten_rib_resolution = "blackmail") and (rotten_rib_strikes = 0))
+  "Ysolde. The timber orders moved the same week you laid that waybill on her table. Brant has his oak back, and Elric is still in his office, doing as he's told." He taps the page. "Nobody threw a punch and nobody threw you out. That's how I like paper handled."
+*elseif (rotten_rib_resolution = "blackmail")
+  "Ysolde. The timber orders moved, and Brant has his oak back." He taps a line lower down. "She also writes that Elric's draymen walked you out of his office once before you had what you were after. You climbed back up and finished it. Next time, finish it the first time. A man who's thrown you out once knows your face."
+*else
+  "Ysolde. You brought her the waybill, and it's worth having." He turns the sheet face down. "The oak's gone. The ship slid down the ways on green wood, and our timber is still sitting in the Scales' sheds. Elric's men put you out of his office twice, and after the second throw he stopped worrying about you."
+*if (rotten_rib_ledger_clue)
+
+  His finger finds a line near the bottom. "She noticed you read the chalk on that pillar before you walked in. Good."
+
+He moves the folded scrap to the middle of the desk.
+
+*if (silt_gate_face_seen)
+  "Kestrel has both names. The porters at the gates also got a good look at you, by her account, so keep clear of Dredge-End for a while. Her sergeants are no use to us if the men who pay them know who took the list."
+*else
+  "Kestrel has both names, and the sergeants on the far bank are polite to her now. Nobody down at the gates could pick you out of a crowd, by her count. That's worth as much as the names."
+*if (((silt_gate_winch_jammed or silt_gate_lamp_snuffed) or silt_gate_illusion_active) or silt_gate_lookout_spotted)
+
+  He turns the scrap over. "And you had the place half beaten before the tide rose, she tells me."
+
+The third sheet he leaves where it lies.
+
+*if (slasher_resolution = "arrested")
+  "Varren. And a Watch sergeant, who stood at my gate the morning after Trent was taken and thanked the company." Vane's voice stays flat, but he takes his time over it. "Seven dead, and the man who did it is in a cell because you built the case against him. That one I'll remember."
+*else
+  "Varren brought it to me himself, before the Watch could." He rests two fingers on the page. "Trent's loose in Dredge-End. He cut past two militiamen in the rush out of his own post, and they're lucky to be walking. You found him, which is more than anyone else in this city managed. But he's out there now with a grudge, and he knows our name."
+
+*if (vd_clean = 3)
+  He gathers the three papers into one pile. "Three jobs, three done clean. That's someone I can build on."
+*elseif (vd_clean > 0)
+  *if (slasher_resolution = "escaped")
+    He squares the three papers together. "Some of it I can use. Some of it cost us, and Trent's the part I'll lose sleep over."
+  *elseif (rotten_rib_resolution = "failed")
+    He squares the three papers together. "Some of it I can use. Some of it cost us, and the timber's the part that hurts."
+  *else
+    He squares the three papers together. "Some of it I can use. Nothing that can't be mended, but people saw you who shouldn't have."
+*else
+  He squares the three papers together anyway. "Three jobs, and not one ended how I'd want." He sets them aside. "I sent for you regardless. You walked into all three and out of all three, which is more than some I've sent can claim. I can use that."
+
+"When I need you again, I'll send for you." He draws the next dispatch toward him. "Anything else?"
+
+*choice
+  # "You said you'd send for me when there was larger work. Is this it?"
+    *set vane_debrief_reply "larger_work"
+    "You told me you'd send for me when there was larger work," you answer. "Is this it?"
+
+    "No. This is me telling you that you'll be ready for it." He unfolds the dispatch. "When it's ready, you'll hear it from me. Not before."
+  *if (vd_clean < 3)
+    # "The parts that fell apart were mine."
+      *set vane_debrief_reply "owned"
+      "The parts that fell apart," you tell him. "Those were mine."
+
+      Vane looks at you a moment longer than he has so far. "I know. I read the reports." He unfolds the dispatch. "Most of them tell me whose fault it was instead. Go on."
+  *else
+    # "Ysolde, Kestrel and Varren pointed me the right way."
+      *set vane_debrief_reply "modest"
+      "Ysolde, Kestrel and Varren pointed me the right way," you offer. "Most of it was theirs."
+
+      "Ysolde warned me you'd say as much." The corner of his mouth moves. "She also asked me to pay it no mind. Go on."
+  # Nod once, and get up.
+    *set vane_debrief_reply "silent"
+    You nod once and get to your feet. Vane has the dispatch open and a pen inked before you reach the door.
+
+The corridor is empty when you come out. Somewhere in the yard, the soldier with the split lip is laughing at something.
+
+*page_break Step out into the yard
+*goto_scene port_valen/port_valen port_valen_hub

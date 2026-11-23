@@ -243,7 +243,6 @@
         "Let her take the lead and draw you down onto the wool mattress.",
         "Catch her by the waist, pull her flush against your chest, and kiss her throat.",
         "Guide her onto the bed's edge and trace her jaw and shoulders.",
-        "Tell her to shed her linen smock slowly in the candlelight.",
         "Step close, test her warmth, and murmur quietly to ask how she wants tonight."
       ],
       beats: [
@@ -309,7 +308,8 @@
       starters: [
         "Let Sable take the lead as she draws you toward the bed.",
         "Run your fingers through her cropped white-blonde hair and tilt her chin up.",
-        "Pull her onto your lap at the edge of the wool mattress."
+        "Pull her onto your lap at the edge of the wool mattress.",
+        "Step close, watch her cool green eyes, and ask softly how she wants tonight."
       ],
       beats: [
         { label: "▸ Let Sable lead", prompt: "Continue the moment naturally, letting Sable take the lead." },
@@ -374,7 +374,8 @@
       starters: [
         "Let Brinna take the lead and pin you back against the wool bolsters.",
         "Grip her strong waist and pull her down onto the mattress with you.",
-        "Trace the muscle of her shoulders and forearms in the candlelight."
+        "Trace the muscle of her shoulders and forearms in the candlelight.",
+        "Press flush against her chest and grin, asking how rough she wants tonight."
       ],
       beats: [
         { label: "▸ Let Brinna lead", prompt: "Continue the moment naturally, letting Brinna take the lead with her strength." },

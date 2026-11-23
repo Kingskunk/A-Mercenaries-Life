@@ -146,4 +146,3 @@ None open. Add a row (the question, and the options with a recommendation) when 
 - A refresh on a targeting prompt page (Magic Missile darts, a healing target) forgets the clicks. Nothing is rolled on those pages, so the player clicks again.
 - The opening page of a fight entered from another scene is not covered by the replay guard. A refresh resumes at the choice instead of re-running the page. The test tool skips those pages.
 - Test-tool limit, not a game bug: `fight_library` throws "invalid return" when the player kills its enemy, so a script there must not end the fight.
-- Other surfaces still use the browser's own `title` tooltip beside the themed card: the sidebar's condition chips (Restless, Poisoned, Wounds dressed), the boons (Mage Armor, Shield, False Life), the darts badge and the range tags.

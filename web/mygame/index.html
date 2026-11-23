@@ -790,7 +790,7 @@ button#statSidebar .turnRow,
     if (max > 9 || max <= 0) {
       body = now + " / " + max;
     } else {
-      body = "<span class=\"orbs\" title=\"" + now + " / " + max + "\">";
+      body = "<span class=\"orbs\" data-tip=\"" + now + " / " + max + "\">";
       for (var i = 0; i < max; i++) body += "<i class=\"orb" + (extra || "") + (i < now ? "" : " used") + "\"></i>";
       body += "</span>";
     }
@@ -836,7 +836,7 @@ button#statSidebar .turnRow,
       var bonus = expert ? 2 * p : (trained ? p : (jack ? Math.floor(p / 2) : 0));
       var mark = expert ? "◆" : (trained ? "●" : (bonus ? "½" : "○"));
       var tip = expert ? "Expertise: double proficiency" : (trained ? "Proficient" : (bonus ? "Jack of All Trades: half proficiency" : "Not proficient"));
-      return "<div class=\"sbSkill" + (expert ? " expert" : (trained ? " trained" : "")) + "\" title=\"" + tip + "\"><i>" + mark + "</i><span>" + name + "</span><em>" + ab.toUpperCase() +
+      return "<div class=\"sbSkill" + (expert ? " expert" : (trained ? " trained" : "")) + "\" data-tip=\"" + tip + "\"><i>" + mark + "</i><span>" + name + "</span><em>" + ab.toUpperCase() +
         "</em><b>" + signed((Number(s[ab + "_mod"]) || 0) + bonus) + "</b></div>";
     }).join("");
     return "<div class=\"sbSkills\">" + rows + "</div>" +
@@ -885,7 +885,7 @@ button#statSidebar .turnRow,
   function miniOrbs(now, max, extra) {
     now = Number(now) || 0; max = Number(max) || 0;
     if (max <= 0 || max > 9) return "";
-    var h = "<span class=\"orbs\" title=\"" + now + " / " + max + "\">";
+    var h = "<span class=\"orbs\" data-tip=\"" + now + " / " + max + "\">";
     for (var i = 0; i < max; i++) h += "<i class=\"orb" + (extra || "") + (i < now ? "" : " used") + "\"></i>";
     return h + "</span>";
   }
@@ -928,7 +928,7 @@ button#statSidebar .turnRow,
     return "<span class=\"terrainBadges\" aria-label=\"" + esc(context + ": " + types.map(terrainLabel).join(", ")) + "\">" +
       types.map(function (type) {
         var label = terrainLabel(type), icon = icons[type], title = esc(context + ": " + label);
-        return "<span class=\"terrainBadge\" title=\"" + title + "\">" +
+        return "<span class=\"terrainBadge\" data-tip=\"" + title + "\">" +
           (icon ? "<img src=\"" + icon + "\" alt=\"\">" : "<span class=\"terrainFallback\">◆</span>") + "</span>";
       }).join("") + "</span>";
   }
@@ -998,7 +998,7 @@ button#statSidebar .turnRow,
       if (!friendlyOn) attrs += " data-target=\"" + o.slot + "\"";
       if (Number(s.combat_player_chosen_target) === o.slot) cls += " picked";
       var darts = Number(s["combat_mm_darts_" + o.slot]) || 0;
-      if (darts > 0) badge = "<b class=\"pawnDarts\" title=\"Darts assigned\">" + darts + "</b>";
+      if (darts > 0) badge = "<b class=\"pawnDarts\" data-tip=\"Darts assigned\">" + darts + "</b>";
     } else if (friendlyOn) {
       var fslot = o.kind === "player" ? 0 : o.slot;
       attrs += " data-friendly=\"" + fslot + "\"";
@@ -1100,7 +1100,7 @@ button#statSidebar .turnRow,
       if (!friendlyOn) attrs += " data-target=\"" + o.slot + "\"";
       if (Number(s.combat_player_chosen_target) === o.slot) cls += " isPicked";
       var darts = Number(s["combat_mm_darts_" + o.slot]) || 0;
-      if (darts > 0) badge = "<b class=\"stageDarts\" title=\"Darts assigned\">" + darts + "</b>";
+      if (darts > 0) badge = "<b class=\"stageDarts\" data-tip=\"Darts assigned\">" + darts + "</b>";
     } else if (friendlyOn) {
       var fslot = o.kind === "player" ? 0 : o.slot;
       attrs += " data-friendly=\"" + fslot + "\"";
@@ -1407,6 +1407,7 @@ button#statSidebar .turnRow,
     var pip = t && t.closest ? t.closest(".stagePip[data-pip]") : null, of = pip && pip.parentNode ? pip.parentNode.getAttribute("data-pipof") : null;
     return pip && of ? "pip:" + of + ":" + pip.getAttribute("data-pip") : null;
   }
+  function subKeyAt(t) { return pipKeyAt(t) || tipKeyAt(t); }
   function disarmPip() { if (pipTimer) clearTimeout(pipTimer); pipTimer = null; pipPending = null; }
   function armPip(key) {
     if (pipPending === key) return;
@@ -1414,14 +1415,14 @@ button#statSidebar .turnRow,
     pipPending = key;
     pipTimer = setTimeout(function () {
       pipTimer = null;
-      var still = pipKeyAt(document.elementFromPoint(pipX, pipY)) === key;
+      var still = subKeyAt(document.elementFromPoint(pipX, pipY)) === key;
       pipPending = null;
       if (still) showTip(key, pipX, pipY);
     }, PIP_DWELL);
   }
   function bindStage(el) {
     el.addEventListener("mouseover", function (ev) {
-      var pk = pipKeyAt(ev.target);
+      var pk = subKeyAt(ev.target);
       pipX = ev.clientX; pipY = ev.clientY;
       if (pk && tipKey === pk) return;   // its card is already up
       if (pk) armPip(pk); else disarmPip();
@@ -1511,7 +1512,7 @@ button#statSidebar .turnRow,
       tempHpHtml = "<div class=\"statRow\"><span>Temporary HP</span><span>+" + fmt(s.temp_hp);
       // False Life (12 hours, 2026-10-02): a tag with the hours left while the spell's temporary hit points are running.
       if (Number(s.false_life_minutes_left) > 0) {
-        tempHpHtml += " <span class=\"boon boonUp\" title=\"False Life: temporary hit points that fade after about " + Math.ceil(Number(s.false_life_minutes_left) / 60) + " more hours, or when you sleep.\">False Life " + Math.ceil(Number(s.false_life_minutes_left) / 60) + "h</span>";
+        tempHpHtml += " <span class=\"boon boonUp\" data-tip=\"False Life: temporary hit points that fade after about " + Math.ceil(Number(s.false_life_minutes_left) / 60) + " more hours, or when you sleep.\">False Life " + Math.ceil(Number(s.false_life_minutes_left) / 60) + "h</span>";
       }
       tempHpHtml += "</span></div>";
     }
@@ -1543,14 +1544,14 @@ button#statSidebar .turnRow,
         "</div>";
       // Routine and a bound dressing (2026-10-21, moved here from the Dossier's status line): a second row of chips that exists only while one applies.
       var extraChips = "";
-      if (s.routine_stage === "Restless") extraChips += "<span class=\"sbCond warn\" title=\"Restless: three nights or more in the same bed. -1 to every check. A night somewhere new clears it.\">Restless</span>";
-      if (s.routine_stage === "Rutted") extraChips += "<span class=\"sbCond bad\" title=\"Rutted: six nights or more in the same bed. -2 to every check. A night somewhere new clears it.\">Rutted</span>";
-      if (isTruthy(s.dressing_on)) extraChips += "<span class=\"sbCond good\" title=\"Wounds dressed: the bandage adds HP to your next sleep.\">Wounds dressed</span>";
+      if (s.routine_stage === "Restless") extraChips += "<span class=\"sbCond warn\" data-tip=\"Restless: three nights or more in the same bed. -1 to every check. A night somewhere new clears it.\">Restless</span>";
+      if (s.routine_stage === "Rutted") extraChips += "<span class=\"sbCond bad\" data-tip=\"Rutted: six nights or more in the same bed. -2 to every check. A night somewhere new clears it.\">Rutted</span>";
+      if (isTruthy(s.dressing_on)) extraChips += "<span class=\"sbCond good\" data-tip=\"Wounds dressed: the bandage adds HP to your next sleep.\">Wounds dressed</span>";
       if (extraChips) condChipsHtml += "<div class=\"sbConds\">" + extraChips + "</div>";
     }
     // Poisoned (2026-10-31): a condition of its own, shown wherever the player is, with the time that is left.
     var poisonLeft = Number(s.poisoned_minutes_left) || 0;
-    if (poisonLeft > 0) condChipsHtml += "<div class=\"sbConds\"><span class=\"sbCond bad\" title=\"Poisoned: disadvantage on every d20 roll. About " + (poisonLeft >= 60 ? Math.ceil(poisonLeft / 60) + " hour" + (Math.ceil(poisonLeft / 60) === 1 ? "" : "s") : poisonLeft + " minutes") + " left.\">Poisoned</span></div>";
+    if (poisonLeft > 0) condChipsHtml += "<div class=\"sbConds\"><span class=\"sbCond bad\" data-tip=\"Poisoned: disadvantage on every d20 roll. About " + (poisonLeft >= 60 ? Math.ceil(poisonLeft / 60) + " hour" + (Math.ceil(poisonLeft / 60) === 1 ? "" : "s") : poisonLeft + " minutes") + " left.\">Poisoned</span></div>";
     var resourceHtml = "";
     if (s.character_class === "wizard") {
       resourceHtml = slotRow("Spell Slots", s.spell_slots_1, s.spell_slots_max_1, "");
@@ -1682,7 +1683,7 @@ button#statSidebar .turnRow,
           // this tag used to double as) moved into the sub-line below instead, per combatantSubLine, so neither
           // fact is lost.
           var cEffRange = kind === "ally" ? allyDistanceToPlayer(s, slot) : effectiveRange(s, kind, slot);
-          var cRangeTag = cDead ? "" : " <span class=\"rangeTag\" title=\"Distance from you\">(" +
+          var cRangeTag = cDead ? "" : " <span class=\"rangeTag\" data-tip=\"Distance from you\">(" +
             rangeTierName(cEffRange, s) + ")</span>";
           var cTerrain = cDead ? "" : combatantTerrainHtml(s, kind, slot);
           var cSub = combatantSubLine(s, kind, slot);
@@ -1691,7 +1692,7 @@ button#statSidebar .turnRow,
           // writes combat_mm_darts_<slot> directly, and this poll (renderStatSidebar runs every 400ms
           // regardless of ChoiceScript page state) is what makes the count visible without a page reload.
           var cDarts = kind === "enemy" ? Number(s["combat_mm_darts_" + slot]) || 0 : 0;
-          var cDartsTag = cDarts > 0 ? "<span class=\"dartsTag\" title=\"Darts assigned\">(" + cDarts + ")</span> " : "";
+          var cDartsTag = cDarts > 0 ? "<span class=\"dartsTag\" data-tip=\"Darts assigned\">(" + cDarts + ")</span> " : "";
           // This is intentionally attached to the ALLY CARD, not the action dock. At capacity one only the
           // current holder has an order; a later wider chokepoint can expose the same compact control on every
           // eligible holder without adding a new row of player actions per ally.
@@ -1749,7 +1750,7 @@ button#statSidebar .turnRow,
       var upcoming = nextAfter || firstAny;
       actingNextKey = upcoming ? upcoming.kind + ":" + upcoming.slot : null;
       if (upcoming) {
-        var atag = "<span class=\"rangeTag\" title=\"Distance from you\">(" + esc(upcoming.tier) + ")</span>";
+        var atag = "<span class=\"rangeTag\" data-tip=\"Distance from you\">(" + esc(upcoming.tier) + ")</span>";
         // Name and distance only (2026-11-15, the user): what it can do ("can close and attack") is on its own row just below, and was printed twice.
         alertHtml += "<div class=\"statRow alertRow\"><span>Acting next</span><span class=\"turnMain\"><span><span class=\"" +
           (upcoming.enemy ? "enemyName" : "allyName") + "\">" + esc(upcoming.name) + "</span> " + atag +
@@ -1769,7 +1770,7 @@ button#statSidebar .turnRow,
         else if ((okind === "enemy" || okind === "ally") && (Number(s["combat_" + okind + oslot + "_hp"]) || 0) > 0) ochip = okind === "enemy" ? String(oslot) : String.fromCharCode(64 + oslot);
         else continue;
         if (upcoming && upcoming.kind === okind && upcoming.slot === oslot) ocls += " actsNext";
-        ordBits.push("<i class=\"" + ocls + "\" data-link=\"" + okind + ":" + (okind === "player" ? 0 : oslot) + "\"" + (ocls.indexOf(" actsNext") >= 0 ? " title=\"Acts next\"" : "") + ">" + ochip + "</i>");
+        ordBits.push("<i class=\"" + ocls + "\" data-link=\"" + okind + ":" + (okind === "player" ? 0 : oslot) + "\"" + (ocls.indexOf(" actsNext") >= 0 ? " data-tip=\"Acts next\"" : "") + ">" + ochip + "</i>");
       }
       orderSummaryHtml = "<span class=\"orderSum\" aria-label=\"Order of play\">" + ordBits.join("<span class=\"orderArrow\">\u203a</span>") + "</span>";
     } else {
@@ -1793,7 +1794,7 @@ button#statSidebar .turnRow,
     else if (s.character_class === "warlock") statsOrbs = miniOrbs(s.pact_slots, s.pact_slots_max, " pact");
     else if (s.character_class === "ranger") statsOrbs = miniOrbs(s.spell_slots_1, s.spell_slots_max_1, "");
     var SB_CASTERS = { wizard: 1, bard: 1, warlock: 1, ranger: 1 };
-    var nonprofHtml = (isTruthy(s.armor_nonprof) || isTruthy(s.shield_nonprof)) ? "<div class=\"timePeriod\" title=\"Your class is not trained in this gear: disadvantage on STR and DEX rolls" + (SB_CASTERS[s.character_class] ? ", and no spellcasting while it is worn" : "") + "\" style=\"color:var(--ch-warn);font-style:normal;\">&#9888; " + (isTruthy(s.armor_nonprof) && isTruthy(s.shield_nonprof) ? "Armor &amp; shield" : (isTruthy(s.shield_nonprof) ? "Shield" : "Armor")) + ": not proficient</div>" : "";
+    var nonprofHtml = (isTruthy(s.armor_nonprof) || isTruthy(s.shield_nonprof)) ? "<div class=\"timePeriod\" data-tip=\"Not proficient: your class is not trained in this gear: disadvantage on STR and DEX rolls" + (SB_CASTERS[s.character_class] ? ", and no spellcasting while it is worn" : "") + "\" style=\"color:var(--ch-warn);font-style:normal;\">&#9888; " + (isTruthy(s.armor_nonprof) && isTruthy(s.shield_nonprof) ? "Armor &amp; shield" : (isTruthy(s.shield_nonprof) ? "Shield" : "Armor")) + ": not proficient</div>" : "";
     function abilTile(label, score, boon, mod) {
       return "<div class=\"sbAbilTile\" data-ability=\"" + label + "\"><span class=\"sbAbilContent\">" +
         "<span class=\"sbAbilLabel\">" + label + "</span><b>" + fmt(score) + "</b>" + boon +
@@ -1922,20 +1923,20 @@ button#statSidebar .turnRow,
   function mageArmorTag(s) {
     var m = Number(s.mage_armor_minutes_left) || 0;
     if (m <= 0) return "";
-    return " <span class=\"boon boonUp\" title=\"Mage Armor: base AC 13 + Dexterity while you wear no armor. Ends in about " + Math.ceil(m / 60) + " hours, or if you put on armor.\">Mage Armor " + Math.ceil(m / 60) + "h</span>";
+    return " <span class=\"boon boonUp\" data-tip=\"Mage Armor: base AC 13 + Dexterity while you wear no armor. Ends in about " + Math.ceil(m / 60) + " hours, or if you put on armor.\">Mage Armor " + Math.ceil(m / 60) + "h</span>";
   }
   // Barkskin potion (1 hour): a tag beside the AC while it holds, with the minutes left.
   function barkskinTag(s) {
     var m = Number(s.barkskin_minutes_left) || 0;
     if (m <= 0) return "";
-    return " <span class=\"boon boonUp\" title=\"Barkskin: your armor class is at least 16. Ends in about " + m + " minutes.\">Barkskin " + (m >= 60 ? Math.ceil(m / 60) + "h" : m + "m") + "</span>";
+    return " <span class=\"boon boonUp\" data-tip=\"Barkskin: your armor class is at least 16. Ends in about " + m + " minutes.\">Barkskin " + (m >= 60 ? Math.ceil(m / 60) + "h" : m + "m") + "</span>";
   }
   function shieldAcTag(s) {
     if (shieldActive(s)) {
-      return " <span class=\"boon boonUp\" title=\"Shield: +5 AC against every attack until the start of your next turn.\">+5 Shield</span>";
+      return " <span class=\"boon boonUp\" data-tip=\"Shield: +5 AC against every attack until the start of your next turn.\">+5 Shield</span>";
     }
     if (shieldReady(s)) {
-      return " <span class=\"boon boonUp\" title=\"Shield is ready. It spends your reaction and slot only when +5 AC can deflect a hit.\">Shield Ready</span>";
+      return " <span class=\"boon boonUp\" data-tip=\"Shield is ready. It spends your reaction and slot only when +5 AC can deflect a hit.\">Shield Ready</span>";
     }
     return "";
   }
@@ -2138,11 +2139,11 @@ button#statSidebar .turnRow,
   }
   function abilityBoon(bonus, helps) {
     var b = Number(bonus) || 0;
-    if (b < 0) return " <span class=\"boon boonDown\" title=\"Includes " + b + " from an affliction\">" + b + "</span>";
+    if (b < 0) return " <span class=\"boon boonDown\" data-tip=\"Includes " + b + " from an affliction\">" + b + "</span>";
     if (b <= 0) return "";
     var cls = isTruthy(helps) ? "boon boonUp" : "boon boonIdle";
     var tip = isTruthy(helps) ? "Includes +" + b + " from a boon, which raises the modifier" : "Includes +" + b + " from a boon, which does not change the modifier";
-    return " <span class=\"" + cls + "\" title=\"" + tip + "\">+" + b + "</span>";
+    return " <span class=\"" + cls + "\" data-tip=\"" + tip + "\">+" + b + "</span>";
   }
   // ── Combatant stat tooltip ─────────────────────────────────────────────────────────────────────────────────
   // Hovering a row in the combat turn order shows that combatant's numbers, so the whole targeting picture
@@ -2515,6 +2516,19 @@ button#statSidebar .turnRow,
     }
     return true;
   }
+  // A plain text card ("tip:<text>", 2026-11-23) for any element carrying data-tip in place of a title attribute: the browser's own tooltip
+  // would open beside a card the element's row or token already shows, two at once. "Head: body" splits like a pip's text.
+  function tipKeyAt(t) {
+    var el = t && t.closest ? t.closest("#statSidebar [data-tip], #battleStage [data-tip]") : null;
+    return el ? "tip:" + el.getAttribute("data-tip") : null;
+  }
+  function paintTextCard(key) {
+    var text = key.slice(4), i = text.indexOf(": ");
+    if (!text) return false;
+    tipNode().innerHTML = i > 0 ? "<div class=\"tHd\">" + esc(text.slice(0, i)) + "</div><div class=\"tText\"><p>" + esc(text.slice(i + 2)) + "</p></div>"
+      : "<div class=\"tHd\">" + esc(text) + "</div>";
+    return true;
+  }
   function showTip(key, x, y) {
     var t = tipNode();
     if (tipHideTimer) { clearTimeout(tipHideTimer); tipHideTimer = null; }
@@ -2531,6 +2545,13 @@ button#statSidebar .turnRow,
     if (key.indexOf("cond:") === 0) {
       tipKey = key; tipX = x; tipY = y;
       if (!paintCondCard(key.slice(5))) return hideTip();
+      placeTip();
+      t.classList.add("on");
+      return;
+    }
+    if (key.indexOf("tip:") === 0) {
+      tipKey = key; tipX = x; tipY = y;
+      if (!paintTextCard(key)) return hideTip();
       placeTip();
       t.classList.add("on");
       return;
@@ -2574,9 +2595,10 @@ button#statSidebar .turnRow,
     if (!meta) return false;
     var desc = "", spells = knownSpells(), i;
     for (i = 0; i < spells.length; i++) if (spells[i].id === id) desc = spells[i].desc;
+    var unprepRow = document.querySelector("#statSidebar .spellRow.spellUnprepared[data-spell=\"" + id + "\"]");
     tipNode().innerHTML = "<div class=\"tHd\">" + esc(meta.name) + "</div>" +
       "<div class=\"tMeta\">" + spellTabLabel(meta.level) +
-      (meta.schools ? " \u00b7 " + esc(meta.schools) : "") + "</div>" +
+      (meta.schools ? " \u00b7 " + esc(meta.schools) : "") + (unprepRow ? " \u00b7 Not prepared" : "") + "</div>" +
       (desc ? "<div style=\"white-space:normal;max-width:230px\">" + esc(desc) + "</div>" : "");
     return true;
   }
@@ -2604,6 +2626,15 @@ button#statSidebar .turnRow,
       tipKey = "cond:" + cchip.getAttribute("data-cond");
       if (!paintCondCard(tipKey.slice(5))) return hideTip();
       return placeTip();
+    }
+    if (tipKey.indexOf("tip:") === 0) {
+      // A data-tip element: re-resolve under the pointer (its text may have moved, a boon's hours); off it, hand back to the card of the
+      // row or token it sits in, as a pip does.
+      var xel = document.elementFromPoint(tipX, tipY), xk = tipKeyAt(xel);
+      if (xk) { tipKey = xk; if (!paintTextCard(xk)) return hideTip(); return placeTip(); }
+      var xown = xel && xel.closest ? xel.closest("#battleStage .stageToken[data-combatant], #statSidebar [data-combatant]") : null;
+      if (xown) return showTip(xown.getAttribute("data-combatant"), tipX, tipY);
+      return hideTip();
     }
     if (tipKey.indexOf("pip:") === 0) {
       // A condition pip: the stage is rebuilt under the pointer, so find the pip again; off it, hand back to the token's own card.
@@ -2828,7 +2859,7 @@ button#statSidebar .turnRow,
               "\" data-spell-tab=\"" + lvl + "\" aria-pressed=\"" + (lvl === spellTab) + "\"" +
               (lvl === 0 ? " data-spell-label=\"Cantrip\"" : "") +
               // The orb IS the label for numbered tabs, so it doubles as the accessible name.
-              (lvl === 0 ? "" : " title=\"Level " + lvl + "\" aria-label=\"Level " + lvl + "\"") +
+              (lvl === 0 ? "" : " data-tip=\"Level " + lvl + "\" aria-label=\"Level " + lvl + "\"") +
               ">" + orb + spellTabText(lvl) + "</button>";
     }
     var shown = byLevel[spellTab] || [];
@@ -2844,7 +2875,7 @@ button#statSidebar .turnRow,
         if (sp.id === spellPicked) pick = sp;
         // A class that prepares (the wizard) can hold more spells than it carries: one left out of today's preparation cannot be cast, so its row is dimmed and marked.
         var unprep = sp.meta.level > 0 && isTruthy(st.class_prepares) && !isTruthy(st["prepared_" + sp.id]);
-        rows += "<button type=\"button\" class=\"spellRow" + (unprep ? " spellUnprepared" : "") + "\" data-spell=\"" + esc(sp.id) + "\"" + (unprep ? " title=\"Not prepared\"" : "") +
+        rows += "<button type=\"button\" class=\"spellRow" + (unprep ? " spellUnprepared" : "") + "\" data-spell=\"" + esc(sp.id) + "\"" +  +
                 " aria-pressed=\"" + (spellPicked === sp.id) + "\">" + spellArt(sp.id) +
                 "<span class=\"spellName\">" + esc(sp.meta.name) + "</span>" +
                 "<span class=\"spellLvl\">" + (sp.meta.level === 0 ? "C" : sp.meta.level) + "</span></button>";
@@ -3090,6 +3121,19 @@ button#statSidebar .turnRow,
   document.getElementById("statSidebar").addEventListener("mouseover", function (ev) {
     var el = ev.target, linked = el && el.closest ? el.closest("[data-link]") : null;
     setLink(linked ? linked.getAttribute("data-link") : null);
+  });
+  // data-tip elements (tipKeyAt): shown at once in the sidebar, replacing the row's card; leaving one hands back to the row (refreshTip).
+  document.getElementById("statSidebar").addEventListener("mouseover", function (ev) {
+    var k = tipKeyAt(ev.target);
+    if (k) showTip(k, ev.clientX, ev.clientY);
+    else if (tipKey && tipKey.indexOf("tip:") === 0) {
+      var own = ev.target && ev.target.closest ? ev.target.closest("[data-combatant]") : null;
+      if (own) showTip(own.getAttribute("data-combatant"), ev.clientX, ev.clientY); else hideTip();
+    }
+  });
+  document.getElementById("statSidebar").addEventListener("mousemove", function (ev) {
+    if (!tipKey || tipKey.indexOf("tip:") !== 0) return;
+    if (tipKeyAt(ev.target)) { tipX = ev.clientX; tipY = ev.clientY; placeTip(); }
   });
   // Keyboard parity: the living-enemy rows are real <button>s, so they must show the card on focus too.
   document.getElementById("statSidebar").addEventListener("focusin", function (ev) {
