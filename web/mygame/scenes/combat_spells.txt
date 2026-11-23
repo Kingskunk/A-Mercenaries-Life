@@ -1484,6 +1484,15 @@ ${combat_player_web_check_banner}
     *set combat_player_bonus_left 0
     *set combat_player_attacks_left 0
     *set combat_player_moves_left 0
+*gosub_scene combat_movement combat_fire_at psic_pos
+*if (combat_fire_here)
+  *set combat_fire_land_banner ""
+  *gosub fire_save "combat_player_" 7
+  *if (not(combat_fire_land_banner = ""))
+    *if (combat_player_step_banner = "")
+      *set combat_player_step_banner combat_fire_land_banner
+    *else
+      *set combat_player_step_banner ((combat_player_step_banner & "[n/]") & combat_fire_land_banner)
 *if (not(combat_player_step_banner = ""))
   ${combat_player_step_banner}
   *line_break
@@ -1515,6 +1524,13 @@ ${combat_player_web_check_banner}
   ${combat_grease_land_banner}
   *line_break
   *set combat_enemy_step_fell {(esic_p & "prone")}
+*gosub_scene combat_movement combat_fire_at esic_pos
+*if (combat_fire_here)
+  *set combat_fire_land_banner ""
+  *gosub fire_save esic_p esic_slot
+  *if (not(combat_fire_land_banner = ""))
+    ${combat_fire_land_banner}
+    *line_break
 *return
 
 *comment An ally that moved this turn, before its attack or cast (combat.txt ally branch) or, with none after the move, at its turn's end (cnt_ally_tail): stepping into an
@@ -1540,6 +1556,13 @@ ${combat_player_web_check_banner}
   ${combat_grease_land_banner}
   *line_break
   *set combat_ally_step_fell {(asic_p & "prone")}
+*gosub_scene combat_movement combat_fire_at asic_pos
+*if (combat_fire_here)
+  *set combat_fire_land_banner ""
+  *gosub fire_save asic_p asic_slot
+  *if (not(combat_fire_land_banner = ""))
+    ${combat_fire_land_banner}
+    *line_break
 *return
 
 *comment AN ENEMY'S ARMOR OF AGATHYS, PRINTED (3.9a 5): the cold a warded enemy sent back at the player's melee hit this page (resolve_player_weapon_hit), after the blow's
@@ -1700,6 +1723,23 @@ ${combat_enemy_agathys_banner}
   *set combat_foe_web_burn_roll (fwb_a + fwb_b)
   *rand combat_foe_web_burn_v 1 3
   *set combat_foe_web_burn_hit_player false
+  *comment FIRE PATCH (2026-11-23): the patch becomes fire for two rounds, handed over (no owner) so its caster's concentration_end leaves it.
+  *if (((combat_terrain1_type = "foe_web") or (combat_terrain1_type = "ally_web")) and (combat_terrain1_owner = fwb_owner))
+    *set combat_terrain1_type "fire"
+    *set combat_terrain1_owner ""
+    *set combat_terrain1_until (combat_round + 2)
+  *if (((combat_terrain2_type = "foe_web") or (combat_terrain2_type = "ally_web")) and (combat_terrain2_owner = fwb_owner))
+    *set combat_terrain2_type "fire"
+    *set combat_terrain2_owner ""
+    *set combat_terrain2_until (combat_round + 2)
+  *if (((combat_terrain3_type = "foe_web") or (combat_terrain3_type = "ally_web")) and (combat_terrain3_owner = fwb_owner))
+    *set combat_terrain3_type "fire"
+    *set combat_terrain3_owner ""
+    *set combat_terrain3_until (combat_round + 2)
+  *if (((combat_terrain4_type = "foe_web") or (combat_terrain4_type = "ally_web")) and (combat_terrain4_owner = fwb_owner))
+    *set combat_terrain4_type "fire"
+    *set combat_terrain4_owner ""
+    *set combat_terrain4_until (combat_round + 2)
   *comment The web is gone first, so its holder makes no concentration save for the fire.
   *gosub_scene combat_dice concentration_end fwb_owner
   *gosub_scene combat_dice concentration_format_ended_banner fwb_owner "web"
@@ -1719,7 +1759,7 @@ ${combat_enemy_agathys_banner}
   *gosub foe_web_burn_allies fwb_pos
   *gosub foe_web_burn_enemies fwb_pos
   *set combat_web_burning false
-  *set combat_foe_web_burn_banner "[b][🔥 The web burns away (2d4: ${fwb_a} + ${fwb_b} = ${combat_foe_web_burn_roll})${combat_foe_web_burn_lines}][/b][n/]${fwb_conc}"
+  *set combat_foe_web_burn_banner "[b][🔥 The web burns away (2d4: ${fwb_a} + ${fwb_b} = ${combat_foe_web_burn_roll})${combat_foe_web_burn_lines}][/b][n/][b][🔥 The ground where it hung is burning | 2 rounds][/b][n/]${fwb_conc}"
   *set combat_foe_web_burn_page page_id
   *set combat_foe_web_burn_site combat_web_burn_site_now
   *set combat_web_burned true
@@ -1803,6 +1843,47 @@ ${combat_foe_web_burn_banner}
 *gosub foe_web_burn_check
 *if (wbc_mine)
   *set combat_web_burned true
+*temp wbc_any combat_web_burned
+*gosub grease_fire_check
+*set combat_web_burned wbc_any
+*return
+
+*comment GREASE CATCHES FIRE (2026-11-23): fire on anyone standing in a Grease patch (adjust_damage_packet sets combat_grease_fire_pending and the spot) turns every Grease slot on
+*comment that spot into fire for two rounds, handed over (no owner). No damage of its own: the fire is on the ground now, and the fire patch's save does the rest. Kept against
+*comment combat_grease_fire_page and _site so a replay of the page prints the same line at the call that made it.
+*label grease_fire_check
+*temp gfc_show false
+*if ((combat_grease_fire_page = page_id) and (combat_grease_fire_site = combat_web_burn_site_now))
+  *set combat_grease_fire_pending false
+  *set gfc_show true
+*elseif (combat_grease_fire_pending)
+  *set combat_grease_fire_pending false
+  *temp gfc_pos combat_grease_fire_pos
+  *if ((combat_terrain1_type = "grease") and (combat_terrain1_position = gfc_pos))
+    *set combat_terrain1_type "fire"
+    *set combat_terrain1_owner ""
+    *set combat_terrain1_until (combat_round + 2)
+  *if ((combat_terrain2_type = "grease") and (combat_terrain2_position = gfc_pos))
+    *set combat_terrain2_type "fire"
+    *set combat_terrain2_owner ""
+    *set combat_terrain2_until (combat_round + 2)
+  *if ((combat_terrain3_type = "grease") and (combat_terrain3_position = gfc_pos))
+    *set combat_terrain3_type "fire"
+    *set combat_terrain3_owner ""
+    *set combat_terrain3_until (combat_round + 2)
+  *if ((combat_terrain4_type = "grease") and (combat_terrain4_position = gfc_pos))
+    *set combat_terrain4_type "fire"
+    *set combat_terrain4_owner ""
+    *set combat_terrain4_until (combat_round + 2)
+  *set combat_grease_fire_page page_id
+  *set combat_grease_fire_site combat_web_burn_site_now
+  *set gfc_show true
+*if (not(gfc_show))
+  *return
+The fire touches the grease, and the whole slick goes up with a soft, heavy thump.
+*line_break
+[b][🔥 The grease catches fire | 2 rounds][/b]
+*line_break
 *return
 
 *label player_web_burn_check
@@ -1850,7 +1931,24 @@ ${combat_foe_web_burn_banner}
   *set combat_web_burning false
   *set combat_active_target wbc_prev_target
   *gosub_scene combat fight_sync_target_in
-  *set combat_web_burn_banner "[b][🔥 The web burns away (2d4: ${wbc_roll_a} + ${wbc_roll_b} = ${wbc_roll})${wbc_lines}][/b]"
+  *comment FIRE PATCH (2026-11-23): the ground the web hung over burns on for two rounds. The slot is handed over (no owner), so concentration_end leaves it.
+  *if (combat_terrain1_type = "web")
+    *set combat_terrain1_type "fire"
+    *set combat_terrain1_owner ""
+    *set combat_terrain1_until (combat_round + 2)
+  *if (combat_terrain2_type = "web")
+    *set combat_terrain2_type "fire"
+    *set combat_terrain2_owner ""
+    *set combat_terrain2_until (combat_round + 2)
+  *if (combat_terrain3_type = "web")
+    *set combat_terrain3_type "fire"
+    *set combat_terrain3_owner ""
+    *set combat_terrain3_until (combat_round + 2)
+  *if (combat_terrain4_type = "web")
+    *set combat_terrain4_type "fire"
+    *set combat_terrain4_owner ""
+    *set combat_terrain4_until (combat_round + 2)
+  *set combat_web_burn_banner "[b][🔥 The web burns away (2d4: ${wbc_roll_a} + ${wbc_roll_b} = ${wbc_roll})${wbc_lines}][/b][n/][b][🔥 The ground where it hung is burning | 2 rounds][/b]"
   *gosub_scene combat_dice concentration_end "combat_player_"
   *set combat_web_burn_page page_id
   *set combat_web_burn_site combat_web_burn_site_now
@@ -2865,6 +2963,73 @@ ${combat_save_banner_7}
     *gosub grease_save gln_ap gln_i
   *set gln_i + 1
   *goto grease_land_ally_loop
+*return
+
+*comment FIRE PATCH (2026-11-23): one creature in the flames saves (Dexterity, DC 10) or catches fire: Burning for three of its turns, unless it is Wet (the fire cannot
+*comment take hold) or already burning. Appends its save and result to combat_fire_land_banner. fsv_lock is its resolve_save lock (7 for the player, the slot otherwise),
+*comment reset first, as grease_save does. check_success is inverted after resolve_save: true means the save FAILED.
+*label fire_save
+*params fsv_prefix fsv_lock
+*temp fsv_name {(fsv_prefix & "name")}
+*temp fsv_burn {(fsv_prefix & "burning")}
+*if (fsv_burn > 0)
+  *return
+*set {("combat_save_locked_" & fsv_lock)} false
+*set combat_save_quiet true
+*gosub_scene combat_dice resolve_save fsv_prefix "dexterity" "Dexterity" 10 fsv_lock
+*set combat_save_quiet false
+*temp fsv_line ""
+*if (check_success)
+  *temp fsv_wet {(fsv_prefix & "wet")}
+  *if (fsv_wet > 0)
+    *if (fsv_prefix = "combat_player_")
+      *set fsv_line "[b][💧 The flames lick at you, but you are too wet to catch][/b]"
+    *else
+      *set fsv_line "[b][💧 ${fsv_name} is too wet to catch fire][/b]"
+  *else
+    *if (fsv_prefix = "combat_player_")
+      *gosub_scene combat_dice combat_burn_ignite fsv_prefix
+    *elseif (fsv_prefix = "combat_ally1_")
+      *gosub_scene combat_dice combat_burn_ignite fsv_prefix
+    *elseif (fsv_prefix = "combat_ally2_")
+      *gosub_scene combat_dice combat_burn_ignite fsv_prefix
+    *elseif (fsv_prefix = "combat_ally3_")
+      *gosub_scene combat_dice combat_burn_ignite fsv_prefix
+    *elseif (fsv_prefix = "combat_ally4_")
+      *gosub_scene combat_dice combat_burn_ignite fsv_prefix
+    *else
+      *set {(fsv_prefix & "burning")} 3
+    *if (fsv_prefix = "combat_player_")
+      *set fsv_line "[b][🔥 You catch fire | Burning][/b]"
+    *else
+      *set fsv_line "[b][🔥 ${fsv_name} catches fire | Burning][/b]"
+*else
+  *if (fsv_prefix = "combat_player_")
+    *set fsv_line "[b][💨 You keep clear of the flames][/b]"
+  *else
+    *set fsv_line "[b][💨 ${fsv_name} keeps clear of the flames][/b]"
+*temp fsv_add (({("combat_save_banner_" & fsv_lock)} & "[n/]") & fsv_line)
+*if (combat_fire_land_banner = "")
+  *set combat_fire_land_banner fsv_add
+*else
+  *set combat_fire_land_banner ((combat_fire_land_banner & "[n/]") & fsv_add)
+*return
+
+*comment The end of a creature's turn in a fire patch (2026-11-23): it saves again or catches fire. Prints its lines. Called beside grease_end_turn, at the end of the
+*comment player's turn (fight_end_player_turn), an enemy's (cnt_boom_tail) and an ally's (cnt_ally_tail).
+*label fire_end_turn
+*params fet_prefix fet_lock
+*temp fet_pos combat_lane_player_position
+*if (not(fet_prefix = "combat_player_"))
+  *set fet_pos {(fet_prefix & "position")}
+*gosub_scene combat_movement combat_fire_at fet_pos
+*if (not(combat_fire_here))
+  *return
+*set combat_fire_land_banner ""
+*gosub fire_save fet_prefix fet_lock
+*if (not(combat_fire_land_banner = ""))
+  ${combat_fire_land_banner}
+  *line_break
 *return
 
 *comment The end of a creature's turn on grease (3.9a): it saves again, or falls (its turn is ending anyway). Prints its lines. Called at the end of the player's turn

@@ -301,6 +301,29 @@
       active: function (s) { return s.gbp_stage === "active"; }
     },
     {
+      id: "ashrun_forge",
+      title: "Sparks in the Holt",
+      place: "Ashrun Holt",
+      giver: "Durgan, the burnt smithy",
+      goal: function (s) {
+        var st = Number(s.ahf_stage) || 0;
+        if (st === 1) return "Speak with Durgan at the burnt smithy off Ashrun Holt's work track and inspect the ruin.";
+        if (st === 2) return "Follow the footprints downhill from the burnt smithy toward the Ashrun bridge.";
+        if (st === 3) return "Follow the blood trail from the Ashrun bridge into the village cabins.";
+        if (st === 4) return "Return to Durgan at the burnt smithy.";
+        return "Find who burned down Durgan's smithy in Ashrun Holt.";
+      },
+      clues: function (s) {
+        var c = [];
+        if (truthy(s.ahf_clue_torch)) c.push("A charred pine knot wrapped in hemp twine and soaked in resin was thrown onto the bark roof.");
+        if (truthy(s.ahf_clue_tracks)) c.push("Heavy footprints lead downhill from the woodpile toward the Ashrun bridge.");
+        if (truthy(s.ahf_clue_boot)) c.push("A snapped leather boot and three deep claw grooves mark the clay bank beneath the bridge, with blood leading back to the cabins.");
+        if (truthy(s.ahf_lacedon_cleared)) c.push("A lacedon lurking beneath the haulers' bridge has been put down.");
+        return c;
+      },
+      active: function (s) { var st = Number(s.ahf_stage) || 0; return st >= 1 && st < 5; }
+    },
+    {
       id: "varren_errand", title: "Varren's Errand", place: "Port Valen",
       giver: "Sergeant Varren, the Carrion Compound",
       goal: function (s) {

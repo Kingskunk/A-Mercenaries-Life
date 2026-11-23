@@ -900,12 +900,17 @@ button#statSidebar .turnRow,
     foe_web: "Enemy Web",
     ally_web: "Ally Web",
     grease: "Grease",
+    water: "Water",
+    fire: "Fire",
     high_ground: "High Ground",
     open_ground: "Open Ground"
   };
   // An enemy's Web wears the Web art. Grease has no art yet, so it shows the brass diamond.
   if (window.BATTLEFIELD_ICONS && !window.BATTLEFIELD_ICONS.foe_web) window.BATTLEFIELD_ICONS.foe_web = window.BATTLEFIELD_ICONS.web;
   if (window.BATTLEFIELD_ICONS && !window.BATTLEFIELD_ICONS.ally_web) window.BATTLEFIELD_ICONS.ally_web = window.BATTLEFIELD_ICONS.web;
+  // Water (2026-11-23) wears the Water Terrain art (tools/gen_battlefield_icons.js keys it water_terrain).
+  if (window.BATTLEFIELD_ICONS && !window.BATTLEFIELD_ICONS.water) window.BATTLEFIELD_ICONS.water = window.BATTLEFIELD_ICONS.water_terrain;
+  if (window.BATTLEFIELD_ICONS && !window.BATTLEFIELD_ICONS.fire) window.BATTLEFIELD_ICONS.fire = window.BATTLEFIELD_ICONS.fire_terrain;
   function terrainLabel(type) {
     return TERRAIN_LABELS[type] || String(type || "Terrain").replace(/_/g, " ").replace(/\b\w/g, function (c) { return c.toUpperCase(); });
   }
@@ -960,6 +965,8 @@ button#statSidebar .turnRow,
     foe_web: "An enemy's sticky webbing. Starting a turn here means a Dexterity save or Restrained, and it slows movement like difficult terrain, so no Dash.",
     ally_web: "An ally's sticky webbing, which holds anyone. Starting a turn here means a Dexterity save or Restrained, and it slows movement like difficult terrain, so no Dash.",
     grease: "Slick ground. Landing in it, stepping into it or ending a turn on it means a Dexterity save or falling Prone, and it slows movement like difficult terrain, so no Dash.",
+    fire: "Burning ground. Stepping into it or ending a turn in it means a Dexterity save or catching fire, unless you are Wet. Rain puts it out.",
+    water: "Shallow water. Ending a turn here leaves you Wet: double cold and lightning damage, resistance to fire, and fire cannot take hold.",
     chokepoint: "Single file: one fighter holds the crossing, and a holder blocks the way past it.",
     open_ground: "Nothing special."
   };
@@ -2246,7 +2253,7 @@ button#statSidebar .turnRow,
       if (Number(s.poisoned_minutes_left) > 0) add("Poisoned", "\u2620", "good", "Poisoned: your d20 rolls have disadvantage");
       // Blinded and concentration (2026-11-15): the rules live here, on the hover, so the fight's own banners only have to name the state.
       var pb = Number(s.combat_player_blinded) || 0;
-      ["off_guard", "pinned", "hobbled", "poisoned", "dazed", "off_balance", "bleeding"].forEach(function (k) { var n = Number(s["combat_player_" + k]) || 0; if (n > 0) add(STATUS_GLYPHS[k][2].split(":")[0], STATUS_GLYPHS[k][0], STATUS_GLYPHS[k][1], STATUS_GLYPHS[k][2]); });
+      ["wet", "burning", "off_guard", "pinned", "hobbled", "poisoned", "dazed", "off_balance", "bleeding"].forEach(function (k) { var n = Number(s["combat_player_" + k]) || 0; if (n > 0) add(STATUS_GLYPHS[k][2].split(":")[0], STATUS_GLYPHS[k][0], STATUS_GLYPHS[k][1], STATUS_GLYPHS[k][2]); });
       if (pb > 0) add("Blinded", "⊘", "grey", "Blinded (" + pb + (pb === 1 ? " round" : " rounds") + "): your attacks have disadvantage, attacks against you have advantage, and spells that need a target you can see are out");
       var pc = concentrationOf(s, "combat_player_");
       if (pc) add("Concentrating", "❂", "gold", "Concentrating on " + pc + ": damage or a stun can break it, and another concentration spell replaces it");

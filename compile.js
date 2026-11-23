@@ -448,6 +448,7 @@ function compile(){
   // *goto_scene at aly_night_retire targets quests/valen_reach_alyndra_scene2, which does not exist yet.
   verifyFileName("overworld/valen_reach_alyndra.txt");
   verifyFileName("overworld/greybank_frying_pan.txt");
+  verifyFileName("timbermouth/ashrun_holt/burnt_smithy.txt");
   verifyFileName("horse_dealer.txt");
   // The hub that lists signed jobs and routes to them (reached from the Trunk Road and the Patrician Avenue).
   verifyFileName("port_valen/radiant/radiant_hub.txt");

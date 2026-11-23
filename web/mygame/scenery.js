@@ -109,6 +109,7 @@
     "timbermouth/ashrun_holt/ashrun_holt": "ashrun_holt_clearing",
     "timbermouth/ashrun_holt/hide_yard": "ashrun_holt_hide_yard",
     "timbermouth/ashrun_holt/work_yards": "ashrun_holt_work_yards",
+    "timbermouth/ashrun_holt/burnt_smithy": "ashrun_holt_work_yards",
     "timbermouth/ashrun_holt/ashrun_house": "generic_village_inn",
     "port_valen/brinewick/tide_house": "brinewick_tide_house",
     "alderford/factors_hall": "shared_factors_hall",

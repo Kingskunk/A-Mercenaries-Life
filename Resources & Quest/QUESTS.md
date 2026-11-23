@@ -37,6 +37,7 @@ The write-ups in `quests/` were moved here word for word from the old version of
 | The Troubled Water | `bark_poisoned_water` | `longshade/longshade_forest.txt` | Bark, the old tree in the Longshade | Finished, or failed by leaving the burning grove | None |
 | Word of Aldis Pellam | `overdue_peddler` | `timbermouth/barleycross/overdue_peddler.txt` | A job board, with the Contractor's Insignia | Resolved | None |
 | A Frying Pan, Spick and Span | `greybank_pan` | `overworld/greybank_frying_pan.txt` | A 10% daytime road event on Greybank Rise (`ar2`) | `returned`, `pocketed` | None |
+| Sparks in the Holt | `ashrun_forge` | `timbermouth/ashrun_holt/burnt_smithy.txt` | Durgan's notice on Ashrun Holt's board of cords, or visiting the burnt smithy | `returned_peaceful`, `returned_subdued`, `bribed` | None |
 
 ## Hiring Hall jobs and parcels the sidebar lists
 

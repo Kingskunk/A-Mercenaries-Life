@@ -56,6 +56,10 @@
     *if (cstd_type = "grease")
       *set combat_ai_terrain_score - 3
       *set combat_ai_terrain_reason "avoid_grease"
+    *comment A fire patch (2026-11-23): stepping in or ending a turn there is a Dexterity save or Burning, so it scores like grease.
+    *if (cstd_type = "fire")
+      *set combat_ai_terrain_score - 3
+      *set combat_ai_terrain_reason "avoid_fire"
     *if (cstd_type = "high_ground")
       *set combat_ai_terrain_score + combat_behavior_seek_high_ground
       *if (combat_behavior_seek_high_ground > 0)
@@ -266,6 +270,8 @@
     *set combat_ai_terrain_step_reason "leave_web"
   *if (ccts_current_reason = "avoid_grease")
     *set combat_ai_terrain_step_reason "leave_grease"
+  *if (ccts_current_reason = "avoid_fire")
+    *set combat_ai_terrain_step_reason "leave_fire"
 *return
 
 *label combat_assess_melee_threat
@@ -367,7 +373,7 @@
         *set ccrts_found_safe_step true
       *comment Leaving a web or grease (2026-11-21) is kept even with no safe tile in reach, as long as it is no more exposed than staying: otherwise a
       *comment threatened archer stood in grease to slip, every turn, because the lane had nowhere a melee foe could not reach.
-      *if ((not(ccrts_keep_terrain_step)) and ((combat_ai_terrain_step_reason = "leave_web") or (combat_ai_terrain_step_reason = "leave_grease")))
+      *if ((not(ccrts_keep_terrain_step)) and (((combat_ai_terrain_step_reason = "leave_web") or (combat_ai_terrain_step_reason = "leave_grease")) or (combat_ai_terrain_step_reason = "leave_fire")))
         *if (combat_ai_melee_threat_level <= ccrts_current_threat)
           *set ccrts_keep_terrain_step true
           *set ccrts_found_safe_step true

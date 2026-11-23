@@ -472,6 +472,7 @@ Read `Resources & Quest/COMBAT_ENGINE_PLAN.md` first. It holds the fight system'
 - A new enemy type, or an existing type renamed for one fight. A fight can rename a type and change its HP, AC and attack, so most fights need no new type.
 - Its creature type, size, behaviour profile and morale.
 - Whether the fight is lethal, whether the player can flee, and what a loss costs.
+- Whether it is outdoors. An outdoor fight sets `combat_open_sky true` (a template: `"open_sky": true`; a scene calling `fight_library`: the line before the call), so the weather reaches it. Left out, it is under cover.
 - What the fight is a consequence of. A quest reaches a fight through a failed roll or a choice, never straight from "accept".
 - Spells belong to the fight, never to the enemy type.
 

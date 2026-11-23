@@ -1,0 +1,479 @@
+*comment ====================================================================================
+*comment SPARKS IN THE HOLT (Ashrun Holt village quest)
+*comment Adapted from The Witcher 3's "Twisted Firestarter" for Ashrun Holt.
+*comment Triggered from the Longhouse notice board (port_valen/radiant/notice_board.txt,
+*comment cr_origin = "fo") or by visiting The Burnt Smithy off the work track in ashrun_holt.txt.
+*comment
+*comment Stages (ahf_stage):
+*comment   0 = not started
+*comment   1 = notice taken or met Durgan at the burnt smithy
+*comment   2 = inspected the burnt shed, found pine knot and tracks toward the Ashrun bridge
+*comment   3 = inspected the bridge bank, found the boot and blood trail (optional Lacedon fight)
+*comment   4 = confronted Jory in his cabin
+*comment   5 = resolved at the smithy (ahf_finished = true)
+*comment
+*comment Endings (ahf_ending):
+*comment   "returned_peaceful" - persuaded or intimidated Jory to face Durgan (40 copper, +15 if Lacedon cleared, +1 Heroic Inspiration)
+*comment   "returned_subdued"  - subdued Jory by force and hauled him to Durgan (40 copper, +15 if Lacedon cleared)
+*comment   "bribed"            - pocketed Jory's 25 copper and lied to Durgan (no pay from Durgan)
+*comment ====================================================================================
+
+*label ahf_notice_take
+*set scenery_subplace "ashrun_holt_longhouse"
+*if (ahf_stage = 0)
+  *set ahf_stage 1
+[b]◈ DURGAN'S NOTICE[/b]
+*line_break
+You pull the folded sheet off the iron nail near the board of cords. The ink is thick and square, written with a blunt nib:
+
+[i]"FORGE BURNED. Someone put a torch to my smithy roof last night. Forty copper bits to whoever brings me the name and proof, or brings the bastard to my door. Durgan, the smithy off the work track."[/i]
+
+Lysa Thorn glances up from her map case. "Down past the woodpiles on the stream track," she remarks. "You will smell it before you see it."
+*choice
+  # Walk over to the burnt smithy now. [~5 min]
+    *goto ahf_smithy
+  # Step back to the Longhouse.
+    *goto_scene timbermouth/ashrun_holt/longhouse ah_hall
+
+*label ahf_smithy
+*set scenery_subplace "ashrun_holt_work_yards"
+*set minutes_to_pass 5
+*set time_advance_call_id "ahf_smithy_walk"
+*gosub ahf_advance_time
+*if (ahf_stage = 0)
+  *set ahf_stage 1
+*if (ahf_stage = 5)
+  *goto ahf_post_quest
+*if (ahf_stage = 4)
+  *goto ahf_return_durgan
+[b]◈ THE BURNT SMITHY[/b]
+*line_break
+*if (not(ahf_met_durgan))
+  *set ahf_met_durgan true
+  A low timber forge off the work track has collapsed into its own footprint. The bark roof is gone, leaving blackened rafters pitched over a stone hearth, a cracked bellows frame, and an anvil dusted with grey ash. The smell of wet char and dead coal hangs over the yard.
+
+  A stocky dwarf stands by the anvil with soot across his knuckles and a leather apron scorched along the hem. He is sorting tongs and axe heads out of the rubble into a wooden crate. When your steps crunch on the cinders, he straightens up and wipes his brow with a forearm.
+
+  "Durgan," he tells you, voice rough from smoke. "If you came for shoeing or an axe edge, you are a day late. Somebody torched my roof last night."
+
+  He kicks a fallen rafter aside. "Timbermouth's haulers brought me up here to keep their saws, chains, and wagon tires in shape. I banked my fire dead before dusk, same as every evening. No wind, no stray spark. Somebody wanted me gone. Forty copper if you find who did it and bring them to my door."
+*else
+  Durgan is still sorting salvaged ironwork into a crate while the smell of char lingers over the track.
+
+  *if (ahf_stage = 1)
+    "Start with the rafters if you have an eye for it," Durgan grunts, nodding at the ruin. "I have not touched the back wall yet."
+  *elseif (ahf_stage = 2)
+    "Follow those tracks down toward the Ashrun," Durgan urges, resting a hand on the anvil. "Whoever set this went downhill in a hurry."
+  *elseif (ahf_stage = 3)
+    "You have the shoe and the blood trail," Durgan mutters, his jaw tight. "Find the bastard before he skips down the road."
+
+*choice
+  *if (ahf_stage = 1)
+    # Inspect the collapsed rafters and the ground behind the ruin. [~10 min]
+      *goto ahf_inspect_shed
+  *if (ahf_stage = 2)
+    # Follow the tracks downhill toward the Ashrun bridge. [~10 min]
+      *goto ahf_bridge
+  *if (ahf_stage = 3)
+    # Follow the blood trail from the stream into the cabins. [~10 min]
+      *goto ahf_cabin
+  # Return to the clearing.
+    *goto ahf_exit
+
+*label ahf_inspect_shed
+*set scenery_subplace "ashrun_holt_work_yards"
+[b]◈ ASH AND PITCH[/b]
+*line_break
+You step past the scorched threshold and work around the collapsed rafters, keeping clear of loose nails and damp charcoal. The hearth itself is clean beneath a crust of fallen bark. The worst charring sits high along the rear eaves, where the roof caught first.
+*choice
+  # Sift the rear eaves and ground for how the fire started. [Investigation]
+    *gosub_scene dice_engine roll_skill_check 12 "investigation" "" "" "" "" ""
+    *set ahf_clue_torch true
+    *set ahf_clue_tracks true
+    *set ahf_stage 2
+    *set minutes_to_pass 10
+    *set time_advance_call_id "ahf_inspect_inv"
+    *gosub ahf_advance_time
+    *if (check_success)
+      Half buried under a fallen shingle behind the ruin, you pull out a charred pine knot wrapped in coarse hemp twine. The wood still smells sharp with resin, never burned inside a hearth. Just beyond the woodpile, heavy footprints cut deep into the soft earth, striding fast downhill toward the Ashrun.
+    *else
+      It takes several minutes of kicking through wet bark before your foot strikes a blackened pine knot wrapped in hemp twine. The resin smell is unmistakable. You miss the exact angle of the throw, but the mud past the woodpile is churned with heavy footprints heading downhill toward the Ashrun.
+    *goto ahf_after_shed
+  # Scan the yard edge and woodpile for where the arsonist stood. [Perception]
+    *gosub_scene dice_engine roll_skill_check 12 "perception" "" "" "" "" ""
+    *set ahf_clue_torch true
+    *set ahf_clue_tracks true
+    *set ahf_stage 2
+    *set minutes_to_pass 10
+    *set time_advance_call_id "ahf_inspect_per"
+    *gosub ahf_advance_time
+    *if (check_success)
+      Your eyes catch a splash of hardened resin on the stacked cordwood, then the half burned pine knot lying in the grass below the rear eaves. Two paces out, a clear line of heavy footprints digs into the damp dirt and angles straight downhill toward the Ashrun.
+    *else
+      Soot blurs most of the yard, but a glint of pitch on the eaves leads you to a charred pine knot in the grass. Beyond the woodpile, a rough line of footprints breaks through the weeds and heads downhill toward the Ashrun.
+    *goto ahf_after_shed
+
+*label ahf_after_shed
+*choice
+  # Follow the prints downhill to the Ashrun bridge. [~10 min]
+    *goto ahf_bridge
+  # Leave it for now and return to the clearing.
+    *goto ahf_exit
+
+*label ahf_bridge
+*set scenery_subplace "ashrun_holt_work_yards"
+*set ahf_clue_boot true
+*if (ahf_stage < 3)
+  *set ahf_stage 3
+*set minutes_to_pass 10
+*set time_advance_call_id "ahf_bridge_walk"
+*gosub ahf_advance_time
+[b]◈ THE ASHRUN BRIDGE[/b]
+*line_break
+The tracks leave the work road where the timber span crosses the Ashrun, sliding down the clay slope into the reeds. Someone came down here to wash soot off their hands or cut along the stream out of sight.
+
+At the water's edge, the mud is torn up by a sudden scramble. A single leather boot lies half sunk in the silt, its laces snapped. Nearby, three deep parallel grooves rake across the wet clay, too wide and curved for any dog. Drops of blood lead up the incline, across the pine needles, and toward the edge of the village cabins.
+
+*if (not(ahf_lacedon_cleared))
+  From the shadowed hollow beneath the timber pilings comes a slow, wet scrape, followed by the stink of stagnant river weed and old carrion. Something is still crouched under the arch.
+*else
+  The water under the arch runs quiet now, the undercut hollow empty.
+
+*gosub_scene dungeon dg_spell_source "light" "Light" 0 "cantrip"
+*choice
+  *if ((not(ahf_lacedon_cleared)) and (dg_ss_can))
+    # [${dg_ss_word}: Light] Cast light onto a stone and toss it under the arch.
+      *goto ahf_culvert_light
+  *if (not(ahf_lacedon_cleared))
+    # Peer into the shadowed culvert beneath the pilings. [Perception]
+      *goto ahf_culvert_peer
+  # Pick up the lost shoe and follow the blood trail to the cabins. [~10 min]
+    *goto ahf_cabin
+  # Return to the clearing.
+    *goto ahf_exit
+
+*label ahf_culvert_light
+*gosub_scene dungeon dg_spell_source "light" "Light" 0 "cantrip"
+*gosub_scene dungeon dg_spell_cast "light"
+*set minutes_to_pass 5
+*set time_advance_call_id "ahf_culvert_light_time"
+*gosub ahf_advance_time
+[b]◈ UNDER THE ARCH[/b]
+*line_break
+You touch a river pebble, call up a steady glow, and lob it under the timber span. Bright white light floods the culvert.
+
+Hunched in the silt among driftwood and tangled roots is a drowned corpse gone grey and taut, its fingers split into black claws. Near its knees, a rotted leather pouch and a wax stoppered clay flask glint in the shallows. The lacedon hisses at the glare and scrambles forward over the wet stones, but you see every move before it clears the shadow.
+*choice
+  # Meet the lacedon in the shallows.
+    *set combat_enemy_advantage false
+    *goto ahf_lacedon_fight
+  # Climb up the slope and leave the thing under the arch.
+    *goto ahf_bridge_leave_culvert
+
+*label ahf_culvert_peer
+[b]◈ UNDER THE ARCH[/b]
+*line_break
+You crouch at the mouth of the culvert, keeping your footing on dry gravel as your eyes adjust to the gloom beneath the pilings.
+*gosub_scene dice_engine roll_skill_check 12 "perception" "" "" "" "" ""
+*set minutes_to_pass 5
+*set time_advance_call_id "ahf_culvert_peer_time"
+*gosub ahf_advance_time
+*if (check_success)
+  In the back of the hollow, two pale hands grip a submerged root near a drowned hauler's rotted pouch. A lacedon lurks there in the silt, jaws parted. You shift your stance just before it lunges out of the gloom.
+  *set combat_enemy_advantage false
+  *goto ahf_lacedon_fight
+*else
+  The shadow under the pilings shifts a heartbeat too fast. A lacedon bursts out of the black water, grey skin slick with river weed, claws sweeping for your throat before you can brace yourself.
+  *set combat_enemy_advantage true
+  *goto ahf_lacedon_fight
+
+*label ahf_lacedon_fight
+*set combat_is_nonlethal false
+*set combat_lib_1 "lacedon"
+*set combat_enemy_name_override "Lacedon"
+*set combat_enemy_epithet_override "the lacedon"
+*set combat_terrain_layout "random_light"
+*set combat_no_morale true
+*set combat_open_sky true
+*gosub_scene combat fight_library
+*if (combat_outcome = "player_died")
+  *set death_cause "combat"
+  *goto_scene death death_screen
+*if (combat_outcome = "victory")
+  *set ahf_lacedon_cleared true
+  *if (not(ahf_lacedon_looted))
+    *set ahf_lacedon_looted true
+    *set currency_add_amount 15
+    *gosub_scene economy currency_add
+    *gosub_scene equipment inv_add "althea_phial" 1
+  *set minutes_to_pass 5
+  *set time_advance_call_id "ahf_lacedon_win"
+  *gosub ahf_advance_time
+  [b]◈ QUIET WATER[/b]
+  *line_break
+  The lacedon collapses face down into the shallows, its limbs twitching once before the current settles around it. The stench of rot thins in the river air.
+
+  Reaching into the hollow beneath the roots, you drag out a drowned hauler's rotted pouch. Inside are fifteen copper coins and an unbroken clay flask sealed tight with wax: a phial of Saint Althea's water. Durgan will want to know the crossing is safe.
+
+  [i](Gained 15 Copper Bits and 1 Saint Althea's Water.)[/i]
+  *choice
+    # Pick up the arsonist's shoe and follow the blood trail to the cabins. [~10 min]
+      *goto ahf_cabin
+    # Return to the clearing.
+      *goto ahf_exit
+*else
+  *set minutes_to_pass 5
+  *set time_advance_call_id "ahf_lacedon_flee"
+  *gosub ahf_advance_time
+  You break free of the mud and scramble up onto the timber span, leaving the lacedon snarling in the gloom below.
+  *choice
+    # Take the shoe and follow the blood trail to the cabins. [~10 min]
+      *goto ahf_cabin
+    # Return to the clearing.
+      *goto ahf_exit
+
+*label ahf_bridge_leave_culvert
+You climb up the clay slope, leaving the glowing stone and the hissing thing beneath the pilings.
+*choice
+  # Pick up the shoe and follow the blood trail to the cabins. [~10 min]
+    *goto ahf_cabin
+  # Return to the clearing.
+    *goto ahf_exit
+
+*label ahf_cabin
+*set scenery_subplace "ashrun_holt_clearing"
+*set minutes_to_pass 10
+*set time_advance_call_id "ahf_cabin_walk"
+*gosub ahf_advance_time
+[b]◈ JORY'S CABIN[/b]
+*line_break
+The blood drops cross the beaten edge of the clearing and stop at a low log cabin downwind of the charcoal track. The door is unlatched. Inside, the room smells of wet wool, tallow, and stale ale.
+
+A lean man in his late twenties sits on a stool near the unlit stove, wrapping a stained strip of linen around his left forearm. Three jagged tears bleed through the cloth. His right foot wears a muddy lace boot; his left foot is bare and bruised.
+
+When you drop the matching boot onto his table next to the charred pine knot, his hands freeze.
+
+"Keep your voice down," he mutters, eyes darting to the shuttered window. "Name's Jory. Look, I was drunk. That dwarf comes up from Timbermouth, takes all the haulers' coin, takes work my uncle used to mend for half the price. I threw a pitch knot on his bark roof to smoke him out. Did not mean for the whole shed to go up, and then some river devil nearly took my arm off under the span."
+
+He reaches into a tin box by the stove and slides a stack of coins across the boards. "Twenty five copper. All I have got. Tell Durgan it was a stray spark or some drifter heading south. Nobody has to know."
+
+*gosub_scene dungeon dg_spell_source "charm_person" "Charm Person" 0 "spell"
+*temp ahf_can_charm dg_ss_can
+*temp ahf_word_charm dg_ss_word
+*gosub_scene dungeon dg_spell_source "thaumaturgy" "Thaumaturgy" 0 "cantrip"
+*temp ahf_can_thaum dg_ss_can
+*temp ahf_word_thaum dg_ss_word
+*choice
+  *if (ahf_can_charm)
+    # [${ahf_word_charm}: Charm Person] Ease his guard and urge him to confess. [Persuasion, Adv]
+      *goto ahf_confront_charm
+  # Urge him to face Durgan now before the whole village notices his wounds. [Persuasion]
+    *goto ahf_confront_persuade
+  *if (ahf_can_thaum)
+    # [${ahf_word_thaum}: Thaumaturgy] Boom your voice and slam the shutters. [Intimidation, Adv]
+      *goto ahf_confront_thaum
+  # Step closer and tell him he walks to Durgan or gets dragged there. [Intimidation]
+    *goto ahf_confront_intimidate
+  # Grab him before he reaches the stove poker and haul him out. [Athletics]
+    *goto ahf_confront_force
+  # Pocket the twenty five copper and agree to cover for him.
+    *goto ahf_take_bribe
+
+*label ahf_confront_charm
+*gosub_scene dungeon dg_spell_source "charm_person" "Charm Person" 0 "spell"
+*gosub_scene dungeon dg_spell_cast "charm_person"
+*set ahf_jory_charmed true
+*set advantage true
+*gosub_scene dice_engine roll_skill_check 13 "persuasion" "" "" "" "" ""
+*set minutes_to_pass 5
+*set time_advance_call_id "ahf_charm_time"
+*gosub ahf_advance_time
+*if (check_success)
+  Warmth settles into your tone as the spell takes hold. Jory's shoulders drop, the panic draining out of his face as if he were talking to an old friend across a tavern table.
+
+  "You are right," he sighs, staring at his bandaged arm. "Lysa Thorn will see the cuts by morning anyway. Better I face Durgan now and work off the timber than get run out of the Holt." He pulls his shoe back on and stands up quietly.
+  *set ahf_stage 4
+  *set ahf_ending "returned_peaceful"
+  *goto ahf_walk_back
+*else
+  The spell eases the panic in his eyes, and he takes his hand off the table, treating you like a friendly neighbor rather than an enemy. Even so, his jaw stays set. "Look, friend, I know you mean well, but Durgan will take my hide if I walk over there. Just take the coins and let me patch my arm."
+  *goto ahf_confront_fallback
+
+*label ahf_confront_persuade
+*gosub_scene dice_engine roll_skill_check 13 "persuasion" "" "" "" "" ""
+*set minutes_to_pass 5
+*set time_advance_call_id "ahf_persuade_time"
+*gosub ahf_advance_time
+*if (check_success)
+  You lay it out plain: half the village will notice the claw marks on his arm and his missing boot before sundown. If he walks over now and offers to haul timber and charcoal to rebuild the shed, Lysa Thorn will keep it a village debt instead of a hanging matter.
+
+  Jory stares at the stack on the table, then drags his hand down his face. "Damn it," he mutters. "All right. Give me the boot."
+  *set ahf_stage 4
+  *set ahf_ending "returned_peaceful"
+  *goto ahf_walk_back
+*else
+  Jory shakes his head hard, his fingers edging toward the iron poker by the stove. "Durgan will not settle for timber, and you know it. Take the coins and walk out."
+  *goto ahf_confront_fallback
+
+*label ahf_confront_thaum
+*gosub_scene dungeon dg_spell_source "thaumaturgy" "Thaumaturgy" 0 "cantrip"
+*gosub_scene dungeon dg_spell_cast "thaumaturgy"
+*set advantage true
+*gosub_scene dice_engine roll_skill_check 13 "intimidation" "" "" "" "" ""
+*set minutes_to_pass 5
+*set time_advance_call_id "ahf_thaum_time"
+*gosub ahf_advance_time
+*if (check_success)
+  Your voice swells to a low thunder that shakes the rafters. Both shutters slam against the log walls at once, and ash puffs out of the stove grate. Jory flinches so hard his stool tips over.
+
+  "Stop, stop! I am coming!" he gasps, scrambling for his shoe with shaking fingers. "Do not do that again. I will tell Durgan everything."
+  *set ahf_stage 4
+  *set ahf_ending "returned_peaceful"
+  *goto ahf_walk_back
+*else
+  The shutters bang and ash blows across the floor, making Jory pale, but cornered fear stiffens his spine. He snatches the iron poker off the stove hearth. "Stay off! Take the coins or try me!"
+  *goto ahf_confront_fallback
+
+*label ahf_confront_intimidate
+*gosub_scene dice_engine roll_skill_check 13 "intimidation" "" "" "" "" ""
+*set minutes_to_pass 5
+*set time_advance_call_id "ahf_intim_time"
+*gosub ahf_advance_time
+*if (check_success)
+  You step into his reach without blinking. He looks at your gear, then down at his own bleeding forearm, and the fight drains out of him.
+
+  "Fine," he admits, voice shaking. "Keep your hands off me. I will put the boot on and walk."
+  *set ahf_stage 4
+  *set ahf_ending "returned_peaceful"
+  *goto ahf_walk_back
+*else
+  Cornered fear gets the better of him. Jory grabs the iron poker by the stove and holds it across his chest. "I am not walking into Durgan's hammer. Take the coins or come take me."
+  *goto ahf_confront_fallback
+
+*label ahf_confront_fallback
+*choice
+  # Wrest him down and haul him to Durgan by force. [Athletics]
+    *goto ahf_confront_force
+  # Pocket the twenty five copper and agree to cover for him.
+    *goto ahf_take_bribe
+
+*label ahf_confront_force
+*gosub_scene dice_engine roll_skill_check 12 "athletics" "" "" "" "" ""
+*if (not(ahf_jory_subdued))
+  *set ahf_jory_subdued true
+  *if (not(check_success))
+    *if (hp_current > 2)
+      *set hp_current (hp_current - 2)
+*set ahf_stage 4
+*set ahf_ending "returned_subdued"
+*set minutes_to_pass 5
+*set time_advance_call_id "ahf_force_time"
+*gosub ahf_advance_time
+*if (check_success)
+  You knock the stove poker aside before he can swing, catch his good wrist, and twist him cleanly onto the planks. With one arm already clawed raw, he cannot break your grip. You haul him up by the collar, shove his shoe into his hand, and march him out the door.
+*else
+  He swings the iron poker wild as you close in, cracking your shoulder before you drive him over the stool and pin him to the floor. Bruised and breathing hard, you wrench the iron away, pull him upright, and march him out the door.
+*goto ahf_walk_back
+
+*label ahf_take_bribe
+*set ahf_stage 4
+*set ahf_ending "bribed"
+*if (not(ahf_reward_claimed))
+  *set ahf_reward_claimed true
+  *set currency_add_amount 25
+  *gosub_scene economy currency_add
+*set minutes_to_pass 5
+*set time_advance_call_id "ahf_bribe_time"
+*gosub ahf_advance_time
+You sweep the twenty five coins into your purse and leave his shoe on the table. Jory lets out a long, ragged breath.
+
+"Thank you," he whispers, already reaching for a clean rag. "I will keep my head down. You will not hear another word out of me."
+
+[i](Gained 25 Copper Bits.)[/i]
+*page_break Walk back to Durgan at the burnt smithy...
+*goto ahf_return_durgan
+
+*label ahf_walk_back
+*page_break March Jory back to Durgan at the burnt smithy...
+*goto ahf_return_durgan
+
+*label ahf_return_durgan
+*set scenery_subplace "ashrun_holt_work_yards"
+*set ahf_stage 5
+*set ahf_finished true
+*if ((ahf_ending = "returned_peaceful") or (ahf_ending = "returned_subdued"))
+  *if (not(ahf_reward_claimed))
+    *set ahf_reward_claimed true
+    *temp ahf_pay 40
+    *if (ahf_lacedon_cleared)
+      *set ahf_pay 55
+    *set currency_add_amount ahf_pay
+    *gosub_scene economy currency_add
+    *if (ahf_ending = "returned_peaceful")
+      *gosub_scene dice_engine heroic_award "ashrun_forge_peaceful"
+*set minutes_to_pass 5
+*set time_advance_call_id "ahf_return_time"
+*gosub ahf_advance_time
+[b]◈ RECKONING AT THE ASHES[/b]
+*line_break
+*if (ahf_ending = "bribed")
+  Durgan looks up from his crate of tongs as you step onto the blackened ground. You tell him the tracks broke off at the water and whoever set the fire was likely a drifter heading downriver, or a stray coal that rolled under the eaves.
+
+  Durgan stares at you for a long moment, then down at his dead hearth. "A drifter," he repeats flatly. He bends to his crate without reaching for his purse. "Right. Thanks for the walk."
+*else
+  Durgan straightens up slowly as you bring Jory onto the cinders, the resin pine knot in one hand and the story laid bare. Jory keeps his eyes on the ground, clutching his bandaged forearm.
+
+  "Jory," Durgan growls, his voice low and hard. "I mended your brother's saw twice last autumn for two loaves and a jar of lard."
+
+  *if (ahf_ending = "returned_peaceful")
+    "I know," Jory mutters. "I was drunk and stupid. I will haul the logs for a new roof and burn your charcoal free until the bellows are paid."
+
+    Durgan studies him, then nods once toward the Longhouse. "We will set the mark in front of Lysa Thorn so you do not forget it by winter." He counts forty coins into your palm, heavy and square.
+    *if (ahf_lacedon_cleared)
+      When you mention the lacedon under the haulers' span, his eyebrows shoot up. "A river ghoul right beneath the timbers? That alone is worth fifteen more." He adds the extra coin to your hand.
+
+      [i](Gained 5 Silver Marks, 5 Copper Bits, and +1 Heroic Inspiration.)[/i]
+    *else
+      [i](Gained 4 Silver Marks and +1 Heroic Inspiration.)[/i]
+  *else
+    Durgan steps close enough that Jory shrinks away. "We are walking to Lysa Thorn right now. You will haul timber and burn charcoal until every shingle is replaced." He turns to you and counts forty coins into your palm.
+    *if (ahf_lacedon_cleared)
+      When you tell him about the lacedon you put down under the crossing, he whistles low. "Beneath the haulers' timbers? Here, take another fifteen for sparing the village a funeral."
+
+      [i](Gained 5 Silver Marks and 5 Copper Bits.)[/i]
+    *else
+      [i](Gained 4 Silver Marks.)[/i]
+
+*page_break Return to the clearing...
+*goto ahf_exit
+
+*label ahf_post_quest
+[b]◈ THE SMITHY YARD[/b]
+*line_break
+*if (ahf_ending = "bribed")
+  The charred rafters of the smithy still sit collapsed around the dead hearth. Durgan has stacked his anvil and tongs on a sled near the work track, ready to haul them toward Timbermouth.
+*else
+  Fresh peeled logs and bundles of bark shingles are stacked near the anvil, and the frame of a new roof is already going up. Durgan nods to you from the hearth as he tests the mended bellows.
+*page_break Return to the clearing...
+*goto ahf_exit
+
+*label ahf_advance_time
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return
+
+*label ahf_exit
+*if (ahf_from_dev)
+  *set ahf_from_dev false
+  *goto_scene dev_hub dev_menu_quests
+*goto_scene timbermouth/ashrun_holt/ashrun_holt ashrun_holt
+
+*label count_finished_ashrun_forge
+*if (ahf_finished)
+  *set quests_finished + 1
+*return

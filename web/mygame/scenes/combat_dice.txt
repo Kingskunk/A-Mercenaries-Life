@@ -121,7 +121,7 @@
 *script var p = String(stats.combat_def_prefix), t = " " + String(stats.combat_defense_type) + " "; function norm(v) { return " " + String(v || "").replace(/\s+/g, " ").trim() + " "; } function yes(v) { return v === true || v === "true"; } stats.combat_def_immune = norm(stats[p + "immune_types"]).indexOf(t) >= 0; stats.combat_def_resist = norm(stats[p + "resist_types"]).indexOf(t) >= 0; stats.combat_def_vulnerable = norm(stats[p + "vulnerable_types"]).indexOf(t) >= 0; stats.combat_def_nonmagic = String(stats[p + "nonmagic"] || ""); stats.combat_def_silvered = yes(stats[p + "nonmagic_silvered"]); stats.combat_def_adamantine = yes(stats[p + "nonmagic_adamantine"]);
 *return
 
-*comment adjust_damage_packet <defender prefix> <amount> <damage type> <enemy slot>: ONE damage packet of one type against one defender. The slot (0 for an ally or the player) is the enemy whose "wet" state and defense_known apply.
+*comment adjust_damage_packet <defender prefix> <amount> <damage type> <enemy slot>: ONE damage packet of one type against one defender. The slot (0 for an ally or the player) is the enemy whose "wet" state and defense_known apply; with slot 0 the player's or that ally's own Wet counter applies.
 *comment   immune (a listed type, or nonmagical weapons not beaten by the attacker's weapon): the packet is 0, and immunity beats resistance and vulnerability;
 *comment   resistant: half, rounded down; vulnerable: double; resistant and vulnerable together cancel.
 *comment NONMAGICAL WEAPONS: only while combat_packet_is_weapon is true and the type is bludgeoning, piercing or slashing. The defender's nonmagic defense is beaten by a magical weapon (combat_atk_magical), a silvered one against a defender that names
@@ -177,6 +177,16 @@
 *temp adp_wet 0
 *if (adp_slot > 0)
   *set adp_wet {(("combat_enemy" & adp_slot) & "_wet")}
+*elseif (adp_prefix = "player_")
+  *set adp_wet combat_player_wet
+*elseif (adp_prefix = "combat_ally1_")
+  *set adp_wet combat_ally1_wet
+*elseif (adp_prefix = "combat_ally2_")
+  *set adp_wet combat_ally2_wet
+*elseif (adp_prefix = "combat_ally3_")
+  *set adp_wet combat_ally3_wet
+*elseif (adp_prefix = "combat_ally4_")
+  *set adp_wet combat_ally4_wet
 *comment WEB BURNS (3.4): fire that reaches an enemy standing on the player's Web patch sets the patch alight; combat_spells.txt web_burn_check resolves it once the blow's banners have printed.
 *if ((((adp_slot > 0) and (adp_type = "fire")) and (adp_amount > 0)) and ((combat_player_concentrating = "web") and (not(combat_web_burning))))
   *temp adp_web_pos {(("combat_enemy" & adp_slot) & "_position")}
@@ -201,6 +211,11 @@
   *if (not(combat_foe_web_owner = ""))
     *set combat_foe_web_burn_pending true
     *set combat_foe_web_burn_pos adp_fw_pos
+  *comment GREASE CATCHES FIRE (2026-11-23): the same fire on someone standing in Grease sets the patch alight (combat_spells.txt grease_fire_check).
+  *gosub_scene combat_spells grease_at adp_fw_pos
+  *if (combat_grease_here)
+    *set combat_grease_fire_pending true
+    *set combat_grease_fire_pos adp_fw_pos
 *if (adp_wet > 0)
   *if (adp_type = "fire")
     *set adp_resisted true
@@ -2959,6 +2974,57 @@ ${combat_player_dmg_roll_banner}
 *gosub condition_tick_down ct_prefix "poisoned"
 *comment BLEEDING (3 rounds; its damage is at the start of the bearer's turn, combat.txt). Dazed and Off-Balance end with their attacker's turn instead.
 *gosub condition_tick_down ct_prefix "bleeding"
+*comment WET (the water jug; 2 = a fresh soaking): no save; one turn off at the end of each of the bearer's turns. Not condition_tick_down: Wet has no _dc or _src fields.
+*temp ct_wet {(ct_prefix & "wet")}
+*if (ct_wet > 0)
+  *set {(ct_prefix & "wet")} (ct_wet - 1)
+*comment WATER (2026-11-23): ending the turn standing in a water patch soaks the bearer afresh (2) and puts out any fire on it. Silent: the Wet pip shows it.
+*temp ct_pos combat_lane_player_position
+*if (not(ct_prefix = "combat_player_"))
+  *set ct_pos {(ct_prefix & "position")}
+*gosub_scene combat_movement combat_water_at ct_pos
+*if (combat_water_here)
+  *set {(ct_prefix & "wet")} 2
+  *set {(ct_prefix & "burning")} 0
+*return
+
+*comment BURN IGNITE (2026-11-23): sets the player or an ally (by field prefix) burning for three of its turns, unless it is Wet: the fire cannot take hold.
+*comment combat_burn_ignite_result is "lit" or "wet" for the caller's lines. An enemy's fire sources still set its slot's _burning themselves.
+*label combat_burn_ignite
+*params cbi_prefix
+*temp cbi_wet 0
+*temp cbi_burn 0
+*if (cbi_prefix = "combat_player_")
+  *set cbi_wet combat_player_wet
+  *set cbi_burn combat_player_burning
+*elseif (cbi_prefix = "combat_ally1_")
+  *set cbi_wet combat_ally1_wet
+  *set cbi_burn combat_ally1_burning
+*elseif (cbi_prefix = "combat_ally2_")
+  *set cbi_wet combat_ally2_wet
+  *set cbi_burn combat_ally2_burning
+*elseif (cbi_prefix = "combat_ally3_")
+  *set cbi_wet combat_ally3_wet
+  *set cbi_burn combat_ally3_burning
+*elseif (cbi_prefix = "combat_ally4_")
+  *set cbi_wet combat_ally4_wet
+  *set cbi_burn combat_ally4_burning
+*if (cbi_wet > 0)
+  *set combat_burn_ignite_result "wet"
+  *return
+*set combat_burn_ignite_result "lit"
+*if (cbi_burn >= 3)
+  *return
+*if (cbi_prefix = "combat_player_")
+  *set combat_player_burning 3
+*elseif (cbi_prefix = "combat_ally1_")
+  *set combat_ally1_burning 3
+*elseif (cbi_prefix = "combat_ally2_")
+  *set combat_ally2_burning 3
+*elseif (cbi_prefix = "combat_ally3_")
+  *set combat_ally3_burning 3
+*elseif (cbi_prefix = "combat_ally4_")
+  *set combat_ally4_burning 3
 *return
 
 *label condition_tick_down

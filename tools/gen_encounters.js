@@ -126,7 +126,7 @@ var encounters = (catalog.encounters || []).map(function (enc) {
   ["leader", "nonlethal_slot"].forEach(function (k) {
     if (enc[k] !== undefined && (!isInt(enc[k]) || enc[k] < 1 || enc[k] > slots.length)) fail(where, k + " must be a slot from 1 to " + slots.length);
   });
-  ["morale", "nonlethal", "no_flee"].forEach(function (k) {
+  ["morale", "nonlethal", "no_flee", "open_sky"].forEach(function (k) {
     if (enc[k] !== undefined && typeof enc[k] !== "boolean") fail(where, k + " must be true or false");
   });
   return { enc: enc, slots: slots };
@@ -144,6 +144,7 @@ function genLabel(x) {
   out.push("*set combat_is_nonlethal " + (enc.nonlethal ? "true" : "false"));
   out.push("*set combat_no_morale " + (enc.morale === false ? "true" : "false"));
   if (enc.no_flee !== undefined) out.push("*set combat_no_flee " + enc.no_flee);
+  if (enc.open_sky) out.push("*set combat_open_sky true");
   if (enc.leader !== undefined) out.push("*set combat_leader_slot " + enc.leader);
   if (enc.nonlethal_slot !== undefined) out.push("*set combat_nonlethal_slot " + enc.nonlethal_slot);
   x.slots.forEach(function (s, i) {

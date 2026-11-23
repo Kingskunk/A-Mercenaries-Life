@@ -561,6 +561,7 @@
 *comment initiative and attacks before the player ever sees a menu -- fight_round_hub's own banner might not
 *comment print until after that first attack.
 *gosub announce_turn_order
+*gosub combat_rain_banner
 *return
 
 *comment ENEMY DEFENSE OVERRIDES (2026-10-31): applies <prefix>nonmagic_override ("immune", "resist", then any of "silvered" and "adamantine" as the exceptions) and the <prefix>resist_override, _vulnerable_override and _immune_override lists (any number of damage types) to the slot named by combat_defense_prefix
@@ -910,6 +911,47 @@
   *set locked_combat_init_page_id page_id
 *return
 
+*comment RAIN (2026-11-23, BG3's rule): a fight under the open sky (combat_open_sky, set by the fight or its caller) in wet weather (weather_wet: Rain,
+*comment Sleet, Storm; snow never soaks) soaks every living combatant at the start of every round, so all of them stay Wet while it lasts (2, and
+*comment condition_tick takes one off at the end of each one's turn), and puts out any fire on anyone, fire patches included. Fixed-value sets, so a replayed page changes nothing.
+*label combat_rain_soak
+*if (not((combat_open_sky) and (weather_wet)))
+  *return
+*set combat_player_wet 2
+*set combat_player_burning 0
+*if (combat_terrain1_type = "fire")
+  *set combat_terrain1_type "none"
+*if (combat_terrain2_type = "fire")
+  *set combat_terrain2_type "none"
+*if (combat_terrain3_type = "fire")
+  *set combat_terrain3_type "none"
+*if (combat_terrain4_type = "fire")
+  *set combat_terrain4_type "none"
+*temp crs_i 1
+*label combat_rain_soak_ally_loop
+*if (crs_i <= combat_ally_slot_cap)
+  *if ({(("combat_ally" & crs_i) & "_hp")} > 0)
+    *set {(("combat_ally" & crs_i) & "_wet")} 2
+    *set {(("combat_ally" & crs_i) & "_burning")} 0
+  *set crs_i + 1
+  *goto combat_rain_soak_ally_loop
+*set crs_i 1
+*label combat_rain_soak_enemy_loop
+*if (crs_i <= combat_enemy_slot_cap)
+  *if ({(("combat_enemy" & crs_i) & "_hp")} > 0)
+    *set {(("combat_enemy" & crs_i) & "_wet")} 2
+    *set {(("combat_enemy" & crs_i) & "_burning")} 0
+  *set crs_i + 1
+  *goto combat_rain_soak_enemy_loop
+*return
+
+*comment The opening page's one line for the rain (the state only; the Wet pips and their hover cards carry the rule).
+*label combat_rain_banner
+*if ((combat_open_sky) and (weather_wet))
+  [b][🌧️ ${weather} | Everyone is Wet][/b]
+  *line_break
+*return
+
 *label announce_turn_order
 *comment One line, once, right after combat_roll_initiative builds the order -- the only player-visible
 *comment confirmation the turn queue exists at all. A real name per position (bare "You" for the player, matching
@@ -1206,6 +1248,7 @@
 *set combat_friendly_targeting_active false
 *set combat_friendly_target 0
 *set combat_is_nonlethal false
+*set combat_open_sky false
 *comment Guard against a condition-inflicted disadvantage the player never
 *comment burned (fled/won before their next roll) bleeding into an unrelated
 *comment skill check outside this fight.
@@ -1584,6 +1627,11 @@
   *comment oa_used reset above.
   *set {(("combat_ally" & fc_a_i) & "_oa_used")} false
   *set {(("combat_ally" & fc_a_i) & "_prone")} false
+  *set {(("combat_ally" & fc_a_i) & "_wet")} 0
+  *set {(("combat_ally" & fc_a_i) & "_burning")} 0
+  *set {(("combat_ally" & fc_a_i) & "_burn_page")} 0
+  *set {(("combat_ally" & fc_a_i) & "_burn_dealt")} 0
+  *set {(("combat_ally" & fc_a_i) & "_burn_douse")} false
   *comment A stun (2026-11-03) never carries into the next fight.
   *set {(("combat_ally" & fc_a_i) & "_stunned")} 0
   *set {(("combat_ally" & fc_a_i) & "_stun_page")} 0
@@ -1692,6 +1740,12 @@
 *set combat_player_off_balance_dc 0
 *set combat_player_off_balance_src ""
 *set combat_player_bleeding 0
+*set combat_player_wet 0
+*set combat_player_burning 0
+*set combat_player_burn_page 0
+*set combat_player_burn_dealt 0
+*set combat_player_burn_conc ""
+*set combat_player_burn_suffix ""
 *set combat_player_bleeding_dc 0
 *set combat_player_bleeding_src ""
 *set combat_player_slowed_dc 0
@@ -3470,6 +3524,7 @@
 *comment ============================================================================
 
 *label combat_begin_round
+*gosub combat_rain_soak
 *comment Chilled from a caster that has since fallen: it has no next turn to end it on, so it ends with the round.
 *if (combat_player_no_heal_slot > 0)
   *if ({(("combat_enemy" & combat_player_no_heal_slot) & "_hp")} <= 0)
@@ -3615,6 +3670,7 @@
 *gosub_scene combat_dice condition_tick "combat_player_" 7
 *comment GREASE (3.9a): ending the turn on a patch is a Dexterity save or Prone.
 *gosub_scene combat_spells grease_end_turn "combat_player_" 7
+*gosub_scene combat_spells fire_end_turn "combat_player_" 7
 *goto combat_next_turn
 
 *label combat_spend_attack
@@ -5455,6 +5511,16 @@
       *line_break
       *goto fight_action_spent
 
+  *if ((combat_player_actions_left > 0) and (combat_player_burning > 0))
+    # [b][ACTION][/b] [b][Put Out the Flames][/b] Beat out the fire on you.
+      *comment BURNING (2026-11-23): the action ends the fire, no roll, as an enemy's or an ally's choice to douse does. A fixed-value set, so a replay changes nothing.
+      *set combat_player_burning 0
+      You drop and roll, beating at the flames until the last of them is out.
+      *line_break
+      [b][💨 You put out the fire][/b]
+      *line_break
+      *goto fight_action_spent
+
   *if (((combat_player_actions_left > 0) and (combat_melee_reach)))
     # [b][ACTION][/b] [b][Shove][/b] Drive an enemy in reach back to Close.@{show_stat_hints  [Athletics vs. its stronger STR/DEX defense]|}
       *gosub_scene combat_movement fight_reach_check
@@ -6675,10 +6741,10 @@
         *set use_item_id "fortifying_tonic"
         *goto fight_use_do
   *comment GEN:END combat_potion_options
-  *comment THE WATER JUG (2026-10-19, the user): a full jug is thrown from the same Throw button. A ranged attack, Dexterity against AC, no damage; a hit leaves the foe Wet for three of its turns (fight_throw_water).
+  *comment THE WATER JUG (2026-10-19, the user): a full jug is thrown from the same Throw button. A ranged attack, Dexterity against AC, no damage; a hit leaves the foe Wet for two of its turns (fight_throw_water).
   *if ((has_water_jug) and (jug_full > 0))
     *if ((combat_player_actions_left > 0) and (combat_in_medium))
-      # [b][ACTION][/b] [b][Throw: Water Jug][/b] Fling the water at ${combat_med_epithet}.@{show_stat_hints  [Thrown: a hit leaves a foe Wet for 3 turns]|}
+      # [b][ACTION][/b] [b][Throw: Water Jug][/b] Fling the water at ${combat_med_epithet}.@{show_stat_hints  [Thrown: a hit leaves a foe Wet for 2 turns]|}
         *set use_item_id "water_jug"
         *goto fight_throw_item
   *comment UNIQUE ITEM USES (2026-11-01, the user's design): the Silverstar's touch and the Philter of Remembrance are item uses, so they are "Items: <name>" and sit on the HUD's Items button, not in the Action or Bonus sections. Each still costs the action. The scene decides when they apply:
@@ -7017,7 +7083,7 @@ You pull the stopper and hurl the philter at ${combat_enemy_epithet}.
 *gosub fight_tail_break
 *goto fight_check_enemy_hp
 
-*comment THE WATER JUG, THROWN (2026-10-19, the user's design, copying Alchemist's Fire's hit rule): a ranged attack, Dexterity + proficiency against AC, at Mid-Range, the whole jug's water flung at the target. No damage. A hit leaves the enemy Wet for three of its turns
+*comment THE WATER JUG, THROWN (2026-10-19, the user's design, copying Alchemist's Fire's hit rule): a ranged attack, Dexterity + proficiency against AC, at Mid-Range, the whole jug's water flung at the target. No damage. A hit leaves the enemy Wet for two of its turns
 *comment (combat_enemyN_wet): it cannot catch fire, resists fire, and takes double from cold and lightning (combat_dice.txt). A burning enemy cannot be soaked: the water goes to steam and it stays as it was. The water is spent hit or miss (jug_full - 1), the jug stays. Shares the
 *comment cantrip replay lock because it costs the same action; the target is picked and ranged inside the lock.
 *label fight_throw_water
@@ -7053,7 +7119,7 @@ You pull the stopper and hurl the philter at ${combat_enemy_epithet}.
     *set combat_throw_wet "steam"
   *else
     *set combat_throw_wet "soaked"
-    *set {(ftw_p & "wet")} 3
+    *set {(ftw_p & "wet")} 2
 *if (check_success)
   *if (combat_throw_wet = "steam")
     *if (combat_throw_v = 1)
@@ -7072,7 +7138,7 @@ You pull the stopper and hurl the philter at ${combat_enemy_epithet}.
     *if (combat_throw_v = 3)
       You swing the jug and the water leaves it in one cold arc, drenching ${combat_throw_epithet} from head to foot.
     *line_break
-    [b][💧 Water Jug: Hit | ${combat_throw_name} is Wet for 3 turns: it cannot catch fire, resists fire, and takes double cold and lightning damage][/b]
+    [b][💧 Water Jug: Hit | ${combat_throw_name} is Wet for 2 turns: it cannot catch fire, resists fire, and takes double cold and lightning damage][/b]
 *else
   *if (combat_throw_v = 1)
     The water goes wide and slaps onto the ground, leaving a dark stain and ${combat_throw_epithet} dry.
@@ -8972,6 +9038,102 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *set combat_turn_advanced_this_page true
 *return
 
+*comment BURNING, player side (2026-11-23): 1d4 fire at the start of the player's turn, resistances applied (Wet, a Fire Resistance Potion), with a concentration save for it, and the fire
+*comment runs down one turn. Stored against the page id (_burn_page, _burn_dealt, _burn_suffix, _burn_conc), so a replay prints the same lines and never burns twice.
+*label combat_player_burn_tick
+*if (not(combat_player_burn_page = page_id))
+  *temp cpbn_die 1
+  *rand cpbn_die 1 4
+  *gosub_scene combat_dice adjust_incoming_damage_packet cpbn_die "fire"
+  *set combat_player_burn_dealt combat_packet_damage
+  *set combat_player_burn_suffix combat_packet_suffix
+  *set hp_current - combat_player_burn_dealt
+  *if (hp_current < 0)
+    *set hp_current 0
+  *if ((not(combat_player_can_die)) and (hp_current < 1))
+    *set hp_current 1
+  *set combat_player_burning - 1
+  *set combat_player_burn_conc ""
+  *if (combat_player_burn_dealt > 0)
+    *set combat_conc_save_triggered false
+    *set combat_conc_save_banner ""
+    *set combat_conc_ended_banner ""
+    *temp cpbn_quiet combat_save_quiet
+    *set combat_save_quiet true
+    *gosub_scene combat_dice concentration_damage_check "combat_player_" combat_player_burn_dealt 7
+    *set combat_save_quiet cpbn_quiet
+    *if (combat_conc_save_triggered)
+      *set combat_player_burn_conc combat_conc_save_banner
+    *if (not(combat_conc_ended_banner = ""))
+      *set combat_player_burn_conc ((combat_player_burn_conc & "[n/]") & combat_conc_ended_banner)
+  *set combat_player_burn_page page_id
+*temp cpbn_out ""
+*if (combat_player_burning <= 0)
+  *set cpbn_out " | The flames die out"
+[b][🔥 You burn: ${combat_player_burn_dealt} Fire damage${combat_player_burn_suffix} | HP: ${hp_current} / ${hp_max}${cpbn_out}][/b]
+*line_break
+*if (not(combat_player_burn_conc = ""))
+  ${combat_player_burn_conc}
+  *line_break
+*set combat_turn_advanced_this_page true
+*return
+
+*comment BURNING, ally side (2026-11-23): as the player's, and as an enemy's, an ally that can think of it spends its turn putting the fire out two turns in three (a feral one
+*comment never does); combat_burn_doused tells the caller the turn is spent. The choice is kept in _burn_douse for a replay of the page.
+*label combat_ally_burn_tick
+*params cabn_slot
+*set combat_burn_doused false
+*temp cabn_p (("combat_ally" & cabn_slot) & "_")
+*temp cabn_name {(cabn_p & "name")}
+*temp cabn_epi {(cabn_p & "epithet")}
+*if (not({(cabn_p & "burn_page")} = page_id))
+  *temp cabn_die 1
+  *rand cabn_die 1 4
+  *set combat_packet_is_weapon false
+  *gosub_scene combat_dice adjust_damage_packet cabn_p cabn_die "fire" 0
+  *temp cabn_dealt combat_packet_damage
+  *temp cabn_hp ({(cabn_p & "hp")} - cabn_dealt)
+  *if (cabn_hp < 0)
+    *set cabn_hp 0
+  *set {(cabn_p & "hp")} cabn_hp
+  *if (cabn_dealt > 0)
+    *if (cabn_hp <= 0)
+      *gosub_scene combat_dice concentration_end cabn_p
+    *else
+      *gosub_scene combat_dice concentration_damage_check cabn_p cabn_dealt 8
+  *temp cabn_left ({(cabn_p & "burning")} - 1)
+  *set {(cabn_p & "burning")} cabn_left
+  *set {(cabn_p & "burn_douse")} false
+  *temp cabn_profile {(cabn_p & "behavior_profile")}
+  *temp cabn_dv 1
+  *rand cabn_dv 1 3
+  *if (((cabn_hp > 0) and (cabn_left > 0)) and ((not(cabn_profile = "feral")) and (cabn_dv <= 2)))
+    *set {(cabn_p & "burning")} 0
+    *set {(cabn_p & "burn_douse")} true
+  *set {(cabn_p & "burn_dealt")} cabn_dealt
+  *set {(cabn_p & "burn_page")} page_id
+*temp cabn_shown {(cabn_p & "burn_dealt")}
+*temp cabn_hp_now {(cabn_p & "hp")}
+*temp cabn_max {(cabn_p & "max_hp")}
+*temp cabn_left_now {(cabn_p & "burning")}
+*temp cabn_douse {(cabn_p & "burn_douse")}
+*if (cabn_hp_now <= 0)
+  [b][🔥 ${cabn_name} burns: ${cabn_shown} Fire damage | Down][/b]
+*else
+  *temp cabn_out ""
+  *if ((cabn_left_now <= 0) and (not(cabn_douse)))
+    *set cabn_out " | The flames die out"
+  [b][🔥 ${cabn_name} burns: ${cabn_shown} Fire damage | HP: ${cabn_hp_now} / ${cabn_max}${cabn_out}][/b]
+*line_break
+*if ((cabn_hp_now > 0) and (cabn_douse))
+  *set combat_burn_doused true
+  $!{cabn_epi} drops and rolls, beating at the flames until the last of them is out, and spends the whole turn on it.
+  *line_break
+  [b][💨 ${cabn_name} puts out the fire | Turn spent][/b]
+  *line_break
+*set combat_turn_advanced_this_page true
+*return
+
 *label combat_ally_bleed_tick
 *params cabt_slot
 *temp cabt_p (("combat_ally" & cabt_slot) & "_")
@@ -9899,6 +10061,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *set locked_stat_bump_page_id page_id
   *gosub combat_begin_round
   *gosub combat_reinforcements_arrive false
+  *gosub combat_rain_soak
 *temp cnt_kind {("combat_turn_kind_" & combat_current_turn_index)}
 *temp cnt_slot {("combat_turn_slot_" & combat_current_turn_index)}
 *if (cnt_kind = "player")
@@ -9912,6 +10075,13 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *comment BLEEDING (3.3): the player bleeds at the start of their turn, and may drop from it.
   *if (combat_player_bleeding > 0)
     *gosub combat_player_bleed_tick
+    *if (combat_player_can_die) and (hp_current <= 0)
+      *goto fight_player_died
+    *if (not(combat_player_can_die)) and (hp_current <= 1)
+      *goto fight_rescued
+  *comment BURNING (2026-11-23): the same, for fire.
+  *if (combat_player_burning > 0)
+    *gosub combat_player_burn_tick
     *if (combat_player_can_die) and (hp_current <= 0)
       *goto fight_player_died
     *if (not(combat_player_can_die)) and (hp_current <= 1)
@@ -9963,7 +10133,6 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *comment Range costs it multiple turns too.
     *temp cnt_first_pass {("combat_turn_first_pass_" & combat_current_turn_index)}
     *temp cnt_slowed {(("combat_enemy" & cnt_slot) & "_slowed")}
-    *temp cnt_wet {(("combat_enemy" & cnt_slot) & "_wet")}
     *temp cnt_frightened {(("combat_enemy" & cnt_slot) & "_frightened")}
     *comment Where this enemy began its turn, for Web's "walked into the webs" save at the end of it.
     *temp cnt_web_from {(("combat_enemy" & cnt_slot) & "_position")}
@@ -10314,6 +10483,8 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
           [b][🕸️ ${combat_enemy_name} Steps Clear of the Web — ${combat_range_display_name}][/b]
         *if (combat_ai_terrain_step_reason = "leave_grease")
           [b][🛢️ ${combat_enemy_name} Steps Off the Grease — ${combat_range_display_name}][/b]
+        *if (combat_ai_terrain_step_reason = "leave_fire")
+          [b][🔥 ${combat_enemy_name} Steps Out of the Flames | ${combat_range_display_name}][/b]
         *line_break
         *gosub fight_booming_trigger
         *if (combat_boom_killed)
@@ -10560,6 +10731,8 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
           [b][🕸️ ${combat_enemy_name} Steps Clear of the Web — ${combat_range_display_name}][/b]
         *if (combat_ai_terrain_step_reason = "leave_grease")
           [b][🛢️ ${combat_enemy_name} Steps Off the Grease — ${combat_range_display_name}][/b]
+        *if (combat_ai_terrain_step_reason = "leave_fire")
+          [b][🔥 ${combat_enemy_name} Steps Out of the Flames | ${combat_range_display_name}][/b]
         *line_break
         *gosub fight_booming_trigger
         *if (combat_boom_killed)
@@ -10627,9 +10800,6 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *gosub fight_check_all_dead
     *if (combat_all_enemies_dead)
       *goto fight_victory_quiet
-    *comment Wet (the water jug): each of this enemy's turns takes one off, so a soaking lasts three of them.
-    *if (cnt_wet > 0)
-      *set {(("combat_enemy" & cnt_slot) & "_wet")} (cnt_wet - 1)
     *comment Frightened's end-of-turn Wisdom save, Blinded's Constitution save and Slowed's countdown all run in condition_tick (combat_dice.txt), which reads the live fields, so a Cause Fear whose concentration broke during this turn is already gone. If it died during its own turn (a Rebuke, Armor of Agathys) there is nothing to roll for.
     *if (combat_enemy_hp > 0)
       *temp cnt_cp (("combat_enemy" & cnt_slot) & "_")
@@ -10638,6 +10808,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
       *gosub_scene combat_spells enemy_step_in_check cnt_slot
       *comment GREASE (3.9a): ending the turn on a patch is a Dexterity save or Prone.
       *gosub_scene combat_spells grease_end_turn cnt_cp cnt_slot
+      *gosub_scene combat_spells fire_end_turn cnt_cp cnt_slot
       *gosub_scene combat_dice condition_tick cnt_cp cnt_slot
       *comment Off-Guard this enemy put on ends at the end of its next turn (3.3).
       *gosub_scene combat_dice move_cond_clear_by_attacker cnt_slot false
@@ -10667,6 +10838,13 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *if ({(("combat_ally" & cnt_slot) & "_bleeding")} > 0)
       *gosub combat_ally_bleed_tick cnt_slot
       *if ({(("combat_ally" & cnt_slot) & "_hp")} <= 0)
+        *goto cnt_ally_tail
+    *comment BURNING (2026-11-23): the ally burns at the start of its turn; one that drops, or spends the turn putting the fire out, has no more of it.
+    *if ({(("combat_ally" & cnt_slot) & "_burning")} > 0)
+      *gosub combat_ally_burn_tick cnt_slot
+      *if ({(("combat_ally" & cnt_slot) & "_hp")} <= 0)
+        *goto cnt_ally_tail
+      *if (combat_burn_doused)
         *goto cnt_ally_tail
     *comment STUN, ally side (2026-11-03): a stunned ally loses the turn before anything else, through the same gate as an enemy.
     *gosub combat_stun_gate "ally" cnt_slot
@@ -10891,6 +11069,8 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
               [b][🕸️ ${combat_attacker_name} Steps Clear of the Web][/b]
             *if (combat_ai_terrain_step_reason = "leave_grease")
               [b][🛢️ ${combat_attacker_name} Steps Off the Grease][/b]
+            *if (combat_ai_terrain_step_reason = "leave_fire")
+              [b][🔥 ${combat_attacker_name} Steps Out of the Flames][/b]
             *line_break
         *if (not(cnt_a_weapon = "ranged"))
           *gosub_scene combat_ai combat_choose_terrain_step "ally" cnt_slot cnt_a_target_position true false
@@ -11023,6 +11203,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
       *gosub_scene combat_spells ally_step_in_check cnt_slot
       *comment GREASE (3.9a): ending the turn on a patch is a Dexterity save or Prone.
       *gosub_scene combat_spells grease_end_turn cnt_ap cnt_slot
+      *gosub_scene combat_spells fire_end_turn cnt_ap cnt_slot
       *gosub_scene combat_dice condition_tick cnt_ap 0
     *set combat_ally_turn_from_slot 0
     *gosub_scene combat_dice concentration_reconcile
@@ -11097,6 +11278,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *comment Encounter template "boar_pack": Three wild boars rooting at the edge of a wood. Skittish beasts: hurt one badly or drop two and the rest may bolt.
 *set combat_is_nonlethal false
 *set combat_no_morale false
+*set combat_open_sky true
 *set combat_lib_1 "beast"
 *set combat_enemy_name_override "Boar 1"
 *set combat_enemy_epithet_override "the first boar"
@@ -11127,6 +11309,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *comment Encounter template "wolf_pair": Two grey wolves that circle in from Close range.
 *set combat_is_nonlethal false
 *set combat_no_morale false
+*set combat_open_sky true
 *set combat_lib_1 "beast"
 *set combat_enemy_name_override "Grey Wolf 1"
 *set combat_enemy_epithet_override "the first grey wolf"
@@ -11149,6 +11332,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *comment Encounter template "roadside_bandits": A bandit chief with a cutthroat at his side; an archer catches up on round 3. Cut the chief down and the rest give it up.
 *set combat_is_nonlethal false
 *set combat_no_morale false
+*set combat_open_sky true
 *set combat_leader_slot 1
 *set combat_lib_1 "swordsman"
 *set combat_enemy_name_override "Bandit Chief"
@@ -11173,6 +11357,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *comment Encounter template "hedge_mage_blindness": Test encounter assigning Poison Spray (at-will), Burning Hands (3 uses, 100% chance), and Blindness (1 use, 100% chance) to a Hedge-Mage at Mid-Range.
 *set combat_is_nonlethal false
 *set combat_no_morale false
+*set combat_open_sky true
 *set combat_lib_1 "hedge_mage"
 *set combat_enemy_name_override "Hedge-Mage"
 *set combat_enemy_epithet_override "the hedge-mage"
@@ -11192,6 +11377,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 
 *comment THE MAGE IN THE BURNING GROVE (2026-10-21): the one definition of Dubhar's fight, called by longshade/longshade_forest.txt lsf_r15_fight and by the dev hub. combat_dubhar_blights (0 to 2) says how many Twig Blights stand with him; the caller raises combat_player_can_die if the fight is to be lethal. The fight cannot be fled (combat_no_flee), ends the moment the mage falls (combat_leader_slot), and only the mage's defeat is non-lethal (combat_nonlethal_slot), so the blights keep creature lines. The mage opens at Mid-Range, the blights at Close.
 *label fight_dubhar
+*set combat_open_sky true
 *set combat_is_nonlethal false
 *set combat_no_flee true
 *set combat_leader_slot 1
@@ -11302,6 +11488,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 
 *label fight_trent_test
 *comment Dev-hub only (dev_hub.txt dev_combat_test_hub): Captain Trent's fight from Varren's Errand (varren_errand.txt slasher_fight), with the same stats and the same random standard terrain, so his Multiattack and the layouts can be tried without playing the quest. Non-lethal for him; combat_player_can_die stays false here, as for every test fight, so a loss is a rescue and not the death screen.
+*set combat_open_sky true
 *set combat_is_nonlethal true
 *set combat_lib_1 "swordsman"
 *set combat_enemy_name_override "Bronner Trent"
@@ -11309,6 +11496,9 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *set combat_enemy_hp_override 22
 *set combat_enemy_ac_override 14
 *set combat_enemy_atk_override 5
+*comment WATER (2026-11-23): the canal behind the player, one step back (coordinate 2). Ending a turn there leaves a combatant Wet.
+*set combat_terrain1_type "water"
+*set combat_terrain1_position 2
 *set combat_terrain_layout "random_standard"
 *set combat_enemy_ability_1_override "offhand_knife"
 *goto fight_library
@@ -11578,6 +11768,29 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *set combat_enemy_range 1
 *goto fight_library
 
+*label fight_dev_fire_patch_test
+*comment Dev fixture for fire patches (2026-11-23): flames at Close (4), between the player and the beast at Mid-Range (5). Stepping in or ending a turn there is a
+*comment Dexterity save (DC 10) or Burning. No Dev Hub entry; the play scripts start here.
+*set combat_is_nonlethal false
+*set combat_terrain1_type "fire"
+*set combat_terrain1_position 4
+*set combat_lib_1 "beast"
+*set combat_enemy_range 2
+*goto fight_library
+
+*label fight_dev_water_test
+*comment Dev fixture for water patches (2026-11-23): water at the player's own coordinate (3) and at Close (4), where the beast starts. Whoever ends a turn
+*comment there is Wet; the beast's bite is cold, so a soaked player takes double. No Dev Hub entry; the play scripts start here.
+*set combat_is_nonlethal false
+*set combat_terrain1_type "water"
+*set combat_terrain1_position 3
+*set combat_terrain2_type "water"
+*set combat_terrain2_position 4
+*set combat_lib_1 "beast"
+*set combat_enemy_range 1
+*set combat_enemy_dmg_type_override "cold"
+*goto fight_library
+
 *label fight_dev_difficult_terrain_test
 *comment Dev-hub fixture for the compact half-speed rule. The player begins beside Difficult Terrain and the
 *comment swordsman begins beyond it at Long Range. A player Dash can reach the difficult coordinate but cannot
@@ -11691,6 +11904,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *comment rate, on par with the Silt-Lurker -- casters are the ones at risk, which is why the calling scene offers a
 *comment toll / slip-away route instead of forcing this fight. Lethal fight, reports combat_outcome like any other;
 *comment the CALLER handles "rescued" (robbed, 1 HP) and "player_died" per the fight_player_died contract.
+*set combat_open_sky true
 *set combat_is_nonlethal false
 *comment Shares combat_roll_initiative's own whole-fight lock (combat_init_locked/locked_combat_init_page_id,
 *comment this file, 2026-09-30) -- this roll happens before *goto fight_library even reaches fight_setup, but on
@@ -11731,11 +11945,15 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *comment they came up to kill the bell-ringer, and survivors would talk to the Watch. Reports combat_outcome like any
 *comment other; the CALLER handles "rescued" (the Watch arrives, hp floored at 1) and "player_died" per the
 *comment fight_player_died contract.
+*set combat_open_sky true
 *set combat_is_nonlethal false
 *set combat_lib_1 "axeman"
 *set combat_lib_2 "slinger"
 *comment Formation: front-line axeman at Close, slinger at Mid-Range; see fight_dredge_ambush.
 *set combat_enemy2_range 2
+*comment WATER (2026-11-23): the harbour under the pier's far edge, at Long Range (coordinate 6). Ending a turn there leaves a combatant Wet.
+*set combat_terrain1_type "water"
+*set combat_terrain1_position 6
 *goto fight_library
 
 *label fight_shroud_thieves
@@ -11760,6 +11978,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *comment corpse on a courier run, and these are street thugs in a scene about carrying a bag -- the same reason
 *comment fight_shroud_thieves is non-lethal. Reports combat_outcome like any other; the CALLER handles "rescued"
 *comment and "fled" (the existing robbery prose) and "player_died" per the fight_player_died contract.
+*set combat_open_sky true
 *set combat_is_nonlethal true
 *set combat_lib_1 "knifeman"
 *set combat_lib_2 "slinger"
@@ -11771,6 +11990,7 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *comment Black Oath: The Short Purse (black_oath_short_purse.txt, orren_confront_brawl). Confronting Orren at his toll-post when
 *comment the player forces past his two hired dock-guards. NON-LETHAL: hired dock bouncers armed with maces
 *comment looking to rough someone up, not to commit murder on the boundary ramp. Reports combat_outcome like any other.
+*set combat_open_sky true
 *set combat_is_nonlethal true
 *set combat_lib_1 "guard"
 *set combat_enemy_name_override "Orren's Toll-Guard (Left)"

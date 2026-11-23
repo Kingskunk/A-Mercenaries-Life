@@ -888,6 +888,34 @@ window.MARKET_DEFS = {
     "buyPct": 0.5,
     "mult": 1
    },
+   "scroll_shatter": {
+    "base": 90,
+    "target": 8,
+    "stock0": 8,
+    "buyPct": 0.5,
+    "mult": 1
+   },
+   "scroll_web": {
+    "base": 90,
+    "target": 8,
+    "stock0": 8,
+    "buyPct": 0.5,
+    "mult": 1
+   },
+   "scroll_hold_person": {
+    "base": 90,
+    "target": 8,
+    "stock0": 8,
+    "buyPct": 0.5,
+    "mult": 1
+   },
+   "scroll_scorching_ray": {
+    "base": 90,
+    "target": 8,
+    "stock0": 8,
+    "buyPct": 0.5,
+    "mult": 1
+   },
    "scroll_burning_hands": {
     "base": 60,
     "target": 8,

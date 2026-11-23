@@ -442,6 +442,18 @@
 *create combat_terrain4_position 0
 *create combat_terrain4_capacity 0
 *create combat_terrain4_blocks_los false
+*comment Output of combat_movement.txt combat_water_at (2026-11-23): a water patch (terrain type "water", placed by a fight beside water) lies on the coordinate asked about.
+*create combat_water_here false
+*comment FIRE PATCHES (2026-11-23): terrain type "fire". combat_movement.txt combat_fire_at sets combat_fire_here; combat_spells.txt fire_save is the Dexterity save (DC 10) a creature
+*comment makes on stepping in or ending its turn there, a failure setting it alight (Burning, unless Wet), and combat_fire_land_banner collects its lines. Rain puts every fire patch out.
+*create combat_fire_here false
+*create combat_fire_land_banner ""
+*comment GREASE CATCHES FIRE (2026-11-23): fire that reaches anyone standing on a Grease patch sets pending and the spot (adjust_damage_packet); combat_spells.txt grease_fire_check
+*comment turns the patch into fire for two rounds once the blow's banners have printed, kept against _page and _site for a replay, as a burning Web is.
+*create combat_grease_fire_pending false
+*create combat_grease_fire_pos 0
+*create combat_grease_fire_page 0
+*create combat_grease_fire_site ""
 *comment Output of combat_movement.txt combat_web_at: a Web patch lies on the coordinate asked about.
 *create combat_web_here false
 *comment Web burning (3.4, combat_spells.txt web_burn_check): fire damage to an enemy on the patch sets pending (adjust_damage_packet); the check burns the patch once, on the page in burn_page, with its prose variant and banner stored for a replay. burning is true while the check deals its own fire, so that fire never sets pending again; burned is the check's output.
@@ -1673,6 +1685,8 @@
 *create combat_enemy_slot_cap 6
 *create combat_all_enemies_dead false
 *create combat_is_nonlethal false
+*comment combat_open_sky (2026-11-23): this fight is outdoors, under the open sky, so the weather reaches it (rain soaks everyone: Wet). A fight's own label sets it true before its setup, as combat_is_nonlethal is set; fight_cleanup clears it. Left false, a fight is under cover.
+*create combat_open_sky false
 *create combat_player_can_die false
 *create combat_enemy1_name "none"
 *create combat_enemy1_hp 0
@@ -1846,6 +1860,36 @@
 *create combat_enemy6_burning 0
 *create combat_enemy6_burn_page 0
 *create combat_enemy6_burn_dealt 0
+*comment BURNING ON THE PLAYER AND ALLIES (2026-11-23): the same fire as an enemy's (1d4 at the start of each of the bearer's turns, three turns), ticked by combat.txt
+*comment combat_player_burn_tick and combat_ally_burn_tick against the page id so a replay never burns twice. A Wet bearer cannot be set alight (combat_dice.txt
+*comment combat_burn_ignite, result in combat_burn_ignite_result: "lit" or "wet"). The player puts it out with an action (Put Out the Flames); an ally does, two turns in three,
+*comment as an enemy does (burn_douse keeps the choice for a replay). _burn_conc and _burn_suffix keep the player's concentration lines and damage tag for a replay.
+*create combat_player_burning 0
+*create combat_player_burn_page 0
+*create combat_player_burn_dealt 0
+*create combat_player_burn_conc ""
+*create combat_player_burn_suffix ""
+*create combat_ally0_burning 0
+*create combat_ally0_burn_page 0
+*create combat_ally0_burn_dealt 0
+*create combat_ally0_burn_douse false
+*create combat_ally1_burning 0
+*create combat_ally1_burn_page 0
+*create combat_ally1_burn_dealt 0
+*create combat_ally1_burn_douse false
+*create combat_ally2_burning 0
+*create combat_ally2_burn_page 0
+*create combat_ally2_burn_dealt 0
+*create combat_ally2_burn_douse false
+*create combat_ally3_burning 0
+*create combat_ally3_burn_page 0
+*create combat_ally3_burn_dealt 0
+*create combat_ally3_burn_douse false
+*create combat_ally4_burning 0
+*create combat_ally4_burn_page 0
+*create combat_ally4_burn_dealt 0
+*create combat_ally4_burn_douse false
+*create combat_burn_ignite_result ""
 *comment The kind of attack the next player attack roll is, read and cleared by combat_hidden_attack_roll ("fire" for Fire Bolt and Alchemist's Fire; "" otherwise) so combat_attack_edge can give a fire attack advantage on a greased target. combat_burn_killed: the burn tick finished the enemy.
 *create combat_attack_tag ""
 *create combat_burn_killed false
@@ -3421,7 +3465,7 @@
 *comment combat_spread_done_n and combat_spread_done_epithet: what the cast spread, copied inside the replay lock so the prose reads the same on a refresh (the scan that gates the option runs again before the page and finds nothing left to spread).
 *create combat_spread_done_n 0
 *create combat_spread_done_epithet ""
-*comment WET (2026-10-19, the user's design, the water jug thrown in a fight): per enemy slot, how many of its own turns the soaking still has (0 = dry; a thrown jug of water sets 3). A Wet enemy cannot catch fire (Alchemist's Fire, a Fire Arrow and Control Flames' spread leave it unlit), takes half damage from fire (resistance) and double from cold and lightning (vulnerability); both are read in combat_dice.txt from this counter, on top of whatever resistance the enemy already has. An enemy that is already burning cannot be soaked. It runs down one at the end of each of that enemy's turns (combat.txt cnt_boom_tail), beside Slowed.
+*comment WET (2026-10-19, the user's design, the water jug thrown in a fight; 2026-11-23: two turns, as BG3, and the player and allies can be Wet too): per combatant, how many of its own turns the soaking still has (0 = dry; a soaking sets 2). A Wet enemy cannot catch fire (Alchemist's Fire, a Fire Arrow and Control Flames' spread leave it unlit), takes half damage from fire (resistance) and double from cold and lightning (vulnerability); both are read in combat_dice.txt from this counter, on top of whatever resistance the enemy already has. An enemy that is already burning cannot be soaked. It runs down one at the end of each of the bearer's turns (combat_dice.txt condition_tick), beside Slowed. The player's and the allies' copies follow the same damage rule (adjust_damage_packet); neither can catch fire today, so only the damage applies to them.
 *create combat_enemy0_wet 0
 *create combat_enemy1_wet 0
 *create combat_enemy2_wet 0
@@ -3429,6 +3473,12 @@
 *create combat_enemy4_wet 0
 *create combat_enemy5_wet 0
 *create combat_enemy6_wet 0
+*create combat_player_wet 0
+*create combat_ally0_wet 0
+*create combat_ally1_wet 0
+*create combat_ally2_wet 0
+*create combat_ally3_wet 0
+*create combat_ally4_wet 0
 *comment combat_throw_wet: what the water jug's throw did, kept inside the replay lock for the report: "soaked" (the enemy is Wet now), "steam" (it was burning, so it stayed dry) or "" (a miss).
 *create combat_throw_wet ""
 *comment SPELL SCROLLS IN A FIGHT (2026-10-19): combat_scroll_id is the item id of the scroll being read ("scroll_bane"), or "" for an ordinary cast. The spell's own resolve label spends that scroll, inside its replay lock, where it would spend a slot; fight_round_hub clears it at the top of every turn page.
