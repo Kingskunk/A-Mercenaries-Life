@@ -3606,6 +3606,7 @@ stats = {
   "combat_grease_fire_pos": 0,
   "combat_grease_fire_page": 0,
   "combat_grease_fire_site": "",
+  "combat_throw_patch": "",
   "combat_player_burning": 0,
   "combat_player_burn_page": 0,
   "combat_player_burn_dealt": 0,

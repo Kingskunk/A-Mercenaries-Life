@@ -31,6 +31,7 @@ const MAP = {
   hide: "Action/Hide_Icon.webp",
   intimidate: "Action/Intimidating_Presence_Icon.webp",   // the morale action (combat.txt MORALE)
   shove: "Action/Shove_Icon.webp",
+  put_out_the_flames: "Action/Self_Immolation_Icon.webp",   // the burning player's action (combat.txt, 2026-11-23); a figure wreathed in flame, the user's pick
   throw: "Action/Throw_Icon.webp",   // the one Throw button on the bar; its fly-out shows each item in its own art (below)
   // Each thrown item's own art, keyed throw_<slug of its title>: battlehud.js variantArt reads "Throw: Grease Flask" as throw_grease_flask.
   // Hex's six abilities (battlehud.js variantArt: "Hex: Strength" reads hex_strength, or reapply_hex_strength while the curse waits to move).

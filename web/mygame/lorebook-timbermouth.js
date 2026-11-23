@@ -235,6 +235,27 @@
     },
 
     {
+      id: "durgan", category: "people", title: "Durgan",
+      sub: "Dwarf smith of Ashrun Holt",
+      role: "Blacksmith, Ashrun Holt",
+      link: ["Durgan"],
+      tags: ["Ashrun Holt"], aliases: ["Durgan", "dwarf smith", "blacksmith"],
+      unlock: "ahf_met_durgan",
+      body: function (s) {
+        var out = [
+          "A stocky, broad-shouldered dwarf blacksmith brought up from Timbermouth by the haulers to mend axe heads, saw blades, log chains, and wagon tires in Ashrun Holt. He wears a scorched leather apron over a coarse linen work shirt, with soot across his knuckles and a practical iron-grey-streaked beard."
+        ];
+        if (s.ahf_ending === "returned_peaceful" || s.ahf_ending === "returned_subdued") {
+          out.push("After his bark-roofed smithy was torched, you tracked down Jory and brought him to answer for the arson; Durgan is rebuilding the shed off the work track.");
+        } else if (s.ahf_ending === "bribed") {
+          out.push("After his bark-roofed smithy burned down, Durgan packed his salvaged anvil and tongs onto a sled, unconvinced by your story of a drifter.");
+        }
+        return out;
+      },
+      see: ["ashrun_holt", "lysa_thorn"]
+    },
+
+    {
       id: "factors_hall_tm", category: "places", title: "Timbermouth Factor's Hall",
       sub: "The Gilded Scales' Timbermouth office",
       tags: ["Timbermouth", "Gilded Scales"], aliases: ["factor's hall", "Timbermouth's Factor's Hall", "town hall", "counting house", "insignia", "notice board"],

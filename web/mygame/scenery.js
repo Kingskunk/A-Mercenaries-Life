@@ -109,7 +109,7 @@
     "timbermouth/ashrun_holt/ashrun_holt": "ashrun_holt_clearing",
     "timbermouth/ashrun_holt/hide_yard": "ashrun_holt_hide_yard",
     "timbermouth/ashrun_holt/work_yards": "ashrun_holt_work_yards",
-    "timbermouth/ashrun_holt/burnt_smithy": "ashrun_holt_work_yards",
+    "timbermouth/ashrun_holt/burnt_smithy": "ashrun_holt_burnt_smithy",
     "timbermouth/ashrun_holt/ashrun_house": "generic_village_inn",
     "port_valen/brinewick/tide_house": "brinewick_tide_house",
     "alderford/factors_hall": "shared_factors_hall",
@@ -284,6 +284,11 @@
     function (s) { return s.sceneName === "timbermouth/barleycross/lane" && s.scenery_subplace === "barleycross_hayloft" ? "generic_farm_hayloft" : undefined; }, // paid loft above a Barleycross farmstead
     function (s) { return s.sceneName === "port_valen/radiant/notice_board" && s.cr_origin === "tm" ? "shared_factors_hall" : undefined; }, // Timbermouth's board is inside its Factor's Hall
     function (s) { return s.sceneName === "port_valen/radiant/notice_board" && s.cr_origin === "fv" ? "generic_village_gathering_hall" : undefined; }, // Barleycross's board is inside its village hall
+    function (s) { return s.sceneName === "port_valen/radiant/notice_board" && s.cr_origin === "fo" ? "ashrun_holt_longhouse" : undefined; }, // Ashrun Holt's board of cords is inside its Longhouse
+    function (s) { return s.sceneName === "port_valen/radiant/hall_courier" && s.cr_origin === "fo" ? "ashrun_holt_longhouse" : undefined; }, // Ashrun Holt's courier postings remain inside the Longhouse
+    function (s) { return s.sceneName === "timbermouth/ashrun_holt/burnt_smithy" && s.scenery_subplace === "ashrun_holt_longhouse" ? "ashrun_holt_longhouse" : undefined; }, // reading Durgan's notice in the Longhouse
+    function (s) { return s.sceneName === "timbermouth/ashrun_holt/burnt_smithy" && s.scenery_subplace === "ashrun_holt_work_yards" ? "ashrun_holt_work_yards" : undefined; }, // following tracks along the Ashrun bridge and bank
+    function (s) { return s.sceneName === "timbermouth/ashrun_holt/burnt_smithy" && s.scenery_subplace === "ashrun_holt_clearing" ? "ashrun_holt_clearing" : undefined; }, // Jory's cabin at the edge of the clearing
     function (s) { return s.sceneName === "port_valen/radiant/hall_courier" && s.cr_origin === "lg" ? "langston_hall" : undefined; }, // Langston's shared courier-posting pages remain at the Contract Board inside Langston Hall
     function (s) { return s.sceneName === "horse_dealer" && s.horse_place === "bc" ? "generic_village_pasture" : undefined; }, // Barleycross's working-horse rail stands at the common pasture
     function (s) { return s.sceneName === "horse_dealer" && s.horse_place === "mw" ? "village_stable_yard" : undefined; }, // Port Valen's dealer works from the Middle Ward yard

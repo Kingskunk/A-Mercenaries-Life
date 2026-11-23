@@ -7045,6 +7045,9 @@ You pull the stopper and hurl the philter at ${combat_enemy_epithet}.
     *set combat_throw_wet "soaked"
   *elseif (combat_enemy_hp > 0)
     *set {(ftf_p & "burning")} 3
+*comment The flask bursts where the target stands, hit or miss, and leaves fire on the ground (combat_spells.txt fire_flask_patch, 2026-11-23).
+*temp ftf_pos {(ftf_p & "position")}
+*gosub_scene combat_spells fire_flask_patch ftf_pos
 *if (check_success)
   *if (combat_throw_wet = "soaked")
     *comment A soaked target (the water jug, 2026-10-19): the mixture lands and finds nothing it can hold.
@@ -7072,14 +7075,35 @@ You pull the stopper and hurl the philter at ${combat_enemy_epithet}.
     *else
       [b][🔥 ${combat_throw_name} is burning: 1d4 fire damage at the start of each of its next three turns][/b]
 *else
-  *if (combat_throw_v = 1)
-    The flask goes wide and bursts on the ground, and the fire gutters out on bare stone.
-  *if (combat_throw_v = 2)
-    ${combat_throw_name} ducks the throw, and the flask burns itself out on the ground.
-  *if (combat_throw_v = 3)
-    The glass breaks short, and a puddle of flame spits and dies at ${combat_throw_epithet}'s feet.
+  *if (combat_throw_patch = "doused")
+    *if (combat_throw_v = 1)
+      The flask goes wide and bursts on the ground beside ${combat_throw_epithet}, and the spilled fire smokes and hisses in the wet.
+    *if (combat_throw_v = 2)
+      ${combat_throw_name} ducks the throw, and the flask smashes at their feet. The mixture spits once on the wet ground and goes out.
+    *if (combat_throw_v = 3)
+      The glass breaks short, and the flame that spreads from it under ${combat_throw_epithet} dies in a hiss of steam.
+  *elseif (combat_throw_patch = "")
+    *if (combat_throw_v = 1)
+      The flask goes wide and bursts on the ground, and the fire gutters out on bare stone.
+    *if (combat_throw_v = 2)
+      ${combat_throw_name} ducks the throw, and the flask burns itself out on the ground.
+    *if (combat_throw_v = 3)
+      The glass breaks short, and a puddle of flame spits and dies at ${combat_throw_epithet}'s feet.
+  *else
+    *if (combat_throw_v = 1)
+      The flask goes wide and bursts on the ground beside ${combat_throw_epithet}, and the mixture catches and spreads in a low, spitting sheet.
+    *if (combat_throw_v = 2)
+      ${combat_throw_name} ducks the throw, and the flask smashes at their feet. The mixture catches where it lands and keeps burning.
+    *if (combat_throw_v = 3)
+      The glass breaks short, and a puddle of flame spreads across the ground under ${combat_throw_epithet}.
   *line_break
   [b][💨 Miss][/b]
+*if (combat_throw_patch = "lit")
+  *line_break
+  [b][🔥 The ground where it burst is burning | 2 rounds][/b]
+*elseif (combat_throw_patch = "doused")
+  *line_break
+  [b][💧 The spilled fire hisses out on the wet ground][/b]
 *gosub fight_tail_break
 *goto fight_check_enemy_hp
 
@@ -8982,6 +9006,11 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *temp cb_profile {(cb_p & "behavior_profile")}
   *temp cb_dv 1
   *rand cb_dv 1 3
+  *comment STANDING IN FIRE (2026-11-23): putting the flames out on a burning patch only lights them again at the end of the turn (fire_end_turn), so it gets clear first
+  *comment and lets its terrain step (leave_fire) take it off the patch; it can douse on a later turn, on clear ground.
+  *gosub_scene combat_movement combat_fire_at {(cb_p & "position")}
+  *if (combat_fire_here)
+    *set cb_dv 3
   *if (((combat_enemy_hp > 0) and (cb_left > 0)) and ((not(cb_profile = "feral")) and (cb_dv <= 2)))
     *set cb_douse true
     *set {(cb_p & "burning")} 0
@@ -9107,6 +9136,10 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *temp cabn_profile {(cabn_p & "behavior_profile")}
   *temp cabn_dv 1
   *rand cabn_dv 1 3
+  *comment STANDING IN FIRE (2026-11-23): as an enemy's (combat_burn_tick): it gets off the patch first, and douses on a later turn on clear ground.
+  *gosub_scene combat_movement combat_fire_at {(cabn_p & "position")}
+  *if (combat_fire_here)
+    *set cabn_dv 3
   *if (((cabn_hp > 0) and (cabn_left > 0)) and ((not(cabn_profile = "feral")) and (cabn_dv <= 2)))
     *set {(cabn_p & "burning")} 0
     *set {(cabn_p & "burn_douse")} true

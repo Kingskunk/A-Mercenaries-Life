@@ -2867,6 +2867,65 @@ ${combat_save_banner_7}
 *return
 
 *comment Is there grease at gat_pos? Sets combat_grease_here, combat_grease_owner and combat_grease_dc (the owner's DC, each slot named outright for quicktest).
+*comment ALCHEMIST'S FIRE PATCH (2026-11-23, BG3's surface): the flask bursts where its target stands, hit or miss, and the spilled fire burns there for two rounds, owned by
+*comment no one, as a burning Web's ground does. Rain on an open-sky fight, or a water patch on the spot, puts it out at once ("doused"). Grease on the spot catches instead
+*comment ("grease": a hit has already set the pending flag in adjust_damage_packet, a miss sets it here) and the shared grease_fire_check prints it. A spot already on fire
+*comment keeps the patch it has ("burning"); four full slots leave none (""). Result in combat_throw_patch. Whoever stands there saves at the end of their turn (fire_end_turn).
+*label fire_flask_patch
+*params ffp_pos
+*set combat_throw_patch ""
+*if ((combat_open_sky) and (weather_wet))
+  *set combat_throw_patch "doused"
+  *return
+*gosub_scene combat_movement combat_water_at ffp_pos
+*if (combat_water_here)
+  *set combat_throw_patch "doused"
+  *return
+*gosub grease_at ffp_pos
+*if (combat_grease_here)
+  *set combat_throw_patch "grease"
+  *set combat_grease_fire_pending true
+  *set combat_grease_fire_pos ffp_pos
+  *return
+*gosub_scene combat_movement combat_fire_at ffp_pos
+*if (combat_fire_here)
+  *set combat_throw_patch "burning"
+  *return
+*temp ffp_until (combat_round + 2)
+*if (combat_terrain1_type = "none")
+  *set combat_terrain1_type "fire"
+  *set combat_terrain1_owner ""
+  *set combat_terrain1_position ffp_pos
+  *set combat_terrain1_until ffp_until
+  *set combat_terrain1_capacity 0
+  *set combat_terrain1_blocks_los false
+  *set combat_throw_patch "lit"
+*elseif (combat_terrain2_type = "none")
+  *set combat_terrain2_type "fire"
+  *set combat_terrain2_owner ""
+  *set combat_terrain2_position ffp_pos
+  *set combat_terrain2_until ffp_until
+  *set combat_terrain2_capacity 0
+  *set combat_terrain2_blocks_los false
+  *set combat_throw_patch "lit"
+*elseif (combat_terrain3_type = "none")
+  *set combat_terrain3_type "fire"
+  *set combat_terrain3_owner ""
+  *set combat_terrain3_position ffp_pos
+  *set combat_terrain3_until ffp_until
+  *set combat_terrain3_capacity 0
+  *set combat_terrain3_blocks_los false
+  *set combat_throw_patch "lit"
+*elseif (combat_terrain4_type = "none")
+  *set combat_terrain4_type "fire"
+  *set combat_terrain4_owner ""
+  *set combat_terrain4_position ffp_pos
+  *set combat_terrain4_until ffp_until
+  *set combat_terrain4_capacity 0
+  *set combat_terrain4_blocks_los false
+  *set combat_throw_patch "lit"
+*return
+
 *label grease_at
 *params gat_pos
 *set combat_grease_here false

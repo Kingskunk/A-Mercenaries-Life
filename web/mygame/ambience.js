@@ -163,6 +163,7 @@
     ashrun_holt_clearing: "woodland",
     ashrun_holt_hide_yard: "woodland",
     ashrun_holt_work_yards: "woodland",
+    ashrun_holt_burnt_smithy: "woodland",
     ashrun_holt_longhouse: "lodgings",
     generic_town_inn: "tavern",
     generic_town_inn_room: "lodgings",
