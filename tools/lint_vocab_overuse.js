@@ -65,10 +65,14 @@ const RESTRICTED_WORDS = [
   { word: 'waterlogged', maxUses: 2 },
   // Everyday words that turned into crutches. Limits sit below today's counts on purpose, so each
   // run lists every use for review. "register" is mostly the Grey Waterway Toll Register item and
-  // the parish register; "ledger" should be a real book a character handles, not a figure of speech.
+  // the parish register; "ledger" should be a real book a character handles, not a figure of speech;
+  // "tally" / "tallies" / "tallied" must be justified to the user if no everyday modern word (count, total, score, list, mark) can replace it.
   { word: 'ledger', maxUses: 20 },
   { word: 'ledgers', maxUses: 5 },
   { word: 'register', maxUses: 15 },
+  { word: 'tally', maxUses: 0 },
+  { word: 'tallies', maxUses: 0 },
+  { word: 'tallied', maxUses: 0 },
 ];
 
 const WORD_GROUPS = [

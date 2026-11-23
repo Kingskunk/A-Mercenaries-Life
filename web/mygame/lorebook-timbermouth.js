@@ -246,9 +246,19 @@
           "A stocky, broad-shouldered dwarf blacksmith brought up from Timbermouth by the haulers to mend axe heads, saw blades, log chains, and wagon tires in Ashrun Holt. He wears a scorched leather apron over a coarse linen work shirt, with soot across his knuckles and a practical iron-grey-streaked beard."
         ];
         if (s.ahf_ending === "returned_peaceful" || s.ahf_ending === "returned_subdued") {
-          out.push("After his bark-roofed smithy was torched, you tracked down Jory and brought him to answer for the arson; Durgan is rebuilding the shed off the work track.");
+          var rd = Number(s.ahf_resolved_day) || 0;
+          if (rd > 0 && Number(s.campaign_day) >= rd + 4) {
+            out.push("After his bark-roofed smithy was torched, you tracked down Jory and brought him to answer for the arson. With the timber and charcoal debt paid, a fresh peeled-log shed and bark-shingle roof stand over the stone hearth, and Durgan's forge is lit again.");
+          } else {
+            out.push("After his bark-roofed smithy was torched, you tracked down Jory and brought him to answer for the arson; Durgan is rebuilding the shed off the work track.");
+          }
         } else if (s.ahf_ending === "bribed") {
-          out.push("After his bark-roofed smithy burned down, Durgan packed his salvaged anvil and tongs onto a sled, unconvinced by your story of a drifter.");
+          var bd = Number(s.ahf_resolved_day) || 0;
+          if (bd > 0 && Number(s.campaign_day) >= bd + 2) {
+            out.push("After his bark-roofed smithy burned down, Durgan did not believe your story of a drifter and hauled his salvaged anvil and tongs back toward Timbermouth.");
+          } else {
+            out.push("After his bark-roofed smithy burned down, Durgan packed his salvaged anvil and tongs onto a sled, unconvinced by your story of a drifter.");
+          }
         }
         return out;
       },

@@ -51,6 +51,12 @@
  *   picks     the same steps as one string: "text@high;other text*"  (@word sets rand, a trailing * = whileAvail)
  *   gosub     true: start the label as if a *gosub_scene had called it, so a subroutine label that ends in *return finishes cleanly (see "simend" below)
  *   watch     variable names (globals, or *temps on the active scene) whose final values are reported
+ *   expect    checks that make the run fail by themselves (2026-11-23), so a script proves its rule instead of only not crashing:
+ *               "vars": {"name": value}   a variable's final value (read like watch; compared as text, so 5 matches "5", and null matches a missing variable)
+ *               "text": ["words", ...]     each must appear somewhere in what the run printed (markup stripped)
+ *               "noText": ["words", ...]   none may appear
+ *               "status": "menu"           how the run ended: menu, exit, finished or error
+ *             A failed check prints "!! EXPECT: ..." and the run exits 1; when all pass it prints "Expect: N check(s) passed".
  *   allowDeadSpace  true: do NOT fail this scenario for a *line_break that prints an empty line. A run fails for one by default (2026-11-16); this
  *             flag is a debt marker for a script that crosses a page with one not yet fixed, so grep for it. requireNoDeadSpace is now the default and is ignored.
  *   refresh   true: after every page, replay it on a copy (what opening Stats and returning does) and
@@ -424,7 +430,9 @@ function worldFromShorthands(scn) {
 
 function purse() { return (+stats.gold * 100) + (+stats.silver * 10) + (+stats.copper); }
 
-function play(scn) {
+// The character and world a script starts with: the preset, the weather/time/day shorthands, then its stats (2026-11-23, split out of play so
+// tools/probe_fight.js can start the real page from the same state).
+function prepareStats(scn) {
   GAME = scn.game || "mygame";
   newGame(scn.preset || DEFAULT_PRESET);
   var world = worldFromShorthands(scn);
@@ -446,6 +454,11 @@ function play(scn) {
       if (/^feature_/.test(k)) stats[k] = sOverride[k];
     });
   }
+}
+function setupStats(scn) { prepareStats(scn); return stats; }
+
+function play(scn) {
+  prepareStats(scn);
   var purseBefore = purse(), hpBefore = stats.hp_current;
   resetRun();
   TOUCHED = {};   // only what the script itself runs: the boot, the preset and the setup scenes above are not its doing
@@ -475,7 +488,24 @@ function play(scn) {
     else if (sceneTemps && Object.prototype.hasOwnProperty.call(sceneTemps, k)) watch[k] = sceneTemps[k];
     else watch[k] = undefined;
   });
+  var expectFails = [], expectCount = 0;
+  if (scn.expect) {
+    var ex = scn.expect, expPrinted = D.events.filter(function (e) { return e.type === "prose"; }).map(function (e) { return stripMarkup(e.shown || e.text); }).join(" ");
+    Object.keys(ex.vars || {}).forEach(function (k) {
+      expectCount++;
+      var have;
+      if (Object.prototype.hasOwnProperty.call(stats, k)) have = stats[k];
+      else if (sceneTemps && Object.prototype.hasOwnProperty.call(sceneTemps, k)) have = sceneTemps[k];
+      var want = ex.vars[k];
+      var ok = (want === null) ? (have === undefined || have === null) : (have !== undefined && String(have) === String(want));
+      if (!ok) expectFails.push(k + " is " + JSON.stringify(have) + ", expected " + JSON.stringify(want));
+    });
+    [].concat(ex.text || []).forEach(function (t) { expectCount++; if (expPrinted.indexOf(t) === -1) expectFails.push("text not printed: \"" + t + "\""); });
+    [].concat(ex.noText || []).forEach(function (t) { expectCount++; if (expPrinted.indexOf(t) !== -1) expectFails.push("text printed but should not be: \"" + t + "\""); });
+    if (ex.status) { expectCount++; if (ex.status !== status) expectFails.push("run ended as " + status + ", expected " + ex.status); }
+  }
   return {
+    expectFails: expectFails, expectCount: expectCount,
     status: status, text: plainTranscript(D.events), events: D.events.slice(), log: D.log.slice(), exits: D.exits.slice(),
     errors: D.errors.slice(), stopped: D.stopped, purseDelta: purse() - purseBefore,
     hpBefore: hpBefore, hp: stats.hp_current, s: stats, watch: watch,
@@ -556,6 +586,10 @@ function formatText(scn, r, opts) {
     out.push("!! DEAD SPACE: " + r.deadSpace.length + " *line_break(s) printed an empty line on this run:");
     r.deadSpace.slice(0, 8).forEach(function (d) { out.push("  - " + d); });
   }
+  if (r.expectCount) {
+    if (r.expectFails.length) r.expectFails.forEach(function (f) { out.push("!! EXPECT: " + f); });
+    else out.push("Expect: " + r.expectCount + " check(s) passed");
+  }
   if (layoutWarnings) out.push("LAYOUT: " + layoutWarnings + " page(s) show a heading glued to the sentence before it (see !! above)");
   r.errors.forEach(function (e) { out.push("ERROR: " + e); });
   errorHints(r.errors).forEach(function (h) { out.push("  hint: " + h); });
@@ -570,6 +604,7 @@ function formatJson(scn, r) {
   return JSON.stringify({
     status: r.status, events: events, stopped: r.stopped, exits: r.exits, errors: r.errors, hints: errorHints(r.errors),
     purseDelta: r.purseDelta, hp: { before: r.hpBefore, after: r.hp }, watch: r.watch,
+    expect: r.expectCount ? { checks: r.expectCount, failures: r.expectFails } : undefined,
     refresh: scn.refresh ? { checks: r.refreshChecks, skipped: r.refreshSkipped,
       differences: r.refreshDiffs.filter(function (d) { return !KNOWN_ENGINE_DIFF.test(d); }),
       knownEngineDifferences: r.refreshDiffs.filter(function (d) { return KNOWN_ENGINE_DIFF.test(d); }) } : undefined
@@ -623,7 +658,7 @@ function main(argv) {
   }
   Object.keys(kv).forEach(function (k) {
     var v = kv[k];
-    if (k === "stats" || k === "steps" || k === "replaySet") scn[k] = JSON.parse(v);
+    if (k === "stats" || k === "steps" || k === "replaySet" || k === "expect") scn[k] = JSON.parse(v);
     else if (k === "picks") scn.steps = parsePicks(v);
     else if (k === "watch" || k === "sabotage") scn[k] = v.split(",").map(function (x) { return x.trim(); }).filter(Boolean);
     else if (k === "refresh") scn.refresh = v === "true";
@@ -632,11 +667,11 @@ function main(argv) {
   var r = play(scn);
   console.log(flags.json ? formatJson(scn, r) : formatText(scn, r, { raw: !!flags.raw, menus: !flags["no-menus"] }));
   var bad = r.errors.length || r.refreshDiffs.some(function (d) { return !KNOWN_ENGINE_DIFF.test(d); }) ||
-    (!scn.allowDeadSpace && r.deadSpace.length);
+    (!scn.allowDeadSpace && r.deadSpace.length) || r.expectFails.length;
   return bad ? 1 : 0;
 }
 
-module.exports = { play: play, presets: presets, parsePicks: parsePicks, formatText: formatText, formatJson: formatJson };
+module.exports = { play: play, setupStats: setupStats, presets: presets, parsePicks: parsePicks, formatText: formatText, formatJson: formatJson };
 
 if (require.main === module) {
   var code;

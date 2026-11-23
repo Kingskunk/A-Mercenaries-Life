@@ -221,6 +221,7 @@ The cottage entrance is secured from within, and the wooden shutters on the side
 
 *label gbp_inside
 *set scenery_subplace "greybank_cottage_inside"
+*temp gbp_tried_deduce false
 Inside, the room is dim and airless, heavy with the sour stench of a corpse and stale woodsmoke. Thin strips of pale light cut across a pine table, a stone hearth deep in grey ash, and a sprawled shape on the floor behind the bench.
 
 *goto gbp_investigate_menu
@@ -251,17 +252,18 @@ What do you examine?
       Stranger still, the underside of the cookware, normally caked black with years of chimney soot, has been scrubbed down to bare, gleaming metal.
       *goto gbp_investigate_menu
 
-  *if ((gbp_found_pan and (gbp_clue_body or gbp_clue_papers)) and (not(gbp_deduced_soot)))
+  *if ((gbp_found_pan and (gbp_clue_body or gbp_clue_papers)) and (not(gbp_tried_deduce)))
     # Piece together why the pan was scrubbed clean.@{show_stat_hints  [Investigation/Insight DC 12]|}@{gbp_rattled  [Disadv]|}
+      *set gbp_tried_deduce true
       *if (gbp_rattled)
         *set disadvantage true
       *gosub_scene dice_engine roll_skill_check 12 "investigation" "" "insight" "" "" ""
-      *set gbp_deduced_soot true
       *set hours_to_pass 0
       *set minutes_to_pass 15
       *set time_advance_call_id "gbp_deduce"
       *gosub_scene calendar advance_time
       *if (check_success)
+        *set gbp_deduced_soot true
         You tilt the gleaming cookware toward the window seam and glance at the bowl of dark water and the dark grate. Nobody scrubs soot off cooking iron to make supper. Someone scraped it down to mix makeshift ink, or washed away something they didn't want found.
 
         Between the worn heels, the scorched wax seals, and the silver ring, this wasn't a common tavern brawl. A courier was cornered here, his dispatches burned, and his killer took their time before slipping out into the dark.

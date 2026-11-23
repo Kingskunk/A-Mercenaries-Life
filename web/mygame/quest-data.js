@@ -292,10 +292,10 @@
       },
       clues: function (s) {
         var c = [];
-        if (truthy(s.gbp_clue_body)) c.push("A dead courier lies behind the table, his throat cut, with a silver ring and coin purse beside him.");
+        if (truthy(s.gbp_clue_body)) c.push("A dead man in a muddy coat lies behind the table, his throat cut, with worn riding heels, a silver ring, and an untouched coin purse.");
         if (truthy(s.gbp_clue_papers)) c.push("Burned parchment and scorched red sealing wax sit in the cold grate.");
-        if (truthy(s.gbp_found_pan)) c.push("The skillet's base has been scrubbed clean of soot beside a bowl of dark water.");
-        if (truthy(s.gbp_deduced_soot)) c.push("Someone scraped soot from the pan or washed up after killing the courier.");
+        if (truthy(s.gbp_found_pan)) c.push("The frying pan's base has been scrubbed clean of soot beside a bowl of dark water.");
+        if (truthy(s.gbp_deduced_soot)) c.push("The dead man was a courier whose dispatches were burned; someone scrubbed soot from the pan afterward to mix makeshift ink or wash away evidence.");
         return c;
       },
       active: function (s) { return s.gbp_stage === "active"; }
@@ -315,10 +315,10 @@
       },
       clues: function (s) {
         var c = [];
-        if (truthy(s.ahf_clue_torch)) c.push("A charred pine knot wrapped in hemp twine and soaked in resin was thrown onto the bark roof.");
+        if (truthy(s.ahf_clue_torch)) c.push("A charred pine knot soaked in resin was thrown onto the bark roof.");
         if (truthy(s.ahf_clue_tracks)) c.push("Heavy footprints lead downhill from the woodpile toward the Ashrun bridge.");
         if (truthy(s.ahf_clue_boot)) c.push("A snapped leather boot and three deep claw grooves mark the clay bank beneath the bridge, with blood leading back to the cabins.");
-        if (truthy(s.ahf_lacedon_cleared)) c.push("A lacedon lurking beneath the haulers' bridge has been put down.");
+        if (truthy(s.ahf_lacedon_cleared)) c.push("The lacedons lurking beneath the haulers' bridge have been put down.");
         return c;
       },
       active: function (s) { var st = Number(s.ahf_stage) || 0; return st >= 1 && st < 5; }
