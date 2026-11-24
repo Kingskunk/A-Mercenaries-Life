@@ -1416,6 +1416,132 @@ window.EQUIPMENT_CATALOG = {
     },
     {
       "ids": [
+        "greatsword"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "greatsword"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Greatsword"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "2d6 slashing"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "slashing"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "melee"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "two_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "greatsword"
+        },
+        "weapon_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "weapon_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_flimsy": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_reach": {
+          "type": "literal",
+          "value": "long"
+        },
+        "weapon_ammo": {
+          "type": "literal",
+          "value": ""
+        }
+      }
+    },
+    {
+      "ids": [
+        "maul"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "maul"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Maul"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "2d6 bludgeoning"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "bludgeoning"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "melee"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "two_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "maul"
+        },
+        "weapon_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "weapon_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_flimsy": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_reach": {
+          "type": "literal",
+          "value": "long"
+        },
+        "weapon_ammo": {
+          "type": "literal",
+          "value": ""
+        }
+      }
+    },
+    {
+      "ids": [
         "ash_spear"
       ],
       "fields": {
@@ -3252,6 +3378,124 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_prose": {
           "type": "literal",
           "value": "handaxe"
+        },
+        "sidearm_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "sidearm_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_flimsy": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_reach": {
+          "type": "literal",
+          "value": "long"
+        }
+      }
+    },
+    {
+      "ids": [
+        "greatsword"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "greatsword"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Slung Greatsword"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "2d6 slashing"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "slashing"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "melee"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "two_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "greatsword"
+        },
+        "sidearm_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "sidearm_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_flimsy": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_reach": {
+          "type": "literal",
+          "value": "long"
+        }
+      }
+    },
+    {
+      "ids": [
+        "maul"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "maul"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Slung Maul"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "2d6 bludgeoning"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "bludgeoning"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "melee"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "two_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "maul"
         },
         "sidearm_magic": {
           "type": "literal",
