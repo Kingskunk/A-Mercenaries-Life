@@ -42,9 +42,9 @@ Primary weapons and secondary sidearms can be equipped in the main-hand or store
 | `starting` (Disgraced) | **Compact Light Crossbow** | Two-Handed Ranged | `1d8 piercing` | Enlistment (Disgraced Scion) or Bowyer — **3s 0c** | Ranged weapon (DEX-based, 1d8). Two-handed. |
 | `longshade_quarterstaff` | **Ash Quarterstaff** | One-Handed Melee | `1d8 bludgeoning` | Roan's Wheel Shop (Timbermouth Workshops) — **1s 5c**; sells back for 50% | Plain blunt weapon of straight-grained Longshade ash (STR-based), one-handed, so it pairs with a shield. |
 | `longshade_spear` | **Spear** | One-Handed Reach Melee | `1d6 piercing` | Roan's Wheel Shop — **2s 0c**; sells back for 50% | Reach weapon (STR-based, `weapon_type "reach"`): can attack from Close as well as Engaged. |
-| `longshade_shortbow` | **Shortbow** | Two-Handed Ranged | `1d6 piercing` | Roan's Wheel Shop — **2s 5c**; sells back for 50% | Ranged weapon (DEX-based). Two-handed. Triggers Rogue Sneak Attack (+1d6). |
-| `timber_axe` | **Battleaxe** (martial) | One-Handed Melee | `1d8 slashing` | Master Torvald's Smithy (Alderford) or Halda's Forge (Port Valen) — **2s 5c** | One-handed war axe (STR-based). Compatible with off-hand shields and Dueling Fighting Style (+2 damage). |
-| `stiletto` | **Stiletto** | One-Handed Finesse | `1d4 piercing` | Master Torvald's Smithy (Alderford) or Halda's Forge (Port Valen) — **1s 5c** | Refined file-steel thrusting blade. Finesse (STR or DEX). Triggers Rogue Sneak Attack (+1d6). |
+| `longshade_shortbow` | **Shortbow** | Two-Handed Ranged | `1d6 piercing` | Roan's Wheel Shop — **3s 5c**; sells back for 50% | Ranged weapon (DEX-based). Two-handed. Triggers Rogue Sneak Attack (+1d6). |
+| `timber_axe` | **Battleaxe** (martial) | One-Handed Melee | `1d8 slashing` | Master Torvald's Smithy (Alderford) or Halda's Forge (Port Valen) — **4s 0c** | One-handed war axe (STR-based). Compatible with off-hand shields and Dueling Fighting Style (+2 damage). |
+| `stiletto` | **Stiletto** | One-Handed Finesse | `1d4 piercing` | Master Torvald's Smithy (Alderford) or Halda's Forge (Port Valen) — **2s 0c** | Refined file-steel thrusting blade. Finesse (STR or DEX). Triggers Rogue Sneak Attack (+1d6). |
 | `longsword` | **Longsword** (martial) | One-Handed Melee | `1d8 slashing` | Halda's Forge (Port Valen) — **10s 0c**; smiths buy at 50%, pawnbroker 35% | Straight double-edged blade (STR-based). |
 | `rapier` | **Rapier** (martial) | One-Handed Finesse | `1d8 piercing` | Halda's Forge — **12s 0c**; smiths 50%, pawnbroker 35% | Finesse; a Rogue is trained in it. |
 | `scimitar` | **Scimitar** (martial) | One-Handed Finesse | `1d6 slashing` | Halda's Forge — **7s 0c**; smiths 50%, pawnbroker 35% | Finesse; a Rogue is trained in it. |
@@ -54,6 +54,8 @@ Primary weapons and secondary sidearms can be equipped in the main-hand or store
 | `mace` | **Mace** | One-Handed Melee | `1d6 bludgeoning` | Master Torvald's Smithy — **2s 5c**; smiths 50%, pawnbroker 35% | Simple weapon. |
 | `handaxe` | **Handaxe** | One-Handed Melee | `1d6 slashing` | Marlow's General Goods (Timbermouth) — **1s 5c**; smiths and general stores 50%, pawnbroker 35% | Simple weapon. Not thrown yet (no Thrown property). |
 | `longbow` | **Longbow** (martial) | Two-Handed Ranged | `1d8 piercing` | Roan's Wheel Shop (Timbermouth) — **6s 0c**; Edda buys at 50%, pawnbroker 35% | Ranged, long reach; takes fire and ice arrows. |
+| `greatsword` | **Greatsword** (martial) | Two-Handed Melee | `2d6 slashing` | Halda's Forge — **15s 0c**; smiths 50%, pawnbroker 35% | Rolls two dice (four on a critical); Great Weapon Fighting rerolls each. |
+| `maul` | **Maul** (martial) | Two-Handed Melee | `2d6 bludgeoning` | Master Torvald's Smithy — **5s 0c**; smiths 50%, pawnbroker 35% | Rolls two dice (four on a critical); Great Weapon Fighting rerolls each. |
 | `road_club` | **Wooden Club** | One-Handed Melee | `1d4 bludgeoning` | Not sold: dropped by robbers on the road (a robber with a club, 40%) — pawnbroker 35%, Roan's Wheel Shop 50% (**5c** retail) | A plain knotted club banded with iron at the head. |
 | `rough_spear` | **Rough Spear** | One-Handed Reach Melee | `1d6 piercing` | Not sold: dropped by robbers on the road (a robber with a spear, 40%) — pawnbroker 35%, Roan's Wheel Shop 50% (**8c** retail) | A straight ash pole with a wired-on iron head. Reach (STR-based): can attack from Close. |
 | `cord_sling` | **Cord Sling** | One-Handed Ranged | `1d4 bludgeoning` | Not sold: dropped by robbers on the road (a robber with a sling, 40%) — pawnbroker 35%, Roan's Wheel Shop 50% (**4c** retail) | Braided cord and a leather pouch for throwing stones. |
@@ -315,7 +317,7 @@ Every weapon is simple unless its catalog loadout says `"martial": true` (the cl
 | Bard | simple; martial too with Valor's Martial Training (level 3) |
 | Warlock, Wizard | simple |
 
-Not built yet: the Light, Heavy, Versatile and Thrown properties, and weapons that roll more than one die (Greatsword, Maul): the engine reads one damage die per weapon.
+Not built yet: the Light, Heavy, Versatile and Thrown properties.
 
 ---
 

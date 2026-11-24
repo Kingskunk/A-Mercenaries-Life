@@ -184,6 +184,8 @@ window.DISCARD_DATA = {
   "longbow": {"kind":"weapon"},
   "mace": {"kind":"weapon"},
   "handaxe": {"kind":"weapon"},
+  "greatsword": {"kind":"weapon"},
+  "maul": {"kind":"weapon"},
   "lesser_amulet_of_the_beast": {"kind":"neck"},
   "iron_gap_poster": {"kind":"valuable","keep":{"reason":"This may matter when the killer is named, and you have not settled what it means.","until":"wol_chapter_6_complete"}},
   "solaines_unfinished_letter": {"kind":"valuable","keep":{"reason":"This may matter when the killer is named, and you have not settled what it means.","until":"wol_chapter_6_complete"}},

@@ -449,14 +449,20 @@ ${combat_player_dmg_roll_banner}
   *set combat_enemy_agathys_banner ((combat_enemy_agathys_banner & "[n/]") & eab_line)
 *return
 
-*comment THE WEAPON'S OWN DIE: read from weapon_damage ("1d6 piercing", set by equipment.txt for every weapon), never from its category. Every weapon in the game is one
-*comment die; a weapon_damage with no die ("1 bludgeoning", bare hands) gives 1, which resolve_player_weapon_hit reads as a flat 1 with no roll. Sets combat_player_dmg_dice_sides.
+*comment THE WEAPON'S OWN DICE: read from weapon_damage ("1d6 piercing", "2d6 slashing", set by equipment.txt for every weapon), never from its category. A weapon_damage
+*comment with no die ("1 bludgeoning", bare hands) gives 1, which resolve_player_weapon_hit reads as a flat 1 with no roll. Sets combat_player_dmg_dice_sides and, for a
+*comment weapon that rolls several dice (the Greatsword's and the Maul's 2d6, 2026-11-24), combat_player_dmg_dice_count (1 otherwise; resolve_player_weapon_hit puts it back to 1).
 *label weapon_die_sides
 *set combat_player_dmg_dice_sides 1
+*set combat_player_dmg_dice_count 1
 *if (length(weapon_damage) < 4)
   *return
 *if (not((weapon_damage#2) = "d"))
   *return
+*if ((weapon_damage#1) = "2")
+  *set combat_player_dmg_dice_count 2
+*elseif ((weapon_damage#1) = "3")
+  *set combat_player_dmg_dice_count 3
 *temp wds_a (weapon_damage#3)
 *temp wds_b (weapon_damage#4)
 *if ((wds_a = "1") and (wds_b = "2"))
@@ -500,15 +506,25 @@ ${combat_player_dmg_roll_banner}
     *if (cwh_roll <= 2)
       *rand cwh_roll 1 cwh_sides
   *temp cwh_roll_str "${cwh_roll}"
-  *if ((combat_player_crit) and (not(cwh_flat)))
-    *comment The second weapon die, with Great Weapon Fighting's reroll of a 1 or 2 like the first.
-    *temp cwh_roll2 0
-    *rand cwh_roll2 1 cwh_sides
+  *comment A weapon of several dice (2d6): the rest of them, each with Great Weapon Fighting's reroll, shown one by one ("4+6"). A critical hit rolls twice as many (a
+  *comment one-die weapon's crit is the first die plus one more, in the same order as before).
+  *temp cwh_more (combat_player_dmg_dice_count - 1)
+  *if (cwh_flat)
+    *set cwh_more 0
+  *elseif (combat_player_crit)
+    *set cwh_more ((cwh_more * 2) + 1)
+  *set combat_player_dmg_dice_count 1
+  *temp cwh_md 0
+  *label cwh_more_dice_loop
+  *if (cwh_more > 0)
+    *rand cwh_md 1 cwh_sides
     *if (((fighting_style = "great_weapon") and (weapon_hands = "two_handed")) and (not(weapon_type = "ranged")))
-      *if (cwh_roll2 <= 2)
-        *rand cwh_roll2 1 cwh_sides
-    *set cwh_roll_str "${cwh_roll}+${cwh_roll2}"
-    *set cwh_roll + cwh_roll2
+      *if (cwh_md <= 2)
+        *rand cwh_md 1 cwh_sides
+    *set cwh_roll_str "${cwh_roll_str}+${cwh_md}"
+    *set cwh_roll + cwh_md
+    *set cwh_more - 1
+    *goto cwh_more_dice_loop
   *set combat_player_dmg_dealt (cwh_roll + combat_player_dmg_bonus)
   *comment Damage-roll banner (2026-09-27): built here, before Sneak/Hex are known, then extended below as each
   *comment one fires -- see the create comment (startup.txt) for why this prints unconditionally after the gate

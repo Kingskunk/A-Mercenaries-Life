@@ -50,6 +50,8 @@ const MAP = {
   w_rapier: "Rapier_Unfaded_Icon.png",
   w_scimitar: "Scimitar_Unfaded_Icon.png",
   w_longbow: "Longbow_Unfaded_Icon.png",
+  w_greatsword: "Greatsword_Unfaded_Icon.png",
+  w_maul: "Maul_Unfaded_Icon.png",
   w_generic: "../RPGIcons/weapon_icon.png",                     // STAND-IN: unarmed and anything unrecognised
 
   // ---- body armour and clothing worn as armour

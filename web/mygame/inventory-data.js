@@ -1323,6 +1323,24 @@
       equip: { slot: "weapon", id: "handaxe" }
     },
     {
+      id: "greatsword", category: "weapons", owned: "has_greatsword", slot: "Weapon, two-handed",
+      weight: 6, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_greatsword) || 0); return "Greatsword" + (n > 1 ? " ×" + n : ""); },
+      description: "Long two-handed blade with a wide cross guard.",
+      traits: "2d6 Slashing, Two-Handed",
+      badge: function (s) { return s.equipped_weapon_id === "greatsword" ? "Equipped" : ""; },
+      equip: { slot: "weapon", id: "greatsword" }
+    },
+    {
+      id: "maul", category: "weapons", owned: "has_maul", slot: "Weapon, two-handed",
+      weight: 10, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_maul) || 0); return "Maul" + (n > 1 ? " ×" + n : ""); },
+      description: "Heavy iron block on a long two-handed haft.",
+      traits: "2d6 Bludgeoning, Two-Handed",
+      badge: function (s) { return s.equipped_weapon_id === "maul" ? "Equipped" : ""; },
+      equip: { slot: "weapon", id: "maul" }
+    },
+    {
       id: "lesser_amulet_of_the_beast", category: "apparel", owned: "has_lesser_amulet_of_the_beast", slot: "Neck",
       weight: 0.2, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_lesser_amulet_of_the_beast) || 0); return "Lesser Amulet of the Beast" + (n > 1 ? " ×" + n : ""); },

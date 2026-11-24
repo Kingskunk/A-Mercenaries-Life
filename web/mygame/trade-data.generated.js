@@ -82,7 +82,7 @@ window.TRADE_DATA = {
    "kind": "weapon",
    "group": "",
    "tier": "",
-   "retail": 25,
+   "retail": 40,
    "weight": 4,
    "minutes": 10,
    "hint": "1d8 Slashing, One-Handed",
@@ -107,7 +107,7 @@ window.TRADE_DATA = {
    "kind": "weapon",
    "group": "",
    "tier": "",
-   "retail": 15,
+   "retail": 20,
    "weight": 1,
    "minutes": 10,
    "hint": "1d4 Piercing, Finesse",
@@ -392,6 +392,56 @@ window.TRADE_DATA = {
     "smith": 50,
     "pawn": 35,
     "general": 50,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 0,
+    "countVar": ""
+   }
+  },
+  "greatsword": {
+   "name": "greatsword",
+   "title": "Greatsword",
+   "kind": "weapon",
+   "group": "",
+   "tier": "",
+   "retail": 150,
+   "weight": 6,
+   "minutes": 10,
+   "hint": "2d6 Slashing, Two-Handed",
+   "slot": "Weapon, two-handed",
+   "stack": true,
+   "sell": {
+    "smith": 50,
+    "pawn": 35,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 0,
+    "countVar": ""
+   }
+  },
+  "maul": {
+   "name": "maul",
+   "title": "Maul",
+   "kind": "weapon",
+   "group": "",
+   "tier": "",
+   "retail": 50,
+   "weight": 10,
+   "minutes": 10,
+   "hint": "2d6 Bludgeoning, Two-Handed",
+   "slot": "Weapon, two-handed",
+   "stack": true,
+   "sell": {
+    "smith": 50,
+    "pawn": 35,
+    "general": 0,
     "tailor": 0,
     "jeweler": 0,
     "pawnFixed": 0,
@@ -3207,7 +3257,7 @@ window.TRADE_DATA = {
    "kind": "weapon",
    "group": "",
    "tier": "",
-   "retail": 25,
+   "retail": 35,
    "weight": 2,
    "minutes": 10,
    "hint": "1d6 Piercing, Ranged, Two-Handed",
@@ -4343,7 +4393,8 @@ window.TRADE_DATA = {
     "iron_crowbar",
     "longsword",
     "rapier",
-    "scimitar"
+    "scimitar",
+    "greatsword"
    ],
    "sell": [
     "brigandine",
@@ -4361,7 +4412,9 @@ window.TRADE_DATA = {
     "warhammer",
     "greataxe",
     "mace",
-    "handaxe"
+    "handaxe",
+    "greatsword",
+    "maul"
    ]
   },
   "ambrose": {
@@ -4644,7 +4697,9 @@ window.TRADE_DATA = {
     "greataxe",
     "mace",
     "handaxe",
-    "longbow"
+    "longbow",
+    "greatsword",
+    "maul"
    ]
   },
   "works": {
@@ -4850,7 +4905,8 @@ window.TRADE_DATA = {
     "shortsword",
     "warhammer",
     "greataxe",
-    "mace"
+    "mace",
+    "maul"
    ],
    "sell": [
     "brigandine",
@@ -4868,7 +4924,9 @@ window.TRADE_DATA = {
     "warhammer",
     "greataxe",
     "mace",
-    "handaxe"
+    "handaxe",
+    "greatsword",
+    "maul"
    ]
   },
   "barley_farm": {
