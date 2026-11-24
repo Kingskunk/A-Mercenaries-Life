@@ -112,7 +112,7 @@ const SETTLEMENTS = {
     name: "Brinewick", start: "brinewick", startScene: "port_valen/brinewick/brinewick", hubFile: "port_valen/brinewick/brinewick.txt", hubLabels: ["brinewick"],
     files: ["port_valen/brinewick/reedhouse.txt", "port_valen/brinewick/saltworks.txt", "port_valen/brinewick/tide_house.txt"],
     services: {
-      board: { name: "Notice board", seen: "bw_tide_house_seen", steps: [S("brinewick", "bw_tide_house", "port_valen/brinewick/brinewick.txt"), S("bw_tide_house_main", "cr_read", "port_valen/brinewick/tide_house.txt")], done: "You are at the notice board." },
+      board: { name: "Notice board", seen: "bw_tide_house_seen", steps: [S("brinewick", "bw_tide_house", "port_valen/brinewick/brinewick.txt"), S("bw_tide_house_main", "nb_read", "port_valen/brinewick/tide_house.txt")], done: "You are at the notice board." },
       inn: { name: "The Reedhouse", seen: "bw_reedhouse_seen", steps: [S("brinewick", "bw_reedhouse", "port_valen/brinewick/brinewick.txt")], done: "You are at the Reedhouse." },
       leave: { name: "Leave Brinewick", steps: [S("brinewick", "ow_here", "port_valen/brinewick/brinewick.txt")], done: "You take the bank road out of Brinewick." }
     }
@@ -121,7 +121,7 @@ const SETTLEMENTS = {
     name: "Marlcross", start: "marlcross", startScene: "port_valen/marlcross/marlcross", hubFile: "port_valen/marlcross/marlcross.txt", hubLabels: ["marlcross"],
     files: ["port_valen/marlcross/cross_hall.txt", "port_valen/marlcross/grain_green.txt", "port_valen/marlcross/wayfarers_rest.txt"],
     services: {
-      board: { name: "Notice board", seen: "mc_hall_seen", steps: [S("marlcross", "mc_cross_hall", "port_valen/marlcross/marlcross.txt"), S("mc_cross_hall_main", "cr_read", "port_valen/marlcross/cross_hall.txt")], done: "You are at the notice board." },
+      board: { name: "Notice board", seen: "mc_hall_seen", steps: [S("marlcross", "mc_cross_hall", "port_valen/marlcross/marlcross.txt"), S("mc_cross_hall_main", "nb_read", "port_valen/marlcross/cross_hall.txt")], done: "You are at the notice board." },
       inn: { name: "The Wayfarer's Rest", seen: "mc_rest_seen", steps: [S("marlcross", "mc_wayfarers_rest", "port_valen/marlcross/marlcross.txt")], done: "You are at the Wayfarer's Rest." },
       leave: { name: "Leave Marlcross", steps: [S("marlcross", "ow_here", "port_valen/marlcross/marlcross.txt")], done: "You take the High Grey Road out of Marlcross." }
     }
@@ -130,7 +130,7 @@ const SETTLEMENTS = {
     name: "Redvein", start: "redvein", startScene: "alderford/redvein/redvein", hubFile: "alderford/redvein/redvein.txt", hubLabels: ["redvein"],
     files: ["alderford/redvein/eastcut.txt", "alderford/redvein/gather_house.txt", "alderford/redvein/red_lantern.txt"],
     services: {
-      board: { name: "Notice board", seen: "rv_hall_seen", steps: [S("redvein", "rv_gather_house", "alderford/redvein/redvein.txt"), S("rv_gather_house_main", "cr_read", "alderford/redvein/gather_house.txt")], done: "You are at the notice board." },
+      board: { name: "Notice board", seen: "rv_hall_seen", steps: [S("redvein", "rv_gather_house", "alderford/redvein/redvein.txt"), S("rv_gather_house_main", "nb_read", "alderford/redvein/gather_house.txt")], done: "You are at the notice board." },
       inn: { name: "The Red Lantern", seen: "rv_lantern_seen", steps: [S("redvein", "rv_red_lantern", "alderford/redvein/redvein.txt")], done: "You are at the Red Lantern." },
       leave: { name: "Leave Redvein", steps: [S("redvein", "ow_here", "alderford/redvein/redvein.txt")], done: "You take the Eastcut Road out of Redvein." }
     }
@@ -139,7 +139,7 @@ const SETTLEMENTS = {
     name: "Whitefold", start: "whitefold", startScene: "alderford/whitefold/whitefold", hubFile: "alderford/whitefold/whitefold.txt", hubLabels: ["whitefold"],
     files: ["alderford/whitefold/fleecefold.txt", "alderford/whitefold/stone_yard.txt", "alderford/whitefold/white_ram.txt"],
     services: {
-      board: { name: "Notice board", seen: "wf_fold_seen", steps: [S("whitefold", "wf_fleecefold", "alderford/whitefold/whitefold.txt"), S("wf_fleecefold", "cr_read", "alderford/whitefold/fleecefold.txt")], done: "You are at the notice rail." },
+      board: { name: "Notice board", seen: "wf_fold_seen", steps: [S("whitefold", "wf_fleecefold", "alderford/whitefold/whitefold.txt"), S("wf_fleecefold", "nb_read", "alderford/whitefold/fleecefold.txt")], done: "You are at the notice rail." },
       inn: { name: "The White Ram", seen: "wf_ram_seen", steps: [S("whitefold", "wf_white_ram", "alderford/whitefold/whitefold.txt")], done: "You are at the White Ram." },
       // The Weight of the Road holds the village shut: the hub's roads option is guarded by the same flag (so no hidden copy exists while it is set), and the card greys the button with this reason.
       leave: { name: "Leave Whitefold", steps: [S("whitefold", "ow_here", "alderford/whitefold/whitefold.txt")], done: "You take the road out of Whitefold.", lock: "weight_road_active", lockReason: "The roads are shut while the wall is down." }
@@ -149,7 +149,7 @@ const SETTLEMENTS = {
     name: "Barleycross", start: "barleycross", startScene: "timbermouth/barleycross/barleycross", hubFile: "timbermouth/barleycross/barleycross.txt", hubLabels: ["barleycross"],
     files: ["timbermouth/barleycross/green.txt", "timbermouth/barleycross/lane.txt", "timbermouth/barleycross/pasture.txt"],
     services: {
-      board: { name: "Notice board", seen: "bc_hall_seen", steps: [S("barleycross", "bc_green", "timbermouth/barleycross/barleycross.txt"), S("bc_hall", "cr_read", "timbermouth/barleycross/green.txt")], done: "You are at the notice post." },
+      board: { name: "Notice board", seen: "bc_hall_seen", steps: [S("barleycross", "bc_green", "timbermouth/barleycross/barleycross.txt"), S("bc_hall", "nb_read", "timbermouth/barleycross/green.txt")], done: "You are at the notice post." },
       // Barleycross has no inn: a farmer lets the loft over his barn for a few coppers, so the Lane's barn is the stand-in
       inn: { name: "The farmer's barn", seen: "bc_lane_seen", steps: [S("barleycross", "bc_lane", "timbermouth/barleycross/barleycross.txt"), S("bc_lane_lane", "bc_lane_barn", "timbermouth/barleycross/lane.txt")], done: "You are at the barn." },
       leave: { name: "Leave Barleycross", steps: [S("barleycross", "ow_here", "timbermouth/barleycross/barleycross.txt")], done: "You take the farm road out of Barleycross." }
@@ -159,7 +159,7 @@ const SETTLEMENTS = {
     name: "Ashrun Holt", start: "ashrun_holt", startScene: "timbermouth/ashrun_holt/ashrun_holt", hubFile: "timbermouth/ashrun_holt/ashrun_holt.txt", hubLabels: ["ashrun_holt"],
     files: ["timbermouth/ashrun_holt/ashrun_house.txt", "timbermouth/ashrun_holt/hide_yard.txt", "timbermouth/ashrun_holt/longhouse.txt", "timbermouth/ashrun_holt/work_yards.txt"],
     services: {
-      board: { name: "Board of cords", seen: "ah_speaker_seen", steps: [S("ashrun_holt", "ah_longhouse", "timbermouth/ashrun_holt/ashrun_holt.txt"), S("ah_hall", "cr_read", "timbermouth/ashrun_holt/longhouse.txt")], done: "You are at the board of cords." },
+      board: { name: "Board of cords", seen: "ah_speaker_seen", steps: [S("ashrun_holt", "ah_longhouse", "timbermouth/ashrun_holt/ashrun_holt.txt"), S("ah_hall", "nb_read", "timbermouth/ashrun_holt/longhouse.txt")], done: "You are at the board of cords." },
       inn: { name: "Ashrun House", seen: "ah_inn_seen", steps: [S("ashrun_holt", "ah_inn", "timbermouth/ashrun_holt/ashrun_holt.txt")], done: "You are at Ashrun House." },
       leave: { name: "Leave Ashrun Holt", steps: [S("ashrun_holt", "ow_here", "timbermouth/ashrun_holt/ashrun_holt.txt")], done: "You take the forest track out of Ashrun Holt." }
     }

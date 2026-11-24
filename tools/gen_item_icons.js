@@ -47,6 +47,9 @@ const MAP = {
   w_mace: "Mace_Unfaded_Icon.png",
   w_club: "Club_Unfaded_Icon.png",
   w_hammer: "Warhammer_Item_Icon.png",
+  w_rapier: "Rapier_Unfaded_Icon.png",
+  w_scimitar: "Scimitar_Unfaded_Icon.png",
+  w_longbow: "Longbow_Unfaded_Icon.png",
   w_generic: "../RPGIcons/weapon_icon.png",                     // STAND-IN: unarmed and anything unrecognised
 
   // ---- body armour and clothing worn as armour

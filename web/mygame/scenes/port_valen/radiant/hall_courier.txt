@@ -14,10 +14,10 @@
 *comment Replay: the take and the delivery each change state once, under a page-id lock (cr_take_locked, and the currency lock for delivery); both pages print from values the lock does not change.
 *comment
 *comment EVERY settlement has a board (the user, 2026-10-11): the origin is cr_origin (a tile id), and the board is the same generator for any of them. Port Valen's is printed inside the Hiring Hall board page
-*comment (port_valen_civic_heights.txt pv_ch_roll_read, which sets cr_origin "pv" and calls cr_board_print, with choices only). Every other settlement's existing notice option (the Factor's Halls of Timbermouth and Alderford,
-*comment the Cross Hall, the Tide House, the Gather House, the Longhouse's board of cords, Barleycross's notice post, Whitefold's notice rail in the Fleecefold) ends by setting cr_origin and going to cr_read, which prints that
-*comment board's postings and offers them, and goes straight back (cr_back) if there is nothing to take. cr_back is the one table of where each place returns to; a new settlement is one line there, one line in
-*comment COURIER_TILES (overworld-data.js) and a call to cr_read from its own notice option.
+*comment (port_valen_civic_heights.txt pv_ch_roll_read, which sets cr_origin "pv" and calls cr_board_print, with choices only). Every other settlement's notice option goes through port_valen/radiant/notice_board.txt nb_read
+*comment (which calls cr_board_prepare, cr_post_line, cr_sign_body, cr_full_body, cr_need_body, cr_lot_go, and cr_back here), printing any local quest notices alongside that board's courier postings and going
+*comment straight back (cr_back) if there is nothing to take. cr_back is the one table of where each place returns to; a new settlement is one line there, one line in COURIER_TILES (overworld-data.js) and a call to
+*comment notice_board.txt nb_read from its own notice option.
 *comment
 *comment Not in *scene_list: compile.js lists it with verifyFileName. Wired in: the notice options named above, radiant_hub.txt (lapse, "Your posting"), overworld.txt (the Deliver options) and
 *comment overworldmap.js (their buttons), startup.txt variables.
@@ -93,7 +93,7 @@
 *return
 
 *comment ── taking one: cr_pick (1 to 3) names the posting. The posting is copied into the first free satchel slot under a lock, and the page prints from the posting, which the lock does not change. ──
-*label cr_sign
+*label cr_sign_body
 *if (not(cr_take_locked)) or (not(locked_cr_take_page_id = page_id))
   *gosub cr_free_slot
   *if (cr_free > 0)
@@ -133,137 +133,45 @@
 You press the brass to the posting. It warms against your palm, and the terms run across its face in thin lines of light and sink into the metal. At the foot of the sheet the seals dim, and the posting is taken down.
 
 [b][🏷️ Job taken: Courier, ${cs_item} for ${cs_who} in ${cs_to}][/b]
+*return
+
+*label cr_sign
+*gosub cr_sign_body
 *page_break Look over the remaining notices…
-*if ((((cr_origin = "tm") or (cr_origin = "fv")) and (peddler_stage = "none")))
-  *goto_scene port_valen/radiant/notice_board nb_read
 *if (cr_origin = "pv")
   *goto_scene port_valen/port_valen_civic_heights pv_ch_roll_display
-*goto cr_read
+*goto_scene port_valen/radiant/notice_board nb_read
 
 *comment The satchel is full: costs no time and sets nothing.
-*label cr_full
+*label cr_full_body
 [b]◈ THE COURIER POSTING[/b]
 *line_break
 You reach for the posting and stop. Three parcels is what the satchel and the Hall's terms allow. Deliver one, or let one lapse, and come back.
+*return
+
+*label cr_full
+*gosub cr_full_body
 *page_break Step back from the notices…
-*if ((((cr_origin = "tm") or (cr_origin = "fv")) and (peddler_stage = "none")))
-  *goto_scene port_valen/radiant/notice_board nb_read
 *if (cr_origin = "pv")
   *goto_scene port_valen/port_valen_civic_heights pv_ch_roll_display
-*goto cr_read
+*goto_scene port_valen/radiant/notice_board nb_read
 
 *comment No insignia: costs no time and sets nothing. A courier carries the Hall's brass, which the Seals window in Port Valen sells once.
-*label cr_need
+*label cr_need_body
 [b]◈ THE COURIER POSTING[/b]
 *line_break
 *script stats.cr_need_text = window.Insignia.needText(stats.cr_gov);
 *if (((((cr_origin = "nv") or (cr_origin = "bm")) or (cr_origin = "fm")) or (cr_origin = "rn2")) or (cr_origin = "pc"))
   *set cr_need_text "You reach for the posting. The village head's countersign at its foot marks House Gault's work, and it goes to a bearer of a House Gault page. The clerks at Langston Hall's counters open one on a Contractor's Insignia, or sell you the Insignia with the page already on it."
 ${cr_need_text}
+*return
+
+*label cr_need
+*gosub cr_need_body
 *page_break Step back from the notices…
-*if ((((cr_origin = "tm") or (cr_origin = "fv")) and (peddler_stage = "none")))
-  *goto_scene port_valen/radiant/notice_board nb_read
 *if (cr_origin = "pv")
   *goto_scene port_valen/port_valen_civic_heights pv_ch_roll_display
-*goto cr_read
-
-*comment ── a settlement's board page (every origin but Port Valen, whose board is printed inside the Hiring Hall page): the postings of cr_origin, with the choices. Nothing to take or carry: straight back. ──
-*comment cr_inline is set true by a notice option that reaches this page straight from its own prose (no page between, the user's call, 2026-10-11): the postings then follow the notices on the SAME page, with no heading, and
-*comment if there is nothing to take the page breaks first so the hall does not run on after the notices. It is cleared as soon as it is read, and every other way in (taking a posting, no insignia) arrives on a fresh page.
-*label cr_read
-*gosub cr_board_prepare
-*temp cr_lot_here false
-*if (((cr_origin = "lg") or ((cr_origin = "tm") or (cr_origin = "af"))) and (cr_lot_link))
-  *set cr_lot_here true
-*temp cr_any true
-*if (not((crp1_open) or ((crp2_open) or ((crp3_open) or ((crp1_full) or ((crp2_full) or (crp3_full)))))))
-  *set cr_any false
-*if ((not(cr_lot_here)) and (not(cr_any)))
-  *if (cr_inline)
-    *set cr_inline false
-    *page_break Step back…
-  *goto cr_back
-*temp cr_where "Among the notices"
-*if ((cr_origin = "tm") or (cr_origin = "af"))
-  *set cr_where "Among the postings on the board"
-*elseif (cr_origin = "fv")
-  *set cr_where "Among the scraps on the post"
-*elseif (cr_origin = "fo")
-  *set cr_where "Beside the board of cords"
-*elseif (cr_origin = "wf")
-  *set cr_where "Beside the notice rail"
-*elseif (cr_origin = "lg")
-  *set cr_where "Below the forecast"
-*elseif (cr_origin = "nv")
-  *set cr_where "Under the heading for House and Village work"
-*elseif (cr_origin = "bm")
-  *set cr_where "Under the heading chalked for Hall work"
-*elseif (cr_origin = "fm")
-  *set cr_where "On the pins under the chalked heading"
-*elseif (cr_origin = "rn2")
-  *set cr_where "Under the chalked heading beside the back door"
-*elseif (cr_origin = "pc")
-  *set cr_where "Pinned along the wooden notice rack by the back wall"
-*temp cr_head "THE COURIER POSTINGS"
-*temp cr_seal "the city's"
-*if (cr_origin = "lg")
-  *set cr_head "LANGSTON HALL: THE CONTRACT BOARD"
-  *set cr_seal "the Hall's counterseal"
-*if (((((cr_origin = "nv") or (cr_origin = "bm")) or (cr_origin = "fm")) or (cr_origin = "rn2")) or (cr_origin = "pc"))
-  *set cr_head "THE VILLAGE HEAD'S HALL: THE CONTRACT BOARD"
-  *set cr_seal "the village head's countersign"
-*if (not(cr_inline))
-  [b]◈ ${cr_head}[/b]
-  *line_break
-*set cr_inline false
-
-*if (cr_any)
-  ${cr_where}, a few sheets are ruled like forms, each headed with a posting number and sealed twice, the patron's in wax and ${cr_seal} pressed beside it.
-*else
-  No courier sheet is left on the board for you.
-
-*if ((crp1_on) and (not(crp1_taken)))
-  *gosub cr_post_line 1
-*if ((crp2_on) and (not(crp2_taken)))
-  *gosub cr_post_line 2
-*if ((crp3_on) and (not(crp3_taken)))
-  *gosub cr_post_line 3
-*choice
-  *if ((crp1_open) and (cr_can))
-    # Press your insignia to the posting and take the courier job to ${crp1_to_name}.
-      *set cr_pick 1
-      *goto cr_sign
-  *if ((crp1_open) and (not(cr_can)))
-    # Take the courier job to ${crp1_to_name}.
-      *goto cr_need
-  *if (crp1_full)
-    # Take the courier job to ${crp1_to_name}.
-      *goto cr_full
-  *if ((crp2_open) and (cr_can))
-    # Press your insignia to the posting and take the courier job to ${crp2_to_name}.
-      *set cr_pick 2
-      *goto cr_sign
-  *if ((crp2_open) and (not(cr_can)))
-    # Take the courier job to ${crp2_to_name}.
-      *goto cr_need
-  *if (crp2_full)
-    # Take the courier job to ${crp2_to_name}.
-      *goto cr_full
-  *if ((crp3_open) and (cr_can))
-    # Press your insignia to the posting and take the courier job to ${crp3_to_name}.
-      *set cr_pick 3
-      *goto cr_sign
-  *if ((crp3_open) and (not(cr_can)))
-    # Take the courier job to ${crp3_to_name}.
-      *goto cr_need
-  *if (crp3_full)
-    # Take the courier job to ${crp3_to_name}.
-      *goto cr_full
-  *if (cr_lot_here)
-    # Walk over to the wagon lot, where the line is making up.
-      *goto cr_lot_go
-  # Step back from the notices.
-    *goto cr_back
+*goto_scene port_valen/radiant/notice_board nb_read
 
 *comment ── the wagon lot a board links to (cr_lot_link, set by the board's page): the one table of where each board's lot is. A new town with a lot is one line here. ──
 *label cr_lot_go

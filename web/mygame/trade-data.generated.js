@@ -77,8 +77,8 @@ window.TRADE_DATA = {
    }
   },
   "timber_axe": {
-   "name": "hewing axe",
-   "title": "Highland Hewing Axe",
+   "name": "battleaxe",
+   "title": "Battleaxe",
    "kind": "weapon",
    "group": "",
    "tier": "",
@@ -103,7 +103,7 @@ window.TRADE_DATA = {
   },
   "stiletto": {
    "name": "stiletto",
-   "title": "Alderford Stiletto",
+   "title": "Stiletto",
    "kind": "weapon",
    "group": "",
    "tier": "",
@@ -199,6 +199,206 @@ window.TRADE_DATA = {
     "herbalistPiece": 0,
     "gamePiece": 0,
     "countVar": "scrap_steel"
+   }
+  },
+  "longsword": {
+   "name": "longsword",
+   "title": "Longsword",
+   "kind": "weapon",
+   "group": "",
+   "tier": "",
+   "retail": 100,
+   "weight": 3,
+   "minutes": 10,
+   "hint": "1d8 Slashing, One-Handed",
+   "slot": "Weapon",
+   "stack": true,
+   "sell": {
+    "smith": 50,
+    "pawn": 35,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 0,
+    "countVar": ""
+   }
+  },
+  "shortsword": {
+   "name": "shortsword",
+   "title": "Shortsword",
+   "kind": "weapon",
+   "group": "",
+   "tier": "",
+   "retail": 60,
+   "weight": 2,
+   "minutes": 10,
+   "hint": "1d6 Piercing, Finesse, One-Handed",
+   "slot": "Weapon",
+   "stack": true,
+   "sell": {
+    "smith": 50,
+    "pawn": 35,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 0,
+    "countVar": ""
+   }
+  },
+  "rapier": {
+   "name": "rapier",
+   "title": "Rapier",
+   "kind": "weapon",
+   "group": "",
+   "tier": "",
+   "retail": 120,
+   "weight": 2,
+   "minutes": 10,
+   "hint": "1d8 Piercing, Finesse, One-Handed",
+   "slot": "Weapon",
+   "stack": true,
+   "sell": {
+    "smith": 50,
+    "pawn": 35,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 0,
+    "countVar": ""
+   }
+  },
+  "scimitar": {
+   "name": "scimitar",
+   "title": "Scimitar",
+   "kind": "weapon",
+   "group": "",
+   "tier": "",
+   "retail": 70,
+   "weight": 3,
+   "minutes": 10,
+   "hint": "1d6 Slashing, Finesse, One-Handed",
+   "slot": "Weapon",
+   "stack": true,
+   "sell": {
+    "smith": 50,
+    "pawn": 35,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 0,
+    "countVar": ""
+   }
+  },
+  "warhammer": {
+   "name": "warhammer",
+   "title": "Warhammer",
+   "kind": "weapon",
+   "group": "",
+   "tier": "",
+   "retail": 35,
+   "weight": 5,
+   "minutes": 10,
+   "hint": "1d8 Bludgeoning, One-Handed",
+   "slot": "Weapon",
+   "stack": true,
+   "sell": {
+    "smith": 50,
+    "pawn": 35,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 0,
+    "countVar": ""
+   }
+  },
+  "greataxe": {
+   "name": "greataxe",
+   "title": "Greataxe",
+   "kind": "weapon",
+   "group": "",
+   "tier": "",
+   "retail": 50,
+   "weight": 7,
+   "minutes": 10,
+   "hint": "1d12 Slashing, Two-Handed",
+   "slot": "Weapon, two-handed",
+   "stack": true,
+   "sell": {
+    "smith": 50,
+    "pawn": 35,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 0,
+    "countVar": ""
+   }
+  },
+  "mace": {
+   "name": "mace",
+   "title": "Mace",
+   "kind": "weapon",
+   "group": "",
+   "tier": "",
+   "retail": 25,
+   "weight": 4,
+   "minutes": 10,
+   "hint": "1d6 Bludgeoning, One-Handed",
+   "slot": "Weapon",
+   "stack": true,
+   "sell": {
+    "smith": 50,
+    "pawn": 35,
+    "general": 0,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 0,
+    "countVar": ""
+   }
+  },
+  "handaxe": {
+   "name": "handaxe",
+   "title": "Handaxe",
+   "kind": "weapon",
+   "group": "",
+   "tier": "",
+   "retail": 15,
+   "weight": 2,
+   "minutes": 10,
+   "hint": "1d6 Slashing, One-Handed",
+   "slot": "Weapon",
+   "stack": true,
+   "sell": {
+    "smith": 50,
+    "pawn": 35,
+    "general": 50,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 0,
+    "countVar": ""
    }
   },
   "shield": {
@@ -2926,6 +3126,31 @@ window.TRADE_DATA = {
     "countVar": ""
    }
   },
+  "longbow": {
+   "name": "longbow",
+   "title": "Longbow",
+   "kind": "weapon",
+   "group": "",
+   "tier": "",
+   "retail": 60,
+   "weight": 2,
+   "minutes": 10,
+   "hint": "1d8 Piercing, Ranged, Two-Handed",
+   "slot": "Weapon, two-handed",
+   "stack": true,
+   "sell": {
+    "smith": 0,
+    "pawn": 35,
+    "general": 50,
+    "tailor": 0,
+    "jeweler": 0,
+    "pawnFixed": 0,
+    "smithPiece": 0,
+    "herbalistPiece": 0,
+    "gamePiece": 0,
+    "countVar": ""
+   }
+  },
   "longshade_quarterstaff": {
    "name": "ash quarterstaff",
    "title": "Ash Quarterstaff",
@@ -2952,8 +3177,8 @@ window.TRADE_DATA = {
    }
   },
   "longshade_spear": {
-   "name": "Longshade spear",
-   "title": "Longshade Spear",
+   "name": "spear",
+   "title": "Spear",
    "kind": "weapon",
    "group": "",
    "tier": "",
@@ -2977,8 +3202,8 @@ window.TRADE_DATA = {
    }
   },
   "longshade_shortbow": {
-   "name": "Longshade shortbow",
-   "title": "Longshade Shortbow",
+   "name": "shortbow",
+   "title": "Shortbow",
    "kind": "weapon",
    "group": "",
    "tier": "",
@@ -4115,7 +4340,10 @@ window.TRADE_DATA = {
     "timber_axe",
     "stiletto",
     "torvald_iron_sallet",
-    "iron_crowbar"
+    "iron_crowbar",
+    "longsword",
+    "rapier",
+    "scimitar"
    ],
    "sell": [
     "brigandine",
@@ -4125,7 +4353,15 @@ window.TRADE_DATA = {
     "stiletto",
     "torvald_iron_sallet",
     "iron_crowbar",
-    "scrap_steel"
+    "scrap_steel",
+    "longsword",
+    "shortsword",
+    "rapier",
+    "scimitar",
+    "warhammer",
+    "greataxe",
+    "mace",
+    "handaxe"
    ]
   },
   "ambrose": {
@@ -4399,7 +4635,16 @@ window.TRADE_DATA = {
     "jewelry_sapphire_gold_ring",
     "jewelry_ruby_gold_ring",
     "jewelry_diamond_gold_ring",
-    "poisoners_robes"
+    "poisoners_robes",
+    "longsword",
+    "shortsword",
+    "rapier",
+    "scimitar",
+    "warhammer",
+    "greataxe",
+    "mace",
+    "handaxe",
+    "longbow"
    ]
   },
   "works": {
@@ -4410,7 +4655,8 @@ window.TRADE_DATA = {
     "longshade_quarterstaff",
     "longshade_spear",
     "longshade_shortbow",
-    "wooden_clogs"
+    "wooden_clogs",
+    "longbow"
    ],
    "sell": [
     "longshade_quarterstaff",
@@ -4420,7 +4666,8 @@ window.TRADE_DATA = {
     "road_club",
     "rough_spear",
     "cord_sling",
-    "hunting_bow"
+    "hunting_bow",
+    "longbow"
    ]
   },
   "tmstore": {
@@ -4442,7 +4689,8 @@ window.TRADE_DATA = {
     "camp_kit",
     "waxed_oilcloth",
     "lye_soap",
-    "trail_rations"
+    "trail_rations",
+    "handaxe"
    ],
    "sell": [
     "hemp_rope",
@@ -4459,7 +4707,8 @@ window.TRADE_DATA = {
     "camp_kit",
     "waxed_oilcloth",
     "lye_soap",
-    "trail_rations"
+    "trail_rations",
+    "handaxe"
    ]
   },
   "tomlin": {
@@ -4597,7 +4846,11 @@ window.TRADE_DATA = {
     "iron_crowbar",
     "torvald_iron_sallet",
     "torvald_hide_cap",
-    "shield"
+    "shield",
+    "shortsword",
+    "warhammer",
+    "greataxe",
+    "mace"
    ],
    "sell": [
     "brigandine",
@@ -4607,7 +4860,15 @@ window.TRADE_DATA = {
     "stiletto",
     "torvald_iron_sallet",
     "iron_crowbar",
-    "scrap_steel"
+    "scrap_steel",
+    "longsword",
+    "shortsword",
+    "rapier",
+    "scimitar",
+    "warhammer",
+    "greataxe",
+    "mace",
+    "handaxe"
    ]
   },
   "barley_farm": {

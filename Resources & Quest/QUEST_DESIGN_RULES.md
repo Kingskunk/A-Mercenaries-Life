@@ -23,7 +23,7 @@ Design guidelines for authoring quests, side contracts, investigations, hubs, an
   Never design quests as an exponentially branching tree where every option splits into a permanently separate path. Instead, use **Branch-and-Bottleneck** structure:
   * **The Shared Spine:** The quest follows a linear spine of 3–5 milestone beats (Hook → Investigation → Confrontation → Climax).
   * **Local Tactical Expression:** At each obstacle, offer 3 distinct approaches across archetypes (Combat/STR, Finesse/DEX, Social/CHA, Cunning/INT/WIS, or Arcane). Each option has its own check, flavor, and immediate cost or advantage (health lost, spell used, a piece of leverage found, or an alarm raised), then **converges back to the next shared beat**.
-  * **Climax Divergence:** Reserve true structural branching for the **Climax / Resolution Beat**, where earlier clues, alarms, or leverage unlock or alter the final endings.
+  * **Climax Divergence:** Reserve true structural branching for the **Climax / Resolution Beat**, where earlier clues, alarms, or leverage unlock or alter the final endings. How many endings a quest has depends on its story, not on a quota (see §4).
 * **The Rule of Three Applies to Obstacles, Not Transitions:**
   Offering three options means giving three tactical ways through a major challenge beat. Simple navigation, room transitions, or binary gates (e.g., *"Climb the ladder"* vs. *"Step back to the lane"*) only need two options or a clean transition—never invent filler choices just to hit three.
 * **Archetype Parity:** Balance major challenge beats across character builds:
@@ -37,7 +37,7 @@ Design guidelines for authoring quests, side contracts, investigations, hubs, an
   * **Failure never converts into the same success or reward:** Never award consolation coin or gear after a failed roll, and never offer a failure menu containing the exact free route the player could have taken without rolling.
   * **No stronger repeat of the failed act:** A failed attempt to intimidate, persuade, or overpower an NPC cannot be followed by an even bigger version of the same act on the same person. The NPC now has the upper hand.
   * **Climactic checks do not fail forward into a rescue menu:** Setup and investigation beats can fail forward with a worse position on the next beat. Failing the climactic check that decides the quest's ending lands directly on a lesser or losing outcome.
-  * **Every quest needs a genuine loss state:** Design "the player lost" as a real ending with its own closing prose and local aftermath, not something the story routes around.
+  * **Losing Must Be Possible and Must Show:** The climactic check can be failed, and failing it lands on a worse result the player can feel: the prize damaged or lost, less pay or none, an NPC turned against them, standing lost. In a small quest this can be a short failed or lesser version of the main ending, with its own closing lines. Give losing a full ending of its own, with local aftermath, only when the loss changes the world (a person dies, a place is lost, a faction turns).
 * **Fights Are a Consequence of a Failed Roll, Not a Given:**
   * **Build an approach beat before combat:** Never jump straight from accepting a contract into a fight. Offer a careful approach that wins an edge on success, a clever approach that can solve or bypass the threat without fighting, and a direct "go straight in" option for players who want the fight.
   * **Non-combat solutions must still fulfill the contract:** If the patron paid to eliminate a threat, a clever bypass still has to neutralize it (such as an environmental trap or collapse) rather than leaving the danger behind.
@@ -77,10 +77,13 @@ Design guidelines for authoring quests, side contracts, investigations, hubs, an
   Scale payouts to **danger, risk, time, and the patron's purse** rather than arbitrary brackets. A quick street job should feel meaningful against a laborer's daily copper; a dangerous bust or recovery should stack up against months of soldier pay; large faction operations deal in gold crowns.
 * **Carried Tools Unlock Extra Options; They Never Gate the Path:**
   Catalog tools (rope, lanterns, repair kits, lockpicks, manacles, chalk) give a prepared player an extra or easier approach, and single-use supplies are spent when used. A player without the tool must always still have a viable route—a harder check, a cost, or a detour. Likewise, worn clothing affects comfort, exposure, or social difficulty, never whether a path is possible at all.
-* **The Mercenary Dilemma (Three Resolution Archetypes):** Major quest climaxes should avoid flat good/evil binaries by offering three competing approaches:
-  * **The Lawful / Institutional Route (Legitimacy & Standing):** Honoring the contract, upholding local law, or backing established authorities. Pays standard rates, builds lawful reputation, and keeps local standing safe, at the cost of passing up bigger illicit profits.
-  * **The Pragmatic / Underworld Route (Immediate Profit):** Exploiting the situation for maximum coin—taking a bribe, skimming cargo, or fencing contraband. Pays double or triple the contract fee up front, at the cost of institutional standing and local goodwill.
-  * **The Strategic / Leverage Route (Long-Term Influence):** Turning the crisis into lasting political leverage, blackmail, an ongoing informant, or access to specialist services, trading immediate cash for long-term power.
+* **Endings Fit the Quest (The Mercenary Dilemma Is a Tool, Not a Quota):** Give a quest the endings its situation actually offers, and never invent one to fill a slot. Ask: *would someone in this scene really offer or allow this path?* If not, cut it.
+  * **Small side quests** (a lost animal, an errand, one confrontation): one success and one failure are usually enough. Different ways of succeeding (paid or unpaid, a grudge earned, a favour owed) can be variations inside one ending, tracked with a flag rather than a new ending.
+  * **Larger quests and faction contracts:** when the situation offers real temptation or leverage, offer the routes below that fit. Two is fine and three is the most, and avoid a flat good/evil choice.
+  * **The three routes, as a reference:**
+    * **The Lawful / Institutional Route (Legitimacy & Standing):** Honoring the contract, upholding local law, or backing established authorities. Pays standard rates, builds lawful reputation, and keeps local standing safe, at the cost of passing up bigger illicit profits.
+    * **The Pragmatic / Underworld Route (Immediate Profit):** Exploiting the situation for maximum coin—taking a bribe, skimming cargo, or fencing contraband. Pays double or triple the contract fee up front, at the cost of institutional standing and local goodwill.
+    * **The Strategic / Leverage Route (Long-Term Influence):** Turning the crisis into lasting political leverage, blackmail, an ongoing informant, or access to specialist services, trading immediate cash for long-term power.
 
 ---
 

@@ -1484,8 +1484,8 @@ button#statSidebar .turnRow,
     tray = allyOrderTray();
     tray.innerHTML = "<div class=\"allyOrderHead\"><span>" + esc(name) + "</span><small>Orders</small></div>" +
       "<div class=\"allyOrderButtons\">" +
-        "<button type=\"button\" data-ally-order=\"trade_places\" title=\"Spend movement to take this ally's place in the chokepoint\"><b>⇄</b><span>Swap with me</span></button>" +
-        "<button type=\"button\" data-ally-order=\"call_ally_back\" title=\"Spend movement to have this ally yield the chokepoint\"><b>↩</b><span>Yield opening</span></button>" +
+        "<button type=\"button\" data-ally-order=\"trade_places\" data-tip=\"Spend movement to take this ally's place in the chokepoint\"><b>⇄</b><span>Swap with me</span></button>" +
+        "<button type=\"button\" data-ally-order=\"call_ally_back\" data-tip=\"Spend movement to have this ally yield the chokepoint\"><b>↩</b><span>Yield opening</span></button>" +
       "</div>";
     tray.className = "open";
     // The sidebar is fixed to the right edge, so the tray grows left into open game space rather than making
@@ -1586,7 +1586,7 @@ button#statSidebar .turnRow,
         if (mcCur < mcMax) {
           var mcReason = (window.PageGate && window.PageGate.waitReason) ? window.PageGate.waitReason() : "";
           resourceHtml += "<button type=\"button\" class=\"spellCast\" data-spell-cast=\"codex_magical_cunning\"" + ((canOpenDossier() && !mcReason) ? "" : " disabled") +
-            " title=\"" + esc(mcReason || "A 1-minute rite: regain half your Pact Magic, rounded up, once per Long Rest.") + "\">Magical Cunning…</button>";
+            " data-tip=\"" + esc(mcReason || "A 1-minute rite: regain half your Pact Magic, rounded up, once per Long Rest.") + "\">Magical Cunning…</button>";
         }
       }
     } else if (s.character_class === "bard") {
@@ -1623,7 +1623,7 @@ button#statSidebar .turnRow,
       var heroicNow = Number(s.heroic_inspiration) || 0, heroicArmed = isTruthy(s.heroic_inspiration_armed);
       resourceHtml += slotRow("Heroic Inspiration", heroicNow, s.heroic_inspiration_max, " heroic");
       if ((heroicNow > 0 || heroicArmed) && !isTruthy(s.combat_engaged)) {
-        resourceHtml += "<button type=\"button\" class=\"spellCast heroicUse\" data-spell-cast=\"codex_heroic_arm\"" + (canOpenDossier() ? "" : " disabled") + " title=\"Your next check that has no advantage rolls with advantage, and takes one point. A check that already has advantage keeps the point.\">" +
+        resourceHtml += "<button type=\"button\" class=\"spellCast heroicUse\" data-spell-cast=\"codex_heroic_arm\"" + (canOpenDossier() ? "" : " disabled") + " data-tip=\"Your next check that has no advantage rolls with advantage, and takes one point. A check that already has advantage keeps the point.\">" +
           (heroicArmed ? "Armed — put it away" : "Use Heroic Inspiration…") + "</button>";
       }
     }
@@ -1707,7 +1707,7 @@ button#statSidebar .turnRow,
           if ((kind === "ally") && !friendlyOn && (cHp > 0) && allyCanReceiveChokepointOrders(s, slot)) {
             cOrder = "<button type=\"button\" class=\"allyOrderToggle" + (allyOrderSlot === slot ? " open" : "") +
               "\" data-ally-orders=\"" + slot + "\" aria-expanded=\"" + (allyOrderSlot === slot) +
-              "\" title=\"Open " + esc(cName) + "'s combat orders\">Orders</button>";
+              "\" data-tip=\"Open " + esc(cName) + "'s combat orders\">Orders</button>";
           }
           var cChip = cDead ? "" : chipHtml({ kind: kind, slot: slot, chip: kind === "enemy" ? String(slot) : String.fromCharCode(64 + slot) }, "idChip");
           var cNameHtml = "<span class=\"turnMain\"><span>" + cDartsTag + cChip + "<span class=\"" +
@@ -1811,11 +1811,11 @@ button#statSidebar .turnRow,
     // plain then and a Stats view left open is put back.
     if (inCombat) sbView = "status";
     var inStats = sbView === "stats";
-    var bannerAttr = inCombat ? "" : " data-sb-view=\"" + (inStats ? "status" : "stats") + "\" title=\"" + (inStats ? "Back to Status" : "Open Stats: ability scores, skills, proficiency") + "\"";
+    var bannerAttr = inCombat ? "" : " data-sb-view=\"" + (inStats ? "status" : "stats") + "\" data-tip=\"" + (inStats ? "Back to Status" : "Open Stats: ability scores, skills, proficiency") + "\"";
     var bannerHint = inCombat ? "" : "<small class=\"sbHint\">" + (inStats ? "← Status" : "Stats →") + "</small>";
     var portraitHtml =
       "<div class=\"sbPortrait\">" +
-        "<div class=\"sbRing\"" + (inCombat ? "" : " data-ss-collapse=\"1\" role=\"button\" tabindex=\"0\" title=\"Hide the sidebar\" aria-label=\"Hide the sidebar\"") + ">" + (sbClass ? "<i style=\"background-image: var(--art-c_" + sbClass + ")\"></i>" : "") + "</div>" +
+        "<div class=\"sbRing\"" + (inCombat ? "" : " data-ss-collapse=\"1\" role=\"button\" tabindex=\"0\" data-tip=\"Hide the sidebar\" aria-label=\"Hide the sidebar\"") + ">" + (sbClass ? "<i style=\"background-image: var(--art-c_" + sbClass + ")\"></i>" : "") + "</div>" +
         "<div class=\"sbName" + (inCombat ? "" : " sbNameBtn") + "\"" + bannerAttr + ">" + fmt(s.name) + "<small>Level " + fmt(s.character_level) + " " + fmt(s.class_name || "Recruit") + "</small>" + bannerHint + combatBadgeHtml + "</div>" +
       "</div>";
     if (inStats) {
@@ -2789,9 +2789,9 @@ button#statSidebar .turnRow,
     // Travel (2026-10-21): enabled only on a page that carries the hidden walk option (citytravel.js), so quest pages, timed jobs and dungeons are never walked away from.
     var travelOn = !!(window.CityTravel && window.CityTravel.available());
     var travelTip = travelOn ? "Go somewhere else: another district, a place you know, the notice board, the inn, or out of town. It costs the walking time. [T]" : "You can set off from the streets of a district or a town, not from here.";
-    return "<div class=\"sbWaitRow\"><button type=\"button\" class=\"sbWait\" data-wait-open=\"1\" title=\"" + esc(tip) + "\"" + (off ? " disabled" : "") + ">Wait\u2026</button>" +
-      "<button type=\"button\" class=\"sbWait\" data-rest-open=\"1\" title=\"" + esc(restTip) + "\"" + (restOff ? " disabled" : "") + ">Rest\u2026</button>" +
-      "<button type=\"button\" class=\"sbWait\" data-travel-open=\"1\" title=\"" + esc(travelTip) + "\"" + (travelOn ? "" : " disabled") + ">Travel\u2026</button></div>";
+    return "<div class=\"sbWaitRow\"><button type=\"button\" class=\"sbWait\" data-wait-open=\"1\" data-tip=\"" + esc(tip) + "\"" + (off ? " disabled" : "") + ">Wait\u2026</button>" +
+      "<button type=\"button\" class=\"sbWait\" data-rest-open=\"1\" data-tip=\"" + esc(restTip) + "\"" + (restOff ? " disabled" : "") + ">Rest\u2026</button>" +
+      "<button type=\"button\" class=\"sbWait\" data-travel-open=\"1\" data-tip=\"" + esc(travelTip) + "\"" + (travelOn ? "" : " disabled") + ">Travel\u2026</button></div>";
   }
   function openDossierAt(label) {
     if (!canOpenDossier()) return;

@@ -75,6 +75,7 @@
     "Langston/broadmead/remount_yard": "remount_yard",
     "Langston/broadmead/village_heads_hall": "broadmead_villageheadhall",
     "Langston/broadmead/longfold_fair": "longfold_fair_sun_pillar",
+    "Langston/broadmead/bolted_mare": "broadmead",
     "Langston/fallowmere/fallowmere": "fallowmere_pond_green",
     "Langston/fallowmere/grey_gander": "fallowmere_grey_gander",
     "Langston/fallowmere/village_heads_hall": "generic_village_gathering_hall",
@@ -188,6 +189,13 @@
   function tile(s) { var O = window.Overworld; return s.ow_on && O && O.nodes ? O.nodes[s.ow_pos] : null; }
   function escortTile(s) { var O = window.Overworld; return s.sceneName === "port_valen/radiant/hall_escort" && (s.rj_escort_road || s.rj_escort_stage === "done") && O && O.nodes ? O.nodes[s.es_leg_to] : null; }
   var ESCORT_YARD_PLACES = { pv: "city_wagon_yard", tm: "timber_wagon_lot", af: "river_carters_lot", lg: "vale_gate_wagon_lot" };
+  var BOARD_PLACES = {
+    pv: "civic_hiring_hall", tm: "shared_factors_hall", af: "shared_factors_hall",
+    lg: "langston_hall", nv: "barolo_village_heads_hall", bm: "broadmead_villageheadhall",
+    fm: "generic_village_gathering_hall", rn2: "generic_village_gathering_hall", pc: "generic_village_gathering_hall",
+    bw: "brinewick_tide_house", mc: "generic_village_gathering_hall", rv: "generic_village_gathering_hall",
+    wf: "whitefold_fleecefold", fv: "generic_village_gathering_hall", fo: "ashrun_holt_longhouse"
+  };
   // The trade panel's shop_open names an OPEN MARKET (a lane, a green, a trading ground: web/mygame/market-data.generated.js, commodities) outdoors, not a shop counter, and the stat stays set
   // when the player walks on, so it must never choose the shop interior picture or the "shop" place.
   function counterShop(s) { var D = window.MARKET_DEFS; return !!(s.shop_open && !(D && D[s.shop_open] && D[s.shop_open].commodities)); }
@@ -282,14 +290,11 @@
     function (s) { return s.sceneName === "timbermouth/ashrun_holt/ashrun_house" && s.scenery_subplace === "ashrun_holt_inn_room" ? "generic_village_inn_room" : undefined; }, // a plain hired room above the Ashrun House
     function (s) { return s.sceneName === "timbermouth/ashrun_holt/ashrun_house" && s.scenery_subplace === "ashrun_holt_stables" ? "forrest_village_stable" : undefined; }, // the stable rails along the house's long side
     function (s) { return s.sceneName === "timbermouth/barleycross/lane" && s.scenery_subplace === "barleycross_hayloft" ? "generic_farm_hayloft" : undefined; }, // paid loft above a Barleycross farmstead
-    function (s) { return s.sceneName === "port_valen/radiant/notice_board" && s.cr_origin === "tm" ? "shared_factors_hall" : undefined; }, // Timbermouth's board is inside its Factor's Hall
-    function (s) { return s.sceneName === "port_valen/radiant/notice_board" && s.cr_origin === "fv" ? "generic_village_gathering_hall" : undefined; }, // Barleycross's board is inside its village hall
-    function (s) { return s.sceneName === "port_valen/radiant/notice_board" && s.cr_origin === "fo" ? "ashrun_holt_longhouse" : undefined; }, // Ashrun Holt's board of cords is inside its Longhouse
-    function (s) { return s.sceneName === "port_valen/radiant/hall_courier" && s.cr_origin === "fo" ? "ashrun_holt_longhouse" : undefined; }, // Ashrun Holt's courier postings remain inside the Longhouse
+    function (s) { return (s.sceneName === "port_valen/radiant/notice_board" || (s.sceneName === "port_valen/radiant/hall_courier" && !s.ow_on)) ? BOARD_PLACES[s.cr_origin] : undefined; }, // settlement notice boards and their courier-signing pages stay inside the hall that holds the board (never on overworld delivery)
     function (s) { return s.sceneName === "timbermouth/ashrun_holt/burnt_smithy" && s.scenery_subplace === "ashrun_holt_longhouse" ? "ashrun_holt_longhouse" : undefined; }, // reading Durgan's notice in the Longhouse
     function (s) { return s.sceneName === "timbermouth/ashrun_holt/burnt_smithy" && s.scenery_subplace === "ashrun_holt_work_yards" ? "ashrun_holt_work_yards" : undefined; }, // following tracks along the Ashrun bridge and bank
     function (s) { return s.sceneName === "timbermouth/ashrun_holt/burnt_smithy" && s.scenery_subplace === "ashrun_holt_clearing" ? "ashrun_holt_clearing" : undefined; }, // Jory's cabin at the edge of the clearing
-    function (s) { return s.sceneName === "port_valen/radiant/hall_courier" && s.cr_origin === "lg" ? "langston_hall" : undefined; }, // Langston's shared courier-posting pages remain at the Contract Board inside Langston Hall
+    function (s) { return s.sceneName === "Langston/broadmead/bolted_mare" && s.scenery_subplace ? s.scenery_subplace : undefined; }, // Broadmead's stray-mare quest switches between the village hall, Remount Yard, ford, downland trail and pasture fold
     function (s) { return s.sceneName === "horse_dealer" && s.horse_place === "bc" ? "generic_village_pasture" : undefined; }, // Barleycross's working-horse rail stands at the common pasture
     function (s) { return s.sceneName === "horse_dealer" && s.horse_place === "mw" ? "village_stable_yard" : undefined; }, // Port Valen's dealer works from the Middle Ward yard
     function (s) { return s.sceneName === "Langston/tomlin_shop" ? "tomlin_herbalist_workroom" : undefined; }, // Tomlin's workroom keeps its own picture while the trade panel is open (it has a bespoke interior, so the generic open-counter picture below must not take over)

@@ -84,11 +84,11 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "weapon": {
           "type": "literal",
-          "value": "timber axe"
+          "value": "battleaxe"
         },
         "weapon_desc": {
           "type": "literal",
-          "value": "Highland Hewing Axe"
+          "value": "Battleaxe"
         },
         "weapon_damage": {
           "type": "literal",
@@ -108,7 +108,7 @@ window.EQUIPMENT_CATALOG = {
         },
         "weapon_prose": {
           "type": "literal",
-          "value": "hewing axe"
+          "value": "battleaxe"
         },
         "weapon_magic": {
           "type": "literal",
@@ -151,7 +151,7 @@ window.EQUIPMENT_CATALOG = {
         },
         "weapon_desc": {
           "type": "literal",
-          "value": "Alderford Stiletto"
+          "value": "Stiletto"
         },
         "weapon_damage": {
           "type": "literal",
@@ -525,11 +525,11 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "weapon": {
           "type": "literal",
-          "value": "Longshade spear"
+          "value": "spear"
         },
         "weapon_desc": {
           "type": "literal",
-          "value": "Longshade Spear"
+          "value": "Spear"
         },
         "weapon_damage": {
           "type": "literal",
@@ -549,7 +549,7 @@ window.EQUIPMENT_CATALOG = {
         },
         "weapon_prose": {
           "type": "literal",
-          "value": "Longshade spear"
+          "value": "spear"
         },
         "weapon_magic": {
           "type": "literal",
@@ -588,11 +588,11 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "weapon": {
           "type": "literal",
-          "value": "Longshade shortbow"
+          "value": "shortbow"
         },
         "weapon_desc": {
           "type": "literal",
-          "value": "Longshade Shortbow"
+          "value": "Shortbow"
         },
         "weapon_damage": {
           "type": "literal",
@@ -612,7 +612,7 @@ window.EQUIPMENT_CATALOG = {
         },
         "weapon_prose": {
           "type": "literal",
-          "value": "Longshade shortbow"
+          "value": "shortbow"
         },
         "weapon_ammo": {
           "type": "literal",
@@ -824,6 +824,573 @@ window.EQUIPMENT_CATALOG = {
         "weapon_magical": {
           "type": "literal",
           "value": true
+        },
+        "weapon_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_flimsy": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_reach": {
+          "type": "literal",
+          "value": "long"
+        },
+        "weapon_ammo": {
+          "type": "literal",
+          "value": ""
+        }
+      }
+    },
+    {
+      "ids": [
+        "longsword"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "longsword"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Longsword"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1d8 slashing"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "slashing"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "melee"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "longsword"
+        },
+        "weapon_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "weapon_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_flimsy": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_reach": {
+          "type": "literal",
+          "value": "long"
+        },
+        "weapon_ammo": {
+          "type": "literal",
+          "value": ""
+        }
+      }
+    },
+    {
+      "ids": [
+        "shortsword"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "shortsword"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Shortsword"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1d6 piercing"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "finesse"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "shortsword"
+        },
+        "weapon_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "weapon_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_flimsy": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_reach": {
+          "type": "literal",
+          "value": "long"
+        },
+        "weapon_ammo": {
+          "type": "literal",
+          "value": ""
+        }
+      }
+    },
+    {
+      "ids": [
+        "rapier"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "rapier"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Rapier"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1d8 piercing"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "finesse"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "rapier"
+        },
+        "weapon_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "weapon_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_flimsy": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_reach": {
+          "type": "literal",
+          "value": "long"
+        },
+        "weapon_ammo": {
+          "type": "literal",
+          "value": ""
+        }
+      }
+    },
+    {
+      "ids": [
+        "scimitar"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "scimitar"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Scimitar"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1d6 slashing"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "slashing"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "finesse"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "scimitar"
+        },
+        "weapon_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "weapon_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_flimsy": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_reach": {
+          "type": "literal",
+          "value": "long"
+        },
+        "weapon_ammo": {
+          "type": "literal",
+          "value": ""
+        }
+      }
+    },
+    {
+      "ids": [
+        "warhammer"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "warhammer"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Warhammer"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1d8 bludgeoning"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "bludgeoning"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "melee"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "warhammer"
+        },
+        "weapon_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "weapon_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_flimsy": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_reach": {
+          "type": "literal",
+          "value": "long"
+        },
+        "weapon_ammo": {
+          "type": "literal",
+          "value": ""
+        }
+      }
+    },
+    {
+      "ids": [
+        "greataxe"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "greataxe"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Greataxe"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1d12 slashing"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "slashing"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "melee"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "two_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "greataxe"
+        },
+        "weapon_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "weapon_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_flimsy": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_reach": {
+          "type": "literal",
+          "value": "long"
+        },
+        "weapon_ammo": {
+          "type": "literal",
+          "value": ""
+        }
+      }
+    },
+    {
+      "ids": [
+        "longbow"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "longbow"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Longbow"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1d8 piercing"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "ranged"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "two_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "longbow"
+        },
+        "weapon_ammo": {
+          "type": "literal",
+          "value": "arrow"
+        },
+        "weapon_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "weapon_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_flimsy": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_reach": {
+          "type": "literal",
+          "value": "long"
+        }
+      }
+    },
+    {
+      "ids": [
+        "mace"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "mace"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Mace"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1d6 bludgeoning"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "bludgeoning"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "melee"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "mace"
+        },
+        "weapon_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "weapon_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_flimsy": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_reach": {
+          "type": "literal",
+          "value": "long"
+        },
+        "weapon_ammo": {
+          "type": "literal",
+          "value": ""
+        }
+      }
+    },
+    {
+      "ids": [
+        "handaxe"
+      ],
+      "fields": {
+        "weapon": {
+          "type": "literal",
+          "value": "handaxe"
+        },
+        "weapon_desc": {
+          "type": "literal",
+          "value": "Handaxe"
+        },
+        "weapon_damage": {
+          "type": "literal",
+          "value": "1d6 slashing"
+        },
+        "weapon_damage_type": {
+          "type": "literal",
+          "value": "slashing"
+        },
+        "weapon_type": {
+          "type": "literal",
+          "value": "melee"
+        },
+        "weapon_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "weapon_prose": {
+          "type": "literal",
+          "value": "handaxe"
+        },
+        "weapon_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "weapon_magical": {
+          "type": "literal",
+          "value": false
         },
         "weapon_silvered": {
           "type": "literal",
@@ -1466,11 +2033,11 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "sidearm": {
           "type": "literal",
-          "value": "timber axe"
+          "value": "battleaxe"
         },
         "sidearm_desc": {
           "type": "literal",
-          "value": "Slung Hewing Axe"
+          "value": "Slung Battleaxe"
         },
         "sidearm_damage": {
           "type": "literal",
@@ -1490,7 +2057,7 @@ window.EQUIPMENT_CATALOG = {
         },
         "sidearm_prose": {
           "type": "literal",
-          "value": "hewing axe"
+          "value": "battleaxe"
         },
         "sidearm_magic": {
           "type": "literal",
@@ -1529,7 +2096,7 @@ window.EQUIPMENT_CATALOG = {
         },
         "sidearm_desc": {
           "type": "literal",
-          "value": "Sheathed Alderford Stiletto"
+          "value": "Sheathed Stiletto"
         },
         "sidearm_damage": {
           "type": "literal",
@@ -1879,11 +2446,11 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "sidearm": {
           "type": "literal",
-          "value": "Longshade spear"
+          "value": "spear"
         },
         "sidearm_desc": {
           "type": "literal",
-          "value": "Slung Longshade Spear"
+          "value": "Slung Spear"
         },
         "sidearm_damage": {
           "type": "literal",
@@ -1903,7 +2470,7 @@ window.EQUIPMENT_CATALOG = {
         },
         "sidearm_prose": {
           "type": "literal",
-          "value": "Longshade spear"
+          "value": "spear"
         },
         "sidearm_magic": {
           "type": "literal",
@@ -1938,11 +2505,11 @@ window.EQUIPMENT_CATALOG = {
       "fields": {
         "sidearm": {
           "type": "literal",
-          "value": "Longshade shortbow"
+          "value": "shortbow"
         },
         "sidearm_desc": {
           "type": "literal",
-          "value": "Slung Longshade Shortbow"
+          "value": "Slung Shortbow"
         },
         "sidearm_damage": {
           "type": "literal",
@@ -1962,7 +2529,7 @@ window.EQUIPMENT_CATALOG = {
         },
         "sidearm_prose": {
           "type": "literal",
-          "value": "Longshade shortbow"
+          "value": "shortbow"
         },
         "sidearm_magic": {
           "type": "literal",
@@ -2162,6 +2729,537 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_magical": {
           "type": "literal",
           "value": true
+        },
+        "sidearm_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_flimsy": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_reach": {
+          "type": "literal",
+          "value": "long"
+        }
+      }
+    },
+    {
+      "ids": [
+        "longsword"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "longsword"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Sheathed Longsword"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d8 slashing"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "slashing"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "melee"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "longsword"
+        },
+        "sidearm_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "sidearm_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_flimsy": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_reach": {
+          "type": "literal",
+          "value": "long"
+        }
+      }
+    },
+    {
+      "ids": [
+        "shortsword"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "shortsword"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Sheathed Shortsword"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d6 piercing"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "finesse"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "shortsword"
+        },
+        "sidearm_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "sidearm_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_flimsy": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_reach": {
+          "type": "literal",
+          "value": "long"
+        }
+      }
+    },
+    {
+      "ids": [
+        "rapier"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "rapier"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Sheathed Rapier"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d8 piercing"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "finesse"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "rapier"
+        },
+        "sidearm_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "sidearm_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_flimsy": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_reach": {
+          "type": "literal",
+          "value": "long"
+        }
+      }
+    },
+    {
+      "ids": [
+        "scimitar"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "scimitar"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Sheathed Scimitar"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d6 slashing"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "slashing"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "finesse"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "scimitar"
+        },
+        "sidearm_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "sidearm_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_flimsy": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_reach": {
+          "type": "literal",
+          "value": "long"
+        }
+      }
+    },
+    {
+      "ids": [
+        "warhammer"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "warhammer"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Slung Warhammer"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d8 bludgeoning"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "bludgeoning"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "melee"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "warhammer"
+        },
+        "sidearm_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "sidearm_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_flimsy": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_reach": {
+          "type": "literal",
+          "value": "long"
+        }
+      }
+    },
+    {
+      "ids": [
+        "greataxe"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "greataxe"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Slung Greataxe"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d12 slashing"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "slashing"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "melee"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "two_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "greataxe"
+        },
+        "sidearm_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "sidearm_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_flimsy": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_reach": {
+          "type": "literal",
+          "value": "long"
+        }
+      }
+    },
+    {
+      "ids": [
+        "longbow"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "longbow"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Slung Longbow"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d8 piercing"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "piercing"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "ranged"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "two_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "longbow"
+        },
+        "sidearm_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "sidearm_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_flimsy": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_reach": {
+          "type": "literal",
+          "value": "long"
+        }
+      }
+    },
+    {
+      "ids": [
+        "mace"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "mace"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Slung Mace"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d6 bludgeoning"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "bludgeoning"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "melee"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "mace"
+        },
+        "sidearm_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "sidearm_magical": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_silvered": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_adamantine": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_flimsy": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_reach": {
+          "type": "literal",
+          "value": "long"
+        }
+      }
+    },
+    {
+      "ids": [
+        "handaxe"
+      ],
+      "fields": {
+        "sidearm": {
+          "type": "literal",
+          "value": "handaxe"
+        },
+        "sidearm_desc": {
+          "type": "literal",
+          "value": "Slung Handaxe"
+        },
+        "sidearm_damage": {
+          "type": "literal",
+          "value": "1d6 slashing"
+        },
+        "sidearm_damage_type": {
+          "type": "literal",
+          "value": "slashing"
+        },
+        "sidearm_type": {
+          "type": "literal",
+          "value": "melee"
+        },
+        "sidearm_hands": {
+          "type": "literal",
+          "value": "one_handed"
+        },
+        "sidearm_prose": {
+          "type": "literal",
+          "value": "handaxe"
+        },
+        "sidearm_magic": {
+          "type": "literal",
+          "value": 0
+        },
+        "sidearm_magical": {
+          "type": "literal",
+          "value": false
         },
         "sidearm_silvered": {
           "type": "literal",

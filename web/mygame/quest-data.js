@@ -324,6 +324,32 @@
       active: function (s) { var st = Number(s.ahf_stage) || 0; return st >= 1 && st < 5; }
     },
     {
+      id: "broadmead_mare",
+      title: "The Mare on the Down",
+      place: "Broadmead",
+      giver: "Sergeant Dagny Marren, the Remount Yard",
+      goal: function (s) {
+        var st = Number(s.bm_mare_stage) || 0;
+        if (st === 1) return "Report to the Remount Yard gate across Broadmead's stream.";
+        if (st === 2) return "Search the stream ford and the down behind Broadmead for the strayed piebald mare.";
+        if (st === 3) return "Check the shepherds' fold on the down for word of the mare.";
+        if (st === 4) return "Recover the mare from the commons pound and bring her back to the Remount Yard.";
+        return "Find the strayed piebald mare and bring her back sound to Broadmead's Remount Yard.";
+      },
+      clues: function (s) {
+        var c = [];
+        if (truthy(s.bm_mare_prep_groom)) c.push("Myles Buckman lost the mare at the stream ford when a loose hurdle spooked her; she bolted upslope toward the down.");
+        if (truthy(s.bm_mare_prep_shoe)) c.push("Every shoe forged at the Remount Yard carries a small crescent notch at the toe.");
+        if (truthy(s.bm_mare_has_halter)) c.push("You took a spare rope halter from the yard's tack room.");
+        if (truthy(s.bm_mare_clue_led)) c.push("Someone led the piebald upslope on foot rather than letting her run loose.");
+        if (truthy(s.bm_mare_clue_calm)) c.push("You picked up how the mare reacts when spooked, making her easier to steady.");
+        if (Number(s.bm_mare_stage) >= 4) c.push("A commons shepherd called Thistle penned the mare in the dry-stone commons pound up the ridge.");
+        if (truthy(s.bm_mare_clue_grievance)) c.push("Thistle is holding her under old grazing custom to make the yard recognize the commons' rights.");
+        return c;
+      },
+      active: function (s) { var st = Number(s.bm_mare_stage) || 0; return st >= 1 && st < 5; }
+    },
+    {
       id: "varren_errand", title: "Varren's Errand", place: "Port Valen",
       giver: "Sergeant Varren, the Carrion Compound",
       goal: function (s) {

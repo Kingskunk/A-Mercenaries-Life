@@ -41,10 +41,19 @@ Primary weapons and secondary sidearms can be equipped in the main-hand or store
 | `starting` / `bodkin_dagger` | **Slim Dagger** | One-Handed Finesse | `1d4 piercing` | Enlistment (Disgraced Scion) or Cutler — **1s 5c** | Finesse (uses higher of STR or DEX). Triggers Rogue Sneak Attack (+1d6). |
 | `starting` (Disgraced) | **Compact Light Crossbow** | Two-Handed Ranged | `1d8 piercing` | Enlistment (Disgraced Scion) or Bowyer — **3s 0c** | Ranged weapon (DEX-based, 1d8). Two-handed. |
 | `longshade_quarterstaff` | **Ash Quarterstaff** | One-Handed Melee | `1d8 bludgeoning` | Roan's Wheel Shop (Timbermouth Workshops) — **1s 5c**; sells back for 50% | Plain blunt weapon of straight-grained Longshade ash (STR-based), one-handed, so it pairs with a shield. |
-| `longshade_spear` | **Longshade Spear** | One-Handed Reach Melee | `1d6 piercing` | Roan's Wheel Shop — **2s 0c**; sells back for 50% | Reach weapon (STR-based, `weapon_type "reach"`): can attack from Close as well as Engaged. |
-| `longshade_shortbow` | **Longshade Shortbow** | Two-Handed Ranged | `1d6 piercing` | Roan's Wheel Shop — **2s 5c**; sells back for 50% | Ranged weapon (DEX-based). Two-handed. Triggers Rogue Sneak Attack (+1d6). |
-| `timber_axe` | **Highland Hewing Axe** | One-Handed Melee | `1d8 slashing` | Master Torvald's Smithy (Alderford) or Halda's Forge (Port Valen) — **2s 5c** | One-handed felling axe (STR-based). Compatible with off-hand shields and Dueling Fighting Style (+2 damage). |
-| `stiletto` | **Alderford Stiletto** | One-Handed Finesse | `1d4 piercing` | Master Torvald's Smithy (Alderford) or Halda's Forge (Port Valen) — **1s 5c** | Refined file-steel thrusting blade. Finesse (STR or DEX). Triggers Rogue Sneak Attack (+1d6). |
+| `longshade_spear` | **Spear** | One-Handed Reach Melee | `1d6 piercing` | Roan's Wheel Shop — **2s 0c**; sells back for 50% | Reach weapon (STR-based, `weapon_type "reach"`): can attack from Close as well as Engaged. |
+| `longshade_shortbow` | **Shortbow** | Two-Handed Ranged | `1d6 piercing` | Roan's Wheel Shop — **2s 5c**; sells back for 50% | Ranged weapon (DEX-based). Two-handed. Triggers Rogue Sneak Attack (+1d6). |
+| `timber_axe` | **Battleaxe** (martial) | One-Handed Melee | `1d8 slashing` | Master Torvald's Smithy (Alderford) or Halda's Forge (Port Valen) — **2s 5c** | One-handed war axe (STR-based). Compatible with off-hand shields and Dueling Fighting Style (+2 damage). |
+| `stiletto` | **Stiletto** | One-Handed Finesse | `1d4 piercing` | Master Torvald's Smithy (Alderford) or Halda's Forge (Port Valen) — **1s 5c** | Refined file-steel thrusting blade. Finesse (STR or DEX). Triggers Rogue Sneak Attack (+1d6). |
+| `longsword` | **Longsword** (martial) | One-Handed Melee | `1d8 slashing` | Halda's Forge (Port Valen) — **10s 0c**; smiths buy at 50%, pawnbroker 35% | Straight double-edged blade (STR-based). |
+| `rapier` | **Rapier** (martial) | One-Handed Finesse | `1d8 piercing` | Halda's Forge — **12s 0c**; smiths 50%, pawnbroker 35% | Finesse; a Rogue is trained in it. |
+| `scimitar` | **Scimitar** (martial) | One-Handed Finesse | `1d6 slashing` | Halda's Forge — **7s 0c**; smiths 50%, pawnbroker 35% | Finesse; a Rogue is trained in it. |
+| `shortsword` | **Shortsword** (martial) | One-Handed Finesse | `1d6 piercing` | Master Torvald's Smithy (Alderford) — **6s 0c**; smiths 50%, pawnbroker 35% | Finesse; a Rogue is trained in it. |
+| `warhammer` | **Warhammer** (martial) | One-Handed Melee | `1d8 bludgeoning` | Master Torvald's Smithy — **3s 5c**; smiths 50%, pawnbroker 35% | STR-based. |
+| `greataxe` | **Greataxe** (martial) | Two-Handed Melee | `1d12 slashing` | Master Torvald's Smithy — **5s 0c**; smiths 50%, pawnbroker 35% | Two-handed (Great Weapon Fighting applies). |
+| `mace` | **Mace** | One-Handed Melee | `1d6 bludgeoning` | Master Torvald's Smithy — **2s 5c**; smiths 50%, pawnbroker 35% | Simple weapon. |
+| `handaxe` | **Handaxe** | One-Handed Melee | `1d6 slashing` | Marlow's General Goods (Timbermouth) — **1s 5c**; smiths and general stores 50%, pawnbroker 35% | Simple weapon. Not thrown yet (no Thrown property). |
+| `longbow` | **Longbow** (martial) | Two-Handed Ranged | `1d8 piercing` | Roan's Wheel Shop (Timbermouth) — **6s 0c**; Edda buys at 50%, pawnbroker 35% | Ranged, long reach; takes fire and ice arrows. |
 | `road_club` | **Wooden Club** | One-Handed Melee | `1d4 bludgeoning` | Not sold: dropped by robbers on the road (a robber with a club, 40%) — pawnbroker 35%, Roan's Wheel Shop 50% (**5c** retail) | A plain knotted club banded with iron at the head. |
 | `rough_spear` | **Rough Spear** | One-Handed Reach Melee | `1d6 piercing` | Not sold: dropped by robbers on the road (a robber with a spear, 40%) — pawnbroker 35%, Roan's Wheel Shop 50% (**8c** retail) | A straight ash pole with a wired-on iron head. Reach (STR-based): can attack from Close. |
 | `cord_sling` | **Cord Sling** | One-Handed Ranged | `1d4 bludgeoning` | Not sold: dropped by robbers on the road (a robber with a sling, 40%) — pawnbroker 35%, Roan's Wheel Shop 50% (**4c** retail) | Braided cord and a leather pouch for throwing stones. |
@@ -268,7 +277,7 @@ Prices live in one place: `equipment.txt` `gear_sale_value` (retail in copper, p
 | Cassia Rell (jeweler) | The Bright Setting, Patrician Quarter | **75% of retail** | loose gems only (section 16); she tests and weighs each one before buying |
 | Fenwick (tailor) | The Gilt Needle, Patrician Quarter (Morning to Afternoon, needs a writ) | **40% of retail** | only what he stocks (section 15); Angel does not list these |
 | Hollis (general store) | Hollis & Daughters, Lantern Lane (Morning to Afternoon) | **50% of retail** | only what he stocks: rope, torch, lamp oil, hooded lantern, repair kit, shovel, tinderbox, water jug, chalk, camp kit, waxed oilcloth, lye soap and trail rations (buyer `general`; a 1c item like the torch pays 1c, since each price is floored) |
-| Edda Roan (Roan's Wheel Shop, Timbermouth Workshops) | The Woodworkers' Workshops, Timbermouth (Morning to Afternoon, closed on the rest day) | **50% of retail** | only what she stocks: the ash quarterstaff, the Longshade spear, the Longshade shortbow and wooden clogs (buyer `general`) |
+| Edda Roan (Roan's Wheel Shop, Timbermouth Workshops) | The Woodworkers' Workshops, Timbermouth (Morning to Afternoon, closed on the rest day) | **50% of retail** | only what she stocks: the ash quarterstaff, the spear, the shortbow, the longbow and wooden clogs (buyer `general`) |
 | Marlow (Marlow's General Store, Timbermouth) | Beside the Market's yard gate, Timbermouth (Morning to Dusk, closed on the rest day) | **50% of retail** | the same twelve goods as Hollis & Daughters at the same prices: rope, torch, lamp oil, hooded lantern, repair kit, shovel, lute, flint and tinderbox, water jug, chalk, camp kit, oilcloth, lye soap and trail rations (buyer `general`; shops `tmstore_buy` / `tmstore_sell`, keep the two stock lists in step) |
 | Vael (locksmith) | Vael & Son, Locksmiths' Close (Morning to Afternoon; shut at Dusk, on Hallowday and in a gale) | **50% of retail** | only what he stocks: lockpick set, padlock and key, door bolt and iron manacles (buyer `general`, the same flat counter as Hollis) |
 
@@ -291,7 +300,22 @@ Wearing an untrained tier sets `armor_nonprof`, which gives **disadvantage on ST
 
 Halda and Master Torvald both sell the shield (3s, `has_shield`) to every class that does not own one, and Halda buys the harness back at 50% of its 15s retail (Angel pays 35%).
 
-Halda's buy menu is its own screen (`mw_halda_stock`, opened from "Look over the racks") so the forge hub stays short. Besides the armor and shield it stocks a few Alderford pieces (hewing axe, stiletto, iron skullcap, iron prybar) at Torvald's prices and with the same `has_` flags, so anyone who missed them in Alderford can buy them, and nothing shows once it is owned. The boiled-hide watch cap stays Alderford-only, since Halda deals in metal.
+Halda's buy menu is its own screen (`mw_halda_stock`, opened from "Look over the racks") so the forge hub stays short. Besides the armor and shield it stocks a few Alderford pieces (battleaxe, stiletto, iron skullcap, iron prybar) at Torvald's prices and with the same `has_` flags, so anyone who missed them in Alderford can buy them, and nothing shows once it is owned. The boiled-hide watch cap stays Alderford-only, since Halda deals in metal.
+
+---
+
+### Weapon proficiency (2026-11-24, PHB'24)
+
+Every weapon is simple unless its catalog loadout says `"martial": true` (the class kits' Longsword and Broadaxe are martial too). Attacking with a martial weapon the class is not trained in leaves the proficiency bonus off the attack roll, which says "(not proficient)"; the fight menu tags the weapon [Not proficient], and every shop warns on the buy option (`equipment.txt weapon_prof_check`, `gen_gear.js`).
+
+| Class | Trained in |
+|---|---|
+| Fighter, Barbarian, Ranger | simple and martial |
+| Rogue | simple, and martial weapons that are Finesse (Rapier, Scimitar, Shortsword) |
+| Bard | simple; martial too with Valor's Martial Training (level 3) |
+| Warlock, Wizard | simple |
+
+Not built yet: the Light, Heavy, Versatile and Thrown properties, and weapons that roll more than one die (Greatsword, Maul): the engine reads one damage die per weapon.
 
 ---
 

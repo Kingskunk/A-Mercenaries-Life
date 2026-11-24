@@ -1,29 +1,91 @@
 *comment ====================================================================================
-*comment SETTLEMENT NOTICE BOARD: shared renderer for a settlement's local notices and its
-*comment origin-specific courier contracts. cr_origin identifies the physical board; the scene
-*comment never makes boards share postings or state. A bespoke quest adds a notice only through
-*comment its own eligibility block here, while its quest scene owns acceptance and resolution.
+*comment SETTLEMENT NOTICE BOARD: single shared renderer for every settlement's local quest
+*comment notices, origin-specific courier contracts, and (for towns with a yard) wagon-lot
+*comment link. Every non-Port-Valen settlement board sets cr_origin and cr_inline true and
+*comment goes to nb_read here. cr_origin identifies the physical board; the scene never makes
+*comment boards share postings or state. A bespoke quest adds a notice only through its own
+*comment eligibility block here (using cr_can for the board's Insignia page gate), while its
+*comment quest scene owns acceptance and resolution.
 *comment ====================================================================================
 
 *label nb_read
+*gosub_scene port_valen/radiant/hall_courier cr_board_prepare
 *temp nb_peddler_open false
 *if ((((cr_origin = "tm") or (cr_origin = "fv")) and (peddler_stage = "none")))
   *set nb_peddler_open true
   *set pd_origin cr_origin
+*temp nb_forge_open false
+*if ((cr_origin = "fo") and (ahf_stage = 0))
+  *set nb_forge_open true
+*temp nb_mare_open false
+*if ((cr_origin = "bm") and (bm_mare_stage = 0))
+  *set nb_mare_open true
+*temp nb_any_quest (((nb_peddler_open) or (nb_forge_open)) or (nb_mare_open))
+*temp cr_lot_here false
+*if (((cr_origin = "lg") or ((cr_origin = "tm") or (cr_origin = "af"))) and (cr_lot_link))
+  *set cr_lot_here true
+*temp cr_any true
+*if (not((crp1_open) or ((crp2_open) or ((crp3_open) or ((crp1_full) or ((crp2_full) or (crp3_full)))))))
+  *set cr_any false
+*if ((not(nb_any_quest)) and ((not(cr_lot_here)) and (not(cr_any))))
+  *if (cr_inline)
+    *set cr_inline false
+    *page_break Step back…
+  *goto_scene port_valen/radiant/hall_courier cr_back
+*temp cr_where "Among the notices"
+*if ((cr_origin = "tm") or (cr_origin = "af"))
+  *set cr_where "Among the postings on the board"
+*elseif (cr_origin = "fv")
+  *set cr_where "Among the scraps on the post"
+*elseif (cr_origin = "fo")
+  *set cr_where "Beside the board of cords"
+*elseif (cr_origin = "wf")
+  *set cr_where "Beside the notice rail"
+*elseif (cr_origin = "lg")
+  *set cr_where "Below the forecast"
+*elseif (cr_origin = "nv")
+  *set cr_where "Under the heading for House and Village work"
+*elseif (cr_origin = "bm")
+  *set cr_where "Under the heading chalked for Hall work"
+*elseif (cr_origin = "fm")
+  *set cr_where "On the pins under the chalked heading"
+*elseif (cr_origin = "rn2")
+  *set cr_where "Under the chalked heading beside the back door"
+*elseif (cr_origin = "pc")
+  *set cr_where "Pinned along the wooden notice rack by the back wall"
+*temp cr_head "THE NOTICE BOARD"
+*temp cr_seal "the city's"
+*if (cr_origin = "lg")
+  *set cr_head "LANGSTON HALL: THE CONTRACT BOARD"
+  *set cr_seal "the Hall's counterseal"
+*if (((((cr_origin = "nv") or (cr_origin = "bm")) or (cr_origin = "fm")) or (cr_origin = "rn2")) or (cr_origin = "pc"))
+  *set cr_head "THE VILLAGE HEAD'S HALL: THE CONTRACT BOARD"
+  *set cr_seal "the village head's countersign"
+*if (not(cr_inline))
+  [b]◈ ${cr_head}[/b]
+  *line_break
+*set cr_inline false
 
+*if (nb_peddler_open)
   One notice is newer than the rest, in a careful, uneven hand:
 
   [i]"WORD WANTED. My husband Aldis Pellam went into the Longshade to gather plants, with two hired guards, and did not come out. We held his funeral without him, and I would still know what happened. Eight silver for the telling. The last cottage on the Lane, Barleycross. Merel Pellam."[/i]
 
-*temp nb_forge_open false
-*if ((cr_origin = "fo") and (ahf_stage = 0))
-  *set nb_forge_open true
-
+*if (nb_forge_open)
   A folded sheet is pinned beside the knotted cords with a heavy iron nail, written in thick, square ink:
 
   [i]"FORGE BURNED. Someone put a torch to my smithy roof last night. Forty copper bits to whoever brings me the name and proof, or brings the bastard to my door. Durgan, the smithy off the work track."[/i]
 
-*gosub_scene port_valen/radiant/hall_courier cr_board_prepare
+*if (nb_mare_open)
+  A stiff card pinned beneath STRAYS AND BRANDS carries a dark blue wax seal bearing a horse, written in a tidy clerk's hand:
+
+  [i]"STRAYED. Piebald mare out of the Remount Yard, Countess's brand on the near shoulder, shod with the yard's mark. Four silver marks for her return sound. Apply at the Remount Yard gate. Sgt. Dagny Marren."[/i]
+
+*if (cr_any)
+  ${cr_where}, a few sheets are ruled like forms, each headed with a posting number and sealed twice, the patron's in wax and ${cr_seal} pressed beside it.
+*elseif (not(nb_any_quest))
+  No courier sheet is left on the board for you.
+
 *if ((crp1_on) and (not(crp1_taken)))
   *gosub_scene port_valen/radiant/hall_courier cr_post_line 1
 *if ((crp2_on) and (not(crp2_taken)))
@@ -31,49 +93,71 @@
 *if ((crp3_on) and (not(crp3_taken)))
   *gosub_scene port_valen/radiant/hall_courier cr_post_line 3
 *choice
-  *if (nb_forge_open)
-    *if (has_hall_insignia)
-      # Press your insignia to Durgan's notice and take the burnt-smithy job.
-        *goto_scene timbermouth/ashrun_holt/burnt_smithy ahf_notice_take
-    *else
-      # Take Durgan's notice about the burnt smithy.
-        *goto_scene timbermouth/ashrun_holt/burnt_smithy ahf_notice_need
-  *if (nb_peddler_open)
-    *if (has_hall_insignia)
-      # Press your insignia to Merel Pellam's notice and take the missing-gatherer job.
-        *goto_scene timbermouth/barleycross/overdue_peddler pd_sign
-    *else
-      # Take Merel Pellam's missing-gatherer job.
-        *goto_scene timbermouth/barleycross/overdue_peddler pd_need
-  *if ((crp1_open) and (has_hall_insignia))
+  *if ((nb_forge_open) and (cr_can))
+    # Press your insignia to Durgan's notice and take the burnt-smithy job.
+      *goto_scene timbermouth/ashrun_holt/burnt_smithy ahf_notice_take
+  *if ((nb_forge_open) and (not(cr_can)))
+    # Take Durgan's notice about the burnt smithy.
+      *goto_scene timbermouth/ashrun_holt/burnt_smithy ahf_notice_need
+  *if ((nb_peddler_open) and (cr_can))
+    # Press your insignia to Merel Pellam's notice and take the missing-gatherer job.
+      *goto_scene timbermouth/barleycross/overdue_peddler pd_sign
+  *if ((nb_peddler_open) and (not(cr_can)))
+    # Take Merel Pellam's missing-gatherer job.
+      *goto_scene timbermouth/barleycross/overdue_peddler pd_need
+  *if ((nb_mare_open) and (cr_can))
+    # Press your insignia to the stray-mare notice and take the job.
+      *goto_scene Langston/broadmead/bolted_mare bm_mare_notice_take
+  *if ((nb_mare_open) and (not(cr_can)))
+    # Take the stray-mare notice from the Remount Yard.
+      *goto_scene Langston/broadmead/bolted_mare bm_mare_notice_need
+  *if ((crp1_open) and (cr_can))
     # Press your insignia to the posting and take the courier job to ${crp1_to_name}.
       *set cr_pick 1
-      *goto_scene port_valen/radiant/hall_courier cr_sign
-  *if ((crp1_open) and (not(has_hall_insignia)))
+      *goto nb_cr_sign
+  *if ((crp1_open) and (not(cr_can)))
     # Take the courier job to ${crp1_to_name}.
-      *goto_scene port_valen/radiant/hall_courier cr_need
+      *goto nb_cr_need
   *if (crp1_full)
     # Take the courier job to ${crp1_to_name}.
-      *goto_scene port_valen/radiant/hall_courier cr_full
-  *if ((crp2_open) and (has_hall_insignia))
+      *goto nb_cr_full
+  *if ((crp2_open) and (cr_can))
     # Press your insignia to the posting and take the courier job to ${crp2_to_name}.
       *set cr_pick 2
-      *goto_scene port_valen/radiant/hall_courier cr_sign
-  *if ((crp2_open) and (not(has_hall_insignia)))
+      *goto nb_cr_sign
+  *if ((crp2_open) and (not(cr_can)))
     # Take the courier job to ${crp2_to_name}.
-      *goto_scene port_valen/radiant/hall_courier cr_need
+      *goto nb_cr_need
   *if (crp2_full)
     # Take the courier job to ${crp2_to_name}.
-      *goto_scene port_valen/radiant/hall_courier cr_full
-  *if ((crp3_open) and (has_hall_insignia))
+      *goto nb_cr_full
+  *if ((crp3_open) and (cr_can))
     # Press your insignia to the posting and take the courier job to ${crp3_to_name}.
       *set cr_pick 3
-      *goto_scene port_valen/radiant/hall_courier cr_sign
-  *if ((crp3_open) and (not(has_hall_insignia)))
+      *goto nb_cr_sign
+  *if ((crp3_open) and (not(cr_can)))
     # Take the courier job to ${crp3_to_name}.
-      *goto_scene port_valen/radiant/hall_courier cr_need
+      *goto nb_cr_need
   *if (crp3_full)
     # Take the courier job to ${crp3_to_name}.
-      *goto_scene port_valen/radiant/hall_courier cr_full
+      *goto nb_cr_full
+  *if (cr_lot_here)
+    # Walk over to the wagon lot, where the line is making up.
+      *goto_scene port_valen/radiant/hall_courier cr_lot_go
   # Step back from the notices.
     *goto_scene port_valen/radiant/hall_courier cr_back
+
+*label nb_cr_sign
+*gosub_scene port_valen/radiant/hall_courier cr_sign_body
+*page_break Look over the remaining notices…
+*goto nb_read
+
+*label nb_cr_full
+*gosub_scene port_valen/radiant/hall_courier cr_full_body
+*page_break Step back from the notices…
+*goto nb_read
+
+*label nb_cr_need
+*gosub_scene port_valen/radiant/hall_courier cr_need_body
+*page_break Step back from the notices…
+*goto nb_read

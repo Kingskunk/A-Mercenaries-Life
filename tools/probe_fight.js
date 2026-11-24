@@ -16,7 +16,7 @@
 //   default   serves web/mygame/ over http with tools/serve_app.js, so it shows the scenes and js as they are on disk, with no compile
 //   --built   opens play_game.html instead (what ships; only as fresh as the last compile)
 //   --out     folder for the screenshots (default <tmp>/probe_fight/<script name>)
-//   --hover   at the end, hovers the battle-bar slot with this name and screenshots its tooltip card
+//   --hover   at the end, hovers the battle-bar slot with this name and screenshots its tooltip card; "css:<selector>" hovers any element instead
 // It starts its own Chrome profile and its own server and stops only those processes. CHROME=... if Chrome is not in the usual place.
 // PROBE_DUMP=1 prints where the page keeps its buttons and text, for when a UI change moves them and the probe stops finding options.
 "use strict";
@@ -186,8 +186,10 @@ async function main() {
       console.log("  battle bar: " + bar.slots + " slot(s)" + (bar.noArt.length ? ", " + bar.noArt.length + " with no art: " + bar.noArt.join(", ") : ", all with art"));
     }
 
-    if (hover && bar.shown) {
-      const box = await ev(`(function(){ var s = document.querySelector('#battleHud .bhud-slot[aria-label*=' + JSON.stringify(${JSON.stringify(hover)}) + ']'); if (!s) return null; var r = s.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`);
+    const hoverCss = hover && hover.indexOf("css:") === 0 ? hover.slice(4) : null;
+    if (hover && (bar.shown || hoverCss)) {
+      const sel = hoverCss ? JSON.stringify(hoverCss) : `'#battleHud .bhud-slot[aria-label*=' + JSON.stringify(${JSON.stringify(hover)}) + ']'`;
+      const box = await ev(`(function(){ var s = document.querySelector(${sel}); if (!s) return null; var r = s.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`);
       if (!box) { console.log("  hover: no slot named '" + hover + "'"); problems++; }
       else {
         await cmd("Input.dispatchMouseEvent", { type: "mouseMoved", x: box.x, y: box.y });

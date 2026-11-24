@@ -1,0 +1,70 @@
+*comment ====================================================================================
+*comment THE MARE ON THE DOWN (Broadmead village quest)
+*comment Adapted from Kingdom Come: Deliverance's "The Horse That Bolted" for Broadmead.
+*comment Triggered from Broadmead's Contract Board (port_valen/radiant/notice_board.txt nb_read,
+*comment cr_origin = "bm") under STRAYS AND BRANDS, gated on a House Gault Insignia page.
+*comment
+*comment Stages (bm_mare_stage):
+*comment   0 = not started
+*comment   1 = notice taken; report to the Remount Yard gate (remount_yard.txt will route here in Step 6)
+*comment   2 = briefed at the Remount Yard; search the ford and the down
+*comment   3 = reached the shepherds' fold on the down
+*comment   4 = met Thistle at the commons pound
+*comment   5 = resolved (bm_mare_finished = true)
+*comment
+*comment Endings (bm_mare_ending): "", "returned", "lost"
+*comment Return methods (bm_mare_how): "", "settled", "law", "paid", "brawled"
+*comment ====================================================================================
+
+*label bm_mare_notice_take
+*set scenery_subplace "broadmead_villageheadhall"
+*set bm_know_sergeant true
+*if (bm_mare_stage = 0)
+  *set bm_mare_stage 1
+[b]◈ THE REMOUNT YARD NOTICE[/b]
+*line_break
+You press your Contractor's Insignia to the stiff card pinned under STRAYS AND BRANDS. The brass warms against your palm, and the terms settle onto the Contractor's Insignia in thin lines of light: a piebald mare strayed from the Countess's Remount Yard, branded on the near shoulder, four silver marks for her return sound.
+
+@{(bm_know_head) Mardred Birchstone|The dwarven woman behind the counter} glances up from her papers. "Across the bridge and up the rise," she calls out. "Show the troopers your brass at the iron gate. They've been told to let the taker through."
+*choice
+  # Walk across the bridge to the Remount Yard now. [~5 min]
+    *goto bm_mare_yard
+  # Step back to the Village Head's Hall.
+    *if (bm_mare_from_dev)
+      *set bm_mare_from_dev false
+      *goto_scene dev_hub dev_menu_quests
+    *goto_scene Langston/broadmead/village_heads_hall bm_hall_front
+
+*label bm_mare_notice_need
+*set scenery_subplace "broadmead_villageheadhall"
+[b]◈ THE POSTING[/b]
+*line_break
+You reach for the card, and the village head's mark beside the dark blue wax shows House Gault's work. The job goes to a bearer of a Contractor's Insignia. The clerks at Langston Hall's counters open one on a Contractor's Insignia, or sell you the Insignia with the page already on it.
+*page_break Step back from the posting…
+*set cr_origin "bm"
+*goto_scene port_valen/radiant/notice_board nb_read
+
+*comment Step 3 replaces this stub with Beat 2 (Remount Yard briefing and optional prep).
+*label bm_mare_yard
+*set scenery_subplace "remount_yard"
+*set minutes_to_pass 5
+*set time_advance_call_id "bm_mare_yard_walk"
+*gosub bm_mare_advance_time
+[b]◈ THE COUNTESS'S REMOUNT YARD[/b]
+*line_break
+At the iron gate, one of the troopers looks over the Contractor's Insignia, nods once, and draws back the heavy bolt.
+*page_break Step back to Broadmead…
+*if (bm_mare_from_dev)
+  *set bm_mare_from_dev false
+  *goto_scene dev_hub dev_menu_quests
+*goto_scene Langston/broadmead/broadmead bm_return
+
+*label bm_mare_advance_time
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return

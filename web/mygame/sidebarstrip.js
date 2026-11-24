@@ -55,7 +55,7 @@
   function realBtn(attr) { return document.querySelector("#statSidebar [" + attr + "]"); }
   function proxyBtn(label, attr, key) {
     var real = realBtn(attr), off = !real || real.disabled;
-    var tip = real ? (real.getAttribute("title") || "") : "Not available right now.";
+    var tip = real ? (real.getAttribute("data-tip") || real.getAttribute("title") || "") : "Not available right now.";
     return "<button type=\"button\" class=\"ssBtn\" data-ss-proxy=\"" + key + "\" title=\"" + esc(tip) + "\"" + (off ? " disabled" : "") + ">" + label + "</button>";
   }
   function stripHtml(s, title) {

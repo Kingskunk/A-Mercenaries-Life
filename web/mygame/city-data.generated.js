@@ -1000,7 +1000,7 @@ window.CITY_SETTLEMENTS = {
   "name": "Brinewick",
   "keys": [
    "brinewick:bw_tide_house",
-   "bw_tide_house_main:cr_read",
+   "bw_tide_house_main:nb_read",
    "brinewick:bw_reedhouse",
    "brinewick:ow_here"
   ],
@@ -1014,7 +1014,7 @@ window.CITY_SETTLEMENTS = {
     "done": "You are at the notice board.",
     "steps": [
      "brinewick:bw_tide_house",
-     "bw_tide_house_main:cr_read"
+     "bw_tide_house_main:nb_read"
     ],
     "stepMin": [
      5,
@@ -1055,7 +1055,7 @@ window.CITY_SETTLEMENTS = {
   "name": "Marlcross",
   "keys": [
    "marlcross:mc_cross_hall",
-   "mc_cross_hall_main:cr_read",
+   "mc_cross_hall_main:nb_read",
    "marlcross:mc_wayfarers_rest",
    "marlcross:ow_here"
   ],
@@ -1069,7 +1069,7 @@ window.CITY_SETTLEMENTS = {
     "done": "You are at the notice board.",
     "steps": [
      "marlcross:mc_cross_hall",
-     "mc_cross_hall_main:cr_read"
+     "mc_cross_hall_main:nb_read"
     ],
     "stepMin": [
      5,
@@ -1110,7 +1110,7 @@ window.CITY_SETTLEMENTS = {
   "name": "Redvein",
   "keys": [
    "redvein:rv_gather_house",
-   "rv_gather_house_main:cr_read",
+   "rv_gather_house_main:nb_read",
    "redvein:rv_red_lantern",
    "redvein:ow_here"
   ],
@@ -1124,7 +1124,7 @@ window.CITY_SETTLEMENTS = {
     "done": "You are at the notice board.",
     "steps": [
      "redvein:rv_gather_house",
-     "rv_gather_house_main:cr_read"
+     "rv_gather_house_main:nb_read"
     ],
     "stepMin": [
      5,
@@ -1165,7 +1165,7 @@ window.CITY_SETTLEMENTS = {
   "name": "Whitefold",
   "keys": [
    "whitefold:wf_fleecefold",
-   "wf_fleecefold:cr_read",
+   "wf_fleecefold:nb_read",
    "whitefold:wf_white_ram",
    "whitefold:ow_here"
   ],
@@ -1179,7 +1179,7 @@ window.CITY_SETTLEMENTS = {
     "done": "You are at the notice rail.",
     "steps": [
      "whitefold:wf_fleecefold",
-     "wf_fleecefold:cr_read"
+     "wf_fleecefold:nb_read"
     ],
     "stepMin": [
      5,
@@ -1220,7 +1220,7 @@ window.CITY_SETTLEMENTS = {
   "name": "Barleycross",
   "keys": [
    "barleycross:bc_green",
-   "bc_hall:cr_read",
+   "bc_hall:nb_read",
    "barleycross:bc_lane",
    "bc_lane_lane:bc_lane_barn",
    "barleycross:ow_here"
@@ -1235,7 +1235,7 @@ window.CITY_SETTLEMENTS = {
     "done": "You are at the notice post.",
     "steps": [
      "barleycross:bc_green",
-     "bc_hall:cr_read"
+     "bc_hall:nb_read"
     ],
     "stepMin": [
      5,
@@ -1278,7 +1278,7 @@ window.CITY_SETTLEMENTS = {
   "name": "Ashrun Holt",
   "keys": [
    "ashrun_holt:ah_longhouse",
-   "ah_hall:cr_read",
+   "ah_hall:nb_read",
    "ashrun_holt:ah_inn",
    "ashrun_holt:ow_here"
   ],
@@ -1292,7 +1292,7 @@ window.CITY_SETTLEMENTS = {
     "done": "You are at the board of cords.",
     "steps": [
      "ashrun_holt:ah_longhouse",
-     "ah_hall:cr_read"
+     "ah_hall:nb_read"
     ],
     "stepMin": [
      5,

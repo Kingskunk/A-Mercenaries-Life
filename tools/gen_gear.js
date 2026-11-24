@@ -38,6 +38,14 @@ items.forEach(function (it) {
   if (byId[it.id]) throw new Error("duplicate item id: " + it.id);
   byId[it.id] = it;
 });
+// WEAPON PROFICIENCY (2026-11-24): a martial weapon (loadout.martial) warns a class that is not trained in it, in every shop menu and the trade panel. The
+// condition is the same rule as equipment.txt weapon_prof_check (Fighter, Barbarian, Ranger, Martial Training; a Rogue for a Finesse one); keep the two together.
+items.forEach(function (it) {
+  if (it.kind !== "weapon" || !it.loadout || !it.loadout.martial) return;
+  var trained = '((((character_class = "fighter") or (character_class = "barbarian")) or ((character_class = "ranger") or (character_class = "none"))) or (feature_martial_training))';
+  if (it.loadout.type === "finesse") trained = '(' + trained + ' or (character_class = "rogue"))';
+  it.warn = (it.warn || []).concat([{ when: '(not' + trained + ')', text: "Not proficient: no proficiency bonus on attacks with it" }]);
+});
 
 // COOKED MEALS (2026-10-26, the user): a dish is a catalog item with effect { type: "meal" } and nothing else. Its boon stat and tier come from its recipe (web/mygame/crafting-data.js, the recipe with the same id) and the tier's
 // hours and temporary HP from COOK_TIERS there, so a balance change is one edit in that file. Eating it is a full meal (like a ration) plus a +1 food boon (the one food_buff slot) and temporary HP; the game never eats one for
@@ -387,6 +395,17 @@ function weaponPropsText(o) {
   if (o.adamantine) out.push("Adamantine");
   if (o.flimsy) out.push("Flimsy (-1 to attack)");
   return out.join(", ");
+}
+
+// WEAPON PROFICIENCY (2026-11-24): the names of the catalog's martial weapons (loadout.martial), for equipment.txt weapon_prof_check. It matches the
+// weapon's own name (weapon / sidearm), not its id, so the class kits and the dev fixtures (named by hand there) are covered by the same check.
+function genMartialNames() {
+  var L = [];
+  items.filter(function (it) { return it.kind === "weapon" && it.loadout && it.loadout.martial; }).forEach(function (it) {
+    L.push('*if (wpc_name = ' + q(it.loadout.weapon) + ')');
+    L.push('  *set wpc_martial true');
+  });
+  return L;
 }
 
 // The label that switches off the magic of a fading weapon once its last day has passed, without re-applying the whole loadout (a dev fixture or a quest may have set other weapon fields by hand).
@@ -780,6 +799,7 @@ setRegion(F.equipment, "armor_items", loadoutBlock("armor"));
 setRegion(F.equipment, "weapon_items", loadoutBlock("weapon"));
 setRegion(F.equipment, "sidearm_items", genSidearms());
 setRegion(F.equipment, "timed_weapon_magic", genTimedMagic());
+setRegion(F.equipment, "weapon_martial_names", genMartialNames());
 setRegion(F.equipment, "head_items", loadoutBlock("head"));
 setRegion(F.equipment, "ring_items", loadoutBlock("ring"));
 CLOTHING.forEach(function (k) { setRegion(F.equipment, k + "_items", loadoutBlock(k)); });

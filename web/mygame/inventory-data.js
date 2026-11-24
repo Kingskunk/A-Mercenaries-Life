@@ -124,8 +124,8 @@
     {
       id: "timber_axe", category: "weapons", owned: "has_timber_axe", slot: "Weapon",
       weight: 4, stow: true, stack: true,
-      name: function (s) { var n = 1 + (Number(s.spare_timber_axe) || 0); return "Highland Hewing Axe" + (n > 1 ? " ×" + n : ""); },
-      description: "Broad-bearded single-handed felling axe with a hardened wedge.",
+      name: function (s) { var n = 1 + (Number(s.spare_timber_axe) || 0); return "Battleaxe" + (n > 1 ? " ×" + n : ""); },
+      description: "Broad-bearded one-handed war axe with a hardened edge.",
       traits: "1d8 Slashing, One-Handed",
       badge: function (s) { return s.equipped_weapon_id === "timber_axe" ? "Equipped" : ""; },
       equip: { slot: "weapon", id: "timber_axe" }
@@ -133,7 +133,7 @@
     {
       id: "stiletto", category: "weapons", owned: "has_stiletto", slot: "Weapon",
       weight: 1, stow: true, stack: true,
-      name: function (s) { var n = 1 + (Number(s.spare_stiletto) || 0); return "Alderford Stiletto" + (n > 1 ? " ×" + n : ""); },
+      name: function (s) { var n = 1 + (Number(s.spare_stiletto) || 0); return "Stiletto" + (n > 1 ? " ×" + n : ""); },
       description: "Slender square-section thrusting dagger ground from scrap file-steel.",
       traits: "1d4 Piercing, Finesse",
       badge: function (s) { return s.equipped_weapon_id === "stiletto" ? "Equipped" : ""; },
@@ -946,8 +946,8 @@
     {
       id: "longshade_spear", category: "weapons", owned: "has_longshade_spear", slot: "Weapon",
       weight: 3, stow: true, stack: true,
-      name: function (s) { var n = 1 + (Number(s.spare_longshade_spear) || 0); return "Longshade Spear" + (n > 1 ? " ×" + n : ""); },
-      description: "Seven-foot Longshade ash shaft with a leaf-bladed iron head.",
+      name: function (s) { var n = 1 + (Number(s.spare_longshade_spear) || 0); return "Spear" + (n > 1 ? " ×" + n : ""); },
+      description: "Seven-foot ash shaft with a leaf-bladed iron head.",
       traits: "1d6 Piercing, Reach, One-Handed",
       badge: function (s) { return s.equipped_weapon_id === "longshade_spear" ? "Equipped" : ""; },
       equip: { slot: "weapon", id: "longshade_spear" }
@@ -955,7 +955,7 @@
     {
       id: "longshade_shortbow", category: "weapons", owned: "has_longshade_shortbow", slot: "Weapon, two-handed",
       weight: 2, stow: true, stack: true,
-      name: function (s) { var n = 1 + (Number(s.spare_longshade_shortbow) || 0); return "Longshade Shortbow" + (n > 1 ? " ×" + n : ""); },
+      name: function (s) { var n = 1 + (Number(s.spare_longshade_shortbow) || 0); return "Shortbow" + (n > 1 ? " ×" + n : ""); },
       description: "Short ash stave bow backed with sinew and strung with waxed hemp.",
       traits: "1d6 Piercing, Ranged, Two-Handed",
       badge: function (s) { return s.equipped_weapon_id === "longshade_shortbow" ? "Equipped" : ""; },
@@ -1240,6 +1240,87 @@
       traits: "1d4 Piercing, Finesse; casts Light while in hand, Magic +1",
       badge: function (s) { return s.equipped_weapon_id === "moonshard" ? "Equipped" : ""; },
       equip: { slot: "weapon", id: "moonshard" }
+    },
+    {
+      id: "longsword", category: "weapons", owned: "has_longsword", slot: "Weapon",
+      weight: 3, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_longsword) || 0); return "Longsword" + (n > 1 ? " ×" + n : ""); },
+      description: "Straight double-edged blade with a plain cross guard.",
+      traits: "1d8 Slashing, One-Handed",
+      badge: function (s) { return s.equipped_weapon_id === "longsword" ? "Equipped" : ""; },
+      equip: { slot: "weapon", id: "longsword" }
+    },
+    {
+      id: "shortsword", category: "weapons", owned: "has_shortsword", slot: "Weapon",
+      weight: 2, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_shortsword) || 0); return "Shortsword" + (n > 1 ? " ×" + n : ""); },
+      description: "Short broad thrusting blade with a cord-wrapped grip.",
+      traits: "1d6 Piercing, Finesse, One-Handed",
+      badge: function (s) { return s.equipped_weapon_id === "shortsword" ? "Equipped" : ""; },
+      equip: { slot: "weapon", id: "shortsword" }
+    },
+    {
+      id: "rapier", category: "weapons", owned: "has_rapier", slot: "Weapon",
+      weight: 2, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_rapier) || 0); return "Rapier" + (n > 1 ? " ×" + n : ""); },
+      description: "Long narrow blade with a guard of bent steel bars.",
+      traits: "1d8 Piercing, Finesse, One-Handed",
+      badge: function (s) { return s.equipped_weapon_id === "rapier" ? "Equipped" : ""; },
+      equip: { slot: "weapon", id: "rapier" }
+    },
+    {
+      id: "scimitar", category: "weapons", owned: "has_scimitar", slot: "Weapon",
+      weight: 3, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_scimitar) || 0); return "Scimitar" + (n > 1 ? " ×" + n : ""); },
+      description: "Curved single-edged blade that widens toward the tip.",
+      traits: "1d6 Slashing, Finesse, One-Handed",
+      badge: function (s) { return s.equipped_weapon_id === "scimitar" ? "Equipped" : ""; },
+      equip: { slot: "weapon", id: "scimitar" }
+    },
+    {
+      id: "warhammer", category: "weapons", owned: "has_warhammer", slot: "Weapon",
+      weight: 5, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_warhammer) || 0); return "Warhammer" + (n > 1 ? " ×" + n : ""); },
+      description: "Square iron head on an ash haft, spiked behind.",
+      traits: "1d8 Bludgeoning, One-Handed",
+      badge: function (s) { return s.equipped_weapon_id === "warhammer" ? "Equipped" : ""; },
+      equip: { slot: "weapon", id: "warhammer" }
+    },
+    {
+      id: "greataxe", category: "weapons", owned: "has_greataxe", slot: "Weapon, two-handed",
+      weight: 7, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_greataxe) || 0); return "Greataxe" + (n > 1 ? " ×" + n : ""); },
+      description: "Wide crescent axe head on a long two-handed haft.",
+      traits: "1d12 Slashing, Two-Handed",
+      badge: function (s) { return s.equipped_weapon_id === "greataxe" ? "Equipped" : ""; },
+      equip: { slot: "weapon", id: "greataxe" }
+    },
+    {
+      id: "longbow", category: "weapons", owned: "has_longbow", slot: "Weapon, two-handed",
+      weight: 2, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_longbow) || 0); return "Longbow" + (n > 1 ? " ×" + n : ""); },
+      description: "Tall single-stave bow strung with waxed hemp.",
+      traits: "1d8 Piercing, Ranged, Two-Handed",
+      badge: function (s) { return s.equipped_weapon_id === "longbow" ? "Equipped" : ""; },
+      equip: { slot: "weapon", id: "longbow" }
+    },
+    {
+      id: "mace", category: "weapons", owned: "has_mace", slot: "Weapon",
+      weight: 4, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_mace) || 0); return "Mace" + (n > 1 ? " ×" + n : ""); },
+      description: "Flanged iron head on a short haft.",
+      traits: "1d6 Bludgeoning, One-Handed",
+      badge: function (s) { return s.equipped_weapon_id === "mace" ? "Equipped" : ""; },
+      equip: { slot: "weapon", id: "mace" }
+    },
+    {
+      id: "handaxe", category: "weapons", owned: "has_handaxe", slot: "Weapon",
+      weight: 2, stow: true, stack: true,
+      name: function (s) { var n = 1 + (Number(s.spare_handaxe) || 0); return "Handaxe" + (n > 1 ? " ×" + n : ""); },
+      description: "Small short-hafted axe that hangs from a belt.",
+      traits: "1d6 Slashing, One-Handed",
+      badge: function (s) { return s.equipped_weapon_id === "handaxe" ? "Equipped" : ""; },
+      equip: { slot: "weapon", id: "handaxe" }
     },
     {
       id: "lesser_amulet_of_the_beast", category: "apparel", owned: "has_lesser_amulet_of_the_beast", slot: "Neck",

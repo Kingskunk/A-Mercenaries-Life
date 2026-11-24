@@ -2733,6 +2733,11 @@
 *if (weapon_flimsy)
   *set check_flat_bonus - 1
   *set check_flat_bonus_label "${check_flat_bonus_label} -1 (flimsy weapon)"
+*comment WEAPON PROFICIENCY (2026-11-24, PHB'24): a martial weapon the class is not trained in rolls without the proficiency bonus (equipment.txt weapon_prof_check).
+*gosub_scene equipment weapon_prof_check weapon weapon_type
+*if (not(wpc_ok))
+  *set check_add_prof_bonus false
+  *set check_flat_bonus_label "${check_flat_bonus_label} (not proficient)"
 *return
 
 *label resolve_reverse_oa_player
@@ -3798,7 +3803,14 @@
 
 *comment WEAPON PROPERTY TAGS (2026-10-31): the fight menu says which of the two weapons is magical, silvered or adamantine, because that decides what it can hurt. Rebuilt at every hub, after any swap. replay-ok: it only sets display strings.
 *label combat_weapon_tags
-*script function tag(m, mg, sv, ad, fl) { var a = []; if (Number(m) > 0) a.push("Magic +" + Number(m)); else if (mg === true || mg === "true") a.push("Magical"); if (sv === true || sv === "true") a.push("Silvered"); if (ad === true || ad === "true") a.push("Adamantine"); if (fl === true || fl === "true") a.push("Flimsy -1"); return a; } var w = tag(stats.weapon_magic, stats.weapon_magical, stats.weapon_silvered, stats.weapon_adamantine, stats.weapon_flimsy), d = tag(stats.sidearm_magic, stats.sidearm_magical, stats.sidearm_silvered, stats.sidearm_adamantine, stats.sidearm_flimsy); stats.combat_weapon_tag = w.length ? " [" + w.join(", ") + "]" : ""; stats.combat_weapon_note = w.length ? " (" + w.join(", ").toLowerCase() + ")" : ""; stats.combat_sidearm_tag = d.length ? " [" + d.join(", ") + "]" : ""; stats.combat_sidearm_note = d.length ? " (" + d.join(", ").toLowerCase() + ")" : "";
+*comment Proficiency (2026-11-24): a martial weapon the class is not trained in says so on its option.
+*gosub_scene equipment weapon_prof_check weapon weapon_type
+*set combat_weapon_nonprof (not(wpc_ok))
+*set combat_sidearm_nonprof false
+*if (not(sidearm = "none"))
+  *gosub_scene equipment weapon_prof_check sidearm sidearm_type
+  *set combat_sidearm_nonprof (not(wpc_ok))
+*script function tag(m, mg, sv, ad, fl, np) { var a = []; if (Number(m) > 0) a.push("Magic +" + Number(m)); else if (mg === true || mg === "true") a.push("Magical"); if (sv === true || sv === "true") a.push("Silvered"); if (ad === true || ad === "true") a.push("Adamantine"); if (fl === true || fl === "true") a.push("Flimsy -1"); if (np === true || np === "true") a.push("Not proficient"); return a; } var w = tag(stats.weapon_magic, stats.weapon_magical, stats.weapon_silvered, stats.weapon_adamantine, stats.weapon_flimsy, stats.combat_weapon_nonprof), d = tag(stats.sidearm_magic, stats.sidearm_magical, stats.sidearm_silvered, stats.sidearm_adamantine, stats.sidearm_flimsy, stats.combat_sidearm_nonprof); stats.combat_weapon_tag = w.length ? " [" + w.join(", ") + "]" : ""; stats.combat_weapon_note = w.length ? " (" + w.join(", ").toLowerCase() + ")" : ""; stats.combat_sidearm_tag = d.length ? " [" + d.join(", ") + "]" : ""; stats.combat_sidearm_note = d.length ? " (" + d.join(", ").toLowerCase() + ")" : "";
 *return
 
 *label fight_round_hub

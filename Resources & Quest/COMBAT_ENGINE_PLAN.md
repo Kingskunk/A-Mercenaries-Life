@@ -111,7 +111,7 @@ None open. Add one here when a play-through finds it.
 
 All seven subclasses are built (table in section 1). What each one left behind:
 
-- **Weapon proficiency (with the first batch of martial weapons).** Of the 12 catalog weapons only the hewing axe (a battleaxe) is martial, so it is not worth building yet. The route: a `category: "simple" | "martial"` on each catalog weapon, a `weapon_prof_check` beside `armor_prof_check` (untrained: no proficiency bonus to hit), and Valor's Martial Training weapons as one line in it.
+- **Weapon properties (next, the user, 2026-11-24).** Weapon proficiency and the first martial weapons are built (`GAMEPLAY_MECHANICS_RULES.md`, Weapons). Still to build: Light, Heavy, Versatile (a Longsword at 1d10 in two hands) and Thrown (the Handaxe), and weapons that roll more than one die (Greatsword 2d6, Maul 2d6: `weapon_die_sides` reads one die). Once Light exists, a Rogue's martial training covers Light weapons too (`weapon_prof_check` reads only Finesse today). Plain arrows and bolts stay uncounted (the user); only special arrows are tracked.
 - **Umbral Sight's invisibility in darkness.** It needs a "this fight is in darkness" state (today `dg_dark` means only "you cannot see") and enemy senses (blindsight, truesight).
 - **A disguise kit**, once a scene uses disguises: sold by the Gilt Needle tailor or a fence; the user has an icon.
 
