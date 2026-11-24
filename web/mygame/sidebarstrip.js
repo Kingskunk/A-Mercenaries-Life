@@ -58,14 +58,15 @@
     var tip = real ? (real.getAttribute("title") || "") : "Not available right now.";
     return "<button type=\"button\" class=\"ssBtn\" data-ss-proxy=\"" + key + "\" title=\"" + esc(tip) + "\"" + (off ? " disabled" : "") + ">" + label + "</button>";
   }
-  function stripHtml(s) {
+  function stripHtml(s, title) {
     var date = String(s.calendar_date || "").split(",")[0], day = s.day_of_week ? String(s.day_of_week) : "";
     var dayLine = (day && date) ? day + ", " + date : (day || date);
-    return "<span class=\"ssWhen\"><span class=\"ssNow\"><b>" + esc(s.clock_time || "") + "</b><span class=\"ssPer\">" + esc((s.time_period ? " · " + s.time_period : "") + (s.weather ? " · " + s.weather : "")) + "</span></span><small class=\"ssDate\">" + esc(dayLine) + "</small></span>" +
+    return "<span class=\"ssTitle\" title=\"" + esc(title) + "\">" + esc(title) + "</span>" +
+      "<span class=\"ssWhen\"><span class=\"ssNow\"><b>" + esc(s.clock_time || "") + "</b><span class=\"ssPer\">" + esc((s.time_period ? " · " + s.time_period : "") + (s.weather ? " · " + s.weather : "")) + "</span></span><small class=\"ssDate\">" + esc(dayLine) + "</small></span>" +
       "<span class=\"ssConds\">" + pillsHtml(s) + "</span>" +
-      "<span class=\"ssPurse\" title=\"Your purse\">" + esc(purseText(s)) + "</span>" +
+      "<span class=\"ssRight\"><span class=\"ssPurse\" title=\"Your purse\">" + esc(purseText(s)) + "</span>" +
       "<span class=\"ssBtns\">" + proxyBtn("Wait", "data-wait-open", "wait") + proxyBtn("Rest", "data-rest-open", "rest") + proxyBtn("Travel", "data-travel-open", "travel") +
-      "<button type=\"button\" class=\"ssBtn ssOpen\" data-ss-expand=\"1\" title=\"Show the full sidebar\" aria-label=\"Show the full sidebar\">«</button></span>";
+      "<button type=\"button\" class=\"ssBtn ssOpen\" data-ss-expand=\"1\" title=\"Show the full sidebar\" aria-label=\"Show the full sidebar\">«</button></span></span>";
   }
 
   function build() {
@@ -91,25 +92,37 @@
     html.classList.toggle("sbHidden", charOn && wide && away);
     html.classList.toggle("sbDrawer", charOn && !wide && drawer);
     var showStrip = charOn && away;   // in a fight the sidebar is up by itself (away is false), unless the player folded it: then the strip is the way back
-    html.classList.toggle("sbStripOn", showStrip);
-    if (showStrip) place(s); else if (strip.style.display !== "none") strip.style.display = "none";
+    if (showStrip) {
+      html.classList.add("sbStripOn");
+      place(s);
+    } else {
+      html.classList.remove("sbStripOn");
+      html.style.removeProperty("--strip-h");
+      if (strip.style.display !== "none") strip.style.display = "none";
+    }
   }
 
-  // line the strip up in the banner row: right of the place banner, to the right edge of the header, over the story column (positions are CSS pixels inside the zoomed page)
+  // unified header bar: spans the full inner width of #header, merging the place title on the left with time/status/actions on the right
   function place(s) {
     var hdrs = document.querySelectorAll("#header"), hdr = hdrs.length ? hdrs[hdrs.length - 1] : null;
     var ban = hdr ? hdr.querySelector("h1.gameTitle") : null;
-    if (!hdr || !ban) { strip.style.display = "none"; return; }
-    var z = zoom(), h = hdr.getBoundingClientRect(), b = ban.getBoundingClientRect();
-    if (!h.width || !b.width) { strip.style.display = "none"; return; }
-    var left = (b.right + 14) / z, right = h.right / z, avail = right - left;
-    if (avail < 150) { strip.style.display = "none"; return; }
-    var size = avail >= 640 ? "full" : (avail >= 500 ? "mid" : "tight");
-    var markup = stripHtml(s);
+    if (!hdr || !ban) { html.classList.remove("sbStripOn"); html.style.removeProperty("--strip-h"); return; }
+    var z = zoom(), h = hdr.getBoundingClientRect();
+    if (!h.width) { html.classList.remove("sbStripOn"); html.style.removeProperty("--strip-h"); return; }
+    var padX = 22;
+    var left = h.left / z + padX, avail = h.width / z - padX * 2;
+    if (avail < 200) { html.classList.remove("sbStripOn"); html.style.removeProperty("--strip-h"); return; }
+    var size = avail >= 860 ? "full" : (avail >= 680 ? "mid" : (avail >= 430 ? "stack" : "tight"));
+    var title = (ban.textContent || "").replace(/\s+/g, " ").trim();
+    var markup = stripHtml(s, title);
     if (markup !== lastStrip) { strip.innerHTML = markup; lastStrip = markup; }
     if (strip.getAttribute("data-size") !== size) strip.setAttribute("data-size", size);
-    var top = (b.top + b.height / 2) / z - 24;
-    strip.style.cssText = "display:flex;left:" + Math.round(left) + "px;width:" + Math.round(avail) + "px;top:" + Math.round(top) + "px";
+    strip.style.display = "";
+    strip.style.left = Math.round(left) + "px";
+    strip.style.width = Math.round(avail) + "px";
+    strip.style.top = Math.round(h.top / z) + "px";
+    var sh = Math.ceil(strip.getBoundingClientRect().height / z);
+    if (sh > 0) html.style.setProperty("--strip-h", sh + "px");
   }
 
   function expand() {
@@ -132,8 +145,12 @@
       if (real && !real.disabled) real.click();
       return;
     }
-    // a drawer closes when the story is tapped
-    if (drawer && NARROW.matches && !t.closest("#statSidebar")) { drawer = false; sync(); }
+    // a drawer closes when the story is tapped (check composedPath too: renderStatSidebar rebuilds innerHTML on clicks inside #statSidebar, detaching ev.target before bubble reaches document)
+    if (drawer && NARROW.matches) {
+      var sb = document.getElementById("statSidebar");
+      var inSidebar = !!t.closest("#statSidebar") || !!(sb && ev.composedPath && ev.composedPath().indexOf(sb) >= 0);
+      if (!inSidebar) { drawer = false; sync(); }
+    }
   });
 
   // the portrait is a button for the keyboard too

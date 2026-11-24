@@ -18,6 +18,7 @@ html {
   overflow: hidden;                    /* the window does not scroll; the story does, inside its frame */
 }
 html.hasSidebar { --side-w: 336px; }
+html.railHidden { --rail-w: 0px; }
 
 body[data-theme] {
   max-width: none;
@@ -71,12 +72,14 @@ body[data-theme] #main {
 }
 body[data-theme] #advertisement, body[data-theme] #mobileLinks { flex: none; }
 
-/* the game's own title becomes the crimson banner; its buttons live on the rail now (shell.js mirrors them) */
+/* the game's own title sits cleanly in the header bar; its buttons live on the rail now (shell.js mirrors them) */
 body[data-theme] #header { flex: none; padding: 6px 22px 0; }
 body[data-theme] #header h1.gameTitle {
-  display: inline-block; margin: 6px 0 4px -34px; padding: 11px 64px 11px 30px; min-width: 330px;
-  background: var(--art-banner) left center / 100% 100% no-repeat;
-  font: 600 1.2rem/1 var(--ch-font-head); letter-spacing: 0.13em; text-transform: uppercase; color: #f1e4cf; text-shadow: 0 1px 3px #000;
+  display: inline-block; margin: 0; padding: 6px 0 6px 14px; max-width: 100%; box-sizing: border-box;
+  background: none; border-left: 3px solid var(--ch-crimson-hi, #b53a35);
+  font: 600 1.2rem/1.15 var(--ch-font-head); letter-spacing: 0.13em; text-transform: uppercase;
+  color: #f1e4cf; text-shadow: 0 1px 3px #000;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 body[data-theme] #header h2.gameTitle, body[data-theme] #identity, body[data-theme] #headerLinks { display: none; }
 body[data-theme] #header #buttons { display: none; }   /* still in the page (the engine and the panels use them); the rail clicks them */
@@ -95,11 +98,38 @@ body[data-theme] input[type="radio"], body[data-theme] input[type="checkbox"] { 
 
 /* ---------------------------------------------------------------- the left rail (built by shell.js) */
 #rail {
-  position: fixed; left: 0; top: 0; bottom: 0; width: var(--rail-w); z-index: 40;
+  position: fixed; left: 0; top: 0; bottom: 0; width: 92px; z-index: 40;
   display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 0 12px;
   font-family: var(--ch-font-ui); pointer-events: none;
+  transition: transform 0.18s ease, opacity 0.18s ease;
 }
 #rail > * { pointer-events: auto; }
+html.railHidden #rail {
+  transform: translateX(-100%);
+  opacity: 0;
+  pointer-events: none;
+}
+html.railHidden #rail > * { pointer-events: none; }
+
+/* collapsible edge tab anchored to the inner-left edge of the bronze story frame (positioned by shell.js) */
+#railToggle {
+  position: fixed; left: 0; top: 50%; transform: translateY(-50%); z-index: 45;
+  width: 20px; height: 56px; padding: 0; border: 1px solid var(--ch-line, #4b3d31); border-left: none;
+  border-radius: 0 8px 8px 0; background: rgba(18, 16, 15, 0.86); color: var(--ch-brass, #d9a441);
+  font: 700 16px/1 var(--ch-font-ui, sans-serif); cursor: pointer;
+  display: grid; place-items: center; box-shadow: 2px 0 10px rgba(0, 0, 0, 0.45);
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+#railToggle:hover, #railToggle:focus-visible {
+  background: rgba(34, 28, 24, 0.96); border-color: var(--ch-brass, #d9a441); color: #ffe9b8; outline: none;
+}
+#railToggle.hasAlert::after {
+  content: ""; position: absolute; top: 6px; right: 4px; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--ch-crimson-hi, #b53a35); box-shadow: 0 0 6px var(--ch-brass, #d9a441);
+}
+@media (pointer: coarse) {
+  #railToggle { width: 24px; height: 68px; font-size: 18px; }
+}
 #rail .rbtn {
   position: relative; width: 58px; height: 58px; padding: 0; border: none; cursor: pointer; background: var(--art-round) center / 100% 100% no-repeat;
   display: grid; place-items: center; color: var(--ch-text);
@@ -142,7 +172,7 @@ body[data-theme] input[type="radio"], body[data-theme] input[type="checkbox"] { 
 }
 #rail .rmini:hover { filter: brightness(1.35); }
 #rail .rmini:focus-visible { outline: 2px solid var(--ch-brass); outline-offset: 2px; border-radius: 50%; }
-#rail .rstatus { width: calc(var(--rail-w) - 8px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: none; letter-spacing: 0; }
+#rail .rstatus { width: 84px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: none; letter-spacing: 0; }
 
 /* ---------------------------------------------------------------- the HUD docks under the story column, not the middle of the window */
 #battleHud {
@@ -157,7 +187,8 @@ body[data-theme] input[type="radio"], body[data-theme] input[type="checkbox"] { 
 }
 @media (max-width: 760px) {
   html { --rail-w: 0px; }
-  #rail { position: static; flex-direction: row; justify-content: center; flex-wrap: wrap; padding: 8px; }
+  #rail { position: static; width: auto; flex-direction: row; justify-content: center; flex-wrap: wrap; padding: 8px; }
+  html.railHidden #rail { display: none; }
   #rail .rspacer { display: none; }
   #rail .rlabel { display: none; }
   body[data-theme] .container { border-width: 22px; }
@@ -200,7 +231,6 @@ body[data-theme] .next:active { filter: brightness(0.92); }
    It was a banner with the text cut off right at its edge, which read as text sliding under a floating banner. Now it is the head of the page: a hairline under it,
    and the text fades out as it nears it. */
 body[data-theme] #header { position: relative; z-index: 2; padding: 0 22px 12px; }
-body[data-theme] #header h1.gameTitle { margin: 0 0 0 -34px; }
 body[data-theme] #header::after {
   content: ""; position: absolute; left: 22px; right: 22px; bottom: 0; height: 1px;
   background: linear-gradient(90deg, var(--pg-bar), transparent 85%);

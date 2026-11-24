@@ -309,20 +309,39 @@
 
   function formatWarmthDuration(rating) {
     var r = Math.max(0, Math.min(20, Math.round(Number(rating) || 0)));
-    var totalMin = 640 + (r * 15);
-    var bonusMin = r * 15;
+    var totalMin = 640;
+    var chaBonus = 1;
+    var clearsMalaise = false;
+    var tier = "Standard";
+    if (r >= 16) {
+      tier = "Peak";
+      chaBonus = 2;
+      clearsMalaise = true;
+      totalMin = 840 + ((r - 16) * 30);
+    } else if (r >= 11) {
+      tier = "Good";
+      chaBonus = 1;
+      clearsMalaise = true;
+      totalMin = 720 + ((r - 11) * 30);
+    } else if (r >= 6) {
+      tier = "Routine";
+      chaBonus = 1;
+      totalMin = 480 + ((r - 6) * 30);
+    } else if (r >= 1) {
+      tier = "Poor";
+      chaBonus = 1;
+      totalMin = 240;
+    }
     var h = Math.floor(totalMin / 60);
     var m = totalMin % 60;
     var label = h + (h === 1 ? " Hour" : " Hours") + (m > 0 ? (" " + m + " Minutes") : "");
-    var bh = Math.floor(bonusMin / 60);
-    var bm = bonusMin % 60;
-    var bonusLabel = bonusMin > 0
-      ? ("+" + (bh > 0 ? bh + "h " : "") + (bm > 0 ? bm + "m" : "").trim()).trim()
-      : "base duration";
+    var bonusLabel = "+" + chaBonus + " CHA" + (clearsMalaise ? " · Mind Eased" : "");
     return {
       rating: r,
+      tier: tier,
+      chaBonus: chaBonus,
+      clearsMalaise: clearsMalaise,
       totalMinutes: totalMin,
-      bonusMinutes: bonusMin,
       label: label,
       bonusLabel: bonusLabel
     };
@@ -381,15 +400,16 @@
       "PERSPECTIVE & VOICE RULES:",
       "- Write strictly in SECOND PERSON PRESENT TENSE ('You...'), matching the opening scene prose.",
       "- Keep the prose grounded, tactile, physical, and sensory.",
-      "- Stay strictly faithful to the clothing, materials, and setting established in the scene (do not invent luxury fabrics or props that are not there).",
+      "- Stay strictly faithful to the clothing, materials, and setting established in the scene (do not invent luxury fabrics or props that are not there, and never refer to trousers, shifts, or other garments that have already been taken off).",
       "- Never dictate the player's spoken words, internal thoughts, or involuntary emotional reactions (never tell the player they are trembling, nervous, or overwhelmed; only describe physical sensations and the companion's actions).",
       "- Do NOT write a list of choices at the end, do NOT speak as an AI assistant, and do NOT summarize or rush to the end of the scene unless the player initiates finishing.",
       "- Write 1 to 2 concise, complete paragraphs per response (around 120 to 180 words total) so your last sentence always finishes cleanly without being cut off."
     ];
     if (hasProfile) {
       lines.push(
+        "- ATTENTIVE RECIPROCITY: Remember the player is a paying guest she genuinely wants to leave thoroughly spent and satisfied. Her Kinks, Dislikes, and Traits shape HOW she enjoys the encounter and how she responds—they do NOT make her a passive or entitled receiver. She takes active physical initiative with her own hands, mouth, hips, and rhythm to pleasure the player, and rewards the player eagerly whenever they read her cues well.",
         "- LIVE PREFERENCE & DISLIKE CUES: When untouched or between beats, weave subtle physical invitations toward one of her Kinks. STRICT BOUNDARY RULE: If the player triggers one of her Dislikes, she MUST visibly resist right away in-character (stiffen, catch or push their hands off, recoil, or give a sharp quiet warning)—never reward or eagerly escalate through an active Dislike unless they soften or adjust. If the player asks in-character what she wants, let her answer authentically according to her traits (candid if Candid/Bold, teasingly reserved if Guarded/Stubborn).",
-        "- PACING & CLIMAX SIGNAL: Do NOT rush to finish early. ONLY when the encounter has genuinely reached climax/release and natural afterglow wind-down, append the exact tag [ACT_COMPLETE]. (with the trailing period) at the very end of your response so the player can conclude the scene."
+        "- PACING & CLIMAX SIGNAL: Do NOT rush to finish early. Do NOT emit the completion tag merely because SHE has climaxed—if she finishes first, she should naturally shift her focus to bringing the player to release too. ONLY append the exact tag [ACT_COMPLETE]. (period outside the bracket) at the very end of your response once the PLAYER ('You') has genuinely reached climax/release and the scene is settling into afterglow (or the player explicitly winds the encounter down)."
       );
     }
     lines.push("");
@@ -422,24 +442,25 @@
 
   function buildEvaluationSystemPrompt(cfg, s, profile) {
     var lines = [
-      "You are an impartial post-scene evaluator for an adult low-fantasy RPG encounter.",
+      "You are a strict, impartial post-scene evaluator for an adult low-fantasy RPG encounter.",
       "Grade how well the player ('You') performed with this companion based strictly on the transcript below and her hidden profile.",
+      "ANTI-INFLATION RULE: Do NOT hand out high scores merely for being polite or avoiding Dislikes. Polite routine play that misses her Kinks should land around 8 to 11 total, NOT 16+.",
       "",
       "COMPANION PROFILE TO GRADE AGAINST:",
       formatProfileForPrompt(profile),
       "",
-      "CLEAR 1-20 SCORING RUBRIC (STRICTLY USE THESE BANDS):",
-      "- 1 to 5 (Poor / Mismatched): Rushed, passive/lazy, cold, or triggered her Dislikes repeatedly without noticing or correcting.",
-      "- 6 to 10 (Passable / Routine): Polite or serviceable physical play; avoided offending Dislikes (or recovered clumsily), but missed her specific Kinks and didn't play to her Traits.",
-      "- 11 to 15 (Good / Satisfying): Attentive pacing and chemistry; handled her Positive & Negative Traits well and genuinely engaged at least one of her Kinks cleanly.",
-      "- 16 to 20 (Peak / Unforgettable): Strong sensory progression; hit multiple Kinks naturally, respected every Dislike, navigated her Negative Trait skillfully, and earned deep responsiveness.",
-      "- LENGTH & EFFORT RULE: An encounter lasting only 1 to 2 brief turns before ending rarely earns above 10-12 unless extraordinarily on-target.",
+      "SCORE 4 SEPARATE CATEGORIES (OUR CODE SUMS THEM TO 20):",
+      "1. KINKS_SCORE (0 to 6): +3 per distinct Kink from her profile genuinely engaged by the player (0 if none, 1-2 if barely brushed, 3 for one clear hit, 6 for two or more distinct Kinks landed).",
+      "2. BOUNDARIES_SCORE (0 to 4): 4 if zero Dislikes triggered; 3 if triggered once but the player immediately adjusted; 1-2 if clumsily tripped; 0 if pushed through a Dislike repeatedly.",
+      "3. TRAITS_SCORE (0 to 5): How well the player played to her Positive Traits AND navigated her Negative Trait (2-3 = neutral/adequate, 4-5 = actively read and leveraged her temperament).",
+      "4. PACING_SCORE (0 to 5): Sensory progression, initiative, and attentiveness across turns (1-2 = rushed or passive, 3 = steady, 4-5 = rich, natural build-up and mutual satisfaction).",
       "",
-      "OUTPUT FORMAT (STRICT — KEEP ANY INTERNAL ANALYSIS BRIEF SO YOU FINISH CLEANLY, THEN OUTPUT ONLY THESE 4 LINES AND END EACH WITH A PERIOD):",
-      "HITS: <concise comma-separated list of kinks/positive traits landed, or None>.",
-      "MISSES: <concise comma-separated list of dislikes triggered or missed cues, or None>.",
-      "RATING: <single integer from 1 to 20>/20.",
-      "SUMMARY: <2 concise sentences addressed directly to 'You' explaining what worked well and where you went wrong>."
+      "OUTPUT FORMAT (STRICT — KEEP ANY INTERNAL ANALYSIS BRIEF, THEN OUTPUT ONLY THESE 5 LINES AND END EVERY LINE WITH A PERIOD):",
+      "KINKS_SCORE: <integer 0-6> | <exact comma-separated Kink labels from her profile that the player genuinely landed, or None>.",
+      "BOUNDARIES_SCORE: <integer 0-4> | <exact comma-separated Dislike labels triggered, or Clean>.",
+      "TRAITS_SCORE: <integer 0-5> | <brief 1-clause note on how you handled her Positive & Negative Traits>.",
+      "PACING_SCORE: <integer 0-5> | <brief 1-clause note on pacing, initiative, and attentiveness>.",
+      "SUMMARY: <2 concise sentences addressed directly to 'You' explaining what worked well and where you fell short>."
     ];
     return lines.join("\n");
   }
@@ -451,7 +472,7 @@
         historyLines.push("OPENING SCENE:\n" + session.openingText);
       }
       historyLines.push("ENCOUNTER TRANSCRIPT:\n" + formatTurnsForPrompt(turnsSlice));
-      historyLines.push("TASK: Grade the player from 1 to 20 using the strict 4-line format (HITS, MISSES, RATING, SUMMARY). End every line with a period.");
+      historyLines.push("TASK: Score the 4 categories strictly using the exact 5-line format (KINKS_SCORE, BOUNDARIES_SCORE, TRAITS_SCORE, PACING_SCORE, SUMMARY). Use exact Kink/Dislike labels from her profile and end every line with a period.");
       return historyLines.join("\n\n");
     }
 
@@ -533,8 +554,8 @@
 
   function parseSceneReadyResponse(rawText) {
     var s = String(rawText || "");
-    var actComplete = /\[{1,2}\s*ACT_COMPLETE\s*\]{1,2}/i.test(s);
-    var cleaned = s.replace(/\s*\[{1,2}\s*ACT_COMPLETE\s*\]{1,2}[.!]*\s*/gi, "\n").trim();
+    var actComplete = /\[{1,2}\s*ACT[\s_]+COMPLETE[\s.!]*\]{1,2}/i.test(s);
+    var cleaned = s.replace(/\s*\[{1,2}\s*ACT[\s_]+COMPLETE[\s.!]*\]{1,2}[.!\s]*/gi, "\n").trim();
     return { text: cleaned, actComplete: actComplete };
   }
 
@@ -592,7 +613,44 @@
     return out;
   }
 
-  function parseEvaluationResult(rawText) {
+  function matchProfileItems(list, text) {
+    if (!Array.isArray(list) || !list.length) return [];
+    var norm = String(text || "").toLowerCase();
+    if (!norm || /^\s*(none|clean|n\/a|none noted)\.?$/i.test(norm)) return [];
+    var matched = [];
+    for (var i = 0; i < list.length; i++) {
+      var item = list[i];
+      var lbl = String(item.label || "").toLowerCase();
+      if (!lbl) continue;
+      if (norm.indexOf(lbl) >= 0) {
+        matched.push(item.id || item.label);
+        continue;
+      }
+      // Also match significant words (e.g., "Slow Edging" for "Slow Edging & Teasing")
+      var tokens = lbl.split(/[^a-z0-9]+/).filter(function (w) { return w.length >= 4 && w !== "with" && w !== "from" && w !== "that" && w !== "your"; });
+      var hits = 0;
+      for (var j = 0; j < tokens.length; j++) {
+        if (norm.indexOf(tokens[j]) >= 0) hits++;
+      }
+      if (tokens.length > 0 && hits >= Math.min(2, tokens.length)) {
+        matched.push(item.id || item.label);
+      }
+    }
+    return matched;
+  }
+
+  function parseSubScoreLine(line, keyRe, maxVal) {
+    var m = line.match(keyRe);
+    if (!m) return null;
+    var rest = m[1].replace(/^\*+|\*+$/g, "").trim();
+    var mNum = rest.match(/^(\d{1,2})(?:\s*(?:\/|out of)\s*\d{1,2})?(?:\s*[|:\-—]\s*(.*))?$/i);
+    if (!mNum) return null;
+    var val = Math.max(0, Math.min(maxVal, parseInt(mNum[1], 10)));
+    var note = (mNum[2] || "").replace(/^\*+|\*+$/g, "").replace(/\.+$/, "").trim();
+    return { score: val, max: maxVal, note: note };
+  }
+
+  function parseEvaluationResult(rawText, opts) {
     var s = String(rawText || "");
     s = s.replace(/<think>[\s\S]*?<\/think>/gi, "");
     s = s.replace(/```[a-zA-Z]*\n?/g, "").replace(/```/g, "").trim();
@@ -600,11 +658,23 @@
     var misses = "";
     var summary = "";
     var rating = null;
+    var kinksSub = null;
+    var boundsSub = null;
+    var traitsSub = null;
+    var pacingSub = null;
     var activeKey = "";
     var lines = s.split(/\r?\n/);
     for (var i = 0; i < lines.length; i++) {
       var line = lines[i].trim().replace(/^(?:[-*\u2022]+|\d+[.):])\s*/, "").trim();
       if (!line) continue;
+      var k = parseSubScoreLine(line, /^(?:\*\*)?KINKS_SCORE(?:\*\*)?\s*[:-]\s*(.*)$/i, 6);
+      if (k) { activeKey = "kinks"; kinksSub = k; hits = k.note || "None"; continue; }
+      var b = parseSubScoreLine(line, /^(?:\*\*)?BOUNDARIES_SCORE(?:\*\*)?\s*[:-]\s*(.*)$/i, 4);
+      if (b) { activeKey = "boundaries"; boundsSub = b; misses = b.note || "Clean"; continue; }
+      var t = parseSubScoreLine(line, /^(?:\*\*)?TRAITS_SCORE(?:\*\*)?\s*[:-]\s*(.*)$/i, 5);
+      if (t) { activeKey = "traits"; traitsSub = t; continue; }
+      var p = parseSubScoreLine(line, /^(?:\*\*)?PACING_SCORE(?:\*\*)?\s*[:-]\s*(.*)$/i, 5);
+      if (p) { activeKey = "pacing"; pacingSub = p; continue; }
       var mHits = line.match(/^(?:\*\*)?HITS(?:\*\*)?\s*[:-]\s*(.*)$/i);
       if (mHits) { activeKey = "hits"; hits = mHits[1].replace(/^\*+|\*+$/g, "").trim(); continue; }
       var mMiss = line.match(/^(?:\*\*)?MISSES(?:\*\*)?\s*[:-]\s*(.*)$/i);
@@ -622,18 +692,50 @@
         summary = (summary ? summary + " " : "") + line.replace(/^\*+|\*+$/g, "").trim();
       }
     }
-    if (rating === null) {
-      var alt = s.match(/\b(20|1\d|[1-9])\s*(?:\/|out of)\s*20\b/i);
-      if (alt) rating = Math.max(1, Math.min(20, parseInt(alt[1], 10)));
+
+    var breakdown = null;
+    var userTurns = opts && typeof opts.userTurns === "number" ? opts.userTurns : null;
+    if (kinksSub && boundsSub && traitsSub && pacingSub) {
+      var pacingScore = pacingSub.score;
+      if (userTurns !== null && userTurns <= 1) pacingScore = Math.min(pacingScore, 1);
+      else if (userTurns !== null && userTurns === 2) pacingScore = Math.min(pacingScore, 3);
+      var sum = kinksSub.score + boundsSub.score + traitsSub.score + pacingScore;
+      if (userTurns !== null && userTurns <= 1) sum = Math.min(sum, 10);
+      else if (userTurns !== null && userTurns === 2) sum = Math.min(sum, 14);
+      rating = Math.max(1, Math.min(20, sum));
+      breakdown = {
+        kinks: { score: kinksSub.score, max: 6, note: kinksSub.note },
+        boundaries: { score: boundsSub.score, max: 4, note: boundsSub.note },
+        traits: { score: traitsSub.score, max: 5, note: traitsSub.note },
+        pacing: { score: pacingScore, max: 5, note: pacingSub.note }
+      };
+    } else {
+      if (rating === null) {
+        var alt = s.match(/\b(20|1\d|[1-9])\s*(?:\/|out of)\s*20\b/i);
+        if (alt) rating = Math.max(1, Math.min(20, parseInt(alt[1], 10)));
+      }
+      if (rating !== null && userTurns !== null) {
+        if (userTurns <= 1) rating = Math.min(rating, 10);
+        else if (userTurns === 2) rating = Math.min(rating, 14);
+      }
     }
+
     if (!summary && s && rating !== null) {
-      summary = s.replace(/^(?:[-*\u2022]+\s*)?(?:\*\*)?(?:HITS|MISSES|RATING|SCORE|GRADE)[^\n]*$/gim, "").trim().slice(0, 360);
+      summary = s.replace(/^(?:[-*\u2022]+\s*)?(?:\*\*)?(?:KINKS_SCORE|BOUNDARIES_SCORE|TRAITS_SCORE|PACING_SCORE|HITS|MISSES|RATING|SCORE|GRADE)[^\n]*$/gim, "").trim().slice(0, 360);
     }
     if (rating === null) return null;
+
+    var profile = opts && opts.profile ? opts.profile : null;
+    var discoveredKinks = profile ? matchProfileItems(profile.kinks, hits) : [];
+    var trippedDislikes = profile ? matchProfileItems(profile.dislikes, misses) : [];
+
     return {
       rating: rating,
-      hits: hits || "None noted",
-      misses: misses || "None noted",
+      breakdown: breakdown,
+      hits: hits || "None",
+      misses: misses || "Clean",
+      discoveredKinks: discoveredKinks,
+      trippedDislikes: trippedDislikes,
       summary: summary || "Evaluation completed."
     };
   }
@@ -1177,27 +1279,75 @@
       if (!evalCardEl || !result) return;
       var profile = resolveSceneProfile(cfg, statsNow());
       var dur = formatWarmthDuration(result.fallback ? 0 : result.rating);
-      var scoreText = result.fallback ? "Base Only" : (dur.rating + " / 20");
+      var scoreText = result.fallback ? "Base Only" : (dur.rating + " / 20 · " + dur.tier);
       var boonText = result.fallback
         ? "Carnal Warmth: " + dur.label + " (grading unavailable)"
-        : "Carnal Warmth: " + dur.label + " (" + dur.bonusLabel + ")";
+        : "Carnal Warmth: " + dur.bonusLabel + " · " + dur.label;
 
-      var traitsList = [];
-      if (profile && Array.isArray(profile.positiveTraits)) {
-        profile.positiveTraits.forEach(function (t) { traitsList.push({ label: "+ " + t.label, cue: t.cue }); });
-      }
-      if (profile && profile.negativeTrait) {
-        traitsList.push({ label: "- " + profile.negativeTrait.label, cue: profile.negativeTrait.cue, isNeg: true });
+      var subscoresHtml = "";
+      if (result.breakdown) {
+        var bd = result.breakdown;
+        subscoresHtml =
+          '<div class="rp-eval-subscores">' +
+            '<div class="rp-eval-sub" title="' + esc(bd.kinks.note || "") + '"><span>Kinks</span><strong>' + bd.kinks.score + '/' + bd.kinks.max + '</strong></div>' +
+            '<div class="rp-eval-sub" title="' + esc(bd.boundaries.note || "") + '"><span>Boundaries</span><strong>' + bd.boundaries.score + '/' + bd.boundaries.max + '</strong></div>' +
+            '<div class="rp-eval-sub" title="' + esc(bd.traits.note || "") + '"><span>Traits</span><strong>' + bd.traits.score + '/' + bd.traits.max + '</strong></div>' +
+            '<div class="rp-eval-sub" title="' + esc(bd.pacing.note || "") + '"><span>Pacing</span><strong>' + bd.pacing.score + '/' + bd.pacing.max + '</strong></div>' +
+          '</div>';
       }
 
-      var traitTagsHtml = "";
-      if (traitsList.length) {
-        traitTagsHtml =
-          '<div class="rp-eval-row"><span class="rp-eval-row-label">Temperament:</span><div class="rp-eval-tags">' +
-          traitsList.map(function (t) {
-            return '<span class="rp-eval-tag ' + (t.isNeg ? "rp-eval-tag-neg" : "rp-eval-tag-pos") + '" title="' + esc(t.cue || "") + '">' + esc(t.label) + '</span>';
-          }).join("") +
-          '</div></div>';
+      var discoveredKinks = Array.isArray(result.discoveredKinks) ? result.discoveredKinks : [];
+      var trippedDislikes = Array.isArray(result.trippedDislikes) ? result.trippedDislikes : [];
+      var profileHtml = "";
+      if (profile) {
+        var kinkPills = (profile.kinks || []).map(function (it) {
+          var key = it.id || it.label;
+          var found = discoveredKinks.indexOf(key) >= 0;
+          return found
+            ? '<span class="rp-eval-tag rp-eval-tag-hit" title="' + esc(it.cue || "") + '">\u2713 ' + esc(it.label) + '</span>'
+            : '<span class="rp-eval-tag rp-eval-tag-unknown" title="Undiscovered preference">? Undiscovered</span>';
+        }).join("");
+
+        var trippedItems = (profile.dislikes || []).filter(function (it) {
+          return trippedDislikes.indexOf(it.id || it.label) >= 0;
+        });
+        var dislikePills = trippedItems.length
+          ? trippedItems.map(function (it) {
+              return '<span class="rp-eval-tag rp-eval-tag-dislike" title="' + esc(it.cue || "") + '">\u2717 ' + esc(it.label) + '</span>';
+            }).join("")
+          : '<span class="rp-eval-tag rp-eval-tag-clean">\u2713 No Dislikes Tripped</span>';
+
+        var traitsList = [];
+        if (Array.isArray(profile.positiveTraits)) {
+          profile.positiveTraits.forEach(function (t) { traitsList.push({ label: "+ " + t.label, cue: t.cue }); });
+        }
+        if (profile.negativeTrait) {
+          traitsList.push({ label: "- " + profile.negativeTrait.label, cue: profile.negativeTrait.cue, isNeg: true });
+        }
+        var traitTagsHtml = traitsList.length
+          ? '<div class="rp-eval-row"><span class="rp-eval-row-label">Temperament:</span><div class="rp-eval-tags">' +
+              traitsList.map(function (t) {
+                return '<span class="rp-eval-tag ' + (t.isNeg ? "rp-eval-tag-neg" : "rp-eval-tag-pos") + '" title="' + esc(t.cue || "") + '">' + esc(t.label) + '</span>';
+              }).join("") +
+            '</div></div>'
+          : "";
+
+        profileHtml =
+          '<div class="rp-eval-profile">' +
+            '<div class="rp-eval-profile-head">Companion Readout (' + discoveredKinks.length + '/' + (profile.kinks ? profile.kinks.length : 0) + ' Kinks Found)</div>' +
+            '<div class="rp-eval-row"><span class="rp-eval-row-label">Kinks:</span><div class="rp-eval-tags">' + kinkPills + '</div></div>' +
+            '<div class="rp-eval-row"><span class="rp-eval-row-label">Dislikes:</span><div class="rp-eval-tags">' + dislikePills + '</div></div>' +
+            traitTagsHtml +
+          '</div>';
+      }
+
+      var feedbackLines = [];
+      if (result.breakdown) {
+        if (result.breakdown.traits.note) feedbackLines.push('<div><strong>Temperament:</strong> ' + esc(result.breakdown.traits.note) + '</div>');
+        if (result.breakdown.pacing.note) feedbackLines.push('<div><strong>Pacing:</strong> ' + esc(result.breakdown.pacing.note) + '</div>');
+      } else {
+        if (result.hits) feedbackLines.push('<div><strong>What landed:</strong> ' + esc(result.hits) + '</div>');
+        if (result.misses) feedbackLines.push('<div><strong>Where you slipped:</strong> ' + esc(result.misses) + '</div>');
       }
 
       evalCardEl.innerHTML =
@@ -1208,19 +1358,10 @@
             '<span class="rp-eval-boon">' + esc(boonText) + '</span>' +
           '</div>' +
         '</div>' +
+        subscoresHtml +
         '<div class="rp-eval-summary">' + esc(result.summary || "") + '</div>' +
-        '<div class="rp-eval-feedback">' +
-          (result.hits ? '<div><strong>What landed:</strong> ' + esc(result.hits) + '</div>' : '') +
-          (result.misses ? '<div><strong>Where you slipped:</strong> ' + esc(result.misses) + '</div>' : '') +
-        '</div>' +
-        (profile
-          ? '<div class="rp-eval-profile">' +
-              '<div class="rp-eval-profile-head">Companion Profile Revealed</div>' +
-              renderTagRow("Kinks / Fetishes:", profile.kinks, "rp-eval-tag-kink") +
-              renderTagRow("Dislikes:", profile.dislikes, "rp-eval-tag-dislike") +
-              traitTagsHtml +
-            '</div>'
-          : '') +
+        (feedbackLines.length ? '<div class="rp-eval-feedback">' + feedbackLines.join("") + '</div>' : '') +
+        profileHtml +
         '<div class="rp-eval-foot">' +
           '<button type="button" class="rp-btn" data-act="resume-rp" title="Return to the scene and keep roleplaying before finishing">\u2190 Continue Roleplay</button>' +
           '<div class="rp-actions-left">' +
@@ -1260,6 +1401,8 @@
       setStatus(waitMsg);
       if (typingTextEl) typingTextEl.textContent = waitMsg;
 
+      var userTurnsCount = session.turns.filter(function (t) { return t.role === "user"; }).length;
+      var evalParseOpts = { userTurns: userTurnsCount, profile: profile };
       var evalSys = buildEvaluationSystemPrompt(cfg, statsNow(), profile);
       dispatchRpGenerate(
         chosenMode,
@@ -1269,7 +1412,7 @@
         "Grading"
       ).then(function (res) {
         if (mySeq !== session.evalSeq) return;
-        var parsed = (res && res.status === "SUCCESS" && res.text) ? parseEvaluationResult(res.text) : null;
+        var parsed = (res && res.status === "SUCCESS" && res.text) ? parseEvaluationResult(res.text, evalParseOpts) : null;
         if (!parsed && settings.mode === "auto" && res && res.mode === "perchance") {
           if (typingTextEl) typingTextEl.textContent = "Retrying grade via OpenRouter...";
           setStatus("Perchance grading unparseable — retrying via OpenRouter...");
@@ -1281,7 +1424,7 @@
             "Grading"
           ).then(function (res2) {
             if (mySeq !== session.evalSeq) return;
-            var parsed2 = (res2 && res2.status === "SUCCESS" && res2.text) ? parseEvaluationResult(res2.text) : null;
+            var parsed2 = (res2 && res2.status === "SUCCESS" && res2.text) ? parseEvaluationResult(res2.text, evalParseOpts) : null;
             finishEvalResponse(res2, parsed2);
           });
         }

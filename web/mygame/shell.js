@@ -19,7 +19,37 @@
     ["tradeButton", "trade", "Trade"],
     ["saveLoadButton", "save", "Save"]
   ];
-  var rail = null, entries = [], level = null, menu = null;
+  var RAIL_KEY = "rail_hidden";
+  var rail = null, railToggle = null, railHidden = false, entries = [], level = null, menu = null;
+  try { railHidden = window.localStorage.getItem(RAIL_KEY) === "1"; } catch (e) { /* no storage: default to visible */ }
+
+  function placeRailToggle() {
+    if (!railToggle) return;
+    var box = document.querySelector(".container");
+    if (!box) return;
+    var r = box.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    var z = window.UI_ZOOM || 1;
+    var inset = r.width <= 760 ? 5 : 8;
+    railToggle.style.left = Math.max(0, Math.round(r.left / z + inset)) + "px";
+    railToggle.style.top = Math.round((r.top + r.height / 2) / z) + "px";
+  }
+
+  function applyRailHidden(savePref) {
+    document.documentElement.classList.toggle("railHidden", railHidden);
+    if (railToggle) {
+      railToggle.textContent = railHidden ? "\u203A" : "\u2039";
+      var label = railHidden ? "Show menu rail" : "Hide menu rail";
+      railToggle.setAttribute("title", label);
+      railToggle.setAttribute("aria-label", label);
+      railToggle.setAttribute("aria-expanded", railHidden ? "false" : "true");
+    }
+    if (savePref) {
+      try { window.localStorage.setItem(RAIL_KEY, railHidden ? "1" : "0"); } catch (e) { /* lasts until tab closes */ }
+      try { window.dispatchEvent(new Event("resize")); } catch (e) {}
+    }
+    placeRailToggle();
+  }
 
   function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;"); }
 
@@ -59,6 +89,17 @@
             "<div class=\"rlabel\" data-for=\"menuButton\">Menu</div>";
     rail.innerHTML = html;
     document.body.appendChild(rail);
+    railToggle = document.createElement("button");
+    railToggle.type = "button";
+    railToggle.id = "railToggle";
+    railToggle.setAttribute("aria-controls", "rail");
+    document.body.appendChild(railToggle);
+    applyRailHidden(false);
+    railToggle.addEventListener("click", function () {
+      railHidden = !railHidden;
+      applyRailHidden(true);
+      sync();
+    });
     rail.addEventListener("click", function (ev) {
       var t = ev.target;
       while (t && t !== rail && !(t.getAttribute && (t.getAttribute("data-real") || t.getAttribute("data-open") || t.getAttribute("data-tts")))) t = t.parentNode;
@@ -199,6 +240,12 @@
     var sb = document.getElementById("statSidebar");
     var side = !!(sb && sb.style.display !== "none");
     if (document.documentElement.classList.contains("hasSidebar") !== side) document.documentElement.classList.toggle("hasSidebar", side);
+    if (railToggle) {
+      var lvlBtn = rail.querySelector(".rlevel");
+      var hasAlert = railHidden && (!!(lvlBtn && !lvlBtn.hidden) || !!rail.querySelector(".rbadge:not([hidden])"));
+      railToggle.classList.toggle("hasAlert", hasAlert);
+      placeRailToggle();
+    }
   }
 
   var queued = false;
@@ -238,6 +285,7 @@
     hookPageTurns();
     build();
     sync();
+    window.addEventListener("resize", placeRailToggle);
     if (window.MutationObserver) new MutationObserver(queue).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["style", "data-return", "title"] });
     window.setInterval(sync, 500);
   }

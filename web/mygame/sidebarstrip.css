@@ -16,21 +16,31 @@ html.sbDrawer #statSidebar {
 #statSidebar .sbRing[data-ss-collapse] { cursor: pointer; transition: filter 0.15s; }
 #statSidebar .sbRing[data-ss-collapse]:hover, #statSidebar .sbRing[data-ss-collapse]:focus-visible { filter: brightness(1.35); outline: none; }
 
-/* ---- the strip, in the banner row ---- */
+/* ---- unified header strip when the sidebar is folded away ---- */
+html.sbStripOn body[data-theme] #header { min-height: calc(var(--strip-h, 48px) + 12px); }
+html.sbStripOn body[data-theme] #header h1.gameTitle { visibility: hidden; }
+
 #sbStrip {
-  position: fixed; z-index: 998; height: 48px; box-sizing: border-box; display: none; align-items: center; justify-content: flex-end; gap: 12px; padding: 0 8px 0 12px;
-  border: 1px solid var(--ch-line, #4b3d31); border-radius: 8px; background: rgba(18, 16, 15, 0.78); color: var(--ch-text, #e8e0d2);
+  position: fixed; z-index: 998; min-height: 46px; box-sizing: border-box; display: none; align-items: center; gap: 12px; padding: 6px 10px 6px 12px;
+  border: 1px solid var(--ch-line, #4b3d31); border-radius: 8px; background: rgba(18, 16, 15, 0.82); color: var(--ch-text, #e8e0d2);
   font: 12px/1.25 var(--ch-font-ui, sans-serif); white-space: nowrap; overflow: hidden;
+}
+#sbStrip .ssTitle {
+  flex: 1 1 auto; min-width: 0; padding-left: 10px; border-left: 3px solid var(--ch-crimson-hi, #b53a35);
+  font: 600 1.05rem/1.15 var(--ch-font-head, serif); letter-spacing: 0.12em; text-transform: uppercase;
+  color: #f1e4cf; text-shadow: 0 1px 2px #000;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 #sbStrip .ssWhen { display: flex; flex-direction: column; flex: 0 0 auto; }
 #sbStrip .ssNow { overflow: hidden; text-overflow: ellipsis; }
 #sbStrip .ssNow b { font-weight: 700; color: var(--ch-head-text, #f0ece6); }
 #sbStrip .ssDate { font-size: 11px; color: var(--ch-dim, #a99f90); overflow: hidden; text-overflow: ellipsis; }
-#sbStrip .ssConds { display: flex; gap: 5px; }
+#sbStrip .ssConds { display: flex; gap: 5px; flex: 0 0 auto; }
 #sbStrip .ssCond { padding: 2px 7px; border: 1px solid var(--ch-line, #4b3d31); border-radius: 999px; font-size: 11px; color: var(--ch-dim, #a99f90); }
 #sbStrip .ssCond.warn { color: var(--ch-warn, #e2a25f); border-color: var(--ch-warn, #e2a25f); }
 #sbStrip .ssCond.bad { color: var(--ch-bad, #e58a8a); border-color: var(--ch-bad, #e58a8a); background: rgba(181, 58, 53, 0.18); }
-#sbStrip .ssPurse { padding-left: 10px; border-left: 1px solid var(--ch-line, #4b3d31); font-weight: 600; color: var(--ch-brass, #d9a441); }
+#sbStrip .ssRight { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; padding-left: 10px; border-left: 1px solid var(--ch-line, #4b3d31); }
+#sbStrip .ssPurse { font-weight: 600; color: var(--ch-brass, #d9a441); }
 #sbStrip .ssBtns { display: flex; gap: 3px; padding-left: 10px; border-left: 1px solid var(--ch-line, #4b3d31); }
 #sbStrip .ssBtn {
   padding: 5px 7px; min-height: 30px; border: 1px solid var(--ch-line, #4b3d31); border-radius: 6px; background: var(--ch-card, #221e1b); color: var(--ch-text, #e8e0d2);
@@ -40,19 +50,48 @@ html.sbDrawer #statSidebar {
 #sbStrip .ssBtn:disabled { color: var(--ch-dim, #a99f90); opacity: 0.55; cursor: not-allowed; }
 #sbStrip .ssOpen { min-width: 30px; font-size: 15px; color: var(--ch-brass, #d9a441); }
 
-/* less room: drop the date line; then the period and weather, and every pill that is not a warning (a hungry or hurt player still sees it) */
+html:not(.sbStripOn) #sbStrip { display: none !important; }
+html.sbStripOn #sbStrip { display: flex; }
+
+/* medium width: keep one crisp row by hiding only the date line */
 #sbStrip[data-size="mid"] .ssDate { display: none; }
+
+/* narrow / portrait tablet: clean two-row unified bar so nothing gets crowded or dropped */
+html.sbStripOn #sbStrip[data-size="stack"] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  padding: 7px 10px;
+  gap: 6px 10px;
+}
+#sbStrip[data-size="stack"] .ssTitle { grid-column: 1; grid-row: 1; font-size: 0.98rem; }
+#sbStrip[data-size="stack"] .ssRight { grid-column: 2; grid-row: 1; border-left: none; padding-left: 0; gap: 6px; }
+#sbStrip[data-size="stack"] .ssBtns { padding-left: 6px; }
+#sbStrip[data-size="stack"] .ssWhen { grid-column: 1; grid-row: 2; min-width: 0; }
+#sbStrip[data-size="stack"] .ssDate { display: none; }
+#sbStrip[data-size="stack"] .ssConds { grid-column: 2; grid-row: 2; justify-self: end; gap: 4px; }
+#sbStrip[data-size="stack"] .ssCond { padding: 2px 6px; font-size: 10.5px; }
+
+/* very tight screens: hide non-warning pills and weather text so buttons stay tappable */
+html.sbStripOn #sbStrip[data-size="tight"] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  padding: 6px 8px;
+  gap: 5px 8px;
+}
+#sbStrip[data-size="tight"] .ssTitle { grid-column: 1; grid-row: 1; font-size: 0.92rem; }
+#sbStrip[data-size="tight"] .ssRight { grid-column: 2; grid-row: 1; border-left: none; padding-left: 0; gap: 5px; }
+#sbStrip[data-size="tight"] .ssBtns { padding-left: 5px; gap: 2px; }
+#sbStrip[data-size="tight"] .ssBtn { padding: 5px 5px; font-size: 10px; letter-spacing: 0; }
+#sbStrip[data-size="tight"] .ssWhen { grid-column: 1; grid-row: 2; min-width: 0; }
 #sbStrip[data-size="tight"] .ssDate, #sbStrip[data-size="tight"] .ssPer { display: none; }
+#sbStrip[data-size="tight"] .ssConds { grid-column: 2; grid-row: 2; justify-self: end; gap: 3px; }
 #sbStrip[data-size="tight"] .ssCond:not(.warn):not(.bad) { display: none; }
-#sbStrip[data-size="tight"] { gap: 4px; padding: 0 5px 0 8px; }
-#sbStrip[data-size="tight"] .ssBtns, #sbStrip[data-size="tight"] .ssPurse { padding-left: 5px; }
-#sbStrip[data-size="tight"] .ssBtns { gap: 2px; }
-#sbStrip[data-size="tight"] .ssBtn { padding: 5px 4px; font-size: 10px; letter-spacing: 0; }
 #sbStrip[data-size="tight"] .ssCond { padding: 2px 5px; font-size: 10px; }
-#sbStrip[data-size="tight"] .ssConds { gap: 3px; }
 
 /* a touch screen: bigger targets, and nothing needs a hover */
 @media (pointer: coarse) {
-  #sbStrip .ssBtn { min-height: 38px; padding: 6px 12px; }
-  #sbStrip { height: 52px; }
+  #sbStrip .ssBtn { min-height: 36px; padding: 6px 10px; }
+  #sbStrip[data-size="tight"] .ssBtn { min-height: 34px; padding: 5px 7px; }
 }

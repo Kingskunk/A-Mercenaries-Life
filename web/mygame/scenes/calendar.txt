@@ -610,6 +610,8 @@
 *comment lock is needed for these two lines. ---
 *set minutes_since_rest 0
 *set neglect_damage_fatigue 0
+*set intimacy_since_rest 0
+*set intimacy_spent false
 *comment The stage word is derived in advance_time (which every sleeping place calls BEFORE this label), so it is stale here; the sidebar chip reads it.
 *set fatigue_stage "Rested"
 *gosub recalc_hp_from_neglect
@@ -1532,4 +1534,19 @@
       *set food_eaten_note ((food_eaten_note & " and ") & fnb_part)
   *set fp_i + 1
   *goto food_note_loop
+*return
+
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment SHARED INTIMACY STAMINA CHECK (CON-SCALED PER LONG REST)
+*comment Call before showing parlor/intimate encounter menus anywhere in the game.
+*comment Outputs: intimacy_stamina_cap (1/2/3 by con_mod), intimacy_spent (true/false).
+*comment Reset happens automatically in resolve_sleep above.
+*comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*label check_intimacy_stamina
+*set intimacy_stamina_cap 1
+*if (con_mod >= 3)
+  *set intimacy_stamina_cap 3
+*elseif (con_mod >= 1)
+  *set intimacy_stamina_cap 2
+*set intimacy_spent (intimacy_since_rest >= intimacy_stamina_cap)
 *return

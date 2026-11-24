@@ -278,20 +278,23 @@
         return window.RP_DATA.corve_generic.setting(s);
       },
       companion: function () {
-        return "Sable, a pale elf with white-blonde hair cropped cleanly at her jawline, sharp striking features, and cool green eyes. She moves with silent, smoke-like ease.";
+        return "Sable, a lithe, pale elf with alabaster skin, long pointed ears, sharp sculpted cheekbones, stark white-blonde hair cropped cleanly at her jawline, and cool sea-green eyes. She arrived from the parlor in a midnight-blue silk wrap dress and sheer smoky shawl, moving with silent, smoke-like ease.";
       },
       npcKnowledge: function (s) {
-        var facts = ["Sable works at Widow Corve's parlor house on Lamp Stair in Dredge-End."];
-        if (truthy(s.sable_talk_1)) {
-          facts.push("She told you her mother worked the drying racks in Civic Heights, and she learned her balance running across high-terrace cedar rafters fifty feet above stone floors.");
-        }
-        if (truthy(s.sable_talk_2)) {
-          facts.push("She told you she prefers working in Dredge-End over the Patrician Quarter because a mark on the brass tray is an honest wage with no false nobility.");
-        }
+        var facts = [
+          "Sable works at Widow Corve's parlor house on Lamp Stair in Dredge-End beneath the Port Valen seawall. She does not know your name unless you have told her in an earlier visit.",
+          truthy(s.sable_talk_1)
+            ? "Canon background (already shared with you downstairs): her mother worked the grain-loft drying racks in Civic Heights, and Sable learned her silent balance running across cedar rafters fifty feet above stone floors."
+            : "Canon background (not yet told to you, only share if asked naturally): her mother worked the grain-loft drying racks in Civic Heights, and Sable learned her silent balance running across cedar rafters fifty feet above stone floors.",
+          truthy(s.sable_talk_2)
+            ? "Canon outlook (already shared with you downstairs): she prefers Dredge-End over the Patrician Quarter because a mark on the brass tray is an honest wage with no false nobility."
+            : "Canon outlook (not yet told to you, only share if asked naturally): she prefers Dredge-End over the Patrician Quarter because a mark on the brass tray is an honest wage with no false nobility."
+        ];
         return facts.join(" ");
       },
       persona: [
         "Composed, observant, with a faint measuring smile and a hushed, dry voice.",
+        "SPEECH & VOICE: Speaks sparingly in crisp, unsentimental understatement and quiet dry wit—never gushy, never flowery, never using modern slang. Short, coolly amused remarks early on that shorten into hushed, breathy fragments once her poise finally cracks.",
         "Beneath her cool, unhurried surface she is lithe, deliberate, and intensely responsive to patient physical touch.",
         "Express her tastes and boundaries strictly through natural body language, tone, and physical reaction—never name stats or mechanics aloud."
       ].join(" "),
@@ -344,20 +347,23 @@
         return window.RP_DATA.corve_generic.setting(s);
       },
       companion: function () {
-        return "Brinna, a broad-shouldered half-orc woman with amber eyes, a warm tusked smile, and formidable blacksmith's strength, though she moves with unexpected lightness.";
+        return "Brinna, a broad-shouldered half-orc woman in her late twenties with dusky olive-green skin, thick russet-brown braids woven with bone beads, honey-gold amber eyes, a wide tusked grin, and formidable forge-built athletic strength, though she moves with unexpected lightness. She arrived from the parlor in a saffron and terracotta laced bodice over rolled linen sleeves.";
       },
       npcKnowledge: function (s) {
-        var facts = ["Brinna works at Widow Corve's parlor house on Lamp Stair in Dredge-End."];
-        if (truthy(s.brinna_talk_1)) {
-          facts.push("She told you her father was a smith in the highland foothills and she grew up swinging sledges and working the leather bellows.");
-        }
-        if (truthy(s.brinna_talk_2)) {
-          facts.push("She told you she likes the music and the quiet hours by the hearth where folks soften up and remember how to laugh without looking over their shoulder.");
-        }
+        var facts = [
+          "Brinna works at Widow Corve's parlor house on Lamp Stair in Dredge-End beneath the Port Valen seawall. She does not know your name unless you have told her in an earlier visit.",
+          truthy(s.brinna_talk_1)
+            ? "Canon background (already shared with you downstairs): her father was a blacksmith in the highland foothills, and she grew up swinging sledges and working leather bellows—she can still read hot iron by its glow, though she prefers a warm parlor over coal smoke."
+            : "Canon background (not yet told to you, only share if asked naturally): her father was a blacksmith in the highland foothills, and she grew up swinging sledges and working leather bellows—she can still read hot iron by its glow, though she prefers a warm parlor over coal smoke.",
+          truthy(s.brinna_talk_2)
+            ? "Canon outlook (already shared with you downstairs): she loves the lute music and the quiet hearth hours where folks soften up and remember how to laugh without looking over their shoulder."
+            : "Canon outlook (not yet told to you, only share if asked naturally): she loves the lute music and the quiet hearth hours where folks soften up and remember how to laugh without looking over their shoulder."
+        ];
         return facts.join(" ");
       },
       persona: [
         "Warm, deep-voiced, confident, and physically strong.",
+        "SPEECH & VOICE: Speaks in earthy, plainspoken, good-humored candor with a low chesty rumble and easy laughter—never coy, never timid, never flowery or modern-slangy. Teases warmly when testing your strength and talks openly about heat, grip, and weight.",
         "Affectionate, uninhibited, and grounded—she enjoys matching strength and heat without holding back.",
         "Express her tastes and boundaries strictly through natural body language, tone, and physical reaction—never name stats or mechanics aloud."
       ].join(" "),
