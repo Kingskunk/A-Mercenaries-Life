@@ -28,8 +28,8 @@
     kinks: [
       { id: "oral_focus", label: "Oral Focus", cue: "Thrives on unhurried mouth and tongue work—giving or receiving—before or between thrusts.", tags: ["oral"] },
       { id: "rough_hair_pull", label: "Rough Grip & Hair-Pulling", cue: "Loves firm hands bruising her hips, hair gathered tight at the nape, and raw physical force.", tags: ["rough"] },
-      { id: "pinned_directed", label: "Pinned & Directed", cue: "Wants you to hold her down, pin her wrists against the bolsters, and take command.", tags: ["sub", "rough"] },
-      { id: "taking_charge", label: "Taking Charge (On Top)", cue: "Wants control—climbing astride your lap, pinning your shoulders, setting the grind herself.", tags: ["dom"] },
+      { id: "pinned_directed", label: "Pinned & Directed", cue: "Wants you to hold her down, pin her wrists against the bolsters, and take command.", tags: ["sub", "rough"], excludesTags: ["dom"] },
+      { id: "taking_charge", label: "Taking Charge (On Top)", cue: "Wants control—climbing astride your lap, pinning your shoulders, setting the grind herself.", tags: ["dom"], excludesTags: ["sub"] },
       { id: "slow_edging", label: "Slow Edging & Teasing", cue: "Craves drawn-out friction, pausing just before the peak, and being kept aching before release.", tags: ["slow"] },
       { id: "biting_scratching", label: "Biting & Scratching", cue: "Likes teeth at her collarbone or throat and nails dragging down your shoulders as heat rises.", tags: ["marks"] },
       { id: "spanking_sting", label: "Over-the-Knee / Sting", cue: "Responds sharply to open-palm spanks across her thighs or hips balanced with immediate warmth.", tags: ["rough", "spank"] },
@@ -37,91 +37,67 @@
       { id: "deep_behind", label: "From Behind / Deep Angles", cue: "Loves knees on the wool mattress, hips tilted high, and deep leverage from behind.", tags: ["deep_angle"] },
       { id: "verbal_praise", label: "Low Spoken Praise & Commands", cue: "Weakens to hoarse, plainspoken praise or quiet commands murmured directly against her ear.", tags: ["verbal"] },
       { id: "heavy_rhythm", label: "Heavy Rhythm & Bedframe Impact", cue: "Loves hard, driving, relentless cadence once warmed up rather than timid pacing.", tags: ["intense"] },
-      { id: "eye_stillness", label: "Eye Contact & Stillness", cue: "Gets undone by locked eyes, slow chest-to-chest grinding, and holding stillness right at the hilt.", tags: ["eye_contact", "slow"] }
+      { id: "eye_stillness", label: "Eye Contact & Stillness", cue: "Gets undone by locked eyes, slow chest-to-chest grinding, and holding stillness right at the hilt.", tags: ["eye_contact", "slow"] },
+      { id: "wall_lift", label: "Pinned Against the Wall / Lifted", cue: "Loves being backed against the cedar paneling or lifted off her feet with thighs locked around your waist.", tags: ["rough", "intense", "wall"] },
+      { id: "chest_hands", label: "Chest & Thigh Attention", cue: "Melts when hands and mouth linger over her breasts, ribs, and inner thighs rather than skipping straight down.", tags: ["closeness"] },
+      { id: "tangled_side_lying", label: "Tangled Side-Lying & Cocooned Heat", cue: "Loves drawing you down sideways under the wool blankets, leg hooked high over your hip for deep, unhurried grinding.", tags: ["closeness", "slow"] },
+      { id: "dirty_talk", label: "Blunt, Shameless Dirty Talk", cue: "Loves coarse, plainspoken talk describing what you are doing and how she feels—distinct from praise or orders.", tags: ["verbal", "dirty_talk"] },
+      { id: "throat_hand", label: "Firm Hand at the Throat", cue: "Thrives on a controlled, steady hand across her throat or collarbone anchoring her gaze and breath.", tags: ["rough", "sub", "throat"], excludesTags: ["dom"] },
+      { id: "overstim", label: "Riding Past the First Peak", cue: "Loves when you keep a slow, steady grind or skilled fingers working right through her first climax into a second.", tags: ["overstim", "intense"] },
+      { id: "grinding_hands", label: "Bare Grinding & Skilled Fingers", cue: "Works up highest from prolonged thigh-and-hip friction and deliberate handwork before penetration.", tags: ["slow", "grinding"] },
+      { id: "service_kneel", label: "Kneeling & Service", cue: "Enjoys dropping to her knees beside the mattress edge to work you with mouth and hands while watching your face.", tags: ["sub", "oral"], excludesTags: ["dom"] }
     ],
     dislikes: [
-      {
-        id: "rushing_no_foreplay",
-        label: "Rushing Without Foreplay",
-        cue: "Cools off fast if you shove straight in without warming her up or reading her breath.",
-        excludesTags: []
-      },
-      {
-        id: "rough_restraint",
-        label: "Rough Handling & Restraint",
-        cue: "Flinches or pushes your hands off if gripped painfully, pulled by the hair, or pinned hard.",
-        excludesTags: ["rough", "sub", "spank"]
-      },
-      {
-        id: "teeth_marks",
-        label: "Teeth & Skin Marks",
-        cue: "Pulls back sharply against biting, clawing, or bruising marks she has to hide downstairs.",
-        excludesTags: ["marks"]
-      },
-      {
-        id: "endless_chatter",
-        label: "Endless Chatter & Awkward Jokes",
-        cue: "Hates talkative pacing, questions about her past, or jokes that kill the quiet tension.",
-        excludesTags: ["verbal"]
-      },
-      {
-        id: "zero_response",
-        label: "Zero Physical Response",
-        cue: "Loses patience fast if you lie back motionless and leave all the work to her.",
-        excludesTags: []
-      },
-      {
-        id: "barked_commands",
-        label: "Cold, Barked Commands",
-        cue: "Bristles and locks up if spoken to like a servant or ordered around coldly.",
-        excludesTags: ["sub", "verbal"]
-      },
-      {
-        id: "position_hopping",
-        label: "Constant Position-Hopping",
-        cue: "Dislikes shuffling positions every few moments before any real rhythm has time to build.",
-        excludesTags: []
-      },
-      {
-        id: "flowery_flattery",
-        label: "Flowery False Flattery",
-        cue: "Sees through grand poetic speeches; wants honest heat rather than courtly lies.",
-        excludesTags: []
-      },
-      {
-        id: "cold_detachment",
-        label: "Avoidant Silence & No Eye Contact",
-        cue: "Withdraws if treated mechanically with zero warmth, glance, or closeness between moves.",
-        excludesTags: []
-      },
-      {
-        id: "timid_hovering",
-        label: "Timid, Hovering Touch",
-        cue: "Gets restless if hands hesitate lightly without committing weight, pressure, or clear intent.",
-        excludesTags: ["slow"]
-      }
+      { id: "rushing_no_foreplay", label: "Rushing Without Foreplay", cue: "Cools off fast if you shove straight in without warming her up or reading her breath.", excludesTags: [] },
+      { id: "rough_restraint", label: "Rough Handling & Restraint", cue: "Flinches or pushes your hands off if gripped painfully, pulled by the hair, or pinned hard.", excludesTags: ["rough", "sub", "spank", "throat", "wall"] },
+      { id: "teeth_marks", label: "Teeth & Skin Marks", cue: "Pulls back sharply against biting, clawing, or bruising marks she has to hide downstairs.", excludesTags: ["marks"] },
+      { id: "endless_chatter", label: "Endless Chatter & Awkward Jokes", cue: "Hates talkative pacing, questions about her past, or jokes that kill the quiet tension.", excludesTags: ["verbal", "dirty_talk"] },
+      { id: "zero_response", label: "Zero Physical Response", cue: "Loses patience fast if you lie back motionless and leave all the work to her.", excludesTags: [] },
+      { id: "barked_commands", label: "Cold, Barked Commands", cue: "Bristles and locks up if spoken to like a servant or ordered around coldly.", excludesTags: ["sub", "verbal"] },
+      { id: "position_hopping", label: "Constant Position-Hopping", cue: "Dislikes shuffling positions every few moments before any real rhythm has time to build.", excludesTags: [] },
+      { id: "flowery_flattery", label: "Flowery False Flattery", cue: "Sees through grand poetic speeches; wants honest heat rather than courtly lies.", excludesTags: [] },
+      { id: "cold_detachment", label: "Avoidant Silence & No Eye Contact", cue: "Withdraws if treated mechanically with zero warmth, glance, or closeness between moves.", excludesTags: [] },
+      { id: "timid_hovering", label: "Timid, Hovering Touch", cue: "Gets restless if hands hesitate lightly without committing weight, pressure, or clear intent.", excludesTags: ["slow"] },
+      { id: "no_throat", label: "Hands Near Her Throat", cue: "Instantly stiffens and wrenches your wrist away if fingers press near her windpipe.", excludesTags: ["throat", "rough"] },
+      { id: "no_wall", label: "Awkward Wall / Standing Angles", cue: "Dislikes being hoisted or jammed against timber walls—wants the solid wool mattress under her.", excludesTags: ["wall", "intense"] },
+      { id: "no_kissing_skip", label: "Skipping Kisses Altogether", cue: "Cools off if you never kiss her lips, jaw, or throat and treat the act purely below the waist.", excludesTags: [] },
+      { id: "no_dirty_talk", label: "Crude, Loud Vulgarity", cue: "Winces at loud, coarse dirty talk; prefers quiet breath and touch over crude narration.", excludesTags: ["dirty_talk", "verbal"] },
+      { id: "no_overstim", label: "Pushing Past Her Peak", cue: "Turns sharply touch-sensitive right after climax and shoves hands off if you keep grinding too hard.", excludesTags: ["overstim"] },
+      { id: "clumsy_groping", label: "Frantic, Clumsy Groping", cue: "Loses heat fast to rushed, uncoordinated pawing or jabbing fingers with no rhythm.", excludesTags: [] }
     ],
     positiveTraits: [
-      { id: "warm_unhurried", label: "Warm & Unhurried", cue: "Unlocks easily to steady touch and lingers naturally between beats." },
-      { id: "dryly_playful", label: "Dryly Playful", cue: "Drops quiet, half-smirking remarks when amused and teases back cleanly." },
-      { id: "fiercely_attentive", label: "Fiercely Attentive", cue: "Reads pulse, hitched breath, and muscle tension closely and mirrors what works." },
-      { id: "quietly_bold", label: "Quietly Bold", cue: "Initiates without coyness—reaches first and meets your gaze evenly." },
-      { id: "tactile_clingy", label: "Tactile & Clingy", cue: "Keeps thighs hooked, palms over your ribs, and skin pressed flush throughout." },
-      { id: "candid_grounded", label: "Candid & Grounded", cue: "Plainspoken about what feels good; guides your hands directly if asked." },
-      { id: "deeply_responsive", label: "Deeply Responsive", cue: "Answers right touch immediately with hitched breath, low hums, and rolling hips." },
-      { id: "patient_steady", label: "Patient & Accommodating", cue: "Gives steady physical cues rather than snapping early if you test the waters." },
-      { id: "competitive_edge", label: "Competitive Streak", cue: "Enjoys matching your strength—pushing back against your chest or testing your grip." },
-      { id: "soft_soothing", label: "Soft-Voiced & Soothing", cue: "Hushed, calming presence that seals the candlelit room off from the parlor below." }
+      { id: "warm_unhurried", label: "Warm & Unhurried", cue: "Unlocks easily to steady touch and lingers naturally between beats.", tags: ["warm", "unhurried"] },
+      { id: "dryly_playful", label: "Dryly Playful", cue: "Drops quiet, half-smirking remarks when amused and teases back cleanly.", tags: ["playful"] },
+      { id: "fiercely_attentive", label: "Fiercely Attentive", cue: "Reads pulse, hitched breath, and muscle tension closely and mirrors what works.", tags: ["attentive"] },
+      { id: "quietly_bold", label: "Quietly Bold", cue: "Initiates without coyness—reaches first and meets your gaze evenly.", tags: ["bold"] },
+      { id: "tactile_clingy", label: "Tactile & Clingy", cue: "Keeps thighs hooked, palms over your ribs, and skin pressed flush throughout.", tags: ["tactile"] },
+      { id: "candid_grounded", label: "Candid & Grounded", cue: "Plainspoken about what feels good; guides your hands directly if asked.", tags: ["candid"] },
+      { id: "deeply_responsive", label: "Deeply Responsive", cue: "Answers right touch immediately with hitched breath, low hums, and rolling hips.", tags: ["responsive"] },
+      { id: "patient_steady", label: "Patient & Accommodating", cue: "Gives steady physical cues rather than snapping early if you test the waters.", tags: ["patient"] },
+      { id: "competitive_edge", label: "Competitive Streak", cue: "Enjoys matching your strength—pushing back against your chest or testing your grip.", tags: ["competitive"] },
+      { id: "soft_soothing", label: "Soft-Voiced & Soothing", cue: "Hushed, calming presence that seals the candlelit room off from the parlor below.", tags: ["soft"], excludesTags: ["vocal"] },
+      { id: "mischievous_teasing", label: "Mischievous & Teasing", cue: "Playfully withholds or grins when she catches you off balance, turning tension into a game.", tags: ["playful"] },
+      { id: "unflappable_steady", label: "Unflappable & Steady", cue: "Calm, grounded nerve; never rattles easily and rolls smoothly with sudden shifts in pace.", tags: ["steady"] },
+      { id: "expressive_vocal", label: "Expressive & Vocal", cue: "Lets out unfiltered sighs, low curses, and ragged gasps—easy to read when you hit the right spot.", tags: ["vocal"], excludesTags: ["soft"] },
+      { id: "generous_giving", label: "Generous & Giving", cue: "Takes real pride in your pleasure, watching your reactions closely to leave you thoroughly spent.", tags: ["warm"] },
+      { id: "detail_focused", label: "Detail-Focused", cue: "Notices small sensory things—callouses, candlelight, heartbeat, salt air—and reacts to them directly.", tags: ["attentive"] },
+      { id: "proud_self_possessed", label: "Proud & Self-Possessed", cue: "Carries quiet dignity; thaws deeply when treated as an equal rather than a commodity.", tags: ["proud"] }
     ],
     negativeTraits: [
-      { id: "guarded_first", label: "Guarded at First", cue: "Stays reserved and measuring early on until steady touch and attention thaw her." },
-      { id: "impatient_stalled", label: "Impatient When Stalled", cue: "Shifts restlessly or pushes the pace forward herself if you hesitate too long." },
-      { id: "blunt_tongued", label: "Blunt-Tongued", cue: "Calls out clumsy angles or slack effort flatly to your face rather than faking enthusiasm." },
-      { id: "bored_routine", label: "Easily Bored by Sameness", cue: "Interest cools if the pace stays monotonous; needs deliberate escalation or contrast." },
-      { id: "stubborn_pace", label: "Stubborn About Pace", cue: "Resists abrupt steering; pushes back to negotiate the rhythm before yielding." },
-      { id: "quick_to_cool", label: "Quick to Cool Off", cue: "Pulls inward fast if treated brusquely, rushed coldly, or handled like furniture." },
-      { id: "demands_effort", label: "Demands Real Effort", cue: "Expects active hands, breath, and focus—refuses to carry a lazy partner alone." },
-      { id: "heavy_handed", label: "Heavy-Handed & Intense", cue: "Grips harder and speeds up faster than expected, testing whether you can match her." }
+      { id: "guarded_first", label: "Guarded at First", cue: "Stays reserved and measuring early on until steady touch and attention thaw her.", excludesTags: ["candid", "bold", "warm"] },
+      { id: "impatient_stalled", label: "Impatient When Stalled", cue: "Shifts restlessly or pushes the pace forward herself if you hesitate too long.", excludesTags: ["unhurried", "patient", "slow"] },
+      { id: "blunt_tongued", label: "Blunt-Tongued", cue: "Calls out clumsy angles or slack effort flatly to your face rather than faking enthusiasm.", excludesTags: ["patient", "soft"] },
+      { id: "bored_routine", label: "Easily Bored by Sameness", cue: "Interest cools if the pace stays monotonous; needs deliberate escalation or contrast.", excludesTags: ["unhurried"] },
+      { id: "stubborn_pace", label: "Stubborn About Pace", cue: "Resists abrupt steering; pushes back to negotiate the rhythm before yielding.", excludesTags: ["patient"] },
+      { id: "quick_to_cool", label: "Quick to Cool Off", cue: "Pulls inward fast if treated brusquely, rushed coldly, or handled like furniture.", excludesTags: ["warm", "steady"] },
+      { id: "demands_effort", label: "Demands Real Effort", cue: "Expects active hands, breath, and focus—refuses to carry a lazy partner alone.", excludesTags: [] },
+      { id: "heavy_handed", label: "Heavy-Handed & Intense", cue: "Grips harder and speeds up faster than expected, testing whether you can match her.", excludesTags: ["soft"] },
+      { id: "restless_mind", label: "Restless Mind", cue: "Attention drifts if a moment stalls without eye contact or clear focus; needs you to pull her attention back.", excludesTags: ["attentive", "steady"] },
+      { id: "hates_overlooked", label: "Hates Being Overlooked", cue: "Sours noticeably if you chase only your own release and forget her pleasure.", excludesTags: [] },
+      { id: "hard_to_impress", label: "Hard to Impress", cue: "Seen plenty of patrons; starts with a cool, skeptical brow until real attentiveness earns genuine heat.", excludesTags: ["responsive", "warm"] },
+      { id: "sharp_bossy", label: "Sharp-Handed / Bossy", cue: "Quick to correct your hand placement or angle bluntly if you aren't hitting the mark right away.", excludesTags: ["patient", "soft", "sub"] },
+      { id: "hot_and_cold", label: "Hot-and-Cold Temper", cue: "Sparks bright fast when engaged, but snaps frosty or defensive if she feels mishandled.", excludesTags: ["steady", "patient", "warm"] },
+      { id: "private_secretive", label: "Private & Secretive", cue: "Clams up and turns icy if you pry into her past, family, or how she ended up at Widow Corve's.", excludesTags: [] }
     ]
   };
 
@@ -137,24 +113,38 @@
     return arr;
   }
 
+  function hasTagConflict(item, activeTagSet) {
+    return (item.excludesTags || []).some(function (t) { return !!activeTagSet[t]; });
+  }
+
+  function pickCompatible(pool, count, sharedTagSet, rngFn) {
+    var shuffled = shuffleWithRng(pool, rngFn);
+    var picked = [];
+    for (var i = 0; i < shuffled.length && picked.length < count; i++) {
+      var cand = shuffled[i];
+      if (hasTagConflict(cand, sharedTagSet)) continue;
+      picked.push(cand);
+      (cand.tags || []).forEach(function (t) { sharedTagSet[t] = true; });
+    }
+    return picked;
+  }
+
   function rollGenericProfile(rngFn, pageId) {
     var r = typeof rngFn === "function" ? rngFn : Math.random;
-    var kinksCount = r() < 0.5 ? 2 : 3;
-    var kinks = shuffleWithRng(CORVE_GENERIC_POOLS.kinks, r).slice(0, kinksCount);
-
     var kinkTagSet = {};
-    kinks.forEach(function (k) {
-      (k.tags || []).forEach(function (t) { kinkTagSet[t] = true; });
-    });
+    var kinksCount = r() < 0.5 ? 2 : 3;
+    var kinks = pickCompatible(CORVE_GENERIC_POOLS.kinks, kinksCount, kinkTagSet, r);
 
-    var eligibleDislikes = CORVE_GENERIC_POOLS.dislikes.filter(function (d) {
-      return !(d.excludesTags || []).some(function (t) { return !!kinkTagSet[t]; });
-    });
+    var dislikeTagSet = Object.assign({}, kinkTagSet);
     var dislikesCount = r() < 0.5 ? 1 : 2;
-    var dislikes = shuffleWithRng(eligibleDislikes, r).slice(0, dislikesCount);
+    var dislikes = pickCompatible(CORVE_GENERIC_POOLS.dislikes, dislikesCount, dislikeTagSet, r);
 
-    var positiveTraits = shuffleWithRng(CORVE_GENERIC_POOLS.positiveTraits, r).slice(0, 2);
-    var negativeTrait = shuffleWithRng(CORVE_GENERIC_POOLS.negativeTraits, r)[0];
+    var traitTagSet = {};
+    var positiveTraits = pickCompatible(CORVE_GENERIC_POOLS.positiveTraits, 2, traitTagSet, r);
+
+    var negConstraintSet = Object.assign({}, kinkTagSet, traitTagSet);
+    var negPicked = pickCompatible(CORVE_GENERIC_POOLS.negativeTraits, 1, negConstraintSet, r);
+    var negativeTrait = negPicked[0] || shuffleWithRng(CORVE_GENERIC_POOLS.negativeTraits, r)[0];
 
     return {
       pageId: pageId !== undefined ? String(pageId) : "",
