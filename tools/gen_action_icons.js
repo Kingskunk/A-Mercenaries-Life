@@ -31,6 +31,8 @@ const MAP = {
   hide: "Action/Hide_Icon.webp",
   intimidate: "Action/Intimidating_Presence_Icon.webp",   // the morale action (combat.txt MORALE)
   shove: "Action/Shove_Icon.webp",
+  help: "Action/Help_Unfaded_Icon.webp",   // Help: <ally> (combat.txt, 2026-11-24): one button, each ally in its fly-out; a reaching hand, the user's pick
+  break_free: "Spell/Freedom_of_Movement_Unfaded_Icon.webp",   // the restrained player's Break Free (2026-11-24): a boot breaking loose, the user's pick
   put_out_the_flames: "Action/Self_Immolation_Icon.webp",   // the burning player's action (combat.txt, 2026-11-23); a figure wreathed in flame, the user's pick
   throw: "Action/Throw_Icon.webp",   // the one Throw button on the bar; its fly-out shows each item in its own art (below)
   // Each thrown item's own art, keyed throw_<slug of its title>: battlehud.js variantArt reads "Throw: Grease Flask" as throw_grease_flask.

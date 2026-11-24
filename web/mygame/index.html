@@ -1254,8 +1254,27 @@ button#statSidebar .turnRow,
       p.classList.add("stageStatusLine");
     });
   }
+  // The turn divider ("────" on a line of its own) is wrapped in .turnRule and its <br> marked, so battlestage.css can give it one fixed gap in a
+  // fight (COMBAT TEXT SPACING). Out of a fight the classes do nothing.
+  function markTurnRules() {
+    var t = document.querySelectorAll("#main #text");
+    for (var k = 0; k < t.length; k++) {
+      var w = document.createTreeWalker(t[k], NodeFilter.SHOW_TEXT, null), hits = [], n;
+      while ((n = w.nextNode())) {
+        if (/^\s*─{4,}\s*$/.test(n.nodeValue) && !(n.parentNode && n.parentNode.classList && n.parentNode.classList.contains("turnRule"))) hits.push(n);
+      }
+      hits.forEach(function (tn) {
+        var span = document.createElement("span");
+        span.className = "turnRule";
+        tn.parentNode.insertBefore(span, tn);
+        span.appendChild(tn);
+        var br = siblingBr(span, "nextSibling");
+        if (br) br.classList.add("turnRuleBr");
+      });
+    }
+  }
   if (window.MutationObserver) {
-    new MutationObserver(markStatusLines).observe(document.documentElement, { childList: true, subtree: true });
+    new MutationObserver(function () { markStatusLines(); markTurnRules(); }).observe(document.documentElement, { childList: true, subtree: true });
   }
   // ── Reach preview (2026-11-04) ──
   // Hovering (or focusing) an action in the battle HUD shows on the stage how far it reaches: the tiles in reach are lit, the rest dimmed,

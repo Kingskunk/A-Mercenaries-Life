@@ -102,7 +102,7 @@
     "magic_missile", "hex", "armor_of_agathys", "mage_armor", "false_life",
     "dissonant_whispers", "cause_fear", "command", "blindness", "web", "hold_person", "shatter", "scorching_ray", "grease", "burning_hands",
     "thunderwave", "arms_of_hadar", "bane", "healing_word", "cure_wounds",
-    "read", "dodge", "intimidate", "hide",
+    "read", "help", "break_free", "dodge", "intimidate", "hide",
     "shield", "hellish_rebuke", "absorb_elements", "riposte", "combat_inspiration", "steady_aim", "second_wind", "hunters_mark",
     "ensnaring_strike", "action_surge", "rage", "eagles_flight", "arcane_ward", "magical_cunning",
     "throw", "potions", "items", "flee", "end_turn"
@@ -673,6 +673,8 @@
     if (e.id === "hex") return (window.ACTION_ICONS || {})[(truthy(statsNow().combat_hex_orphaned) ? "reapply_hex_" : "hex_") + slug(v.label)] || "";
     // Command: Approach / Drop / Flee / Grovel / Halt -- each word wears its own art (ACTION_ICONS command_<word>).
     if (e.id === "command") return (window.ACTION_ICONS || {})["command_" + slug(v.label)] || "";
+    // Help: <ally> -- every ally in the fly-out wears the Help art (2026-11-24).
+    if (e.id === "help") return (window.ACTION_ICONS || {}).help || "";
     if (e.id === "riposte") return (window.ACTION_ICONS || {}).riposte || "";
     if (e.id === "combat_inspiration") return (window.ACTION_ICONS || {}).combat_inspiration || "";
     // The Wild Heart's Rage of the Wilds: "Rage: Bear" wears rage_bear (ACTION_ICONS).

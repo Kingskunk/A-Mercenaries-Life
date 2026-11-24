@@ -1719,6 +1719,16 @@ ${combat_player_dmg_roll_banner}
 *comment "enemy" and its slot) remembers its attacker's kind and slot and the round. Called on every landed hit: the player's damage packets
 *comment (adjust_outgoing_damage_packet, which every player attack and spell goes through), an ally's hit, and an enemy's hit on the player or an ally.
 *comment Fixed prefixes, never one built from rlh_victim: quicktest walks every branch.
+*comment AN ALLY'S KILL (2026-11-24, the user): an enemy an ally drops says so at the end of the ally's damage line, the way an enemy's blow ends
+*comment "[💀 Archer is down]" and the player's own kill prints "Defeated". Allies never trigger Undead Fortitude (only the player's attacks do), so the
+*comment kill is final. Called right after the blow takes the enemy to 0; the area-spell loop in resolve_ally_cast_damage tags its own lines.
+*label ally_kill_tag
+*params akt_ep akt_bannername
+*temp akt_name {(akt_ep & "name")}
+*temp akt_line {(akt_bannername)}
+*set {(akt_bannername)} "${akt_line} [b][@{combat_is_nonlethal 🏳️|💀} ${akt_name} @{combat_is_nonlethal Beaten|Defeated}][/b]"
+*return
+
 *label record_last_hit
 *comment REPLAY-SAFE (2026-11-03): a refreshed page keeps what the first pass wrote, so a hit landed late on this page would be seen by a turn
 *comment that, the first time, came before it. Each victim keeps two records: last_hit_* (the newest, and the page it was written on) and
@@ -2162,6 +2172,7 @@ ${combat_player_dmg_roll_banner}
     *if ({(raa_ep & "hp")} <= 0)
       *set {(raa_ep & "hp")} 0
       *gosub concentration_end raa_ep
+      *gosub ally_kill_tag raa_ep raa_dmg_bannername
     *else
       *comment An enemy hit by an ally makes its concentration save (3.9), lock 8.
       *gosub concentration_damage_check raa_ep raa_dmg_after 8
@@ -2306,6 +2317,7 @@ ${combat_player_dmg_roll_banner}
     *if ({(racd_ep & "hp")} <= 0)
       *set {(racd_ep & "hp")} 0
       *gosub concentration_end racd_ep
+      *gosub ally_kill_tag racd_ep racd_dmg_bannername
     *else
       *gosub concentration_damage_check racd_ep racd_after 8
       *comment The riders (3.9a 5), as the enemy versions put them on the player: Ray of Frost Slows, Ray of Sickness and Vicious Mockery give disadvantage on its next attack,
@@ -2414,6 +2426,8 @@ ${combat_player_dmg_roll_banner}
       *else
         *gosub concentration_damage_check racd_xp racd_xafter 8
       *set racd_xline "${racd_xline}[n/][b][💥 ${racd_xname}: ${racd_xafter} ${spell_fact_dmg_type} damage${combat_packet_suffix}][/b]"
+      *if ({(racd_xp & "hp")} <= 0)
+        *set racd_xline "${racd_xline} [b][@{combat_is_nonlethal 🏳️|💀} ${racd_xname} @{combat_is_nonlethal Beaten|Defeated}][/b]"
       *comment Thunderwave throws back each foe that failed and still stands, as it does the main target.
       *if ((check_success) and ((combat_ally_cast_spell = "thunderwave") and ({(racd_xp & "hp")} > 0)))
         *gosub ally_push_enemy racd_ap racd_x

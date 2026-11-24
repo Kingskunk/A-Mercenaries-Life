@@ -18,6 +18,7 @@
 //   --out     folder for the screenshots (default <tmp>/probe_fight/<script name>)
 //   --hover   at the end, hovers the battle-bar slot with this name and screenshots its tooltip card; "css:<selector>" hovers any element instead
 // It starts its own Chrome profile and its own server and stops only those processes. CHROME=... if Chrome is not in the usual place.
+// PROBE_HTML=1 prints each step's page markup (#text), to see how its spacing is built.
 // PROBE_DUMP=1 prints where the page keeps its buttons and text, for when a UI change moves them and the probe stops finding options.
 "use strict";
 const { spawn, spawnSync } = require("child_process");
@@ -165,10 +166,13 @@ async function main() {
       let reps = 0;
       do {
         await setRand(st.rand !== undefined ? st.rand : scn.rand);
+        // A step's "set" (as scripted_play): stats changed just before the pick.
+        if (st.set) await ev("(function(o){ for (var k in o) window.stats[k] = o[k]; })(" + JSON.stringify(st.set) + ")");
         await choose(want);
         n++;
         shots.push(await shot(String(n).padStart(2, "0") + "_" + String(want).replace(/[^A-Za-z0-9]+/g, "_").slice(0, 30)));
         console.log("  step " + n + ": " + want + "  (round " + (await ev("String(window.stats.combat_round)")) + ")");
+        if (process.env.PROBE_HTML) console.log(await ev("(function(){ var t = document.querySelectorAll('#main #text'); return t.length ? t[t.length - 1].innerHTML : ''; })()"));
         s = await toMenu();
       } while (st.whileAvail && has() && ++reps < 30);
     }

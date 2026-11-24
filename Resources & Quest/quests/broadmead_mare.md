@@ -30,10 +30,10 @@
 ### New Named NPCs (add to `RESERVED` in `web/mygame/names-data.js`)
 - **Myles Buckman** (human, late teens, commons-born junior groom newly taken on at the Remount Yard): lost the mare at the stream ford. Keeps his place at the yard on `returned`; loses it on `lost`.
 - **Thistle** (human, late forties, weathered commons shepherd known across the downs by his byname): penned the stray mare in the dry-stone commons pound under old grazing custom, demanding the customary 1-silver pound fee and recognition that common grazing still stands.
-- **Magpie** (the horse): a piebald remount mare bearing House Gault's golden-horse brand on her near shoulder and yard-forged shoes with the farrier's crescent toe-notch.
+- **Magpie** (the horse): a spotted black and white mare bearing House Gault's golden-horse brand on her left shoulder and forge-marked shoes with a crescent notch at the toe.
 
 ### Unnamed Extras (remain unnamed per `QUEST_DESIGN_RULES.md`)
-- Remount Yard gate troopers, yard farrier, Downs Road drover, old shepherd and herdboy at the lambing fold.
+- Remount Yard gate troopers, yard blacksmith, Downs Road drover, old shepherd and herdboy at the lambing fold.
 
 ---
 
@@ -41,20 +41,20 @@
 
 ### Beat 1: The Notice (`notice_board.txt nb_read` -> `bm_mare_notice_take` / `bm_mare_notice_need`, 0 min to sign)
 - Appears on Broadmead's board (`cr_origin = "bm"`, `bm_mare_stage = 0`) under `STRAYS AND BRANDS`:
-  > *"STRAYED: piebald mare, Countess's brand on the near shoulder, shod with the yard's mark. Four silver marks for her return sound. Apply at the Remount Yard gate. Sgt. D. Marren."*
+  > *"STRAYED: spotted black and white mare out of the Remount Yard, Countess's brand on the left shoulder, wearing shoes with our forge mark. Four silver marks for her return unharmed. Apply at the Remount Yard gate. Sgt. Dagny Marren."*
 - Gated by `cr_can`. Without a House Gault page, `bm_mare_notice_need` prints the House Gault page refusal and returns to `notice_board nb_read`.
-- Taking the posting sets `bm_mare_stage = 1` and offers either walking straight to the Remount Yard (`+5 min`) or stepping back to the Village Head's Hall.
+- Taking the posting sets `bm_mare_stage = 1` and offers either walking straight to the Remount Yard (`+15 min` including briefing) or stepping back to the Village Head's Hall.
 
-### Beat 2: Inside the Remount Yard (`bm_mare_yard`, +5 min walk, +10 min briefing; optional prep +5 min each)
-- Gate troopers inspect the Insignia and admit the player for this job (`remount_yard.txt` also routes here while `bm_mare_stage = 1`).
-- Dagny Marren (`bm_know_sergeant = true`, `bm_ry_met = true`) sets the terms plainly: bring Magpie back sound, before dark if possible.
+### Beat 2: Inside the Remount Yard (`bm_mare_yard`, +10/+15 min briefing; optional prep +5 min each)
+- Gate troopers inspect the Insignia and admit the player for this job (`remount_yard.txt` also routes here while `bm_mare_stage = 1` or `2`).
+- Dagny Marren (`bm_know_sergeant = true`, `bm_ry_met = true`) sets the terms plainly: bring Magpie back unharmed, before dark if possible.
 - Optional downtime prep inside the yard before setting out (each gives an advantage later; skipping carries no penalty):
-  - **Speak with Myles Buckman** (`bm_mare_prep_groom = true`): admits a loose hurdle startled her at the stream ford and she bolted upslope toward the open down. Grants advantage on Beat 3 Animal Handling and Survival checks.
-  - **Speak with the yard farrier at the smithy bay** (`bm_mare_prep_shoe = true`): shows the crescent toe-notch stamped into every yard shoe. Grants advantage on Beat 3 Survival tracking and lets non-trackers spot her prints.
-  - **Take a spare rope halter from the tack room** (`bm_mare_has_halter = true`, or note carried Hemp Rope): physical affordance for handling Magpie cleanly at the pound.
+  - **Speak with Myles Buckman** (`bm_mare_prep_groom = true`): admits a loose wooden pen fence startled her at the stream crossing and she bolted upslope toward the open hills. Grants advantage on Beat 3 Animal Handling and Survival checks.
+  - **Speak with the yard blacksmith at the forge** (`bm_mare_prep_shoe = true`): shows the crescent toe-notch stamped into every yard shoe. Grants advantage on Beat 3 Survival tracking and lets non-trackers spot her prints.
+  - **Take a spare rope halter from the saddle room** (`bm_mare_has_halter = true`, or note carried Hemp Rope): physical affordance for handling Magpie cleanly at the pound.
 - Advances to `bm_mare_stage = 2`.
 
-### Beat 3: The Ford and the Down (`bm_mare_trail`, +30 min; +45 min extra on failure)
+### Beat 3: The Stream Crossing and the Down (`bm_mare_trail`, +30 min; +45 min extra on failure)
 - Calls `calendar ensure_navigable_weather` before the outdoor search.
 - One obstacle with four archetype approaches, all converging on Beat 4:
   - **Track the notched hoofprints** (`Survival DC 12`, advantage with `bm_mare_prep_shoe` or `bm_mare_prep_groom`):
@@ -64,32 +64,32 @@
     - Success: reaches the fold in 30 min with `bm_mare_clue_calm` (advantage when handling or riding Magpie later).
     - Failure: loses +45 min checking the wrong hollows.
   - **Flag down a drover on the Downs Road** (`Persuasion DC 12`, or pay `3 copper` with no check):
-    - Success or paid: learns a commons man led a piebald upslope (`bm_mare_clue_led`) in 30 min.
+    - Success or paid: learns a commons man led a black and white mare upslope (`bm_mare_clue_led`) in 30 min.
     - Failure: loses +45 min walking the down by hand.
   - **Arcane (`known_speak_with_animals`, cast via `dungeon dg_spell_source` / `dg_spell_cast`):**
-    - Ask a grazing sheep or farm dog near the ford; automatic 30 min arrival with `bm_mare_clue_led`.
+    - Ask a grazing sheep or farm dog near the stream crossing; automatic 30 min arrival with `bm_mare_clue_led`.
 - Advances to `bm_mare_stage = 3`.
 
 ### Beat 4: The Shepherds' Fold (`bm_mare_fold`, +15 min)
 - Bottleneck beat (no forced 3-way menu): a turf-and-stone lambing fold on the down with an old shepherd, a herdboy, and a sheepdog.
-- They confirm **Thistle** found the mare loose on the common grass and penned her in the dry-stone **commons pound** up the ridge, following old grazing custom.
+- They confirm **Thistle** found the mare loose on the common grass and penned her in the stone **commons pound** up the ridge, following old grazing custom.
 - Optional single read (`Insight DC 12`, or automatic if the player already learned `bm_hl_asked_sides` from Mardred): surfaces the real grievance. Thistle is not trying to steal a horse; he is forcing the yard to recognize commons grazing rights after the Home Meadow was fenced (`bm_mare_clue_grievance = true`). Failing Insight gets a curt brush-off with no leverage.
 - Advances to `bm_mare_stage = 4`.
 
 ### Beat 5: The Commons Pound and Thistle (`bm_mare_pound`, +25 min)
-- Dry-stone pen on the ridge. Magpie is inside, mud-splashed across her shoulder (hiding the brand), twitchy but sound. Thistle leans on the gate-bar with a crooked ash staff, demanding the customary 1-silver pound fee.
+- Stone pen on the ridge. Magpie is inside, muddy across her shoulder (hiding the brand), twitchy but unharmed. Thistle leans on the gate-bar with a crooked ash staff, demanding the customary 1-silver pound fee.
 - Approaches (climactic failures have real consequences with no rescue menus; combat follows only from an explicit force choice or a failed push at the gate):
   - **Propose taking it to Mardred Birchstone's counter** (`Persuasion DC 12`, advantage with `bm_mare_clue_grievance` or `bm_hl_asked_sides`):
     - Success: short ruling beat at Mardred's counter (`bm_mare_mardred_ruling`, +20 min). Mardred reads the brand by touch, rules the yard honors the customary 1-silver pound fee on the roll, and hands over the lead (`bm_mare_how = "settled"`).
     - Failure: Thistle rejects hall paper, swings his ash staff to bar the gate, and forces the non-lethal brawl below.
   - **Scrape the mud off the Gault brand and press authority** (`Intimidation DC 13`, advantage with `bm_mare_clue_led` or `known_thaumaturgy`):
     - Success: Thistle backs down grimly; player takes Magpie (`bm_mare_how = "law"`).
-    - Failure: shouting and a slammed staff startle Magpie; she scrambles over the low corner of the dry-stone wall and bolts lame across the scree straight into **`lost`**.
+    - Failure: shouting and a slammed staff startle Magpie; she scrambles over the low corner of the stone wall and bolts hurt across the loose rock straight into **`lost`**.
   - **Pay the customary pound fee yourself** (`[1 Silver Mark]`, requires `>= 10 copper`, spent via `economy currency_spend`, no check):
     - Automatic quiet handover (`bm_mare_how = "paid"`).
   - **Slip the halter on and draw Magpie past him** (`Animal Handling DC 13`, advantage with `bm_mare_clue_calm` or `bm_mare_has_halter`):
     - Success: clean getaway with Magpie; Thistle curses after you (`bm_mare_how = "law"`).
-    - Failure: clumsy grab startles Magpie; she bolts over the broken wall and goes lame off the down straight into **`lost`**.
+    - Failure: clumsy grab startles Magpie; she bolts over the broken wall and goes hurt off the ridge straight into **`lost`**.
   - **Force your way through (direct brawl)**, or triggered by failed Mardred-counter Persuasion:
     - Non-lethal `fight_library` scuffle (`combat_is_nonlethal true`, `combat_lib_1 "hookman"`, `combat_enemy_name_override "Thistle"`, `combat_enemy_epithet_override "Thistle"`, `combat_enemy_hp_override 10`, `combat_enemy_ac_override 11`, `combat_enemy_atk_override 2`, `combat_open_sky true`, `combat_no_morale false`).
     - Win: Thistle yields nursing a bruise; player takes Magpie (`bm_mare_how = "brawled"`).

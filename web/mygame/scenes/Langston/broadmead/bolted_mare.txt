@@ -6,7 +6,7 @@
 *comment
 *comment Stages (bm_mare_stage):
 *comment   0 = not started
-*comment   1 = notice taken; report to the Remount Yard gate (remount_yard.txt will route here in Step 6)
+*comment   1 = notice taken; report to the Remount Yard gate (remount_yard.txt routes here while bm_mare_stage = 1 or 2)
 *comment   2 = briefed at the Remount Yard; search the ford and the down
 *comment   3 = reached the shepherds' fold on the down
 *comment   4 = met Thistle at the commons pound
@@ -23,12 +23,12 @@
   *set bm_mare_stage 1
 [b]◈ THE REMOUNT YARD NOTICE[/b]
 *line_break
-You press your Contractor's Insignia to the stiff card pinned under STRAYS AND BRANDS. The brass warms against your palm, and the terms settle onto the Contractor's Insignia in thin lines of light: a piebald mare strayed from the Countess's Remount Yard, branded on the near shoulder, four silver marks for her return sound.
+You press your Contractor's Insignia to the card pinned under STRAYS AND BRANDS. The brass warms against your palm, and the terms settle onto the face in thin lines of light: a spotted black and white mare strayed from the Countess's Remount Yard, branded on the left shoulder, four silver marks for her return unharmed.
 
-@{(bm_know_head) Mardred Birchstone|The dwarven woman behind the counter} glances up from her papers. "Across the bridge and up the rise," she calls out. "Show the troopers your brass at the iron gate. They've been told to let the taker through."
+@{(bm_know_head) Mardred Birchstone|The dwarven woman behind the counter} glances up from her papers. "Across the bridge and up the rise," she calls out. "Show the troopers your brass at the iron gate. They've been told to let whoever took the job through."
 *choice
-  # Walk across the bridge to the Remount Yard now. [~5 min]
-    *goto bm_mare_yard
+  # Walk across the bridge to the Remount Yard now. [~15 min]
+    *goto bm_mare_yard_from_hall
   # Step back to the Village Head's Hall.
     *if (bm_mare_from_dev)
       *set bm_mare_from_dev false
@@ -39,27 +39,793 @@ You press your Contractor's Insignia to the stiff card pinned under STRAYS AND B
 *set scenery_subplace "broadmead_villageheadhall"
 [b]◈ THE POSTING[/b]
 *line_break
-You reach for the card, and the village head's mark beside the dark blue wax shows House Gault's work. The job goes to a bearer of a Contractor's Insignia. The clerks at Langston Hall's counters open one on a Contractor's Insignia, or sell you the Insignia with the page already on it.
+You reach for the card, and the village head's mark beside the dark blue wax shows House Gault's work. The job goes to a bearer of a House Gault page. The clerks at Langston Hall's counters open one on your Contractor's Insignia, or sell you the Insignia with the page already on it.
 *page_break Step back from the posting…
 *set cr_origin "bm"
 *goto_scene port_valen/radiant/notice_board nb_read
 
-*comment Step 3 replaces this stub with Beat 2 (Remount Yard briefing and optional prep).
+*label bm_mare_yard_from_hall
+*set minutes_to_pass 15
+*goto bm_mare_yard_run
+
 *label bm_mare_yard
+*set minutes_to_pass 10
+*goto bm_mare_yard_run
+
+*label bm_mare_yard_run
 *set scenery_subplace "remount_yard"
-*set minutes_to_pass 5
-*set time_advance_call_id "bm_mare_yard_walk"
+*set bm_ry_seen true
+*set bm_mare_stage 2
+*set time_advance_call_id "bm_mare_yard_brief"
 *gosub bm_mare_advance_time
 [b]◈ THE COUNTESS'S REMOUNT YARD[/b]
 *line_break
-At the iron gate, one of the troopers looks over the Contractor's Insignia, nods once, and draws back the heavy bolt.
-*page_break Step back to Broadmead…
+At the iron gate in the cut stone wall, one of the two troopers in coats trimmed in blue lifts a short silver chime-key and taps the rim of your Contractor's Insignia. A single clean note rings out. Thin pale lines surface across the metal, and the trooper slides the bolt aside and waves you through onto the raked gravel.
+
+Inside, the compound is swept clean: a stone lodge under a slate roof with a tall navy banner showing a golden horse above its door, a row of stables with painted half-doors, an open forge, and a harness room beyond.
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  A lamp burns above the doorway, and the pale pebbles catch the lantern light.
+*elseif (time_period = "Dusk")
+  Long shadows stretch over the gravel yard from the hitching posts, and lamps are already lit inside the house.
+*else
+  Clear daylight picks out the gold thread on the banner and the neat lines raked into the gravel.
+*if (weather_wet)
+  Moisture darkens the slate roofs and beads along the wet stones by the gatehouse.
+
+*if (not(bm_ry_met))
+  *set bm_ry_met true
+  *set bm_know_sergeant true
+  By the hitching rail, a tall woman in her early forties finishes checking a brown mount before turning to face you. She murmurs to the animal, runs a palm down its neck, and sets its front hoof down. Short greying brown hair is tucked behind her ears above a weathered face, grey eyes, and an old scar cutting through her left eyebrow. She wears a dark blue tunic under a leather vest, and pale grooves run across her calloused palms from years on the reins.
+
+  "Sergeant Dagny Marren," she says in a level voice that carries without rising. "The troopers sent word you took the card off the board."
+*else
+  *set bm_know_sergeant true
+  Sergeant Dagny Marren hands a horse's rein to a stable hand by the hitching rail, steps across the gravel, and gives your insignia a single nod.
+
+"She bolted at the stream crossing below the yard while being led to water," Marren says. "A young black and white mare called Magpie. She carries House Gault's golden horse branded on her left shoulder and shoes forged here. Four silver marks if you bring her back unharmed, and before dark if you can manage it. A loose horse on the down breaks a leg after nightfall if a fox or sheepdog drives her onto loose rock."
+*if (time_period = "Dusk")
+  She glances down the lane as shadows lengthen. "Light is already thinning. Mind her footing and do not drive her into a ditch."
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  She looks down the dark lane. "The daylight is already gone. Take care on the slopes and do not push her onto broken ground."
+
+"Who lost her, and where should I start looking?" you ask.
+
+Marren nods at the buildings without raising her voice or her temper. "The junior groom who dropped her lead is clearing stalls by the stables if you want his side of it. The blacksmith is at the smithy if you want to see the mark on our shoes. And spare halters hang in the saddle room before you head down to the stream."
+*goto bm_mare_yard_prep_menu
+
+*label bm_mare_yard_return
+*set scenery_subplace "remount_yard"
+[b]◈ THE COUNTESS'S REMOUNT YARD[/b]
+*line_break
+The gate trooper knows your brass at a glance, taps its rim once with the silver chime-key, and draws the heavy bolt. Inside the wall, the swept yard opens between the stables, the smithy, and the gear shed, and Sergeant Marren gives you a single nod from the steps.
+*goto bm_mare_yard_prep_menu
+
+*label bm_mare_yard_prep_menu
+*choice
+  *if (not(bm_mare_prep_groom))
+    # Talk to the junior groom clearing stalls by the stables. [~5 min]
+      *goto bm_mare_prep_groom_scene
+  *if (not(bm_mare_prep_shoe))
+    # Visit the forge and talk to the blacksmith. [~5 min]
+      *goto bm_mare_prep_shoe_scene
+  *if (not(bm_mare_has_halter))
+    # Look through the saddle room for a halter and rope. [~5 min]
+      *goto bm_mare_prep_tack_scene
+  # Head down to the stream crossing and pick up Magpie's trail.
+    *goto bm_mare_trail
+  # Step out and return to Broadmead.
+    *if (bm_mare_from_dev)
+      *set bm_mare_from_dev false
+      *goto_scene dev_hub dev_menu_quests
+    *goto_scene Langston/broadmead/broadmead bm_return
+
+*label bm_mare_prep_groom_scene
+*set scenery_subplace "remount_yard"
+*set bm_mare_prep_groom true
+*set minutes_to_pass 5
+*set time_advance_call_id "bm_mare_prep_groom"
+*gosub bm_mare_advance_time
+[b]◈ THE STABLES[/b]
+*line_break
+By the half-door of an empty stall, a lad in his late teens turns straw with a pitchfork, wearing a coarse wool shirt under a leather apron. He tenses as you stop beside him, his knuckles whitening on the wooden handle.
+
+"Easy," you tell him. "The sergeant sent me to find the spotted horse, not to call you to account. Tell me how she got loose at the water."
+
+His shoulders drop a fraction. "Myles. Myles Buckman," he says, wiping his brow with a forearm. "I'm from Broadmead, born on the commons, only taken on here this season. If she's hurt or lost for good, the sergeant will let me go before market day."
+
+He holds out his hands, showing a red, blistered groove along both palms. "I was leading her home from the water when a farm cart rattled over the arched stone bridge and tipped a wooden pen fence right beside us. She reared up, ripped the wet line straight through my fingers, splashed through the creek, and bolted uphill onto the open slopes instead of taking the road."
+
+He lowers his hands, glancing at the empty stall. "She spooks easily at raised sticks or banging wood, mind. Come up low on her left shoulder and talk steady to her neck instead of grabbing at her nose, and she settles quick enough."
+*goto bm_mare_yard_prep_menu
+
+*label bm_mare_prep_shoe_scene
+*set scenery_subplace "remount_yard"
+*set bm_mare_prep_shoe true
+*set minutes_to_pass 5
+*set time_advance_call_id "bm_mare_prep_shoe"
+*gosub bm_mare_advance_time
+[b]◈ THE FORGE[/b]
+*line_break
+Under the smithy's open eaves, glowing coals warm an anvil seated on an oak block. A stocky blacksmith in a heavy apron pauses with a metal file as you step closer.
+
+"Sergeant Marren said your shop stamps its own mark on our shoes," you say. "What am I looking for in the mud?"
+
+The smith sets the file down, reaches onto a shelf of spare iron, and holds up a new horseshoe, turning the toe into the light. Right at the center of the front rim, a small curved notch is punched cleanly into the metal.
+
+"Every shoe out of this forge gets a crescent notch at the toe," the smith says, tapping the hollow with a sooty thumb. "Common village horses wear plain iron, rounded smooth in front. Magpie got fresh shoes four days ago, so any print she left in the mud on the bank or soft grass above will show that little notch at the front."
+*goto bm_mare_yard_prep_menu
+
+*label bm_mare_prep_tack_scene
+*set scenery_subplace "remount_yard"
+*set bm_mare_has_halter true
+*set minutes_to_pass 5
+*set time_advance_call_id "bm_mare_prep_tack"
+*gosub bm_mare_advance_time
+[b]◈ THE SADDLE ROOM[/b]
+*line_break
+This timber room smells sharply of leather oil, dry hay, and saddle soap. Bridles hang in straight rows on the timber boards beside saddles set cleanly on wooden racks.
+
+On the end peg hang spare cord halters fitted with wide soft nose straps and knotted lead lines, with no metal rings to clatter and spook a nervous animal.
+*if (has_hemp_rope)
+  The coil of hemp rope in your pack would serve in a pinch, yet a soft halter settles far more gently over a jumpy mare's muzzle. You lift one off the peg, test the sliding knot to be sure it runs cleanly, and loop the coiled lead over your arm.
+*else
+  You lift a sturdy hemp halter off the peg, test the sliding knot once in your fingers so the cord moves freely, and loop the coiled line over your arm.
+*goto bm_mare_yard_prep_menu
+
+*comment ====================================================================================
+*comment BEAT 3: THE STREAM CROSSING AND THE HILLS (bm_mare_stage 2 -> 3)
+*comment Four ways onto the down, all converging on the shepherds' pen (bm_mare_fold):
+*comment   - Track hoofprints (Survival DC 12; advantage from bm_mare_prep_shoe or bm_mare_prep_groom)
+*comment   - Read a frightened horse's path (Animal Handling DC 13; advantage from bm_mare_prep_groom)
+*comment   - Question the mule driver on the hill road (Persuasion DC 12, or pay 3 copper)
+*comment   - Speak with Animals on the farm dog by the bridge (slot, scroll, or ritual)
+*comment Success / paid / spell takes 30 min (40 min as a ritual); a failed check loses +45 min (75 min).
+*comment ====================================================================================
+
+*label bm_mare_trail
+*if (bm_mare_stage >= 4)
+  *goto bm_mare_pound
+*if (bm_mare_stage = 3)
+  *goto bm_mare_fold
+*gosub_scene calendar ensure_navigable_weather
+*set scenery_subplace "broadmead"
+*gosub_scene dungeon dg_spell_source "speak_with_animals" "Speak with Animals" 30 "ritual"
+*temp bm_mare_can_swa dg_ss_can
+*temp bm_mare_swa_tag dg_ss_tag
+*temp bm_mare_can_pay ((((gold * 100) + (silver * 10)) + copper) >= 3)
+[b]◈ THE STREAM CROSSING[/b]
+*line_break
+Below the arched bridge, Broadmead's stream spreads wide and shallow over flat pebbles. On the far bank, a wooden fence panel lies tipped into the wet earth where the pasture begins to climb into the hills.
+*gosub bm_mare_hill_sky
+
+*if (bm_mare_prep_groom)
+  Deep gouges in the soft bank beside the fallen fence match what Myles Buckman described: a horse rearing back from the water and lunging uphill onto the pasture.
+*else
+  Deep gouges tear up the soft bank beside the fallen fence, heading away from the village lane and uphill onto the slopes.
+
+Higher up, shallow dips and thorn bushes break the wind across the hillside. Along the rutted cart track to your right, a weathered driver comes walking down behind two loaded pack mules, while a shaggy farm dog sits by the bridge post watching the upper ridge.
+*choice
+  # Search the mud and grass for Magpie's hoofprints. [~30 min]@{show_stat_hints  [Survival DC 12]|}
+    *goto bm_mare_trail_track
+  # Read the hillside for where a spooked horse would run. [~30 min]@{show_stat_hints  [Animal Handling DC 13]|}
+    *goto bm_mare_trail_instinct
+  # Ask the mule driver coming down the road what he saw. [~30 min]@{show_stat_hints  [Persuasion DC 12]|}
+    *goto bm_mare_trail_ask
+  *if (bm_mare_can_pay)
+    # [3 Copper Bits] Offer the mule driver coin for word of the mare. [~30 min]
+      *goto bm_mare_trail_pay
+  *if (bm_mare_can_swa)
+    # Speak to the farm dog watching the upper path. [${bm_mare_swa_tag}]
+      *goto bm_mare_trail_beast
+  # Step back to Broadmead for now.
+    *goto bm_mare_leave
+
+*label bm_mare_trail_track
+*set scenery_subplace "overworld_hilly_road"
+*if (bm_mare_prep_shoe)
+  You crouch by the churned bank, scanning the mud for the small curved notch at the front of a Remount Yard shoe. Within a dozen paces you spot it pressed clean into the soft earth, separating Magpie's prints from every cart horse by the water.
+  *set advantage true
+*elseif (bm_mare_prep_groom)
+  Starting right where Myles said she scrambled out of the creek, you pick up the deep prints of a running horse cutting straight uphill.
+  *set advantage true
+*else
+  You crouch at the edge of the bank, sorting fresh horseshoe marks from older flock tracks and cart ruts.
+*gosub_scene dice_engine roll_skill_check 12 "survival" "" "" "" "" ""
+*if (check_success)
+  *set bm_mare_clue_led true
+  *set bm_mare_stage 3
+  *set minutes_to_pass 30
+  *set time_advance_call_id "bm_mare_trail_search"
+  *gosub bm_mare_advance_time
+  You follow the deep prints up the grassy slope. Halfway up the climb, the long running strides abruptly shorten into a calm, even walk, and a pair of heavy boot prints appears right beside her left shoulder. Magpie did not keep bolting across the country on her own. Somebody caught hold of her and walked her steadily uphill to a walled shepherds' fold near the ridge.
+*else
+  *set bm_mare_stage 3
+  *set minutes_to_pass 75
+  *set time_advance_call_id "bm_mare_trail_search"
+  *gosub bm_mare_advance_time
+  The iron prints vanish where a large flock recently crossed a rocky gully. You lose three quarters of an hour circling two empty hollows on the hillside before catching sight of a walled shepherds' fold further up the slope, with voices carrying down on the wind.
+*goto bm_mare_trail_after
+
+*label bm_mare_trail_instinct
+*set scenery_subplace "overworld_hilly_road"
+*if (bm_mare_prep_groom)
+  Remembering Myles's warning about how badly rattling wood spooks her, you look away from the noisy cart road to the quiet, sheltered dips higher up the slope.
+  *set advantage true
+*else
+  You stand at the foot of the climb and study the shape of the hillside, looking for the sheltered ground a frightened horse seeks once its first panic burns out.
+*gosub_scene dice_engine roll_skill_check 13 "animal_handling" "" "" "" "" ""
+*if (check_success)
+  *set bm_mare_clue_calm true
+  *set bm_mare_stage 3
+  *set minutes_to_pass 30
+  *set time_advance_call_id "bm_mare_trail_search"
+  *gosub bm_mare_advance_time
+  You climb straight to a grassy dip out of the wind where clover grows thick beside a cluster of thorn bushes. Freshly bitten stems and a tuft of white hair snagged on a low branch show where Magpie stood blowing until her breathing slowed. Seeing how quickly she settled once clear of the clatter gives you a clear sense of how to approach her without setting her off again. From the hollow, a beaten footpath leads onward to a shepherds' fold higher up the slope.
+*else
+  *set bm_mare_stage 3
+  *set minutes_to_pass 75
+  *set time_advance_call_id "bm_mare_trail_search"
+  *gosub bm_mare_advance_time
+  You climb into two sheltered hollows on the far side of the rise, finding nothing there except cropped clover and dry droppings. By the time you work your way back along the slope to a shepherds' fold near the ridge, forty-five extra minutes have slipped away.
+*goto bm_mare_trail_after
+
+*label bm_mare_trail_ask
+*set scenery_subplace "overworld_hilly_road"
+You step off the ruts to give the two pack mules plenty of room and raise a hand in greeting. "Morning's work to you," you say as the driver comes level with you. "Did you pass a black and white mare loose up above?"
+*gosub_scene dice_engine roll_skill_check 12 "persuasion" "" "" "" "" ""
+*if (check_success)
+  *set bm_mare_clue_led true
+  *set bm_mare_stage 3
+  *set minutes_to_pass 30
+  *set time_advance_call_id "bm_mare_trail_search"
+  *gosub bm_mare_advance_time
+  The driver halts his mules, rests an elbow against a canvas pack, and jerks his thumb back over his shoulder. "Saw her an hour ago, sure enough, though she wasn't running loose. One of the commons men had a rope on her neck and was walking her up past the shepherds' fold near the ridge."
+
+  You thank him and take the rising footpath straight up the slope.
+*else
+  *set bm_mare_stage 3
+  *set minutes_to_pass 75
+  *set time_advance_call_id "bm_mare_trail_search"
+  *gosub bm_mare_advance_time
+  The driver narrows his eyes at the mention of a riding mare. "Countess's folk have enough riders to watch their own stock," he mutters, clicking his tongue to urge the mules past you without slowing. Left to search on foot, you spend an extra forty-five minutes walking empty stretches of grass before spotting a walled fold higher up the slope.
+*goto bm_mare_trail_after
+
+*label bm_mare_trail_pay
+*set scenery_subplace "overworld_hilly_road"
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount -3
+  *gosub_scene economy currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*set bm_mare_clue_led true
+*set bm_mare_stage 3
+*set minutes_to_pass 30
+*set time_advance_call_id "bm_mare_trail_search"
+*gosub bm_mare_advance_time
+You step aside for the pack mules and hold up three copper bits between your fingers. "Three coppers for a straight word," you tell the driver. "Did you see a spotted black and white mare up on the hill?"
+
+He catches the coins cleanly out of the air and tucks them into his pouch. "Saw her an hour ago," he says, pointing back up the track. "She wasn't bolting, neither. One of the commons shepherds had a line around her neck and was leading her uphill past the shepherds' fold on the way to the ridge."
+
+[b][💰 Paid: 3 Copper Bits][/b]
+
+You thank him and follow his directions straight up the hillside path.
+*goto bm_mare_trail_after
+
+*label bm_mare_trail_beast
+*set scenery_subplace "overworld_hilly_road"
+*gosub_scene dungeon dg_spell_source "speak_with_animals" "Speak with Animals" 30 "ritual"
+*gosub_scene dungeon dg_spell_cast "speak_with_animals"
+*set bm_mare_clue_led true
+*set bm_mare_stage 3
+*if (dg_ss_cost = "ritual")
+  *set minutes_to_pass 40
+*else
+  *set minutes_to_pass 30
+*set time_advance_call_id "bm_mare_trail_search"
+*gosub bm_mare_advance_time
+You crouch near the bridge post at eye level with the shaggy farm dog.
+*if (dg_ss_cost = "scroll")
+  Unrolling your scroll, you read the words softly until the parchment crumbles and the animal's low whine sharpens into plain sense.
+*elseif (dg_ss_cost = "ritual")
+  Tracing slow circles in the dirt, you murmur the long chant until the rush of the water fades behind the clear sense of its voice.
+*elseif (dg_ss_cost = "slot")
+  You speak the quiet words of the spell, feeling the magic settle between you as the hound tilts its head.
+*else
+  You murmur the familiar words under your breath until its watchful huffing resolves into speech.
+
+"The tall spotted runner that splashed through here," you ask gently. "Which way did she go?"
+
+The hound's ears prick up at the hills. "Ran fast up the grass, smelling of fear," it answers in short, blunt bursts. "Stopped in the wind. Then a man smelling of wool took her rope and walked her slow up to the high pens."
+
+You scratch behind its rough ear and follow the footpath straight up the slope to the shepherds' fold.
+*goto bm_mare_trail_after
+
+*label bm_mare_trail_after
+*choice
+  # Walk up to the shepherds' fold and ask after the mare. [~15 min]
+    *goto bm_mare_fold
+  # Head back down to Broadmead first.
+    *goto bm_mare_leave
+
+*comment ====================================================================================
+*comment BEAT 4: THE SHEPHERDS' FOLD (bm_mare_stage 3 -> 4)
+*comment Bottleneck beat. Old shepherd, teenage helper, and sheepdog confirm Thistle penned the
+*comment mare in the stone commons pound on the ridge. Optional single Insight DC 12 read (or
+*comment automatic if bm_hl_asked_sides is already true) reveals the grazing-rights grievance.
+*comment ====================================================================================
+
+*label bm_mare_fold
+*gosub_scene calendar ensure_navigable_weather
+*set scenery_subplace "generic_village_pasture"
+*set bm_mare_stage 4
+*set minutes_to_pass 15
+*set time_advance_call_id "bm_mare_fold_talk"
+*gosub bm_mare_advance_time
+[b]◈ THE SHEPHERDS' FOLD[/b]
+*line_break
+Halfway up the down, a low ring of stacked fieldstone shelters a dozen sheep from the wind. An older shepherd in a patched wool cloak leans on a walking stick by the gap in the wall while a teenage boy kneels nearby tying up bundles of dry brushwood, a lean grey sheepdog lying flat at his heels.
+*gosub bm_mare_hill_sky
+
+The dog lifts its head with a low growl as you approach, settling only when the older man taps his stick once against the wall.
+
+"If you're out walking for the view, it's finer further west," the shepherd says, eyeing you without warmth.
+
+"I'm looking for a black and white mare from the sergeant's stables," you reply. "@{(bm_mare_clue_led) Somebody led her up this path an hour ago.|She came uphill from the stream crossing earlier.}"
+
+The boy glances quickly at the older shepherd before bending back over his brushwood. After a pause, the man nods up at the crest of the hill.
+
+"That'll be Thistle's doing," he says plainly. "Found her trampling the common grass without a keeper on her. He shut her in the enclosure up on the ridge, the village pound where stray stock goes until the customary fee is paid."
+*if (bm_hl_asked_sides)
+  *set bm_mare_clue_grievance true
+
+  Remembering what Mardred Birchstone told you at the Hall about the fenced Home Meadow costing the shepherds their spring grass, you keep your voice even. "Thistle has no use for a Countess's riding horse," you say. "He wants the Countess's people to pay the stray fee so they have to admit the commons' grazing rights still stand."
+
+  The shepherd's weathered mouth twitches just slightly. "You've got ears on you, stranger," he says. "They fenced the lower meadow on paper. Up here, village custom still holds, and Thistle means to see it respected."
+*choice
+  *if ((not(bm_hl_asked_sides)) and (not(bm_mare_clue_grievance)))
+    # Watch the shepherd's face and ask what Thistle really wants.@{show_stat_hints  [Insight DC 12]|}
+      *goto bm_mare_fold_insight
+  # Climb the ridge to the commons pound. [~25 min]
+    *goto bm_mare_pound
+  # Head back down to Broadmead first.
+    *goto bm_mare_leave
+
+*label bm_mare_fold_insight
+*set scenery_subplace "generic_village_pasture"
+"Nobody shuts a branded horse in an open enclosure on the ridge intending to steal her," you say, watching the quick look the boy gave him a moment ago. "What point is Thistle trying to prove?"
+*gosub_scene dice_engine roll_skill_check 12 "insight" "" "" "" "" ""
+*if (check_success)
+  *set bm_mare_clue_grievance true
+  You catch the slight sag in the old man's shoulders before he guards his face again. He rests both hands atop his walking stick and looks down at the fenced meadows around Broadmead.
+
+  "Every spring the sergeant's stables put up new rails down below and cut another strip off our grazing," he says, lowering his voice. "They wave Hall paper at us whenever we complain. Custom says any stray animal trampling the common owes one silver mark at the pound. Thistle doesn't want their horse. He wants the Countess's folk, or Mardred Birchstone down at the Hall, to honor the old rule for once."
+*else
+  You press a touch too sharp, and the old man's face closes up at once. The boy whistles the sheepdog closer to his knees.
+
+  "Thistle's mind is his own," the shepherd says curtly, turning back to his flock. "Follow the rocky path to the top of the ridge and ask him yourself."
+*choice
+  # Climb the ridge to the commons pound. [~25 min]
+    *goto bm_mare_pound
+  # Head back down to Broadmead first.
+    *goto bm_mare_leave
+
+*comment ====================================================================================
+*comment BEAT 5: THE COMMONS POUND AND THISTLE (bm_mare_stage = 4)
+*comment Climactic confrontation on the ridge. Failures carry real consequences (forced brawl or
+*comment Magpie bolting hurt down the far valley into "lost").
+*comment ====================================================================================
+
+*label bm_mare_pound
+*if (bm_mare_stage >= 5)
+  *goto bm_mare_leave
+*gosub_scene calendar ensure_navigable_weather
+*set scenery_subplace "generic_village_pasture"
+*set minutes_to_pass 25
+*set time_advance_call_id "bm_mare_pound_climb"
+*gosub bm_mare_advance_time
+*gosub_scene dungeon dg_spell_source "charm_person" "Charm Person" 0 "spell"
+*temp bm_mare_can_charm dg_ss_can
+*temp bm_mare_tag_charm dg_ss_tag
+*gosub_scene dungeon dg_spell_source "thaumaturgy" "Thaumaturgy" 0 "cantrip"
+*temp bm_mare_can_thaum dg_ss_can
+*temp bm_mare_word_thaum dg_ss_word
+*temp bm_mare_can_pay_pound ((((gold * 100) + (silver * 10)) + copper) >= 10)
+[b]◈ THE COMMONS POUND[/b]
+*line_break
+Near the windy top of the hill stands a square enclosure built from rough fieldstone up to chest height. A heavy wooden bar is slid across its narrow opening, and one low, crumbling corner overlooks a steep drop of loose rock on the far side of the hill.
+*gosub bm_mare_hill_sky
+
+Inside the enclosure, Magpie shifts restlessly on the trampled grass. Thick river mud is smeared over the black and white coat of her left shoulder, hiding her brand, and her ears flick at every gust of wind, though she stands squarely on all four legs without a limp.
+
+Leaning in front of the wooden bar is a lean, weatherbeaten shepherd in his late forties wearing a faded brown coat, both hands resting atop a crooked ash staff.
+
+"If you've walked up from the sergeant's stables, save your breath about honest mistakes," he says as you stop on the path. "I'm Thistle. Found this mare loose and trampling our grass with nobody minding her. By Broadmead custom, stray livestock stays in the pound until one silver mark is paid for the pasture."
+
+"That's Magpie, out of the Countess's Remount Yard," you tell him. "Sergeant Marren sent me to bring her home."
+
+Thistle does not move an inch from the bar. "Countess's rails down in the Home Meadow have Hall paper behind them. Up here, village custom is older than her stables. Put one silver mark in my palm, or walk down and tell Sergeant Marren why her mount is eating pound hay."
+*choice
+  # Propose walking down together so Mardred Birchstone can rule on it at the Hall.@{show_stat_hints  [Persuasion DC 12]|}
+    *goto bm_mare_pound_settle
+  *if (bm_mare_can_thaum)
+    # [${bm_mare_word_thaum}: Thaumaturgy] Wipe the mud off the brand and boom your voice.@{show_stat_hints  [Intimidation DC 13, Adv]|}
+      *goto bm_mare_pound_thaum
+  # Wipe the mud off House Gault's brand and warn him against holding her.@{show_stat_hints  [Intimidation DC 13]|}
+    *goto bm_mare_pound_authority
+  *if (bm_mare_can_pay_pound)
+    # [1 Silver Mark] Pay the customary pound fee out of your own purse.
+      *goto bm_mare_pound_pay
+  # Reach over the wall, slip a halter onto Magpie, and guide her past him.@{show_stat_hints  [Animal Handling DC 13]|}
+    *goto bm_mare_pound_slip
+  *if (bm_mare_can_charm)
+    # Warm his temper with magic and ask him to hand Magpie over. [${bm_mare_tag_charm}]@{show_stat_hints  [Persuasion DC 12, Adv]|}
+      *goto bm_mare_pound_charm
+  # Shove past his staff and open the pound by force. [Non-Lethal Combat]
+    *goto bm_mare_pound_force
+
+*label bm_mare_pound_settle
+*set scenery_subplace "generic_village_pasture"
+*if ((bm_mare_clue_grievance) or (bm_hl_asked_sides))
+  "A coin handed over on an empty hillside proves nothing down below," you say evenly. "You want the Remount Yard to admit the commons' grazing custom still stands. Walk Magpie down to the Village Head's Hall with me right now and put the claim before Mardred Birchstone. Whatever she enters in the village record, Sergeant Marren has to respect."
+  *set advantage true
+*else
+  "Standing on a windy hill settles nothing between you and Sergeant Marren," you tell him plainly. "Walk down to the Village Head's Hall with me and let Mardred Birchstone rule between the brand and the pound fee."
+*gosub_scene dice_engine roll_skill_check 12 "persuasion" "" "" "" "" ""
+*if (check_success)
+  Thistle studies your face in the wind, his thumb rubbing the worn bend of his staff. Slowly, he nods once.
+
+  "Mardred knows the fences and she knows the custom," he says, lifting the heavy wooden bar out of its slot. He takes hold of the rough cord looped around Magpie's neck. "Fair enough. We walk her to the Hall counter together, and we both stand by what Mardred says."
+  *page_break Walk down to the Village Head's Hall…
+  *goto bm_mare_mardred_ruling
+*else
+  Thistle's mouth sets in a hard line. "Hall clerks only ever write in favor of whoever owns the big fences," he snaps. As you take a step closer to the bar, he swings his crooked staff across the opening to block you. "Back off those stones, or I'll rap your knuckles off them!"
+  *page_break Defend yourself at the pound…
+  *goto bm_mare_brawl
+
+*label bm_mare_mardred_ruling
+*set scenery_subplace "broadmead_villageheadhall"
+*set bm_know_head true
+*set bm_mare_ending "returned"
+*set bm_mare_how "settled"
+*set minutes_to_pass 20
+*set time_advance_call_id "bm_mare_hall_ruling"
+*gosub bm_mare_advance_time
+[b]◈ RULING AT THE HALL[/b]
+*line_break
+*if (((time_period = "Night") or (time_period = "Pre-Dawn")) or (time_period = "Dusk"))
+  Though the Hall's front shutters are drawn for the evening, Mardred Birchstone answers Thistle's knock with a lantern in one hand and steps out beside the pens to hear the dispute.
+*else
+  Outside the Village Head's Hall, Mardred Birchstone comes out from behind her counter, wiping ink from her fingers as Thistle halts Magpie beside the empty sheep rails.
+
+Mardred steps up to Magpie's left shoulder, rubs away the dried crust of mud with a damp rag, and presses her broad thumb directly over the scar of the horse brand to read it by touch. Then she holds up one hand and folds her thick fingers down one by one.
+
+"One, that's House Gault's mark, plain under my thumb," Mardred rumbles. "Two, she was loose on common pasture with no groom in sight, so Thistle was within village custom to pen her. Three, Sergeant Marren owes the commons one silver mark for the pound fee, and I'll deduct it from the stables' hay account myself so nobody calls it charity."
+
+Thistle lets out a slow breath, satisfied, and presses Magpie's lead cord cleanly into your hand. "That's all we asked," he says, touching two fingers to his brow before turning up the lane.
+
+Mardred looks up at you. "Take the mare over the bridge to Marren. Tell her the silver mark's already down on my sheet, and the matter's settled."
+*page_break Lead Magpie across the bridge…
+*goto bm_mare_resolve
+
+*label bm_mare_pound_thaum
+*set scenery_subplace "generic_village_pasture"
+*gosub_scene dungeon dg_spell_source "thaumaturgy" "Thaumaturgy" 0 "cantrip"
+*gosub_scene dungeon dg_spell_cast "thaumaturgy"
+You step up to the fieldstone enclosure, reach calmly over the top to wipe the caked mud off House Gault's golden horse brand, and let the cantrip swell your voice across the hilltop while the heavy wooden bar shudders audibly in its socket.
+
+"This mount carries the Countess's own mark," your booming voice rolls along the ridge. "Slide that bar aside before Langston hears who kept her."
+*set advantage true
+*gosub_scene dice_engine roll_skill_check 13 "intimidation" "" "" "" "" ""
+*if (check_success)
+  Thistle flinches a step away from the rattling timber, his face paling under its weatherbeaten tan. Lowering the point of his staff to the dirt, he shoves the bar clear of the opening with one boot.
+
+  "Keep your magic off our hills," he mutters bitterly. "Take the Countess's animal and go. Broadmead won't forget how her people talk to us."
+  *set bm_mare_ending "returned"
+  *set bm_mare_how "law"
+  *page_break Lead Magpie out of the pound…
+  *goto bm_mare_return_trip
+*else
+  The unnatural roar echoes too sharply off the enclosure stones. Inside, Magpie throws her head high in sudden terror, wheels away from you both, and scrambles her front hooves over the crumbling low corner of the masonry. Loose stones give way beneath her weight as she plunges onto the steep rocky drop beyond, stumbling hard on her right front leg before limping wildly down into the far valley out of reach.
+
+  Thistle stares after the dust, then glares at you in disgust and stalks away along the crest.
+  *set bm_mare_ending "lost"
+  *set bm_mare_how ""
+  *page_break Walk down to the Remount Yard…
+  *goto bm_mare_resolve
+
+*label bm_mare_pound_authority
+*set scenery_subplace "generic_village_pasture"
+You step straight to the enclosure, reach over to rub the dried mud off the golden horse brand on Magpie's left shoulder, and hold Thistle's gaze without blinking.
+*if (bm_mare_clue_led)
+  "She didn't wander into this pen on her own," you say coldly. "I saw heavy footprints halfway down the climb where you caught her and led her up here. Down in Langston Hall, taking a Countess's branded mount by hand isn't grazing custom. It's horse theft."
+  *set advantage true
+*else
+  "That is House Gault's brand under my hand," you tell him coldly. "Holding a Countess's mount for ransom will bring troopers up this path, not silver."
+*gosub_scene dice_engine roll_skill_check 13 "intimidation" "" "" "" "" ""
+*if (check_success)
+  Thistle's jaw works silently for a moment, his knuckles white on the ash staff. Then he spits onto the dirt and drags the wooden bar clear of the gap.
+
+  "Always threats when Hall brass comes up the hill," he says flatly. "Take her and clear off. Folks on the common have long memories."
+  *set bm_mare_ending "returned"
+  *set bm_mare_how "law"
+  *page_break Lead Magpie out of the pound…
+  *goto bm_mare_return_trip
+*else
+  Thistle's face flushes dark red, and he slams the butt of his staff hard against the stone post in anger. "Nobody calls me a horse thief on my own hill!" he shouts.
+
+  At the sharp crack of wood on rock right beside her head, Magpie rears in blind panic, wheels into the low broken corner of the enclosure, and crashes over the tumbling stones onto the loose rock beyond. Her front leg buckles on the steep slide; coming up with a heavy limp, she bolts down the far gully before either of you can reach her.
+  *set bm_mare_ending "lost"
+  *set bm_mare_how ""
+  *page_break Walk down to the Remount Yard…
+  *goto bm_mare_resolve
+
+*label bm_mare_pound_pay
+*set scenery_subplace "generic_village_pasture"
+*if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
+  *set currency_add_amount -10
+  *gosub_scene economy currency_add
+  *set currency_txn_locked true
+  *set locked_currency_txn_page_id page_id
+*set bm_mare_ending "returned"
+*set bm_mare_how "paid"
+You reach into your purse and hold out a single silver mark. "One mark for the pound fee," you say plainly. "Now lift the bar."
+
+Thistle blinks once, clearly expecting an argument, then takes the coin and tests its edge with his thumb. Giving a short, grudging nod, he slides the heavy wooden bar aside and hands you the cord around Magpie's neck.
+*if (bm_mare_has_halter)
+  You slip the soft halter from the saddle room cleanly over her muzzle in place of his rough cord, and she settles at your touch.
+
+[b][💰 Paid: 1 Silver Mark][/b]
+
+"Fair paid, fair settled," Thistle says, stepping aside to clear the path.
+*page_break Lead Magpie out of the pound…
+*goto bm_mare_return_trip
+
+*label bm_mare_pound_slip
+*set scenery_subplace "generic_village_pasture"
+*if ((bm_mare_has_halter) and (bm_mare_clue_calm))
+  Uncoiling the soft halter from the saddle room, you step casually to the low side of the enclosure by Magpie's left shoulder, murmuring in the steady tone that quieted her earlier.
+  *set advantage true
+*elseif (bm_mare_has_halter)
+  Uncoiling the soft cord halter from the saddle room so no metal clinks near her ears, you step close to Magpie's neck by the gap.
+  *set advantage true
+*elseif (bm_mare_clue_calm)
+  Using what you learned in the clover hollow, you come in low near Magpie's flank and murmur evenly to steady her breathing before reaching for her cord.
+  *set advantage true
+*elseif (has_hemp_rope)
+  Forming a smooth loop in your hemp rope, you ease up to the opening within reach of Magpie's muzzle.
+  *set advantage true
+*else
+  You edge close to the gap beside Thistle, watching for an opening to grab the rough cord around Magpie's neck and slip the bar clear.
+*gosub_scene dice_engine roll_skill_check 13 "animal_handling" "" "" "" "" ""
+*if (check_success)
+  With one smooth motion you ease her head toward you, knock the wooden bar out of its shallow slot with your elbow before Thistle can plant his staff, and guide Magpie cleanly through the opening at a brisk trot. Unwilling to swing his stick at the horse herself, Thistle can only shout a curse into the wind behind you as you clear the crest.
+  *set bm_mare_ending "returned"
+  *set bm_mare_how "law"
+  *page_break Guide Magpie down the path…
+  *goto bm_mare_return_trip
+*else
+  As you lunge for her neck cord, Thistle shoves your arm aside and rattles the wooden bar hard against the stones. Caught between two sudden movements, Magpie throws her weight backward, scrambles over the crumbling low corner of the enclosure, and slides into the loose rock beyond. She comes up limping sharply on a wrenched front leg and bolts away down the far valley out of reach.
+  *set bm_mare_ending "lost"
+  *set bm_mare_how ""
+  *page_break Walk down to the Remount Yard…
+  *goto bm_mare_resolve
+
+*label bm_mare_pound_charm
+*set scenery_subplace "generic_village_pasture"
+*gosub_scene dungeon dg_spell_source "charm_person" "Charm Person" 0 "spell"
+*gosub_scene dungeon dg_spell_cast "charm_person"
+*if (dg_ss_cost = "scroll")
+  Drawing the scroll discreetly against your palm, you murmur its syllables under the wind until the parchment fades and warmth settles into your voice.
+*else
+  You weave the quiet words of the spell under the sound of the wind, letting an easy, neighborly warmth fill your voice.
+
+"Come now, Thistle, it's cold work standing guard on a ridge all afternoon," you say gently. "Let me walk the mare home before evening chills her, and save yourself the trouble."
+*set advantage true
+*gosub_scene dice_engine roll_skill_check 12 "persuasion" "" "" "" "" ""
+*if (check_success)
+  The tightness around Thistle's eyes eases all at once, as though an old friend from Broadmead's lane were asking a simple favor. Lowering his staff, he slides the wooden bar open and passes Magpie's cord into your hand.
+
+  "Suppose there's no harm in letting you take her down before supper," he says amiably, though you know full well his mood will turn cold once the charm wears off.
+  *set bm_mare_ending "returned"
+  *set bm_mare_how "law"
+  *page_break Lead Magpie down from the ridge…
+  *goto bm_mare_return_trip
+*else
+  Thistle blinks hard, shaking his head as the pull of the magic slips off him and his eyes narrow in sudden fury. "Trying to muddle a man's head with spells, are you?" he barks, swinging his crooked staff straight at your shoulder!
+  *page_break Defend yourself at the pound…
+  *goto bm_mare_brawl
+
+*label bm_mare_pound_force
+*set scenery_subplace "generic_village_pasture"
+"Move aside, or be moved," you tell him, stepping straight up to lift the wooden bar out of its slot.
+
+Thistle plants both heels in the dirt and swings his crooked ash staff to drive you off!
+*page_break Meet him at the pound…
+*goto bm_mare_brawl
+
+*label bm_mare_brawl
+*set scenery_combat_place "generic_village_pasture"
+*set combat_is_nonlethal true
+*set combat_open_sky true
+*set combat_opens_engaged true
+*set combat_no_morale false
+*set combat_lib_1 "hookman"
+*set combat_enemy_name_override "Thistle"
+*set combat_enemy_epithet_override "Thistle"
+*set combat_enemy_hp_override 10
+*set combat_enemy_ac_override 11
+*set combat_enemy_atk_override 2
+*gosub_scene combat fight_library
+*set scenery_combat_place ""
+*set scenery_subplace "generic_village_pasture"
+*if (combat_outcome = "victory")
+  Thistle drops onto one knee against the stacked stones, clutching his bruised ribs while his crooked staff rolls into the grass.
+
+  "Strong arm on you," he grunts, wiping his split lip with a sleeve. "Go on and take her, then. Every hearth in Broadmead will hear how the sergeant collects her horses now."
+
+  Inside the pound, Magpie is snorting and stamping from the commotion, yet unhurt. You slide the wooden bar clear and take firm hold of her rope.
+  *set bm_mare_ending "returned"
+  *set bm_mare_how "brawled"
+  *page_break Take Magpie down from the ridge…
+  *goto bm_mare_return_trip
+*else
+  *if (hp_current < 1)
+    *set hp_current 1
+  In the tangle of blows at the narrow opening, the heavy wooden bar crashes onto the stones. Terrified by the shouting and clatter, Magpie lunges over the broken low corner of the enclosure onto the loose rock beyond, stumbles badly on her front leg, and bolts limping into the far valley while Thistle drives you back down the path.
+  *set bm_mare_ending "lost"
+  *set bm_mare_how ""
+  *page_break Limp down to the Remount Yard…
+  *goto bm_mare_resolve
+
+*comment ====================================================================================
+*comment RETURN TRIP (skipped when settled at Mardred's Hall counter)
+*comment ====================================================================================
+
+*label bm_mare_return_trip
+*set scenery_subplace "overworld_hilly_road"
+[b]◈ DOWN FROM THE RIDGE[/b]
+*line_break
+Clear of the pound, the hillside path winds down toward Broadmead's bridge and the Remount Yard across the water. Magpie steps briskly beside you, ears swiveling at the wind. Without a saddle on her back, walking her down on foot is sure and steady, though riding her bareback would get her inside the gate in less than half the time.
+*choice
+  # Swing onto Magpie's back and ride her down to the stables. [~20 min]@{show_stat_hints  [Animal Handling DC 12]|}
+    *goto bm_mare_return_ride
+  # Walk her down the hillside path on foot. [~50 min]
+    *goto bm_mare_return_lead
+
+*label bm_mare_return_ride
+*set scenery_subplace "overworld_hilly_road"
+*if ((bm_mare_clue_calm) or (bm_mare_has_halter))
+  *set advantage true
+  Resting a steady palm against her left shoulder first, you use the soft lead to keep her head low and calm as you swing effortlessly onto her back.
+*else
+  Shortening the cord in one hand, you spring up onto Magpie's bare back and press your knees lightly to her sides.
+*gosub_scene dice_engine roll_skill_check 12 "animal_handling" "" "" "" "" ""
+*if (check_success)
+  *set minutes_to_pass 20
+  *set time_advance_call_id "bm_mare_return_walk"
+  *gosub bm_mare_advance_time
+  Magpie tosses her head once, settles under your weight, and carries you down the winding grass path at an easy, rhythmic trot, splashing cleanly over the bridge road to the Remount Yard gate.
+*else
+  *set minutes_to_pass 50
+  *set time_advance_call_id "bm_mare_return_walk"
+  *gosub bm_mare_advance_time
+  The instant your weight settles on her spine, Magpie sidesteps sharply with her ears pinned flat. Rather than risk a fall on the slope, you slide straight onto your feet, steady her neck with a quiet word, and walk her down to the bridge instead.
+*page_break Report at the Remount Yard…
+*goto bm_mare_resolve
+
+*label bm_mare_return_lead
+*set scenery_subplace "overworld_hilly_road"
+*set minutes_to_pass 50
+*set time_advance_call_id "bm_mare_return_walk"
+*gosub bm_mare_advance_time
+Keeping an easy, unhurried slack in the line, you walk beside Magpie's left shoulder all the way down the long hillside track, over the stone bridge, and up the rise to the Remount Yard gate.
+*page_break Report at the Remount Yard…
+*goto bm_mare_resolve
+
+*comment ====================================================================================
+*comment BEAT 6: RESOLUTION AT THE REMOUNT YARD (bm_mare_stage = 5, bm_mare_finished = true)
+*comment Single replay lock (bm_mare_reward_claimed) guards all coin, Insignia, and flag grants.
+*comment ====================================================================================
+
+*label bm_mare_resolve
+*set scenery_subplace "remount_yard"
+*set bm_mare_stage 5
+*set bm_mare_finished true
+*temp bm_mare_pay_copper 0
+*if (bm_mare_ending = "returned")
+  *if ((bm_mare_how = "settled") or (bm_mare_how = "brawled"))
+    *set bm_mare_pay_copper 30
+  *else
+    *set bm_mare_pay_copper 40
+*if (not(bm_mare_reward_claimed))
+  *set bm_mare_reward_claimed true
+  *if (bm_mare_ending = "returned")
+    *set bm_mare_success true
+    *if (bm_mare_how = "settled")
+      *set bm_mare_goodwill true
+      *set bm_ry_open true
+    *elseif (bm_mare_how = "law")
+      *set bm_mare_commons_cold true
+      *set bm_ry_open true
+    *elseif (bm_mare_how = "paid")
+      *set bm_ry_open true
+    *elseif (bm_mare_how = "brawled")
+      *set bm_mare_commons_cold true
+    *set currency_add_amount bm_mare_pay_copper
+    *gosub_scene economy currency_add
+    *if (has_hall_insignia)
+      *script window.Insignia.credit(stats, "gault");
+    *gosub_scene character_progression refresh_level_up_progress
+*set minutes_to_pass 10
+*set time_advance_call_id "bm_mare_resolve_time"
+*gosub bm_mare_advance_time
+[b]◈ RECKONING AT THE YARD[/b]
+*line_break
+*if (bm_mare_ending = "returned")
+  The guards at the gate draw the bolt as you bring Magpie onto the swept gravel. Myles Buckman hurries out from the stalls, relief washing over his face as he takes the line gently near her neck. Sergeant Dagny Marren steps up beside him, runs a firm hand down each of Magpie's legs first, and gives a single nod when she finds every joint cool and unhurt.
+
+  *if (bm_mare_how = "settled")
+    You relay Mardred Birchstone's ruling from the Hall: the mare was penned under village custom, and one mark has been entered against the stables' hay account to settle the pound fee.
+
+    Marren listens without a flicker of irritation and counts three coins into your palm. "Three to you, and one on Mardred's sheet to close the quarrel," she replies. "Fair enough. Clean ink at the Hall beats cut fences next month. Give the gate guards your name whenever you have business inside this wall."
+  *elseif (bm_mare_how = "law")
+    You report that a shepherd called Thistle had penned her on the ridge and you brought her out without paying his demand.
+
+    Marren sets four silver marks into your hand. "Your full pay, as promised," she tells you evenly. "The shepherds won't smile at you in the lane for it, though you brought the Countess's animal home unharmed. The troopers at the gate will know your face whenever you need to step inside."
+  *elseif (bm_mare_how = "paid")
+    You explain that Thistle held her in the village pound on the ridge and you paid his customary fee out of your own purse to bring her down without trouble.
+
+    Marren lifts her scarred eyebrow a fraction, then presses all four coins into your palm. "Three clear for your walk, then, and no bad blood left behind on the hill," she answers. "The guards will let you pass whenever you have reason to call here."
+  *else
+    You report that Thistle barred the pound with his staff and you had to knock him down to bring Magpie out.
+
+    Marren's grey eyes cool a notch. "Bruised shepherds mean cut fence rails before the month is out," she notes flatly. She lays three silver coins into your hand instead of four. "Three for bringing her home whole, less one for the trouble left on our border. That ends our arrangement."
+
+  Drawing a short silver chime-key, Marren lays its flat side against your Contractor's Insignia. A low note hums once as the contract closes. Behind her, Myles leads Magpie toward her clean stall, his place at the stables safe.
+
+  *if (bm_mare_pay_copper = 40)
+    [b][💰 Received: 4 Silver Marks][/b]
+  *else
+    [b][💰 Received: 3 Silver Marks][/b]
+  *if (has_hall_insignia)
+    *line_break
+    [b][🏷️ Insignia: House Gault page, ${hall_jobs_gault} @{(hall_jobs_gault = 1) job|jobs} finished][/b]
+*else
+  You walk inside the gate with empty hands. Over by the stalls, Myles Buckman stops with a water bucket in his grip, the color draining out of his face before you say a word.
+
+  When Sergeant Dagny Marren hears how Magpie scrambled over the broken pound corner and bolted hurt into the far valley, she does not raise her voice. Turning toward the stables, she orders two troopers to saddle mounts with ropes and lanterns to search the valley floor before night or ditches finish the mare, then tells Myles quietly to pack his bundle before supper.
+
+  "The posting was four marks for a horse brought home unharmed," Marren tells you, her gaze cool and final. "The troopers will see you out."
+
+  No coin changes hands, your Contractor's Insignia stays untouched, and the heavy bolt slides shut behind you.
+*page_break Return to Broadmead's lane…
+*goto bm_mare_leave
+
+*label bm_mare_leave
 *if (bm_mare_from_dev)
   *set bm_mare_from_dev false
   *goto_scene dev_hub dev_menu_quests
 *goto_scene Langston/broadmead/broadmead bm_return
 
+*label bm_mare_hill_sky
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  Night lies thick over the hillsides, with only a few distant lamps below to mark the village.
+*elseif (time_period = "Dusk")
+  Fading evening light stretches long shadows down the grassy slopes to the roofs below.
+*elseif (weather_visibility = "poor")
+  Low mist hangs along the hillside, dimming the upper ridge to a pale grey line.
+*else
+  Daylight spreads wide over the hillsides above Broadmead's roofs.
+*if (weather_wet)
+  Steady moisture slicks the grass and turns the paths muddy underfoot.
+*elseif (ground_state = "sodden")
+  Water still stands in the hoof hollows from the recent rain, and the ground squelches at every step.
+*elseif (ground_state = "wet")
+  The grass stays damp and heavy from the last rain, holding clear prints in the soft earth.
+*return
+
 *label bm_mare_advance_time
+*set hours_to_pass 0
 *gosub_scene calendar advance_time
 *gosub_scene calendar recalc_hp_from_neglect
 *if (hp_current <= 0)
@@ -67,4 +833,10 @@ At the iron gate, one of the troopers looks over the Contractor's Insignia, nods
   *if (neglect_damage_fatigue > neglect_damage_hunger)
     *set death_cause "exhaustion"
   *goto_scene death death_screen
+*return
+
+*comment replay-ok: refresh_quests_finished (character_progression.txt) sets quests_finished to 0 and then calls this label, so the count is rebuilt from the permanent flag on every call and a replay cannot double it.
+*label count_finished_broadmead_mare
+*if (bm_mare_success)
+  *set quests_finished + 1
 *return

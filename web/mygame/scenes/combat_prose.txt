@@ -474,6 +474,33 @@
     *set fnaa_line "$!{combat_attacker_epithet} strikes true, and ${combat_defender_epithet} shrugs the blow away like a drop of rain."
   *else
     *set fnaa_line "The blow from ${combat_attacker_epithet} sinks into ${combat_defender_epithet} and fades, leaving the hide whole."
+*comment AN ALLY'S FINISHING BLOW (2026-11-24, the user): an enemy this ally's hit dropped to 0 HP goes down in the line, whatever the attack was (bow, blade,
+*comment spell or claws), so no line has it merely "strike" a foe that is already finished. In a non-lethal fight the foe gives up instead. The damage line
+*comment above it already ends "[💀 <enemy> Defeated]" (combat_dice.txt ally_kill_tag).
+*if (((fnaa_attacker_kind = "ally") and (fnaa_defender_kind = "enemy")) and (fnaa_hit))
+  *if ({(fnaa_dp & "hp")} <= 0)
+    *if (combat_is_nonlethal)
+      *if (fnaa_v = 1)
+        *set fnaa_line "$!{combat_attacker_epithet}'s hit takes the last of the fight out of ${combat_defender_epithet}, who drops to one knee and gives up."
+      *if (fnaa_v = 2)
+        *set fnaa_line "$!{combat_defender_epithet} reels from ${combat_attacker_epithet}'s attack and throws up both hands."
+      *if (fnaa_v = 3)
+        *set fnaa_line "$!{combat_defender_epithet} sits down hard after ${combat_attacker_epithet}'s hit and stays there, done with the fight."
+      *if (fnaa_v = 4)
+        *set fnaa_line "$!{combat_attacker_epithet} lands one more, and ${combat_defender_epithet} backs off with both hands raised."
+      *if (fnaa_v = 5)
+        *set fnaa_line "$!{combat_defender_epithet} folds under ${combat_attacker_epithet}'s attack and calls out that it's over."
+    *else
+      *if (fnaa_v = 1)
+        *set fnaa_line "$!{combat_attacker_epithet} lands the finishing hit, and ${combat_defender_epithet} drops."
+      *if (fnaa_v = 2)
+        *set fnaa_line "$!{combat_defender_epithet} staggers under ${combat_attacker_epithet}'s attack and falls hard."
+      *if (fnaa_v = 3)
+        *set fnaa_line "$!{combat_attacker_epithet}'s attack finishes the job, and ${combat_defender_epithet} sinks to the ground."
+      *if (fnaa_v = 4)
+        *set fnaa_line "$!{combat_attacker_epithet} catches ${combat_defender_epithet} mid-step, and ${combat_defender_epithet} goes down for good."
+      *if (fnaa_v = 5)
+        *set fnaa_line "$!{combat_defender_epithet} takes the hit from ${combat_attacker_epithet}, sways, and collapses."
 *comment An ally this hit dropped to 0 HP falls in the line too, whatever the attack was, so no line has it reel away or shake it off.
 *if ((fnaa_attacker_kind = "enemy") and (fnaa_defender_kind = "ally"))
   *if ({(fnaa_dp & "hp")} <= 0)
@@ -981,9 +1008,9 @@
     You twist inside the net, and the knots hold firm.
 *line_break
 *if (combat_break_free_success)
-  [b][🪢 You break free][/b]
+  [b][⛓️ You break free][/b]
 *else
-  [b][🪢 You are still held fast][/b]
+  [b][⛓️ You are still held fast][/b]
 *return
 
 *label flavor_ally_break_free
