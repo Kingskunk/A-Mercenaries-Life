@@ -17,6 +17,8 @@
 //   --built   opens play_game.html instead (what ships; only as fresh as the last compile)
 //   --out     folder for the screenshots (default <tmp>/probe_fight/<script name>)
 //   --hover   at the end, hovers the battle-bar slot with this name and screenshots its tooltip card; "css:<selector>" hovers any element instead
+//   --open    at the end, clicks the battle-bar slot with this name so its fly-out opens (Throw, Shoot, Potions...), lists its buttons and screenshots it;
+//             --open-hover=<text> then hovers the fly-out button whose label holds the text and screenshots its card
 // It starts its own Chrome profile and its own server and stops only those processes. CHROME=... if Chrome is not in the usual place.
 // PROBE_HTML=1 prints each step's page markup (#text), to see how its spacing is built.
 // PROBE_DUMP=1 prints where the page keeps its buttons and text, for when a UI change moves them and the probe stops finding options.
@@ -37,6 +39,7 @@ const NAME = path.basename(file).replace(/\.json$/, "");
 const OUT = flag("out") || path.join(os.tmpdir(), "probe_fight", NAME);
 const built = !!flag("built");
 const hover = flag("hover");
+const openSlot = flag("open"), openHover = flag("open-hover");
 
 function randValue(v) { return v === "low" ? 0 : v === "high" ? 0.9999 : v === "mid" || v === undefined ? 0.5 : Number(v); }
 
@@ -199,6 +202,31 @@ async function main() {
         await cmd("Input.dispatchMouseEvent", { type: "mouseMoved", x: box.x, y: box.y });
         await sleep(1600);
         shots.push(await shot("zz_hover_" + String(hover).replace(/[^A-Za-z0-9]+/g, "_")));
+      }
+    }
+
+    // --open (2026-11-25): click a battle-bar slot so its fly-out opens (Throw, Shoot, Potions...), screenshot it, and with --open-hover hover one of its buttons for the card.
+    if (openSlot && bar.shown) {
+      const osel = `'#battleHud .bhud-slot[aria-label*=' + JSON.stringify(${JSON.stringify(openSlot)}) + ']'`;
+      const obox = await ev(`(function(){ var s = document.querySelector(${osel}); if (!s) return null; var r = s.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`);
+      if (!obox) { console.log("  open: no slot named '" + openSlot + "'"); problems++; }
+      else {
+        await cmd("Input.dispatchMouseEvent", { type: "mouseMoved", x: obox.x, y: obox.y });
+        await cmd("Input.dispatchMouseEvent", { type: "mousePressed", x: obox.x, y: obox.y, button: "left", clickCount: 1 });
+        await cmd("Input.dispatchMouseEvent", { type: "mouseReleased", x: obox.x, y: obox.y, button: "left", clickCount: 1 });
+        await sleep(900);
+        const fly = await ev(`(function(){ var f = document.getElementById(${JSON.stringify("battleHudFly")}); if (!f || !/on/.test(f.className)) return null; var b = f.querySelectorAll('.bfly-btn'), out = []; for (var i = 0; i < b.length; i++) out.push(b[i].getAttribute('aria-label') + (b[i].querySelector('img') ? '' : ' (no art)')); return out; })()`);
+        console.log("  open '" + openSlot + "': " + (fly ? fly.join(" | ") : "no fly-out opened"));
+        shots.push(await shot("zz_open_" + String(openSlot).replace(/[^A-Za-z0-9]+/g, "_")));
+        if (openHover && fly) {
+          const hbox = await ev(`(function(){ var b = document.querySelectorAll('#' + ${JSON.stringify("battleHudFly")} + ' .bfly-btn'); for (var i = 0; i < b.length; i++) if ((b[i].getAttribute('aria-label') || '').indexOf(${JSON.stringify(String(openHover))}) >= 0) { var r = b[i].getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; } return null; })()`);
+          if (!hbox) { console.log("  open-hover: no fly-out button with '" + openHover + "'"); problems++; }
+          else {
+            await cmd("Input.dispatchMouseEvent", { type: "mouseMoved", x: hbox.x, y: hbox.y });
+            await sleep(1600);
+            shots.push(await shot("zz_openhover_" + String(openHover).replace(/[^A-Za-z0-9]+/g, "_")));
+          }
+        }
       }
     }
 

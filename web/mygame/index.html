@@ -1312,6 +1312,14 @@ button#statSidebar .turnRow,
       var fr = Number(s.combat_friendly_reach) || 3;
       return { lo: player - fr, hi: player + fr, friendly: true, note: "Healing Word reaches an ally up to " + fr + (fr === 1 ? " step" : " steps") + " away" };
     }
+    // A thrown weapon ("Throw: Handaxe (3)", 2026-11-25) reaches its normal range and one band past it at disadvantage, both worked out by the hub (combat_throw_normal / _long:
+    // medium reach, a band more at STR +3 or more). The grease and the fire keep the fixed medium below.
+    if (parent === "throw" && /\(\d+\)$/.test(String(name || ""))) {
+      var tn = Number(s.combat_throw_normal) || Number(s.combat_reach_medium) || 2, tl = Number(s.combat_throw_long) || (tn + 1), tmax = Number(s.combat_max_range) || 3;
+      var tw = String(name).replace(/\s*\(\d+\)$/, "");
+      if (tn >= tmax) return { lo: player - tmax, hi: player + tmax, note: tw + " reaches the whole field" };
+      return { lo: player - Math.min(tl, tmax), hi: player + Math.min(tl, tmax), note: tw + " reaches up to " + rangeTierName(tn, s) + ", " + rangeTierName(Math.min(tl, tmax), s) + " at disadvantage" };
+    }
     var key = STAGE_REACH_FIXED[id] ? id : (STAGE_REACH_FIXED[parent] ? parent : "");
     var cls = key ? STAGE_REACH_FIXED[key] : ((window.SPELL_REACH || {})[id] || (window.SPELL_REACH || {})[parent]);
     if (!cls) return null;

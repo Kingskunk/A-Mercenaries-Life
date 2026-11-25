@@ -27,6 +27,7 @@
  *   node tools/scripted_play.js scene=port_valen/port_valen_dredge_end label=cut_shrine weather=Clear time=Morning \
  *        day=Hallowday stats='{"cut_shrine_gave":true,"de_savvy":false}' \
  *        picks="Kneel by the friar;Follow what he left behind@high;Step inside the knife@high"
+ *   node tools/scripted_play.js <script.json> --trace  also print the AI decision trace: why each enemy and ally picked its target, step and spell
  *   node tools/scripted_play.js --presets              list the character presets
  *   node tools/scripted_play.js --labels=<scene>       list a scene's labels and line numbers
  *   Examples: tools/play_scripts/<area>/*.json (area folders: combat, character, systems, story/<region>)
@@ -53,6 +54,7 @@
  *   watch     variable names (globals, or *temps on the active scene) whose final values are reported
  *   expect    checks that make the run fail by themselves (2026-11-23), so a script proves its rule instead of only not crashing:
  *               "vars": {"name": value}   a variable's final value (read like watch; compared as text, so 5 matches "5", and null matches a missing variable)
+ *               "trace": ["text"], "noTrace": ["text"]   text the AI decision trace must (not) hold; set "combat_ai_trace": true in the stats
  *               "text": ["words", ...]     each must appear somewhere in what the run printed (markup stripped)
  *               "noText": ["words", ...]   none may appear
  *               "status": "menu"           how the run ended: menu, exit, finished or error
@@ -503,6 +505,10 @@ function play(scn) {
     [].concat(ex.text || []).forEach(function (t) { expectCount++; if (expPrinted.indexOf(t) === -1) expectFails.push("text not printed: \"" + t + "\""); });
     [].concat(ex.noText || []).forEach(function (t) { expectCount++; if (expPrinted.indexOf(t) !== -1) expectFails.push("text printed but should not be: \"" + t + "\""); });
     if (ex.status) { expectCount++; if (ex.status !== status) expectFails.push("run ended as " + status + ", expected " + ex.status); }
+    // "trace": text the AI decision trace must hold (combat_ai_trace on; each string is looked for anywhere in the log), "noTrace": text it must not.
+    var traceLog = String(stats.combat_ai_trace_log || "");
+    [].concat(ex.trace || []).forEach(function (t) { expectCount++; if (traceLog.indexOf(t) === -1) expectFails.push("not in the AI trace: \"" + t + "\""); });
+    [].concat(ex.noTrace || []).forEach(function (t) { expectCount++; if (traceLog.indexOf(t) !== -1) expectFails.push("in the AI trace but should not be: \"" + t + "\""); });
   }
   return {
     expectFails: expectFails, expectCount: expectCount,
@@ -578,6 +584,13 @@ function formatText(scn, r, opts) {
   out.push("Result: " + r.status + " | coin " + (r.purseDelta >= 0 ? "+" : "") + r.purseDelta + " copper | HP " + r.hpBefore + " -> " + r.hp +
     (r.exits.length ? " | exits to " + r.exits.join(", ") : ""));
   Object.keys(r.watch).forEach(function (k) { out.push("  " + k + " = " + JSON.stringify(r.watch[k])); });
+  // AI DECISION TRACE (2026-11-25): with "combat_ai_trace": true in a script's stats, every AI decision of the run (combat_ai.txt ai_trace), one a line.
+  // A refresh can append an entry twice, so a repeat of the line just before is dropped.
+  var trace = String((r.s && r.s.combat_ai_trace_log) || "").split(" ‖ ").filter(Boolean);
+  if (trace.length) {
+    out.push("AI trace:");
+    trace.forEach(function (t, i) { if (t !== trace[i - 1]) out.push("  " + t); });
+  }
   if (scn.refresh) {
     out.push("Refresh check: " + r.refreshChecks + " pages replayed, " + r.refreshSkipped + " skipped (started in another scene), " + diffs.length + " differences" + (known.length ? " (+" + known.length + " known engine difference)" : ""));
     diffs.slice(0, 12).forEach(function (d) { out.push("  - " + d); });
@@ -664,6 +677,8 @@ function main(argv) {
     else if (k === "refresh") scn.refresh = v === "true";
     else scn[k] = v;
   });
+  // --trace: turn on the AI decision trace for this run (the same as "combat_ai_trace": true in the stats); the log prints after the result.
+  if (flags.trace) { scn.stats = scn.stats || {}; scn.stats.combat_ai_trace = true; }
   var r = play(scn);
   console.log(flags.json ? formatJson(scn, r) : formatText(scn, r, { raw: !!flags.raw, menus: !flags["no-menus"] }));
   var bad = r.errors.length || r.refreshDiffs.some(function (d) { return !KNOWN_ENGINE_DIFF.test(d); }) ||

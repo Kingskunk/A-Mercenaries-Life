@@ -85,6 +85,7 @@
     "hartwell/palmcote/palmcote_gathering_hall": "generic_village_gathering_hall",
     "hartwell/palmcote/green_branch": "generic_village_inn",
     "hartwell/palmcote/palmcote_market": "palmcote_market",
+    "hartwell/palmcote/short_weight": "palmcote",
     "hartwell/oxworth/oxworth_market": "oxworth_market",
     "hartwell/oxworth/yoke_and_horn": "oxworth_yoke_and_horn",
     "hartwell/oxworth/village_heads_hall": "generic_village_gathering_hall",
@@ -308,6 +309,13 @@
     function (s) { return s.sceneName === "Langston/fallowmere/grey_gander" && s.scenery_subplace === "fallowmere_grey_gander_yard" ? "village_stable_yard" : undefined; }, // the Grey Gander's open cart yard (the taproom keeps its own picture)
     function (s) { return s.sceneName === "hartwell/oxworth/yoke_and_horn" && s.scenery_subplace === "oxworth_yoke_and_horn_yard" ? "village_stable_yard" : undefined; }, // the Yoke & Horn's open cart yard (the common room keeps its own picture)
     function (s) { return s.sceneName === "hartwell/palmcote/green_branch" && s.scenery_subplace === "palmcote_green_branch_yard" ? "village_stable_yard" : undefined; }, // the Green Branch's open stable yard (the common room keeps its own picture)
+    function (s) {
+      if (!/^hartwell\/palmcote\//.test(s.sceneName)) return undefined;
+      if (s.scenery_subplace === "palmcote_olive_yard" || s.scenery_subplace === "palmcote_pressing_house" || s.scenery_subplace === "palmcote_verner_cottage" || s.scenery_subplace === "generic_curing_shed" || s.scenery_subplace === "generic_village_gathering_hall") return s.scenery_subplace;
+      if (s.scenery_subplace === "village_inn_hall") return "generic_village_inn";
+      if (s.scenery_subplace === "village_inn_room") return "generic_village_inn_room";
+      return undefined;
+    }, // Palmcote quest and hub subplaces (olive yard, pressing house, Verner cottage, curing shed, gathering hall, Green Branch)
     function (s) { return s.sceneName === "Langston/broadmead/crooked_halter" && s.scenery_subplace === "broadmead_crooked_halter_yard" ? "village_stable_yard" : undefined; }, // the Crooked Halter's open stable yard (the common room keeps its own picture)
     function (s) { return s.sceneName === "Langston/barolo/red_stave" && s.scenery_subplace === "barolo_red_stave_court" ? "village_stable_yard" : undefined; }, // the Red Stave's open stable court (the hall keeps its own picture; the rented room is the village inn room above)
     function (s) { return s.sceneName === "port_valen/brinewick/reedhouse" && s.scenery_subplace === "reedhouse_stable_yard" ? "village_stable_yard" : undefined; }, // the Reedhouse's raised stable yard (the hall keeps its own picture)

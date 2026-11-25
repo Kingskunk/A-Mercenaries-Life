@@ -98,6 +98,14 @@
         if (truthy(s.pc_market_seen)) {
           out.push("Palmcote Market occupies a widening of the hillside lane under canvas awnings, where sellers weigh out olives, oil, honey, grain, vegetables, and cloth on counter scales.");
         }
+        if (truthy(s.met_house_ferrand)) {
+          out.push("The large grey manor at the crest belongs to [[house_ferrand|House Ferrand]], though villagers rarely speak the name aloud.");
+        }
+        if (s.pc_sw_ending === "exposed") {
+          out.push("After [[bailiff_kelm|Bailiff Kelm]]'s rigged weights were exposed at the Gathering Hall, House Ferrand sent down a new man to work the scale.");
+        } else if (s.pc_sw_ending === "raided") {
+          out.push("Bailiff Kelm was found dead in the stone pressing house above the yard; the manor steward blamed road robbers and quietly hired a replacement.");
+        }
         return out;
       },
       see: ["oxworth", "nora_greer", "odda_pellam"]
@@ -207,6 +215,87 @@
         return out;
       },
       see: ["palmcote", "nora_greer"]
+    },
+
+    {
+      id: "house_ferrand", category: "factions", title: "House Ferrand",
+      sub: "The noble house above Palmcote",
+      tags: ["Palmcote", "Hartwell"],
+      aliases: ["Ferrand", "House Ferrand", "the big house", "house on the hill"],
+      link: ["House Ferrand"],
+      unlock: "met_house_ferrand",
+      body: function (s) {
+        var out = [
+          "The family in the large grey stone house behind the high wall at the crest of [[palmcote|Palmcote]]. They own the olive terraces, the leases and the pressing house above the yard. Most villagers call the estate simply the big house, though its burned olive-tree crest sits on every yard cart, lease and scale box."
+        ];
+        if (s.pc_sw_ending === "exposed") {
+          out.push("After Bailiff Kelm's rigged weights were exposed before [[nora_greer|Nora Greer]], House Ferrand's steward paid Hartwell's fine quietly and sent down a new man to work the scale.");
+        } else if (s.pc_sw_ending === "raided") {
+          out.push("When Bailiff Kelm turned up dead beside hidden oil casks and missing weights, House Ferrand's steward blamed road robbers rather than draw the Viscountess's patrol up the hill.");
+        }
+        return out;
+      },
+      see: ["palmcote", "bailiff_kelm", "nora_greer"]
+    },
+
+    {
+      id: "lina_verner", category: "people", title: "Lina Verner",
+      sub: "Olive picker of Palmcote's lower terraces",
+      role: "Olive picker, Palmcote",
+      tags: ["Palmcote", "Hartwell"],
+      aliases: ["Lina", "Verner", "Berta Verner"],
+      link: ["Lina Verner", "Lina"],
+      unlock: "met_lina_verner",
+      body: function (s) {
+        var out = [
+          "A sun-tanned young human woman in her early twenties with dark braided hair and steady dark eyes, who works her sick mother Berta's leased olive terrace at the foot of [[palmcote|Palmcote]]. When [[bailiff_kelm|Bailiff Kelm]] used rigged scale weights to put them behind on the rent and locked her in the pressing house loft, she slipped out with his brass weights and skimmed purse."
+        ];
+        if (s.pc_sw_ending === "exposed") {
+          out.push("With Kelm exposed before [[nora_greer|Nora Greer]], her mother's debt was struck from the village register and she remains on the lower terrace.");
+        } else if (s.pc_sw_ending === "raided" || s.pc_sw_ending === "heist") {
+          out.push("With her mother's lease burned to ash and Kelm's grip broken, she remains at the lower terrace cottage" + (truthy(s.pc_sw_lina_cold) ? ", though she turned cold after you took the whole purse she carried out." : "."));
+        } else if (s.pc_sw_ending === "blackmail") {
+          out.push("After you forced Kelm to burn her mother's lease under threat of the Viscountess's patrol, she stayed on the lower terrace free of his reach.");
+        } else if (s.pc_sw_ending === "escaped") {
+          out.push("You guided her down to a pre-dawn oil cart bound for Hartwell, where she meant to start fresh around the oil yards.");
+        } else if (s.pc_sw_ending === "sold_out") {
+          out.push("You gave her hiding place to Bailiff Kelm for seven silver marks, and his men dragged her back up the hill.");
+        }
+        if (truthy(s.pc_sw_lina_close) && !truthy(s.pc_sw_lina_cold)) {
+          out.push("The night she hid in your upstairs room at The Green Branch left an unspoken closeness between you.");
+        }
+        return out;
+      },
+      see: ["palmcote", "bailiff_kelm", "house_ferrand", "odda_pellam"]
+    },
+
+    {
+      id: "bailiff_kelm", category: "people", title: "Bailiff Kelm",
+      sub: "Yard bailiff for House Ferrand",
+      role: "Pressing-yard bailiff, Palmcote",
+      tags: ["Palmcote", "Hartwell"],
+      aliases: ["Kelm", "bailiff", "pressing house"],
+      link: ["Bailiff Kelm", "Kelm"],
+      unlock: "met_bailiff_kelm",
+      body: function (s) {
+        var out = [
+          "A thickset human bailiff in his late forties with grey stubble, a heavy jaw, and a dark wool coat smelling of wine and crushed fruit, overseeing [[house_ferrand|House Ferrand]]'s weighing scale and stone pressing house above [[palmcote|Palmcote]]."
+        ];
+        if (truthy(s.pc_sw_proof_verified)) {
+          out.push("He bored out House Ferrand's brass scale weights and packed them with lead shot, so the villagers' baskets weighed light and he could sell the extra oil for himself.");
+        }
+        if (truthy(s.pc_sw_kelm_dead)) {
+          out.push("He died fighting to protect his rigged scales and strongbox.");
+        } else if (s.pc_sw_ending === "exposed") {
+          out.push("Caught with rigged weights before [[nora_greer|Nora Greer]], he lost his post and the pressing house.");
+        } else if (s.pc_sw_ending === "blackmail") {
+          out.push("Under threat of the Viscountess's patrol seeing his rigged weights, he burned Berta Verner's lease and paid five silver marks for his silence.");
+        } else if (s.pc_sw_ending === "sold_out" || s.pc_sw_ending === "betrayed_early") {
+          out.push("He paid you in silver to hand over Lina Verner and recover his missing box.");
+        }
+        return out;
+      },
+      see: ["palmcote", "house_ferrand", "lina_verner", "nora_greer"]
     }
 
   ]);

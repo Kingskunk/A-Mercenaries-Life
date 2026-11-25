@@ -777,9 +777,11 @@
     var vers = String(s[pre + "_versatile"] || ""), twoGrip = !!vers && !truthy(s.shield_equipped) && s.fighting_style !== "dueling";
     var dieMatch = String(twoGrip ? vers : (s[pre + "_damage"] || "")).match(/^(\d+d\d+)/);
     var dice = dieMatch ? dieMatch[1] : "1";
-    var dueling = (s.fighting_style === "dueling" && type !== "ranged" && hands !== "two_handed") ? 2 : 0;
+    var dueling = (!opts.offhand && s.fighting_style === "dueling" && type !== "ranged" && hands !== "two_handed") ? 2 : 0;
     var rage = (!opts.ignoreRage && s.character_class === "barbarian" && truthy(s.is_raging) && type !== "ranged" && (type !== "finesse" || strMod > dexMod)) ? num(s.barbarian_rage_damage_bonus) : 0;
-    var dmgMod = abMod + dueling + rage + magic;
+    // The off-hand attack (Light, 2026-11-25) adds no ability modifier to its damage unless it is negative, or the style is Two-Weapon Fighting (combat.txt).
+    var dmgAb = (opts.offhand && abMod > 0 && s.fighting_style !== "two_weapon") ? 0 : abMod;
+    var dmgMod = dmgAb + dueling + rage + magic;
     var rawDmg = String(s[pre + "_damage"] || "");
     var dmgType = opts.overrideDmgType || ((s[pre + "_damage_type"] && s[pre + "_damage_type"] !== "none") ? s[pre + "_damage_type"] : (rawDmg.split(/\s+/)[1] || ""));
     var range = type === "ranged" ? (REACH_NAME[s[pre + "_reach"] || "long"] || "Long range") : (type === "reach" ? "Engaged or Close" : "Engaged");
@@ -806,12 +808,13 @@
     };
   }
   function weaponCard(id) {
-    var pre = id === "primary_attack" ? "weapon" : (id === "sidearm_attack" ? "sidearm" : "");
+    var off = id === "off_hand_attack";
+    var pre = id === "primary_attack" ? "weapon" : ((id === "sidearm_attack" || off) ? "sidearm" : "");
     if (!pre) return "";
-    var w = weaponStats(statsNow(), pre);
+    var w = weaponStats(statsNow(), pre, off ? { offhand: true } : undefined);
     if (!w) return "";
     return "<div class=\"bt-name\">" + esc(w.desc) + "</div>" +
-      "<div class=\"bt-kind\">" + (pre === "weapon" ? "Primary weapon" : "Sidearm") + " \u00b7 Action</div>" +
+      "<div class=\"bt-kind\">" + (off ? "Off-hand \u00b7 Bonus action" : (pre === "weapon" ? "Primary weapon" : "Sidearm") + " \u00b7 Action") + "</div>" +
       "<div class=\"bt-text\">" + esc(signed(w.atk) + " to hit \u00b7 " + w.dmgExpr) + "</div>" +
       "<div class=\"bt-text\">" + esc(w.props.concat([w.range]).join(" \u00b7 ")) + "</div>" +
       (w.notes.length ? "<div class=\"bt-text\">" + esc(w.notes.join(" \u00b7 ")) + "</div>" : "");
@@ -989,6 +992,9 @@
         desc = typeof item.description === "function" ? item.description(s) : (item.description || "");
       } catch (err) { /* the label alone will do */ }
     }
+    // A thrown weapon's label carries the copies carried ("Handaxe (3)", 2026-11-25): the card says how many.
+    var carried = /\((\d+)\)$/.exec(String(v.label || ""));
+    if (carried && e.id === "throw") badge = carried[1] + " carried";
     return "<div class=\"bt-name\">" + esc(name) + "</div>" +
       "<div class=\"bt-kind\">" + esc([KIND[e.group], ITEM_MENUS[e.id]].filter(Boolean).join(" \u00b7 ")) + "</div>" +
       (badge ? "<div class=\"bt-meta\">" + esc(badge) + "</div>" : "") +

@@ -86,6 +86,10 @@
   *else
     You climb the slope between the tree rows into Palmcote.
 *gosub pc_layers
+*if (not(pc_first_arrival))
+  *comment SHORT WEIGHT (hartwell/palmcote/short_weight.txt): stepping onto the lane at dusk, night or before dawn springs the chase by the well once.
+  *if ((pc_sw_stage = 0) and (((time_period = "Dusk") or (time_period = "Night")) or (time_period = "Pre-Dawn")))
+    *goto_scene hartwell/palmcote/short_weight pc_sw_well_chase
 *goto pc_menu
 
 *label pc_walk_time
@@ -120,6 +124,9 @@
   You step back out onto the slope as the evening settles over the tree rows.
 *else
   You come back out onto Palmcote's sloping lane.
+*comment SHORT WEIGHT (hartwell/palmcote/short_weight.txt): stepping onto the lane at dusk, night or before dawn springs the chase by the well once.
+*if ((pc_sw_stage = 0) and (((time_period = "Dusk") or (time_period = "Night")) or (time_period = "Pre-Dawn")))
+  *goto_scene hartwell/palmcote/short_weight pc_sw_well_chase
 *goto pc_menu
 
 *label pc_menu
@@ -141,6 +148,12 @@
   *else
     # [b]Palmcote Market[/b] (${pc_market_closed_reason}).
       *goto_scene hartwell/palmcote/palmcote_market pc_market_closed
+  *if (((pc_sw_stage = 0) and (not(pc_sw_saw_yard))) and (pc_ok_hall))
+    # [b]The Olive Yard[/b]: pause where a bailiff is weighing pickers' baskets. [~5 min]
+      *goto_scene hartwell/palmcote/short_weight pc_sw_day_yard
+  *if (pc_sw_stage = 2)
+    # [b]@{(pc_sw_shelter = "room") Check on Lina upstairs at The Green Branch|Check on Lina in the lower drying shed}[/b]: decide what to do next.
+      *goto_scene hartwell/palmcote/short_weight pc_sw_shelter_return
   # [b]The road out of the village[/b]: leave Palmcote.
     *set ow_pos "pc"
     *goto_scene overworld/overworld ow_here

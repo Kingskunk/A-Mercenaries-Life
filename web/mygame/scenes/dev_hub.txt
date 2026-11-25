@@ -489,7 +489,7 @@ Preset loaded successfully for [b]${name}[/b] (${race_title} ${class_title}, ${s
     *goto dev_menu_prologue
   # 🏙️ Cities and towns -- Port Valen, Alderford, Timbermouth, Langston
     *goto dev_menu_places
-  # 📜 Quests -- Weight of the Road, The Mare on the Down, The Nine Court
+  # 📜 Quests -- Weight of the Road, The Mare on the Down, Short Weight, The Nine Court
     *goto dev_menu_quests
   # 🧪 Systems tests -- overworld, combat, dungeon, Heroic Inspiration
     *goto dev_menu_systems
@@ -619,6 +619,22 @@ Jump into a quest:
     *set cr_origin "bm"
     *set cr_inline false
     *goto_scene port_valen/radiant/notice_board nb_read
+  # ⚖️ Short Weight (Palmcote) -- walk in at dusk; the chase by the well springs on arrival
+    *comment Open-world entry: a repeat walk in from tile pc at dusk, so palmcote.txt pc_arrive fires the quest's hook the way play would.
+    *gosub dev_clock_day4_dusk
+    *gosub dev_reset_palmcote_short_weight
+    *gosub dev_palmcote_seen
+    *goto_scene hartwell/palmcote/palmcote pc_arrive
+  # ⚖️ Short Weight (Palmcote) -- walk in mid-afternoon; the olive yard is open, then wait for dusk
+    *comment The daytime breadcrumb needs the Gathering Hall open (pc_ok_hall: Morning to Afternoon, not the rest day). Wait or step into a place and back out after 18:00 to spring the chase.
+    *gosub dev_clock_day4_dusk
+    *set clock_hour 15
+    *set clock_time "15:00"
+    *set time_period "Afternoon"
+    *set day_of_week "Ironday"
+    *gosub dev_reset_palmcote_short_weight
+    *gosub dev_palmcote_seen
+    *goto_scene hartwell/palmcote/palmcote pc_arrive
   # 🧱 Jump to Whitefold on a clear, wet morning with the Weight of the Road hook ready
     *comment The hook needs: a Morning, Clear weather over wet ground (rain_streak 1), campaign day 30 or later, an Insignia with ten jobs and all four places seen.
     *gosub dev_clock_day4_morning
@@ -804,6 +820,48 @@ Jump to a system's test harness:
 *set dredge_end_open true
 *set middle_ward_open true
 *set pv_pois_open true
+*return
+
+*comment SHORT WEIGHT (hartwell/palmcote/short_weight.txt, startup_parts/59_palmcote_press.txt): every quest flag back to its start.
+*label dev_reset_palmcote_short_weight
+*set pc_sw_stage 0
+*set pc_sw_ending ""
+*set pc_sw_finished false
+*set pc_sw_success false
+*set pc_sw_reward_claimed false
+*set pc_sw_saw_yard false
+*set pc_sw_stood_up_day false
+*set pc_sw_kelm_wary false
+*set pc_sw_noticed_weight false
+*set pc_sw_patrol_alive true
+*set pc_sw_blood_in_lane false
+*set pc_sw_shelter ""
+*set pc_sw_proof_verified false
+*set pc_sw_knows_layout false
+*set pc_sw_room_rested false
+*set pc_sw_lina_close false
+*set pc_sw_lina_trust false
+*set pc_sw_lina_cold false
+*set pc_sw_lina_stays false
+*set pc_sw_lina_in_hartwell false
+*set pc_sw_kelm_dead false
+*set pc_sw_odda_cold false
+*set pc_sw_odda_drink_given false
+*set pc_sw_nora_aftermath_seen false
+*set met_lina_verner false
+*set met_bailiff_kelm false
+*set met_house_ferrand false
+*set pc_gb_bunk_active false
+*set pc_gb_bunk_until 0
+*set time_advance_locked false
+*return
+
+*comment Palmcote already visited once, standing on its overworld tile, so a walk in is a repeat arrival.
+*label dev_palmcote_seen
+*set ow_pos "pc"
+*set wx_zone "vale"
+*set pc_seen true
+*set pc_arrival_seen true
 *return
 
 *label dev_reset_broadmead_mare
@@ -1042,9 +1100,8 @@ HP and every class resource are refilled to full before each one, so every fight
 *set scenery_suppressed false
 *set hp_current hp_max
 *gosub_scene character_progression restore_class_resources
-*comment fight_victory and fight_cured already print their own line break; the other endings print none, so only they need this one (two in a row is dead space).
-*if (not(combat_outcome = "victory") and not(combat_outcome = "cured"))
-  *line_break
+*comment Every ending already closes its last line: fight_victory and fight_cured with their own break, a flight and a rescue with the break under the last banner of the
+*comment turn that ended it (2026-11-25: the extra break here printed an empty line after both), so the result line follows straight on.
 [b]Result: ${combat_outcome}[/b] | Ended the fight at ${dctest_hp_after}/${hp_max} HP — healed to full
 *line_break
 [b]Enemies: ${combat_result_down} down, ${combat_result_fled} fled, ${combat_result_surrendered} surrendered, ${combat_result_standing} still standing[/b]

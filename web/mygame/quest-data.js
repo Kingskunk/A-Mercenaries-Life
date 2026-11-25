@@ -353,6 +353,36 @@
       active: function (s) { var st = Number(s.bm_mare_stage) || 0; return st >= 1 && st < 5; }
     },
     {
+      id: "palmcote_short_weight",
+      title: "Short Weight",
+      place: "Palmcote",
+      giver: function (s) {
+        return truthy(s.met_lina_verner) ? "Lina Verner, Palmcote" : "A runaway picker on Palmcote's lane";
+      },
+      goal: function (s) {
+        if (Number(s.pc_sw_stage) === 1) return "Get the runaway picker clear of the estate patrol by the stone well.";
+        if (Number(s.pc_sw_stage) === 2) {
+          var where = s.pc_sw_shelter === "room" ? "your room at The Green Branch" : "the lower terrace drying shed";
+          return "Return to Lina Verner in " + where + " and decide how to deal with Bailiff Kelm and the rigged weights.";
+        }
+        return "See the matter of Bailiff Kelm and House Ferrand's scale weights through in Palmcote.";
+      },
+      clues: function (s) {
+        var c = [];
+        if (truthy(s.pc_sw_saw_yard)) c.push("At the olive yard, House Ferrand's bailiff declared a full basket twelve pounds short and ordered the picker up to the pressing house at dusk.");
+        if (truthy(s.pc_sw_noticed_weight)) c.push("The bailiff's brass scale weight landed with a dead, heavy thud, heavier than honest brass of its size.");
+        if (truthy(s.met_lina_verner)) c.push("Lina Verner fled Bailiff Kelm's pressing house with his three brass weights and four silver marks; Kelm still holds her sick mother Berta's lease.");
+        if (truthy(s.pc_sw_proof_verified)) c.push("The brass weights are bored hollow and packed with lead shot under dark wax, cheating the pickers, the big house and the Viscountess's cut.");
+        if (truthy(s.pc_sw_knows_layout)) c.push("The pressing house sits below the manor's outer wall with a low shutter over the oil chute at the back, held by an iron pin.");
+        if (!truthy(s.pc_sw_patrol_alive)) c.push("Kelm's two yard hands and estate hound were killed during the chase in the lane.");
+        return c;
+      },
+      active: function (s) {
+        var st = Number(s.pc_sw_stage) || 0;
+        return st >= 1 && st < 5;
+      }
+    },
+    {
       id: "varren_errand", title: "Varren's Errand", place: "Port Valen",
       giver: "Sergeant Varren, the Carrion Compound",
       goal: function (s) {
@@ -372,14 +402,64 @@
     },
     {
       id: "silt_gate", title: "Silt-Gate Contraband", place: "The Silt-Gates",
-      active: function (s) { return s.silt_gate_quest_stage === "active"; }
+      giver: "Dockmaster Voss, Harbor Quayside",
+      goal: function (s) {
+        if (truthy(s.has_silt_gate_payout_slip) && !truthy(s.kestrel_slip_turned_in)) return "Bring the broker's payout slip to Kestrel in the watchtower.";
+        if (!truthy(s.silt_gate_recon_done)) return "Scout the Silt-Gates drainage channel in Dredge-End and see what moves through it after dark.";
+        return "Return to the Silt-Gates after dark when the flood tide rises to intercept the drop.";
+      },
+      clues: function (s) {
+        var c = [];
+        if (truthy(s.kestrel_silt_briefed)) c.push("Voss confirmed untaxed highland tool-steel and mountain liquor are slipping through the Silt-Gates at full flood tide late at night or pre-dawn.");
+        if (truthy(s.silt_gate_lookout_spotted)) c.push("A lookout with a shuttered tin lantern watches the cut from the cross-beams; the far shadow-line along the kerb stays out of his sight.");
+        if (truthy(s.silt_gate_winch_jammed)) c.push("You jammed the street-side water-gate winch so the gates will lock shut behind any boat once the tide turns.");
+        if (truthy(s.silt_gate_recon_done) && !truthy(s.silt_gate_lookout_spotted) && !truthy(s.silt_gate_winch_jammed)) c.push("Tidemarks and charcoal signs show a flat-bottomed boat can only clear the arch during the two hours around midnight.");
+        if (truthy(s.has_silt_gate_payout_slip)) c.push("You recovered the broker's wax-vellum payout slip naming Sergeant Kray and Watchman Pell.");
+        return c;
+      },
+      active: function (s) {
+        return s.silt_gate_quest_stage === "active" || (s.silt_gate_quest_stage === "resolved" && truthy(s.has_silt_gate_payout_slip) && !truthy(s.kestrel_slip_turned_in));
+      }
     },
     {
       id: "dry_lion", title: "The Dry Lion", place: "Middle Ward",
+      giver: function (s) { return truthy(s.met_tomas_saye) ? "Tomas Saye, Water Clerk" : "The city water clerk, Conduit Square"; },
+      goal: function (s) {
+        if (truthy(s.dry_lion_branch_found)) {
+          return "Tell " + (truthy(s.met_tomas_saye) ? "Tomas Saye" : "the water clerk") + " at Conduit Square what you found before he shuts the main valve.";
+        }
+        return "Investigate the fountain trench and surrounding lines in Conduit Square to find where the water is going.";
+      },
+      clues: function (s) {
+        var c = [];
+        if (truthy(s.dry_lion_joint_found_early)) c.push("An unauthorized scrap-lead sleeve over a filed-down city stamp is weeping water into the trench.");
+        else if (truthy(s.dry_lion_fittings_done)) c.push("The central pipe in the trench has an unmapped, weakened joint that is leaking heavily.");
+        if (truthy(s.dry_lion_residents_trust)) c.push("Brown seepage leads down an alley off Locksmiths' Close to a tenement yard standpipe where the residents pointed out a bubbling flagstone.");
+        else if (truthy(s.dry_lion_water_trace_done)) c.push("Brown seepage runs down an alley off Locksmiths' Close toward a tenement yard, though the residents bolted their doors at the sight of the city badge.");
+        if (truthy(s.dry_lion_marda_support) || truthy(s.dry_lion_merrin_support)) c.push("Both Marda's bakehouse and Merrin's bathhouse lines held pressure during the valve test; the loss is elsewhere.");
+        else if (truthy(s.dry_lion_coordination_done)) c.push("The valve test at the bakehouse and baths ended in steam and tempers, leaving the bathhouse line marked for an audit.");
+        return c;
+      },
       active: function (s) { return s.dry_lion_quest_stage === "active"; }
     },
     {
       id: "a_key_for_every_door", title: "A Key for Every Door", place: "Middle Ward",
+      giver: "Mistress Kess & Master Vael, Locksmiths' Close",
+      goal: function (s) {
+        if ((Number(s.a_key_evidence) || 0) >= 2) return "Bring your findings to Mistress Kess and Master Vael at Locksmiths' Close (or gather more leads first).";
+        return "Investigate how someone entered Hesta Rook's locked room at Terrace Lodgings without marking the lock.";
+      },
+      progress: function (s) { return [{ label: "Leads gathered", have: Number(s.a_key_evidence) || 0, need: 2 }]; },
+      clues: function (s) {
+        var c = [];
+        if (truthy(s.a_key_lock_found)) c.push("Hesta's lock is unmarked, but lamp soot in the key's deepest cut shows someone took a wax impression of it.");
+        else if (truthy(s.a_key_lock_done)) c.push("Hesta's lock is unmarked and its inner teeth are clean; it was opened with a key.");
+        if (truthy(s.a_key_runner_trust)) c.push("Three tenants handed their keys to a satchel-carrying boy with two brass knots at his wrist (wharf warehouser livery) after receiving forged notices in Vael's name.");
+        else if (truthy(s.a_key_records_done)) c.push("Several tenants received short notices offering free lock greasing in Vael's name and gave their keys briefly to a satchel-carrying boy.");
+        if (truthy(s.a_key_mark_found)) c.push("You planted word in the close of a vulnerable second-landing room after second bell tomorrow.");
+        if (truthy(s.a_key_runner_done)) c.push("The brass knots on the runner's wrist belong to wharf warehousers; Kess can name the counting house if you catch the boy.");
+        return c;
+      },
       active: function (s) { return s.a_key_quest_stage === "active"; }
     },
     {
@@ -407,14 +487,54 @@
     },
     {
       id: "quiet_block", title: "The Quiet Block", place: "Fishmongers' Slip",
+      giver: "Wenna Rusk, Fishmongers' Slip",
+      goal: "Return to the Fishmongers' Slip auction (Pre-Dawn or Morning) and decide how to handle Thale's buyers' ring before Wenna Rusk's last two baskets of brill go under the bell.",
+      clues: function (s) {
+        var c = [];
+        if (truthy(s.fish_met_wenna)) c.push("Wenna Rusk says Thale and two other buyers who eat at his table never bid against each other on her catch, halving her price.");
+        if (truthy(s.fish_saw_signals)) c.push("You spotted the ring's signals: two fingers to Thale's cap brim claims the lot, while a scratched ear or a glance at the boots keeps the other two out.");
+        if (truthy(s.fish_ring_wary)) c.push("Thale caught you watching the half circle; the buyers' ring is wary of you.");
+        return c;
+      },
       active: function (s) { return s.fish_quest_stage === "active"; }
     },
     {
       id: "toll_register", title: "Toll Register Delivery", place: "Gilded Scales",
+      goal: function (s) {
+        if (truthy(s.read_alderford_bounty_board)) return "Bring the Grey Waterway Toll Register to the Gilded Scales Counting House in Alderford (or another interested authority).";
+        return "Find someone in Alderford or Port Valen willing to buy or make use of the Grey Waterway Toll Register.";
+      },
+      clues: function (s) {
+        var c = [];
+        if (truthy(s.read_alderford_bounty_board)) c.push("The Alderford bounty board lists a standing Gilded Scales reward for the Sinks customs vellum at the Counting House.");
+        if (truthy(s.studied_customs_vellum)) c.push("Studying the register revealed old imperial toll exemptions and waterway entries.");
+        if (truthy(s.asked_ch_commutation)) c.push("Orlov's parish register shows Saint Althea's chapel is paying a four-silver labor commutation against its wool sales.");
+        return c;
+      },
       active: function (s) { return truthy(s.found_customs_vellum) && !truthy(s.turned_in_customs_vellum); }
     },
     {
       id: "lyra_errand", title: "Five Silver", place: "Dredge-End & the Compound",
+      giver: "Lyra, Dredge-End",
+      goal: function (s) {
+        var coin = (Number(s.gold) || 0) * 100 + (Number(s.silver) || 0) * 10 + (Number(s.copper) || 0);
+        if (coin >= 50) return "Bring 5 Silver Marks to Lyra in the Vanguard barracks at the Carrion Compound from dusk onward.";
+        return "Gather 5 Silver Marks and bring them to Lyra in the Vanguard barracks at the Carrion Compound from dusk onward.";
+      },
+      progress: function (s) {
+        var coin = (Number(s.gold) || 0) * 100 + (Number(s.silver) || 0) * 10 + (Number(s.copper) || 0);
+        return [{ label: "Silver Marks", have: Math.floor(coin / 10), need: 5 }];
+      },
+      clues: function (s) {
+        var c = [];
+        var left = (Number(s.lyra_start_day) + Number(s.lyra_deadline_days)) - Number(s.campaign_day);
+        if (left > 1) c.push(left + " days remaining before her term runs out.");
+        else if (left === 1) c.push("1 day remaining before her term runs out.");
+        else if (left === 0) c.push("Final day before her term runs out.");
+        else if (!isNaN(left)) c.push("Her deadline has passed; find her in the barracks to settle the matter.");
+        c.push("She is out on harbor detail during the day and only in quarters from dusk onward.");
+        return c;
+      },
       active: function (s) { return s.lyra_quest_stage === "active"; }
     },
     {

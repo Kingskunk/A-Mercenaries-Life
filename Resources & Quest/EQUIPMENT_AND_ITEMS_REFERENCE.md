@@ -323,7 +323,7 @@ Versatile is built (2026-11-25): the Longsword, Battleaxe and Warhammer roll 1d1
 
 Heavy is built (2026-11-25): the Greatsword, Greataxe, Maul, Longbow and the kit Broadaxe have disadvantage on attacks below STR 13 (DEX 13 for the Longbow), and shops warn such a buyer.
 
-Light is built (2026-11-25): the Dagger (kit), Stiletto, Flimsy Jeweled Dagger, Handaxe, Shortsword and Scimitar are Light. After an attack with one, a Light sidearm can make an Off-Hand Attack as a bonus action (no shield; no ability modifier on its damage). A Rogue is trained in martial Light weapons. Not built: a Two-Weapon Fighting style, weapon masteries.
+Light is built (2026-11-25): the Dagger (kit), Stiletto, Flimsy Jeweled Dagger, Handaxe, Shortsword and Scimitar are Light. After an attack with one, a Light sidearm can make an Off-Hand Attack as a bonus action (no shield; no ability modifier on its damage). A Rogue is trained in martial Light weapons. The Two-Weapon Fighting style (Fighter, Ranger) adds the modifier back. Not built: weapon masteries.
 
 ---
 

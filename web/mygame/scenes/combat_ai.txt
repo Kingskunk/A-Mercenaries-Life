@@ -5,6 +5,167 @@
 *comment Quicktest runs every library scene once from the top. The first label below takes *params, which only exist inside a gosub, so that walk stops here. A real call jumps straight to its label and never runs this line.
 *return
 
+*comment AI DECISION TRACE (2026-11-25, the user: a dev log of why each enemy and ally did what it did). With combat_ai_trace on (a play script's stats, never the
+*comment game), each decision appends one entry to combat_ai_trace_log: the round, the actor, the options it weighed with their scores, and the pick. Nothing
+*comment is printed on the page; tools/scripted_play.js prints the log after a run. Entries are separated by " ‖ ". A refresh can append an entry twice; the tool
+*comment drops a repeat of the entry just before it.
+*label ai_trace
+*params at_who at_line
+*if (not(combat_ai_trace))
+  *return
+*temp at_entry "R${combat_round} ${at_who}: ${at_line}"
+*set combat_ai_trace_log ((combat_ai_trace_log & at_entry) & " ‖ ")
+*return
+
+*comment SHOVE INTO A HAZARD (2026-11-25, the user: enemies use terrain against the player). A bruiser or guardian Engaged with the player, holding a melee weapon,
+*comment shoves instead of attacking when one step straight back from it (away from the side it stands on) is fire, grease or a web inside the lane. Read-only:
+*comment sets combat_shove_dir ("" for no shove, else the combat_shift_all_ranges direction), combat_shove_onto (the words for where the player lands) and
+*comment combat_shove_spot. The shove itself is combat.txt fight_enemy_shove.
+*label enemy_shove_pick
+*params esp_slot
+*set combat_shove_dir ""
+*set combat_shove_onto ""
+*set combat_shove_land ""
+*set combat_shove_spot 0
+*temp esp_p (("combat_enemy" & esp_slot) & "_")
+*temp esp_prof {(esp_p & "behavior_profile")}
+*temp esp_weapon {(esp_p & "weapon_type")}
+*gosub_scene combat_types resolve_behavior_profile esp_prof esp_weapon
+*temp esp_chance combat_behavior_shove_chance
+*if (esp_chance <= 0)
+  *return
+*if (((combat_enemy_range > 0) or (combat_player_hidden)) or (combat_enemy_weapon_type = "ranged"))
+  *return
+*temp esp_side {(esp_p & "side")}
+*temp esp_dir "fallback"
+*temp esp_to (combat_lane_player_position - 1)
+*if (esp_side < 0)
+  *set esp_dir "push"
+  *set esp_to (combat_lane_player_position + 1)
+*temp esp_why "nothing to shove you onto behind you"
+*if ((esp_to < combat_lane_min_position) or (esp_to > combat_lane_max_position))
+  *set esp_why "your back is to the edge"
+*else
+  *temp esp_i 1
+  *label enemy_shove_pick_loop
+  *if ((esp_i <= combat_terrain_slot_cap) and (combat_shove_dir = ""))
+    *temp esp_type {(("combat_terrain" & esp_i) & "_type")}
+    *if ({(("combat_terrain" & esp_i) & "_position")} = esp_to)
+      *if (esp_type = "fire")
+        *set combat_shove_onto "into the flames"
+        *set combat_shove_land "in the flames"
+      *if (esp_type = "grease")
+        *set combat_shove_onto "onto the grease"
+        *set combat_shove_land "on the grease"
+      *if (((esp_type = "web") or (esp_type = "foe_web")) or (esp_type = "ally_web"))
+        *set combat_shove_onto "into the webs"
+        *set combat_shove_land "in the webs"
+      *if (not(combat_shove_onto = ""))
+        *set combat_shove_dir esp_dir
+        *set combat_shove_spot esp_to
+    *set esp_i + 1
+    *goto enemy_shove_pick_loop
+*comment WEIGHTED (2026-11-25, the user): a hazard behind the player only makes a shove likely, never certain. The profile's chance (guardian 45, bruiser 30), +15 for fire,
+*comment -20 when its own attack could finish the player this turn (an average hit, as target scoring's "drop"), -15 when it shoved last round and the player held. The
+*comment roll is kept per slot against the page (shove_pick_page, shove_pick_roll), so a replay makes the same choice.
+*if (not(combat_shove_dir = ""))
+  *if (combat_shove_onto = "into the flames")
+    *set esp_chance + 15
+  *temp esp_avg2 ((combat_enemy_dmg_dice_sides + 1) + (2 * combat_enemy_dmg_bonus))
+  *temp esp_mods ""
+  *if (combat_shove_onto = "into the flames")
+    *set esp_mods ", fire +15"
+  *if ((hp_current * 2) <= esp_avg2)
+    *set esp_chance - 20
+    *set esp_mods "${esp_mods}, its attack could finish you -20"
+  *if ((({(esp_p & "shove_round")} > 0) and ({(esp_p & "shove_round")} = (combat_round - 1))) and (not({(esp_p & "shove_failed")})))
+    *set esp_chance - 15
+    *set esp_mods "${esp_mods}, you held last time -15"
+  *temp esp_roll {(esp_p & "shove_pick_roll")}
+  *if (not({(esp_p & "shove_pick_page")} = page_id))
+    *set esp_roll 1
+    *rand esp_roll 1 100
+    *set {(esp_p & "shove_pick_roll")} esp_roll
+    *set {(esp_p & "shove_pick_page")} page_id
+  *set esp_why "a step behind you is ${combat_shove_onto}; rolled ${esp_roll} against ${esp_chance}% (${combat_behavior_shove_chance} for its profile${esp_mods})"
+  *if (esp_roll > esp_chance)
+    *set combat_shove_dir ""
+*temp esp_pick "attack"
+*if (not(combat_shove_dir = ""))
+  *set esp_pick "shove"
+*gosub ai_trace {(esp_p & "name")} "shove: ${esp_why} → ${esp_pick}"
+*return
+
+*comment AN ALLY'S SHOVE (2026-11-25, the user): the twin of enemy_shove_pick for an ally Engaged with its foe (same tile). The step behind the foe (on the foe's own side
+*comment of the player, combat_enemyN_side) being fire, grease or a web inside the lane makes a shove likely, never certain: the ally profile's shove chance, +15 for fire,
+*comment -20 when one average hit of its own could finish the foe. One roll per ally per page (shove_pick_page / _roll). Sets combat_shove_dir to "" or the step's sign
+*comment ("1" or "-1"), combat_shove_spot, combat_shove_onto and combat_shove_land. The shove itself is combat.txt fight_ally_shove.
+*label ally_shove_pick
+*params asp_slot asp_e
+*set combat_shove_dir ""
+*set combat_shove_onto ""
+*set combat_shove_land ""
+*set combat_shove_spot 0
+*temp asp_p (("combat_ally" & asp_slot) & "_")
+*temp asp_ep (("combat_enemy" & asp_e) & "_")
+*temp asp_prof {(asp_p & "behavior_profile")}
+*temp asp_weapon {(asp_p & "weapon_type")}
+*gosub_scene combat_types resolve_behavior_profile asp_prof asp_weapon
+*temp asp_chance combat_behavior_shove_chance
+*if ((asp_chance <= 0) or (asp_weapon = "ranged"))
+  *return
+*temp asp_epos {(asp_ep & "position")}
+*if ((not({(asp_p & "position")} = asp_epos)) or ({(asp_ep & "hp")} <= 0))
+  *return
+*temp asp_side {(asp_ep & "side")}
+*if (asp_side = 0)
+  *set asp_side 1
+*temp asp_to (asp_epos + asp_side)
+*temp asp_why "nothing to shove the foe onto behind them"
+*if ((asp_to < combat_lane_min_position) or (asp_to > combat_lane_max_position))
+  *set asp_why "the foe's back is to the edge"
+*else
+  *temp asp_i 1
+  *label ally_shove_pick_loop
+  *if ((asp_i <= combat_terrain_slot_cap) and (combat_shove_onto = ""))
+    *temp asp_type {(("combat_terrain" & asp_i) & "_type")}
+    *if ({(("combat_terrain" & asp_i) & "_position")} = asp_to)
+      *if (asp_type = "fire")
+        *set combat_shove_onto "into the flames"
+        *set combat_shove_land "in the flames"
+      *if (asp_type = "grease")
+        *set combat_shove_onto "onto the grease"
+        *set combat_shove_land "on the grease"
+      *if (((asp_type = "web") or (asp_type = "foe_web")) or (asp_type = "ally_web"))
+        *set combat_shove_onto "into the webs"
+        *set combat_shove_land "in the webs"
+    *set asp_i + 1
+    *goto ally_shove_pick_loop
+*if (not(combat_shove_onto = ""))
+  *temp asp_mods ""
+  *if (combat_shove_onto = "into the flames")
+    *set asp_chance + 15
+    *set asp_mods ", fire +15"
+  *temp asp_avg2 (({(asp_p & "dmg_dice_sides")} + 1) + (2 * {(asp_p & "dmg_bonus")}))
+  *if (({(asp_ep & "hp")} * 2) <= asp_avg2)
+    *set asp_chance - 20
+    *set asp_mods "${asp_mods}, its attack could finish the foe -20"
+  *temp asp_roll {(asp_p & "shove_pick_roll")}
+  *if (not({(asp_p & "shove_pick_page")} = page_id))
+    *set asp_roll 1
+    *rand asp_roll 1 100
+    *set {(asp_p & "shove_pick_roll")} asp_roll
+    *set {(asp_p & "shove_pick_page")} page_id
+  *set asp_why "a step behind the foe is ${combat_shove_onto}; rolled ${asp_roll} against ${asp_chance}% (${combat_behavior_shove_chance} for its profile${asp_mods})"
+  *if (asp_roll <= asp_chance)
+    *set combat_shove_dir asp_side
+    *set combat_shove_spot asp_to
+*temp asp_pick "attack"
+*if (not(combat_shove_dir = ""))
+  *set asp_pick "shove"
+*gosub ai_trace {(asp_p & "name")} "shove: ${asp_why} → ${asp_pick}"
+*return
+
 *label combat_score_terrain_destination
 *comment Phase 1 terrain-intent evaluator. It scores one PROPOSED, already-legal lane destination for one AI actor;
 *comment it does not move anyone, pick a target, ignore a chokepoint capacity, or invent a new route. Keeping the
@@ -31,6 +192,11 @@
 *comment on every slot. This prevents a newly added terrain preference from requiring a migration of every actor field.
 *gosub_scene combat_types resolve_behavior_profile cstd_profile cstd_weapon
 *gosub_scene combat_movement combat_difficult_terrain_crossing_query cstd_current_position cstd_candidate_position
+*comment WATER PUTS IT OUT (2026-11-25, the user): a burning enemy that can think of it (not a beast, the feral profile, as with dousing) scores a water patch well, since
+*comment ending its turn there puts the fire out (condition_tick) and costs only its step, where dousing costs its whole action (combat.txt combat_burn_tick).
+*temp cstd_burning false
+*if (cstd_actor_kind = "enemy")
+  *set cstd_burning (({(("combat_enemy" & cstd_actor_slot) & "_burning")} > 0) and (not(cstd_profile = "feral")))
 *if (combat_difficult_terrain_blocks_dash)
   *set combat_ai_terrain_score (0 - combat_behavior_avoid_difficult_terrain)
   *if (combat_behavior_avoid_difficult_terrain > 0)
@@ -60,6 +226,9 @@
     *if (cstd_type = "fire")
       *set combat_ai_terrain_score - 3
       *set combat_ai_terrain_reason "avoid_fire"
+    *if ((cstd_type = "water") and (cstd_burning))
+      *set combat_ai_terrain_score + 3
+      *set combat_ai_terrain_reason "douse_in_water"
     *if (cstd_type = "high_ground")
       *set combat_ai_terrain_score + combat_behavior_seek_high_ground
       *if (combat_behavior_seek_high_ground > 0)
@@ -196,6 +365,8 @@
 *temp ccts_current_score combat_ai_terrain_score
 *temp ccts_current_reason combat_ai_terrain_reason
 *temp ccts_best_score ccts_current_score
+*comment The decision trace's list of what was weighed (ai_trace).
+*temp ccts_tr "stay ${ccts_current_score} (${ccts_current_reason})"
 *if (ccts_current_score > 0)
   *set combat_ai_terrain_hold_position true
   *set combat_ai_terrain_step_reason combat_ai_terrain_reason
@@ -229,8 +400,11 @@
     *set ccts_toward_check false
 *if (ccts_toward_check)
   *gosub combat_ai_terrain_destination_is_legal ccts_actor_kind ccts_actor_slot ccts_candidate_toward
+  *if (not(combat_ai_terrain_destination_legal))
+    *set ccts_tr "${ccts_tr}; toward blocked"
   *if (combat_ai_terrain_destination_legal)
     *gosub combat_score_terrain_destination ccts_actor_kind ccts_actor_slot ccts_candidate_toward
+    *set ccts_tr "${ccts_tr}; toward ${combat_ai_terrain_score} (${combat_ai_terrain_reason})"
     *if (combat_ai_terrain_score > ccts_best_score)
       *set ccts_best_score combat_ai_terrain_score
       *set combat_ai_terrain_step_direction "toward"
@@ -251,8 +425,11 @@
     *set ccts_away_check false
 *if (ccts_away_check)
   *gosub combat_ai_terrain_destination_is_legal ccts_actor_kind ccts_actor_slot ccts_candidate_away
+  *if (not(combat_ai_terrain_destination_legal))
+    *set ccts_tr "${ccts_tr}; away blocked"
   *if (combat_ai_terrain_destination_legal)
     *gosub combat_score_terrain_destination ccts_actor_kind ccts_actor_slot ccts_candidate_away
+    *set ccts_tr "${ccts_tr}; away ${combat_ai_terrain_score} (${combat_ai_terrain_reason})"
     *comment A keep-distance (ranged) actor takes the away step on a tie with the toward one (2026-11-21): stepping off grease either way, the side away from its foe is the safer.
     *temp ccts_away_wins (combat_ai_terrain_score > ccts_best_score)
     *if (((ccts_keep_distance) and (combat_ai_terrain_step_direction = "toward")) and (combat_ai_terrain_score = ccts_best_score))
@@ -272,6 +449,45 @@
     *set combat_ai_terrain_step_reason "leave_grease"
   *if (ccts_current_reason = "avoid_fire")
     *set combat_ai_terrain_step_reason "leave_fire"
+*comment WEIGHTED (2026-11-25, the user: no predictable robots). A step that scores better than staying is taken on a roll, not always: 50% and 15% more for each point it
+*comment beats staying by, at most 95% (leaving grease or fire, 3 points, is 95; Cover, 1 point, 65; High Ground, 2, 80). A failed roll is a hesitation: the actor stays put.
+*comment A HIGH roll takes the step (it needs more than 100 less the chance), so a play script run with high dice sees the AI act as designed. One roll per actor per page
+*comment (<slot>tstep_page / _roll), so a replay, or a second call in the same turn, gets the same answer.
+*temp ccts_roll_note ""
+*if ((not(combat_ai_terrain_step_direction = "none")) and ((ccts_actor_kind = "enemy") or (ccts_actor_kind = "ally")))
+  *temp ccts_rp (("combat_enemy" & ccts_actor_slot) & "_")
+  *if (ccts_actor_kind = "ally")
+    *set ccts_rp (("combat_ally" & ccts_actor_slot) & "_")
+  *temp ccts_chance (50 + (15 * (ccts_best_score - ccts_current_score)))
+  *if (ccts_chance > 95)
+    *set ccts_chance 95
+  *temp ccts_roll {(ccts_rp & "tstep_roll")}
+  *if (not({(ccts_rp & "tstep_page")} = page_id))
+    *set ccts_roll 1
+    *rand ccts_roll 1 100
+    *set {(ccts_rp & "tstep_roll")} ccts_roll
+    *set {(ccts_rp & "tstep_page")} page_id
+  *temp ccts_need ((100 - ccts_chance) + 1)
+  *set ccts_roll_note "; ${combat_ai_terrain_step_direction} ${ccts_chance}%, rolled ${ccts_roll}, needs ${ccts_need}+"
+  *if (ccts_roll < ccts_need)
+    *set ccts_roll_note "${ccts_roll_note}, hesitates"
+    *set combat_ai_terrain_step_direction "none"
+    *set combat_ai_terrain_step_destination ccts_current_position
+    *set combat_ai_terrain_step_reason "none"
+    *set combat_ai_terrain_hold_position false
+    *if (ccts_current_score > 0)
+      *set combat_ai_terrain_hold_position true
+      *set combat_ai_terrain_step_reason ccts_current_reason
+*if (combat_ai_trace)
+  *temp ccts_who "you"
+  *if (ccts_actor_kind = "enemy")
+    *set ccts_who {(("combat_enemy" & ccts_actor_slot) & "_name")}
+  *if (ccts_actor_kind = "ally")
+    *set ccts_who {(("combat_ally" & ccts_actor_slot) & "_name")}
+  *temp ccts_pick combat_ai_terrain_step_direction
+  *if ((ccts_pick = "none") and (combat_ai_terrain_hold_position))
+    *set ccts_pick "hold"
+  *gosub ai_trace ccts_who "terrain step: ${ccts_tr}${ccts_roll_note} → ${ccts_pick} (${combat_ai_terrain_step_reason})"
 *return
 
 *label combat_assess_melee_threat
@@ -338,6 +554,8 @@
 *comment is an absolute destination, so the attacking target and threatening melee combatant may be on different sides.
 *params ccrts_actor_kind ccrts_actor_slot ccrts_target_position
 *gosub combat_choose_terrain_step ccrts_actor_kind ccrts_actor_slot ccrts_target_position false true
+*temp ccrts_was combat_ai_terrain_step_direction
+*temp ccrts_why ""
 *temp ccrts_current_position combat_lane_player_position
 *temp ccrts_profile "feral"
 *temp ccrts_weapon "melee"
@@ -359,6 +577,7 @@
   *if ((ccrts_current_threat < combat_behavior_avoid_melee_threat) and (combat_ai_terrain_step_direction != "none"))
     *gosub combat_assess_melee_threat ccrts_actor_kind ccrts_actor_slot combat_ai_terrain_step_destination
     *if (combat_ai_melee_threat_level >= combat_behavior_avoid_melee_threat)
+      *set ccrts_why "safe stays safe: that step is in a melee foe's reach"
       *set combat_ai_terrain_step_direction "none"
       *set combat_ai_terrain_step_destination ccrts_current_position
       *set combat_ai_terrain_step_reason "none"
@@ -396,7 +615,9 @@
           *set combat_ai_terrain_step_reason "avoid_melee_threat"
           *set combat_ai_terrain_hold_position false
           *set ccrts_found_safe_step true
+          *set ccrts_why "threat level ${ccrts_current_threat}: steps away from it"
       *if (not(ccrts_found_safe_step))
+        *set ccrts_why "threatened, and no step leaves the threat"
         *set combat_ai_terrain_step_direction "none"
         *set combat_ai_terrain_step_destination ccrts_current_position
         *set combat_ai_terrain_step_reason "none"
@@ -418,6 +639,7 @@
         *set ccrts_k_dest - 1
       *gosub combat_ai_terrain_destination_is_legal ccrts_actor_kind ccrts_actor_slot ccrts_k_dest
       *if (combat_ai_terrain_destination_legal)
+        *set ccrts_why "target nearer than its reach: kites back a step"
         *set combat_ai_terrain_step_direction "kite"
         *set combat_ai_terrain_step_destination ccrts_k_dest
         *set combat_ai_terrain_step_reason "kite"
@@ -434,10 +656,18 @@
   *if (ccrts_now_d < 0)
     *set ccrts_now_d (0 - ccrts_now_d)
   *if ((ccrts_dest_d > ccrts_tier) and (ccrts_dest_d > ccrts_now_d))
+    *set ccrts_why "reach guard: that step loses its target"
     *set combat_ai_terrain_step_direction "none"
     *set combat_ai_terrain_step_destination ccrts_current_position
     *set combat_ai_terrain_step_reason "none"
     *set combat_ai_terrain_hold_position false
+*if (((combat_ai_trace) and (not(ccrts_why = ""))) and (not(ccrts_was = combat_ai_terrain_step_direction)))
+  *temp ccrts_who "you"
+  *if (ccrts_actor_kind = "enemy")
+    *set ccrts_who {(("combat_enemy" & ccrts_actor_slot) & "_name")}
+  *if (ccrts_actor_kind = "ally")
+    *set ccrts_who {(("combat_ally" & ccrts_actor_slot) & "_name")}
+  *gosub ai_trace ccrts_who "ranged step: ${ccrts_was} → ${combat_ai_terrain_step_direction} (${ccrts_why})"
 *return
 *label find_intercepting_ally
 *comment Interception (2026-09-28; broadened 2026-09-28 again; widened into full target selection 2026-09-29,
@@ -578,6 +808,13 @@
 *set {(cant_p & "target_kind")} combat_score_best_kind
 *set {(cant_p & "target_slot")} combat_score_best_slot
 *set {(cant_p & "target_page")} page_id
+*if (combat_ai_trace)
+  *temp cant_tw "you"
+  *if (combat_score_best_kind = "ally")
+    *set cant_tw {(("combat_ally" & combat_score_best_slot) & "_name")}
+  *if (combat_score_best_kind = "enemy")
+    *set cant_tw {(("combat_enemy" & combat_score_best_slot) & "_name")}
+  *gosub ai_trace {(cant_p & "name")} "target: ${combat_ai_trace_cands} → ${cant_tw}"
 *if (combat_ai_explain)
   *temp cant_who "you"
   *if (combat_score_best_kind = "ally")
@@ -620,6 +857,7 @@
 *set combat_score_best_slot 0
 *set combat_score_best_d 999
 *set combat_score_reason ""
+*set combat_ai_trace_cands ""
 *temp cst_p (("combat_enemy" & cst_slot) & "_")
 *if (cst_kind = "ally")
   *set cst_p (("combat_ally" & cst_slot) & "_")
@@ -818,38 +1056,49 @@
 *temp cso_t_current (cso_current * combat_behavior_tw_current)
 *temp cso_t_opening (cso_opening * combat_behavior_tw_opening)
 *temp cso_score (((((cso_t_close + cso_t_wounded) + (cso_t_drop + cso_t_payback)) + (cso_t_soft + cso_t_isolated)) + cso_t_current) + cso_t_opening)
+*comment The factors that counted, in a fixed order: the winner's become combat_score_reason, and every candidate's go in the decision trace.
+*temp cso_sep ""
+*temp cso_reason ""
+*if (cso_t_payback > 0)
+  *set cso_reason "${cso_reason}${cso_sep}payback ${cso_t_payback}"
+  *set cso_sep ", "
+*if (cso_t_drop > 0)
+  *set cso_reason "${cso_reason}${cso_sep}can drop ${cso_t_drop}"
+  *set cso_sep ", "
+*if (cso_t_opening > 0)
+  *set cso_reason "${cso_reason}${cso_sep}opening ${cso_t_opening}"
+  *set cso_sep ", "
+*if (cso_t_isolated > 0)
+  *set cso_reason "${cso_reason}${cso_sep}isolated ${cso_t_isolated}"
+  *set cso_sep ", "
+*if (cso_t_soft > 0)
+  *set cso_reason "${cso_reason}${cso_sep}soft target ${cso_t_soft}"
+  *set cso_sep ", "
+*if (cso_t_wounded > 0)
+  *set cso_reason "${cso_reason}${cso_sep}wounded ${cso_t_wounded}"
+  *set cso_sep ", "
+*if (cso_t_close > 0)
+  *set cso_reason "${cso_reason}${cso_sep}close ${cso_t_close}"
+  *set cso_sep ", "
+*if (cso_t_current > 0)
+  *set cso_reason "${cso_reason}${cso_sep}current ${cso_t_current}"
+*if (combat_ai_trace)
+  *temp cso_who "you"
+  *if (not(cso_kind = "player"))
+    *set cso_who {(cso_p & "name")}
+  *if (not(combat_ai_trace_cands = ""))
+    *set combat_ai_trace_cands (combat_ai_trace_cands & "; ")
+  *temp cso_tr_why cso_reason
+  *if (cso_tr_why = "")
+    *set cso_tr_why "no factor"
+  *set combat_ai_trace_cands "${combat_ai_trace_cands}${cso_who} ${cso_score} (${cso_tr_why})"
 *if (((cso_score > cst_best_score) or ((cso_score = cst_best_score) and (cso_d < combat_score_best_d))) or (((cso_score = cst_best_score) and (cso_d = combat_score_best_d)) and (cso_hp < cst_best_hp)))
   *set cst_best_score cso_score
   *set cst_best_hp cso_hp
   *set combat_score_best_kind cso_kind
   *set combat_score_best_slot cso_slot
   *set combat_score_best_d cso_d
-  *comment The factors that counted, in a fixed order.
-  *temp cso_sep ""
-  *set combat_score_reason ""
-  *if (cso_t_payback > 0)
-    *set combat_score_reason "${combat_score_reason}${cso_sep}payback ${cso_t_payback}"
-    *set cso_sep ", "
-  *if (cso_t_drop > 0)
-    *set combat_score_reason "${combat_score_reason}${cso_sep}can drop ${cso_t_drop}"
-    *set cso_sep ", "
-  *if (cso_t_opening > 0)
-    *set combat_score_reason "${combat_score_reason}${cso_sep}opening ${cso_t_opening}"
-    *set cso_sep ", "
-  *if (cso_t_isolated > 0)
-    *set combat_score_reason "${combat_score_reason}${cso_sep}isolated ${cso_t_isolated}"
-    *set cso_sep ", "
-  *if (cso_t_soft > 0)
-    *set combat_score_reason "${combat_score_reason}${cso_sep}soft target ${cso_t_soft}"
-    *set cso_sep ", "
-  *if (cso_t_wounded > 0)
-    *set combat_score_reason "${combat_score_reason}${cso_sep}wounded ${cso_t_wounded}"
-    *set cso_sep ", "
-  *if (cso_t_close > 0)
-    *set combat_score_reason "${combat_score_reason}${cso_sep}close ${cso_t_close}"
-    *set cso_sep ", "
-  *if (cso_t_current > 0)
-    *set combat_score_reason "${combat_score_reason}${cso_sep}current ${cso_t_current}"
+  *set combat_score_reason cso_reason
 *return
 
 *label combat_ai_ally_cornered
@@ -1027,6 +1276,11 @@
       *set {(("combat_enemy" & rec_slot) & "_chase_target")} recc_candidate
       *set {(("combat_enemy" & rec_slot) & "_chase_range")} recc_candidate_range
       *set {(("combat_enemy" & rec_slot) & "_chase_hp_snapshot")} combat_enemy_hp
+    *temp recc_pick "stays on you"
+    *if (combat_enemy_chase_target > 0)
+      *set recc_pick "chases them"
+    *temp recc_who {(("combat_ally" & recc_candidate) & "_name")}
+    *gosub ai_trace combat_enemy_name "chase: ${recc_who} is a ranged ally within reach; rolled ${recc_roll} against ${combat_enemy_chase_chance}% (once a fight) → ${recc_pick}"
     *set combat_enemy_chase_roll_done true
     *set {(("combat_enemy" & rec_slot) & "_chase_roll_done")} true
 *return
@@ -1172,6 +1426,54 @@
 *temp fpes_picked_spell ""
 *temp fpes_picked_place 0
 *temp fpes_k 1
+*temp fpes_tr ""
+*comment SETTING THE GREASE ALIGHT (2026-11-25, the user: enemies use terrain against the player). With the player standing in a Grease patch that none of its own side stands
+*comment in, an enemy casts a fire spell it would cast at the player first, with no chance roll: fire on someone in grease turns the patch to flame (combat_spells.txt
+*comment grease_fire_check, through the enemy turn's web_burn_check). Its uses still count. The ordinary pick below runs when it has none.
+*gosub_scene combat_spells grease_at combat_lane_player_position
+*if ((combat_grease_here) and (not(combat_player_hidden)))
+  *gosub ai_own_side_at combat_lane_player_position
+  *if (combat_ai_own_side_here)
+    *set fpes_tr "you stand in grease, but its own side is in it too; "
+  *else
+    *label fpes_fire_loop
+    *if (fpes_k <= 3)
+      *temp fpes_fid {(fpes_p & ("cast_spell_" & fpes_k))}
+      *if (((not(fpes_fid = "")) and (not(fpes_fid = {(fpes_p & "spell_base_id")}))) and ({(fpes_p & ("cast_uses_" & fpes_k))} > 0))
+        *gosub_scene combat_spells spell_facts_load fpes_fid
+        *if (spell_fact_dmg_type = "fire")
+          *gosub spell_worth_casting fpes_p fpes_fid
+          *if (combat_spell_worth_it)
+            *comment WEIGHTED (2026-11-25, the user): the profile's ignite chance (70), -20 when its own attack could finish the player this turn. A miss falls through to the
+            *comment ordinary pick below. This runs inside the pick's per-slot lock, so a replay reads the cached choice and never rolls again.
+            *temp fpes_ip {(fpes_p & "behavior_profile")}
+            *temp fpes_iw {(fpes_p & "weapon_type")}
+            *gosub_scene combat_types resolve_behavior_profile fpes_ip fpes_iw
+            *temp fpes_ichance combat_behavior_ignite_chance
+            *temp fpes_imods ""
+            *if ((hp_current * 2) <= ((combat_enemy_dmg_dice_sides + 1) + (2 * combat_enemy_dmg_bonus)))
+              *set fpes_ichance - 20
+              *set fpes_imods ", its attack could finish you -20"
+            *temp fpes_iroll 0
+            *rand fpes_iroll 1 100
+            *if (fpes_iroll <= fpes_ichance)
+              *set fpes_picked_spell fpes_fid
+              *set fpes_picked_place fpes_k
+              *set fpes_tr "you stand in grease, ${fpes_fid} to set it alight rolled ${fpes_iroll} against ${fpes_ichance}%${fpes_imods}, "
+              *goto fpes_done
+            *set fpes_tr "you stand in grease, ${fpes_fid} to set it alight rolled ${fpes_iroll} against ${fpes_ichance}%${fpes_imods}, not this time; "
+            *goto fpes_fire_done
+      *set fpes_k + 1
+      *goto fpes_fire_loop
+    *label fpes_fire_done
+    *comment Its own at-will attack is a fire cantrip (spell_base_id, Fire Bolt): it casts nothing else this turn, so that attack lights the patch.
+    *temp fpes_base {(fpes_p & "spell_base_id")}
+    *if (not(fpes_base = ""))
+      *gosub_scene combat_spells spell_facts_load fpes_base
+      *if (spell_fact_dmg_type = "fire")
+        *set fpes_tr "you stand in grease, its own ${fpes_base} sets it alight, "
+        *goto fpes_done
+    *set fpes_k 1
 *label fpes_loop
 *if (fpes_k <= 3)
   *temp fpes_id {(fpes_p & ("cast_spell_" & fpes_k))}
@@ -1179,9 +1481,13 @@
   *temp fpes_chance {(fpes_p & ("cast_chance_" & fpes_k))}
   *if (((not(fpes_id = "")) and (not(fpes_id = {(fpes_p & "spell_base_id")}))) and ((fpes_uses > 0) and (fpes_chance > 0)))
     *gosub spell_worth_casting fpes_p fpes_id
+    *if ((combat_ai_trace) and (not(combat_spell_worth_it)))
+      *set fpes_tr "${fpes_tr}${fpes_id} not worth casting, "
     *if (combat_spell_worth_it)
       *temp fpes_roll 0
       *rand fpes_roll 1 100
+      *if (combat_ai_trace)
+        *set fpes_tr "${fpes_tr}${fpes_id} rolled ${fpes_roll} against ${fpes_chance}%, "
       *if (fpes_roll <= fpes_chance)
         *set fpes_picked_spell fpes_id
         *set fpes_picked_place fpes_k
@@ -1189,6 +1495,11 @@
   *set fpes_k + 1
   *goto fpes_loop
 *label fpes_done
+*if ((combat_ai_trace) and (not(fpes_tr = "")))
+  *temp fpes_pick "its own attack"
+  *if (not(fpes_picked_spell = ""))
+    *set fpes_pick fpes_picked_spell
+  *gosub ai_trace {(fpes_p & "name")} "spell: ${fpes_tr}so → ${fpes_pick}"
 *set combat_enemy_cast_spell fpes_picked_spell
 *set combat_enemy_cast_place fpes_picked_place
 *set {fpes_sp_cache} fpes_picked_spell
@@ -1331,6 +1642,36 @@
   *set combat_ally_cast_place {(fpacs_p & "cast_picked_place")}
   *return
 *temp fpacs_k 1
+*comment SETTING THE GREASE ALIGHT, ally side (2026-11-25): the enemy it fights stands in a Grease patch that neither the player nor another ally stands in, so a fire spell
+*comment it would cast at that enemy is cast on a roll of its profile's ignite chance (70), as an enemy does (fight_pick_enemy_spell). A miss falls through to the ordinary pick.
+*temp fpacs_epos {(("combat_enemy" & fpacs_e) & "_position")}
+*gosub_scene combat_spells grease_at fpacs_epos
+*if (combat_grease_here)
+  *gosub ai_player_side_at fpacs_epos
+  *if ((not(combat_ai_own_side_here)) and (not(combat_lane_player_position = fpacs_epos)))
+    *label fpacs_fire_loop
+    *if (fpacs_k <= 3)
+      *temp fpacs_fid {(fpacs_p & ("cast_spell_" & fpacs_k))}
+      *if ((not(fpacs_fid = "")) and ({(fpacs_p & ("cast_uses_" & fpacs_k))} > 0))
+        *gosub_scene combat_spells spell_facts_load fpacs_fid
+        *if (spell_fact_dmg_type = "fire")
+          *gosub spell_worth_casting_at_enemy fpacs_p fpacs_fid fpacs_e
+          *if (combat_spell_worth_it)
+            *temp fpacs_ip {(fpacs_p & "behavior_profile")}
+            *temp fpacs_iw {(fpacs_p & "weapon_type")}
+            *gosub_scene combat_types resolve_behavior_profile fpacs_ip fpacs_iw
+            *temp fpacs_iroll 0
+            *rand fpacs_iroll 1 100
+            *gosub ai_trace {(fpacs_p & "name")} "spell: the foe stands in grease, ${fpacs_fid} to set it alight rolled ${fpacs_iroll} against ${combat_behavior_ignite_chance}%"
+            *if (fpacs_iroll <= combat_behavior_ignite_chance)
+              *set combat_ally_cast_spell fpacs_fid
+              *set combat_ally_cast_place fpacs_k
+              *goto fpacs_done
+            *goto fpacs_fire_done
+      *set fpacs_k + 1
+      *goto fpacs_fire_loop
+    *label fpacs_fire_done
+    *set fpacs_k 1
 *label fpacs_loop
 *if (fpacs_k <= 3)
   *temp fpacs_id {(fpacs_p & ("cast_spell_" & fpacs_k))}

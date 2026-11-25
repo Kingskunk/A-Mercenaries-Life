@@ -111,9 +111,19 @@ None open. Add one here when a play-through finds it.
 
 All seven subclasses are built (table in section 1). What each one left behind:
 
-- **Weapon properties (next, the user, 2026-11-24).** Weapon proficiency and the first martial weapons are built (`GAMEPLAY_MECHANICS_RULES.md`, Weapons). Thrown is built (2026-11-25, `GAMEPLAY_MECHANICS_RULES.md`, Thrown weapons). Versatile is built (2026-11-25, `GAMEPLAY_MECHANICS_RULES.md`, Versatile weapons). Heavy is built (2026-11-25, `GAMEPLAY_MECHANICS_RULES.md`, Heavy weapons). Light and the off-hand attack are built (2026-11-25, `GAMEPLAY_MECHANICS_RULES.md`, Light weapons); every weapon property is now in. Not built, if wanted: a Two-Weapon Fighting style (Fighter, Ranger), weapon masteries (2024), enemies and allies throwing or dual-wielding. Later, not built: enemies and allies throwing weapons, the Thrown Weapon Fighting style. Weapons of several dice are built (the Greatsword and the Maul, 2d6). Once Light exists, a Rogue's martial training covers Light weapons too (`weapon_prof_check` reads only Finesse today). Plain arrows and bolts stay uncounted (the user); only special arrows are tracked.
+- **Weapon properties (next, the user, 2026-11-24).** Weapon proficiency and the first martial weapons are built (`GAMEPLAY_MECHANICS_RULES.md`, Weapons). Thrown is built (2026-11-25, `GAMEPLAY_MECHANICS_RULES.md`, Thrown weapons). Versatile is built (2026-11-25, `GAMEPLAY_MECHANICS_RULES.md`, Versatile weapons). Heavy is built (2026-11-25, `GAMEPLAY_MECHANICS_RULES.md`, Heavy weapons). Light and the off-hand attack are built (2026-11-25, `GAMEPLAY_MECHANICS_RULES.md`, Light weapons); every weapon property is now in. The Two-Weapon Fighting style is built too (Fighter, Ranger). Not built, if wanted: weapon masteries (2024), enemies and allies throwing or dual-wielding. Later, not built: enemies and allies throwing weapons, the Thrown Weapon Fighting style. Weapons of several dice are built (the Greatsword and the Maul, 2d6). Once Light exists, a Rogue's martial training covers Light weapons too (`weapon_prof_check` reads only Finesse today). Plain arrows and bolts stay uncounted (the user); only special arrows are tracked.
 - **Umbral Sight's invisibility in darkness.** It needs a "this fight is in darkness" state (today `dg_dark` means only "you cannot see") and enemy senses (blindsight, truesight).
 - **A disguise kit**, once a scene uses disguises: sold by the Gilt Needle tailor or a fence; the user has an icon.
+
+### 3.2a AI work (the user, 2026-11-25)
+
+- **The decision trace is built** (`GAMEPLAY_MECHANICS_RULES.md`, AI decision trace). Enemies set the grease under the player alight (built 2026-11-25); choke points were already held. The Shove into a hazard is built too (2026-11-25). An Engaged enemy on a hazard was checked and needs nothing: a melee one stays to fight, a ranged one already falls back. The Shove, the grease ignition and the terrain step are weighted rolls, not sure things (2026-11-25). A burning enemy uses water too (2026-11-25). The AI terrain list is done; allies use water, set grease alight under foes and shove foes into hazards too (2026-11-25); the trace gaps are tabled (3.2b) (the turn's overall branch, the Net, the chase commit, allies' spells). Trace each new decision as it is added.
+
+### 3.2b Tabled for later (the user, 2026-11-25)
+
+- **Trace gaps:** the enemy turn's overall branch (close, shoot, flee, surrender), action abilities (the Net), allies' ordinary spell picks.
+- **Weapon extras:** enemies and allies throwing weapons or dual-wielding; 2024 weapon masteries (Nick and the rest).
+- **Edge cases:** two forced moves on the player on one page (the second is blocked by combat_shift_all_ranges' page lock while its text still says the player moved); a refresh on a targeting prompt page forgets the clicks; a fight's opening page entered from another scene is outside the replay guard.
 
 ### 3.3 Feats (level 4)
 

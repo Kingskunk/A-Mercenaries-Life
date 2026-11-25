@@ -2970,6 +2970,13 @@
   *set combat_cornered_choice "disengage"
 *elseif ((ccd_dealt - ccd_taken) < ccd_stay)
   *set combat_cornered_choice "stay"
+*if (combat_ai_trace)
+  *comment In expected damage (the scores are percent times twice the average, times 100: / 20000), to one decimal.
+  *temp ccd_t_shot (round(ccd_dealt / 2000) / 10)
+  *temp ccd_t_taken (round(ccd_taken / 2000) / 10)
+  *temp ccd_t_net (round((ccd_dealt - ccd_taken) / 2000) / 10)
+  *temp ccd_t_stay (round(ccd_stay / 2000) / 10)
+  *gosub_scene combat_ai ai_trace combat_enemy_name "cornered: retreat and shoot ${ccd_t_net} (its shot ${ccd_t_shot}, less the attack it draws ${ccd_t_taken} as the profile weighs it), stay ${ccd_t_stay}; that attack can deal up to ${ccd_oa_max} of its ${combat_enemy_hp} HP → ${combat_cornered_choice}"
 *return
 
 *comment combat_cornered_decide's loop over the slot's three spell places (ccd_ep, ccd_k), keeping the best score in ccd_stay.
@@ -7133,7 +7140,7 @@ You press the gnarled heart to your chest. It beats once against your palm, slow
 
 *comment LIGHT: THE OFF-HAND ATTACK (2026-11-25, PHB'24). The Light sidearm makes one attack as a bonus action: it is put in the main hand for this one attack (its numbers, its lines), as a throw is,
 *comment and the hands are put back afterwards (fight_check_enemy_hp, or fight_thrown_return on a win) from combat_throw_main_after / _side_after. No ability modifier on its damage unless it is
-*comment negative (resolve_weapon_attack_choice); no Two-Weapon Fighting style exists yet to lift that. The lock keeps a replay from reading the hands after they were swapped.
+*comment negative (resolve_weapon_attack_choice), unless the fighting style is Two-Weapon Fighting. The lock keeps a replay from reading the hands after they were swapped.
 *label fight_offhand_attack
 *if (not(combat_offhand_locked)) or (not(locked_combat_offhand_page_id = page_id))
   *set combat_throw_main_after equipped_weapon_id
@@ -8623,8 +8630,8 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
       *set combat_player_dmg_bonus dex_mod
     *else
       *set combat_player_dmg_bonus str_mod
-    *comment LIGHT: the off-hand attack adds no ability modifier to its damage unless the modifier is negative (PHB'24).
-    *if ((combat_offhand_on) and (combat_player_dmg_bonus > 0))
+    *comment LIGHT: the off-hand attack adds no ability modifier to its damage unless the modifier is negative (PHB'24), or the fighting style is Two-Weapon Fighting (2026-11-25), which keeps it.
+    *if (((combat_offhand_on) and (combat_player_dmg_bonus > 0)) and (not(fighting_style = "two_weapon")))
       *set combat_player_dmg_bonus 0
     *comment True Strike: the spellcasting modifier replaces the Strength or Dexterity one, and the player may turn the damage to Radiant. The level 5 Radiant dice are rolled with the hit, in combat_dice.txt.
     *if (true_strike_on)
@@ -9406,12 +9413,43 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *gosub_scene combat_movement combat_fire_at {(cb_p & "position")}
   *if (combat_fire_here)
     *set cb_dv 3
+  *comment WATER (2026-11-25): its terrain step (combat_ai.txt, already chosen) is into water. A ranged enemy that is not cornered takes that step as part of its turn, and the
+  *comment water puts the fire out at the end of it, so it keeps its action and does not douse. A melee one closing on the player would Dash straight through, so for it the
+  *comment water takes the place of dousing: on the same two-in-three roll it walks into the water instead of beating at the flames (the turn is spent either way, but it
+  *comment ends a step nearer), and the fire is out now (the water's rule, Wet 2). The walk is kept in burn_water for a replay.
+  *temp cb_to_water false
+  *temp cb_walk false
+  *set {(cb_p & "burn_water")} false
+  *if (combat_ai_terrain_step_reason = "douse_in_water")
+    *if ((combat_enemy_weapon_type = "ranged") and (not(combat_ranged_cornered)))
+      *set cb_to_water true
+      *set cb_dv 3
+    *elseif (((not(combat_enemy_weapon_type = "ranged")) and (combat_enemy_range > 0)) and (combat_intercepting_ally = 0))
+      *set cb_walk true
   *if (((combat_enemy_hp > 0) and (cb_left > 0)) and ((not(cb_profile = "feral")) and (cb_dv <= 2)))
     *set cb_douse true
     *set {(cb_p & "burning")} 0
     *set {(cb_p & "burn_douse")} true
+    *if (cb_walk)
+      *set {(cb_p & "burn_water")} true
+      *set {(cb_p & "wet")} 2
+      *gosub_scene combat_movement combat_lane_move_enemy_to_position cb_slot combat_ai_terrain_step_destination
+  *if ((combat_ai_trace) and ((combat_enemy_hp > 0) and (cb_left > 0)))
+    *temp cb_tr "rolled ${cb_dv} of 3 (1-2 puts it out)"
+    *if (cb_profile = "feral")
+      *set cb_tr "a beast never puts it out"
+    *if (combat_fire_here)
+      *set cb_tr "standing in fire, gets clear first"
+    *if (cb_to_water)
+      *set cb_tr "heads into the water to put it out, keeping its action"
+    *if ((cb_walk) and (cb_douse))
+      *set cb_tr "${cb_tr}; water in reach, so it walks in rather than beating at the flames"
+    *temp cb_tp "keeps burning"
+    *if (cb_douse)
+      *set cb_tp "puts it out"
+    *gosub_scene combat_ai ai_trace combat_enemy_name "burning: ${cb_tr} → ${cb_tp}"
 *if (combat_enemy_hp <= 0)
-  The fire finishes ${combat_enemy_epithet}, and it drops, still burning.
+  The fire finishes ${combat_enemy_epithet}, and they drop, still burning.
   *line_break
   [b][🔥 ${combat_enemy_name} burns: ${cb_dealt} Fire damage${combat_outgoing_dmg_suffix} | @{combat_is_nonlethal 🏳️ Beaten|💀 Defeated}][/b]
   *line_break
@@ -9421,9 +9459,14 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *line_break
   *if (cb_douse)
     *set combat_burn_doused true
-    $!{combat_enemy_epithet} throws themselves down and beats at the flames with a cloak and both hands, spending the whole turn putting the fire out.
-    *line_break
-    [b][💨 ${combat_enemy_name} puts out the fire — turn spent][/b]
+    *if ({(cb_p & "burn_water")})
+      $!{combat_enemy_epithet} breaks off and throws themselves into the water, and the flames hiss out in a burst of steam.
+      *line_break
+      [b][💧 ${combat_enemy_name} puts out the fire in the water — turn spent][/b]
+    *else
+      $!{combat_enemy_epithet} throws themselves down and beats at the flames with a cloak and both hands, spending the whole turn putting the fire out.
+      *line_break
+      [b][💨 ${combat_enemy_name} puts out the fire — turn spent][/b]
     *line_break
 *set combat_turn_advanced_this_page true
 *return
@@ -9535,9 +9578,27 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *gosub_scene combat_movement combat_fire_at {(cabn_p & "position")}
   *if (combat_fire_here)
     *set cabn_dv 3
+  *set {(cabn_p & "burn_water")} false
   *if (((cabn_hp > 0) and (cabn_left > 0)) and ((not(cabn_profile = "feral")) and (cabn_dv <= 2)))
     *set {(cabn_p & "burning")} 0
     *set {(cabn_p & "burn_douse")} true
+    *comment WATER (2026-11-25): with a water patch one step away inside the lane, it walks into the water instead of beating at the flames, as a melee enemy does
+    *comment (combat_burn_tick): the turn is spent either way, but it ends Wet (the water's rule). Kept in burn_water for a replay.
+    *temp cabn_pos {(cabn_p & "position")}
+    *temp cabn_wto 0
+    *temp cabn_wi 1
+    *label cabn_water_loop
+    *if ((cabn_wi <= combat_terrain_slot_cap) and (cabn_wto = 0))
+      *temp cabn_wpos {(("combat_terrain" & cabn_wi) & "_position")}
+      *if ({(("combat_terrain" & cabn_wi) & "_type")} = "water")
+        *if ((((cabn_wpos = (cabn_pos + 1)) or (cabn_wpos = (cabn_pos - 1))) and (cabn_wpos >= combat_lane_min_position)) and (cabn_wpos <= combat_lane_max_position))
+          *set cabn_wto cabn_wpos
+      *set cabn_wi + 1
+      *goto cabn_water_loop
+    *if (not(cabn_wto = 0))
+      *set {(cabn_p & "burn_water")} true
+      *set {(cabn_p & "wet")} 2
+      *gosub_scene combat_movement combat_lane_move_ally_to_position cabn_slot 0 cabn_wto
   *set {(cabn_p & "burn_dealt")} cabn_dealt
   *set {(cabn_p & "burn_page")} page_id
 *temp cabn_shown {(cabn_p & "burn_dealt")}
@@ -9555,9 +9616,14 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *line_break
 *if ((cabn_hp_now > 0) and (cabn_douse))
   *set combat_burn_doused true
-  $!{cabn_epi} drops and rolls, beating at the flames until the last of them is out, and spends the whole turn on it.
-  *line_break
-  [b][💨 ${cabn_name} puts out the fire | Turn spent][/b]
+  *if ({(cabn_p & "burn_water")})
+    $!{cabn_epi} breaks off and throws themselves into the water, and the flames hiss out in a burst of steam.
+    *line_break
+    [b][💧 ${cabn_name} puts out the fire in the water | Turn spent][/b]
+  *else
+    $!{cabn_epi} drops and rolls, beating at the flames until the last of them is out, and spends the whole turn on it.
+    *line_break
+    [b][💨 ${cabn_name} puts out the fire | Turn spent][/b]
   *line_break
 *set combat_turn_advanced_this_page true
 *return
@@ -10318,6 +10384,14 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *gosub_scene combat_abilities ability_use_action cepa_slot ability_action_place
   *set combat_enemy_cast_spell "ability"
   *return
+*comment SHOVE INTO A HAZARD (2026-11-25): a bruiser or guardian with fire, grease or a web one step behind the player shoves instead of attacking (combat_ai.txt enemy_shove_pick).
+*comment Marked like an ability, so no extra attack follows: the player is out of its reach anyway when it works.
+*gosub_scene combat_ai enemy_shove_pick cepa_slot
+*if (not(combat_shove_dir = ""))
+  *gosub fight_enemy_shove cepa_slot
+  *set combat_enemy_cast_spell "shove"
+  *set combat_turn_advanced_this_page true
+  *return
 *if (not(combat_player_hidden))
   *gosub_scene combat_ai fight_pick_enemy_spell
 *if (not(combat_enemy_cast_spell = ""))
@@ -10347,6 +10421,129 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *gosub_scene combat_ai fight_pick_enemy_move
 *gosub_scene combat_dice resolve_enemy_attack
 *gosub_scene combat_prose fight_narrate_enemy_turn
+*return
+
+*comment THE SHOVE (2026-11-25, PHB'24 Shove): the player makes a Strength or Dexterity save, whichever is better, against DC 8 + the shover's STR modifier + its proficiency
+*comment bonus. A failure pushes the player one step straight back (combat_shift_all_ranges, combat_shove_dir from enemy_shove_pick): forced movement, so no opportunity
+*comment attack, and the landing is the hazard's own check at the next menu (combat_spells.txt player_step_in_check: grease's slip, fire's burn, a web's hold). A success
+*comment holds the ground. The roll, its result and the line are kept per slot against the page (shove_page, shove_failed, shove_v), so a replay prints the same shove.
+*comment AN ALLY'S SHOVE (2026-11-25): the foe saves with Strength or Dexterity, whichever is better, against DC 8 + the ally's STR modifier + its proficiency; a failure
+*comment pushes it one step to combat_shove_spot (forced movement). The hazard does the rest on the foe's own turn (grease and fire are checked when a turn ends there, a
+*comment web holds whoever moves). The roll and the line are kept per ally against the page (shove_page, shove_failed, shove_v, shove_banner).
+*label fight_ally_shove
+*params fas_a fas_e
+*temp fas_p (("combat_ally" & fas_a) & "_")
+*temp fas_ep (("combat_enemy" & fas_e) & "_")
+*temp fas_str {(fas_p & "strength")}
+*gosub_scene startup score_to_mod fas_str
+*temp fas_prof {(fas_p & "prof")}
+*if (fas_prof <= 0)
+  *set fas_prof combat_lib_prof_bonus
+*temp fas_dc ((8 + sm_mod) + fas_prof)
+*temp fas_es {(fas_ep & "strength")}
+*gosub_scene startup score_to_mod fas_es
+*temp fas_esm sm_mod
+*temp fas_ed {(fas_ep & "dexterity")}
+*gosub_scene startup score_to_mod fas_ed
+*temp fas_stat "strength"
+*temp fas_label "Strength"
+*if (sm_mod > fas_esm)
+  *set fas_stat "dexterity"
+  *set fas_label "Dexterity"
+*temp fas_failed {(fas_p & "shove_failed")}
+*temp fas_v {(fas_p & "shove_v")}
+*if (not({(fas_p & "shove_page")} = page_id))
+  *set fas_v 1
+  *rand fas_v 1 2
+  *set {("combat_save_locked_" & fas_e)} false
+  *set combat_save_quiet true
+  *gosub_scene combat_dice resolve_save fas_ep fas_stat fas_label fas_dc fas_e
+  *set combat_save_quiet false
+  *set fas_failed check_success
+  *set {(fas_p & "shove_banner")} {("combat_save_banner_" & fas_e)}
+  *set {(fas_p & "shove_failed")} fas_failed
+  *set {(fas_p & "shove_v")} fas_v
+  *set {(fas_p & "shove_page")} page_id
+  *if (fas_failed)
+    *gosub_scene combat_movement combat_lane_move_enemy_to_position fas_e combat_shove_spot
+*temp fas_ae {(fas_p & "epithet")}
+*temp fas_ee {(fas_ep & "epithet")}
+*temp fas_en {(fas_ep & "name")}
+*if (fas_v = 1)
+  $!{fas_ae} drops a shoulder into ${fas_ee} and drives hard, trying to shove them back ${combat_shove_onto}.
+*else
+  $!{fas_ae} plants both hands on ${fas_ee} and heaves, trying to throw them back ${combat_shove_onto}.
+*line_break
+*temp fas_banner {(fas_p & "shove_banner")}
+${fas_banner}
+*line_break
+*if (fas_failed)
+  $!{fas_ee} staggers back a step and lands ${combat_shove_land}.
+  *line_break
+  [b][💥 ${fas_en} is shoved ${combat_shove_onto}][/b]
+*else
+  $!{fas_ee} sets their feet and holds.
+  *line_break
+  [b][💪 ${fas_en} holds their ground][/b]
+*line_break
+*return
+
+*label fight_enemy_shove
+*params fes_slot
+*temp fes_p (("combat_enemy" & fes_slot) & "_")
+*temp fes_str {(fes_p & "strength")}
+*gosub_scene startup score_to_mod fes_str
+*temp fes_prof {(fes_p & "prof")}
+*if (fes_prof <= 0)
+  *set fes_prof combat_lib_prof_bonus
+*temp fes_dc ((8 + sm_mod) + fes_prof)
+*gosub_scene combat_dice combat_player_sync
+*temp fes_stat "strength"
+*temp fes_label "Strength"
+*if ((dex_mod + combat_player_save_bonus_dexterity) > (str_mod + combat_player_save_bonus_strength))
+  *set fes_stat "dexterity"
+  *set fes_label "Dexterity"
+*temp fes_failed {(fes_p & "shove_failed")}
+*temp fes_v {(fes_p & "shove_v")}
+*if (not({(fes_p & "shove_page")} = page_id))
+  *set fes_v 1
+  *rand fes_v 1 2
+  *set combat_save_locked_7 false
+  *set combat_save_quiet true
+  *gosub_scene combat_dice resolve_save "combat_player_" fes_stat fes_label fes_dc 7
+  *set combat_save_quiet false
+  *set fes_failed check_success
+  *set {(fes_p & "shove_banner")} combat_save_banner_7
+  *set {(fes_p & "shove_failed")} fes_failed
+  *set {(fes_p & "shove_v")} fes_v
+  *set {(fes_p & "shove_page")} page_id
+  *set {(fes_p & "shove_round")} combat_round
+*if (fes_v = 1)
+  $!{combat_enemy_epithet} drops a shoulder and drives into your chest, trying to shove you back ${combat_shove_onto}.
+*else
+  $!{combat_enemy_epithet} plants both hands on you and heaves, trying to throw you back ${combat_shove_onto}.
+*line_break
+*temp fes_banner {(fes_p & "shove_banner")}
+${fes_banner}
+*line_break
+*if (fes_failed)
+  *comment The move is page-locked in combat_shift_all_ranges, so a replay does not push twice.
+  *gosub_scene combat_movement combat_shift_all_ranges combat_shove_dir
+  *set combat_enemy_range {(fes_p & "range")}
+  *if (fes_v = 1)
+    You stagger back a step and land ${combat_shove_land}.
+  *else
+    Your heels skid, and you go back a step ${combat_shove_onto}.
+  *line_break
+  [b][💥 Shoved ${combat_shove_onto}][/b]
+*else
+  *if (fes_v = 1)
+    You set your feet and hold your ground.
+  *else
+    You twist aside and keep your footing.
+  *line_break
+  [b][💪 You hold your ground][/b]
+*line_break
 *return
 
 *comment Scorching Ray's other rays at an ally (spell_fact_projectiles, still loaded), each on its own page as at the player, while the ally stands.
@@ -10663,6 +10860,8 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *if (((combat_enemy_weapon_type = "ranged") and (combat_ranged_cornered)) and ((combat_enemy_can_retreat) and (cnt_e_room)))
       *if (combat_behavior_oa_weight > 0)
         *gosub combat_cornered_decide
+      *elseif (combat_ai_trace)
+        *gosub_scene combat_ai ai_trace combat_enemy_name "cornered: its profile does not count the attack a retreat draws → retreat_shoot"
     *temp cnt_burning {(("combat_enemy" & cnt_slot) & "_burning")}
     *if ((cnt_burning > 0) and (not((combat_player_surprise) and (cnt_first_pass))))
       *gosub combat_burn_tick cnt_slot
@@ -10853,9 +11052,9 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
           *gosub_scene combat_movement combat_range_name combat_enemy_range
           *rand cnt_rv 1 3
           *if (cnt_rv = 1)
-            $!{combat_enemy_epithet} breaks off, falling back a step to put ground between itself and the fight.
+            $!{combat_enemy_epithet} breaks off and falls back a step, out of the press of the fight.
           *if (cnt_rv = 2)
-            Backing away fast, ${combat_enemy_epithet} puts a step of distance between itself and the blade at its throat.
+            Backing away fast, ${combat_enemy_epithet} opens a step of ground between you.
           *if (cnt_rv = 3)
             $!{combat_enemy_epithet} gives ground, retreating just far enough to loose a clean shot.
           *line_break
@@ -10913,6 +11112,8 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
           [b][🛢️ ${combat_enemy_name} Steps Off the Grease — ${combat_range_display_name}][/b]
         *if (combat_ai_terrain_step_reason = "leave_fire")
           [b][🔥 ${combat_enemy_name} Steps Out of the Flames | ${combat_range_display_name}][/b]
+        *if (combat_ai_terrain_step_reason = "douse_in_water")
+          [b][💧 ${combat_enemy_name} Steps Into the Water | ${combat_range_display_name}][/b]
         *line_break
         *gosub fight_booming_trigger
         *if (combat_boom_killed)
@@ -11161,6 +11362,8 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
           [b][🛢️ ${combat_enemy_name} Steps Off the Grease — ${combat_range_display_name}][/b]
         *if (combat_ai_terrain_step_reason = "leave_fire")
           [b][🔥 ${combat_enemy_name} Steps Out of the Flames | ${combat_range_display_name}][/b]
+        *if (combat_ai_terrain_step_reason = "douse_in_water")
+          [b][💧 ${combat_enemy_name} Steps Into the Water | ${combat_range_display_name}][/b]
         *line_break
         *gosub fight_booming_trigger
         *if (combat_boom_killed)
@@ -11504,7 +11707,15 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
           *gosub_scene combat_ai combat_choose_terrain_step "ally" cnt_slot cnt_a_target_position true false
         *comment STEPPING IN (3.9a 5): a step into an enemy's Web or onto Grease is a save first; a fall to Prone costs the action.
         *gosub_scene combat_spells ally_step_in_check cnt_slot
+        *comment AN ALLY'S SHOVE (2026-11-25): Engaged with its foe, with fire, grease or a web behind that foe, it may shove instead of attacking (combat_ai.txt ally_shove_pick).
+        *temp cnt_a_shove false
+        *if ((((not(cnt_a_weapon = "ranged")) and (cnt_a_range <= 0)) and (not(cnt_a_cast))) and (not(combat_ally_step_fell)))
+          *gosub_scene combat_ai ally_shove_pick cnt_slot combat_active_target
+          *set cnt_a_shove (not(combat_shove_dir = ""))
         *if (combat_ally_step_fell)
+          *set combat_turn_advanced_this_page true
+        *elseif (cnt_a_shove)
+          *gosub fight_ally_shove cnt_slot combat_active_target
           *set combat_turn_advanced_this_page true
         *elseif (cnt_a_cast)
           *gosub fight_ally_cast cnt_slot combat_active_target

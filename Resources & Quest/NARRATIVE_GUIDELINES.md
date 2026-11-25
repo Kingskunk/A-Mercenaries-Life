@@ -94,3 +94,21 @@
 * **Never assert weather in a calendar or activity line.** A rest-day paragraph must not say "grey light", and a market-day line must not hedge ("if it has rained this morning"). Weather lives in the sky layer only.
 * **Don't print the weather variable mid-sentence.** `${weather}` prints a capitalized type name ("the Storm"); write "the weather" or branch on a flag.
 * **Sheltered and indoor places skip the sky layer** and get at most one muffled weather line (rain on the roof, fog against the porthole glass).
+
+## 11. Page Titles Name Places, Once per Page
+
+The `[b]◈ …[/b]` line is a place name, never a scene name.
+
+* **A title names where the player stands:** `◈ PALMCOTE`, `◈ THE GREEN BRANCH`, `◈ YOUR ROOM: THE GREEN BRANCH`, `◈ THE PRESSING HOUSE`. It never names the event or the mood: not `◈ THE CHASE ON THE TERRACES`, `◈ BLOOD ON THE LANE`, `◈ RECKONING AT THE GATHERING HALL` or `◈ DIRTY SILVER`.
+* **One title per page, at most.** A quest beat that starts on a page that already has a title, such as a hook firing from a hub after `◈ PALMCOTE`, prints no title of its own. Its prose follows straight on.
+* **A title prints on arrival only.** Print it when the player moves somewhere new. Follow-up pages in the same place carry none. That covers a choice's result, the page after a fight, a flight or an aftermath, and a page break that stays put.
+* **One arrival, one title.** When a page moves the player and then goes on in the new place, such as walking into the inn and up to the room, it gets one title, for the place they arrive at first.
+
+Example: a hub return at dusk that springs a quest.
+
+```
+◈ PALMCOTE
+You step back out onto the slope as the evening settles over the tree rows.
+
+Near the roofed stone well at the bend in the lane, a hound bays sharply up on the dark terraces.
+```
