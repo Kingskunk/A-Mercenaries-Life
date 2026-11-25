@@ -1,11 +1,11 @@
 /*
- * LOREBOOK: HARTWELL & OXWORTH -- Oxworth on the open down and the people who run its hall and inn.
+ * LOREBOOK: HARTWELL, OXWORTH & PALMCOTE -- the downland and hillside villages under the Viscounty of Hartwell and the people who run their halls and inns.
  *
  * Same entry format as lorebook-data.js. This file appends to window.LOREBOOK, so it loads after lorebook-data.js.
  * Every entry unlocks when the player reaches the place or learns the person's name, and reveals later facts only when their matching scene flags are set.
  *
- * Places: Oxworth (incorporating The Village Head's Hall, The Yoke & Horn, Oxworth Market, and The Salting & Cattle Yard).
- * People: Bramwell "Bram" Tallow, Sigrin Copperpot.
+ * Places: Oxworth (incorporating The Village Head's Hall, The Yoke & Horn, Oxworth Market, and The Salting & Cattle Yard) and Palmcote (incorporating The Gathering Hall, The Green Branch, and Palmcote Market).
+ * People: Bramwell "Bram" Tallow, Sigrin Copperpot, Nora Greer, and Odda Pellam.
  */
 (function () {
   "use strict";
@@ -63,7 +63,44 @@
         }
         return out;
       },
-      see: ["western_vale", "broadmead", "bram_tallow", "sigrin_copperpot"]
+      see: ["western_vale", "broadmead", "palmcote", "bram_tallow", "sigrin_copperpot"]
+    },
+
+    {
+      id: "palmcote", category: "places", title: "Palmcote",
+      sub: "An olive-grove village on a sun-facing slope under Hartwell",
+      tags: ["Palmcote", "Hartwell", "Trade", "Lodging"],
+      aliases: [
+        "Palmcote", "olive terraces", "olive groves", "Gathering Hall",
+        "The Green Branch", "Green Branch", "Palmcote Market", "house on the hill", "the big house"
+      ],
+      link: ["Palmcote", "The Green Branch", "Green Branch", "Palmcote Market"],
+      unlock: function (s) { return truthy(s.pc_seen) || truthy(s.pc_arrival_seen); },
+      body: function (s) {
+        var out = [
+          "A hillside village climbing a single steep lane on a sheltered, south-facing slope under Hartwell. Low drystone walls hold the earth in stepped terraces planted with thick, knotted olive trees whose leaves show grey-green on top and pale underneath. Pale stone houses under red clay tile roofs sit close to the lane with benches and drying baskets by their doors.",
+          "A roofed stone well stands where the lane bends, a flat earth yard holds stacked baskets and carts, and high at the crest behind a tall wall and dark trees rises a large grey stone manor house."
+        ];
+        if (truthy(s.pc_hall_seen)) {
+          if (truthy(s.met_pc_head)) {
+            out.push("The Gathering Hall is a wide timber-and-plaster building near the foot of the lane. Inside, village head [[nora_greer|Nora Greer]] works from a heavy trestle table with the leather-bound register, settling terrace-wall matters while road notices from Hartwell and local errands hang on a slatted wooden rack.");
+          } else {
+            out.push("The Gathering Hall is a wide timber-and-plaster building near the foot of the lane with two heavy trestle tables, an iron stove, and a slatted wooden notice rack holding road postings from Hartwell.");
+          }
+        }
+        if (truthy(s.pc_gb_seen)) {
+          if (truthy(s.met_odda)) {
+            out.push("The Green Branch sits just above the hall with a leafy bough hung over its door. Run by [[odda_pellam|Odda Pellam]], its long red-tiled room has a clay bread oven built beside the hearth, serving bean-and-olive stew, watered red wine, upstairs rooms, and a cobbled stable yard behind the wall.");
+          } else {
+            out.push("The Green Branch sits just above the hall with a leafy bough hung over its door, offering hot stew, watered red wine, upstairs rooms, and a cobbled stable yard behind the wall.");
+          }
+        }
+        if (truthy(s.pc_market_seen)) {
+          out.push("Palmcote Market occupies a widening of the hillside lane under canvas awnings, where sellers weigh out olives, oil, honey, grain, vegetables, and cloth on counter scales.");
+        }
+        return out;
+      },
+      see: ["oxworth", "nora_greer", "odda_pellam"]
     },
 
     /* ------------------------------------------------------------------ PEOPLE */
@@ -123,6 +160,53 @@
         return out;
       },
       see: ["oxworth", "bram_tallow"]
+    },
+
+    {
+      id: "nora_greer", category: "people", title: "Nora Greer",
+      sub: "Village head of Palmcote",
+      role: "Village Head, the Gathering Hall (Palmcote)",
+      tags: ["Palmcote", "Hartwell"],
+      aliases: ["Nora", "Greer", "village head"],
+      link: ["Nora Greer"],
+      unlock: "met_pc_head",
+      body: function (s) {
+        var out = [
+          "The village head of [[palmcote|Palmcote]], a spare, sun-browned human woman in her late fifties with silver-streaked dark hair pinned tight at the nape of her neck, deep lines around watchful brown eyes, and faint ink stains across her right knuckles. She wears a neat slate-grey wool waistcoat over a cream linen shirt with rolled sleeves, resting a polished ash walking stick against the trestle table beside her knee.",
+          "Calm, unhurried, and diplomatic, she sits in the Gathering Hall updating the leather-bound village register, hearing terrace-wall matters, and tending the slatted notice rack of Hartwell road postings and local errands."
+        ];
+        if (truthy(s.pc_gh_asked_village)) {
+          out.push("She explains that Palmcote lives mainly by its olive terraces, supplemented by goats, kitchen plots, and carters coming up from Hartwell, promising fair treatment to travellers who respect the terrace walls and pay their way.");
+        }
+        if (truthy(s.pc_gh_asked_house)) {
+          out.push("When asked about the manor at the crest, she calls it only the house on the hill, held by an old Viscounty family since before her father's time: their estate steward manages pressing-yard leases and harvest carts, while neither side troubles the other's gate.");
+        }
+        return out;
+      },
+      see: ["palmcote", "odda_pellam"]
+    },
+
+    {
+      id: "odda_pellam", category: "people", title: "Odda Pellam",
+      sub: "Innkeeper of The Green Branch",
+      role: "Innkeeper, The Green Branch (Palmcote)",
+      tags: ["Palmcote", "Lodging"],
+      aliases: ["Odda", "Pellam", "innkeeper", "Green Branch"],
+      link: ["Odda Pellam", "Odda"],
+      unlock: "met_odda",
+      body: function (s) {
+        var out = [
+          "The stout, broad-shouldered human innkeeper of [[palmcote|The Green Branch]] in her sixties, with a long grey braid slung over one shoulder, a sun-creased face, and a steady, unhurried gaze. Wearing a heavy linen apron tied high over a plain brown woollen kirtle with flour dried pale along her rolled sleeves and forearms, she bakes loaves in the hearthside clay oven, ladles bean-and-olive stew, and rents out the rooms upstairs."
+        ];
+        if (truthy(s.pc_gb_asked_village)) {
+          out.push("Warm and direct at the counter, she slides newcomers a free dish of dark olives with a warning not to spit stones on her tiles, describing Palmcote as a quiet slope of olive groves and walled beehives hauling baskets down to Hartwell.");
+        }
+        if (truthy(s.pc_gb_asked_house)) {
+          out.push("Asked about the manor above the trees, she lowers her voice and calls it simply the big house: its burned mark sits on every yard cart and its bailiff weighs the pickers' baskets, though its people never drink in her hall and she never climbs their hill.");
+        }
+        return out;
+      },
+      see: ["palmcote", "nora_greer"]
     }
 
   ]);

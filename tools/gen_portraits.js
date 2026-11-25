@@ -39,9 +39,9 @@ const LORE_FILES = [
 const PROMPTS_PATH = path.join(__dirname, "portrait_prompts.json");
 const PORTRAITS_DIR = path.join(ROOT, "portraits");
 
-const STYLE_PREFIX = "Close-up bust portrait (head and shoulders, chest-up framing) in gritty realistic medieval oil painting style of";
+const STYLE_PREFIX = "Close-up bust portrait (head and shoulders, chest-up framing) in gritty realistic medieval oil portrait style of";
 const STYLE_SUFFIX =
-  "Tight head-and-shoulders framing, warm low-key amber lighting, dark moody background, master oil painting brushwork, rich muted historical palette.";
+  "Tight head-and-shoulders framing, warm low-key amber lighting, dark moody background, rich oil brushwork, rich muted historical palette.";
 const DEFAULT_NEGATIVE =
   "pointed ears, elf, elven, half-elf, fantasy race, alien ears, animal ears, full body, waist up, hips, legs, knees, distant, wide shot, low quality, worst quality, blurry, anime, cartoon, 3d render, modern clothes, text, watermark, signature, extra fingers, deformed";
 

@@ -715,6 +715,25 @@
         },
         see: ["great_sedge", "black_sinks", "silt_gates", "black_oath", "grey_marches", "meridian_empire"]
       },
+      {
+        id: "agnes_fenwick", category: "people", title: "Agnes Fenwick",
+        link: ["Agnes Fenwick"],
+        sub: "Riverside cottager below Greybank Rise",
+        role: "Cottager, Grey River bank below Greybank Rise",
+        tags: ["Valen Reach"], aliases: ["Agnes", "Fenwick", "cottager", "Greybank Rise", "frying pan", "skillet"],
+        unlock: "met_agnes_fenwick",
+        body: function (s) {
+          var out = [
+            "An elderly human woman in her late sixties who has lived for forty years in a low riverside cottage tucked below the shoulder of Greybank Rise along the [[grey_river|Grey River]]. Silver hair is braided neatly around a weathered, sharp-featured face with clear hazel eyes, and she wears a faded russet wool shawl over a plain homespun dress and deep-pocketed apron, her knuckles reddened from cold water.",
+            "Locked out of her own home after a polite wet traveler barred her door from within and a second man in a dark coat climbed through the shuttered window, she waited in the shingle yard clutching a wooden spoon and asked you to recover her only decent iron skillet."
+          ];
+          if (truthy(s.gbp_finished)) {
+            out.push("When you brought her skillet back scoured down to bare metal and warned her of the murdered courier inside, she gave you an orchard apple and a barley loaf for the road before heading up to the highway to hail a [[gilded_scales|Gilded Scales]] wagon patrol.");
+          }
+          return out;
+        },
+        see: ["valen_reach", "grey_river", "gilded_scales", "alderford"]
+      },
 
       /* ---------------------------------------------------------------- FACTIONS */
 
@@ -882,7 +901,7 @@
           "The river territory governed from Port Valen, extending from the coast along the Grey River and the Ashrun into the settlements of the interior. Its roads, toll posts and river trade bind its towns and villages to the free city.",
           "The Gilded Scales administer the Reach through factors, customs houses, toll collectors, courts and local officials recognized by the Council of Factors. Port Valen retains the old imperial title of a free city, but its authority reaches far beyond its walls. The Reach has no king or hereditary ruler; charters, contracts and merchant power hold it together. Formal documents style the polity <i>the Free City of Port Valen and the Valen Reach</i>."
         ],
-        see: ["grey_marches", "port_valen", "gilded_scales", "port_watch", "alderford", "timbermouth", "barleycross", "ashrun_holt", "marlcross", "brinewick", "whitefold", "redvein", "grey_river", "alyndra"]
+        see: ["grey_marches", "port_valen", "gilded_scales", "port_watch", "alderford", "timbermouth", "barleycross", "ashrun_holt", "marlcross", "brinewick", "whitefold", "redvein", "grey_river", "alyndra", "agnes_fenwick"]
       },
       {
         id: "port_valen", category: "places", title: "Port Valen",

@@ -6,7 +6,7 @@
  * flag, so a player who has not reached a scene reads nothing of it. Where a fact depends on a choice, the paragraph says only what that player did.
  *
  * Places: Langston (incorporating Langston Hall, the Pickled Hen, and the Cord & Kettle), Barolo (incorporating the Hall, Red Stave, Market, and Vineyard Roads), Broadmead (incorporating the Hall, Crooked Halter, Longfold Fair, and Remount Yard), Fallowmere (incorporating the Hall, Grey Gander, and Market on the Green), the Sun Temple, and Roi's Grove.
- * People: Mayor Tanya Anathram, Tomlin, Roi Sunderhammer, Solaine, Harlan Vetch, Ansel Reed, Hobart Thring, Odalie Hollowell, Mardred Birchstone, Olof, Dagny Marren, Aubrey Fenn, Ione Brackett, Edric Merrow, and Maybelline.
+ * People: Mayor Tanya Anathram, Tomlin, Roi Sunderhammer, Solaine, Harlan Vetch, Ansel Reed, Hobart Thring, Odalie Hollowell, Mardred Birchstone, Olof, Dagny Marren, Myles Buckman, Thistle, Aubrey Fenn, Ione Brackett, Edric Merrow, and Maybelline.
  * Factions: The Order of Radiant Light, House Veyre, House Durnell, and House Avenel.
  */
 (function () {
@@ -125,9 +125,25 @@
         if (truthy(s.bm_hl_asked_holders) || truthy(s.bm_hl_asked_commons) || truthy(s.bm_hl_asked_sides)) {
           out.push("Tension runs quietly through the village: eight or nine tenant families hold leases from Langston Hall to raise the Countess's mares on fenced meadows, while thrice as many common shepherds and dairy folk graze the open downs by ancient custom without a scrap of paper.");
         }
+        if (truthy(s.bm_ry_open)) {
+          if (String(s.bm_mare_how) === "settled") {
+            out.push("After you settled the ridge pound claim over the stray mare Magpie at [[mardred_birchstone|Mardred Birchstone]]'s counter, the gate guards admit you inside the Remount Yard on Sergeant [[dagny_marren|Dagny Marren]]'s word.");
+          } else {
+            out.push("After you brought the stray mare Magpie back unharmed from the ridge pound, the gate guards admit you inside the Remount Yard on Sergeant [[dagny_marren|Dagny Marren]]'s word.");
+          }
+          if (truthy(s.bm_mare_commons_cold)) {
+            out.push("Taking the mare from the commons pound without answering the shepherds' grazing grievance left a cool reception among the hill folk.");
+          }
+        } else if (truthy(s.bm_mare_finished)) {
+          if (String(s.bm_mare_ending) === "lost") {
+            out.push("The Remount Yard's stray mare bolted hurt off the ridge before you could bring her home, leaving the yard gate shut to you and costing " + (truthy(s.bm_mare_prep_groom) ? "the young groom [[myles_buckman|Myles Buckman]]" : "a young stable groom") + " his job.");
+          } else if (String(s.bm_mare_how) === "brawled") {
+            out.push("You recovered the Remount Yard's stray mare by fighting the shepherd [[thistle|Thistle]] at the ridge pound; Sergeant [[dagny_marren|Dagny Marren]] paid three marks for the horse, though the yard gate remains shut to you and the hill folk stay cool toward you.");
+          }
+        }
         return out;
       },
-      see: ["western_vale", "house_gault", "fallowmere", "mardred_birchstone", "olof", "dagny_marren", "langston", "barolo"]
+      see: ["western_vale", "house_gault", "fallowmere", "mardred_birchstone", "olof", "dagny_marren", "myles_buckman", "thistle", "langston", "barolo"]
     },
     {
       id: "fallowmere", category: "places", title: "Fallowmere",
@@ -448,9 +464,12 @@
         if (truthy(s.bm_hl_asked_sides)) {
           out.push("In confidence she told you the dispute is over fences: every time the Home Meadow is fenced for the mares, the commons lose a strip of spring grazing. With paper on one side and custom on the other, she works to keep both sides believing she is half theirs to prevent a fight.");
         }
+        if (String(s.bm_mare_how) === "settled") {
+          out.push("When you and [[thistle|Thistle]] brought the stray mare Magpie to her counter, she ruled that the brand belonged to [[house_gault|House Gault]] while the pound fee stood by village custom, deducting one silver mark from the Remount Yard's hay account.");
+        }
         return out;
       },
-      see: ["broadmead", "house_gault", "olof", "dagny_marren"]
+      see: ["broadmead", "house_gault", "olof", "dagny_marren", "thistle"]
     },
     {
       id: "olof", category: "people", title: "Olof",
@@ -480,7 +499,7 @@
       sub: "Sergeant of the Remount Yard",
       role: "Sergeant & Horse Trainer, the Remount Yard (Broadmead)",
       tags: ["Broadmead", "House Gault", "Military"], aliases: ["Dagny", "Marren", "Sergeant Marren", "trainer", "sergeant"],
-      link: ["Dagny Marren", "Sergeant Marren", "Sergeant Dagny Marren", "Dagny"],
+      link: ["Sergeant Dagny Marren", "Dagny Marren", "Sergeant Marren", "Dagny", "Marren"],
       unlock: function (s) { return truthy(s.bm_know_sergeant) || truthy(s.bm_ry_met); },
       body: function (s) {
         var out = [
@@ -491,9 +510,76 @@
         if (truthy(s.bm_ry_met)) {
           out.push("She rode for Countess Gault for eleven years until a horse fell under her on the ice at Coombe Gap, injuring her knee. When the mayor in Langston needed someone who would sort horses by what they are rather than what they are worth, she was given the yard. She admits she misses riding every morning until she puts a saddle on a young horse.");
         }
+        if (truthy(s.bm_ry_open)) {
+          out.push("After you brought her stray mare Magpie home unharmed, she gave the gate troopers your name so you may step inside the yard and buy or sell a mount when she has a retired horse to spare.");
+        } else if (String(s.bm_mare_ending) === "lost") {
+          out.push("After the stray mare Magpie bolted hurt off the ridge, she dismissed " + (truthy(s.bm_mare_prep_groom) ? "the young groom [[myles_buckman|Myles Buckman]]" : "the young groom who lost her") + " and left the yard gate shut to you.");
+        } else if (String(s.bm_mare_how) === "brawled") {
+          out.push("She paid three silver marks when you brought Magpie back after fighting a shepherd on the ridge, though she left the yard gate closed to you over the trouble on her border.");
+        }
         return out;
       },
-      see: ["broadmead", "house_gault", "mardred_birchstone", "olof"]
+      see: ["broadmead", "house_gault", "mardred_birchstone", "olof", "myles_buckman", "thistle"]
+    },
+    {
+      id: "myles_buckman", category: "people", title: "Myles Buckman",
+      sub: "Junior groom at the Remount Yard",
+      role: "Junior Groom, the Remount Yard (Broadmead)",
+      tags: ["Broadmead", "House Gault"], aliases: ["Myles", "Buckman", "junior groom", "groom", "stable lad"],
+      link: ["Myles Buckman"],
+      unlock: "bm_mare_prep_groom",
+      body: function (s) {
+        var out = [
+          "A lean, freckled human lad in his late teens from [[broadmead|Broadmead]]'s commons, taken on for the season as a junior groom at the Remount Yard under Sergeant [[dagny_marren|Dagny Marren]]. Sandy brown hair sticks to his damp forehead above anxious hazel eyes, and he works the stalls in a coarse undyed wool shirt under a scuffed leather apron, both palms blistered raw where a wet lead rope tore through his grip.",
+          "While leading the spotted mare Magpie back from the stream crossing, a rattling farm cart tipped a wooden pen fence beside them and sent the horse bolting uphill onto the open slopes. He warned you that banging wood spooks her and advised coming up low by her left shoulder."
+        ];
+        if (truthy(s.bm_mare_finished)) {
+          if (String(s.bm_mare_ending) === "returned") {
+            out.push("After you brought Magpie back unharmed to the Remount Yard, Sergeant Marren let him retain his place at the stables.");
+          } else if (String(s.bm_mare_ending) === "lost") {
+            out.push("After Magpie bolted hurt off the ridge, Sergeant Marren dismissed him from the Remount Yard before supper.");
+          }
+        }
+        return out;
+      },
+      see: ["broadmead", "dagny_marren", "thistle"]
+    },
+    {
+      id: "thistle", category: "people", title: "Thistle",
+      sub: "Commons shepherd of Broadmead",
+      role: "Shepherd, the Broadmead Commons",
+      tags: ["Broadmead"], aliases: ["Thistle", "shepherd", "commons pound", "ridge pound"],
+      link: ["Thistle"],
+      unlock: function (s) { return Number(s.bm_mare_stage) >= 4; },
+      body: function (s) {
+        if (!truthy(s.bm_mare_met_thistle)) {
+          return [
+            "A shepherd of [[broadmead|Broadmead]]'s upper commons. Word at the shepherds' fold is that he found the Remount Yard's stray mare loose on the common grass and shut her inside the stone village pound on the ridge until the customary one-mark fee is paid."
+          ];
+        }
+        var out = [
+          "A lean, weatherbeaten human shepherd in his late forties who grazes flocks on the high downs above [[broadmead|Broadmead]]. Coarse dark hair streaked with silver frames a wind-tanned face and keen grey eyes, and he wears a faded brown wool jacket while leaning on a crooked ash staff.",
+          "Finding the Remount Yard's stray mare Magpie loose on the common pasture, he shut her inside the fieldstone pound on the ridge and demanded the customary one-mark stray fee."
+        ];
+        if (truthy(s.bm_mare_clue_grievance) || truthy(s.bm_hl_asked_sides)) {
+          out.push("With the Remount Yard fencing strips of the lower meadow each spring on Hall paper, he used the pound claim to make the yard recognize the shepherds' ancient grazing custom.");
+        }
+        if (truthy(s.bm_mare_finished)) {
+          if (String(s.bm_mare_how) === "settled") {
+            out.push("He walked Magpie down to [[mardred_birchstone|Mardred Birchstone]]'s counter with you and handed over her lead once Mardred entered the one-mark fee against the stables' hay account.");
+          } else if (String(s.bm_mare_how) === "paid") {
+            out.push("After you paid the one-mark pound fee out of your own purse, he slid the bar aside and handed Magpie over without a quarrel.");
+          } else if (String(s.bm_mare_how) === "law") {
+            out.push("Pressured into giving Magpie up without the pound fee, he let you take her off the ridge with cold resentment.");
+          } else if (String(s.bm_mare_how) === "brawled") {
+            out.push("When he barred the pound with his ash staff, you knocked him down in a scuffle by the stones and led Magpie away.");
+          } else if (String(s.bm_mare_ending) === "lost") {
+            out.push("During the confrontation at the pound, Magpie panicked over the crumbling corner wall and bolted hurt into the far valley.");
+          }
+        }
+        return out;
+      },
+      see: ["broadmead", "mardred_birchstone", "dagny_marren", "myles_buckman"]
     },
     {
       id: "aubrey_fenn", category: "people", title: "Aubrey Fenn",

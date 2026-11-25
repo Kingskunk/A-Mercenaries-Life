@@ -286,9 +286,12 @@
       id: "greybank_pan",
       title: "A Frying Pan, Spick and Span",
       place: "Greybank Rise",
-      giver: "An elderly cottager by the Grey River",
+      giver: function (s) {
+        return truthy(s.met_agnes_fenwick) ? "Agnes Fenwick, riverside cottage" : "An elderly cottager by the Grey River";
+      },
       goal: function (s) {
-        return truthy(s.gbp_found_pan) ? "Bring the skillet back to the cottager outside." : "Get inside the locked cottage by the Grey River and recover the woman's skillet.";
+        var who = truthy(s.met_agnes_fenwick) ? "Agnes Fenwick" : "the cottager";
+        return truthy(s.gbp_found_pan) ? "Bring the skillet back to " + who + " outside." : "Get inside the locked cottage by the Grey River and recover " + (truthy(s.met_agnes_fenwick) ? "Agnes Fenwick's" : "the woman's") + " skillet.";
       },
       clues: function (s) {
         var c = [];

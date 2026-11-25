@@ -888,14 +888,59 @@
           out.push("He has put his own name behind yours. That makes you an associate who may be trusted with named paid work, not a sworn member of the brotherhood.");
         }
         if (Number(s.black_oath_night_list_count) > 0 || truthy(s.black_oath_night_list_resolution === "completed")) {
-          out.push("On his referral, you were admitted to the room above the Duckboard Market rope-and-oil house, where the woman upstairs directs the brotherhood's night lists and debt collections.");
+          out.push("On his referral, you were admitted to the room above the Duckboard Market rope-and-oil house, where [[mara_vey|" + (truthy(s.black_oath_mara_named) ? "Mara Vey" : "the woman upstairs") + "]] directs the brotherhood's night lists and debt collections.");
         }
         if (s.short_purse_stage && s.short_purse_stage !== "unstarted") {
           out.push("When twenty-four copper bits vanished from the boat-shed slip fund behind his driftwood fence, his standing as the quarter's gatekeeper brought the theft straight to the brotherhood's attention.");
         }
         return out;
       },
-      see: ["dredge_end", "black_oath", "boat_sheds", "duckboard_market"]
+      see: ["dredge_end", "black_oath", "boat_sheds", "duckboard_market", "mara_vey"]
+    },
+    {
+      id: "mara_vey", category: "people",
+      title: function (s) { return truthy(s.black_oath_mara_named) ? "Mara Vey" : "The Woman Upstairs"; },
+      sub: function (s) {
+        return truthy(s.black_oath_mara_named)
+          ? "Black Oath keeper above Duckboard Market"
+          : "Keeper of the night list above Duckboard Market";
+      },
+      role: "Black Oath Keeper, Duckboard Market Rope-and-Oil House",
+      link: ["Mara Vey"],
+      tags: ["Dredge-End", "Black Oath"],
+      aliases: ["Mara", "Mara Vey", "woman upstairs", "rope-and-oil house", "night list"],
+      unlock: function (s) { return truthy(s.black_oath_keeper_met) || truthy(s.black_oath_mara_named); },
+      body: function (s) {
+        var out = [
+          "A composed, sharp-featured human woman in her late thirties with dark hair drawn back cleanly, hard angles along her jaw, and unblinking dark-grey eyes that measure visitors across a candlelit slate table. Wearing a plain dark woollen coat with slender fingers and square-cut nails, she works from the upper room above the [[duckboard_market|Duckboard Market]] rope-and-oil house, sorting coin on slate and directing [[black_oath|Black Oath]] night runs without raising her voice."
+        ];
+        if (!truthy(s.black_oath_mara_named)) {
+          out.push("Admitted on [[hask|Hask]]'s word, you have run night drops from her marked paper strips; she declined to give her name to an outside hand.");
+        } else {
+          out.push("After you completed three night routes and settled the missing twenty-four coppers from the boat-shed slip fund without drawing the Port Watch, she gave her name as Mara Vey, welcomed you up the stairs without [[hask|Hask]]'s referral, and sent word of you to [[korrigan_vale|Korrigan Vale]].");
+        }
+        return out;
+      },
+      see: ["black_oath", "hask", "korrigan_vale", "duckboard_market", "dredge_end"]
+    },
+    {
+      id: "korrigan_vale", category: "people", title: "Korrigan Vale",
+      sub: "Black Oath gangway enforcer",
+      role: "Enforcer, the Gangway Loft (Dredge-End)",
+      link: ["Korrigan Vale"],
+      tags: ["Dredge-End", "Black Oath"],
+      aliases: ["Korrigan", "Vale", "enforcer", "gangway loft"],
+      unlock: "black_oath_enforcer_met",
+      body: function (s) {
+        var out = [
+          "A hulking, broad-shouldered human enforcer in his early forties with cropped dark hair, a heavy scarred jaw, and cold dark eyes, stationed in a brazier-warmed loft twenty feet above the canal along [[dredge_end|Dredge-End]]'s upper gangways. Wearing a heavy coat patched with greased sailcloth and bruised knuckles from waterfront brawls, he rests a spiked iron mace beside his timber workbench and oversees the [[black_oath|Black Oath]]'s muscle."
+        ];
+        if (Number(s.black_oath_enforcer_count) > 0) {
+          out.push("Sent up on [[mara_vey|Mara Vey]]'s word, you have taken heavier canal assignments from his bench: collecting overdue gaming debts, clearing rogue skimmers off berths, and riding guard on contraband barges.");
+        }
+        return out;
+      },
+      see: ["black_oath", "mara_vey", "hask", "dredge_end"]
     },
     {
       id: "dredge_landing", category: "places", title: "Dredge Landing",
@@ -1304,7 +1349,7 @@
         }
         return out;
       },
-      see: ["church_true_sun", "sun_father", "saint_althea", "alley_shrine", "sanctuary_charter", "civic_heights"]
+      see: ["church_true_sun", "sun_father", "saint_althea", "alley_shrine", "sanctuary_charter", "civic_heights", "deacon_vey", "sister_anwen"]
     },
     {
       id: "port_watch_hq", category: "places", title: "The Port Watch Headquarters",
@@ -1565,7 +1610,26 @@
         }
         return out;
       },
-      see: ["cathedral"]
+      see: ["cathedral", "sister_anwen"]
+    },
+    {
+      id: "sister_anwen", category: "people", title: "Sister Anwen Pell",
+      sub: "Runs the charity soup kettles at the Cathedral",
+      role: "Sister of Charity, Cathedral of the True Sun (Civic Heights)",
+      link: ["Sister Anwen Pell", "Sister Anwen", "Anwen Pell"],
+      tags: ["Civic Heights", "Faith"],
+      aliases: ["Anwen", "Sister Anwen", "Pell", "kettles", "soup line"],
+      unlock: "met_sister_anwen",
+      body: function (s) {
+        var out = [
+          "A brisk, practical human woman in her late thirties with clean linen tied over her hair beneath the hood of a patched blue cloak, weathered skin, steady brown eyes, and sleeves rolled over work-roughened forearms. Stationed at the foot of [[cathedral|the Cathedral]] steps on [[civic_heights|Civic Heights]], she directs the charity soup kettles from First Bell until the pots run dry and watches that hungry children are not trampled on the stair."
+        ];
+        if (truthy(s.cath_anwen_kettles_talk)) {
+          out.push("She says the pots stay full on poor-box flour, grain shamed out of great houses when the High Prelate leans on them, and strict counting before rats or clever clerks touch the sacks, sending the wounded inside to [[deacon_vey|Deacon Harl Vey]] at the oath desk.");
+        }
+        return out;
+      },
+      see: ["cathedral", "deacon_vey", "saint_althea", "civic_heights"]
     },
     {
       id: "pq_terrace_walk", category: "places", title: "The Terrace Walk",

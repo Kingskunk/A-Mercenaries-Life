@@ -28,7 +28,35 @@
         "A road town of timber houses around a paved square, at the edge of the Longshade. Roads lead toward the river, the forest and the farm country, with only gateposts at their mouths.",
         "The Ashrun turns the sawmill below the town, and ranks of graded ash stand beneath open sheds. Workshops, the Market, the Split Pine and the Gilded Scales' Timbermouth Factor's Hall all open from the square."
       ],
-      see: ["valen_reach", "gilded_scales", "split_pine", "workshops_lane", "marlows_store", "factors_hall_tm"]
+      see: ["valen_reach", "gilded_scales", "split_pine", "workshops_lane", "marlows_store", "factors_hall_tm", "longshade"]
+    },
+
+    {
+      id: "longshade", category: "places", title: "The Longshade",
+      sub: "The deep forest west of Timbermouth and the Ashrun",
+      tags: ["Longshade", "Valen Reach", "Timbermouth"],
+      aliases: ["Longshade", "the Longshade", "West Longshade", "Deep Longshade", "Bark's Glade", "Flùràlainn's Grove"],
+      link: ["Longshade Forest", "Deep Longshade", "West Longshade", "Longshade"],
+      unlock: function (s) {
+        return truthy(s.timbermouth_seen) || truthy(s.ah_seen) || truthy(s.bc_seen) ||
+          truthy(s.lsf_trapper_met) || truthy(s.lsf_bark_met) || truthy(s.lsf_grove_seen);
+      },
+      body: function (s) {
+        var out = [
+          "A vast, dense forest stretching west of [[timbermouth|Timbermouth]] and [[barleycross|Barleycross]], fed by the headwaters of the Ashrun. Cutters, charcoal burners, and trappers work its outer edge around [[ashrun_holt|Ashrun Holt]], while narrow animal paths wind beneath a close canopy of pine, oak, and ash where open sky and wind quickly drop away."
+        ];
+        if (truthy(s.lsf_bark_met)) {
+          out.push("Deep beneath the boughs opens Bark's Glade, a hushed clearing around the ancient speaking oak [[bark|Bark]].");
+        }
+        if (truthy(s.lsf_grove_seen)) {
+          out.push("Further along the northwest stream lies a secluded ring of broad trees around an old oak tended by the dryad [[fluralainn|Flùràlainn]].");
+        }
+        if (truthy(s.lsf_dubhar_dead)) {
+          out.push("Since the poisoner by the northwest stream was put down, the water running out from the upper glades flows clear again.");
+        }
+        return out;
+      },
+      see: ["valen_reach", "timbermouth", "ashrun_holt", "barleycross", "bark", "fluralainn"]
     },
 
     {
@@ -248,9 +276,9 @@
         if (s.ahf_ending === "returned_peaceful" || s.ahf_ending === "returned_subdued") {
           var rd = Number(s.ahf_resolved_day) || 0;
           if (rd > 0 && Number(s.campaign_day) >= rd + 4) {
-            out.push("After his bark-roofed smithy was torched, you tracked down Jory and brought him to answer for the arson. With the timber and charcoal debt paid, a fresh peeled-log shed and bark-shingle roof stand over the stone hearth, and Durgan's forge is lit again.");
+            out.push("After his bark-roofed smithy was torched, you tracked down [[jory|Jory]] and brought him to answer for the arson. With the timber and charcoal debt paid, a fresh peeled-log shed and bark-shingle roof stand over the stone hearth, and Durgan's forge is lit again.");
           } else {
-            out.push("After his bark-roofed smithy was torched, you tracked down Jory and brought him to answer for the arson; Durgan is rebuilding the shed off the work track.");
+            out.push("After his bark-roofed smithy was torched, you tracked down [[jory|Jory]] and brought him to answer for the arson; Durgan is rebuilding the shed off the work track.");
           }
         } else if (s.ahf_ending === "bribed") {
           var bd = Number(s.ahf_resolved_day) || 0;
@@ -262,7 +290,86 @@
         }
         return out;
       },
-      see: ["ashrun_holt", "lysa_thorn"]
+      see: ["ashrun_holt", "lysa_thorn", "jory"]
+    },
+
+    {
+      id: "jory", category: "people", title: "Jory",
+      sub: "Woodcutter and charcoal hand in Ashrun Holt",
+      role: "Resident, cabin by the charcoal track (Ashrun Holt)",
+      link: ["Jory"],
+      tags: ["Ashrun Holt"], aliases: ["Jory", "arsonist", "burnt smithy", "charcoal track"],
+      unlock: function (s) { return Number(s.ahf_stage) >= 4; },
+      body: function (s) {
+        var out = [
+          "A lean, nervous human woodcutter and charcoal hand in his late twenties with dark brown hair, a pale narrow face, and wary hazel-grey eyes, living in a low log cabin downwind of [[ashrun_holt|Ashrun Holt]]'s charcoal track. Resentful that Timbermouth's haulers brought [[durgan|Durgan]] up to take ironwork his uncle once mended for half the price, he drunkenly threw a resin-soaked pine knot onto the smithy's bark roof and had his left forearm raked by a lacedon under the Ashrun bridge while fleeing."
+        ];
+        if (s.ahf_ending === "returned_peaceful") {
+          out.push("Persuaded to face the village rather than hide, he walked to the ruined smithy and agreed before [[lysa_thorn|Lysa Thorn]] to haul peeled logs and burn charcoal until the new shed and bellows were paid off.");
+        } else if (s.ahf_ending === "returned_subdued") {
+          out.push("Subdued in his cabin and marched to the ruined smithy, he was set by [[durgan|Durgan]] and [[lysa_thorn|Lysa Thorn]] to haul timber and burn charcoal until every burned shingle was replaced.");
+        } else if (s.ahf_ending === "bribed") {
+          out.push("You accepted twenty-five copper bits from his tin box and left him bandaging his arm in his cabin while telling [[durgan|Durgan]] a drifter set the fire.");
+        }
+        return out;
+      },
+      see: ["ashrun_holt", "durgan", "lysa_thorn"]
+    },
+
+    {
+      id: "bark", category: "lore", title: "Bark",
+      sub: "The ancient speaking oak at the heart of the Longshade",
+      link: ["Bark"],
+      tags: ["Longshade", "Folklore"], aliases: ["Bark", "old oak", "speaking tree", "Bark's Glade", "Heartwood Fruit"],
+      unlock: "lsf_bark_met",
+      body: function (s) {
+        var out = [
+          "An enormous ancient oak standing in a hushed glade deep within the [[longshade|Longshade]], with massive roots rising from the earth like buried beasts and knots at eye level gathered into a weathered face beneath two pale yellow eyes. His voice reaches listeners first as a vibration through the ground before rustling down dry and slow from the upper boughs."
+        ];
+        if (truthy(s.lsf_bark_asked_what)) {
+          out.push("He says the Longshade grew around him and that the surrounding trees pass memories of stormwater, running beasts, and turning seasons through their roots.");
+        }
+        if (truthy(s.lsf_bark_accepted) && !truthy(s.lsf_corruption_cleared) && !truthy(s.lsf_bark_failed)) {
+          out.push("You gave your word to search the northwest stream and end whatever was poisoning the forest's water.");
+        }
+        if (truthy(s.lsf_bark_reward)) {
+          out.push("After you cleared the foul source on the northwest stream, he dropped five pale Heartwood Fruits from his boughs and promised five more with each turning season.");
+        } else if (truthy(s.lsf_bark_failed)) {
+          out.push("After you turned away from the burning grove, the forest trail north of the old crossing closed behind you.");
+        }
+        return out;
+      },
+      see: ["longshade", "fluralainn"]
+    },
+
+    {
+      id: "fluralainn", category: "people", title: "Flùràlainn",
+      sub: "Dryad of the Deep Longshade grove",
+      role: "Dryad, Flùràlainn's Grove (Deep Longshade)",
+      link: ["Flùràlainn"],
+      tags: ["Longshade"], aliases: ["Flùràlainn", "Fluralainn", "dryad", "burning grove", "oak grove"],
+      unlock: function (s) {
+        return s.lsf_tree_state === "saved_by_player" || s.lsf_tree_state === "saved_by_dryad" ||
+          truthy(s.dryad_early_seen) || truthy(s.dryad_first_met);
+      },
+      meter: function (s) {
+        return truthy(s.dryad_bond_seeded) ? { stat: "dryad_bond", label: "Bond with Flùràlainn" } : null;
+      },
+      body: function (s) {
+        var out = [
+          "The dryad bound to the great central oak of a secluded ring deep in the [[longshade|Longshade]], a grove she says was hers before the oldest surrounding trees were seeds. Her skin is grey-brown and finely textured like smooth bark, warming with a light flush of green along her cheeks, and long ropes of deep forest-green hair frame clear, expressive eyes."
+        ];
+        if (s.lsf_tree_state === "saved_by_player") {
+          out.push("When you first reached her clearing, her oak was burning from root to crown while poisoned Briarvine and Thornbranch sprite swarms shrieked and clashed overhead; you helped put out the fire before the tree was lost.");
+        } else if (s.lsf_tree_state === "saved_by_dryad") {
+          out.push("When you first reached her clearing, her oak was burning from root to crown while poisoned sprite swarms clashed overhead; spent to the edge of her strength, she extinguished the flames with her own bare hands.");
+        }
+        if (truthy(s.dryad_first_met)) {
+          out.push("Once the season turned after the poisoner's death, copper-bright buds broke through the blackened bark and she welcomed you back to sit among the roots beside the clear stream.");
+        }
+        return out;
+      },
+      see: ["longshade", "bark"]
     },
 
     {
