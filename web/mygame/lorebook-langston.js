@@ -409,9 +409,11 @@
       body: function (s) {
         var out = [
           "The village head of [[barolo|Barolo]], a tall, lean human in his mid-fifties with a stooped posture earned through decades hunched over parchment rolls and ledgers. Thin iron-grey hair recedes at his temples above pale, parchment-toned skin creased with squint lines, a narrow aquiline nose, and an ever-present ink smudge along his right temple. Mild, observant slate-blue eyes peer through silver-rimmed spectacles as he works unhurriedly with split goose quill and drying blotter.",
-          "Clad in a dark plum woollen tunic with ink-soaked cuffs over an unbleached linen shirt and a worn leather vest fitted with quill slots, he sits at a window table in the Village Head's Hall, writing down what he hears as he listens because he forgets what has not been recorded.",
-          "He was once the clerk to the old village head. When his predecessor died at the table mid-sentence, Hobart was the only one who could read the hand; Mayor [[anathram|Anathram]] confirmed his appointment under the Countess's seal that spring. He is known as slow, fair, and careful with every boundary and contract."
+          "Clad in a dark plum woollen tunic with ink-soaked cuffs over an unbleached linen shirt and a worn leather vest fitted with quill slots, he sits at a window table in the Village Head's Hall, writing down what he hears as he listens because he forgets what has not been recorded. He is known as slow, fair, and careful with every boundary and contract."
         ];
+        if (truthy(s.ba_hl_asked_post)) {
+          out.push("He was once the clerk to the old village head. When his predecessor died at the table mid-sentence, Hobart was the only one who could read the hand; Mayor [[anathram|Anathram]] confirmed his appointment under the Countess's seal that spring.");
+        }
         if (truthy(s.ba_hl_asked_growers)) {
           out.push("Most of his days are spent settling path disputes and press schedules for the seventy-odd small growers who bring their grapes to the common press.");
         }
@@ -432,11 +434,16 @@
       body: function (s) {
         var out = [
           "The lively, round-faced halfling innkeeper of the [[barolo|Red Stave]], in her early forties with a plump, energetic build. Her sun-warmed, rosy complexion is punctuated by dimpled cheeks and a quick, perceptive smile, while warm hazel eyes sparkle with sharp hospitality. A thick coronet braid of rich auburn hair bears a striking silver-grey streak across the crown.",
-          "Dressed in a fitted wine-red woollen bodice over an embroidered gold-and-cream blouse and heavy canvas apron, her stout forearms are stained deep purple to the elbow from countless autumn pressings. She stands briskly on a wooden step behind the counter so she can oversee the taproom, a heavy iron ring of cellar keys clinking at her hip as she dries tall wine flutes.",
-          "She came up the river road as a cook with her mother's recipes and bought the inn on terms from its previous owner, paying off every coin. She pours for all three manor houses and prides herself on keeping their rivalries outside her doors."
+          "Dressed in a fitted wine-red woollen bodice over an embroidered gold-and-cream blouse and heavy canvas apron, her stout forearms are stained deep purple to the elbow from countless autumn pressings. She stands briskly on a wooden step behind the counter so she can oversee the taproom, a heavy iron ring of cellar keys clinking at her hip as she dries tall wine flutes."
         ];
         if (truthy(s.ba_rs_talk_opened)) {
           out.push("She keeps a sharp eye on the hall, knowing the people who grow the wine, the ones who haul it, and the ones who drink it.");
+        }
+        if (truthy(s.ba_rs_asked_houses)) {
+          out.push("She pours for all three manor houses and prides herself on keeping their rivalries outside her doors.");
+        }
+        if (truthy(s.ba_rs_asked_self)) {
+          out.push("She came up the river road as a cook with her mother's recipes and bought the inn on terms from its previous owner, paying off every coin.");
         }
         return out;
       },
@@ -452,9 +459,11 @@
       body: function (s) {
         var out = [
           "The village head of [[broadmead|Broadmead]], a sturdy dwarf woman in her mid-sixties with the solid, immovable frame of a veteran drover. Her weather-beaten, ruddy bronze face features a resolute, square jaw and blunt nose, complemented by piercing dark brown eyes that can identify a counterfeit brand at thirty paces. Heavy iron-grey braids are wound securely atop her head and fastened with scarlet wool cord.",
-          "She wears a dun woollen vest over a coarse grey homespun shirt with sleeves rolled past thick, muscled forearms, alongside sturdy sheepskin breeches and scarred leather gaiters. Working at the plank counter in the Village Head's Hall with a massive grey drover hound sleeping across the threshold, she settles disputes with blunt, numbered points counted off on thick calloused fingers.",
-          "She walked cattle and sheep for the yard's buyers for thirty years, between Dunmow and the river, and knows every brand in the Vale. When the previous head retired, every man in the village pointed at her because a head who cannot read a brand can be lied to. She accepted the post under [[house_gault|House Gault]]'s charter to give her worn knees a rest, though she calls a desk the worse trade."
+          "She wears a dun woollen vest over a coarse grey homespun shirt with sleeves rolled past thick, muscled forearms, alongside sturdy sheepskin breeches and scarred leather gaiters. Working at the plank counter in the Village Head's Hall with a massive grey drover hound sleeping across the threshold, she settles disputes with blunt, numbered points counted off on thick calloused fingers."
         ];
+        if (truthy(s.bm_hl_asked_post)) {
+          out.push("She walked cattle and sheep for the yard's buyers for thirty years, between Dunmow and the river, and knows every brand in the Vale. When the previous head retired, every man in the village pointed at her because a head who cannot read a brand can be lied to. She accepted the post under [[house_gault|House Gault]]'s charter to give her worn knees a rest, though she calls a desk the worse trade.");
+        }
         if (truthy(s.bm_hl_asked_holders)) {
           out.push("She keeps count of the eight or nine families who raise the Countess's mares, noting they are skilled and careful under the yard's eye, though tired of folk treating the horses as gifts.");
         }
@@ -481,11 +490,13 @@
       body: function (s) {
         var out = [
           "The hulking half-orc innkeeper of the [[broadmead|Crooked Halter]], in his late forties with a massive, barrel-chested build. His mottled grey-green skin is leathery from decades in the high wind, framed by a broad, flat nose, weathered lower tusks chipped from trail grit, and deep-set, calm amber eyes that weigh how newcomers treat beasts before checking their coin.",
-          "Grizzled charcoal-and-grey hair hangs in a thick, plaited braid over his left shoulder. He wears a scuffed brown leather jerkin over a rough dark wool shirt, his powerful forearms marked with pale rope-burn scars. A damaged left hip from an old horse kick leaves his leg stretched out stiffly beside his stool, allowing him to wipe heavy pewter mugs and slide ale across the stall-partition bar without having to rise.",
-          "He spent twenty-two years on the road as a drover, driving wool to Langston and cattle to the river, until a mare put her hoof through his hip outside Dunmow. Unable to walk the roads, he bought the Halter with his savings and his second-best horse when the previous owner wanted to sit down. He judges people by how they handle dogs and horses."
+          "Grizzled charcoal-and-grey hair hangs in a thick, plaited braid over his left shoulder. He wears a scuffed brown leather jerkin over a rough dark wool shirt, his powerful forearms marked with pale rope-burn scars. An old crushed left hip leaves his leg stretched out stiffly beside his stool, allowing him to wipe heavy pewter mugs and slide ale across the stall-partition bar without having to rise."
         ];
         if (truthy(s.bm_ch_talk_opened)) {
-          out.push("He describes the villagers as decent folk who do not always agree, and keeps out of their disputes himself.");
+          out.push("He describes the villagers as decent folk who do not always agree, keeps out of their disputes himself, and says he judges people by how they handle a dog.");
+        }
+        if (truthy(s.bm_ch_asked_self)) {
+          out.push("He spent twenty-two years on the road as a drover, driving wool to Langston and cattle to the river, until a mare put her hoof through his hip outside Dunmow. Unable to walk the roads, he bought the Halter with his savings and his second-best horse when the previous owner wanted to sit down.");
         }
         if (truthy(s.bm_ch_asked_sergeant)) {
           out.push("He pointed you toward Sergeant [[dagny_marren|Dagny Marren]] at the Remount Yard, saying she is fair like a good farrier is fair, and trusts her because she speaks to the horse before looking at the rider.");
@@ -507,7 +518,7 @@
           "Dressed in a navy-blue cavalry tunic bearing the golden horse crest of House Gault beneath a buff leather riding brigandine, tall polished riding boots with dulled brass spurs, and rein-calloused palms, she walks with an easy equestrian stride touched by a slight stiffness in her right knee. She speaks to horses with quiet authority before speaking to people, and counts every foal raised for the yard herself.",
           "The yard's gate remains barred to strangers without business or a writ from [[langston|Langston Hall]]."
         ];
-        if (truthy(s.bm_ry_met)) {
+        if (truthy(s.bm_ry_asked_self)) {
           out.push("She rode for Countess Gault for eleven years until a horse fell under her on the ice at Coombe Gap, injuring her knee. When the mayor in Langston needed someone who would sort horses by what they are rather than what they are worth, she was given the yard. She admits she misses riding every morning until she puts a saddle on a young horse.");
         }
         if (truthy(s.bm_ry_open)) {
@@ -591,9 +602,14 @@
       body: function (s) {
         var out = [
           "The village head and sole clerk of [[fallowmere|Fallowmere]], a lean, gangly human in his late thirties with a restless, slightly stooped frame. His narrow, earnest face is heavily freckled and sunburnt from long days walking field strips, framed by unruly curls of sandy-brown hair that spill over his ears. Wide, anxious hazel eyes blink rapidly when startled, accompanied by an apologetic, earnest expression.",
-          "He wears a faded russet work coat with ink-stained cuffs over a homespun linen shirt, mud-spattered boots, and a knotted surveyor's cord constantly wound around his nervous fingers. Tucking brass measuring ells and parchment boundary rolls beneath his arm, he speaks in rapid, looping sentences that frequently double back on themselves.",
-          "He studied surveying in Langston with dreams of drawing grand maps of high ridges and rivers. When his booming father died, the elders found every field roll in Aubrey's hand and asked him to see out the autumn rent; he never left. He keeps the rolls, measures boundary lines with his cord, oversees ditch and road duties, and reports to [[langston|Langston Hall]] under [[house_gault|House Gault]]'s seal."
+          "He wears a faded russet work coat with ink-stained cuffs over a homespun linen shirt, mud-spattered boots, and a knotted surveyor's cord constantly wound around his nervous fingers. Tucking brass measuring ells and parchment boundary rolls beneath his arm, he speaks in rapid, looping sentences that frequently double back on themselves."
         ];
+        if (truthy(s.fm_hl_asked_post)) {
+          out.push("He studied surveying in Langston with dreams of drawing grand maps of high ridges and rivers. When his booming father died, the elders found every field roll in Aubrey's hand and asked him to see out the autumn rent; he never left.");
+        }
+        if (truthy(s.fm_hl_asked_duties)) {
+          out.push("He keeps the rolls, measures boundary lines with his cord, oversees ditch and road duties, and reports to [[langston|Langston Hall]] under [[house_gault|House Gault]]'s seal.");
+        }
         if (truthy(s.fm_hl_asked_village)) {
           out.push("He takes quiet pride in the strips that feed Langston, pointing out that if a strip is out by half an ell, the miller and carter argue and the town goes hungry.");
         }
@@ -614,9 +630,11 @@
       body: function (s) {
         var out = [
           "The dry, unflappable half-elf innkeeper of the [[fallowmere|Grey Gander]], in her early fifties though carrying herself with the graceful endurance of someone ten years younger. She has a slender, tall frame, smooth light olive skin with subtle laugh lines at the corners of her mouth, and delicate, slightly pointed ears. Her deep sable hair is streaked with silver and drawn back into an austere, tidy coil at the nape of her neck.",
-          "Cool, assessing amber-brown eyes take in everyone who enters, sizing them up with quiet precision. Wearing a dark slate-grey wool gown under a crisp linen apron, her lean forearms bear faint pale scars from decades tending boiling cauldrons and turning spit-roasts. She wipes pewter tankards in rhythmic, deliberate circles and addresses customers levelly by their trade before learning their names.",
-          "She grew up at the inn as a potgirl after her father, a local reaper, died of a winter illness. The old landlord raised her, kept the taps for another decade, and left her the inn, the cask, and no debts. Her mother was an elven wagon-singer whom Ione brushes off simply as 'passing trade.' She feeds the harvest crews and keeps a peaceful, orderly house."
+          "Cool, assessing amber-brown eyes take in everyone who enters, sizing them up with quiet precision. Wearing a dark slate-grey wool gown under a crisp linen apron, her lean forearms bear faint pale scars from decades tending boiling cauldrons and turning spit-roasts. She wipes pewter tankards in rhythmic, deliberate circles and addresses customers levelly by their trade before learning their names. She feeds the harvest crews and keeps a peaceful, orderly house."
         ];
+        if (truthy(s.fm_gg_asked_self)) {
+          out.push("She grew up at the inn as a potgirl after her father, a local reaper, died of a winter illness. The old landlord raised her, kept the taps for another decade, and left her the inn, the cask, and no debts. When asked about her mother, she brushes the question off simply as 'passing trade.'");
+        }
         if (truthy(s.fm_gg_asked_dice) || truthy(s.fm_gg_dice_met)) {
           out.push("After dark, she brings down bone dice and a chalked slate from a high shelf for carters and field hands to play small-stakes games by the hearth.");
         }

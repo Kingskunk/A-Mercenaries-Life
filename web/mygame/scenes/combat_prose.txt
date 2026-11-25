@@ -528,6 +528,13 @@
 *return
 
 *label pick_weapon_flavor
+*comment A thrown weapon (combat.txt fight_throw_weapon) is neither a shot nor a blow struck in hand: its own lines, against a person or a creature.
+*if (combat_throw_on)
+  *if ((combat_player_keyed) and (combat_player_creature))
+    *gosub flavor_creature_thrown
+  *else
+    *gosub flavor_player_thrown
+  *return
 *comment In every library fight (combat_player_keyed) the lines come from flavor_player_<damage type> against a person or
 *comment flavor_creature_<damage type> against a creature (combat_player_creature), built now, at the moment of the attack,
 *comment so they follow the weapon and name the fighter struck. The rest of this label is the stored pool, for a
@@ -631,6 +638,14 @@
 *comment kill, from the weapon's damage type and naming the fighter through its epithet (PLAYER FINISHING BLOWS and
 *comment PLAYER LINES AGAINST A CREATURE, above): flavor_yield_<type> when the fight is non-lethal (a person beaten into
 *comment surrender or a stupor), flavor_kill_<type> against a person, flavor_creature_kill_<type> against a creature.
+*if (combat_throw_on)
+  *if (combat_is_nonlethal)
+    *gosub flavor_yield_thrown
+  *elseif (combat_player_creature)
+    *gosub flavor_creature_kill_thrown
+  *else
+    *gosub flavor_kill_thrown
+  *return
 *if (combat_is_nonlethal)
   *if (weapon_type = "ranged")
     *gosub flavor_yield_ranged
@@ -4247,11 +4262,122 @@
   *set fdh "You loose at the neck, and the shot takes ${combat_enemy_epithet} clean through, and ${combat_enemy_epithet} thrashes once and drops."
 *return
 
+*comment THROWN WEAPONS (2026-11-25): a Dagger, Handaxe or Spear thrown (combat.txt fight_throw_weapon). The throw, not the weapon, is the subject, and the weapon is only ever "your ${weapon}".
+*label flavor_player_thrown
+*comment A thrown weapon at a person.
+*temp fpt_v 1
+*rand fpt_v 1 6
+*if (fpt_v = 1)
+  *set fwh "You whip your ${weapon} overhand, and the throw takes ${combat_enemy_epithet} high in the shoulder and knocks them back a step."
+  *set fwm "You whip your ${weapon} overhand, and ${combat_enemy_epithet} jerks aside as the throw spins past."
+*if (fpt_v = 2)
+  *set fwh "You snap your ${weapon} across the gap, and the throw catches ${combat_enemy_epithet} in the ribs and drives a grunt out of them."
+  *set fwm "You snap your ${weapon} across the gap, but the throw goes low and skids away past ${combat_enemy_epithet}'s feet."
+*if (fpt_v = 3)
+  *set fwh "You throw on the turn, and the throw slams into ${combat_enemy_epithet}'s thigh, and the next step comes out as a stagger."
+  *set fwm "You throw on the turn, and ${combat_enemy_epithet} ducks, and the throw sails over their head."
+*if (fpt_v = 4)
+  *set fwh "You let your ${weapon} fly as ${combat_enemy_epithet} raises an arm, and the throw rips across the forearm and sends the arm wide."
+  *set fwm "You let your ${weapon} fly a heartbeat early, and the throw turns in the air and falls short of ${combat_enemy_epithet}."
+*if (fpt_v = 5)
+  *set fwh "You put your weight behind the throw, and it hits ${combat_enemy_epithet} square in the chest and stops them where they stand."
+  *set fwm "You put your weight behind the throw, and ${combat_enemy_epithet} twists aside, and it passes close enough to tug at a sleeve."
+*if (fpt_v = 6)
+  *set fwh "You flick your ${weapon} low and hard, and the throw clips ${combat_enemy_epithet}'s knee, and they lurch sideways with a hiss."
+  *set fwm "You flick your ${weapon} low and hard, but ${combat_enemy_epithet} steps over the throw and keeps coming."
+*return
+
+*label flavor_creature_thrown
+*comment A thrown weapon at a creature.
+*temp fct_v 1
+*rand fct_v 1 6
+*if (fct_v = 1)
+  *set fwh "You whip your ${weapon} overhand, and the throw takes ${combat_enemy_epithet} in the shoulder and knocks them sideways."
+  *set fwm "You whip your ${weapon} overhand, and ${combat_enemy_epithet} lurches aside as the throw spins past."
+*if (fct_v = 2)
+  *set fwh "You snap your ${weapon} across the gap, and the throw thuds into ${combat_enemy_epithet}'s flank, and they recoil."
+  *set fwm "You snap your ${weapon} across the gap, but the throw goes low and skids away under ${combat_enemy_epithet}."
+*if (fct_v = 3)
+  *set fwh "You throw as ${combat_enemy_epithet} turns, and the throw bites into the ribs, and they flinch back."
+  *set fwm "You throw as ${combat_enemy_epithet} turns, and they drop low, and the throw sails over."
+*if (fct_v = 4)
+  *set fwh "You let your ${weapon} fly at the reaching limb, and the throw cracks against it and spoils the reach."
+  *set fwm "You let your ${weapon} fly a heartbeat early, and the throw falls short of ${combat_enemy_epithet}."
+*if (fct_v = 5)
+  *set fwh "You put your weight behind the throw, and it lands square in ${combat_enemy_epithet}'s chest and stops the rush for a heartbeat."
+  *set fwm "You put your weight behind the throw, and ${combat_enemy_epithet} veers off, and the throw goes wide."
+*if (fct_v = 6)
+  *set fwh "You flick your ${weapon} low, and the throw clips ${combat_enemy_epithet}'s legs, and they stumble."
+  *set fwm "You flick your ${weapon} low, but ${combat_enemy_epithet} clears the throw in a single step."
+*return
+
+*label flavor_kill_thrown
+*comment A killing throw at a person.
+*temp fkt_v 1
+*rand fkt_v 1 6
+*if (fkt_v = 1)
+  *set fdh "You whip your ${weapon} overhand, and the throw takes ${combat_enemy_epithet} full in the chest, and they fold and go down."
+*if (fkt_v = 2)
+  *set fdh "The throw catches ${combat_enemy_epithet} at the base of the throat, and they stagger two steps and drop."
+*if (fkt_v = 3)
+  *set fdh "You put everything into the throw, and it strikes ${combat_enemy_epithet} high in the chest with a heavy thud, and the knees give way."
+*if (fkt_v = 4)
+  *set fdh "The throw turns once in the air and takes ${combat_enemy_epithet} under the ribs, and they crumple with a gasp."
+*if (fkt_v = 5)
+  *set fdh "You throw as ${combat_enemy_epithet} closes, and the throw meets them mid-stride, and the charge ends on the ground."
+*if (fkt_v = 6)
+  *set fdh "You snap the throw at ${combat_enemy_epithet}'s head, and it lands with a crack, and they drop where they stand."
+*return
+
+*label flavor_creature_kill_thrown
+*comment A killing throw at a creature.
+*temp fckt_v 1
+*rand fckt_v 1 6
+*if (fckt_v = 1)
+  *set fdh "You whip your ${weapon} overhand, and the throw takes ${combat_enemy_epithet} full in the chest, and they fold and go down."
+*if (fckt_v = 2)
+  *set fdh "The throw catches ${combat_enemy_epithet} at the neck, and they stagger two steps and drop."
+*if (fckt_v = 3)
+  *set fdh "You put everything into the throw, and it strikes ${combat_enemy_epithet} deep behind the shoulder, and the legs give way."
+*if (fckt_v = 4)
+  *set fdh "The throw turns once in the air and takes ${combat_enemy_epithet} in the side, and they collapse and lie still."
+*if (fckt_v = 5)
+  *set fdh "You throw as ${combat_enemy_epithet} closes, and the throw meets them mid-rush, and the charge ends on the ground."
+*if (fckt_v = 6)
+  *set fdh "You snap the throw at ${combat_enemy_epithet}'s head, and it lands with a crack, and they drop where they stand."
+*return
+
+*label flavor_yield_thrown
+*comment A thrown weapon, non-lethal: the legs, the weapon hand, the shoulder.
+*temp fyt_v 1
+*rand fyt_v 1 5
+*if (fyt_v = 1)
+  *set fdh "You throw low, and the throw takes ${combat_enemy_epithet} behind the knee, and they go down and stay down, hands up."
+*if (fyt_v = 2)
+  *set fdh "The throw cracks across ${combat_enemy_epithet}'s weapon hand, and the weapon falls, and they back away with both hands open."
+*if (fyt_v = 3)
+  *set fdh "You throw for the legs, and the throw knocks ${combat_enemy_epithet}'s feet from under them, and they stay on the ground and call out that they're done."
+*if (fyt_v = 4)
+  *set fdh "The throw catches ${combat_enemy_epithet} on the shoulder and spins them half around, and they drop to the knees and wave you off."
+*if (fyt_v = 5)
+  *set fdh "You throw hard at the weapon arm, and the blow numbs it to the fingers, and ${combat_enemy_epithet} lets the weapon fall and gives up the fight."
+*return
+
 *comment BLOCKED BLOWS (2026-10-31, the user: tell the player what is happening, in the prose). A weapon blow that lands and does no damage because the target is immune to it: sets combat_flavor_weapon_blocked, picked now, inside the hit's lock, by the weapon's damage type and whether it is shot or swung.
 *comment Written to be read as the fighter's own sense of the blow, the metal and the hide, never as a rule.
 *label pick_weapon_blocked_flavor
 *temp pwb_v 1
 *rand pwb_v 1 4
+*if (combat_throw_on)
+  *if (pwb_v = 1)
+    *set combat_flavor_weapon_blocked "The throw strikes ${combat_enemy_epithet} squarely and drops away, spent, as if it had hit a wall of stone."
+  *if (pwb_v = 2)
+    *set combat_flavor_weapon_blocked "The throw lands and glances off the hide with a bright ring, and tumbles to the ground."
+  *if (pwb_v = 3)
+    *set combat_flavor_weapon_blocked "The throw sinks in, and the flesh pushes it out again; it falls whole and clean at ${combat_enemy_epithet}'s feet."
+  *if (pwb_v = 4)
+    *set combat_flavor_weapon_blocked "The throw hits and rebounds as if it had struck an anvil, and the hide is unmarked."
+  *return
 *if (weapon_type = "ranged")
   *if (pwb_v = 1)
     *set combat_flavor_weapon_blocked "The shot strikes ${combat_enemy_epithet} squarely and drops away, spent, as if it had hit a wall of stone."

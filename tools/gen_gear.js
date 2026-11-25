@@ -157,6 +157,8 @@ function genCreates() {
   items.forEach(function (it) { if (stackable(it)) L.push("*create spare_" + it.id + " 0"); });
   // A weapon whose magic fades (loadout.fadesDays): the last campaign day its magic holds, set by whatever hands the weapon over (0 = never granted, so already faded).
   items.forEach(function (it) { if (it.kind === "weapon" && it.loadout && it.loadout.fadesDays) L.push("*create magic_until_" + it.id + " 0"); });
+  // Copies of each Thrown weapon thrown in the current fight, given back on a win (combat.txt fight_thrown_return).
+  thrownWeapons().forEach(function (w) { L.push("*create combat_thrown_" + w.id + " 0"); });
   // What the character has learned to cook (the Craft view's Recipes list reads recipe_<id>; the first success sets it): one flag per cooking recipe, so a new dish needs no startup edit.
   ((CRAFT.CRAFT_RECIPES || {}).cooking || []).forEach(function (r) { L.push("*create recipe_" + r.id + " false"); });
   // SPELL SOURCES (2026-10-20): dungeon.txt dg_spell_source reads has_scroll_<spell id> for ANY spell it is asked about, so the flag exists for every spell of level 1 and up even before its scroll does (the scroll items above create their own).
@@ -628,6 +630,83 @@ function genArrowOptions() {
   });
   return L;
 }
+// THROWN WEAPONS (2026-11-25, the user): a catalog weapon whose loadout says thrown: true, and the two class-kit weapons that are Thrown in the PHB (the kit Spear and Dagger, written by hand in equipment.txt). The kit
+// pieces carry no has_ flag, so they are thrown only from a hand that holds them and nothing is given back to the pack for them on a win (the hands are put back instead). One option each on the fight's main menu,
+// "Throw: <title> (<copies carried>)", which the battle bar folds into the Throw button beside the grease and the fire. The attack is combat.txt fight_throw_weapon; the copies thrown come back on a win (fight_thrown_return).
+var KIT_THROWN = [{ id: "ash_spear", title: "Spear", dmg: "1d8 Piercing" }, { id: "matched_dagger", title: "Dagger", dmg: "1d4 Piercing" }];
+function titleCase(s) { return String(s).replace(/\b[a-z]/g, function (c) { return c.toUpperCase(); }); }
+function thrownWeapons() {
+  return items.filter(function (it) { return it.kind === "weapon" && it.loadout && it.loadout.thrown; })
+    .map(function (it) { return { id: it.id, title: it.title || it.name, dmg: titleCase(it.loadout.damage), catalog: true }; })
+    .concat(KIT_THROWN.map(function (k) { return { id: k.id, title: k.title, dmg: k.dmg, catalog: false }; }));
+}
+function inHand(id) { return '(equipped_weapon_id = ' + q(id) + ') or (equipped_sidearm_id = ' + q(id) + ')'; }
+// The copies carried, for the option's label: a catalog weapon's has_ and spare_ (the one in hand is one of them), a kit piece's hands.
+function genThrowWeaponCounts() {
+  var L = [];
+  thrownWeapons().forEach(function (w) {
+    L.push('*temp ctw_n_' + w.id + ' 0');
+    if (w.catalog) {
+      L.push('*if (has_' + w.id + ')');
+      L.push('  *set ctw_n_' + w.id + ' (1 + spare_' + w.id + ')');
+    } else {
+      L.push('*if (equipped_weapon_id = ' + q(w.id) + ')');
+      L.push('  *set ctw_n_' + w.id + ' + 1');
+      L.push('*if (equipped_sidearm_id = ' + q(w.id) + ')');
+      L.push('  *set ctw_n_' + w.id + ' + 1');
+    }
+  });
+  return L;
+}
+function genThrowWeaponOptions() {
+  var L = [];
+  thrownWeapons().forEach(function (w) {
+    L.push('*if (' + (w.catalog ? 'has_' + w.id : '(' + inHand(w.id) + ')') + ')');
+    L.push('  *if ((combat_can_attack) and (combat_in_throw))');
+    L.push('    # [b][ACTION][/b] [b][Throw: ' + w.title + ' (${ctw_n_' + w.id + '})][/b] Hurl it at ${combat_wthrow_epithet}.@{show_stat_hints  [Thrown: ' + w.dmg + ']|}');
+    L.push('      *set combat_throw_id ' + q(w.id));
+    L.push('      *goto fight_throw_weapon');
+  });
+  return L;
+}
+// Inside fight_throw_weapon's lock. Each weapon is named outright rather than through {("has_" & id)}: the quicktest walks every branch with whatever id is set, and a kit piece has no has_ flag.
+function genThrowCarried() {
+  var L = [];
+  thrownWeapons().forEach(function (w) {
+    if (!w.catalog) return;
+    L.push('*if (combat_throw_id = ' + q(w.id) + ')');
+    L.push('  *set combat_throw_catalog true');
+    L.push('  *if (has_' + w.id + ')');
+    L.push('    *set ftw_carried (1 + spare_' + w.id + ')');
+  });
+  return L;
+}
+function genThrowSpend() {
+  var L = [];
+  thrownWeapons().forEach(function (w) {
+    L.push('*if (combat_throw_id = ' + q(w.id) + ')');
+    if (w.catalog) L.push('  *gosub_scene equipment sell_gear ' + q(w.id));
+    L.push('  *set combat_thrown_' + w.id + ' + 1');
+  });
+  return L;
+}
+function genThrownReturn() {
+  var L = [];
+  thrownWeapons().forEach(function (w) {
+    var v = 'combat_thrown_' + w.id;
+    L.push('*if (' + v + ' > 0)');
+    if (w.catalog) L.push('  *gosub_scene equipment grant_gear ' + q(w.id) + ' ' + v);
+    L.push('  *set combat_thrown_note ((combat_thrown_note & ftr_sep) & ' + q(w.title) + ')');
+    L.push('  *if (' + v + ' > 1)');
+    L.push('    *set combat_thrown_note ((combat_thrown_note & " ×") & ' + v + ')');
+    L.push('  *set ftr_sep ", "');
+    L.push('  *set ' + v + ' 0');
+  });
+  return L;
+}
+function genThrownReset() {
+  return thrownWeapons().map(function (w) { return '*set combat_thrown_' + w.id + ' 0'; });
+}
 // True while a boon of this item's name is already running in one of the three unique-buff slots (a boon item only).
 function boonRunning(it) {
   var terms = [1, 2, 3].map(function (n) { return "(unique_buff" + n + "_active) and (unique_buff" + n + "_name = " + q(it.effect.name) + ")"; });
@@ -811,6 +890,12 @@ setRegion(F.calendar, "food_note_list", genFoodPickList(false));
 setRegion(F.overworldmap, "food_items", genFoodItemsJs());
 setRegion(F.combat, "combat_throw_options", genThrowOptions());
 setRegion(F.combat, "combat_arrow_options", genArrowOptions());
+setRegion(F.combat, "combat_throw_weapon_counts", genThrowWeaponCounts());
+setRegion(F.combat, "combat_throw_weapon_options", genThrowWeaponOptions());
+setRegion(F.combat, "combat_throw_carried", genThrowCarried());
+setRegion(F.combat, "combat_throw_spend", genThrowSpend());
+setRegion(F.combat, "combat_thrown_return", genThrownReturn());
+setRegion(F.combat, "combat_thrown_reset", genThrownReset());
 setRegion(F.combat, "combat_read_check", genReadCheck());
 setRegion(F.combat, "combat_read_options", genReadOptions());
 setRegion(F.combat, "combat_potion_options", genPotionOptions());

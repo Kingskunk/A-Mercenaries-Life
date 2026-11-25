@@ -297,6 +297,8 @@
     function (s) { return s.sceneName === "Langston/broadmead/bolted_mare" && s.scenery_subplace ? s.scenery_subplace : undefined; }, // Broadmead's stray-mare quest switches between the village hall, Remount Yard, ford, downland trail and pasture fold
     function (s) { return s.sceneName === "horse_dealer" && s.horse_place === "bc" ? "generic_village_pasture" : undefined; }, // Barleycross's working-horse rail stands at the common pasture
     function (s) { return s.sceneName === "horse_dealer" && s.horse_place === "mw" ? "village_stable_yard" : undefined; }, // Port Valen's dealer works from the Middle Ward yard
+    function (s) { return s.sceneName === "horse_dealer" && s.horse_place === "bm" ? "remount_yard" : undefined; }, // Broadmead's Countess's Remount Yard
+    function (s) { return s.sceneName === "horse_dealer" && s.horse_place === "bf" ? "longfold_fair_sun_pillar" : undefined; }, // Broadmead's Longfold Fair horse line
     function (s) { return s.sceneName === "Langston/tomlin_shop" ? "tomlin_herbalist_workroom" : undefined; }, // Tomlin's workroom keeps its own picture while the trade panel is open (it has a bespoke interior, so the generic open-counter picture below must not take over)
     function (s) { return counterShop(s) && s.shop_open !== "trapper" && s.shop_open !== "halda" ? "generic_trade_shop_open" : undefined; }, // unobstructed shop counters; Halda has a scoped forge rule above and the forest trapper stays outdoors
     function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_inn_room" ? "generic_town_inn_room" : undefined; }, // Wagoner's Rest guest room and Kess's rented chamber

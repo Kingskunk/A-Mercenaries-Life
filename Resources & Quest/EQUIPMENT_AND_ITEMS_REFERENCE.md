@@ -52,7 +52,7 @@ Primary weapons and secondary sidearms can be equipped in the main-hand or store
 | `warhammer` | **Warhammer** (martial) | One-Handed Melee | `1d8 bludgeoning` | Master Torvald's Smithy — **3s 5c**; smiths 50%, pawnbroker 35% | STR-based. |
 | `greataxe` | **Greataxe** (martial) | Two-Handed Melee | `1d12 slashing` | Master Torvald's Smithy — **5s 0c**; smiths 50%, pawnbroker 35% | Two-handed (Great Weapon Fighting applies). |
 | `mace` | **Mace** | One-Handed Melee | `1d6 bludgeoning` | Master Torvald's Smithy — **2s 5c**; smiths 50%, pawnbroker 35% | Simple weapon. |
-| `handaxe` | **Handaxe** | One-Handed Melee | `1d6 slashing` | Marlow's General Goods (Timbermouth) — **1s 5c**; smiths and general stores 50%, pawnbroker 35% | Simple weapon. Not thrown yet (no Thrown property). |
+| `handaxe` | **Handaxe** | One-Handed Melee | `1d6 slashing` | Marlow's General Goods (Timbermouth) — **1s 5c**; smiths and general stores 50%, pawnbroker 35% | Simple weapon. Thrown (from the fight's Throw button, 2026-11-25). |
 | `longbow` | **Longbow** (martial) | Two-Handed Ranged | `1d8 piercing` | Roan's Wheel Shop (Timbermouth) — **6s 0c**; Edda buys at 50%, pawnbroker 35% | Ranged, long reach; takes fire and ice arrows. |
 | `greatsword` | **Greatsword** (martial) | Two-Handed Melee | `2d6 slashing` | Halda's Forge — **15s 0c**; smiths 50%, pawnbroker 35% | Rolls two dice (four on a critical); Great Weapon Fighting rerolls each. |
 | `maul` | **Maul** (martial) | Two-Handed Melee | `2d6 bludgeoning` | Master Torvald's Smithy — **5s 0c**; smiths 50%, pawnbroker 35% | Rolls two dice (four on a critical); Great Weapon Fighting rerolls each. |
@@ -317,7 +317,9 @@ Every weapon is simple unless its catalog loadout says `"martial": true` (the cl
 | Bard | simple; martial too with Valor's Martial Training (level 3) |
 | Warlock, Wizard | simple |
 
-Not built yet: the Light, Heavy, Versatile and Thrown properties.
+Thrown is built (2026-11-25): the Dagger (kit), Stiletto, Flimsy Jeweled Dagger, Handaxe, Spear (kit and catalog) and Rough Spear can be thrown from the fight's Throw button, one copy per throw, out to the medium reach (one band further at STR +3 or more) and one band past it at disadvantage; a win gives every thrown copy back, a flight or a loss does not (`GAMEPLAY_MECHANICS_RULES.md`, Thrown weapons).
+
+Not built yet: the Light, Heavy and Versatile properties.
 
 ---
 

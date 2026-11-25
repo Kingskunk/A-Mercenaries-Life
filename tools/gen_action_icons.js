@@ -61,6 +61,13 @@ const MAP = {
   throw_grease_flask: "Item/Consumable/Grenade/GRN_Grease_Bottle_Unfaded_Icon.png",
   throw_alchemists_fire: "Item/Consumable/Grenade/GRN_Alchemist's_Fire_Unfaded_Icon.png",
   throw_water_jug: "item:water_jug",
+  // Thrown weapons (2026-11-25) wear their own item art: "Throw: Handaxe (3)" is throw_handaxe (battlehud.js drops the count).
+  throw_handaxe: "item:w_axe",
+  throw_dagger: "item:w_dagger",
+  throw_stiletto: "item:w_dagger",
+  throw_flimsy_jeweled_dagger: "item:flimsy_jeweled_dagger",
+  throw_spear: "item:w_spear",
+  throw_rough_spear: "item:w_spear",
   // Unique combat items share one Items button. Each "Items: <name>" choice uses items_<slug of its name> in the fly-out.
   items: "Item/Miscellaneous_item/Container/Backpack_A_Unfaded_Icon.webp",
   items_bramble_heart: "item:bramble_heart",

@@ -660,7 +660,8 @@
   // Anything else (True Strike: Weapon / Radiant) wears the spell's own icon.
   function variantArt(e, v) {
     // Throw: Grease Flask / Alchemist's Fire ... -- each thrown item wears its own art (ACTION_ICONS throw_<item>), the Throw icon when it has none.
-    if (e.id === "throw") return (window.ACTION_ICONS || {})["throw_" + slug(v.label)] || "";
+    // A thrown weapon's label ends with the copies carried ("Throw: Handaxe (3)"): the count is not part of the art's key.
+    if (e.id === "throw") return (window.ACTION_ICONS || {})["throw_" + slug(String(v.label).replace(/\s*\(\d+\)$/, ""))] || "";
     // Shoot: Fire Arrow / Ice Arrow ... -- each special arrow wears its own art (ACTION_ICONS shoot_<item>).
     if (e.id === "shoot") return (window.ACTION_ICONS || {})["shoot_" + slug(v.label)] || "";
     // Items: Bramble Heart / future unique combat items -- one backpack button, each fly-out choice wearing its own art.
@@ -952,7 +953,7 @@
 
   // The Pack's entry for an item named on a button: the names match the Pack's (a leading "The" or "Gnarled" aside), so the card says what the Pack's card says.
   function packItemFor(label) {
-    var items = (window.INVENTORY && window.INVENTORY.items) || [], s = statsNow(), want = normName(label), best = null;
+    var items = (window.INVENTORY && window.INVENTORY.items) || [], s = statsNow(), want = normName(String(label || "").replace(/\s*\(\d+\)$/, "")), best = null;   // "Handaxe (3)": the count is the copies carried
     if (!want) return null;
     for (var i = 0; i < items.length; i++) {
       var n = items[i].name, nm;
