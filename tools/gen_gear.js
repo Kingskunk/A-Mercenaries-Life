@@ -38,12 +38,19 @@ items.forEach(function (it) {
   if (byId[it.id]) throw new Error("duplicate item id: " + it.id);
   byId[it.id] = it;
 });
+// HEAVY (2026-11-25, PHB'24): a Heavy weapon (loadout.heavy) warns a buyer below STR 13 (DEX 13 for a ranged one). Added before the proficiency warning so that one, written later, wins when both apply
+// (a shop row shows one warning). The rule itself is combat.txt combat_apply_weapon_magic_attack.
+items.forEach(function (it) {
+  if (it.kind !== "weapon" || !it.loadout || !it.loadout.heavy) return;
+  var ranged = it.loadout.type === "ranged";
+  it.warn = (it.warn || []).concat([{ when: ranged ? '(dexterity < 13)' : '(strength < 13)', text: "Heavy: disadvantage on attacks with it below " + (ranged ? "DEX" : "STR") + " 13" }]);
+});
 // WEAPON PROFICIENCY (2026-11-24): a martial weapon (loadout.martial) warns a class that is not trained in it, in every shop menu and the trade panel. The
 // condition is the same rule as equipment.txt weapon_prof_check (Fighter, Barbarian, Ranger, Martial Training; a Rogue for a Finesse one); keep the two together.
 items.forEach(function (it) {
   if (it.kind !== "weapon" || !it.loadout || !it.loadout.martial) return;
   var trained = '((((character_class = "fighter") or (character_class = "barbarian")) or ((character_class = "ranger") or (character_class = "none"))) or (feature_martial_training))';
-  if (it.loadout.type === "finesse") trained = '(' + trained + ' or (character_class = "rogue"))';
+  if (it.loadout.type === "finesse" || it.loadout.light) trained = '(' + trained + ' or (character_class = "rogue"))';   // PHB'24: a Rogue's martial weapons are the Finesse and Light ones
   it.warn = (it.warn || []).concat([{ when: '(not' + trained + ')', text: "Not proficient: no proficiency bonus on attacks with it" }]);
 });
 
@@ -353,6 +360,9 @@ function loadoutBlock(kind) {
       L.push('  *set weapon_prose ' + q(o.prose));
       if (o.reach) L.push('  *set weapon_reach ' + q(o.reach));
       if (o.ammo) L.push('  *set weapon_ammo ' + q(o.ammo));
+      if (o.versatile) L.push('  *set weapon_versatile ' + q(o.versatile));
+      if (o.heavy) L.push('  *set weapon_heavy true');
+      if (o.light) L.push('  *set weapon_light true');   // an off-hand attack can follow it (combat.txt fight_offhand_attack)   // disadvantage below STR or DEX 13 (combat.txt combat_apply_weapon_magic_attack)   // the die in two hands (combat_dice.txt weapon_die_sides)
       weaponProps(o).forEach(function (kv) { L.push('  *set weapon_' + kv[0] + ' ' + kv[1]); });
       if (o.fadesDays) { L.push('  *if (campaign_day > magic_until_' + it.id + ')'); L.push('    *set weapon_magic 0'); L.push('    *set weapon_magical false'); }
     } else if (kind === "ring") {
@@ -406,6 +416,7 @@ function genMartialNames() {
   items.filter(function (it) { return it.kind === "weapon" && it.loadout && it.loadout.martial; }).forEach(function (it) {
     L.push('*if (wpc_name = ' + q(it.loadout.weapon) + ')');
     L.push('  *set wpc_martial true');
+    if (it.loadout.light) L.push('  *set wpc_light true');
   });
   return L;
 }
@@ -438,6 +449,9 @@ function genSidearms() {
     L.push('  *set sidearm_hands ' + q(o.hands));
     L.push('  *set sidearm_prose ' + q(o.prose));
     if (o.reach) L.push('  *set sidearm_reach ' + q(o.reach));
+    if (o.versatile) L.push('  *set sidearm_versatile ' + q(o.versatile));
+    if (o.heavy) L.push('  *set sidearm_heavy true');
+    if (o.light) L.push('  *set sidearm_light true');
     weaponProps(o).forEach(function (kv) { L.push('  *set sidearm_' + kv[0] + ' ' + kv[1]); });
     if (o.fadesDays) { L.push('  *if (campaign_day > magic_until_' + it.id + ')'); L.push('    *set sidearm_magic 0'); L.push('    *set sidearm_magical false'); }
   });
@@ -633,7 +647,7 @@ function genArrowOptions() {
 // THROWN WEAPONS (2026-11-25, the user): a catalog weapon whose loadout says thrown: true, and the two class-kit weapons that are Thrown in the PHB (the kit Spear and Dagger, written by hand in equipment.txt). The kit
 // pieces carry no has_ flag, so they are thrown only from a hand that holds them and nothing is given back to the pack for them on a win (the hands are put back instead). One option each on the fight's main menu,
 // "Throw: <title> (<copies carried>)", which the battle bar folds into the Throw button beside the grease and the fire. The attack is combat.txt fight_throw_weapon; the copies thrown come back on a win (fight_thrown_return).
-var KIT_THROWN = [{ id: "ash_spear", title: "Spear", dmg: "1d8 Piercing" }, { id: "matched_dagger", title: "Dagger", dmg: "1d4 Piercing" }];
+var KIT_THROWN = [{ id: "ash_spear", title: "Spear", dmg: "1d6 Piercing" }, { id: "matched_dagger", title: "Dagger", dmg: "1d4 Piercing" }];
 function titleCase(s) { return String(s).replace(/\b[a-z]/g, function (c) { return c.toUpperCase(); }); }
 function thrownWeapons() {
   return items.filter(function (it) { return it.kind === "weapon" && it.loadout && it.loadout.thrown; })

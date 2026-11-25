@@ -38,7 +38,7 @@ The write-ups in `quests/` were moved here word for word from the old version of
 | Word of Aldis Pellam | `overdue_peddler` | `timbermouth/barleycross/overdue_peddler.txt` | A job board, with the Contractor's Insignia | Resolved | None |
 | A Frying Pan, Spick and Span | `greybank_pan` | `overworld/greybank_frying_pan.txt` | A 10% daytime road event on Greybank Rise (`ar2`) | `returned`, `pocketed` | None |
 | Sparks in the Holt | `ashrun_forge` | `timbermouth/ashrun_holt/burnt_smithy.txt` | Durgan's notice on Ashrun Holt's board of cords (requires the Contractor's Insignia; credits `hall_jobs_scales`) | `returned_peaceful`, `returned_subdued`, `bribed` | None |
-| The Mare on the Down | `broadmead_mare` | `Langston/broadmead/bolted_mare.txt` | Remount Yard notice under STRAYS AND BRANDS on Broadmead's Contract Board (requires a House Gault page; credits `hall_jobs_gault`) | `returned` (`settled`, `law`, `paid`, `brawled`), `lost` | `quests/broadmead_mare.md` |
+| The Mare on the Down | `broadmead_mare` | `Langston/broadmead/bolted_mare.txt` | Remount Yard notice under STRAYS AND BRANDS on Broadmead's Contract Board (requires a House Gault page; credits `hall_jobs_gault`) | `returned` (`settled`, `law`, `paid`, `brawled`, `recovered`), `lost` | `quests/broadmead_mare.md` |
 
 ## Hiring Hall jobs and parcels the sidebar lists
 

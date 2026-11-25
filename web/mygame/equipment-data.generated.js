@@ -19,9 +19,21 @@ window.EQUIPMENT_CATALOG = {
         "starting"
       ],
       "fields": {
+        "weapon_light": {
+          "type": "statRef",
+          "value": "starting_weapon_light"
+        },
         "weapon_ammo": {
           "type": "statRef",
           "value": "starting_weapon_ammo"
+        },
+        "weapon_versatile": {
+          "type": "statRef",
+          "value": "starting_weapon_versatile"
+        },
+        "weapon_heavy": {
+          "type": "statRef",
+          "value": "starting_weapon_heavy"
         },
         "weapon": {
           "type": "statRef",
@@ -110,6 +122,10 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "battleaxe"
         },
+        "weapon_versatile": {
+          "type": "literal",
+          "value": "1d10"
+        },
         "weapon_magic": {
           "type": "literal",
           "value": 0
@@ -137,6 +153,14 @@ window.EQUIPMENT_CATALOG = {
         "weapon_ammo": {
           "type": "literal",
           "value": ""
+        },
+        "weapon_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -173,6 +197,10 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "stiletto"
         },
+        "weapon_light": {
+          "type": "literal",
+          "value": true
+        },
         "weapon_magic": {
           "type": "literal",
           "value": 0
@@ -200,6 +228,14 @@ window.EQUIPMENT_CATALOG = {
         "weapon_ammo": {
           "type": "literal",
           "value": ""
+        },
+        "weapon_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "weapon_heavy": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -263,6 +299,18 @@ window.EQUIPMENT_CATALOG = {
         "weapon_ammo": {
           "type": "literal",
           "value": ""
+        },
+        "weapon_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "weapon_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -299,6 +347,10 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "rough spear"
         },
+        "weapon_versatile": {
+          "type": "literal",
+          "value": "1d8"
+        },
         "weapon_magic": {
           "type": "literal",
           "value": 0
@@ -326,6 +378,14 @@ window.EQUIPMENT_CATALOG = {
         "weapon_ammo": {
           "type": "literal",
           "value": ""
+        },
+        "weapon_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -389,6 +449,18 @@ window.EQUIPMENT_CATALOG = {
         "weapon_ammo": {
           "type": "literal",
           "value": ""
+        },
+        "weapon_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "weapon_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -452,6 +524,18 @@ window.EQUIPMENT_CATALOG = {
         "weapon_reach": {
           "type": "literal",
           "value": "long"
+        },
+        "weapon_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "weapon_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -470,7 +554,7 @@ window.EQUIPMENT_CATALOG = {
         },
         "weapon_damage": {
           "type": "literal",
-          "value": "1d8 bludgeoning"
+          "value": "1d6 bludgeoning"
         },
         "weapon_damage_type": {
           "type": "literal",
@@ -487,6 +571,10 @@ window.EQUIPMENT_CATALOG = {
         "weapon_prose": {
           "type": "literal",
           "value": "ash quarterstaff"
+        },
+        "weapon_versatile": {
+          "type": "literal",
+          "value": "1d8"
         },
         "weapon_magic": {
           "type": "literal",
@@ -515,6 +603,14 @@ window.EQUIPMENT_CATALOG = {
         "weapon_ammo": {
           "type": "literal",
           "value": ""
+        },
+        "weapon_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -551,6 +647,10 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "spear"
         },
+        "weapon_versatile": {
+          "type": "literal",
+          "value": "1d8"
+        },
         "weapon_magic": {
           "type": "literal",
           "value": 0
@@ -578,6 +678,14 @@ window.EQUIPMENT_CATALOG = {
         "weapon_ammo": {
           "type": "literal",
           "value": ""
+        },
+        "weapon_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -641,6 +749,18 @@ window.EQUIPMENT_CATALOG = {
         "weapon_reach": {
           "type": "literal",
           "value": "long"
+        },
+        "weapon_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "weapon_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -677,6 +797,10 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "jeweled dagger"
         },
+        "weapon_light": {
+          "type": "literal",
+          "value": true
+        },
         "weapon_flimsy": {
           "type": "literal",
           "value": true
@@ -704,6 +828,14 @@ window.EQUIPMENT_CATALOG = {
         "weapon_ammo": {
           "type": "literal",
           "value": ""
+        },
+        "weapon_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "weapon_heavy": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -767,6 +899,18 @@ window.EQUIPMENT_CATALOG = {
         "weapon_ammo": {
           "type": "literal",
           "value": ""
+        },
+        "weapon_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "weapon_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_light": {
+          "type": "literal",
+          "value": false
         }
       },
       "fade": {
@@ -844,6 +988,18 @@ window.EQUIPMENT_CATALOG = {
         "weapon_ammo": {
           "type": "literal",
           "value": ""
+        },
+        "weapon_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "weapon_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -880,6 +1036,10 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "longsword"
         },
+        "weapon_versatile": {
+          "type": "literal",
+          "value": "1d10"
+        },
         "weapon_magic": {
           "type": "literal",
           "value": 0
@@ -907,6 +1067,14 @@ window.EQUIPMENT_CATALOG = {
         "weapon_ammo": {
           "type": "literal",
           "value": ""
+        },
+        "weapon_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -943,6 +1111,10 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "shortsword"
         },
+        "weapon_light": {
+          "type": "literal",
+          "value": true
+        },
         "weapon_magic": {
           "type": "literal",
           "value": 0
@@ -970,6 +1142,14 @@ window.EQUIPMENT_CATALOG = {
         "weapon_ammo": {
           "type": "literal",
           "value": ""
+        },
+        "weapon_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "weapon_heavy": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -1033,6 +1213,18 @@ window.EQUIPMENT_CATALOG = {
         "weapon_ammo": {
           "type": "literal",
           "value": ""
+        },
+        "weapon_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "weapon_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -1069,6 +1261,10 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "scimitar"
         },
+        "weapon_light": {
+          "type": "literal",
+          "value": true
+        },
         "weapon_magic": {
           "type": "literal",
           "value": 0
@@ -1096,6 +1292,14 @@ window.EQUIPMENT_CATALOG = {
         "weapon_ammo": {
           "type": "literal",
           "value": ""
+        },
+        "weapon_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "weapon_heavy": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -1132,6 +1336,10 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "warhammer"
         },
+        "weapon_versatile": {
+          "type": "literal",
+          "value": "1d10"
+        },
         "weapon_magic": {
           "type": "literal",
           "value": 0
@@ -1159,6 +1367,14 @@ window.EQUIPMENT_CATALOG = {
         "weapon_ammo": {
           "type": "literal",
           "value": ""
+        },
+        "weapon_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -1195,6 +1411,10 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "greataxe"
         },
+        "weapon_heavy": {
+          "type": "literal",
+          "value": true
+        },
         "weapon_magic": {
           "type": "literal",
           "value": 0
@@ -1222,6 +1442,14 @@ window.EQUIPMENT_CATALOG = {
         "weapon_ammo": {
           "type": "literal",
           "value": ""
+        },
+        "weapon_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "weapon_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -1262,6 +1490,10 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "arrow"
         },
+        "weapon_heavy": {
+          "type": "literal",
+          "value": true
+        },
         "weapon_magic": {
           "type": "literal",
           "value": 0
@@ -1285,6 +1517,14 @@ window.EQUIPMENT_CATALOG = {
         "weapon_reach": {
           "type": "literal",
           "value": "long"
+        },
+        "weapon_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "weapon_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -1348,6 +1588,18 @@ window.EQUIPMENT_CATALOG = {
         "weapon_ammo": {
           "type": "literal",
           "value": ""
+        },
+        "weapon_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "weapon_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -1384,6 +1636,10 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "handaxe"
         },
+        "weapon_light": {
+          "type": "literal",
+          "value": true
+        },
         "weapon_magic": {
           "type": "literal",
           "value": 0
@@ -1411,6 +1667,14 @@ window.EQUIPMENT_CATALOG = {
         "weapon_ammo": {
           "type": "literal",
           "value": ""
+        },
+        "weapon_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "weapon_heavy": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -1447,6 +1711,10 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "greatsword"
         },
+        "weapon_heavy": {
+          "type": "literal",
+          "value": true
+        },
         "weapon_magic": {
           "type": "literal",
           "value": 0
@@ -1474,6 +1742,14 @@ window.EQUIPMENT_CATALOG = {
         "weapon_ammo": {
           "type": "literal",
           "value": ""
+        },
+        "weapon_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "weapon_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -1510,6 +1786,10 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "maul"
         },
+        "weapon_heavy": {
+          "type": "literal",
+          "value": true
+        },
         "weapon_magic": {
           "type": "literal",
           "value": 0
@@ -1537,6 +1817,14 @@ window.EQUIPMENT_CATALOG = {
         "weapon_ammo": {
           "type": "literal",
           "value": ""
+        },
+        "weapon_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "weapon_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -1555,7 +1843,11 @@ window.EQUIPMENT_CATALOG = {
         },
         "weapon_damage": {
           "type": "literal",
-          "value": "1d8 piercing"
+          "value": "1d6 piercing"
+        },
+        "weapon_versatile": {
+          "type": "literal",
+          "value": "1d8"
         },
         "weapon_damage_type": {
           "type": "literal",
@@ -1600,6 +1892,14 @@ window.EQUIPMENT_CATALOG = {
         "weapon_ammo": {
           "type": "literal",
           "value": ""
+        },
+        "weapon_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -1608,6 +1908,10 @@ window.EQUIPMENT_CATALOG = {
         "felling_axe"
       ],
       "fields": {
+        "weapon_heavy": {
+          "type": "literal",
+          "value": true
+        },
         "weapon": {
           "type": "literal",
           "value": "broadaxe"
@@ -1663,6 +1967,14 @@ window.EQUIPMENT_CATALOG = {
         "weapon_ammo": {
           "type": "literal",
           "value": ""
+        },
+        "weapon_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "weapon_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -1671,6 +1983,10 @@ window.EQUIPMENT_CATALOG = {
         "matched_dagger"
       ],
       "fields": {
+        "weapon_light": {
+          "type": "literal",
+          "value": true
+        },
         "weapon": {
           "type": "literal",
           "value": "dagger"
@@ -1726,6 +2042,14 @@ window.EQUIPMENT_CATALOG = {
         "weapon_ammo": {
           "type": "literal",
           "value": ""
+        },
+        "weapon_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "weapon_heavy": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -1789,6 +2113,18 @@ window.EQUIPMENT_CATALOG = {
         "weapon_ammo": {
           "type": "literal",
           "value": ""
+        },
+        "weapon_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "weapon_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -1852,6 +2188,18 @@ window.EQUIPMENT_CATALOG = {
         "weapon_ammo": {
           "type": "literal",
           "value": ""
+        },
+        "weapon_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "weapon_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "weapon_light": {
+          "type": "literal",
+          "value": false
         }
       }
     }
@@ -1862,6 +2210,18 @@ window.EQUIPMENT_CATALOG = {
         "starting"
       ],
       "fields": {
+        "sidearm_light": {
+          "type": "statRef",
+          "value": "starting_weapon_light"
+        },
+        "sidearm_versatile": {
+          "type": "statRef",
+          "value": "starting_weapon_versatile"
+        },
+        "sidearm_heavy": {
+          "type": "statRef",
+          "value": "starting_weapon_heavy"
+        },
         "sidearm": {
           "type": "statRef",
           "value": "starting_weapon"
@@ -1931,7 +2291,11 @@ window.EQUIPMENT_CATALOG = {
         },
         "sidearm_damage": {
           "type": "literal",
-          "value": "1d8 piercing"
+          "value": "1d6 piercing"
+        },
+        "sidearm_versatile": {
+          "type": "literal",
+          "value": "1d8"
         },
         "sidearm_damage_type": {
           "type": "literal",
@@ -1972,6 +2336,14 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_reach": {
           "type": "literal",
           "value": "long"
+        },
+        "sidearm_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -2031,6 +2403,18 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_reach": {
           "type": "literal",
           "value": "long"
+        },
+        "sidearm_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "sidearm_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -2039,6 +2423,10 @@ window.EQUIPMENT_CATALOG = {
         "matched_dagger"
       ],
       "fields": {
+        "sidearm_light": {
+          "type": "literal",
+          "value": true
+        },
         "sidearm": {
           "type": "literal",
           "value": "dagger"
@@ -2090,6 +2478,14 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_reach": {
           "type": "literal",
           "value": "long"
+        },
+        "sidearm_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "sidearm_heavy": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -2149,6 +2545,18 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_flimsy": {
           "type": "literal",
           "value": false
+        },
+        "sidearm_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "sidearm_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -2185,6 +2593,10 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "battleaxe"
         },
+        "sidearm_versatile": {
+          "type": "literal",
+          "value": "1d10"
+        },
         "sidearm_magic": {
           "type": "literal",
           "value": 0
@@ -2208,6 +2620,14 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_reach": {
           "type": "literal",
           "value": "long"
+        },
+        "sidearm_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -2244,6 +2664,10 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "stiletto"
         },
+        "sidearm_light": {
+          "type": "literal",
+          "value": true
+        },
         "sidearm_magic": {
           "type": "literal",
           "value": 0
@@ -2267,6 +2691,14 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_reach": {
           "type": "literal",
           "value": "long"
+        },
+        "sidearm_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "sidearm_heavy": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -2326,6 +2758,18 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_reach": {
           "type": "literal",
           "value": "long"
+        },
+        "sidearm_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "sidearm_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -2362,6 +2806,10 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "rough spear"
         },
+        "sidearm_versatile": {
+          "type": "literal",
+          "value": "1d8"
+        },
         "sidearm_magic": {
           "type": "literal",
           "value": 0
@@ -2385,6 +2833,14 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_reach": {
           "type": "literal",
           "value": "long"
+        },
+        "sidearm_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -2442,6 +2898,18 @@ window.EQUIPMENT_CATALOG = {
           "value": false
         },
         "sidearm_flimsy": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "sidearm_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_light": {
           "type": "literal",
           "value": false
         }
@@ -2503,6 +2971,18 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_reach": {
           "type": "literal",
           "value": "long"
+        },
+        "sidearm_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "sidearm_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -2521,7 +3001,7 @@ window.EQUIPMENT_CATALOG = {
         },
         "sidearm_damage": {
           "type": "literal",
-          "value": "1d8 bludgeoning"
+          "value": "1d6 bludgeoning"
         },
         "sidearm_damage_type": {
           "type": "literal",
@@ -2538,6 +3018,10 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_prose": {
           "type": "literal",
           "value": "ash quarterstaff"
+        },
+        "sidearm_versatile": {
+          "type": "literal",
+          "value": "1d8"
         },
         "sidearm_magic": {
           "type": "literal",
@@ -2562,6 +3046,14 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_reach": {
           "type": "literal",
           "value": "long"
+        },
+        "sidearm_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -2598,6 +3090,10 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "spear"
         },
+        "sidearm_versatile": {
+          "type": "literal",
+          "value": "1d8"
+        },
         "sidearm_magic": {
           "type": "literal",
           "value": 0
@@ -2621,6 +3117,14 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_reach": {
           "type": "literal",
           "value": "long"
+        },
+        "sidearm_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -2680,6 +3184,18 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_reach": {
           "type": "literal",
           "value": "long"
+        },
+        "sidearm_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "sidearm_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -2716,6 +3232,10 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "jeweled dagger"
         },
+        "sidearm_light": {
+          "type": "literal",
+          "value": true
+        },
         "sidearm_flimsy": {
           "type": "literal",
           "value": true
@@ -2739,6 +3259,14 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_reach": {
           "type": "literal",
           "value": "long"
+        },
+        "sidearm_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "sidearm_heavy": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -2798,6 +3326,18 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_reach": {
           "type": "literal",
           "value": "long"
+        },
+        "sidearm_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "sidearm_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_light": {
+          "type": "literal",
+          "value": false
         }
       },
       "fade": {
@@ -2871,6 +3411,18 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_reach": {
           "type": "literal",
           "value": "long"
+        },
+        "sidearm_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "sidearm_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -2907,6 +3459,10 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "longsword"
         },
+        "sidearm_versatile": {
+          "type": "literal",
+          "value": "1d10"
+        },
         "sidearm_magic": {
           "type": "literal",
           "value": 0
@@ -2930,6 +3486,14 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_reach": {
           "type": "literal",
           "value": "long"
+        },
+        "sidearm_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -2966,6 +3530,10 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "shortsword"
         },
+        "sidearm_light": {
+          "type": "literal",
+          "value": true
+        },
         "sidearm_magic": {
           "type": "literal",
           "value": 0
@@ -2989,6 +3557,14 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_reach": {
           "type": "literal",
           "value": "long"
+        },
+        "sidearm_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "sidearm_heavy": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -3048,6 +3624,18 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_reach": {
           "type": "literal",
           "value": "long"
+        },
+        "sidearm_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "sidearm_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -3084,6 +3672,10 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "scimitar"
         },
+        "sidearm_light": {
+          "type": "literal",
+          "value": true
+        },
         "sidearm_magic": {
           "type": "literal",
           "value": 0
@@ -3107,6 +3699,14 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_reach": {
           "type": "literal",
           "value": "long"
+        },
+        "sidearm_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "sidearm_heavy": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -3143,6 +3743,10 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "warhammer"
         },
+        "sidearm_versatile": {
+          "type": "literal",
+          "value": "1d10"
+        },
         "sidearm_magic": {
           "type": "literal",
           "value": 0
@@ -3166,6 +3770,14 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_reach": {
           "type": "literal",
           "value": "long"
+        },
+        "sidearm_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -3202,6 +3814,10 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "greataxe"
         },
+        "sidearm_heavy": {
+          "type": "literal",
+          "value": true
+        },
         "sidearm_magic": {
           "type": "literal",
           "value": 0
@@ -3225,6 +3841,14 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_reach": {
           "type": "literal",
           "value": "long"
+        },
+        "sidearm_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "sidearm_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -3261,6 +3885,10 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "longbow"
         },
+        "sidearm_heavy": {
+          "type": "literal",
+          "value": true
+        },
         "sidearm_magic": {
           "type": "literal",
           "value": 0
@@ -3284,6 +3912,14 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_reach": {
           "type": "literal",
           "value": "long"
+        },
+        "sidearm_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "sidearm_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -3343,6 +3979,18 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_reach": {
           "type": "literal",
           "value": "long"
+        },
+        "sidearm_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "sidearm_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -3379,6 +4027,10 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "handaxe"
         },
+        "sidearm_light": {
+          "type": "literal",
+          "value": true
+        },
         "sidearm_magic": {
           "type": "literal",
           "value": 0
@@ -3402,6 +4054,14 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_reach": {
           "type": "literal",
           "value": "long"
+        },
+        "sidearm_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "sidearm_heavy": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -3438,6 +4098,10 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "greatsword"
         },
+        "sidearm_heavy": {
+          "type": "literal",
+          "value": true
+        },
         "sidearm_magic": {
           "type": "literal",
           "value": 0
@@ -3461,6 +4125,14 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_reach": {
           "type": "literal",
           "value": "long"
+        },
+        "sidearm_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "sidearm_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -3497,6 +4169,10 @@ window.EQUIPMENT_CATALOG = {
           "type": "literal",
           "value": "maul"
         },
+        "sidearm_heavy": {
+          "type": "literal",
+          "value": true
+        },
         "sidearm_magic": {
           "type": "literal",
           "value": 0
@@ -3520,6 +4196,14 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_reach": {
           "type": "literal",
           "value": "long"
+        },
+        "sidearm_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "sidearm_light": {
+          "type": "literal",
+          "value": false
         }
       }
     },
@@ -3579,6 +4263,18 @@ window.EQUIPMENT_CATALOG = {
         "sidearm_reach": {
           "type": "literal",
           "value": "long"
+        },
+        "sidearm_versatile": {
+          "type": "literal",
+          "value": ""
+        },
+        "sidearm_heavy": {
+          "type": "literal",
+          "value": false
+        },
+        "sidearm_light": {
+          "type": "literal",
+          "value": false
         }
       }
     }

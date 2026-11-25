@@ -104,7 +104,8 @@ const MAP = {
 
   // Class features.
   second_wind: "Skill/Second_Wind_Icon.webp",
-  steady_aim: "Weapon_action/Brace_Ranged_Icon.webp",   // the rogue's Steady Aim (2026-11-22, the user's pick)
+  steady_aim: "Weapon_action/Brace_Ranged_Icon.webp",
+  off_hand_attack: "Weapon_action/Off-Hand_Attack_Melee_Unfaded_Icon.webp",   // the Light weapon's off-hand attack (2026-11-25)   // the rogue's Steady Aim (2026-11-22, the user's pick)
   action_surge: "Skill/Action_Surge_Icon.webp",
   rage: "Action/Rage_Icon.webp",
   reckless_attack: "Weapon_action/Reckless_Attack_Icon.webp",

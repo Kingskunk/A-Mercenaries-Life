@@ -455,16 +455,24 @@ ${combat_player_dmg_roll_banner}
 *label weapon_die_sides
 *set combat_player_dmg_dice_sides 1
 *set combat_player_dmg_dice_count 1
-*if (length(weapon_damage) < 4)
+*comment VERSATILE (2026-11-25, PHB'24, the grip as BG3 picks it): a Versatile weapon (weapon_versatile, its die in two hands) is held in both hands when no shield is on the arm, unless the
+*comment fighting style is Dueling (one hand, for its +2), and never for a throw (combat_throw_on: a thrown Spear is its one-handed die). combat_weapon_two_grip lets Great Weapon Fighting reroll it.
+*temp wds_dmg weapon_damage
+*set combat_weapon_two_grip false
+*if ((not(weapon_versatile = "")) and (((not(shield_equipped)) and (not(fighting_style = "dueling"))) and (not(combat_throw_on))))
+  *set combat_weapon_two_grip true
+  *comment The versatile die is a bare "1d10"; the spaces make it read like a damage string ("1d8 slashing") for the parse below, and keep it four characters long when the quicktest walks this branch with no versatile die.
+  *set wds_dmg (weapon_versatile & "    ")
+*if (length(wds_dmg) < 4)
   *return
-*if (not((weapon_damage#2) = "d"))
+*if (not((wds_dmg#2) = "d"))
   *return
-*if ((weapon_damage#1) = "2")
+*if ((wds_dmg#1) = "2")
   *set combat_player_dmg_dice_count 2
-*elseif ((weapon_damage#1) = "3")
+*elseif ((wds_dmg#1) = "3")
   *set combat_player_dmg_dice_count 3
-*temp wds_a (weapon_damage#3)
-*temp wds_b (weapon_damage#4)
+*temp wds_a (wds_dmg#3)
+*temp wds_b (wds_dmg#4)
 *if ((wds_a = "1") and (wds_b = "2"))
   *set combat_player_dmg_dice_sides 12
 *elseif ((wds_a = "1") and (wds_b = "0"))
@@ -502,7 +510,7 @@ ${combat_player_dmg_roll_banner}
     *set cwh_roll 1
   *else
     *rand cwh_roll 1 cwh_sides
-  *if ((((fighting_style = "great_weapon") and (weapon_hands = "two_handed")) and (not(weapon_type = "ranged"))) and (not(cwh_flat)))
+  *if ((((fighting_style = "great_weapon") and ((weapon_hands = "two_handed") or (combat_weapon_two_grip))) and (not(weapon_type = "ranged"))) and (not(cwh_flat)))
     *if (cwh_roll <= 2)
       *rand cwh_roll 1 cwh_sides
   *temp cwh_roll_str "${cwh_roll}"
@@ -518,7 +526,7 @@ ${combat_player_dmg_roll_banner}
   *label cwh_more_dice_loop
   *if (cwh_more > 0)
     *rand cwh_md 1 cwh_sides
-    *if (((fighting_style = "great_weapon") and (weapon_hands = "two_handed")) and (not(weapon_type = "ranged")))
+    *if (((fighting_style = "great_weapon") and ((weapon_hands = "two_handed") or (combat_weapon_two_grip))) and (not(weapon_type = "ranged")))
       *if (cwh_md <= 2)
         *rand cwh_md 1 cwh_sides
     *set cwh_roll_str "${cwh_roll_str}+${cwh_md}"

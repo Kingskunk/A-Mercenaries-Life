@@ -582,6 +582,8 @@
             out.push("After you paid the one-mark pound fee out of your own purse, he slid the bar aside and handed Magpie over without a quarrel.");
           } else if (String(s.bm_mare_how) === "law") {
             out.push("Pressured into giving Magpie up without the pound fee, he let you take her off the ridge with cold resentment.");
+          } else if (String(s.bm_mare_how) === "recovered") {
+            out.push("During the confrontation at the pound, Magpie panicked over the crumbling corner wall; he left you to chase her down the slope on your own, resenting how the claim ended.");
           } else if (String(s.bm_mare_how) === "brawled") {
             out.push("When he barred the pound with his ash staff, you knocked him down in a scuffle by the stones and led Magpie away.");
           } else if (String(s.bm_mare_ending) === "lost") {

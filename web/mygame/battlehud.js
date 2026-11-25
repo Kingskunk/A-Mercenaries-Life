@@ -103,7 +103,7 @@
     "dissonant_whispers", "cause_fear", "command", "blindness", "web", "hold_person", "shatter", "scorching_ray", "grease", "burning_hands",
     "thunderwave", "arms_of_hadar", "bane", "healing_word", "cure_wounds",
     "read", "help", "break_free", "dodge", "intimidate", "hide",
-    "shield", "hellish_rebuke", "absorb_elements", "riposte", "combat_inspiration", "steady_aim", "second_wind", "hunters_mark",
+    "shield", "hellish_rebuke", "absorb_elements", "riposte", "combat_inspiration", "steady_aim", "off_hand_attack", "second_wind", "hunters_mark",
     "ensnaring_strike", "action_surge", "rage", "eagles_flight", "arcane_ward", "magical_cunning",
     "throw", "potions", "items", "flee", "end_turn"
   ];
@@ -773,7 +773,9 @@
     var flimsy = truthy(s[pre + "_flimsy"]) ? -1 : 0;
     var atk = num(s.prof_bonus) + abMod + archery + magic + flimsy;
     // The weapon's own die, from its damage string ("1d6 piercing"); one with no die ("1 bludgeoning", bare hands) is a flat 1. Matches combat_dice.txt weapon_die_sides.
-    var dieMatch = String(s[pre + "_damage"] || "").match(/^(\d+d\d+)/);
+    // Versatile (2026-11-25): held in both hands when no shield is on the arm and the style is not Dueling, as combat_dice.txt weapon_die_sides decides; then the two-handed die is the one shown.
+    var vers = String(s[pre + "_versatile"] || ""), twoGrip = !!vers && !truthy(s.shield_equipped) && s.fighting_style !== "dueling";
+    var dieMatch = String(twoGrip ? vers : (s[pre + "_damage"] || "")).match(/^(\d+d\d+)/);
     var dice = dieMatch ? dieMatch[1] : "1";
     var dueling = (s.fighting_style === "dueling" && type !== "ranged" && hands !== "two_handed") ? 2 : 0;
     var rage = (!opts.ignoreRage && s.character_class === "barbarian" && truthy(s.is_raging) && type !== "ranged" && (type !== "finesse" || strMod > dexMod)) ? num(s.barbarian_rage_damage_bonus) : 0;
@@ -784,7 +786,9 @@
     var props = [];
     if (type === "finesse") props.push("Finesse");
     else if (type === "reach") props.push("Reach");
-    props.push(hands === "two_handed" ? "Two-handed" : "One-handed");
+    props.push(hands === "two_handed" ? "Two-handed" : (vers ? (twoGrip ? "Versatile, in two hands" : "Versatile, in one hand") : "One-handed"));
+    // Heavy (2026-11-25): disadvantage below STR 13, or DEX 13 for a ranged one (combat.txt combat_apply_weapon_magic_attack).
+    if (truthy(s[pre + "_heavy"])) props.push(num(type === "ranged" ? s.dexterity : s.strength) < 13 ? "Heavy (disadvantage)" : "Heavy");
     if (magic > 0) props.push(signed(magic) + " magic");
     else if (truthy(s[pre + "_magical"])) props.push("Magical");
     if (truthy(s[pre + "_silvered"])) props.push("Silvered");

@@ -13,7 +13,7 @@
 *comment   5 = resolved (bm_mare_finished = true)
 *comment
 *comment Endings (bm_mare_ending): "", "returned", "lost"
-*comment Return methods (bm_mare_how): "", "settled", "law", "paid", "brawled"
+*comment Return methods (bm_mare_how): "", "settled", "law", "paid", "brawled", "recovered"
 *comment ====================================================================================
 
 *label bm_mare_notice_take
@@ -405,8 +405,9 @@ The boy glances quickly at the older shepherd before bending back over his brush
 
 *comment ====================================================================================
 *comment BEAT 5: THE COMMONS POUND AND THISTLE (bm_mare_stage = 4)
-*comment Climactic confrontation on the ridge. Failures carry real consequences (forced brawl or
-*comment Magpie bolting hurt down the far valley into "lost").
+*comment Climactic confrontation on the ridge. Failed thaum, authority, or slip sends Magpie over
+*comment the crumbling wall into the bm_mare_spooked hillside recovery beat; failing there (or
+*comment losing bm_mare_brawl) lands on "lost".
 *comment ====================================================================================
 
 *label bm_mare_pound
@@ -520,13 +521,11 @@ You step up to the fieldstone enclosure, reach calmly over the top to wipe the c
   *page_break Lead Magpie out of the pound…
   *goto bm_mare_return_trip
 *else
-  The unnatural roar echoes too sharply off the enclosure stones. Inside, Magpie throws her head high in sudden terror, wheels away from you both, and scrambles her front hooves over the crumbling low corner of the masonry. Loose stones give way beneath her weight as she plunges onto the steep rocky drop beyond, stumbling hard on her right front leg before limping wildly down into the far valley out of reach.
+  The unnatural roar echoes too sharply off the enclosure stones. Inside, Magpie throws her head high in sudden terror, wheels away from you both, and scrambles over the crumbling low corner of the masonry. Loose stones tumble down the bank as she lands hard on the steep grassy slope beyond, her rough neck cord trailing behind her hooves as she bolts toward the rocky drop.
 
-  Thistle stares after the dust, then glares at you in disgust and stalks away along the crest.
-  *set bm_mare_ending "lost"
-  *set bm_mare_how ""
-  *page_break Walk down to the Remount Yard…
-  *goto bm_mare_resolve
+  Thistle stares at the broken corner, glares at you in disgust, and turns away along the crest. "Chase her down yourself, then!" he calls back over his shoulder.
+  *page_break Scramble after Magpie…
+  *goto bm_mare_spooked
 
 *label bm_mare_pound_authority
 *set scenery_subplace "generic_village_pasture"
@@ -548,11 +547,11 @@ You step straight to the enclosure, reach over to rub the dried mud off the gold
 *else
   Thistle's face flushes dark red, and he slams the butt of his staff hard against the stone post in anger. "Nobody calls me a horse thief on my own hill!" he shouts.
 
-  At the sharp crack of wood on rock right beside her head, Magpie rears in blind panic, wheels into the low broken corner of the enclosure, and crashes over the tumbling stones onto the loose rock beyond. Her front leg buckles on the steep slide; coming up with a heavy limp, she bolts down the far gully before either of you can reach her.
-  *set bm_mare_ending "lost"
-  *set bm_mare_how ""
-  *page_break Walk down to the Remount Yard…
-  *goto bm_mare_resolve
+  At the sharp crack of wood on rock right beside her head, Magpie rears in panic, wheels into the low broken corner of the enclosure, and vaults the tumbling stones onto the steep grassy slope beyond, her rough neck cord trailing behind her as she bolts toward the loose rock below.
+
+  Thistle glares at his broken wall, spits into the dirt, and turns up the ridge with his staff over his shoulder. "Fetch the Countess's beast off the drop yourself!"
+  *page_break Scramble after Magpie…
+  *goto bm_mare_spooked
 
 *label bm_mare_pound_pay
 *set scenery_subplace "generic_village_pasture"
@@ -599,11 +598,11 @@ Thistle blinks once, clearly expecting an argument, then takes the coin and test
   *page_break Guide Magpie down the path…
   *goto bm_mare_return_trip
 *else
-  As you lunge for her neck cord, Thistle shoves your arm aside and rattles the wooden bar hard against the stones. Caught between two sudden movements, Magpie throws her weight backward, scrambles over the crumbling low corner of the enclosure, and slides into the loose rock beyond. She comes up limping sharply on a wrenched front leg and bolts away down the far valley out of reach.
-  *set bm_mare_ending "lost"
-  *set bm_mare_how ""
-  *page_break Walk down to the Remount Yard…
-  *goto bm_mare_resolve
+  As you lunge for her neck cord, Thistle shoves your arm aside and rattles the wooden bar hard against the stones. Caught between two sudden movements, Magpie throws her weight backward, scrambles over the crumbling low corner of the enclosure, and bolts onto the steep grassy slope beyond with her rough cord trailing behind her toward the rocky drop.
+
+  Thistle curses at the tumbled stones and stalks away along the crest without lifting a hand to help.
+  *page_break Scramble after Magpie…
+  *goto bm_mare_spooked
 
 *label bm_mare_pound_charm
 *set scenery_subplace "generic_village_pasture"
@@ -673,6 +672,122 @@ Thistle plants both heels in the dirt and swings his crooked ash staff to drive 
   *goto bm_mare_resolve
 
 *comment ====================================================================================
+*comment BEAT 5B: LOOSE ON THE SLOPE (Second chance after failed pound check)
+*comment One hillside recovery obstacle before Magpie reaches the loose rock.
+*comment Success routes into bm_mare_return_trip with bm_mare_how = "recovered" (3 marks,
+*comment bm_mare_commons_cold = true, bm_ry_open = true). Failure sets "lost".
+*comment ====================================================================================
+
+*label bm_mare_spooked
+*gosub_scene calendar ensure_navigable_weather
+*set scenery_subplace "overworld_hilly_road"
+*set minutes_to_pass 30
+*set time_advance_call_id "bm_mare_spooked_chase"
+*gosub bm_mare_advance_time
+*gosub_scene dungeon dg_spell_source "speak_with_animals" "Speak with Animals" 0 "spell"
+*temp bm_mare_spook_swa dg_ss_can
+*temp bm_mare_spook_swa_tag dg_ss_tag
+[b]◈ LOOSE ON THE SLOPE[/b]
+*line_break
+Below the broken corner of the pound, a narrow turf shelf slants steeply across the flank of the hill before dropping into a long slide of loose grey rock.
+*gosub bm_mare_hill_sky
+
+Fifty paces downhill, Magpie trots wild-eyed along the grass edge with her ears pinned back and Thistle's rough cord dragging behind her hooves. Nobody from the ridge is coming to help, and one more burst of fright will send her plunging straight onto the sliding stone where a twisted leg is all but certain.
+*choice
+  # Sprint across the bank to cut her off and catch the trailing cord.@{show_stat_hints  [Athletics DC 12]|}
+    *goto bm_mare_spooked_sprint
+  # Slide down the steep turf to come alongside and snatch her rope.@{show_stat_hints  [Acrobatics DC 12]|}
+    *goto bm_mare_spooked_slide
+  # Circle downwind, come up low by her left shoulder, and talk her steady.@{show_stat_hints  [Animal Handling DC 12]|}
+    *goto bm_mare_spooked_calm
+  *if (bm_mare_spook_swa)
+    # Call out in her own tongue to halt her before the drop. [${bm_mare_spook_swa_tag}]
+      *goto bm_mare_spooked_beast
+
+*label bm_mare_spooked_sprint
+*set scenery_subplace "overworld_hilly_road"
+*if (has_hemp_rope)
+  Unlooping your hemp rope on the run, you drive across the upper grass bank to head her off above the rock slide and cast a wide loop toward her chest.
+  *set advantage true
+*else
+  You dig in and sprint at full stretch across the upper turf, angling down the slope to cross her line before she reaches the grey scree.
+*gosub_scene dice_engine roll_skill_check 12 "athletics" "" "" "" "" ""
+*if (check_success)
+  *if (has_hemp_rope)
+    The wide loop settles cleanly across her withers as you angle into her path, giving you the slack to bring her down to a blowing walk five paces short of the loose stone.
+  *else
+    Outpacing her along the grass bank, you plant yourself across her line, scoop up the trailing cord in both hands, and guide her to a blowing halt before the stones begin.
+  *goto bm_mare_spooked_caught
+*else
+  Your footing tears loose in a patch of damp grass as you lunge for the dragging cord. Sliding wide past her shoulder, you only startle her harder; Magpie veers onto the loose grey rock, wrenches her right front leg between two shifting stones, and bolts limping down into the far valley out of reach.
+  *goto bm_mare_spooked_lost
+
+*label bm_mare_spooked_slide
+*set scenery_subplace "overworld_hilly_road"
+*if (bm_mare_clue_calm)
+  Remembering the quick sideways rhythm of her trot on the downs earlier, you drop onto one hip and ride the steep grass down to match her stride.
+  *set advantage true
+*else
+  Throwing your weight low, you slide straight down the steep turf bank to come alongside her shoulder before she hits the rock drop.
+*gosub_scene dice_engine roll_skill_check 12 "acrobatics" "" "" "" "" ""
+*if (check_success)
+  You come back onto both feet beside her neck without jerking her head, gather the dragging cord smoothly off the grass, and turn her head upslope onto firm ground.
+  *goto bm_mare_spooked_caught
+*else
+  Loose turf shears away under your heel mid-slide, pitching you hard onto one knee. Startled by the sudden rush at her flank, Magpie plunges onto the sliding stone, twists her right front leg badly on the drop, and bolts limping away into the far valley.
+  *goto bm_mare_spooked_lost
+
+*label bm_mare_spooked_calm
+*set scenery_subplace "overworld_hilly_road"
+*if ((bm_mare_prep_groom) and (bm_mare_has_halter))
+  Holding the soft halter quiet against your sleeve as Myles Buckman advised, you circle wide downwind and walk in low toward her left shoulder, murmuring steadily over the grass.
+  *set advantage true
+*elseif (bm_mare_prep_groom)
+  Remembering Myles Buckman's warning against sudden noise near her nose, you circle downwind and walk in low toward her left shoulder with your voice held flat and even.
+  *set advantage true
+*elseif ((bm_mare_clue_calm) or (bm_mare_has_halter))
+  Checking your stride so nothing rattles as you close, you swing wide downwind and approach low by her left shoulder in a calm murmur.
+  *set advantage true
+*else
+  Slowing your breath, you circle downwind around the grass edge and come in low beside her left shoulder, speaking steadily to bring her head down.
+*gosub_scene dice_engine roll_skill_check 12 "animal_handling" "" "" "" "" ""
+*if (check_success)
+  Ten paces short of the grey rock, Magpie's ears swivel toward your voice instead of the drop. She blows out a long breath, drops her muzzle to your palm, and stands trembling while you gather the cord.
+  *goto bm_mare_spooked_caught
+*else
+  Before she settles, a sharp gust snaps dry grass over the stones ahead. Still raw from the clatter at the pound, Magpie wheels onto the loose rock, wrenches her right front leg between shifting boulders, and limps wildly down into the far valley out of reach.
+  *goto bm_mare_spooked_lost
+
+*label bm_mare_spooked_beast
+*set scenery_subplace "overworld_hilly_road"
+*gosub_scene dungeon dg_spell_source "speak_with_animals" "Speak with Animals" 0 "spell"
+*gosub_scene dungeon dg_spell_cast "speak_with_animals"
+*if (dg_ss_cost = "scroll")
+  Drawing the scroll clear against your palm as you jog, you speak its quick syllables until the parchment crumbles and a horse's blunt panic sharpens into sense.
+*else
+  Speaking the swift words of the spell on the slope, you let its magic bridge the gap between your voice and the mare's ears.
+
+"Turn left onto the grass, runner," you call out steadily. "The stones ahead will break your leg."
+
+Magpie checks mid-stride, nostrils flaring as she turns her head toward the voice that actually warns of the drop. Stepping back onto the firm turf shelf, she trots over to your shoulder and stands quivering while you take up her line.
+*goto bm_mare_spooked_caught
+
+*label bm_mare_spooked_caught
+*if (bm_mare_has_halter)
+
+  Once her breathing evens out, you slip the soft halter from the saddle room cleanly over her muzzle in place of Thistle's rough cord.
+*set bm_mare_ending "returned"
+*set bm_mare_how "recovered"
+*page_break Lead Magpie toward the road…
+*goto bm_mare_return_trip
+
+*label bm_mare_spooked_lost
+*set bm_mare_ending "lost"
+*set bm_mare_how ""
+*page_break Walk down to the Remount Yard…
+*goto bm_mare_resolve
+
+*comment ====================================================================================
 *comment RETURN TRIP (skipped when settled at Mardred's Hall counter)
 *comment ====================================================================================
 
@@ -728,7 +843,7 @@ Keeping an easy, unhurried slack in the line, you walk beside Magpie's left shou
 *set bm_mare_finished true
 *temp bm_mare_pay_copper 0
 *if (bm_mare_ending = "returned")
-  *if ((bm_mare_how = "settled") or (bm_mare_how = "brawled"))
+  *if (((bm_mare_how = "settled") or (bm_mare_how = "brawled")) or (bm_mare_how = "recovered"))
     *set bm_mare_pay_copper 30
   *else
     *set bm_mare_pay_copper 40
@@ -739,7 +854,7 @@ Keeping an easy, unhurried slack in the line, you walk beside Magpie's left shou
     *if (bm_mare_how = "settled")
       *set bm_mare_goodwill true
       *set bm_ry_open true
-    *elseif (bm_mare_how = "law")
+    *elseif ((bm_mare_how = "law") or (bm_mare_how = "recovered"))
       *set bm_mare_commons_cold true
       *set bm_ry_open true
     *elseif (bm_mare_how = "paid")
@@ -771,6 +886,10 @@ Keeping an easy, unhurried slack in the line, you walk beside Magpie's left shou
     You explain that Thistle held her in the village pound on the ridge and you paid his customary fee out of your own purse to bring her down without trouble.
 
     Marren lifts her scarred eyebrow a fraction, then presses all four coins into your palm. "Three clear for your walk, then, and no bad blood left behind on the hill," she answers. "The guards will let you pass whenever you have reason to call here."
+  *elseif (bm_mare_how = "recovered")
+    You report that Thistle had penned her on the ridge, and when the confrontation spooked Magpie over the crumbling pound wall, you caught her on the slope before she reached the loose rock.
+
+    Marren brushes stone dust from Magpie's knees and counts three silver marks into your palm instead of four. "Three for bringing the Countess's mare home unharmed," she tells you evenly. "One mark goes up to Mardred's counter to mend the tumbled pound stones before the shepherds take it out on her fences. Give the gate guards your name whenever you have business inside this wall."
   *else
     You report that Thistle barred the pound with his staff and you had to knock him down to bring Magpie out.
 

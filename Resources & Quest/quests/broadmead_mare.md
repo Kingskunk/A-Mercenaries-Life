@@ -16,7 +16,7 @@
 | **Hook & gate** | Pinned under `STRAYS AND BRANDS` on Broadmead's Contract Board (`port_valen/radiant/notice_board.txt nb_read`, `cr_origin = "bm"`), gated on `cr_can` (`Insignia.canTake(stats, "gault")`, requiring a Contractor's Insignia with a House Gault page) |
 | **Level-up pool** | Counts as 1 completed quest on `returned` (`bm_mare_success = true`, read by `count_finished_broadmead_mare` in `bolted_mare.txt`, wired into `character_progression.txt refresh_quests_finished`) |
 | **Insignia credit** | Credits 1 job on the House Gault page (`window.Insignia.credit(stats, "gault")`) on `returned` (counts toward *Proven* at 3 jobs; does not grant *Vouched*) |
-| **Endings (`bm_mare_ending`)** | Two endings: `"returned"` and `"lost"`. Inside `"returned"`, `bm_mare_how` records `"settled"`, `"law"`, `"paid"`, or `"brawled"`. |
+| **Endings (`bm_mare_ending`)** | Two endings: `"returned"` and `"lost"`. Inside `"returned"`, `bm_mare_how` records `"settled"`, `"law"`, `"paid"`, `"brawled"`, or `"recovered"`. |
 
 ---
 
@@ -84,18 +84,26 @@
     - Failure: Thistle rejects hall paper, swings his ash staff to bar the gate, and forces the non-lethal brawl below.
   - **Scrape the mud off the Gault brand and press authority** (`Intimidation DC 13`, advantage with `bm_mare_clue_led` or `known_thaumaturgy`):
     - Success: Thistle backs down grimly; player takes Magpie (`bm_mare_how = "law"`).
-    - Failure: shouting and a slammed staff startle Magpie; she scrambles over the low corner of the stone wall and bolts hurt across the loose rock straight into **`lost`**.
+    - Failure: shouting and a slammed staff (or booming Thaumaturgy) startle Magpie over the crumbling corner wall onto the grassy slope above a loose rock drop (`bm_mare_spooked`).
   - **Pay the customary pound fee yourself** (`[1 Silver Mark]`, requires `>= 10 copper`, spent via `economy currency_spend`, no check):
     - Automatic quiet handover (`bm_mare_how = "paid"`).
   - **Slip the halter on and draw Magpie past him** (`Animal Handling DC 13`, advantage with `bm_mare_clue_calm` or `bm_mare_has_halter`):
     - Success: clean getaway with Magpie; Thistle curses after you (`bm_mare_how = "law"`).
-    - Failure: clumsy grab startles Magpie; she bolts over the broken wall and goes hurt off the ridge straight into **`lost`**.
+    - Failure: clumsy grab startles Magpie; she bolts over the broken corner wall onto the grassy slope (`bm_mare_spooked`).
   - **Force your way through (direct brawl)**, or triggered by failed Mardred-counter Persuasion:
     - Non-lethal `fight_library` scuffle (`combat_is_nonlethal true`, `combat_lib_1 "hookman"`, `combat_enemy_name_override "Thistle"`, `combat_enemy_epithet_override "Thistle"`, `combat_enemy_hp_override 10`, `combat_enemy_ac_override 11`, `combat_enemy_atk_override 2`, `combat_open_sky true`, `combat_no_morale false`).
     - Win: Thistle yields nursing a bruise; player takes Magpie (`bm_mare_how = "brawled"`).
     - Lose or flee: driven off the ridge or Magpie bolts in the confusion -> **`lost`**.
   - **Arcane (`known_charm_person`, if slot available via `dungeon dg_spell_source` / `dg_spell_cast`):**
-    - Cast Charm Person to get Thistle to hand Magpie over quietly (`bm_mare_how = "law"`, with commons distrust of magic once it wears off); failure triggers the startled-bolting **`lost`** or brawl.
+    - Cast Charm Person to get Thistle to hand Magpie over quietly (`bm_mare_how = "law"`, with commons distrust of magic once it wears off); failure triggers `bm_mare_brawl`.
+
+### Beat 5B: Loose on the Slope (`bm_mare_spooked`, +30 min)
+- Reached only on failed `thaum`, `authority`, or `slip` at the pound. Offers one second-chance hillside recovery obstacle before Magpie hits the loose rock drop:
+  - **Sprint across the bank** (`Athletics DC 12`, advantage with `has_hemp_rope`)
+  - **Slide down the steep turf** (`Acrobatics DC 12`, advantage with `bm_mare_clue_calm`)
+  - **Circle downwind and talk her steady** (`Animal Handling DC 12`, advantage with `bm_mare_prep_groom`, `bm_mare_clue_calm`, or `bm_mare_has_halter`)
+  - **Call out with `Speak with Animals`** (`dungeon dg_spell_source` / `dg_spell_cast` as `"spell"`, slot or scroll only)
+- Success brings her back onto the turf shelf and sends flow into Beat 5/Return Trip with `bm_mare_how = "recovered"`. Failure sends her onto the loose rock into **`lost`**.
 
 ### Return Trip (`bm_mare_return_trip`, skipped for `settled` since Thistle and the player walk straight to Mardred's counter)
 - **Mount and ride Magpie back** (`Animal Handling DC 12`, advantage with `bm_mare_clue_calm`, `+20 min`; failure means she sidesteps and the player leads her in `+50 min`).
@@ -107,6 +115,7 @@
   - `settled`: **3 Silver Marks** (30c) + 1 Gault job (`Insignia.credit(stats, "gault")`) + **`bm_ry_open = true`** + `bm_mare_goodwill = true` (warmer greeting from Mardred and Olof).
   - `law`: **4 Silver Marks** (40c) + 1 Gault job + **`bm_ry_open = true`** + `bm_mare_commons_cold = true`.
   - `paid`: **4 Silver Marks** (40c; 3 silver net after 1-silver fee) + 1 Gault job + **`bm_ry_open = true`**.
+  - `recovered`: **3 Silver Marks** (30c; 1 mark held for mending the broken pound stones) + 1 Gault job + **`bm_ry_open = true`** + `bm_mare_commons_cold = true`.
   - `brawled`: **3 Silver Marks** (30c) + 1 Gault job + **`bm_ry_open` stays `false`** + `bm_mare_commons_cold = true`.
   - Myles Buckman keeps his place at the yard.
 - **`lost` (`bm_mare_ending = "lost"`, `bm_mare_success = false`):**
@@ -135,7 +144,7 @@
 
 - `bm_mare_stage` (0..5)
 - `bm_mare_ending` (`""` | `"returned"` | `"lost"`)
-- `bm_mare_how` (`""` | `"settled"` | `"law"` | `"paid"` | `"brawled"`)
+- `bm_mare_how` (`""` | `"settled"` | `"law"` | `"paid"` | `"brawled"` | `"recovered"`)
 - `bm_mare_finished` (`false`)
 - `bm_mare_success` (`false`)
 - `bm_mare_reward_claimed` (`false`)

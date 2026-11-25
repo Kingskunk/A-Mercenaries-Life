@@ -1204,6 +1204,8 @@
 *set combat_throw_home_main ""
 *set combat_throw_home_side ""
 *set combat_throw_on false
+*set combat_offhand_on false
+*set combat_light_attack_round 0
 *comment An unspent self-cast Bardic Inspiration (combat_spells.txt) must not survive the fight it was cast in --
 *comment otherwise it silently attaches to the next failed DC check anywhere, combat or not (found 2026-11-07: a
 *comment stray +6 on a tavern dice roll at the White Ram, days after the fight that cast it and never spent it).
@@ -2751,6 +2753,11 @@
 *if (not(wpc_ok))
   *set check_add_prof_bonus false
   *set check_flat_bonus_label "${check_flat_bonus_label} (not proficient)"
+*comment HEAVY (2026-11-25, PHB'24): a Heavy weapon's attacks have disadvantage below STR 13, or DEX 13 for a ranged one; the scores already carry any boon. combat_atk_heavy names it on the roll.
+*if (weapon_heavy)
+  *if (((weapon_type = "ranged") and (dexterity < 13)) or ((not(weapon_type = "ranged")) and (strength < 13)))
+    *set disadvantage true
+    *set combat_atk_heavy true
 *return
 
 *label resolve_reverse_oa_player
@@ -3826,6 +3833,16 @@
   *gosub_scene equipment weapon_prof_check sidearm sidearm_type
   *set combat_sidearm_nonprof (not(wpc_ok))
 *script function tag(m, mg, sv, ad, fl, np) { var a = []; if (Number(m) > 0) a.push("Magic +" + Number(m)); else if (mg === true || mg === "true") a.push("Magical"); if (sv === true || sv === "true") a.push("Silvered"); if (ad === true || ad === "true") a.push("Adamantine"); if (fl === true || fl === "true") a.push("Flimsy -1"); if (np === true || np === "true") a.push("Not proficient"); return a; } var w = tag(stats.weapon_magic, stats.weapon_magical, stats.weapon_silvered, stats.weapon_adamantine, stats.weapon_flimsy, stats.combat_weapon_nonprof), d = tag(stats.sidearm_magic, stats.sidearm_magical, stats.sidearm_silvered, stats.sidearm_adamantine, stats.sidearm_flimsy, stats.combat_sidearm_nonprof); stats.combat_weapon_tag = w.length ? " [" + w.join(", ") + "]" : ""; stats.combat_weapon_note = w.length ? " (" + w.join(", ").toLowerCase() + ")" : ""; stats.combat_sidearm_tag = d.length ? " [" + d.join(", ") + "]" : ""; stats.combat_sidearm_note = d.length ? " (" + d.join(", ").toLowerCase() + ")" : "";
+*comment VERSATILE (2026-11-25): the option names the grip when the weapon is held in both hands (the same test as combat_dice.txt weapon_die_sides: no shield, not Dueling).
+*if ((not(weapon_versatile = "")) and ((not(shield_equipped)) and (not(fighting_style = "dueling"))))
+  *set combat_weapon_tag (combat_weapon_tag & " [Two hands: ${weapon_versatile}]")
+*comment HEAVY: the option says so while the penalty applies (the same test as combat_apply_weapon_magic_attack).
+*if ((weapon_heavy) and (((weapon_type = "ranged") and (dexterity < 13)) or ((not(weapon_type = "ranged")) and (strength < 13))))
+  *set combat_weapon_tag (combat_weapon_tag & " [Too heavy: disadvantage]")
+*if ((sidearm_heavy) and (((sidearm_type = "ranged") and (dexterity < 13)) or ((not(sidearm_type = "ranged")) and (strength < 13))))
+  *set combat_sidearm_tag (combat_sidearm_tag & " [Too heavy: disadvantage]")
+*if ((not(sidearm_versatile = "")) and ((not(shield_equipped)) and (not(fighting_style = "dueling"))))
+  *set combat_sidearm_tag (combat_sidearm_tag & " [Two hands: ${sidearm_versatile}]")
 *return
 
 *label fight_round_hub
@@ -4616,6 +4633,12 @@
     *goto combat_melee_reach_loop
   *if ((cmr_best > 0) and (combat_target_range > 0))
     *set combat_reach_epithet {(("combat_enemy" & cmr_best) & "_epithet")}
+*comment LIGHT (2026-11-25, PHB'24): after an attack this turn with a Light weapon in the Attack action (combat_light_attack_round, set in resolve_weapon_attack_choice), a Light sidearm can make one
+*comment off-hand attack as a bonus action: a free hand for it (no shield), and a foe in its reach. It keeps the turn alive like any other bonus-action feature.
+*temp combat_can_offhand false
+*if ((((combat_player_bonus_left > 0) and (combat_light_attack_round = combat_round)) and ((sidearm_light) and (not(shield_equipped)))) and ((not(sidearm_type = "ranged")) and (combat_sidearm_reach)))
+  *set combat_can_offhand true
+  *set combat_bonus_available true
 *comment REACH CLASSES (2026-10-12, the user's call): touch, short (up to Close), medium (up to Mid-Range) and long (anywhere). Worked out here once per page: combat_reach_medium is the tier "medium" means in this fight, combat_in_short / combat_in_medium /
 *comment combat_in_long say whether any living enemy is inside that reach, and combat_med_epithet names who a medium-reach action will really hit (the clicked enemy if it is in reach, otherwise the weakest one that is), exactly as combat_reach_epithet does
 *comment for melee. The per-spell flags below are generated from tools/spell_book.json; a ranged weapon uses its own reach class (weapon_reach / sidearm_reach, from its loadout).
@@ -5578,6 +5601,15 @@
       *if (not(combat_weapon_attack_locked)) or (not(locked_combat_weapon_attack_page_id = page_id))
         *gosub_scene equipment equip_weapon equipped_sidearm_id
       *goto resolve_weapon_attack_choice
+
+  *if (combat_can_offhand)
+    # [b][BONUS ACTION][/b] [b][Off-Hand Attack][/b] Strike with your ${sidearm}${combat_sidearm_tag}.
+      *gosub_scene combat_movement fight_sidearm_reach_check
+      *if (not(combat_reach_ok))
+        ${combat_reach_msg}
+        *line_break
+        *goto fight_round_hub
+      *goto fight_offhand_attack
 
   *if ((combat_player_actions_left > 0) and (combat_player_restrained > 0))
     # [b][ACTION][/b] [b][Break Free][/b] Tear loose from what holds you.@{show_stat_hints  [Athletics vs. DC ${combat_player_restrained_dc}]|}
@@ -6808,7 +6840,7 @@
         *goto fight_throw_weapon
   *if (((equipped_weapon_id = "ash_spear") or (equipped_sidearm_id = "ash_spear")))
     *if ((combat_can_attack) and (combat_in_throw))
-      # [b][ACTION][/b] [b][Throw: Spear (${ctw_n_ash_spear})][/b] Hurl it at ${combat_wthrow_epithet}.@{show_stat_hints  [Thrown: 1d8 Piercing]|}
+      # [b][ACTION][/b] [b][Throw: Spear (${ctw_n_ash_spear})][/b] Hurl it at ${combat_wthrow_epithet}.@{show_stat_hints  [Thrown: 1d6 Piercing]|}
         *set combat_throw_id "ash_spear"
         *goto fight_throw_weapon
   *if (((equipped_weapon_id = "matched_dagger") or (equipped_sidearm_id = "matched_dagger")))
@@ -7099,6 +7131,20 @@ You press the gnarled heart to your chest. It beats once against your palm, slow
 *set combat_throw_on true
 *goto resolve_weapon_attack_choice
 
+*comment LIGHT: THE OFF-HAND ATTACK (2026-11-25, PHB'24). The Light sidearm makes one attack as a bonus action: it is put in the main hand for this one attack (its numbers, its lines), as a throw is,
+*comment and the hands are put back afterwards (fight_check_enemy_hp, or fight_thrown_return on a win) from combat_throw_main_after / _side_after. No ability modifier on its damage unless it is
+*comment negative (resolve_weapon_attack_choice); no Two-Weapon Fighting style exists yet to lift that. The lock keeps a replay from reading the hands after they were swapped.
+*label fight_offhand_attack
+*if (not(combat_offhand_locked)) or (not(locked_combat_offhand_page_id = page_id))
+  *set combat_throw_main_after equipped_weapon_id
+  *set combat_throw_side_after equipped_sidearm_id
+  *set combat_offhand_locked true
+  *set locked_combat_offhand_page_id page_id
+*set equipped_weapon_id combat_throw_side_after
+*gosub_scene equipment apply_weapon_loadout
+*set combat_offhand_on true
+*goto resolve_weapon_attack_choice
+
 *comment The thrown copies come back after a win (fight_victory, fight_victory_quiet), and the hands are put back as they were before the first throw that emptied one. The line is kept for the page, so a replay reprints it.
 *label fight_thrown_return
 *if (not(combat_thrown_note_page = page_id))
@@ -7158,8 +7204,9 @@ You press the gnarled heart to your chest. It beats once against your palm, slow
 *set combat_thrown_note_page page_id
 *comment A throw that ended the fight left the thrown weapon in the main hand for its lines (resolve_weapon_attack_choice leaves the hands to this label then): the hands as the throw left them first.
 *temp ftr_hands false
-*if (combat_throw_on)
+*if ((combat_throw_on) or (combat_offhand_on))
   *set combat_throw_on false
+  *set combat_offhand_on false
   *set equipped_weapon_id combat_throw_main_after
   *set equipped_sidearm_id combat_throw_side_after
   *set ftr_hands true
@@ -8469,6 +8516,9 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *comment Every targeted option re-syncs the HUD-picked target here, at the moment it's chosen, not just when the
   *comment page was built -- a click made while the page was already open would otherwise land on the stale target.
   *gosub_scene combat_movement fight_pick_target
+  *comment LIGHT: an Attack-action attack with a Light weapon (a throw of one too) opens the off-hand attack for this round. Not the off-hand attack itself, and not a cantrip's weapon attack (True Strike, Booming Blade), which is the Magic action.
+  *if (((weapon_light) and (not(combat_offhand_on))) and ((not(true_strike_on)) and (not(booming_armed))))
+    *set combat_light_attack_round combat_round
   *comment SPECIAL ARROWS (2026-10-15): the Shoot options set combat_arrow_kind and come here. The arrow is spent now, hit or miss, inside the lock so a replay cannot spend a second one; combat_arrow_used is what was loosed.
   *set combat_arrow_used ""
   *set combat_arrow_dealt 0
@@ -8573,6 +8623,9 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
       *set combat_player_dmg_bonus dex_mod
     *else
       *set combat_player_dmg_bonus str_mod
+    *comment LIGHT: the off-hand attack adds no ability modifier to its damage unless the modifier is negative (PHB'24).
+    *if ((combat_offhand_on) and (combat_player_dmg_bonus > 0))
+      *set combat_player_dmg_bonus 0
     *comment True Strike: the spellcasting modifier replaces the Strength or Dexterity one, and the player may turn the damage to Radiant. The level 5 Radiant dice are rolled with the hit, in combat_dice.txt.
     *if (true_strike_on)
       *set combat_player_dmg_bonus spell_damage_mod
@@ -8583,7 +8636,8 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
     *comment finesse and plain-melee branches above are one-handed melee
     *comment in this game's model.
     *comment On a throw only when it was the one weapon in hand (combat_throw_dueling_ok, fight_throw_weapon); a spare thrown while another weapon is held gets none.
-    *if ((fighting_style = "dueling") and ((not(combat_throw_on)) or (combat_throw_dueling_ok)))
+    *comment Nor on the off-hand attack: that is two weapons in hand.
+    *if (((fighting_style = "dueling") and (not(combat_offhand_on))) and ((not(combat_throw_on)) or (combat_throw_dueling_ok)))
       *if (not((weapon_type = "ranged") or (weapon_hands = "two_handed")))
         *set combat_player_dmg_bonus + 2
     *comment Close Combat Shooter: +2 damage on a ranged hit against a creature within 5 feet (Engaged).
@@ -8829,6 +8883,8 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *comment label next (a spell, which must still spend the general action, not an attack).
 *temp fceh_is_attack combat_pending_spend_is_attack
 *set combat_pending_spend_is_attack false
+*comment The off-hand attack spends the bonus action, not an attack (read before the hands are put back below clears the flag).
+*temp fceh_offhand combat_offhand_on
 *gosub fight_undead_fortitude
 *gosub fight_sync_target_out
 *gosub fight_check_all_dead
@@ -8836,8 +8892,10 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
   *goto fight_victory
 *comment A throw is over and the fight goes on: the hands go back to how fight_throw_weapon worked out they end up (the thrown copy gone). Here, after the dead check and Undead Fortitude, and not
 *comment in resolve_weapon_attack_choice: a call into another scene closes the open paragraph, and a win's fight_victory opens with the break that ends the last banner's line (fight_thrown_return does it then).
-*if (combat_throw_on)
+*comment The off-hand attack puts the hands back the same way (fight_offhand_attack).
+*if ((combat_throw_on) or (combat_offhand_on))
   *set combat_throw_on false
+  *set combat_offhand_on false
   *set equipped_weapon_id combat_throw_main_after
   *set equipped_sidearm_id combat_throw_side_after
   *gosub_scene equipment apply_weapon_loadout
@@ -8877,6 +8935,8 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
       *goto resolve_weapon_attack_choice
   *set combat_dual_shot_active false
   *set combat_player_chosen_target 0
+*if (fceh_offhand)
+  *goto fight_bonus_spent
 *if (fceh_is_attack)
   *goto fight_attack_spent
 *goto fight_action_spent

@@ -85,7 +85,7 @@ window.TRADE_DATA = {
    "retail": 40,
    "weight": 4,
    "minutes": 10,
-   "hint": "1d8 Slashing, One-Handed",
+   "hint": "1d8 Slashing, Versatile (1d10)",
    "slot": "Weapon",
    "stack": true,
    "sell": {
@@ -210,7 +210,7 @@ window.TRADE_DATA = {
    "retail": 100,
    "weight": 3,
    "minutes": 10,
-   "hint": "1d8 Slashing, One-Handed",
+   "hint": "1d8 Slashing, Versatile (1d10)",
    "slot": "Weapon",
    "stack": true,
    "sell": {
@@ -310,7 +310,7 @@ window.TRADE_DATA = {
    "retail": 35,
    "weight": 5,
    "minutes": 10,
-   "hint": "1d8 Bludgeoning, One-Handed",
+   "hint": "1d8 Bludgeoning, Versatile (1d10)",
    "slot": "Weapon",
    "stack": true,
    "sell": {
@@ -3110,7 +3110,7 @@ window.TRADE_DATA = {
    "retail": 8,
    "weight": 3,
    "minutes": 5,
-   "hint": "1d6 Piercing, Reach, One-Handed",
+   "hint": "1d6 Piercing, Reach, Versatile (1d8)",
    "slot": "Weapon",
    "stack": true,
    "sell": {
@@ -3210,7 +3210,7 @@ window.TRADE_DATA = {
    "retail": 15,
    "weight": 4,
    "minutes": 10,
-   "hint": "1d8 Bludgeoning, One-Handed",
+   "hint": "1d6 Bludgeoning, Versatile (1d8)",
    "slot": "Weapon",
    "stack": true,
    "sell": {
@@ -3235,7 +3235,7 @@ window.TRADE_DATA = {
    "retail": 20,
    "weight": 3,
    "minutes": 10,
-   "hint": "1d6 Piercing, Reach, One-Handed",
+   "hint": "1d6 Piercing, Reach, Versatile (1d8)",
    "slot": "Weapon",
    "stack": true,
    "sell": {

@@ -126,7 +126,7 @@
       weight: 4, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_timber_axe) || 0); return "Battleaxe" + (n > 1 ? " ×" + n : ""); },
       description: "Broad-bearded one-handed war axe with a hardened edge.",
-      traits: "1d8 Slashing, One-Handed",
+      traits: "1d8 Slashing, Versatile (1d10)",
       badge: function (s) { return s.equipped_weapon_id === "timber_axe" ? "Equipped" : ""; },
       equip: { slot: "weapon", id: "timber_axe" }
     },
@@ -153,7 +153,7 @@
       weight: 3, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_rough_spear) || 0); return "Rough Spear" + (n > 1 ? " ×" + n : ""); },
       description: "Straight ash pole with a wired-on iron head.",
-      traits: "1d6 Piercing, Reach, One-Handed",
+      traits: "1d6 Piercing, Reach, Versatile (1d8)",
       badge: function (s) { return s.equipped_weapon_id === "rough_spear" ? "Equipped" : ""; },
       equip: { slot: "weapon", id: "rough_spear" }
     },
@@ -939,7 +939,7 @@
       weight: 4, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_longshade_quarterstaff) || 0); return "Ash Quarterstaff" + (n > 1 ? " ×" + n : ""); },
       description: "Six-foot staff of straight-grained Longshade ash, planed round and oiled.",
-      traits: "1d8 Bludgeoning, One-Handed",
+      traits: "1d6 Bludgeoning, Versatile (1d8)",
       badge: function (s) { return s.equipped_weapon_id === "longshade_quarterstaff" ? "Equipped" : ""; },
       equip: { slot: "weapon", id: "longshade_quarterstaff" }
     },
@@ -948,7 +948,7 @@
       weight: 3, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_longshade_spear) || 0); return "Spear" + (n > 1 ? " ×" + n : ""); },
       description: "Seven-foot ash shaft with a leaf-bladed iron head.",
-      traits: "1d6 Piercing, Reach, One-Handed",
+      traits: "1d6 Piercing, Reach, Versatile (1d8)",
       badge: function (s) { return s.equipped_weapon_id === "longshade_spear" ? "Equipped" : ""; },
       equip: { slot: "weapon", id: "longshade_spear" }
     },
@@ -1246,7 +1246,7 @@
       weight: 3, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_longsword) || 0); return "Longsword" + (n > 1 ? " ×" + n : ""); },
       description: "Straight double-edged blade with a plain cross guard.",
-      traits: "1d8 Slashing, One-Handed",
+      traits: "1d8 Slashing, Versatile (1d10)",
       badge: function (s) { return s.equipped_weapon_id === "longsword" ? "Equipped" : ""; },
       equip: { slot: "weapon", id: "longsword" }
     },
@@ -1282,7 +1282,7 @@
       weight: 5, stow: true, stack: true,
       name: function (s) { var n = 1 + (Number(s.spare_warhammer) || 0); return "Warhammer" + (n > 1 ? " ×" + n : ""); },
       description: "Square iron head on an ash haft, spiked behind.",
-      traits: "1d8 Bludgeoning, One-Handed",
+      traits: "1d8 Bludgeoning, Versatile (1d10)",
       badge: function (s) { return s.equipped_weapon_id === "warhammer" ? "Equipped" : ""; },
       equip: { slot: "weapon", id: "warhammer" }
     },
