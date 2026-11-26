@@ -11,11 +11,14 @@
  * that room's files at the end unless --keep is given.
  *
  * Usage:
- *   node tools/rp_memory_test.js <sample file> --model <OpenRouter id> [--server URL] [--narrator openrouter|perchance] [--keep]
+ *   node tools/rp_memory_test.js <sample file> --model <OpenRouter id> [--server URL] [--narrator openrouter|perchance] [--keep] [--chunk-over N]
  *   node tools/rp_memory_test.js tools/rp_memory_samples/lina_verner.json --model nvidia/nemotron-3-ultra-550b-a55b:free
  *
  * --model is the OpenRouter model that writes the memories (in the game: the one picked in the console's model list) and,
  * with --narrator openrouter, also plays the scene.
+ *
+ * --chunk-over N notes a transcript part by part once it is longer than N characters (the server's default is 16000),
+ * so a sample shorter than that can still test the long-scene path (server.py MEMORY_CHUNK_OVER).
  *
  * Needs the Mempalace server running (default http://localhost:5000) with its OpenRouter key. The narrator defaults to
  * OpenRouter with the memory model; --narrator perchance needs the Perchance tab open. Calls are made one at a time
@@ -29,13 +32,14 @@ const ROOT = path.resolve(__dirname, "..");
 const GAME = path.join(ROOT, "web", "mygame");
 
 const args = process.argv.slice(2);
-let sampleFile = null, server = "http://localhost:5000", narrator = "openrouter", narratorModel = null, keep = false;
+let sampleFile = null, server = "http://localhost:5000", narrator = "openrouter", narratorModel = null, keep = false, chunkOver = 0;
 for (let i = 0; i < args.length; i++) {
   const a = args[i];
   if (a === "--server") server = args[++i].replace(/\/+$/, "");
   else if (a === "--narrator") narrator = args[++i];
   else if (a === "--model") narratorModel = args[++i];
   else if (a === "--keep") keep = true;
+  else if (a === "--chunk-over") chunkOver = Number(args[++i]) || 0;
   else if (!sampleFile) sampleFile = a;
   else { console.error("Unknown argument: " + a); process.exit(2); }
 }
@@ -123,9 +127,11 @@ async function wipe() {
       date_label: RP.formatMemoryDateLabel(s), mode: "openrouter", model: narratorModel, timeout: 120,
       player_name: RP.companionKnowsName(cfg, s) ? String(s.name || "") : ""
     };
+    if (chunkOver) body.chunk_over = chunkOver;
     hr("save: " + sess.label);
     const t0 = Date.now();
-    const r = await post("/append_memory", body, 160000);
+    // A long scene is noted part by part before the memory is written (two model calls in a row), so up to 5 minutes.
+    const r = await post("/append_memory", body, 300000);
     const secs = ((Date.now() - t0) / 1000).toFixed(1);
     if (r.body && r.body.status === "success") {
       console.log(memId + " · " + secs + "s · " + r.body.memory.length + " characters\n" + r.body.memory);
@@ -161,8 +167,7 @@ async function wipe() {
 
   // 4. Later: does the narrator use them?
   for (const q of sample.questions || []) {
-    const got = ((await memories(later, q.say)).body || {}).memories || [];
-    const memBlock = got.map((m) => "- " + m.content).join("\n");
+    const memBlock = RP.formatMemoryBlock((await memories(later, q.say)).body);
     // As the game sends it: the system message for the visit, then the turn's context (memories, lore) before the action.
     const sys = RP.buildSystemPrompt(mainCfg, later);
     const turnCtx = RP.buildTurnContext(mainCfg, later, memBlock, [q.say]);

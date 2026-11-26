@@ -141,6 +141,7 @@ You look around: whitewashed walls, a pot on the fire, herbs hanging from the be
 *label lv_menu
 *gosub lv_week_now
 *set wait_ok_page page_id
+*gosub_scene crafting cook_site_set "lina_verner"
 *comment Her bed is offered every night, not once a week (only the tryst is weekly). The one block: the Pre-Dawn of the day you
 *comment just woke here, since a night begun at Dusk ends around 03:00, still Pre-Dawn; that evening the bed is offered again.
 *choice
@@ -149,6 +150,10 @@ You look around: whitewashed walls, a pot on the fire, herbs hanging from the be
       *goto lv_meal
   *if ((not(lv_meal_day = campaign_day)) and (not(time_period = "Pre-Dawn")))
     # [Roleplay] Eat with her and talk over supper. [~1 hour]
+      *set rp_active_scene "lina_supper"
+      *goto lv_supper
+  *if ((lv_meal_day = campaign_day) or (time_period = "Pre-Dawn"))
+    # [Roleplay] Sit at the table and talk with her. [~1 hour]
       *set rp_active_scene "lina_supper"
       *goto lv_supper
   *if (((lv_in_mood) and (not(lv_tryst_week = lv_week))) and ((time_period = "Dusk") or (time_period = "Night")))
@@ -206,31 +211,37 @@ You look around: whitewashed walls, a pot on the fire, herbs hanging from the be
 *comment talk scene: no grade, no boon, she keeps it a conversation). Its memory is saved to Lina's room once the next page shows no scene.
 *label lv_supper
 *set scenery_subplace "palmcote_verner_cottage"
-*set lv_meal_day campaign_day
-*set tavern_item_cost_copper 0
-*set tavern_item_hp_heal 0
-*set tavern_item_temp_hp 0
-*set tavern_item_type "food"
-*set tavern_item_buff_name ""
-*set tavern_item_buff_desc ""
-*set tavern_item_buff_stat "none"
-*set tavern_item_buff_bonus 0
-*set tavern_item_buff_minutes 0
-*gosub_scene economy buy_tavern_item
+*temp lv_supper_fed false
+*if ((not(lv_meal_day = campaign_day)) and (not(time_period = "Pre-Dawn")))
+  *set lv_supper_fed true
+  *set lv_meal_day campaign_day
+  *set tavern_item_cost_copper 0
+  *set tavern_item_hp_heal 0
+  *set tavern_item_temp_hp 0
+  *set tavern_item_type "food"
+  *set tavern_item_buff_name ""
+  *set tavern_item_buff_desc ""
+  *set tavern_item_buff_stat "none"
+  *set tavern_item_buff_bonus 0
+  *set tavern_item_buff_minutes 0
+  *gosub_scene economy buy_tavern_item
 *set minutes_to_pass 60
 *set time_advance_call_id "lv_supper"
 *gosub_scene hartwell/palmcote/palmcote pc_walk_time
-Lina ladles beans and onion into two bowls, drops a torn loaf between them and hooks a stool out from the table with her foot. "Sit. Eat. Then talk."
+*if (lv_supper_fed)
+  Lina ladles beans and onion into two bowls, drops a torn loaf between them and hooks a stool out from the table with her foot. "Sit. Eat. Then talk."
+*else
+  Lina pours two cups of herb tea from the kettle on the hob and hooks a stool out from the table with her foot. "Sit. Talk."
 
 [RP_SESSION:${rp_active_scene}]
-*page_break Clear the table…
+*page_break Step back from the table…
 *goto lv_supper_after
 
 *comment The scene is cleared here, on the page after the roleplay, never on the roleplay page itself (a Stats round trip replays that page).
 *label lv_supper_after
 *set scenery_subplace "palmcote_verner_cottage"
 *set rp_active_scene "none"
-You stack the bowls by the basin while Lina sweeps the crumbs off the table into her palm and tosses them on the fire.
+Lina sweeps the table clean with the flat of her hand and leans back toward the hearth.
 *goto lv_menu
 
 *comment Five things to talk about, each once, one a day; after that the option is gone. Each has the player's own line first.

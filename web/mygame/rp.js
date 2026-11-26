@@ -54,7 +54,10 @@
     try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch (e) {}
     return {
       mode: saved.mode || "auto", // "auto" (Perchance if worker connected, else OpenRouter), "perchance", "openrouter"
-      model: saved.model || "baidu/ernie-5.5-flash-preview:free"
+      model: saved.model || "baidu/ernie-5.5-flash-preview:free",
+      // AUTO REPLY (2026-11-26): off, Send posts the player's turn without a reply (the last word before /end);
+      // "Get reply" (or Send with an empty box) asks for one. Kept per browser, like the mode and model.
+      autoReply: saved.autoReply !== false
     };
   }
 
@@ -1122,19 +1125,25 @@
         query: queryText || ""
       })
     }).then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) {
-        if (!d || !Array.isArray(d.memories) || !d.memories.length) return "";
-        return d.memories.map(function (m) { return "- " + m.content; }).join("\n");
-      })
+      .then(formatMemoryBlock)
       .catch(function () { return ""; });
   }
 
-  // The transcript sent to be summarised: whole when it fits, otherwise its start and its end (where names, promises and
-  // goodbyes usually are) with the middle cut. It used to be cut at 3500 characters, which lost every ending.
+  // The memories as the prompt lists them. OPEN THREADS (2026-11-26): the server returns the last visit's unresolved
+  // threads on their own (server.py get_npc_memories), listed last so the companion can follow up on them.
+  function formatMemoryBlock(d) {
+    if (!d || !Array.isArray(d.memories) || !d.memories.length) return "";
+    var lines = d.memories.map(function (m) { return "- " + m.content; });
+    if (d.threads) lines.push("- LEFT OPEN AT THE LAST VISIT (worth following up on or bringing up when it fits): " + d.threads);
+    return lines.join("\n");
+  }
+
+  // The transcript sent to be summarised. The server notes a long one part by part (server.py MEMORY_CHUNK_OVER), so it is
+  // sent whole up to 80000 characters; past that, its start and its end (where names, promises and goodbyes usually are).
   function memoryTranscript(text) {
-    var MAX = 24000;
+    var MAX = 80000;
     if (text.length <= MAX) return text;
-    return text.slice(0, 6000) + "\n\n[... middle of the scene left out ...]\n\n" + text.slice(text.length - (MAX - 6000));
+    return text.slice(0, 20000) + "\n\n[... middle of the scene left out ...]\n\n" + text.slice(text.length - (MAX - 20000));
   }
 
   function commitSessionToMemPalace() {
@@ -1222,6 +1231,7 @@
   RP.companionKnowsName = companionKnowsName;
   RP.memoryOrder = memoryOrder;
   RP.memoryTranscript = memoryTranscript;
+  RP.formatMemoryBlock = formatMemoryBlock;
   RP.formatMemoryDateLabel = formatMemoryDateLabel;
   RP.buildSystemPrompt = buildSystemPrompt;
   RP.buildAdvisorSystemPrompt = buildAdvisorSystemPrompt;
@@ -1456,8 +1466,10 @@
             '<div class="rp-actions-left">' +
               '<button type="button" class="rp-btn rp-btn-primary" data-act="send">Send / Continue</button>' +
               '<button type="button" class="rp-btn rp-btn-advise" data-act="advise" title="Ask the AI to advise context-aware choices for this moment (replaces static chips)">\u2726 Advise</button>' +
+              '<button type="button" class="rp-btn rp-btn-reply" data-act="reply" title="Ask for a reply to what you have posted"' + (settings.autoReply ? ' hidden' : '') + '>Get reply</button>' +
             '</div>' +
             '<div class="rp-actions-right">' +
+              '<label class="rp-mem-check rp-auto-reply-check" title="When unchecked, Send posts your turn without a reply, so you can have the last word"><input type="checkbox" class="rp-auto-reply-cb"' + (settings.autoReply ? ' checked' : '') + '><span>Auto reply</span></label>' +
               (hasMem ? '<label class="rp-mem-check" title="When checked, this scene will be distilled into a memory for this companion when you leave"><input type="checkbox" class="rp-save-mem-cb" checked><span>Save as memory</span></label>' : '') +
               '<span class="rp-status">Scene in progress. Type &quot;/end&quot; anytime to wrap up early.</span>' +
             '</div>' +
@@ -1471,6 +1483,8 @@
     var statusEl = box.querySelector(".rp-status");
     var sendBtn = box.querySelector('[data-act="send"]');
     var adviseBtn = box.querySelector('[data-act="advise"]');
+    var replyBtn = box.querySelector('[data-act="reply"]');
+    var autoReplyCb = box.querySelector(".rp-auto-reply-cb");
     var modeSel = box.querySelector(".rp-mode-select");
     var modelSel = box.querySelector(".rp-model-select");
     var composerEl = box.querySelector(".rp-composer");
@@ -1557,6 +1571,7 @@
     function updateButtons() {
       sendBtn.disabled = session.busy;
       if (adviseBtn) adviseBtn.disabled = session.busy;
+      if (replyBtn) replyBtn.disabled = session.busy || !!session.evalResult;
       Array.prototype.forEach.call(box.querySelectorAll(".rp-chip"), function (c) {
         c.disabled = session.busy;
       });
@@ -1914,6 +1929,35 @@
       saveActiveSession(inputEl.value);
     });
 
+    // Auto reply off: the player's turn is posted and nothing is generated.
+    function postTurnOnly(playerText) {
+      if (session.busy || session.evalResult || !playerText) return;
+      session.adviseSeq += 1;
+      session.advisedStarters = null;
+      session.advisedBeats = null;
+      renderChips();
+      var userTurn = createTurnBlock("user", playerText, box);
+      if (userTurn) session.turns.push(userTurn);
+      saveActiveSession(inputEl.value);
+      updateButtons();
+      setStatus("Your turn is posted.");
+      if (userTurn && userTurn.wrap && userTurn.wrap.scrollIntoView) userTurn.wrap.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    // A reply to what is already posted: the last turn, if it is the player's, is the action (as a regenerate does).
+    function requestReply() {
+      if (session.busy || session.evalResult) return;
+      var last = session.turns.length ? session.turns[session.turns.length - 1] : null;
+      if (last && last.role === "user") runGeneration(last.text, true);
+      else runGeneration("Continue the moment naturally, letting the companion take the lead.", false);
+    }
+
+    // What the player's text does: a turn and its reply, or (auto reply off) the turn alone.
+    function playerTurn(playerText) {
+      if (settings.autoReply) runGeneration(playerText, false);
+      else postTurnOnly(playerText);
+    }
+
     function runGeneration(playerText, isReroll) {
       if (session.busy) return;
       session.busy = true;
@@ -1947,7 +1991,7 @@
           function (m, mid) {
             return buildUserPrompt(playerText || "Continue the scene naturally from where it left off.", sysPrompt, m, mid, turnContext);
           },
-          600,
+          2000,
           "Generating"
         );
       }).then(function (res) {
@@ -2052,6 +2096,12 @@
       saveSettings();
     });
 
+    if (autoReplyCb) autoReplyCb.addEventListener("change", function () {
+      settings.autoReply = autoReplyCb.checked;
+      saveSettings();
+      if (replyBtn) replyBtn.hidden = settings.autoReply;
+    });
+
     box.addEventListener("click", function (ev) {
       var target = ev.target;
       var actBtn = target.closest ? target.closest("[data-act]") : null;
@@ -2117,14 +2167,14 @@
       if (starterBtn && !session.busy) {
         var stText = starterBtn.getAttribute("data-starter");
         inputEl.value = "";
-        runGeneration(stText, false);
+        playerTurn(stText);
         return;
       }
 
       var beatBtn = target.closest ? target.closest("[data-beat]") : null;
       if (beatBtn && !session.busy) {
         var bText = beatBtn.getAttribute("data-beat");
-        runGeneration(bText, false);
+        playerTurn(bText);
         return;
       }
 
@@ -2147,7 +2197,10 @@
           }
           return;
         }
-        runGeneration(val || "Continue the moment naturally, letting the companion take the lead.", false);
+        if (!val) requestReply();
+        else playerTurn(val);
+      } else if (actName === "reply") {
+        requestReply();
       } else if (actName === "memories") {
         memDrawer.hidden = !memDrawer.hidden;
         if (!memDrawer.hidden) renderMemoriesDrawer();

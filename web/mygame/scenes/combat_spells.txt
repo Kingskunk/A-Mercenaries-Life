@@ -3174,6 +3174,105 @@ ${combat_grease_land_banner}
 *comment Replay-locked (combat_cast_locked); the per-target lines are kept in combat_mm_banner_1..6, same as
 *comment Thunderwave/Grease/Magic Missile's split targeting, and printed after the lock.
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*comment CONE TARGETS (2026-11-26, the user): a cone catches at most 3 foes, all living, Engaged and on the side it points
+*comment (combat_cone_side: 1 ahead, -1 behind; an enemy's _side -1 is behind, anything else ahead). The foe picked in the sidebar
+*comment (combat_player_chosen_target) is caught first when it stands there, then the rest in slot order. Sets combat_cone_caught_1..6,
+*comment the count (combat_cone_caught_n) and the names in the order caught ("A", "A and B", "A, B and C") in combat_cone_names.
+*label cone_pick
+*temp cp_max 3
+*set combat_cone_caught_n 0
+*set combat_cone_names ""
+*temp cp_last ""
+*temp cp_i 1
+*label cone_pick_clear
+*if (cp_i <= combat_enemy_slot_cap)
+  *set {("combat_cone_caught_" & cp_i)} false
+  *set cp_i + 1
+  *goto cone_pick_clear
+*comment The sidebar pick first, found by a slot loop (quicktest runs both sides of an *if, so a bare *if on the pick would reach slot 0).
+*temp cp_slot 1
+*set cp_i 1
+*label cone_pick_first
+*if (cp_i <= combat_enemy_count)
+  *if (cp_i = combat_player_chosen_target)
+    *set cp_slot cp_i
+    *gosub cone_pick_try
+  *set cp_i + 1
+  *goto cone_pick_first
+*set cp_i 1
+*label cone_pick_loop
+*if ((cp_i <= combat_enemy_count) and (combat_cone_caught_n < cp_max))
+  *set cp_slot cp_i
+  *gosub cone_pick_try
+  *set cp_i + 1
+  *goto cone_pick_loop
+*if (combat_cone_names = "")
+  *set combat_cone_names cp_last
+*elseif (not(cp_last = ""))
+  *set combat_cone_names ((combat_cone_names & " and ") & cp_last)
+*comment Allies (2026-11-26, the user): an ally has a lane position but no side, so one standing on the player's tile is in the cone when the
+*comment foe it is fighting (combat_allyN_target) is caught. Not counted against the 3. Fills combat_cone_ally_caught_1..4, _n and _names.
+*set combat_cone_ally_n 0
+*set combat_cone_ally_names ""
+*set cp_last ""
+*set cp_i 1
+*label cone_pick_ally_loop
+*if (cp_i <= combat_ally_slot_cap)
+  *gosub cone_pick_ally_try
+  *set cp_i + 1
+  *goto cone_pick_ally_loop
+*if (combat_cone_ally_names = "")
+  *set combat_cone_ally_names cp_last
+*elseif (not(cp_last = ""))
+  *set combat_cone_ally_names ((combat_cone_ally_names & " and ") & cp_last)
+*return
+
+*comment One ally slot (cp_i) for cone_pick: caught when it stands on the player's tile and the foe it fights is caught. The foe is found by a slot
+*comment loop, not a guarded {} lookup: quicktest runs both sides of an *if and would ask for combat_cone_caught_0.
+*label cone_pick_ally_try
+*temp cpa_p (("combat_ally" & cp_i) & "_")
+*set {("combat_cone_ally_caught_" & cp_i)} false
+*temp cpa_foe {(cpa_p & "target")}
+*temp cpa_in false
+*temp cpa_j 1
+*label cone_pick_ally_foe
+*if (cpa_j <= combat_enemy_slot_cap)
+  *if ((cpa_j = cpa_foe) and ({("combat_cone_caught_" & cpa_j)}))
+    *set cpa_in true
+  *set cpa_j + 1
+  *goto cone_pick_ally_foe
+*if ((cpa_in) and (({(cpa_p & "hp")} > 0) and ({(cpa_p & "position")} = combat_lane_player_position)))
+  *set {("combat_cone_ally_caught_" & cp_i)} true
+  *set combat_cone_ally_n + 1
+  *if (not(cp_last = ""))
+    *if (combat_cone_ally_names = "")
+      *set combat_cone_ally_names cp_last
+    *else
+      *set combat_cone_ally_names ((combat_cone_ally_names & ", ") & cp_last)
+  *set cp_last {(cpa_p & "name")}
+*return
+
+*comment One slot (cp_slot) for cone_pick: caught when it is not already, stands in the cone, and there is room.
+*label cone_pick_try
+*if ({("combat_cone_caught_" & cp_slot)})
+  *return
+*if (combat_cone_caught_n >= cp_max)
+  *return
+*temp cpt_p (("combat_enemy" & cp_slot) & "_")
+*temp cpt_side {(cpt_p & "side")}
+*if (not(cpt_side = (0 - 1)))
+  *set cpt_side 1
+*if ((({(cpt_p & "hp")} > 0) and ({(cpt_p & "range")} <= 0)) and (cpt_side = combat_cone_side))
+  *set {("combat_cone_caught_" & cp_slot)} true
+  *set combat_cone_caught_n + 1
+  *if (not(cp_last = ""))
+    *if (combat_cone_names = "")
+      *set combat_cone_names cp_last
+    *else
+      *set combat_cone_names ((combat_cone_names & ", ") & cp_last)
+  *set cp_last {(cpt_p & "name")}
+*return
+
 *label resolve_cast_burning_hands
 *if (not(combat_scroll_id = ""))
   *gosub_scene equipment spend_consumable combat_scroll_id
@@ -3189,13 +3288,13 @@ ${combat_grease_land_banner}
 *set combat_mm_banner_4 ""
 *set combat_mm_banner_5 ""
 *set combat_mm_banner_6 ""
+*comment The cone points one way (combat_cone_side, set by fight_aim_burning_hands) and catches at most 3 (cone_pick).
+*gosub cone_pick
 *temp bh_i 1
 *label resolve_cast_burning_hands_loop
 *if (bh_i <= combat_enemy_count)
   *temp bh_p (("combat_enemy" & bh_i) & "_")
-  *temp bh_hp {(bh_p & "hp")}
-  *temp bh_range {(bh_p & "range")}
-  *if ((bh_hp > 0) and (bh_range <= 0))
+  *if ({("combat_cone_caught_" & bh_i)})
     *gosub_scene combat_dice resolve_save bh_p spell_fact_save_ability "Dexterity" spell_save_dc bh_i
     *comment check_success is inverted here (resolve_save: true = the enemy FAILED the save).
     *temp bh_failed check_success
@@ -3220,6 +3319,17 @@ ${combat_grease_land_banner}
     *set {(("combat_mm_banner_" & bh_i))} "[b][🔥 ${bh_line}][/b]"
   *set bh_i + 1
   *goto resolve_cast_burning_hands_loop
+*comment Allies in the cone (cone_pick: on the player's tile, fighting a caught foe) make the same save against the same roll, with their own
+*comment defenses (adjust_damage_packet: a Wet ally resists fire). Save locks 9-12 (8 + the ally slot); the concentration save uses lock 8 as
+*comment an enemy's blow on an ally does. Each line is kept in combat_cone_ally_banner_N and printed after the foes'.
+*set bh_i 1
+*label resolve_cast_burning_hands_ally_loop
+*if (bh_i <= combat_ally_slot_cap)
+  *set {("combat_cone_ally_banner_" & bh_i)} ""
+  *if ({("combat_cone_ally_caught_" & bh_i)})
+    *gosub resolve_cone_ally bh_i bh_total spell_fact_save_ability "Dexterity" "🔥" "flames" false
+  *set bh_i + 1
+  *goto resolve_cast_burning_hands_ally_loop
 *if (not(combat_save_quiet))
   ${combat_player_dmg_roll_banner}
   *line_break
@@ -3232,6 +3342,82 @@ ${combat_grease_land_banner}
     *line_break
   *set bh_pi + 1
   *goto resolve_cast_burning_hands_print_loop
+*set bh_pi 1
+*label resolve_cast_burning_hands_ally_print
+*if (bh_pi <= combat_ally_slot_cap)
+  *temp bh_aval {("combat_cone_ally_banner_" & bh_pi)}
+  *if (not(bh_aval = ""))
+    ${bh_aval}
+    *line_break
+  *set bh_pi + 1
+  *goto resolve_cast_burning_hands_ally_print
+*return
+
+*comment One ally caught in the player's own cone or cube (Burning Hands, Thunderwave; cone_pick): its save (lock 8 + the slot) against the
+*comment cast's one roll, the damage after its own defenses (a Wet ally resists fire), and its line in combat_cone_ally_banner_N ("caught in
+*comment your <rca_what>"). rca_push: a failed save that leaves it standing throws it one step the way the spell went (combat_cone_side), forced
+*comment movement as enemy_push_ally's; the lane's ends stop it.
+*label resolve_cone_ally
+*params rca_slot rca_total rca_stat rca_label rca_icon rca_what rca_push
+*temp rca_p (("combat_ally" & rca_slot) & "_")
+*gosub_scene combat_dice resolve_save rca_p rca_stat rca_label spell_save_dc (8 + rca_slot)
+*temp rca_failed check_success
+*temp rca_dmg rca_total
+*if (not(rca_failed))
+  *set rca_dmg ((rca_total - (rca_total modulo 2)) / 2)
+*gosub_scene combat_dice adjust_damage_packet rca_p rca_dmg combat_player_dmg_type 0
+*set rca_dmg combat_packet_damage
+*temp rca_tag combat_packet_suffix
+*if ({(rca_p & "off_balance")} > 0)
+  *gosub_scene combat_dice condition_end rca_p "off_balance"
+*set {(rca_p & "hp")} - rca_dmg
+*if ({(rca_p & "hp")} <= 0)
+  *set {(rca_p & "hp")} 0
+  *gosub_scene combat_dice concentration_end rca_p
+*else
+  *gosub_scene combat_dice concentration_damage_check rca_p rca_dmg 8
+*temp rca_shove ""
+*if ((rca_push) and ((rca_failed) and ({(rca_p & "hp")} > 0)))
+  *temp rca_from {(rca_p & "position")}
+  *gosub_scene combat_movement combat_lane_move_ally_to_position rca_slot 0 (rca_from + combat_cone_side)
+  *if (not({(rca_p & "position")} = rca_from))
+    *set rca_shove ", thrown back a step"
+*temp rca_name {(rca_p & "name")}
+*temp rca_line "${rca_name}: ${rca_dmg} ${combat_player_dmg_type} damage${rca_tag}, caught in your ${rca_what}${rca_shove}"
+*if (not(rca_failed))
+  *set rca_line "${rca_line} (braced, half)"
+*if ({(rca_p & "hp")} <= 0)
+  *set rca_line "${rca_name} is down: ${rca_dmg} ${combat_player_dmg_type} damage${rca_tag}, caught in your ${rca_what}"
+*set {("combat_cone_ally_banner_" & rca_slot)} "[b][${rca_icon} ${rca_line}][/b]"
+*return
+
+*comment One ally caught in the player's Burning Hands: its save, the damage after its own defenses, and its line.
+*label resolve_cast_burning_hands_ally
+*params bha_slot bha_total
+*temp bha_p (("combat_ally" & bha_slot) & "_")
+*gosub_scene combat_dice resolve_save bha_p spell_fact_save_ability "Dexterity" spell_save_dc (8 + bha_slot)
+*temp bha_failed check_success
+*temp bha_dmg bha_total
+*if ((not(bha_failed)) and (spell_fact_half_on_save))
+  *set bha_dmg ((bha_total - (bha_total modulo 2)) / 2)
+*gosub_scene combat_dice adjust_damage_packet bha_p bha_dmg combat_player_dmg_type 0
+*set bha_dmg combat_packet_damage
+*temp bha_tag combat_packet_suffix
+*if ({(bha_p & "off_balance")} > 0)
+  *gosub_scene combat_dice condition_end bha_p "off_balance"
+*set {(bha_p & "hp")} - bha_dmg
+*if ({(bha_p & "hp")} <= 0)
+  *set {(bha_p & "hp")} 0
+  *gosub_scene combat_dice concentration_end bha_p
+*else
+  *gosub_scene combat_dice concentration_damage_check bha_p bha_dmg 8
+*temp bha_name {(bha_p & "name")}
+*temp bha_line "${bha_name}: ${bha_dmg} ${combat_player_dmg_type} damage${bha_tag}, caught in your flames"
+*if (not(bha_failed))
+  *set bha_line "${bha_line} (braced, half)"
+*if ({(bha_p & "hp")} <= 0)
+  *set bha_line "${bha_name} is down: ${bha_dmg} ${combat_player_dmg_type} damage${bha_tag}, caught in your flames"
+*set {("combat_cone_ally_banner_" & bha_slot)} "[b][🔥 ${bha_line}][/b]"
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -3239,7 +3425,7 @@ ${combat_grease_land_banner}
 *comment 2nd level, RAW +1d8 per slot level above 1st, same dice-count = combat_cast_at_level + 1 shape Ray of
 *comment Sickness uses) to every living enemy Engaged with the caster, Constitution save for half. RAW the wave
 *comment fills a fifteen-foot cube from the caster; this engine places combatants in bands rather than on a grid,
-*comment so Engaged (range 0) is the honest reading, the same one Arms of Hadar uses above.
+*comment so Engaged (range 0) on the side it is aimed, at most 3 (cone_pick, 2026-11-26), is the honest reading. Arms of Hadar, a true radius, still takes every Engaged foe.
 *comment ONE roll total is shared by every target, RAW, and carries NO casting modifier -- the burst spells here are flat (Arms of Hadar's 2d6) while the single-target save spells add it (Dissonant
 *comment Whispers). A target that FAILS is also driven back one range step: forced movement, no opportunity attack, Large or smaller only, and nothing moves at the back of the lane. That is the same
 *comment step Repelling Blast and Shove use (combat_movement combat_shift_target_range), so nothing new moves anybody.
@@ -3268,13 +3454,13 @@ ${combat_grease_land_banner}
 *set combat_mm_banner_4 ""
 *set combat_mm_banner_5 ""
 *set combat_mm_banner_6 ""
+*comment The cube goes one way (combat_cone_side, set by fight_aim_thunderwave) and catches at most 3 (cone_pick), as Burning Hands does.
+*gosub cone_pick
 *temp tw_i 1
 *label resolve_cast_thunderwave_loop
 *if (tw_i <= combat_enemy_count)
   *temp tw_p (("combat_enemy" & tw_i) & "_")
-  *temp tw_hp {(tw_p & "hp")}
-  *temp tw_range {(tw_p & "range")}
-  *if ((tw_hp > 0) and (tw_range <= 0))
+  *if ({("combat_cone_caught_" & tw_i)})
     *gosub_scene combat_dice resolve_save tw_p "constitution" "Constitution" spell_save_dc tw_i
     *comment check_success is inverted here (resolve_save: true = the enemy FAILED the save).
     *temp tw_failed check_success
@@ -3308,6 +3494,15 @@ ${combat_grease_land_banner}
     *set {(("combat_mm_banner_" & tw_i))} "[b][⚡ ${tw_line}][/b]"
   *set tw_i + 1
   *goto resolve_cast_thunderwave_loop
+*comment Allies in the cube (cone_pick), RAW: the same Constitution save against the same roll, and a failure throws one back a step (resolve_cone_ally).
+*set tw_i 1
+*label resolve_cast_thunderwave_ally_loop
+*if (tw_i <= combat_ally_slot_cap)
+  *set {("combat_cone_ally_banner_" & tw_i)} ""
+  *if ({("combat_cone_ally_caught_" & tw_i)})
+    *gosub resolve_cone_ally tw_i tw_total "constitution" "Constitution" "⚡" "wave" true
+  *set tw_i + 1
+  *goto resolve_cast_thunderwave_ally_loop
 ${combat_player_dmg_roll_banner}
 *line_break
 *temp tw_pi 1
@@ -3319,6 +3514,15 @@ ${combat_player_dmg_roll_banner}
     *line_break
   *set tw_pi + 1
   *goto resolve_cast_thunderwave_print_loop
+*set tw_pi 1
+*label resolve_cast_thunderwave_ally_print
+*if (tw_pi <= combat_ally_slot_cap)
+  *temp tw_aval {("combat_cone_ally_banner_" & tw_pi)}
+  *if (not(tw_aval = ""))
+    ${tw_aval}
+    *line_break
+  *set tw_pi + 1
+  *goto resolve_cast_thunderwave_ally_print
 *return
 
 *comment ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

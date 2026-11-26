@@ -13,6 +13,7 @@ This file only says where to look. The rules are in the files it names. Read the
 | Adding a place, a settlement, a quest, a named character, a shop, an item, or an enemy or fight | `Resources & Quest/CONTENT_WORKFLOW.md`: for each, what to decide, the files to touch, the tools to run and the checks |
 | Scene code, items, the interface, dungeons, the overworld, the test tools | `Resources & Quest/GAMEPLAY_MECHANICS_RULES.md`. It is far too large to read whole: list its `## ` headings, then search inside the one section you need. |
 | The fight system: spells, enemies, conditions, subclasses, feats | `Resources & Quest/COMBAT_ENGINE_PLAN.md` |
+| An AI roleplay companion or scene, `rp.js`, `rp-data.js`, the memory server | `Resources & Quest/ROLEPLAY_SYSTEM.md` |
 | What already exists: gear, spells, recipes | The `*_REFERENCE.md` files in `Resources & Quest/` |
 | A quest or region that has its own plan | The matching `*_PLAN.md` in `Resources & Quest/` |
 

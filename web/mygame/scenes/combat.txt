@@ -1121,6 +1121,28 @@
 *temp fcar_shape spell_fact_target
 *if ((not(fcar_shape = "engaged")) and (not(fcar_shape = "spot")))
   *return
+*comment A CONE (2026-11-26, the user; RAW): Burning Hands and Thunderwave go one way, from the caster through its mark (combat_ai enemy_cone_reach): at most 3 of
+*comment the player's side, and its own side standing past the mark is caught too (fight_enemy_cast_own_side). Arms of Hadar, a true radius, keeps the reach below.
+*if ((combat_enemy_cast_spell = "burning_hands") or (combat_enemy_cast_spell = "thunderwave"))
+  *gosub_scene combat_ai enemy_cone_reach combat_active_target fcar_primary_ally
+  *if ((fcar_primary_ally > 0) and ((hp_current > 1) and (combat_econe_player)))
+    *page_break The spell spreads…
+    *gosub_scene combat_dice resolve_enemy_attack
+    *gosub_scene combat_prose fight_narrate_enemy_turn
+  *temp fcar_ci 1
+  *label fight_enemy_cast_area_cone_loop
+  *if (fcar_ci <= combat_ally_slot_cap)
+    *temp fcar_cap (("combat_ally" & fcar_ci) & "_")
+    *if (((not(fcar_ci = fcar_primary_ally)) and ({(fcar_cap & "hp")} > 0)) and ({("combat_econe_ally_" & fcar_ci)}))
+      *page_break The spell spreads…
+      *gosub_scene combat_dice resolve_enemy_attack_on_ally fcar_ci
+      *gosub_scene combat_prose fight_narrate_ally_attack "enemy" combat_active_target "ally" fcar_ci combat_enemy_atk_on_ally_hit
+    *set fcar_ci + 1
+    *goto fight_enemy_cast_area_cone_loop
+  *if (combat_econe_own_n > 0)
+    *page_break The spell spreads…
+    *gosub_scene combat_dice enemy_cone_hit_own
+  *return
 *temp fcar_caster_pos {(("combat_enemy" & combat_active_target) & "_position")}
 *temp fcar_center combat_lane_player_position
 *if (fcar_shape = "engaged")
@@ -6433,38 +6455,26 @@
   *if (combat_why_burning_hands = "")
     # [b][ACTION][/b] [b][Burning Hands: 1st level][/b] A thin sheet of flame washes over whatever stands too close.@{show_stat_hints  [Dexterity Save, 3d6 Fire]|}
       *set combat_cast_at_level 1
-      *gosub_scene combat_prose flavor_burning_hands
-      *line_break
-      *gosub_scene combat_spells resolve_cast_burning_hands
-      *goto fight_check_enemy_hp
+      *goto fight_aim_burning_hands
 
   *if (combat_why_burning_hands_2 = "")
     # [b][ACTION][/b] [b][Burning Hands: 2nd level][/b] An empowered sheet of flame: 4d6 instead of 3d6.@{show_stat_hints  [Dexterity Save, 4d6 Fire]|}
       *comment UPCASTING (2026-11-09, RAW): +1d6 per slot level above 1st -- resolve_cast_burning_hands
       *comment (combat_spells.txt) reads combat_cast_at_level for the dice count, same shape Thunderwave uses.
       *set combat_cast_at_level 2
-      *gosub_scene combat_prose flavor_burning_hands
-      *line_break
-      *gosub_scene combat_spells resolve_cast_burning_hands
-      *goto fight_check_enemy_hp
+      *goto fight_aim_burning_hands
 
   *if (combat_why_thunderwave = "")
     # [b][ACTION][/b] [b][Thunderwave: 1st level][/b] A wave of thunder rolls out from you and throws back whatever stands too close.@{show_stat_hints  [Constitution Save, 2d8 Thunder, Push]|}
       *set combat_cast_at_level 1
-      *gosub_scene combat_prose flavor_thunderwave
-      *line_break
-      *gosub_scene combat_spells resolve_cast_thunderwave
-      *goto fight_check_enemy_hp
+      *goto fight_aim_thunderwave
 
   *if (combat_why_thunderwave_2 = "")
     # [b][ACTION][/b] [b][Thunderwave: 2nd level][/b] An empowered wave of thunder: 3d8 instead of 2d8.@{show_stat_hints  [Constitution Save, 3d8 Thunder, Push]|}
       *comment UPCASTING (2026-11-08, RAW): +1d8 per slot level above 1st -- resolve_cast_thunderwave
       *comment (combat_spells.txt) reads combat_cast_at_level for the dice count, same shape Ray of Sickness uses.
       *set combat_cast_at_level 2
-      *gosub_scene combat_prose flavor_thunderwave
-      *line_break
-      *gosub_scene combat_spells resolve_cast_thunderwave
-      *goto fight_check_enemy_hp
+      *goto fight_aim_thunderwave
 
   *if (combat_why_arms_of_hadar = "")
     # [b][ACTION][/b] [b][Arms of Hadar][/b] Black arms lash every foe within reach, and what they catch cannot strike back.@{show_stat_hints  [Strength Save, ${combat_hadar_dice} Necrotic]|}
@@ -7902,21 +7912,101 @@ You peel the tacky strip open and read the line aloud, and grey strands spill ou
 *gosub_scene combat_spells resolve_cast_web
 *goto fight_action_spent
 
-*comment Burning Hands read from a scroll: no individual target, exactly like Thunderwave below -- resolve_cast_burning_hands picks every Engaged enemy itself.
+*comment Burning Hands read from a scroll: aimed like the spell (fight_aim_burning_hands below), which prints the scroll's own line.
 *label fight_read_burning_hands
 *set combat_cast_at_level 1
-You unroll the warm strip and read the line aloud, and a thin sheet of flame leaps out, washing over everything close enough to touch.
+*goto fight_aim_burning_hands
+
+*comment BURNING HANDS AIM (2026-11-26, the user): the cone points one way along the lane, ahead (combat_cone_side 1) or behind (-1),
+*comment and only Engaged foes on that side are caught (resolve_cast_burning_hands). With Engaged foes on one side only it aims there
+*comment without asking; with foes on both it asks. The caller has set combat_cast_at_level, and combat_scroll_id for a scroll (the
+*comment choice page keeps it: only the hub clears it, and Cancel goes back there). Spell and scroll both end in fight_check_enemy_hp,
+*comment so a kill is checked at once (the scroll used to go straight to fight_action_spent).
+*comment An ally the flames would catch (cone_pick) is named on its side's button, and the page always asks then, even with foes on one side only.
+*label fight_aim_burning_hands
+*gosub fight_cone_count_sides
+*if ((combat_cone_behind_n = 0) and (combat_cone_ahead_allies = ""))
+  *set combat_cone_side 1
+  *goto fight_cast_burning_hands
+*if ((combat_cone_ahead_n = 0) and (combat_cone_behind_allies = ""))
+  *set combat_cone_side (0 - 1)
+  *goto fight_cast_burning_hands
+*choice
+  *if (combat_cone_ahead_n > 0) #Turn the flames ahead, on ${combat_cone_ahead_names}.@{(combat_cone_ahead_allies = "") | ${combat_cone_ahead_allies} would burn too.}
+    *set combat_cone_side 1
+    *goto fight_cast_burning_hands
+  *if (combat_cone_behind_n > 0) #Turn the flames behind, on ${combat_cone_behind_names}.@{(combat_cone_behind_allies = "") | ${combat_cone_behind_allies} would burn too.}
+    *set combat_cone_side (0 - 1)
+    *goto fight_cast_burning_hands
+  # Cancel the spell.
+    *set combat_cast_at_level 1
+    You let the working dissolve, unspent.
+    *line_break
+    *goto fight_round_hub
+
+*label fight_cast_burning_hands
+*if (combat_scroll_id = "")
+  *gosub_scene combat_prose flavor_burning_hands
+*else
+  You unroll the warm strip and read the line aloud, and a thin sheet of flame leaps out, washing over everything close enough to touch.
 *line_break
 *gosub_scene combat_spells resolve_cast_burning_hands
-*goto fight_action_spent
+*goto fight_check_enemy_hp
 
-*comment Thunderwave read from a scroll: no individual target, exactly like Bane above -- resolve_cast_thunderwave picks every Engaged enemy itself.
+*comment What the cone would catch on each side (cone_pick, combat_spells.txt: at most 3, the sidebar pick first), for the aim page:
+*comment the counts in combat_cone_ahead_n / _behind_n, the names in combat_cone_ahead_names / _behind_names, and the allies it would catch in
+*comment combat_cone_ahead_allies / _behind_allies.
+*label fight_cone_count_sides
+*set combat_cone_side 1
+*gosub_scene combat_spells cone_pick
+*set combat_cone_ahead_n combat_cone_caught_n
+*set combat_cone_ahead_names combat_cone_names
+*set combat_cone_ahead_allies combat_cone_ally_names
+*set combat_cone_side (0 - 1)
+*gosub_scene combat_spells cone_pick
+*set combat_cone_behind_n combat_cone_caught_n
+*set combat_cone_behind_names combat_cone_names
+*set combat_cone_behind_allies combat_cone_ally_names
+*return
+
+*comment Thunderwave read from a scroll: aimed like the spell (fight_aim_thunderwave below), which prints the scroll's own line.
 *label fight_read_thunderwave
 *set combat_cast_at_level 1
-You unroll the humming strip and read the line aloud, and the sound does not stop at sound: it rolls out of you as a wall of hard air.
+*goto fight_aim_thunderwave
+
+*comment THUNDERWAVE AIM (2026-11-26, the user): RAW the 15-foot cube starts at the caster and goes one way, so it is aimed like Burning Hands
+*comment (fight_aim_burning_hands above): one side of the lane, at most 3 foes (cone_pick, combat_spells.txt), the sidebar pick first. It asks
+*comment when Engaged foes stand on both sides, or when an ally would be caught (RAW, as Burning Hands; named on that side's button). Spell and
+*comment scroll both end in fight_check_enemy_hp, so a kill is checked at once (the scroll used to go straight to fight_action_spent).
+*label fight_aim_thunderwave
+*gosub fight_cone_count_sides
+*if ((combat_cone_behind_n = 0) and (combat_cone_ahead_allies = ""))
+  *set combat_cone_side 1
+  *goto fight_cast_thunderwave
+*if ((combat_cone_ahead_n = 0) and (combat_cone_behind_allies = ""))
+  *set combat_cone_side (0 - 1)
+  *goto fight_cast_thunderwave
+*choice
+  *if (combat_cone_ahead_n > 0) #Send the wave ahead, at ${combat_cone_ahead_names}.@{(combat_cone_ahead_allies = "") | ${combat_cone_ahead_allies} would be struck too.}
+    *set combat_cone_side 1
+    *goto fight_cast_thunderwave
+  *if (combat_cone_behind_n > 0) #Send the wave behind, at ${combat_cone_behind_names}.@{(combat_cone_behind_allies = "") | ${combat_cone_behind_allies} would be struck too.}
+    *set combat_cone_side (0 - 1)
+    *goto fight_cast_thunderwave
+  # Cancel the spell.
+    *set combat_cast_at_level 1
+    You let the working dissolve, unspent.
+    *line_break
+    *goto fight_round_hub
+
+*label fight_cast_thunderwave
+*if (combat_scroll_id = "")
+  *gosub_scene combat_prose flavor_thunderwave
+*else
+  You unroll the humming strip and read the line aloud, and the sound does not stop at sound: it rolls out of you as a wall of hard air.
 *line_break
 *gosub_scene combat_spells resolve_cast_thunderwave
-*goto fight_action_spent
+*goto fight_check_enemy_hp
 
 *label fight_read_mage_armor
 *gosub_scene equipment cast_mage_armor

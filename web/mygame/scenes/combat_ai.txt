@@ -1443,6 +1443,8 @@
         *gosub_scene combat_spells spell_facts_load fpes_fid
         *if (spell_fact_dmg_type = "fire")
           *gosub spell_worth_casting fpes_p fpes_fid
+          *if ((combat_ai_trace) and ((not(combat_spell_worth_it)) and (not(combat_spell_ff_note = ""))))
+            *set fpes_tr "you stand in grease, ${fpes_fid} ${combat_spell_ff_note}not worth casting; "
           *if (combat_spell_worth_it)
             *comment WEIGHTED (2026-11-25, the user): the profile's ignite chance (70), -20 when its own attack could finish the player this turn. A miss falls through to the
             *comment ordinary pick below. This runs inside the pick's per-slot lock, so a replay reads the cached choice and never rolls again.
@@ -1451,6 +1453,9 @@
             *gosub_scene combat_types resolve_behavior_profile fpes_ip fpes_iw
             *temp fpes_ichance combat_behavior_ignite_chance
             *temp fpes_imods ""
+            *if (combat_spell_ff_penalty > 0)
+              *set fpes_ichance (fpes_ichance - combat_spell_ff_penalty)
+              *set fpes_imods ", it ${combat_spell_ff_note}"
             *if ((hp_current * 2) <= ((combat_enemy_dmg_dice_sides + 1) + (2 * combat_enemy_dmg_bonus)))
               *set fpes_ichance - 20
               *set fpes_imods ", its attack could finish you -20"
@@ -1482,12 +1487,13 @@
   *if (((not(fpes_id = "")) and (not(fpes_id = {(fpes_p & "spell_base_id")}))) and ((fpes_uses > 0) and (fpes_chance > 0)))
     *gosub spell_worth_casting fpes_p fpes_id
     *if ((combat_ai_trace) and (not(combat_spell_worth_it)))
-      *set fpes_tr "${fpes_tr}${fpes_id} not worth casting, "
+      *set fpes_tr "${fpes_tr}${fpes_id} ${combat_spell_ff_note}not worth casting, "
     *if (combat_spell_worth_it)
+      *set fpes_chance (fpes_chance - combat_spell_ff_penalty)
       *temp fpes_roll 0
       *rand fpes_roll 1 100
       *if (combat_ai_trace)
-        *set fpes_tr "${fpes_tr}${fpes_id} rolled ${fpes_roll} against ${fpes_chance}%, "
+        *set fpes_tr "${fpes_tr}${fpes_id} ${combat_spell_ff_note}rolled ${fpes_roll} against ${fpes_chance}%, "
       *if (fpes_roll <= fpes_chance)
         *set fpes_picked_spell fpes_id
         *set fpes_picked_place fpes_k
@@ -1536,10 +1542,108 @@
   *goto ai_own_side_at_loop
 *return
 
+*comment AN ENEMY'S CONE (2026-11-26, the user; RAW): an enemy's Burning Hands (a cone) or Thunderwave (a cube from the caster) goes one way, from the
+*comment caster through its main target, as the player's own do (fight_aim_burning_hands). It catches the main target first (ecr_a: an ally slot, 0 for
+*comment the player), then the rest of the player's side on that tile (the player, then allies by slot), at most 3 of them. Any of the
+*comment caster's own side on that tile standing on the other side from it is in the path past its mark (a foe flanking the player from behind), and is
+*comment caught too, not counted against the 3. Arms of Hadar is a true radius and keeps its old reach. Sets combat_econe_player, _ally_1..4,
+*comment _own_1..6, _opp_n, _own_n and _own_names (their epithets, "the guard and the archer"). Slot loops, never a guarded {} lookup (quicktest).
+*label enemy_cone_reach
+*params ecr_c ecr_a
+*set combat_econe_player false
+*set combat_econe_opp_n 0
+*set combat_econe_own_n 0
+*set combat_econe_own_names ""
+*temp ecr_last ""
+*temp ecr_cp (("combat_enemy" & ecr_c) & "_")
+*comment The tile the cone fills is the one caster and mark shared before the spell. A failed Thunderwave moves one of them before the spread is worked
+*comment out: at the player it opens the CASTER's distance (combat_dice resolve_enemy_attack), at an ally it moves the ALLY (enemy_push_ally). So the tile is
+*comment the player's when the player is the mark, and the caster's when an ally is.
+*temp ecr_center combat_lane_player_position
+*if (ecr_a > 0)
+  *set ecr_center {(ecr_cp & "position")}
+*temp ecr_side {(ecr_cp & "side")}
+*if (not(ecr_side = (0 - 1)))
+  *set ecr_side 1
+*temp ecr_i 1
+*label enemy_cone_reach_clear
+*if (ecr_i <= combat_enemy_slot_cap)
+  *set {("combat_econe_own_" & ecr_i)} false
+  *set ecr_i + 1
+  *goto enemy_cone_reach_clear
+*set ecr_i 1
+*label enemy_cone_reach_mark
+*if (ecr_i <= combat_ally_slot_cap)
+  *set {("combat_econe_ally_" & ecr_i)} false
+  *if (ecr_i = ecr_a)
+    *set {("combat_econe_ally_" & ecr_i)} true
+    *set combat_econe_opp_n 1
+  *set ecr_i + 1
+  *goto enemy_cone_reach_mark
+*if (ecr_a = 0)
+  *set combat_econe_player true
+  *set combat_econe_opp_n 1
+*elseif ((hp_current > 0) and (combat_lane_player_position = ecr_center))
+  *set combat_econe_player true
+  *set combat_econe_opp_n (combat_econe_opp_n + 1)
+*set ecr_i 1
+*label enemy_cone_reach_allies
+*if (ecr_i <= combat_ally_slot_cap)
+  *temp ecr_ap (("combat_ally" & ecr_i) & "_")
+  *if (((not({("combat_econe_ally_" & ecr_i)})) and (combat_econe_opp_n < 3)) and (({(ecr_ap & "hp")} > 0) and ({(ecr_ap & "position")} = ecr_center)))
+    *set {("combat_econe_ally_" & ecr_i)} true
+    *set combat_econe_opp_n (combat_econe_opp_n + 1)
+  *set ecr_i + 1
+  *goto enemy_cone_reach_allies
+*set ecr_i 1
+*label enemy_cone_reach_own
+*if (ecr_i <= combat_enemy_count)
+  *temp ecr_ep (("combat_enemy" & ecr_i) & "_")
+  *temp ecr_xside {(ecr_ep & "side")}
+  *if (not(ecr_xside = (0 - 1)))
+    *set ecr_xside 1
+  *if (((not(ecr_i = ecr_c)) and ({(ecr_ep & "hp")} > 0)) and ((({(ecr_ep & "position")} = ecr_center) and (not(ecr_xside = ecr_side))) and ({(ecr_ep & "out")} = "")))
+    *set {("combat_econe_own_" & ecr_i)} true
+    *set combat_econe_own_n (combat_econe_own_n + 1)
+    *if (not(ecr_last = ""))
+      *if (combat_econe_own_names = "")
+        *set combat_econe_own_names ecr_last
+      *else
+        *set combat_econe_own_names ((combat_econe_own_names & ", ") & ecr_last)
+    *set ecr_last {(ecr_ep & "epithet")}
+  *set ecr_i + 1
+  *goto enemy_cone_reach_own
+*if (combat_econe_own_names = "")
+  *set combat_econe_own_names ecr_last
+*elseif (not(ecr_last = ""))
+  *set combat_econe_own_names ((combat_econe_own_names & " and ") & ecr_last)
+*return
+
+*comment THE WEIGH-UP (2026-11-26, the user: risk against reward, weighted, never a robot): before an enemy (combat_active_target) casts a cone at its mark
+*comment (acw_a: an ally slot, 0 for the player), it counts both sides in it (enemy_cone_reach). With none of its own in the path nothing changes. With as
+*comment many of its own as of the player's side it will not cast it. Otherwise each of its own caught takes 30 off the cast chance (combat_spell_ff_penalty),
+*comment and the note goes to the trace (combat_spell_ff_note). Sets combat_spell_worth_it false on a refusal.
+*label ai_cone_weigh
+*params acw_a
+*set combat_spell_ff_penalty 0
+*set combat_spell_ff_note ""
+*gosub enemy_cone_reach combat_active_target acw_a
+*if (combat_econe_own_n = 0)
+  *return
+*if (combat_econe_own_n >= combat_econe_opp_n)
+  *set combat_spell_worth_it false
+  *set combat_spell_ff_note "would catch ${combat_econe_own_n} of its own against ${combat_econe_opp_n} of yours, "
+  *return
+*set combat_spell_ff_penalty (30 * combat_econe_own_n)
+*set combat_spell_ff_note "would catch ${combat_econe_own_n} of its own with ${combat_econe_opp_n} of yours -${combat_spell_ff_penalty}, "
+*return
+
 *comment Per-spell worth-casting checks (explicit *if on literal ids, never construct variable names from spell_id).
 *label spell_worth_casting
 *params swc_caster_prefix swc_spell_id
 *set combat_spell_worth_it false
+*set combat_spell_ff_penalty 0
+*set combat_spell_ff_note ""
 *if ({(swc_caster_prefix & "hp")} <= 0)
   *return
 *gosub_scene combat_spells spell_facts_load swc_spell_id
@@ -1594,6 +1698,9 @@
   *gosub_scene combat_movement combat_reach_tier spell_fact_reach
   *if (combat_enemy_range <= combat_reach_tier_result)
     *set combat_spell_worth_it true
+    *comment A cone weighs its own side in the path (ai_cone_weigh).
+    *if ((swc_spell_id = "burning_hands") or (swc_spell_id = "thunderwave"))
+      *gosub ai_cone_weigh 0
 *return
 
 *comment POSITIONING (3.9, 2026-11-19): the closest reach tier among enemy slot eswt_slot's assigned spells it would still cast at the player (uses and chance left, enemy
@@ -1751,6 +1858,8 @@
 *label spell_worth_casting_at_ally
 *params swca_caster_prefix swca_spell_id swca_ally
 *set combat_spell_worth_it false
+*set combat_spell_ff_penalty 0
+*set combat_spell_ff_note ""
 *temp swca_ap (("combat_ally" & swca_ally) & "_")
 *if (({(swca_caster_prefix & "hp")} <= 0) or ({(swca_ap & "hp")} <= 0))
   *return
@@ -1767,6 +1876,9 @@
 *temp swca_dmg (((spell_fact_resolution = "attack") or (spell_fact_resolution = "auto")) or ((spell_fact_resolution = "save") and (spell_fact_dice_sides > 0)))
 *if (swca_dmg)
   *set combat_spell_worth_it true
+  *comment A cone weighs its own side in the path (ai_cone_weigh), its mark the ally.
+  *if ((swca_spell_id = "burning_hands") or (swca_spell_id = "thunderwave"))
+    *gosub ai_cone_weigh swca_ally
   *return
 *gosub_scene combat_dice condition_has swca_caster_prefix "blinded"
 *if (condition_result)
@@ -1828,9 +1940,14 @@
   *temp fpais_chance {(fpais_p & ("cast_chance_" & fpais_k))}
   *if (((not(fpais_id = "")) and (not(fpais_id = {(fpais_p & "spell_base_id")}))) and ((fpais_uses > 0) and (fpais_chance > 0)))
     *gosub spell_worth_casting_at_ally fpais_p fpais_id fpais_ally
+    *if (((combat_ai_trace) and (not(combat_spell_ff_note = ""))) and (not(combat_spell_worth_it)))
+      *gosub ai_trace {(fpais_p & "name")} "spell at an ally: ${fpais_id} ${combat_spell_ff_note}not worth casting"
     *if (combat_spell_worth_it)
+      *set fpais_chance (fpais_chance - combat_spell_ff_penalty)
       *temp fpais_roll 0
       *rand fpais_roll 1 100
+      *if ((combat_ai_trace) and (not(combat_spell_ff_note = "")))
+        *gosub ai_trace {(fpais_p & "name")} "spell at an ally: ${fpais_id} ${combat_spell_ff_note}rolled ${fpais_roll} against ${fpais_chance}%"
       *if (fpais_roll <= fpais_chance)
         *set fpais_picked_spell fpais_id
         *set fpais_picked_place fpais_k

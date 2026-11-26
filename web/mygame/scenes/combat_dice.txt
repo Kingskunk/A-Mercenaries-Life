@@ -2357,6 +2357,13 @@ ${combat_player_dmg_roll_banner}
       *temp racd_center {(racd_ep & "position")}
       *if (spell_fact_target = "engaged")
         *set racd_center {(racd_ap & "position")}
+      *comment A CONE (2026-11-26, the user; RAW): an ally's Burning Hands or Thunderwave goes one way, as the player's do: only the foes on its main foe's side
+      *comment (an enemy's _side), at most 3 with the main foe. It is aimed past the player, so it never catches the player's side. Arms of Hadar takes them all.
+      *temp racd_cone ((combat_ally_cast_spell = "burning_hands") or (combat_ally_cast_spell = "thunderwave"))
+      *temp racd_eside {(racd_ep & "side")}
+      *if (not(racd_eside = (0 - 1)))
+        *set racd_eside 1
+      *temp racd_caught 1
       *temp racd_x 1
       *gosub racd_area_loop
   *set {racd_lockname} true
@@ -2367,6 +2374,100 @@ ${combat_player_dmg_roll_banner}
 *if (not(racd_dmg_text = ""))
   *line_break
   ${racd_dmg_text}
+*return
+
+*comment AN ENEMY'S CONE CATCHES ITS OWN SIDE (2026-11-26, the user; RAW): the foes combat_ai enemy_cone_reach found past the caster's mark (combat_econe_own_N)
+*comment each make the spell's save (combat_enemy_atk_save_stat / _dc, their own slot's save lock) and take their own roll of its damage, half on a success as
+*comment the data says, after their own defenses. A Thunderwave failure throws a Large or smaller one a step further the way it already stands (its _side).
+*comment A drop to 0 is a kill like any other (concentration ends, the last hit is the caster's). Called on its own page from fight_enemy_cast_area, the
+*comment caster in combat_active_target and its spell's numbers still loaded.
+*label enemy_cone_hit_own
+*temp echo_c combat_active_target
+*temp echo_cname {(("combat_enemy" & echo_c) & "_epithet")}
+*temp echo_tw (combat_enemy_cast_spell = "thunderwave")
+*temp echo_icon "🔥"
+*temp echo_what "flames"
+*if (echo_tw)
+  *set echo_icon "⚡"
+  *set echo_what "wave"
+*if (echo_tw)
+  The wave does not stop where it was aimed. It rolls on into ${combat_econe_own_names}.
+*else
+  The flames do not stop where they were aimed. They roll on into ${combat_econe_own_names}.
+*line_break
+*temp echo_stat combat_enemy_atk_save_stat
+*if (echo_stat = "")
+  *set echo_stat "dexterity"
+*temp echo_label "Dexterity"
+*if (echo_stat = "constitution")
+  *set echo_label "Constitution"
+*if (echo_stat = "strength")
+  *set echo_label "Strength"
+*if (echo_stat = "wisdom")
+  *set echo_label "Wisdom"
+*if (echo_stat = "intelligence")
+  *set echo_label "Intelligence"
+*if (echo_stat = "charisma")
+  *set echo_label "Charisma"
+*temp echo_i 1
+*label enemy_cone_hit_own_loop
+*if (echo_i <= combat_enemy_slot_cap)
+  *if ({("combat_econe_own_" & echo_i)})
+    *gosub enemy_cone_hit_own_one echo_i
+  *set echo_i + 1
+  *goto enemy_cone_hit_own_loop
+*return
+
+*comment One of the caster's own side (eco_x) caught in its cone (enemy_cone_hit_own's temps: echo_c, echo_stat, echo_label, echo_icon, echo_what, echo_tw, echo_cname).
+*label enemy_cone_hit_own_one
+*params eco_x
+*temp eco_p (("combat_enemy" & eco_x) & "_")
+*gosub resolve_save eco_p echo_stat echo_label combat_enemy_atk_save_dc eco_x
+*comment check_success is inverted for a foe's save (resolve_save: true = it FAILED).
+*temp eco_failed check_success
+*comment The whole roll first (roll_enemy_base_dmg halves by itself when combat_enemy_save_halved is set, so it is kept false), then half here on a success.
+*set combat_enemy_crit false
+*set combat_enemy_save_halved false
+*temp eco_dmg 0
+*if ((eco_failed) or (combat_enemy_atk_save_half))
+  *gosub roll_enemy_base_dmg "combat_econe_scratch"
+  *set eco_dmg combat_enemy_dmg_dealt
+  *if (not(eco_failed))
+    *set eco_dmg ((eco_dmg - (eco_dmg modulo 2)) / 2)
+*temp eco_name {(eco_p & "name")}
+*if (eco_dmg <= 0)
+  [b][${echo_icon} ${eco_name} braces and takes nothing][/b]
+  *line_break
+  *return
+*gosub adjust_damage_packet eco_p eco_dmg combat_enemy_dmg_type eco_x
+*temp eco_after combat_packet_damage
+*temp eco_tag combat_packet_suffix
+*gosub record_last_hit "enemy" eco_x "enemy" echo_c
+*set {(eco_p & "hp")} - eco_after
+*if ({(eco_p & "hp")} <= 0)
+  *set {(eco_p & "hp")} 0
+  *gosub concentration_end eco_p
+*else
+  *gosub concentration_damage_check eco_p eco_after 8
+*temp eco_shove ""
+*if (((echo_tw) and (eco_failed)) and ({(eco_p & "hp")} > 0))
+  *temp eco_size {(eco_p & "size")}
+  *gosub_scene combat combat_size_rank eco_size
+  *if (combat_size_rank_value <= 3)
+    *temp eco_side {(eco_p & "side")}
+    *if (not(eco_side = (0 - 1)))
+      *set eco_side 1
+    *temp eco_from {(eco_p & "position")}
+    *gosub_scene combat_movement combat_lane_move_enemy_to_position eco_x (eco_from + eco_side)
+    *if (not({(eco_p & "position")} = eco_from))
+      *set eco_shove ", thrown back a step"
+*temp eco_line "${eco_name}: ${eco_after} ${combat_enemy_dmg_type} damage${eco_tag}, caught in ${echo_cname}'s ${echo_what}${eco_shove}"
+*if (not(eco_failed))
+  *set eco_line "${eco_line} (braced, half)"
+*if ({(eco_p & "hp")} <= 0)
+  *set eco_line "${eco_name} @{combat_is_nonlethal Beaten|Defeated}: ${eco_after} ${combat_enemy_dmg_type} damage${eco_tag}, caught in ${echo_cname}'s ${echo_what}"
+[b][${echo_icon} ${eco_line}][/b]
+*line_break
 *return
 
 *comment resolve_ally_cast_damage's area pass (shares its temps): every other living enemy at racd_center saves and takes racd_full, or half.
@@ -2411,7 +2512,12 @@ ${combat_player_dmg_roll_banner}
 *label racd_area_loop
 *if (racd_x <= combat_enemy_slot_cap)
   *temp racd_xp (("combat_enemy" & racd_x) & "_")
-  *if (((not(racd_x = racd_e)) and ({(racd_xp & "hp")} > 0)) and ({(racd_xp & "position")} = racd_center))
+  *temp racd_xside {(racd_xp & "side")}
+  *if (not(racd_xside = (0 - 1)))
+    *set racd_xside 1
+  *temp racd_in_cone ((not(racd_cone)) or ((racd_xside = racd_eside) and (racd_caught < 3)))
+  *if ((((not(racd_x = racd_e)) and ({(racd_xp & "hp")} > 0)) and ({(racd_xp & "position")} = racd_center)) and (racd_in_cone))
+    *set racd_caught + 1
     *set {("combat_save_locked_" & racd_x)} false
     *set combat_save_quiet true
     *gosub resolve_save racd_xp racd_stat racd_label racd_dc racd_x
@@ -2543,6 +2649,10 @@ ${combat_player_dmg_roll_banner}
   *set combat_save_locked_6 false
   *set combat_save_locked_7 false
   *set combat_save_locked_8 false
+  *set combat_save_locked_9 false
+  *set combat_save_locked_10 false
+  *set combat_save_locked_11 false
+  *set combat_save_locked_12 false
   *set locked_combat_save_page_id page_id
 *if ({(res_lockname)}) and (locked_combat_save_page_id = page_id)
   *set check_success {(res_successname)}

@@ -33,7 +33,7 @@
  *
  * Run: node tools/gen_overworld_art.js            (write overworld-art.js from the SVGs)
  *      node tools/gen_overworld_art.js --guide    (first redraw the guide layer of each SVG from the current tiles, then write)
- *      node tools/gen_overworld_art.js --check    (verify overworld-art.js is current; non-writing; exit 1 if stale or an SVG is bad)
+ *      node tools/gen_overworld_art.js --check    (verify overworld-art.js is current; writes only its label cache, see placeLabel; exit 1 if stale or an SVG is bad)
  */
 const fs = require("fs");
 const path = require("path");
@@ -145,7 +145,7 @@ function childText(inner, tag) {
 // range puts its name in the emptiest corner of its bounding box, which is off the range entirely -- a bounding box is not a shape. Vertical distance to a tile counts for
 // more than horizontal, because a name is wide and shallow and what it collides with is the tile's own label slung underneath it. The whole name has to fit inside the
 // bounding box too, or it hangs off the end. A shape too small for its name falls back to its middle, and a Description line "Label: x,y" overrides all of this.
-function placeLabel(bbox, name, pts) {
+function placeLabelUncached(bbox, name, pts) {
   const half = String(name).length * 7 + 12, vh = 26;
   const mid = [(bbox[0] + bbox[2]) / 2 / UNIT, (bbox[1] + bbox[3]) / 2 / UNIT];
   const round = (p) => [Math.round(p[0] * 100) / 100, Math.round(p[1] * 100) / 100];
@@ -173,6 +173,26 @@ function placeLabel(bbox, name, pts) {
   }
   const pick = best || fallback;
   return pick ? round([pick.x / UNIT, pick.y / UNIT]) : round(mid);
+}
+
+// The search above is slow (about 8 seconds for the whole map), and every compile runs --check, which needs the positions to compare. So each answer is kept in
+// tools/.overworld-label-cache.json (per computer, not committed), keyed by a hash of everything it depends on: the shape, the name, the tile positions, UNIT and the
+// search's own code. Change any of them and that one feature is searched again, so the result is always what placeLabelUncached would give. Entries not used in a run are dropped.
+const LABEL_CACHE_FILE = path.join(__dirname, ".overworld-label-cache.json");
+const labelCacheOld = (() => { try { return JSON.parse(fs.readFileSync(LABEL_CACHE_FILE, "utf8")); } catch (e) { return {}; } })();
+const labelCacheNew = {};
+let labelSearchCode = null;
+function placeLabel(bbox, name, pts) {
+  if (labelSearchCode === null) labelSearchCode = placeLabelUncached.toString() + JSON.stringify({ UNIT, tiles: Object.keys(OW.nodes).map((id) => [OW.nodes[id].x, OW.nodes[id].y]) });
+  const key = require("crypto").createHash("sha1").update(labelSearchCode).update(JSON.stringify([bbox, String(name), pts])).digest("hex");
+  const at = Object.prototype.hasOwnProperty.call(labelCacheOld, key) ? labelCacheOld[key] : placeLabelUncached(bbox, name, pts);
+  labelCacheNew[key] = at;
+  return at;
+}
+function saveLabelCache() {
+  const before = Object.keys(labelCacheOld).sort().join(","), after = Object.keys(labelCacheNew).sort().join(",");
+  if (before === after) return;
+  try { fs.writeFileSync(LABEL_CACHE_FILE, JSON.stringify(labelCacheNew)); } catch (e) { /* a cache that cannot be written only costs time */ }
 }
 
 function slug(label) { return String(label).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""); }
@@ -439,6 +459,8 @@ async function renderRaster() {
     try { fs.rmSync(dir, { recursive: true, force: true }); } catch (e) {}
   }
 }
+
+saveLabelCache();
 
 (async () => {
   const cur = existing();

@@ -197,11 +197,9 @@ function compile(){
   // "combat" is a *gosub_scene-only subroutine library (see combat.txt's own
   // header comment) and is deliberately NOT in *scene_list -- adding it there
   // would hijack *finish's implicit "continue to the next scene" chain (see
-  // nav.nextSceneName). compile.js has no directory-scan fallback (see the
-  // comment above), so it has to be told about explicitly here, exactly like
-  // calendar.txt just above, or it silently never makes it into the compiled
-  // allScenes object and every *gosub_scene combat ... call fails at runtime
-  // with "scene doesn't exist" the moment a player actually reaches a fight.
+  // nav.nextSceneName). It is named here for the record; since 2026-11-26 the
+  // compile also takes every scene file under scenes/ itself (addEveryScene,
+  // after this list), so a file left off this list is still built.
   verifyFileName("combat.txt");
   // Combat's supporting modules are *gosub_scene-only libraries, just like combat.txt itself. Keep them out of
   // *scene_list so they cannot affect the chapter-to-chapter *finish chain, but include them in compiled builds
@@ -341,6 +339,7 @@ function compile(){
   verifyFileName("hartwell/palmcote/palmcote.txt");
   verifyFileName("hartwell/palmcote/green_branch.txt");
   verifyFileName("hartwell/palmcote/palmcote_market.txt");
+  verifyFileName("hartwell/palmcote/palmcote_gathering_hall.txt");
   verifyFileName("hartwell/palmcote/short_weight.txt");
   verifyFileName("hartwell/palmcote/lina_verner.txt");
   verifyFileName("Langston/market.txt");
@@ -468,6 +467,28 @@ function compile(){
   // The crafting scene (2026-10-23): craft_brew, run from the Inventory's Craft view through choicescript_stats codex_craft_now.
   verifyFileName("crafting.txt");
   verifyFileName("prologue/class_select.txt");
+  // Every other scene file (2026-11-26). A file reached only by *goto_scene or *gosub_scene and missing from the list above used to be left out of the build without a word,
+  // and failed with "scene doesn't exist" when a player reached it (palmcote_gathering_hall.txt did). So the compile now also takes every .txt under scenes/ itself:
+  // from the disk when run with node, from the uploaded folder in compile.html. startup_parts/ is skipped (the source of startup.txt, not scenes).
+  // The list above stays for the order and the notes. A file named twice is added once (addFile).
+  (function addEveryScene() {
+    var base = rootDir + 'mygame/scenes/';
+    var found = [];
+    if (typeof window !== 'undefined' && window.slurpedFiles) {
+      Object.keys(window.slurpedFiles).forEach(function(k) {
+        if (k.indexOf(base) === 0 && /\.txt$/i.test(k)) found.push(k.slice(base.length));
+      });
+    } else if (typeof fs !== 'undefined' && fs.readdirSync) {
+      (function walk(rel) {
+        fs.readdirSync(base + rel, {withFileTypes: true}).forEach(function(d) {
+          var p = rel + d.name;
+          if (d.isDirectory()) { if (p !== 'startup_parts') walk(p + '/'); }
+          else if (/\.txt$/i.test(d.name)) found.push(p);
+        });
+      })('');
+    }
+    found.filter(function(p) { return p.indexOf('startup_parts/') !== 0; }).sort().forEach(addFile);
+  })();
 
   //Check startup.txt for a *scene_list
   var sceneList = false;
