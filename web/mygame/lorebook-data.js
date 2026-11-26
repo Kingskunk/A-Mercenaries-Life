@@ -1176,7 +1176,20 @@
           "Long before its collapse, the Meridian Empire was already failing, worn down by centuries of bureaucratic rot, warring client kingdoms, regional rebellions, and border wars. The huge stone causeways, fortified weirs, and river booms across the Marches are what it left behind. Its legions withdrew thirty years ago, and its center went silent without ever formally giving up its frontier holdings.",
           "Today the continent is a patchwork of ruined successor territories, and petty warlords, each carving a small kingdom out of the wreckage."
         ],
-        see: ["broken_crown_war", "imperial_booms", "sanctuary_charter", "baron_karr", "house_gault", "skell", "carrion_founding"]
+        see: ["broken_crown_war", "imperial_booms", "sanctuary_charter", "baron_karr", "house_gault", "skell", "carrion_founding", "imperial_reckoning"]
+      },
+      {
+        // The "IR" after every date (calendar.txt calendar_date). Open from the start: the player reads a date on the first page.
+        id: "imperial_reckoning", category: "history", title: "The Imperial Reckoning",
+        link: ["Imperial Reckoning"],
+        sub: "How the year is counted",
+        tags: ["Empire"], aliases: ["IR", "the year", "calendar", "months", "weekdays"],
+        body: [
+          "Years in the Marches are still counted in the Imperial Reckoning, the Meridian Empire's own count, written IR after a date: the 17th of Scorpio, 428 IR. The legions left thirty years ago, but no lord since has been strong enough to start a count of their own, and most people simply say \"this year\".",
+          "The twelve months carry the old star-sign names, three to a season: Aries, Taurus and Gemini in spring; Cancer, Leo and Virgo in summer; Libra, Scorpio and Sagittarius in autumn; Capricorn, Aquarius and Pisces in winter. Each runs about thirty days.",
+          "The week has seven days: Ironday, Tideday, Marketday, Hearthday, Forgeday, Greyday and Hallowday, the rest day, when work stops and most halls and shops close."
+        ],
+        see: ["meridian_empire"]
       },
       {
         id: "broken_crown_war", category: "history", title: "The Broken Crown War",

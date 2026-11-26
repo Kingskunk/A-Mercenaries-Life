@@ -192,17 +192,50 @@
     return parts.join(" | ") || "A road-weary mercenary";
   }
 
+  // The game's own calendar (calendar.txt): twelve star-sign months of 28 to 32 days, a seven-day week, years in IR.
+  var CAL_MONTHS = [
+    ["Aries", 30, "spring"], ["Taurus", 31, "spring"], ["Gemini", 32, "spring"],
+    ["Cancer", 31, "summer"], ["Leo", 31, "summer"], ["Virgo", 31, "summer"],
+    ["Libra", 31, "autumn"], ["Scorpio", 30, "autumn"], ["Sagittarius", 30, "autumn"],
+    ["Capricorn", 28, "winter"], ["Aquarius", 30, "winter"], ["Pisces", 30, "winter"]
+  ];
+  var CAL_WEEK = ["Ironday", "Tideday", "Marketday", "Hearthday", "Forgeday", "Greyday", "Hallowday"];
+
+  // The date the way people in the game say it: "Forgeday, the 17th of Scorpio, 428 IR (autumn) · Dusk (20:20) · Weather: Clear".
   function getCurrentDateSummary(s) {
     var parts = [];
-    var dayNum = Number(s.campaign_day) || 1;
-    var dow = s.day_of_week ? " (" + s.day_of_week + ")" : "";
-    parts.push("Day " + dayNum + dow);
-    if (s.time_period) {
-      parts.push(s.time_period + (s.clock_time ? " (" + s.clock_time + ")" : ""));
-    }
-    if (s.current_season) parts.push("Season: " + s.current_season);
-    if (s.weather) parts.push("Weather: " + s.weather);
+    var dow = s.day_of_week ? s.day_of_week + ", " : "";
+    if (s.calendar_date) parts.push(dow + "the " + s.calendar_date + (s.current_season ? " (" + String(s.current_season).toLowerCase() + ")" : ""));
+    else parts.push("Day " + (Number(s.campaign_day) || 1) + (s.day_of_week ? " (" + s.day_of_week + ")" : ""));
+    // The hour in words, never clock digits: people here tell time by the light, meals and bells.
+    var HOURS = { "Pre-Dawn": "before dawn, still dark", "Morning": "morning", "Midday": "midday", "Afternoon": "afternoon", "Dusk": "dusk, the light going", "Night": "night" };
+    if (s.time_period) parts.push(HOURS[s.time_period] || String(s.time_period).toLowerCase());
+    if (s.weather) parts.push("weather: " + String(s.weather).toLowerCase());
     return parts.join(" · ");
+  }
+
+  // How people in this world count time, so the AI never reaches for January or Monday, and answers a "what month is it?" correctly.
+  // IR is the Imperial Reckoning, the Meridian Empire's year count (lorebook-data.js imperial_reckoning, confirmed by the designer 2026-11-25).
+  function getCalendarPacket(s) {
+    var cur = String(s.calendar_month || "");
+    var idx = -1;
+    for (var i = 0; i < CAL_MONTHS.length; i++) if (CAL_MONTHS[i][0] === cur) idx = i;
+    var bySeason = ["spring", "summer", "autumn", "winter"].map(function (season) {
+      return CAL_MONTHS.filter(function (m) { return m[2] === season; }).map(function (m) { return m[0]; }).join(", ") + " (" + season + ")";
+    }).join("; ");
+    var year = s.calendar_year || "428";
+    var lines = [
+      "- Months and weekdays have their own names here; never use real-world ones (no January, no Monday). Nobody owns a clock: time goes by the light, meals and bells.",
+      "- The year is " + year + " IR, the Imperial Reckoning: the old Meridian Empire's count of years, still used though its legions left about thirty years ago. Ordinary folk say 'this year' or 'the year " + year + "'.",
+      "- The months, in order, each about thirty days: " + bySeason + "."
+    ];
+    if (idx >= 0) {
+      var prev = CAL_MONTHS[(idx + 11) % 12][0], next = CAL_MONTHS[(idx + 1) % 12][0];
+      lines.push("- This month is " + cur + "; last month was " + prev + ", next is " + next + ".");
+    }
+    lines.push("- The week: " + CAL_WEEK.join(", ") + ". Hallowday is the rest day." + (s.day_of_week ? " Today is " + s.day_of_week + "." : ""));
+    lines.push("- Coin: copper bits; a silver mark is 10 bits; a gold crown is 10 marks.");
+    return lines.join("\n");
   }
 
   function formatMemoryDateLabel(s) {
@@ -210,7 +243,8 @@
     var dow = s.day_of_week ? ", " + s.day_of_week : "";
     var tp = s.time_period ? " " + s.time_period : "";
     var seas = s.current_season ? " (" + s.current_season + ")" : "";
-    return "Day " + dayNum + dow + tp + seas;
+    var date = s.calendar_date ? ", the " + s.calendar_date : "";
+    return "Day " + dayNum + dow + date + tp + seas;
   }
 
   /**
@@ -285,27 +319,56 @@
     return parseRolledProfile(s);
   }
 
-  function formatProfileForPrompt(profile) {
+  // A scene's full config: its RP_DATA entry laid over the character it names (rp-data.js RP_CHARACTERS), scene fields winning.
+  // A scene with no character (an anonymous encounter) is used as it is.
+  function resolveSceneConfig(sceneId) {
+    var scene = (window.RP_DATA || {})[sceneId];
+    if (!scene) return null;
+    var who = scene.character ? (window.RP_CHARACTERS || {})[scene.character] : null;
+    if (!who) return scene;
+    var cfg = {};
+    Object.keys(who).forEach(function (k) { cfg[k] = who[k]; });
+    Object.keys(scene).forEach(function (k) { cfg[k] = scene[k]; });
+    cfg.id = scene.id || sceneId;
+    return cfg;
+  }
+
+  // The headings of a companion's hidden-profile block. A companion can phrase its own (cfg.profileHeadings, any of the four keys);
+  // the rest fall back to Widow Corve's wording. The labels and cues under each heading are the profile's own, so the evaluator's
+  // "exact labels" checks are unaffected by the phrasing.
+  var DEFAULT_PROFILE_HEADINGS = {
+    kinks: "KINKS / FETISHES (she responds with keen heat when engaged cleanly):",
+    dislikes: "DISLIKES (if triggered, show unmistakable physical resistance or a sharp quiet pushback so the player can adjust):",
+    positiveTraits: "POSITIVE PERSONALITY TRAITS:",
+    negativeTrait: "NEGATIVE PERSONALITY TRAIT (navigable friction/quirk):"
+  };
+  function profileHeading(cfg, key) {
+    var h = cfg && cfg.profileHeadings;
+    return (h && h[key]) || DEFAULT_PROFILE_HEADINGS[key];
+  }
+
+  function formatProfileForPrompt(profile, cfg) {
     if (!profile) return "";
     var out = [];
     if (Array.isArray(profile.kinks) && profile.kinks.length) {
-      out.push("KINKS / FETISHES (she responds with keen heat when engaged cleanly):");
+      out.push(profileHeading(cfg, "kinks"));
       profile.kinks.forEach(function (k) { out.push("- " + k.label + ": " + k.cue); });
     }
     if (Array.isArray(profile.dislikes) && profile.dislikes.length) {
-      out.push("DISLIKES (if triggered, show unmistakable physical resistance or a sharp quiet pushback so the player can adjust):");
+      out.push(profileHeading(cfg, "dislikes"));
       profile.dislikes.forEach(function (d) { out.push("- " + d.label + ": " + d.cue); });
     }
     if (Array.isArray(profile.positiveTraits) && profile.positiveTraits.length) {
-      out.push("POSITIVE PERSONALITY TRAITS:");
+      out.push(profileHeading(cfg, "positiveTraits"));
       profile.positiveTraits.forEach(function (t) { out.push("- " + t.label + ": " + t.cue); });
     }
     if (profile.negativeTrait) {
-      out.push("NEGATIVE PERSONALITY TRAIT (navigable friction/quirk):");
+      out.push(profileHeading(cfg, "negativeTrait"));
       out.push("- " + profile.negativeTrait.label + ": " + profile.negativeTrait.cue);
     }
     return out.join("\n");
   }
+
 
   function formatWarmthDuration(rating) {
     var r = Math.max(0, Math.min(20, Math.round(Number(rating) || 0)));
@@ -359,14 +422,16 @@
   function buildContextBlocks(cfg, s, memBlock) {
     var settingText = evalField(cfg.setting, s);
     var companionText = evalField(cfg.companion, s);
-    var personaText = evalField(cfg.persona, s);
-    var npcKnowledge = evalField(cfg.npcKnowledge, s);
+    // A scene adds its own lines after the character's (rp-data.js RP_CHARACTERS: scenePersona, sceneKnowledge).
+    var personaText = [evalField(cfg.persona, s), evalField(cfg.scenePersona, s)].filter(Boolean).join(" ");
+    var npcKnowledge = [evalField(cfg.npcKnowledge, s), evalField(cfg.sceneKnowledge, s)].filter(Boolean).join(" ");
     var activeProfile = resolveSceneProfile(cfg, s);
-    var profileBlock = formatProfileForPrompt(activeProfile);
+    var profileBlock = formatProfileForPrompt(activeProfile, cfg);
 
+    // Order (2026-11-25): when and where, who she is, what she knows of you, her world, the calendar, then you, then her hidden tastes.
+    var worldKnowledge = evalField(cfg.worldKnowledge, s);
     var lines = [
-      "CURRENT TIME & WEATHER:",
-      getCurrentDateSummary(s),
+      "NOW: " + getCurrentDateSummary(s),
       "",
       "SETTING:",
       settingText,
@@ -375,11 +440,22 @@
       companionText,
       "",
       "COMPANION PERSONA & BEHAVIOR:",
-      personaText,
-      "",
-      "PLAYER APPEARANCE IN THIS ROOM (ONLY what the companion can physically see or has been told):",
-      getPlayerSummary(cfg, s, !!memBlock)
+      personaText
     ];
+    if (npcKnowledge) {
+      lines.push("", "WHAT THE COMPANION KNOWS OF YOU AND HERSELF (in this section and everywhere below, 'you' always means the player):", npcKnowledge);
+    }
+    if (worldKnowledge) {
+      lines.push("", "HER WIDER WORLD (an ordinary local's horizon: beyond this she knows little, and says so plainly rather than inventing places, rulers or events):", worldKnowledge);
+    }
+    lines.push(
+      "",
+      "CALENDAR & COIN (how people here count time and money):",
+      getCalendarPacket(s),
+      "",
+      "THE PLAYER ('you') AS THE COMPANION SEES THEM:",
+      getPlayerSummary(cfg, s, !!memBlock)
+    );
 
     if (profileBlock) {
       lines.push(
@@ -389,9 +465,6 @@
       );
     }
 
-    if (npcKnowledge) {
-      lines.push("", "WHAT THIS COMPANION KNOWS:", npcKnowledge);
-    }
     if (memBlock) {
       lines.push(
         "",
@@ -418,7 +491,7 @@
       lines.push(
         "- ATTENTIVE RECIPROCITY: " + (evalField(cfg.reciprocity, s) || "Remember the player is a paying guest she genuinely wants to leave thoroughly spent and satisfied.") + " Her Kinks, Dislikes, and Traits shape HOW she enjoys the encounter and how she responds—they do NOT make her a passive or entitled receiver. She takes active physical initiative with her own hands, mouth, hips, and rhythm to pleasure the player, and rewards the player eagerly whenever they read her cues well.",
         "- LIVE PREFERENCE & DISLIKE CUES: When untouched or between beats, weave subtle physical invitations toward one of her Kinks. STRICT BOUNDARY RULE: If the player triggers one of her Dislikes, she MUST visibly resist right away in-character (stiffen, catch or push their hands off, recoil, or give a sharp quiet warning)—never reward or eagerly escalate through an active Dislike unless they soften or adjust. If the player asks in-character what she wants, let her answer authentically according to her traits (candid if Candid/Bold, teasingly reserved if Guarded/Stubborn).",
-        "- PACING & CLIMAX SIGNAL: Do NOT rush to finish early. Do NOT emit the completion tag merely because SHE has climaxed—if she finishes first, she should naturally shift her focus to bringing the player to release too. ONLY append the exact tag [ACT_COMPLETE]. (period outside the bracket) at the very end of your response once the PLAYER ('You') has genuinely reached climax/release and the scene is settling into afterglow (or the player explicitly winds the encounter down)."
+        "- PACING & CLIMAX SIGNAL: Do NOT rush to finish early. Do NOT emit the completion tag merely because SHE has climaxed—if she finishes first, she should naturally shift her focus to bringing the player to release too. End a reply with the tag [ACT_COMPLETE] only once the PLAYER ('you') has genuinely reached climax and the scene is settling into afterglow, or the player clearly winds the encounter down; never earlier."
       );
     }
     lines.push("");
@@ -456,7 +529,7 @@
       "ANTI-INFLATION RULE: Do NOT hand out high scores merely for being polite or avoiding Dislikes. Polite routine play that misses her Kinks should land around 8 to 11 total, NOT 16+.",
       "",
       "COMPANION PROFILE TO GRADE AGAINST:",
-      formatProfileForPrompt(profile),
+      formatProfileForPrompt(profile, cfg),
       "",
       "SCORE 4 SEPARATE CATEGORIES (OUR CODE SUMS THEM TO 20):",
       "1. KINKS_SCORE (0 to 6): +3 per distinct Kink from her profile genuinely engaged by the player (0 if none, 1-2 if barely brushed, 3 for one clear hit, 6 for two or more distinct Kinks landed).",
@@ -846,6 +919,11 @@
   RP.parseEvaluationResult = parseEvaluationResult;
   RP.formatWarmthDuration = formatWarmthDuration;
   RP.boonFor = boonFor;
+  // For tools/rp_prompt_preview.js: the exact prompts a session would send, built from a scene id and a stats object.
+  RP.resolveSceneConfig = resolveSceneConfig;
+  RP.buildSystemPrompt = buildSystemPrompt;
+  RP.buildAdvisorSystemPrompt = buildAdvisorSystemPrompt;
+  RP.buildEvaluationSystemPrompt = buildEvaluationSystemPrompt;
   RP.resolveSceneProfile = resolveSceneProfile;
   RP.parseSceneReadyResponse = parseSceneReadyResponse;
 
@@ -996,7 +1074,7 @@
   ];
 
   function mountConsole(markerParagraph, sceneId) {
-    var cfg = (window.RP_DATA || {})[sceneId];
+    var cfg = resolveSceneConfig(sceneId);
     if (!cfg) return;
     var textEl = markerParagraph.parentNode;
     if (!textEl) return;
