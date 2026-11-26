@@ -601,6 +601,54 @@
         { label: "Shift position", prompt: "Shift position on the creaking bed, moving her into a new angle." },
         { label: "Say something", prompt: "Say something low to her, close to her ear." }
       ]
+    },
+
+    /* ------------------------------------------------------------------ LINA: SUPPER TALK (a conversation, not a tryst) */
+    // lina_verner.txt lv_supper. Same character, so the same memories (cs_lina_verner); the talk kind means no grade, no
+    // boon and no hidden tastes, and she keeps it a conversation even if the player pushes for bed (rp.js SCENE_KINDS.talk).
+    lina_supper: {
+      id: "lina_supper",
+      kind: "talk",
+      character: "lina_verner",
+      scenePersona: function (s) {
+        var N = s.name || "the player";
+        return "Tonight is supper at her table and talk, nothing more planned. She is easy and curious: she asks " + N + " about the road and has opinions of her own about the terraces, the village, her mother and whatever " + N + " brings up. She eats with her elbows on the table and talks with her mouth full. If the talk turns warm she can flirt, but supper is supper.";
+      },
+      // What she has already told the player in her written talks (lv_talk, in order), so she does not tell it fresh.
+      sceneKnowledge: function (s) {
+        var N = s.name || "the player";
+        var told = [
+          "her mother Berta is up on her feet again and nagging; she told the new man at the scale he held the beam wrong",
+          "the weighing is honest now and it feels strange to her",
+          "she has been to Hartwell twice and would like to see the sea once",
+          "her father built every wall on the terrace and fed her uncured olives off the branch when she was small",
+          "when someone grabs her wrist she is back at the scale with Kelm; it will pass, and she does not want " + N + " going soft over it"
+        ].slice(0, Math.max(0, Math.min(5, Number(s.lv_talk_step) || 0)));
+        return told.length ? "Things she has already told " + N + " by her fire: " + told.join("; ") + "." : "";
+      },
+      supportsEvaluation: false,
+      memory: true,
+      title: "Lina — Supper",
+      subtitle: function (s) {
+        return "The Old Olive Store, Palmcote · " + ((s.time_period === "Night" || s.time_period === "Pre-Dawn") ? "Night" : (s.time_period === "Dusk" ? "Evening" : "Supper"));
+      },
+      setting: function (s) {
+        return root.RP_DATA.lina_verner.setting(s) + " Supper is on the table: a pot of beans and onion, a torn loaf, hard sheep's cheese and a saucer of green oil with salt in it.";
+      },
+      starters: [
+        "Tear off some bread and ask how her day on the terraces went.",
+        "Ask what the village has been saying since the business with Kelm.",
+        "Tell her something about where you've been since you last ate here.",
+        "Ask what she'd do with a whole free day."
+      ],
+      beats: [
+        { label: "▸ Let her talk", prompt: "Eat and listen, letting Lina carry the talk where she likes." },
+        { label: "Ask her something", prompt: "Ask her something about herself you haven't asked before." },
+        { label: "Tell her a story", prompt: "Tell her a short story from the road." },
+        { label: "Tease her", prompt: "Tease her about something she just said." },
+        { label: "Help clear up", prompt: "Get up and help her clear the table." },
+        { label: "Say goodnight", prompt: "Thank her for supper and say goodnight." }
+      ]
     }
 
   };

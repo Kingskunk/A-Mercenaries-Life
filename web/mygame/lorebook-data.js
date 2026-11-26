@@ -24,6 +24,9 @@
  *             May also be function(stats) -> that object, or null for no bar.
  *   body      HTML string, array of strings (one paragraph each) or function(stats) -> either.
  *             Inline HTML allowed (<b>, <i>). {{stat_name}} inserts a game variable.
+ *   rp        optional: what a local would know of this, in one or two plain sentences, for the roleplay AI (rp.js
+ *             loreMatches sends it instead of the body when a companion talks about this entry). Facts from the entry
+ *             only: role, look in brief, what people say. The body stays the searchable text on the server.
  *   see       ids of related entries; only unlocked ones are shown
  *
  * Text rules still apply: names are only revealed once the player has met them, and prose

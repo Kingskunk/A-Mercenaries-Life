@@ -568,16 +568,25 @@
           if (re.test(parts[i])) { var sc = (parts.length - i) * 10 + Math.min(t.length, 9); if (sc > score) { score = sc; hit = t; } break; }
         }
       });
-      if (!score && extraIds && extraIds.indexOf(e.id) !== -1) { score = 1; hit = "(semantic)"; }
+      // A semantic hit (by meaning, from the server) ranks below every keyword match, in the server's order.
+      var semIdx = extraIds ? extraIds.indexOf(e.id) : -1;
+      if (!score && semIdx !== -1) { score = 1 + (extraIds.length - semIdx) / 100; hit = "(by meaning)"; }
       if (score) found.push({ entry: e, hearsay: isHearsay && !isKnown, rumor: hearsayMap[e.id] || "", score: score, hit: hit });
     });
     found.sort(function (a, b) { return b.score - a.score; });
     return found.slice(0, Math.max(1, Number(scope.max) || 3));
   }
   function formatLoreMatch(m) {
-    var e = m.entry, head = e.title + (e.sub ? " (" + cleanLoreText(e.sub) + ")" : "");
+    var e = m.entry, head = e.title + (e.sub && !e.rp ? " (" + cleanLoreText(e.sub) + ")" : "");
     if (m.hearsay) return "- " + e.title + ": hearsay only" + (m.rumor ? ", what she has heard: " + m.rumor : "") + ". She knows no more than that, and would say so.";
-    return "- " + head + ": " + loreBaseText(e);
+    return "- " + head + ": " + loreRpText(e);
+  }
+  // The entry's `rp` line (lorebook-data.js: what a local would know, in brief) when it has one, else its base text.
+  // The server's lore room keeps the fuller base text (exportLoreEntries), which searches better.
+  function loreRpText(e) {
+    var rp = e.rp;
+    try { if (typeof rp === "function") rp = rp({}); } catch (err) { rp = ""; }
+    return rp ? cleanLoreText(rp) : loreBaseText(e);
   }
 
   function buildContextBlocks(cfg, s) {
@@ -639,11 +648,11 @@
    * Holds: the lore matched to what is being said, the month list and week or the coins when they come up, and the
    * memories fetched for this turn. Empty when none of them applies.
    */
-  function buildTurnContext(cfg, s, memBlock, focusParts) {
+  function buildTurnContext(cfg, s, memBlock, focusParts, semanticIds) {
     var C = companionRef(cfg, s), P = playerRef(cfg, s);
     var PU = P === "the player" ? "THE PLAYER" : P.toUpperCase() + " (THE PLAYER)";
     var out = [];
-    var lore = loreMatches(cfg, focusParts);
+    var lore = loreMatches(cfg, focusParts, semanticIds);
     if (lore.length) {
       out.push("WHAT " + C.toUpperCase() + " KNOWS ABOUT WHO AND WHAT IS BEING TALKED ABOUT (beyond these lines and her notes in the system prompt, she does not know more about them):\n" + lore.map(formatLoreMatch).join("\n"));
     }
@@ -1036,6 +1045,67 @@
     return parts;
   }
 
+  /*
+   * SEMANTIC LORE (2026-11-26): the lorebook also lives on the Mempalace server as one room (server.py /sync_lore,
+   * /search_lore), so an entry can be found by meaning when nobody names it ("the old war", "the lords up north").
+   * The page sends its entries once per load when their version (a hash of the text) differs from the server's; each
+   * turn asks for hits above LORE_SEMANTIC_THRESHOLD. Hits only join the keyword matches, under the same character scope
+   * (loreMatches extraIds), ranked below any keyword match. With the server down, keyword matching still works alone.
+   */
+  var LORE_SEMANTIC_THRESHOLD = 0.45;
+  var loreSync = { done: false, busy: false };
+  function exportLoreEntries() {
+    return loreEntryList().filter(function (e) { return e && e.id; }).map(function (e) {
+      var head = e.title + (e.sub ? " (" + cleanLoreText(e.sub) + ")" : "");
+      var also = (e.aliases || []).filter(function (a) { return String(a).toLowerCase() !== String(e.title).toLowerCase(); });
+      return { id: e.id, text: head + "." + (also.length ? " Also called: " + also.join(", ") + "." : "") + " " + loreBaseText(e) };
+    });
+  }
+  function loreVersion(entries) {
+    var str = entries.map(function (e) { return e.id + "\u0001" + e.text; }).join("\u0002"), h = 5381;
+    for (var i = 0; i < str.length; i++) h = ((h * 33) ^ str.charCodeAt(i)) >>> 0;
+    return entries.length + "-" + h.toString(36);
+  }
+  function syncLoreToServer() {
+    var baseUrl = getServerUrl();
+    if (!baseUrl || loreSync.done || loreSync.busy) return;
+    var entries = exportLoreEntries();
+    if (!entries.length) return;
+    var version = loreVersion(entries);
+    var post = function (body) {
+      return fetch(baseUrl + "/sync_lore", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+        body: JSON.stringify(body)
+      }).then(function (r) { return r.ok ? r.json() : null; });
+    };
+    loreSync.busy = true;
+    post({ version: version }).then(function (d) {
+      if (d && d.current) return d;
+      return post({ version: version, entries: entries });
+    }).then(function (d) { if (d) loreSync.done = true; })
+      .catch(function () {})
+      .then(function () { loreSync.busy = false; });
+  }
+  // A search costs the server about 4.5s (it starts the mempalace command each time), so it only runs when the player's
+  // line sounds like talk about something: a question, or words like know, heard, tell, remember, about.
+  var LORE_TALK_WORDS = /\?|\b(know|knew|heard|hear|tell|told|remember|about|who|what|where|why|ever|story|stories|rumou?rs?|news)\b/i;
+  // Entry ids found by meaning for this turn, best first; [] when the line is not talk, or the server is down, slow (8s) or mining.
+  function fetchLoreHits(cfg, focusParts) {
+    var baseUrl = getServerUrl();
+    var query = (focusParts || []).slice(0, 2).join("\n").slice(0, 600);
+    if (!baseUrl || !cfg || !cfg.lore || !query || !LORE_TALK_WORDS.test(String((focusParts || [])[0] || ""))) return Promise.resolve([]);
+    var timeout = new Promise(function (resolve) { setTimeout(function () { resolve([]); }, 8000); });
+    var ask = fetch(baseUrl + "/search_lore", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+      body: JSON.stringify({ query: query, limit: 6, threshold: LORE_SEMANTIC_THRESHOLD })
+    }).then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) { return (d && Array.isArray(d.hits)) ? d.hits.map(function (h) { return h.id; }) : []; })
+      .catch(function () { return []; });
+    return Promise.race([ask, timeout]);
+  }
+
   function fetchMemories(threadId, queryText) {
     var baseUrl = getServerUrl();
     if (!baseUrl || !threadId) return Promise.resolve("");
@@ -1146,6 +1216,9 @@
   RP.SCENE_KINDS = SCENE_KINDS;
   RP.loreMatches = loreMatches;
   RP.buildTurnContext = buildTurnContext;
+  RP.exportLoreEntries = exportLoreEntries;
+  RP.loreVersion = loreVersion;
+  RP.LORE_SEMANTIC_THRESHOLD = LORE_SEMANTIC_THRESHOLD;
   RP.companionKnowsName = companionKnowsName;
   RP.memoryOrder = memoryOrder;
   RP.memoryTranscript = memoryTranscript;
@@ -1232,6 +1305,7 @@
   }
 
   function checkServerAndModels(box) {
+    syncLoreToServer();
     var dot = box.querySelector(".rp-dot");
     var badgeText = box.querySelector(".rp-badge-text");
     var modelSelect = box.querySelector(".rp-model-select");
@@ -1505,6 +1579,10 @@
     function dispatchRpGenerate(chosenMode, sysPrompt, buildPromptForMode, maxTokens, actionLabel) {
       var baseUrl = getServerUrl();
       var usrPrompt = buildPromptForMode(chosenMode, settings.model);
+      // One id per scene on this page (and per job: the narrator, the helper and the grader each have their own prompt),
+      // so OpenRouter keeps the scene on the provider that holds its prompt cache (server.py universal_core: session_id).
+      var job = String(actionLabel || "Generating").toLowerCase().replace(/[^a-z]+/g, "");
+      var stickyId = ("cs_" + (session.pageId || session.id || "rp") + "_" + (statsNow().rp_world_id || "") + "_" + job).replace(/[^A-Za-z0-9_:.-]/g, "_").slice(0, 200);
       return fetch(baseUrl + "/rp_generate", {
         method: "POST",
         headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
@@ -1514,7 +1592,8 @@
           raw_mode: true,
           max_tokens: maxTokens,
           system: sysPrompt,
-          prompt: usrPrompt
+          prompt: usrPrompt,
+          session_id: stickyId
         })
       }).then(function (r) { return r.json(); })
         .then(function (res) {
@@ -1531,7 +1610,8 @@
                 raw_mode: true,
                 max_tokens: maxTokens,
                 system: sysPrompt,
-                prompt: fallbackPrompt
+                prompt: fallbackPrompt,
+                session_id: stickyId
               })
             }).then(function (r2) { return r2.json(); });
           }
@@ -1856,9 +1936,11 @@
 
       var threadId = resolveThreadId(cfg, statsNow());
 
-      fetchMemories(threadId, playerText || "Continue the scene").then(function (memBlock) {
+      var genFocus = loreFocusParts(playerText);
+      Promise.all([fetchMemories(threadId, playerText || "Continue the scene"), fetchLoreHits(cfg, genFocus)]).then(function (got) {
+        var memBlock = got[0];
         var sysPrompt = buildSystemPrompt(cfg, statsNow());
-        var turnContext = buildTurnContext(cfg, statsNow(), memBlock, loreFocusParts(playerText));
+        var turnContext = buildTurnContext(cfg, statsNow(), memBlock, genFocus, got[1]);
         return dispatchRpGenerate(
           chosenMode,
           sysPrompt,
@@ -1916,10 +1998,12 @@
       var threadId = resolveThreadId(cfg, statsNow());
       var recentHint = session.turns.slice(-2).map(function (t) { return t.text; }).join(" ").slice(0, 300);
 
-      fetchMemories(threadId, recentHint || "Advise choices for this scene").then(function (memBlock) {
+      var advFocus = loreFocusParts("");
+      Promise.all([fetchMemories(threadId, recentHint || "Advise choices for this scene"), fetchLoreHits(cfg, advFocus)]).then(function (got) {
+        var memBlock = got[0];
         if (mySeq !== session.adviseSeq) return null;
         var sysPrompt = buildAdvisorSystemPrompt(cfg, statsNow());
-        var turnContext = buildTurnContext(cfg, statsNow(), memBlock, loreFocusParts(""));
+        var turnContext = buildTurnContext(cfg, statsNow(), memBlock, advFocus, got[1]);
         return dispatchRpGenerate(
           chosenMode,
           sysPrompt,

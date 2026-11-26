@@ -69,6 +69,7 @@
     {
       id: "palmcote", category: "places", title: "Palmcote",
       sub: "An olive-grove village on a sun-facing slope under Hartwell",
+      rp: "An olive village under Hartwell: one steep lane of pale stone houses under red tile roofs, with drystone terraces of olive trees all around. Everyone picks, carts or presses olives; along the lane are the Gathering Hall, The Green Branch inn and the market.",
       tags: ["Palmcote", "Hartwell", "Trade", "Lodging"],
       aliases: [
         "Palmcote", "olive terraces", "olive groves", "Gathering Hall",
@@ -173,6 +174,7 @@
     {
       id: "nora_greer", category: "people", title: "Nora Greer",
       sub: "Village head of Palmcote",
+      rp: "Palmcote's village head: a spare, watchful woman in her late fifties with silver-streaked hair pinned tight, ink on her knuckles and an ash walking stick. She keeps the village register at the Gathering Hall.",
       role: "Village Head, the Gathering Hall (Palmcote)",
       tags: ["Palmcote", "Hartwell"],
       aliases: ["Nora", "Greer", "village head"],
@@ -197,6 +199,7 @@
     {
       id: "odda_pellam", category: "people", title: "Odda Pellam",
       sub: "Innkeeper of The Green Branch",
+      rp: "Keeps The Green Branch: a stout woman in her sixties with a long grey braid and flour to the elbows. She bakes the bread, ladles bean-and-olive stew and rents the rooms upstairs.",
       role: "Innkeeper, The Green Branch (Palmcote)",
       tags: ["Palmcote", "Lodging"],
       aliases: ["Odda", "Pellam", "innkeeper", "Green Branch"],
@@ -220,6 +223,7 @@
     {
       id: "house_ferrand", category: "factions", title: "House Ferrand",
       sub: "The noble house above Palmcote",
+      rp: "The noble family who own Palmcote's estate: the grey stone house behind the high wall at the crest, the terraces, the leases and the pressing house. They live in Hartwell; their estate steward runs it, with a bailiff over the weighing yard. Villagers call it the big house; its burned olive-tree crest is on every cart, lease and scale box.",
       tags: ["Palmcote", "Hartwell"],
       aliases: ["Ferrand", "House Ferrand", "the big house", "house on the hill"],
       link: ["House Ferrand"],

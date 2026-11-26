@@ -23,6 +23,7 @@
  *   --say "<text>"   what the player just said or did; the lore lookup reads it (rp.js loreMatches)
  *   --last "<text>"  the companion's last reply, read by the lore lookup after --say
  *   --memory "<text>" stands in for a memory the server would return this turn
+ *   --hits id,id     stands in for lore entries the server found by meaning this turn (rp_lore_search.js shows real ones)
  *
  * The output has two parts: the system message (the same for the whole visit, so it can be cached) and this turn's
  * context (lore, calendar or coin when they come up, memories), which goes in the user message before the player's action.
@@ -44,7 +45,7 @@ const GAME = path.join(ROOT, "web", "mygame");
 
 // ---- arguments
 const args = process.argv.slice(2);
-let sceneId = null, mode = "system", scriptFile = null, statsFile = null, list = false, kindOverride = null, say = "", last = "", memory = "";
+let sceneId = null, mode = "system", scriptFile = null, statsFile = null, list = false, kindOverride = null, say = "", last = "", memory = "", hits = [];
 const pairs = {};
 for (let i = 0; i < args.length; i++) {
   const a = args[i];
@@ -57,6 +58,7 @@ for (let i = 0; i < args.length; i++) {
   else if (a === "--say") say = args[++i];
   else if (a === "--last") last = args[++i];
   else if (a === "--memory") memory = args[++i];
+  else if (a === "--hits") hits = args[++i].split(",").map((x) => x.trim()).filter(Boolean);
   else if (/^[A-Za-z_][\w]*=/.test(a)) { const k = a.slice(0, a.indexOf("=")); pairs[k] = a.slice(a.indexOf("=") + 1); }
   else if (!sceneId) sceneId = a;
   else { console.error("Unknown argument: " + a); process.exit(2); }
@@ -137,14 +139,14 @@ if (RP.sceneKind(cfg) && RP.sceneKind(cfg).grader && !RP.resolveSceneProfile(cfg
 }
 
 const focus = [say, last].filter(Boolean);
-const lorePulled = RP.loreMatches(cfg, focus);
+const lorePulled = RP.loreMatches(cfg, focus, hits);
 let prompt;
 if (mode === "eval" && !RP.resolveSceneProfile(cfg, s)) { console.log("A " + (cfg.kind || "intimate") + " scene has no grader: nothing is graded after it."); process.exit(problems.length ? 1 : 0); }
 if (mode === "advisor") prompt = RP.buildAdvisorSystemPrompt(cfg, s);
 else if (mode === "eval") prompt = RP.buildEvaluationSystemPrompt(cfg, s, RP.resolveSceneProfile(cfg, s));
 else prompt = RP.buildSystemPrompt(cfg, s);
 // The turn's context goes in the user message (rp.js buildTurnContext), so the system message stays cacheable.
-const turnCtx = mode === "eval" ? "" : RP.buildTurnContext(cfg, s, memory ? "- " + memory : "", focus);
+const turnCtx = mode === "eval" ? "" : RP.buildTurnContext(cfg, s, memory ? "- " + memory : "", focus, hits);
 
 console.log("======== SYSTEM MESSAGE (the same all visit) ========");
 console.log(prompt);
