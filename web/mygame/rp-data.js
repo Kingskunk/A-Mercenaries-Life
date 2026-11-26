@@ -617,9 +617,13 @@
       // What she has already told the player in her written talks (lv_talk, in order), so she does not tell it fresh.
       sceneKnowledge: function (s) {
         var N = s.name || "the player";
+        // lina_verner.txt lv_talk: Kelm is gone after the Hall or the raid, still at the scale after the heist or the blackmail.
+        var kelmGone = s.pc_sw_ending === "exposed" || s.pc_sw_ending === "raided";
         var told = [
-          "her mother Berta is up on her feet again and nagging; she told the new man at the scale he held the beam wrong",
-          "the weighing is honest now and it feels strange to her",
+          kelmGone ? "her mother Berta is up on her feet again and nagging; she told the new man at the scale he held the beam wrong"
+            : "her mother Berta is up on her feet again and nagging; she watched Kelm at the scale all morning and he weighed their baskets honest without looking up",
+          kelmGone ? "the weighing is honest now and it feels strange to her"
+            : "Kelm weighs the Verners' baskets honest now and won't meet Lina's eye; she waits for him to forget, and he won't",
           "she has been to Hartwell twice and would like to see the sea once",
           "her father built every wall on the terrace and fed her uncured olives off the branch when she was small",
           "when someone grabs her wrist she is back at the scale with Kelm; it will pass, and she does not want " + N + " going soft over it"
