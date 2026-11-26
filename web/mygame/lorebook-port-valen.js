@@ -1490,13 +1490,13 @@
     },
     {
       id: "alys_threnn", category: "people", title: "Alys Threnn",
-      sub: "Gate-Captain of the Inner Gate",
-      role: "Gate-Captain, Patrician Quarter (house guard)",
-      link: ["Alys Threnn", "Captain Threnn", "Threnn"],
-      tags: ["Patrician Quarter", "Law"], aliases: ["Threnn", "Alys", "gate-captain"],
+      sub: "Gate-Warden of the Inner Gate",
+      role: "Gate-Warden, Patrician Quarter (house guard)",
+      link: ["Alys Threnn", "Warden Threnn", "Threnn"],
+      tags: ["Patrician Quarter", "Law"], aliases: ["Threnn", "Alys", "gate-warden"],
       unlock: "pq_gate_seen",
       body: [
-        "A tall human woman in her early fifties, blade-straight with a duelist's stillness, who keeps the Inner Gate's book on a slanted desk under the arch. She has dark slate hair threaded with silver at the temples pulled into a tight warrior's tail, cool steel-grey eyes, and weathered, pale skin. She wears a navy and silver surcoat over a polished steel-trimmed mail hauberk, fitted steel vambraces, and a fine dueling longsword and parrying dagger belted at her hip. She serves the houses jointly, not the Watch."
+        "A tall human woman in her early fifties, blade-straight with a duelist's stillness, who keeps the Inner Gate's book on a slanted desk under the arch. She has dark slate hair threaded with silver at the temples pulled into a tight warrior's tail, cool steel-grey eyes, and weathered, pale skin. She wears a navy and silver surcoat over a polished steel-trimmed mail hauberk, fitted steel vambraces, and a fine dueling longsword and parrying dagger belted at her hip. She serves the houses jointly, not the Watch. She keeps the day desk; a gate-sergeant holds it through the night, and she reads his entries over at first bell."
       ],
       see: ["upper_wharves", "entry_writs"]
     },

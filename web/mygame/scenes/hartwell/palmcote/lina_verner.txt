@@ -1,0 +1,396 @@
+*comment ====================================================================================
+*comment LINA'S PLACE (Palmcote, after Short Weight)
+*comment Lina Verner's one-room olive store on the lowest terrace, two doors up from her mother
+*comment Berta's cottage. Open to the player when Short Weight left her in Palmcote and still
+*comment warm toward them (pc_sw_lina_stays and not pc_sw_lina_cold): the exposed, raided, heist
+*comment and blackmail endings. A light lover, not a bond track like Janna, Talia or the dryad:
+*comment   - a free bed on any night she is home (lv_sleep),
+*comment   - a free supper once a day (lv_meal),
+*comment   - a tryst once a campaign week when she is in the mood: a 50% roll made on the first
+*comment     visit of the week that finds her home (lv_mood_week, lv_in_mood); it pays a 24-hour
+*comment     +1 CON unique buff, "Lina's Warmth" (designer, 2026-11-25; rp.js may stretch it later).
+*comment Her hours (lv_where): out on the terraces Morning to Afternoon; on the rest day at her
+*comment mother's in the Morning and home from Midday; home at Dusk except one evening in three
+*comment (campaign_day modulo 3 = 0), when she sits with Berta; home at Night and Pre-Dawn.
+*comment Backdrop: palmcote_verner_cottage (one room, hearth and pot, bed in an alcove, table).
+*comment ====================================================================================
+
+*comment Where Lina is now. Sets lv_home and, when she is out, lv_away_reason for the hub button.
+*label lv_where
+*set lv_home true
+*set lv_away_reason ""
+*if (day_of_week = "Hallowday")
+  *if (time_period = "Morning")
+    *set lv_home false
+    *set lv_away_reason "latched; she is at her mother's"
+  *return
+*if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
+  *set lv_home false
+  *set lv_away_reason "latched; she is up on the terraces"
+  *return
+*if ((time_period = "Dusk") and ((campaign_day modulo 3) = 0))
+  *set lv_home false
+  *set lv_away_reason "dark; she is sitting with her mother"
+*return
+
+*comment The campaign week, the same count Janna's alcove uses.
+*label lv_week_now
+*set lv_week ((((campaign_day - 1) - ((campaign_day - 1) modulo 7)) / 7) + 1)
+*return
+
+*label lv_door
+*set minutes_to_pass 5
+*set time_advance_call_id "lv_walk_1"
+*gosub_scene hartwell/palmcote/palmcote pc_walk_time
+*gosub lv_where
+*if (not(lv_home))
+  *goto lv_shut
+*set scenery_subplace "palmcote_verner_cottage"
+*gosub lv_week_now
+*comment The week's mood: rolled once, on the first visit of the week that finds her home.
+*if (not(lv_mood_week = lv_week))
+  *set lv_mood_week lv_week
+  *temp lv_roll 1
+  *rand lv_roll 1 100
+  *set lv_in_mood (lv_roll <= 50)
+*comment Visits are counted once per arrival page (a Stats round trip replays the page), so the greeting rotates by visit, never repeats
+*comment back to back, and does not depend on the day.
+*if (not(lv_visit_page = page_id))
+  *set lv_visit_page page_id
+  *set lv_visits + 1
+[b]◈ LINA'S PLACE[/b]
+*line_break
+*if (not(lv_first_visit_done))
+  *goto lv_first_visit
+*if ((weather = "Rain") or (weather = "Storm"))
+  Rain runs off the eaves above her door in strings.
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  A line of firelight shows under her door.
+*else
+  Her shutter is propped open, and something is cooking on the fire.
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  The steps down to her place are still slick from the rain.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The terrace dirt by her step is still dark from earlier rain.
+
+*gosub lv_greeting
+*goto lv_menu
+
+*label lv_shut
+[b]◈ LINA'S PLACE[/b]
+*line_break
+*if (time_period = "Dusk")
+  No light shows at the shutter. A few steps below, the window of Berta Verner's cottage glows, and Lina's voice carries low through it, reading something aloud.
+*elseif (day_of_week = "Hallowday")
+  The door is latched. A few steps below, Berta Verner's cottage stands open to the morning, and Lina's laugh comes out of it.
+*else
+  The door is latched with a loop of cord. Up the slope, pickers move along the terrace rows with baskets on their hips.
+*choice
+  # Step back out onto Palmcote's lane.
+    *goto_scene hartwell/palmcote/palmcote pc_return
+
+*comment First visit after the quest: the reunion, shaped by how Short Weight ended.
+*label lv_first_visit
+*set lv_first_visit_done true
+*if (time_period = "Dusk")
+  Lina answers before you can knock twice. She has flour to the elbows and her braid pinned up off her neck, and for a moment she only looks at you.
+*else
+  Lina answers before you can knock twice, her hair down for bed and a shawl around her shoulders, and for a moment she only looks at you.
+
+"${name}." Then she has your sleeve and is hauling you inside. "Get in here before the whole lane sees you and makes a story of it."
+
+*if (pc_sw_ending = "exposed")
+  "Nora read it out in the hall," she tells you once you're inside. "Struck the debt right off her register, in front of everyone." She laughs, and it comes out shaky. "Ma cried. She never cries. She says it was the dust."
+*elseif (pc_sw_ending = "blackmail")
+  "Kelm goes the long way round our trees now," she announces, dropping the latch. "Goes red to the ears when he sees me." Her mouth twitches. "I don't want to know what you said to him. All right, I do. Later."
+*else
+  "Nobody's come down the lane asking about that note," she whispers, as if the lane might still be listening. "Not once." She lets out a long breath. "Ma's sleeping through the night again."
+
+You look around: whitewashed walls, a pot on the fire, herbs hanging from the beams, a bed tucked into the alcove. "You've got your own place."
+
+"Finally." She raps a knuckle on the thick wall. "Da stored his press gear in here. When Ma got sick I needed a door I could shut." She gives you a sideways look. "And somewhere I could be as loud as I like without her hearing."
+
+*if (pc_sw_lina_close)
+  "I've thought about that night at the inn," she adds. "More than I'm going to admit while you're stood there grinning."
+*else
+  "There's always too much in the pot for one," she adds, already turning to the table. "And the bed's big enough for two. Just so you know."
+
+*goto lv_menu
+
+*comment How she greets you on a later visit: by lv_visits, so two visits in a row never open the same way. Her mood for the week
+*comment shows here, never as a number.
+*label lv_greeting
+*temp lv_g (lv_visits modulo 3)
+*if ((lv_in_mood) and ((time_period = "Dusk") or (time_period = "Night")))
+  *if (lv_g = 0)
+    Lina sees it's you and leans on the frame instead of stepping aside. "Took your time." She catches your hand to pull you in.
+  *elseif (lv_g = 1)
+    "Latch it behind you," Lina calls from the edge of the bed, her braid half undone. "Then come here. I've been thinking about you all day, and the olives didn't deserve it."
+  *else
+    Lina is laughing before you're properly inside. "I knew that was you." She pulls you inside and kisses you before you've said a word.
+*elseif (time_period = "Pre-Dawn")
+  Lina opens up wrapped in a shawl, squinting at you. "Do you know what hour it is?" She steps aside anyway. "In. You're letting the cold in."
+*elseif (lv_g = 0)
+  Lina is at the table cracking olives with the flat of a knife. "Sit before you fall over," she orders. "You look like the road chewed you up and spat you out."
+*elseif (lv_g = 1)
+  Lina lets you in with a tired smile. "I'm poor company tonight. I've been carrying baskets since sunup and my arms have quit on me." She nudges a stool out with her foot. "Stay anyway."
+*else
+  Lina is mending a basket strap by the fire and stays where she is. "Pot's warm," she mutters around the twine between her teeth. "Help yourself, and tell me something that isn't about olives."
+*return
+
+*label lv_menu
+*gosub lv_week_now
+*set wait_ok_page page_id
+*choice
+  *if ((not(lv_meal_day = campaign_day)) and (not(time_period = "Pre-Dawn")))
+    # Eat with her at the table. [~30 min]
+      *goto lv_meal
+  *if (((lv_in_mood) and (not(lv_tryst_week = lv_week))) and ((time_period = "Dusk") or (time_period = "Night")))
+    # Draw her toward the bed. [~1 hour]
+      *set rp_active_scene "none"
+      *goto lv_tryst
+  *if (((lv_in_mood) and (not(lv_tryst_week = lv_week))) and ((time_period = "Dusk") or (time_period = "Night")))
+    # [Roleplay] Draw her toward the bed. [~1 hour]
+      *set rp_active_scene "lina_verner"
+      *goto lv_tryst
+  *if ((((time_period = "Dusk") or (time_period = "Night")) or (time_period = "Pre-Dawn")) and (not(lv_woke_day = campaign_day)))
+    # Stay the night in her bed. [~8 Hours]
+      *goto lv_sleep
+  *if ((lv_talk_step < 5) and (not(lv_talk_day = campaign_day)))
+    # Sit by the fire and talk a while. [~15 min]
+      *goto lv_talk
+  # Head out onto Palmcote's lane.
+    *goto_scene hartwell/palmcote/palmcote pc_return
+
+*label lv_meal
+*set scenery_subplace "palmcote_verner_cottage"
+*set lv_meal_day campaign_day
+*set tavern_item_cost_copper 0
+*set tavern_item_hp_heal 0
+*set tavern_item_temp_hp 0
+*set tavern_item_type "food"
+*set tavern_item_buff_name ""
+*set tavern_item_buff_desc ""
+*set tavern_item_buff_stat "none"
+*set tavern_item_buff_bonus 0
+*set tavern_item_buff_minutes 0
+*gosub_scene economy buy_tavern_item
+*set minutes_to_pass 30
+*set time_advance_call_id "lv_meal"
+*gosub_scene hartwell/palmcote/palmcote pc_walk_time
+*temp lv_m (campaign_day modulo 3)
+*if (lv_m = 0)
+  Lina ladles beans and onion out of the pot, tears a loaf in half and shoves the bigger half at you, then sets a bowl of black olives between you. "Dip the bread," she orders. "The oil's the best part."
+
+  You do. She watches until you make a noise about it, then looks smug for the rest of the meal.
+*elseif (lv_m = 1)
+  Supper is flatbread straight off the hearthstone, a wedge of hard sheep's cheese and a saucer of green oil with salt in it. Lina eats with her elbows on the table. "Go on, then. Where've you been?"
+
+  You tell her some of it between mouthfuls. She stops you at the good parts to ask what it smelled like, and whether you were scared.
+*else
+  Lina fries eggs with a fistful of wild greens and slaps them onto bread. When you look away, she steals the crust off your plate.
+
+  "Hey."
+
+  "What?" she asks, chewing. "You weren't eating it."
+
+*goto lv_menu
+
+*comment Five things to talk about, each once, one a day; after that the option is gone. Each has the player's own line first.
+*label lv_talk
+*set scenery_subplace "palmcote_verner_cottage"
+*comment The topic is fixed once per day (lv_talk_now); a Stats round trip replays the page without moving on to the next one.
+*if (not(lv_talk_day = campaign_day))
+  *set lv_talk_now lv_talk_step
+  *set lv_talk_step + 1
+*set lv_talk_day campaign_day
+*set minutes_to_pass 15
+*set time_advance_call_id "lv_talk"
+*gosub_scene hartwell/palmcote/palmcote pc_walk_time
+*if (lv_talk_now = 0)
+  "How's your mother?" you ask.
+
+  "Better." Lina's face goes soft. "Up on her feet by noon and nagging me by one, so she's better." She grins at the fire. "Yesterday she sat on the terrace wall and told the new man at the scale he was holding the beam wrong. He wasn't. He thanked her anyway."
+*elseif (lv_talk_now = 1)
+  "How's the weighing now?" you ask.
+
+  Lina snorts. "Honest. It's strange." She turns her cup in her hands. "A basket weighs what it weighs, and nobody at the yard looks at you like you owe them something. I keep waiting for it to go back the way it was."
+
+  "It won't," you tell her.
+
+  "No." She looks at you a moment. "Not while you're about, anyway."
+*elseif (lv_talk_now = 2)
+  "What about you?" Lina says, pulling her knees up onto the stool. "Where does the road take you, when you're not here?"
+
+  You tell her some of it: the cold nights, the bad food, the places worth seeing. She listens with her chin on her fist.
+
+  "I've been to Hartwell," she offers when you're done. "Twice. Smelled of oil and horses both times." She is quiet a moment. "I'd like to see the sea, once. Just to see what all the fuss is."
+*elseif (lv_talk_now = 3)
+  You run a hand over the stone of the wall beside the hearth. "Who built this?"
+
+  "Da." Lina reaches past you and touches the same stones. "Every wall on this terrace, too. He used to carry me up the steps on his shoulders at harvest and let me eat the olives off the branch so I'd learn they taste like nothing until they're cured." She laughs. "I cried. He laughed so hard he nearly dropped me."
+*else
+  Lina is rubbing her left wrist without seeming to notice. You nod at it. "Still sore?"
+
+  She stops, looks down at her hand as if it belonged to someone else, then tucks it into her lap. "Not sore. It's only that when someone grabs me there, I'm back at the scale with him." She shrugs, too quickly. "It'll pass."
+
+  "Take your time with it," you say.
+
+  "I am." She bumps her knee against yours. "Don't go soft on me over it, either."
+
+*goto lv_menu
+
+*label lv_tryst
+*set scenery_subplace "palmcote_verner_cottage"
+*gosub lv_week_now
+*comment Counted once: a replayed page finds the week already marked.
+*if (not(lv_tryst_week = lv_week))
+  *set lv_trysts + 1
+*set lv_tryst_week lv_week
+*set minutes_to_pass 60
+*set time_advance_call_id "lv_tryst"
+*gosub_scene hartwell/palmcote/palmcote pc_walk_time
+*set ambience_intimacy true
+*comment ROLEPLAY (rp-data.js lina_verner): the AI plays the night from here; its grade (rp_encounter_rating, 0 to 20) is read on the next page.
+*if (not(rp_active_scene = "none"))
+  *set rp_encounter_rating 0
+  Lina drops the bar across the door and turns around with her back against it, already smiling.
+
+  [RP_SESSION:${rp_active_scene}]
+  *page_break Lie back together…
+  *goto lv_tryst_after
+*temp lv_v (lv_trysts modulo 3)
+*if (lv_v = 1)
+  Lina meets you halfway. She pulls the pins from her braid as she backs away from you, and the dark hair comes down over her shoulders. Her hands are rough from the terraces and in no hurry, working your clothes loose a piece at a time until there is nothing left between you but the heat of the hearth.
+
+  In the alcove she drags you over her and wraps her legs around you, and the slow pace doesn't last. She is loud and unembarrassed about it, her nails in your back, laughing breathlessly into your neck when the old frame knocks against the wall, then not laughing at all.
+*elseif (lv_v = 2)
+  Lina pushes you down onto the edge of the mattress and climbs into your lap, her skirt rucked up around her hips. "Stay there. I'm doing this one." She sets the pace herself, slow and deliberate, her forehead pressed to yours and her breath catching every time she sinks down.
+
+  When you take her by the hips and roll her under you, she gasps your name and holds on. The blanket ends up on the floor. Neither of you notices.
+*else
+  Lina kisses you against the door before you have it fully shut. You end up tangled together half-dressed, her shift bunched under her arms and her heel hooked behind your knee, both of you too impatient to bother with the rest.
+
+  It is quick, rough and laughing, then slow the second time, when she makes you wait for it until you are both shaking.
+
+*goto lv_tryst_after
+
+*comment rp_active_scene and ambience_intimacy are cleared on the next page, never here: reopening Stats replays this page, and a cleared
+*comment rp_active_scene would then re-apply the boon at 24 hours.
+*comment After the tryst, written or roleplayed. A roleplayed night's grade stretches the boon past 24 hours: up to a grade of 5 it
+*comment stays 24 hours, then 96 minutes more per point, 48 hours at 20 (the same sum as rp-data.js lina_verner formatBoon).
+*label lv_tryst_after
+*set scenery_subplace "palmcote_verner_cottage"
+*temp lv_rating 0
+*if (not(rp_active_scene = "none"))
+  *set lv_rating rp_encounter_rating
+*if (lv_rating < 0)
+  *set lv_rating 0
+*if (lv_rating > 20)
+  *set lv_rating 20
+*temp lv_boon_min 1440
+*if (lv_rating > 5)
+  *set lv_boon_min (1440 + ((lv_rating - 5) * 96))
+*temp lv_boon_m (lv_boon_min modulo 60)
+*temp lv_boon_h ((lv_boon_min - lv_boon_m) / 60)
+*temp lv_boon_label "${lv_boon_h} hours"
+*if (lv_boon_m > 0)
+  *set lv_boon_label "${lv_boon_h} hours ${lv_boon_m} minutes"
+Afterward she lies along your side under the grey wool with one leg thrown over yours, tracing lazy lines on your chest while the fire burns down.
+
+*temp lv_a (lv_trysts modulo 3)
+*if (lv_a = 1)
+  "Stay," she mumbles into your shoulder. "Or go. But stay."
+*elseif (lv_a = 2)
+  "You're not going anywhere," she murmurs, hooking her leg tighter over yours. "I'm not finished with you. Give me a minute."
+*else
+  She yawns against your neck. "Bed's warm, road's cold. I'm only saying."
+*set unique_buff_input_name "Lina's Warmth"
+*set unique_buff_input_desc "+1 CON (A Night with Lina)"
+*set unique_buff_input_stat "con"
+*set unique_buff_input_bonus 1
+*set unique_buff_input_minutes lv_boon_min
+*gosub_scene economy apply_unique_buff
+
+[b][❤️ Lina's Warmth: +1 CON for ${lv_boon_label}][/b]
+*choice
+  # Stay the night with her. [~8 Hours]
+    *set ambience_intimacy false
+    *set rp_active_scene "none"
+    *goto lv_sleep
+  # Kiss her goodnight and head out onto the lane.
+    *set ambience_intimacy false
+    *set rp_active_scene "none"
+    You find your clothes by the last of the firelight. Lina watches from the bed with the covers pulled up to her chin. "Next week, then. Don't make me come looking."
+
+    *goto_scene hartwell/palmcote/palmcote pc_return
+
+*label lv_sleep
+*set scenery_subplace "palmcote_verner_cottage"
+*set hours_to_pass 8
+*set minutes_to_pass 0
+*set time_advance_call_id "lv_sleep"
+*gosub_scene calendar advance_time
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*set sleep_location_id "palmcote_lina"
+*set sleep_is_shared false
+*set sleep_is_permanent_home false
+*set sleep_is_paid_inn false
+*set sleep_tier_name "none"
+*set sleep_tier_stat1 "none"
+*set sleep_tier_bonus1 0
+*set sleep_tier_stat2 "none"
+*set sleep_tier_bonus2 0
+*gosub_scene calendar resolve_sleep
+*gosub_scene calendar update_hub_condition
+*set lv_woke_day campaign_day
+Lina pulls the wool over you both and is asleep almost at once, warm against you. The fire ticks down in the hearth, and the olive trees whisper on the terrace outside.
+
+*gosub lv_where
+*if (lv_home)
+  You wake to the scrape of the shutter. Lina is up already, lacing her bodice by the last of the coals. "Sleep a bit longer if you want," she whispers. "Pull the door to when you go."
+*else
+  When you wake, her side of the bed is cool. A heel of bread and a cup of water wait on the table, and up the slope you can hear the pickers already calling to each other along the rows.
+*if (not(sleep_gear_note = ""))
+  *line_break
+  ${sleep_gear_note}
+*goto lv_wake_menu
+
+*comment After a night in her bed you wake in her room, never on the lane. She is home (Pre-Dawn) or already gone to the terraces.
+*label lv_wake_menu
+*set scenery_subplace "palmcote_verner_cottage"
+*set wait_ok_page page_id
+*choice
+  *if (not(lv_meal_day = campaign_day))
+    # Eat something before you go. [~10 min]
+      *goto lv_breakfast
+  # Pull the door to behind you and step out onto the lane.
+    *goto_scene hartwell/palmcote/palmcote pc_return
+
+*label lv_breakfast
+*set scenery_subplace "palmcote_verner_cottage"
+*set lv_meal_day campaign_day
+*set tavern_item_cost_copper 0
+*set tavern_item_hp_heal 0
+*set tavern_item_temp_hp 0
+*set tavern_item_type "food"
+*set tavern_item_buff_name ""
+*set tavern_item_buff_desc ""
+*set tavern_item_buff_stat "none"
+*set tavern_item_buff_bonus 0
+*set tavern_item_buff_minutes 0
+*gosub_scene economy buy_tavern_item
+*set minutes_to_pass 10
+*set time_advance_call_id "lv_breakfast"
+*gosub_scene hartwell/palmcote/palmcote pc_walk_time
+*gosub lv_where
+*if (lv_home)
+  Lina tears the heel of bread in two and hands you half on her way out. "Don't say I never fed you," she says, and kisses you, quick and warm, before she goes.
+*else
+  The bread is yesterday's and the water is cold. Under the cup she has left a single black olive, set there on purpose.
+
+*goto lv_wake_menu

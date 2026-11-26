@@ -39,7 +39,7 @@ The write-ups in `quests/` were moved here word for word from the old version of
 | A Frying Pan, Spick and Span | `greybank_pan` | `overworld/greybank_frying_pan.txt` | A 10% daytime road event on Greybank Rise (`ar2`) | `returned`, `pocketed` | None |
 | Sparks in the Holt | `ashrun_forge` | `timbermouth/ashrun_holt/burnt_smithy.txt` | Durgan's notice on Ashrun Holt's board of cords (requires the Contractor's Insignia; credits `hall_jobs_scales`) | `returned_peaceful`, `returned_subdued`, `bribed` | None |
 | The Mare on the Down | `broadmead_mare` | `Langston/broadmead/bolted_mare.txt` | Remount Yard notice under STRAYS AND BRANDS on Broadmead's Contract Board (requires a House Gault page; credits `hall_jobs_gault`) | `returned` (`settled`, `law`, `paid`, `brawled`, `recovered`), `lost` | `quests/broadmead_mare.md` |
-| Short Weight | `palmcote_short_weight` | `hartwell/palmcote/short_weight.txt` | Stepping onto Palmcote's lane at dusk, night or before dawn (a picker running from the estate patrol); a daytime breadcrumb at the olive yard | `exposed`, `raided`, `heist`, `blackmail`, `escaped`; `betrayed_early`, `sold_out`, `ignored`; losses `fled_lane`, `fled_press`, `fled_hall`, `fled_road` | `quests/Short_Weight_Palmcote` |
+| Short Weight | `palmcote_short_weight` | `hartwell/palmcote/short_weight.txt` | Stepping onto Palmcote's lane at dusk, night or before dawn, once Odda and Nora Greer are met (a picker running from the estate patrol); a daytime breadcrumb at the olive yard | `exposed`, `raided`, `heist`, `blackmail`, `escaped`; `betrayed_early`, `sold_out`, `ignored`; losses `fled_lane`, `fled_press`, `fled_hall`, `fled_road` | `quests/Short_Weight_Palmcote` |
 
 ## Hiring Hall jobs and parcels the sidebar lists
 

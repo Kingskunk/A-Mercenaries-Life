@@ -469,6 +469,7 @@ button#statSidebar .turnRow,
 #csTip .tAb i.zero { color: var(--ch-dim); }
 #csTip .tDead { color: var(--ch-dim); font-size: 10.5px; margin-top: 6px; }
 #csTip .tText { white-space: normal; max-width: 250px; }   /* the condition chips' card: sentences, not one-line rows */
+#csTip .tHd { white-space: normal; max-width: 260px; }     /* a header never runs out of the card (2026-11-25: a one-sentence data-tip did) */
 #csTip .tText p { margin: 4px 0 0; }
 #csTip .tText b { color: var(--ch-dim); font-weight: 600; }
 /* The quest card is a compact preview (goal and the latest clues); the whole history is in the Quest Journal panel a click on the quest's name opens (questjournal.js). */
@@ -2559,8 +2560,9 @@ button#statSidebar .turnRow,
   function paintTextCard(key) {
     var text = key.slice(4), i = text.indexOf(": ");
     if (!text) return false;
+    // A short label with no "Head: body" split is the card's header; a sentence (the Wait and Rest refusals) is body text, so it wraps.
     tipNode().innerHTML = i > 0 ? "<div class=\"tHd\">" + esc(text.slice(0, i)) + "</div><div class=\"tText\"><p>" + esc(text.slice(i + 2)) + "</p></div>"
-      : "<div class=\"tHd\">" + esc(text) + "</div>";
+      : (text.length > 40 ? "<div class=\"tText\"><p style=\"margin:0\">" + esc(text) + "</p></div>" : "<div class=\"tHd\">" + esc(text) + "</div>");
     return true;
   }
   function showTip(key, x, y) {

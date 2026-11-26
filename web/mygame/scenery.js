@@ -86,6 +86,7 @@
     "hartwell/palmcote/green_branch": "generic_village_inn",
     "hartwell/palmcote/palmcote_market": "palmcote_market",
     "hartwell/palmcote/short_weight": "palmcote",
+    "hartwell/palmcote/lina_verner": "palmcote",
     "hartwell/oxworth/oxworth_market": "oxworth_market",
     "hartwell/oxworth/yoke_and_horn": "oxworth_yoke_and_horn",
     "hartwell/oxworth/village_heads_hall": "generic_village_gathering_hall",

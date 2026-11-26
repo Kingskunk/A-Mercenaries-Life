@@ -9,28 +9,31 @@
  *
  * What it measures: the text the player sees on the button, in characters (the screen wraps by width, not by word
  * count). Markup is removed first: [b]/[i] tags, and the tags and conditions of @{...} (the longest option is counted).
- * A ${...} interpolation counts as the longest text the file ever sets into that variable (*set name "text"), which is how the
- * stat hints are filled in. If the file never sets it to a plain string it is a guess: 12 characters, or 60 for a name with "hint". The bracketed hint written straight into the
+ * A ${...} interpolation counts as the longest text the file ever sets into that variable (*set name "text", or a joined
+ * *set name ("text" & var), each variable counted as 3 characters), which is how the stat hints are filled in. If the file never sets it to a plain string it is a guess: 12 characters, or 60 for a name with "hint". The bracketed hint written straight into the
  * button, such as [Lyra Bond / Dialogue / Advantage on Gatehouse Melee], is counted: the player reads it.
  *
- * Two signals, both advisory:
- *   long     the button is over the limit (default 100 characters, about one line on the game screen)
- *   hint     the bracketed hint alone is over 65 characters, so it is the part to trim first
+ * Three signals:
+ *   WRAPS    the button is over 109 characters: on the game screen it breaks onto a second line (the designer, 2026-11-25:
+ *            109 fits, 110 wraps). Fix these.
+ *   long     the button is over the target (default 100 characters), a round number to aim for. Advisory.
+ *   hint     the bracketed hint alone is over 65 characters, so it is the part to trim first. Advisory.
  *
  * Usage:
- *   node tools/lint_choice_length.js [path] [max=100] [hintmax=65] [show=40]
+ *   node tools/lint_choice_length.js [path] [max=100] [wrap=109] [hintmax=65] [show=40]
  *
  *   path - optional single file or directory to lint (default: web/mygame/scenes/)
  *
- * Skipped: combat buttons (a different rule, 15 words, tools/lint_choice_labels.js), the developer menu, and the level-up
- * pick lists in character_progression.txt, where a spell name plus its description is the point of the menu.
+ * Skipped: combat buttons (a different rule, 15 words, tools/lint_choice_labels.js) and the developer menu. The level-up
+ * pick lists in character_progression.txt are checked too (2026-11-25): a spell or invocation name plus its description
+ * still has to fit on one line.
  * Report-only: always exits 0. On a directory it also prints a per-file table, most over-long buttons first.
  */
 
 const fs = require('fs');
 const path = require('path');
 
-const opts = { max: 100, hintmax: 65, show: 40 };
+const opts = { max: 100, wrap: 109, hintmax: 65, show: 40 };
 let target = null;
 process.argv.slice(2).forEach((a) => {
   const m = /^(\w+)=(.*)$/.exec(a);
@@ -44,9 +47,8 @@ if (!target) target = path.resolve(__dirname, '..', 'web', 'mygame', 'scenes');
 
 const { collectSceneFiles: collectScenes } = require('./lib/collect_scene_files');
 
-// Files whose buttons follow the combat rule instead, the developer menu, and the level-up pick lists (a spell or feature
-// name followed by its description is the point of those menus).
-const SKIP_FILES = /(^|[\\/])(combat[a-z_]*|dev_hub|dungeon|character_progression)\.txt$/i;
+// Files whose buttons follow the combat rule instead, and the developer menu (the level-up lists are checked since 2026-11-25).
+const SKIP_FILES = /(^|[\\/])(combat[a-z_]*|dev_hub|dungeon)\.txt$/i;
 
 // The button text of a choice line, or null when the line is not a choice. Handles the option prefixes
 // (*selectable_if (...) #text, *hide_reuse #text, *disable_reuse #text, *allow_reuse #text).
@@ -127,6 +129,14 @@ function stringLengths(lines) {
   for (const line of lines) {
     const m = line.match(/^\s*\*set\s+(\w+)\s+"([^"]*)"\s*$/);
     if (m && m[2].length > (longest[m[1]] || 0)) longest[m[1]] = m[2].length;
+    // A joined string, *set name ((" [INT DC " & dc) & "]"): its quoted pieces plus 3 characters for each variable in it.
+    const j = line.match(/^\s*\*set\s+(\w+)\s+(\(.*&.*\))\s*$/);
+    if (j) {
+      const lits = j[2].match(/"[^"]*"/g) || [];
+      const vars = j[2].replace(/"[^"]*"/g, '').match(/[A-Za-z_]\w*/g) || [];
+      const len = lits.reduce((s, x) => s + x.length - 2, 0) + 3 * vars.length;
+      if (len > (longest[j[1]] || 0)) longest[j[1]] = len;
+    }
   }
   return longest;
 }
@@ -149,6 +159,7 @@ function analyse(file) {
     const shown = rendered(raw, varLengths);
     const hint = bracketHint(shown);
     const problems = [];
+    if (shown.length > opts.wrap) problems.push('wraps');
     if (shown.length > opts.max) problems.push('long');
     if (hint.length > opts.hintmax) problems.push('hint');
     if (problems.length) found.push({ line: i + 1, length: shown.length, hintLength: hint.length, problems, text: raw });
@@ -175,6 +186,7 @@ if (!single) {
 
 let flaggedFiles = 0;
 let flaggedButtons = 0;
+let wrapButtons = 0;
 for (const r of results) {
   if (!r.found.length) {
     if (single) console.log(`${rel(r.file)}: ${r.buttons} button(s), none over ${opts.max} characters. OK.`);
@@ -182,19 +194,22 @@ for (const r of results) {
   }
   flaggedFiles++;
   flaggedButtons += r.found.length;
+  wrapButtons += r.found.filter((p) => p.problems.includes('wraps')).length;
   console.log(`${rel(r.file)}: ${r.found.length} of ${r.buttons} button(s) too long`);
   r.found
     .sort((a, b) => b.length - a.length)
     .slice(0, opts.show)
     .forEach((p) => {
       const note = p.problems.includes('hint') ? ` (hint ${p.hintLength})` : '';
-      console.log(`    line ${p.line}: ${p.length} chars${note} - ${p.text.slice(0, 110)}${p.text.length > 110 ? '...' : ''}`);
+      const tag = p.problems.includes('wraps') ? 'WRAPS ' : '';
+      console.log(`    ${tag}line ${p.line}: ${p.length} chars${note} - ${p.text.slice(0, 110)}${p.text.length > 110 ? '...' : ''}`);
     });
 }
 
 if (!single) {
   console.log(flaggedFiles
-    ? `\n${flaggedButtons} button(s) in ${flaggedFiles} file(s) flagged (advisory).`
+    ? `\n${flaggedButtons} button(s) in ${flaggedFiles} file(s) over ${opts.max} (advisory).`
     : '\nNo buttons flagged.');
 }
+if (wrapButtons) console.log(`${wrapButtons} button(s) over ${opts.wrap} characters WRAP onto a second line: shorten them.`);
 process.exit(0);

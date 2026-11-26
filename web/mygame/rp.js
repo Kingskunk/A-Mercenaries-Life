@@ -347,6 +347,15 @@
     };
   }
 
+  // The boon a graded session pays, for the card and the fallback note. A companion can supply cfg.formatBoon(rating) returning
+  // { name, rating, tier, label, bonusLabel }; otherwise it is Widow Corve's Carnal Warmth (+CHA, formatWarmthDuration).
+  function boonFor(cfg, rating) {
+    if (cfg && typeof cfg.formatBoon === "function") return cfg.formatBoon(rating);
+    var d = formatWarmthDuration(rating);
+    d.name = "Carnal Warmth";
+    return d;
+  }
+
   function buildContextBlocks(cfg, s, memBlock) {
     var settingText = evalField(cfg.setting, s);
     var companionText = evalField(cfg.companion, s);
@@ -407,7 +416,7 @@
     ];
     if (hasProfile) {
       lines.push(
-        "- ATTENTIVE RECIPROCITY: Remember the player is a paying guest she genuinely wants to leave thoroughly spent and satisfied. Her Kinks, Dislikes, and Traits shape HOW she enjoys the encounter and how she responds—they do NOT make her a passive or entitled receiver. She takes active physical initiative with her own hands, mouth, hips, and rhythm to pleasure the player, and rewards the player eagerly whenever they read her cues well.",
+        "- ATTENTIVE RECIPROCITY: " + (evalField(cfg.reciprocity, s) || "Remember the player is a paying guest she genuinely wants to leave thoroughly spent and satisfied.") + " Her Kinks, Dislikes, and Traits shape HOW she enjoys the encounter and how she responds—they do NOT make her a passive or entitled receiver. She takes active physical initiative with her own hands, mouth, hips, and rhythm to pleasure the player, and rewards the player eagerly whenever they read her cues well.",
         "- LIVE PREFERENCE & DISLIKE CUES: When untouched or between beats, weave subtle physical invitations toward one of her Kinks. STRICT BOUNDARY RULE: If the player triggers one of her Dislikes, she MUST visibly resist right away in-character (stiffen, catch or push their hands off, recoil, or give a sharp quiet warning)—never reward or eagerly escalate through an active Dislike unless they soften or adjust. If the player asks in-character what she wants, let her answer authentically according to her traits (candid if Candid/Bold, teasingly reserved if Guarded/Stubborn).",
         "- PACING & CLIMAX SIGNAL: Do NOT rush to finish early. Do NOT emit the completion tag merely because SHE has climaxed—if she finishes first, she should naturally shift her focus to bringing the player to release too. ONLY append the exact tag [ACT_COMPLETE]. (period outside the bracket) at the very end of your response once the PLAYER ('You') has genuinely reached climax/release and the scene is settling into afterglow (or the player explicitly winds the encounter down)."
       );
@@ -836,6 +845,7 @@
   RP.parseAdvisedChoices = parseAdvisedChoices;
   RP.parseEvaluationResult = parseEvaluationResult;
   RP.formatWarmthDuration = formatWarmthDuration;
+  RP.boonFor = boonFor;
   RP.resolveSceneProfile = resolveSceneProfile;
   RP.parseSceneReadyResponse = parseSceneReadyResponse;
 
@@ -1278,11 +1288,11 @@
     function renderEvalCard(result, nextBtn) {
       if (!evalCardEl || !result) return;
       var profile = resolveSceneProfile(cfg, statsNow());
-      var dur = formatWarmthDuration(result.fallback ? 0 : result.rating);
+      var dur = boonFor(cfg, result.fallback ? 0 : result.rating);
       var scoreText = result.fallback ? "Base Only" : (dur.rating + " / 20 · " + dur.tier);
       var boonText = result.fallback
-        ? "Carnal Warmth: " + dur.label + " (grading unavailable)"
-        : "Carnal Warmth: " + dur.bonusLabel + " · " + dur.label;
+        ? dur.name + ": " + dur.label + " (grading unavailable)"
+        : dur.name + ": " + dur.bonusLabel + " · " + dur.label;
 
       var subscoresHtml = "";
       if (result.breakdown) {
@@ -1437,7 +1447,7 @@
           fallback: true,
           hits: "N/A",
           misses: "N/A",
-          summary: "Network error during grading (" + (err && err.message ? err.message : String(err)) + "), so Carnal Warmth keeps the standard 10 Hours 40 Minutes base duration."
+          summary: "Network error during grading (" + (err && err.message ? err.message : String(err)) + "), so " + boonFor(cfg, 0).name + " keeps its base duration of " + boonFor(cfg, 0).label + "."
         };
         saveActiveSession(inputEl.value);
         updateButtons();
@@ -1456,7 +1466,7 @@
             fallback: true,
             hits: "N/A",
             misses: "N/A",
-            summary: "Grading could not complete (" + errMsg + "), so Carnal Warmth keeps the standard 10 Hours 40 Minutes base duration." + rawSnippet
+            summary: "Grading could not complete (" + errMsg + "), so " + boonFor(cfg, 0).name + " keeps its base duration of " + boonFor(cfg, 0).label + "." + rawSnippet
           };
         }
         saveActiveSession(inputEl.value);

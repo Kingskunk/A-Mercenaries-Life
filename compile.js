@@ -342,6 +342,7 @@ function compile(){
   verifyFileName("hartwell/palmcote/green_branch.txt");
   verifyFileName("hartwell/palmcote/palmcote_market.txt");
   verifyFileName("hartwell/palmcote/short_weight.txt");
+  verifyFileName("hartwell/palmcote/lina_verner.txt");
   verifyFileName("Langston/market.txt");
   verifyFileName("Langston/cord_and_kettle.txt");
   verifyFileName("Langston/pickled_hen.txt");

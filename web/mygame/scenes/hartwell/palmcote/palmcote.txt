@@ -22,9 +22,12 @@
 *if (not(pc_seen))
   *set pc_first_hub true
 *set current_district "palmcote"
+*comment Back on the lane: drop the room a place or quest left behind (Lina's room, the inn), or scenery.js keeps painting it here.
+*set scenery_subplace ""
 *set pc_seen true
 *gosub_scene calendar update_hub_condition
 *gosub pc_hours
+*gosub_scene hartwell/palmcote/lina_verner lv_where
 *return
 
 *comment Palmcote Market hours: Morning through Dusk, shut at night, on the rest day and while dangerous weather has emptied the lane.
@@ -87,8 +90,9 @@
     You climb the slope between the tree rows into Palmcote.
 *gosub pc_layers
 *if (not(pc_first_arrival))
-  *comment SHORT WEIGHT (hartwell/palmcote/short_weight.txt): stepping onto the lane at dusk, night or before dawn springs the chase by the well once.
-  *if ((pc_sw_stage = 0) and (((time_period = "Dusk") or (time_period = "Night")) or (time_period = "Pre-Dawn")))
+  *comment SHORT WEIGHT (hartwell/palmcote/short_weight.txt): stepping onto the lane at dusk, night or before dawn springs the chase by the well once,
+  *comment after the player has met Odda (the Green Branch) and Nora Greer (the Gathering Hall): the quest names both (designer, 2026-11-25).
+  *if (((pc_sw_stage = 0) and ((met_odda) and (met_pc_head))) and (((time_period = "Dusk") or (time_period = "Night")) or (time_period = "Pre-Dawn")))
     *goto_scene hartwell/palmcote/short_weight pc_sw_well_chase
 *goto pc_menu
 
@@ -124,8 +128,9 @@
   You step back out onto the slope as the evening settles over the tree rows.
 *else
   You come back out onto Palmcote's sloping lane.
-*comment SHORT WEIGHT (hartwell/palmcote/short_weight.txt): stepping onto the lane at dusk, night or before dawn springs the chase by the well once.
-*if ((pc_sw_stage = 0) and (((time_period = "Dusk") or (time_period = "Night")) or (time_period = "Pre-Dawn")))
+*comment SHORT WEIGHT (hartwell/palmcote/short_weight.txt): stepping onto the lane at dusk, night or before dawn springs the chase by the well once,
+*comment after the player has met Odda (the Green Branch) and Nora Greer (the Gathering Hall): the quest names both (designer, 2026-11-25).
+*if (((pc_sw_stage = 0) and ((met_odda) and (met_pc_head))) and (((time_period = "Dusk") or (time_period = "Night")) or (time_period = "Pre-Dawn")))
   *goto_scene hartwell/palmcote/short_weight pc_sw_well_chase
 *goto pc_menu
 
@@ -154,6 +159,12 @@
   *if (pc_sw_stage = 2)
     # [b]@{(pc_sw_shelter = "room") Check on Lina upstairs at The Green Branch|Check on Lina in the lower drying shed}[/b]: decide what to do next.
       *goto_scene hartwell/palmcote/short_weight pc_sw_shelter_return
+  *if (((pc_sw_lina_stays) and (not(pc_sw_lina_cold))) and (lv_home))
+    # [b]Lina's place[/b]: the old olive store at the foot of the lane. [~5 min]
+      *goto_scene hartwell/palmcote/lina_verner lv_door
+  *if (((pc_sw_lina_stays) and (not(pc_sw_lina_cold))) and (not(lv_home)))
+    # [b]Lina's place[/b] (${lv_away_reason}).
+      *goto_scene hartwell/palmcote/lina_verner lv_shut
   # [b]The road out of the village[/b]: leave Palmcote.
     *set ow_pos "pc"
     *goto_scene overworld/overworld ow_here

@@ -371,7 +371,7 @@
         var c = [];
         if (truthy(s.pc_sw_saw_yard)) c.push("At the olive yard, House Ferrand's bailiff declared a full basket twelve pounds short and ordered the picker up to the pressing house at dusk.");
         if (truthy(s.pc_sw_noticed_weight)) c.push("The bailiff's brass scale weight landed with a dead, heavy thud, heavier than honest brass of its size.");
-        if (truthy(s.met_lina_verner)) c.push("Lina Verner fled Bailiff Kelm's pressing house with his three brass weights and four silver marks; Kelm still holds her sick mother Berta's lease.");
+        if (truthy(s.met_lina_verner)) c.push("Lina Verner fled Bailiff Kelm's pressing house with his three brass weights and four silver marks; Kelm still holds the debt note he made her sick mother Berta sign for the back rent.");
         if (truthy(s.pc_sw_proof_verified)) c.push("The brass weights are bored hollow and packed with lead shot under dark wax, cheating the pickers, the big house and the Viscountess's cut.");
         if (truthy(s.pc_sw_knows_layout)) c.push("The pressing house sits below the manor's outer wall with a low shutter over the oil chute at the back, held by an iron pin.");
         if (!truthy(s.pc_sw_patrol_alive)) c.push("Kelm's two yard hands and estate hound were killed during the chase in the lane.");
