@@ -154,7 +154,7 @@
     } else if (hasMemories) {
       parts.push("Name: Only known if recorded in past memories below; otherwise unknown");
     } else {
-      parts.push("Name: Unknown (you have not given your name)");
+      parts.push("Name: Unknown (the player has not given a name)");
     }
     if (s.gender) parts.push("Gender: " + s.gender);
     if (s.age_desc) parts.push("Age: " + s.age_desc);
@@ -174,8 +174,9 @@
       }
     }
 
-    // Gear: either stripped/laid aside (for intimate scenes with undressed: true, or by default in chambers) or worn
-    var undressed = !cfg || cfg.undressed !== false;
+    // Gear: either stripped/laid aside or worn. The scene's own `undressed` wins; otherwise its kind decides (SCENE_KINDS).
+    var kindGear = sceneKind(cfg);
+    var undressed = (cfg && cfg.undressed !== undefined) ? cfg.undressed !== false : (!kindGear || kindGear.undressed);
     if (undressed) {
       if (s.weapon_prose && s.equipped_weapon_id !== "none") parts.push("Weapon laid nearby: " + s.weapon_prose);
       if (s.armor_prose && s.equipped_armor_id !== "none") parts.push("Armor removed: " + s.armor_prose);
@@ -186,8 +187,12 @@
       if (s.head_prose && s.equipped_head_id !== "none") worn.push(s.head_prose);
       if (s.hands_prose && s.equipped_hands_id !== "none") worn.push(s.hands_prose);
       if (s.feet_prose && s.equipped_feet_id !== "none") worn.push(s.feet_prose);
+      // The gear slots say nothing of what is under the armor; without this the AI invents it once the armor comes off.
+      var armorWorn = s.armor_prose && s.equipped_armor_id !== "none";
+      if (armorWorn && !/shirt|tunic|blouse|clothes|robe|dress|gown/i.test(String(s.armor_prose))) worn.push("a plain linen shirt and trousers under the armor");
       if (worn.length) parts.push("Wearing: " + worn.join(", "));
-      if (s.weapon_prose && s.equipped_weapon_id !== "none") parts.push("Weapon at side: " + s.weapon_prose);
+      // "Weapon", not "Weapon at side": a bow is carried on the back, a spear in the hand.
+      if (s.weapon_prose && s.equipped_weapon_id !== "none") parts.push("Weapon: " + s.weapon_prose);
     }
     return parts.join(" | ") || "A road-weary mercenary";
   }
@@ -216,26 +221,40 @@
 
   // How people in this world count time, so the AI never reaches for January or Monday, and answers a "what month is it?" correctly.
   // IR is the Imperial Reckoning, the Meridian Empire's year count (lorebook-data.js imperial_reckoning, confirmed by the designer 2026-11-25).
-  function getCalendarPacket(s) {
+  // CALENDAR & COIN (2026-11-25): a two-line core goes in every system prompt; the month list and the week, and the coins,
+  // join the turn's context only when what is being said touches them (calendarTriggered / coinTriggered).
+  function getCalendarCore(s) {
+    var year = s.calendar_year || "428";
+    return [
+      "- Months and weekdays have their own names here; never use real-world ones (no January, no Monday). Nobody owns a clock: time goes by the light, meals and bells.",
+      "- The year is " + year + " IR, the Imperial Reckoning: the old Meridian Empire's count of years, still used though its legions left about thirty years ago. Ordinary folk say 'this year' or 'the year " + year + "'."
+    ].join("\n");
+  }
+  function getCalendarDetail(s) {
     var cur = String(s.calendar_month || "");
     var idx = -1;
     for (var i = 0; i < CAL_MONTHS.length; i++) if (CAL_MONTHS[i][0] === cur) idx = i;
     var bySeason = ["spring", "summer", "autumn", "winter"].map(function (season) {
       return CAL_MONTHS.filter(function (m) { return m[2] === season; }).map(function (m) { return m[0]; }).join(", ") + " (" + season + ")";
     }).join("; ");
-    var year = s.calendar_year || "428";
-    var lines = [
-      "- Months and weekdays have their own names here; never use real-world ones (no January, no Monday). Nobody owns a clock: time goes by the light, meals and bells.",
-      "- The year is " + year + " IR, the Imperial Reckoning: the old Meridian Empire's count of years, still used though its legions left about thirty years ago. Ordinary folk say 'this year' or 'the year " + year + "'.",
-      "- The months, in order, each about thirty days: " + bySeason + "."
-    ];
+    var lines = ["- The months, in order, each about thirty days: " + bySeason + "."];
     if (idx >= 0) {
       var prev = CAL_MONTHS[(idx + 11) % 12][0], next = CAL_MONTHS[(idx + 1) % 12][0];
       lines.push("- This month is " + cur + "; last month was " + prev + ", next is " + next + ".");
     }
     lines.push("- The week: " + CAL_WEEK.join(", ") + ". Hallowday is the rest day." + (s.day_of_week ? " Today is " + s.day_of_week + "." : ""));
-    lines.push("- Coin: copper bits; a silver mark is 10 bits; a gold crown is 10 marks.");
     return lines.join("\n");
+  }
+  var COIN_LINE = "- Coin: copper bits; a silver mark is 10 bits; a gold crown is 10 marks.";
+  var CALENDAR_WORDS = new RegExp("\\b(" + CAL_MONTHS.map(function (m) { return m[0]; }).concat(CAL_WEEK,
+    ["month", "months", "week", "weeks", "weekday", "season", "seasons", "spring", "summer", "autumn", "winter", "year", "years",
+     "date", "tomorrow", "yesterday", "days", "calendar", "rest day", "how long", "when"]).join("|") + ")\\b", "i");
+  var COIN_WORDS = /\b(coin|coins|copper|coppers|bits?|silver|marks?|gold|crowns?|price|prices|cost|costs|pay|paid|pays|wage|wages|money|purse|buy|bought|sell|sold|cheap|dear)\b/i;
+  function calendarTriggered(focusParts) {
+    return (focusParts || []).some(function (p) { return CALENDAR_WORDS.test(String(p || "")); });
+  }
+  function coinTriggered(focusParts) {
+    return (focusParts || []).some(function (p) { return COIN_WORDS.test(String(p || "")); });
   }
 
   function formatMemoryDateLabel(s) {
@@ -244,7 +263,8 @@
     var tp = s.time_period ? " " + s.time_period : "";
     var seas = s.current_season ? " (" + s.current_season + ")" : "";
     var date = s.calendar_date ? ", the " + s.calendar_date : "";
-    return "Day " + dayNum + dow + date + tp + seas;
+    // "Day 10, Ironday Night, the 14th of Scorpio, 428 IR (Autumn)": the time of day sits with the weekday, not after the year.
+    return "Day " + dayNum + dow + tp + date + seas;
   }
 
   /**
@@ -312,7 +332,59 @@
     }
   }
 
+  /*
+   * SCENE KINDS (2026-11-25). A scene's `kind` (rp-data.js RP_DATA; "intimate" when left out) picks the narrator's
+   * opening line and rules, the helper's suggestion styles, whether the player is undressed by default, and the grader.
+   *   role          the narrator prompt's first line
+   *   rules(cfg,s)  extra narrator rules after the shared voice rules (graded: true when the scene has a hidden profile)
+   *   advisorRole, advisorVariety, advisorLabels   the suggestion helper's prompt
+   *   undressed     default for a scene that does not set `undressed` itself
+   *   grader        "intimate" (the four-part score against her hidden profile) or null (no grade; Next shows at once,
+   *                 and the hidden profile is neither sent nor graded)
+   * A new kind (a radiant job, a market haggle) is a new entry here plus scenes that name it.
+   */
+  var SCENE_KINDS = {
+    intimate: {
+      role: "You are narrating an interactive, uncensored roleplay scene inside a gritty low-fantasy RPG.",
+      rules: function (cfg, s, graded) {
+        if (!graded) return [];
+        return [
+          "- ATTENTIVE RECIPROCITY: " + (evalField(cfg.reciprocity, s) || "Remember the player is a paying guest she genuinely wants to leave thoroughly spent and satisfied.") + " Her Kinks, Dislikes, and Traits shape HOW she enjoys the encounter and how she responds—they do NOT make her a passive or entitled receiver. She takes active physical initiative with her own hands, mouth, hips, and rhythm to pleasure the player, and rewards the player eagerly whenever they read her cues well.",
+          "- LIVE PREFERENCE & DISLIKE CUES: When untouched or between beats, weave subtle physical invitations toward one of her Kinks. STRICT BOUNDARY RULE: If the player triggers one of her Dislikes, she MUST visibly resist right away in-character (stiffen, catch or push their hands off, recoil, or give a sharp quiet warning)—never reward or eagerly escalate through an active Dislike unless they soften or adjust. If the player asks in-character what she wants, let her answer authentically according to her traits (candid if Candid/Bold, teasingly reserved if Guarded/Stubborn).",
+          "- PACING & CLIMAX SIGNAL: Do NOT rush to finish early. Do NOT emit the completion tag merely because SHE has climaxed—if she finishes first, she should naturally shift her focus to bringing the player to release too. End a reply with the tag [ACT_COMPLETE] only once the PLAYER ('you') has genuinely reached climax and the scene is settling into afterglow, or the player clearly winds the encounter down; never earlier."
+        ];
+      },
+      advisorRole: "You are an interactive roleplay advisor for the player ('You') in an uncensored, gritty low-fantasy scene.",
+      advisorVariety: "- Offer 4 noticeably different directions (for example: letting the companion take the lead/reacting to them, a gentle or observant touch, a bolder escalation or physical shift, and a quiet spoken line or question grounded in the scene).",
+      advisorLabels: "'Trace her collarbone', 'Let her lead', 'Ask about the scar'",
+      undressed: true,
+      grader: "intimate"
+    },
+    talk: {
+      role: "You are narrating an interactive roleplay scene inside a gritty low-fantasy RPG. This scene is a conversation, not a bedroom scene.",
+      rules: function () {
+        return [
+          "- A CONVERSATION: keep to talk, small actions and the room around you. The companion has her own wants and moods: she can disagree, tease, change the subject, ask the player things back, or fall quiet. She speaks like a person, never like a guidebook.",
+          "- If the player pushes toward sex, she answers in character (laughs it off, says not tonight, names another time, or simply says no) and the scene stays a conversation.",
+          "- SCENE END: End a reply with the tag [ACT_COMPLETE] once the talk reaches a natural close or the player takes their leave; never earlier."
+        ];
+      },
+      advisorRole: "You are an interactive roleplay advisor for the player ('You') in a gritty low-fantasy conversation scene.",
+      advisorVariety: "- Offer 4 noticeably different directions (for example: a question about her or her life, a remark about the place or the day, something of your own story, and a practical action or gesture grounded in the scene).",
+      advisorLabels: "'Ask about her mother', 'Mention the road', 'Help with the fire'",
+      undressed: false,
+      grader: null
+    }
+  };
+
+  function sceneKind(cfg) {
+    return SCENE_KINDS[(cfg && cfg.kind) || "intimate"] || null;
+  }
+
+  // The hidden profile is only used by a kind that grades against it: a conversation never sends or grades kinks.
   function resolveSceneProfile(cfg, s) {
+    var kind = sceneKind(cfg);
+    if (!kind || !kind.grader) return null;
     if (cfg && cfg.profile && Array.isArray(cfg.profile.kinks)) {
       return cfg.profile;
     }
@@ -419,44 +491,121 @@
     return d;
   }
 
-  function buildContextBlocks(cfg, s, memBlock) {
+  /*
+   * WHO IS WHO (2026-11-25, designer: "you" in the notes was confusing even to read). Every section the AI reads ABOUT the
+   * player calls the player by name, or "the player" when the companion does not know the name (knowsName); the AI is told
+   * once, in the voice rules, that its own replies still narrate to the player as "you".
+   */
+  function companionKnowsName(cfg, s) {
+    return !!(cfg && (typeof cfg.knowsName === "function" ? cfg.knowsName(s) : truthy(cfg.knowsName)));
+  }
+  function playerRef(cfg, s) {
+    return companionKnowsName(cfg, s) && s && s.name ? String(s.name) : "the player";
+  }
+  function companionRef(cfg, s) {
+    return evalField(cfg && cfg.npcName, s) || "the companion";
+  }
+  function whoIsWhoRule(cfg, s) {
+    var p = playerRef(cfg, s), c = companionRef(cfg, s);
+    return p === "the player"
+      ? "- WHO IS WHO: the sections below call the player 'the player' and the companion by name (" + c + "). " + c + " does not know the player's name unless the player says it. In your replies, always narrate to the player as 'you'."
+      : "- WHO IS WHO: the player is " + p + ". The sections below call the player '" + p + "' and the companion '" + c + "'. In your replies, always narrate to " + p + " as 'you' (never 'he', 'she' or '" + p + "' in the narration); only " + c + " says the name " + p + " aloud.";
+  }
+
+  /*
+   * LORE ON DEMAND (2026-11-25). A character's `lore` (rp-data.js) names the lorebook entries (window.LOREBOOK, lorebook-*.js)
+   * they know: `know` (by tag or id) as a local knows them, `hearsay` (ids) as a name and a rumor only, `skip` (ids) never
+   * (their own entry, or one their notes already cover). Each turn, the entries whose title, aliases or link names appear in
+   * what is being said are sent, at most `max` (default 3): the player's latest words count most, then the last reply, then
+   * the turn before. Nothing matched, nothing sent. Only an entry's base text is used: the lines a lorebook body adds once the
+   * player has asked about something in a scene are the player's knowledge, not the character's.
+   * Keyword matching runs here in the page, so it works with the server down and the preview tool can test it offline.
+   * Semantic matches (the server's palace search) are meant to join these; see loreMatches' `extraIds`.
+   */
+  function loreEntryList() {
+    return (typeof window !== "undefined" && window.LOREBOOK && Array.isArray(window.LOREBOOK.entries)) ? window.LOREBOOK.entries : [];
+  }
+  function loreTerms(e) {
+    var seen = {}, out = [];
+    [e.title].concat(e.aliases || [], e.link || []).forEach(function (t) {
+      t = String(t || "").trim();
+      var k = t.toLowerCase();
+      if (t.length >= 3 && !seen[k]) { seen[k] = true; out.push(t); }
+    });
+    return out;
+  }
+  function termRegex(t) {
+    return new RegExp("(^|[^A-Za-z])" + t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?=[^A-Za-z]|$)", "i");
+  }
+  function cleanLoreText(txt) {
+    return String(txt || "").replace(/\[\[[^|\]]+\|([^\]]+)\]\]/g, "$1").replace(/\[\[([^\]]+)\]\]/g, "$1").replace(/\s+/g, " ").trim();
+  }
+  function loreBaseText(e) {
+    var b = e.body;
+    try { if (typeof b === "function") b = b({}); } catch (err) { b = ""; }
+    if (Array.isArray(b)) b = b[0];
+    return cleanLoreText(b);
+  }
+  // focusParts: [the player's latest words, the last reply, the turn before], most important first.
+  function loreMatches(cfg, focusParts, extraIds) {
+    var scope = cfg && cfg.lore;
+    if (!scope) return [];
+    var know = scope.know || {}, knowTags = (know.tags || []).map(function (x) { return String(x).toLowerCase(); });
+    // hearsay: a list of ids, or { id: "her own version of the rumor" } so a rumor sounds like hers, not the lorebook's.
+    var hearsayMap = Array.isArray(scope.hearsay) ? {} : (scope.hearsay || {});
+    var knowIds = know.ids || [], hearsay = Array.isArray(scope.hearsay) ? scope.hearsay : Object.keys(hearsayMap), skip = scope.skip || [];
+    var parts = (focusParts || []).map(function (p) { return String(p || ""); });
+    var found = [];
+    loreEntryList().forEach(function (e) {
+      if (!e || !e.id || skip.indexOf(e.id) !== -1) return;
+      var isHearsay = hearsay.indexOf(e.id) !== -1;
+      var isKnown = knowIds.indexOf(e.id) !== -1 || (e.tags || []).some(function (t) { return knowTags.indexOf(String(t).toLowerCase()) !== -1; });
+      if (!isKnown && !isHearsay) return;
+      var score = 0, hit = "";
+      loreTerms(e).forEach(function (t) {
+        var re = termRegex(t);
+        for (var i = 0; i < parts.length; i++) {
+          if (re.test(parts[i])) { var sc = (parts.length - i) * 10 + Math.min(t.length, 9); if (sc > score) { score = sc; hit = t; } break; }
+        }
+      });
+      if (!score && extraIds && extraIds.indexOf(e.id) !== -1) { score = 1; hit = "(semantic)"; }
+      if (score) found.push({ entry: e, hearsay: isHearsay && !isKnown, rumor: hearsayMap[e.id] || "", score: score, hit: hit });
+    });
+    found.sort(function (a, b) { return b.score - a.score; });
+    return found.slice(0, Math.max(1, Number(scope.max) || 3));
+  }
+  function formatLoreMatch(m) {
+    var e = m.entry, head = e.title + (e.sub ? " (" + cleanLoreText(e.sub) + ")" : "");
+    if (m.hearsay) return "- " + e.title + ": hearsay only" + (m.rumor ? ", what she has heard: " + m.rumor : "") + ". She knows no more than that, and would say so.";
+    return "- " + head + ": " + loreBaseText(e);
+  }
+
+  function buildContextBlocks(cfg, s) {
     var settingText = evalField(cfg.setting, s);
     var companionText = evalField(cfg.companion, s);
     // A scene adds its own lines after the character's (rp-data.js RP_CHARACTERS: scenePersona, sceneKnowledge).
     var personaText = [evalField(cfg.persona, s), evalField(cfg.scenePersona, s)].filter(Boolean).join(" ");
-    var npcKnowledge = [evalField(cfg.npcKnowledge, s), evalField(cfg.sceneKnowledge, s)].filter(Boolean).join(" ");
+    var npcKnowledge = [evalField(cfg.npcKnowledge, s), evalField(cfg.sceneKnowledge, s)].filter(Boolean).join("\n");
     var activeProfile = resolveSceneProfile(cfg, s);
     var profileBlock = formatProfileForPrompt(activeProfile, cfg);
 
-    // Order (2026-11-25): when and where, who she is, what she knows of you, her world, the calendar, then you, then her hidden tastes.
+    // ORDER (2026-11-25), for prompt caching: a provider reuses only an identical start of the prompt, so what never changes
+    // comes first (the companion, her persona, her world, her hidden tastes), then what changes from visit to visit (what she
+    // knows of the player, the calendar, the player, the room's light, NOW), and last what can change every turn (the lore
+    // matched to what is being said, and the memories fetched for it).
     var worldKnowledge = evalField(cfg.worldKnowledge, s);
+    var P = playerRef(cfg, s), C = companionRef(cfg, s);
+    var PU = P === "the player" ? "THE PLAYER" : P.toUpperCase() + " (THE PLAYER)";
     var lines = [
-      "NOW: " + getCurrentDateSummary(s),
-      "",
-      "SETTING:",
-      settingText,
-      "",
       "COMPANION:",
       companionText,
       "",
       "COMPANION PERSONA & BEHAVIOR:",
       personaText
     ];
-    if (npcKnowledge) {
-      lines.push("", "WHAT THE COMPANION KNOWS OF YOU AND HERSELF (in this section and everywhere below, 'you' always means the player):", npcKnowledge);
-    }
     if (worldKnowledge) {
       lines.push("", "HER WIDER WORLD (an ordinary local's horizon: beyond this she knows little, and says so plainly rather than inventing places, rulers or events):", worldKnowledge);
     }
-    lines.push(
-      "",
-      "CALENDAR & COIN (how people here count time and money):",
-      getCalendarPacket(s),
-      "",
-      "THE PLAYER ('you') AS THE COMPANION SEES THEM:",
-      getPlayerSummary(cfg, s, !!memBlock)
-    );
-
     if (profileBlock) {
       lines.push(
         "",
@@ -464,47 +613,82 @@
         profileBlock
       );
     }
-
-    if (memBlock) {
-      lines.push(
-        "",
-        "WHAT THIS COMPANION REMEMBERS ABOUT YOU FROM PAST VISITS (if your name or a detail is recorded here, the companion now knows it):",
-        memBlock
-      );
+    if (npcKnowledge) {
+      lines.push("", "WHAT " + C.toUpperCase() + " KNOWS ABOUT " + PU + ", AND ABOUT HER OWN LIFE:", npcKnowledge);
     }
+    lines.push(
+      "",
+      "CALENDAR (how people here count time):",
+      getCalendarCore(s),
+      "",
+      PU + " AS " + C.toUpperCase() + " SEES THEM:",
+      getPlayerSummary(cfg, s, !!(cfg && cfg.memory)),
+      "",
+      "SETTING:",
+      settingText,
+      "",
+      "NOW: " + getCurrentDateSummary(s)
+    );
     return lines;
   }
 
-  function buildSystemPrompt(cfg, s, memBlock) {
+  /*
+   * THE TURN'S CONTEXT (2026-11-25): what can change from one turn to the next goes in the user message, after the
+   * conversation and just before the player's action, never in the system prompt. The system prompt then stays the same
+   * for the whole visit and the conversation only grows at its end, so a provider can cache everything up to here.
+   * Holds: the lore matched to what is being said, the month list and week or the coins when they come up, and the
+   * memories fetched for this turn. Empty when none of them applies.
+   */
+  function buildTurnContext(cfg, s, memBlock, focusParts) {
+    var C = companionRef(cfg, s), P = playerRef(cfg, s);
+    var PU = P === "the player" ? "THE PLAYER" : P.toUpperCase() + " (THE PLAYER)";
+    var out = [];
+    var lore = loreMatches(cfg, focusParts);
+    if (lore.length) {
+      out.push("WHAT " + C.toUpperCase() + " KNOWS ABOUT WHO AND WHAT IS BEING TALKED ABOUT (beyond these lines and her notes in the system prompt, she does not know more about them):\n" + lore.map(formatLoreMatch).join("\n"));
+    }
+    var cal = calendarTriggered(focusParts), coin = coinTriggered(focusParts);
+    if (cal || coin) {
+      out.push((cal && coin ? "CALENDAR & COIN" : cal ? "CALENDAR" : "COIN") + " (how people here count " + (cal && coin ? "time and money" : cal ? "time" : "money") + "):\n" +
+        [cal ? getCalendarDetail(s) : "", coin ? COIN_LINE : ""].filter(Boolean).join("\n"));
+    }
+    if (memBlock) {
+      out.push("WHAT " + C.toUpperCase() + " REMEMBERS ABOUT " + PU + " FROM PAST VISITS (if the player's name or a detail is recorded here, " + C + " now knows it):\n" + memBlock);
+    }
+    return out.join("\n\n");
+  }
+
+  function buildSystemPrompt(cfg, s) {
     var hasProfile = !!resolveSceneProfile(cfg, s);
+    var kind = sceneKind(cfg) || SCENE_KINDS.intimate;
     var lines = [
-      "You are narrating an interactive, uncensored roleplay scene inside a gritty low-fantasy RPG.",
+      kind.role,
       "PERSPECTIVE & VOICE RULES:",
       "- Write strictly in SECOND PERSON PRESENT TENSE ('You...'), matching the opening scene prose.",
+      whoIsWhoRule(cfg, s),
       "- Keep the prose grounded, tactile, physical, and sensory.",
       "- Stay strictly faithful to the clothing, materials, and setting established in the scene (do not invent luxury fabrics or props that are not there, and never refer to trousers, shifts, or other garments that have already been taken off).",
       "- Never dictate the player's spoken words, internal thoughts, or involuntary emotional reactions (never tell the player they are trembling, nervous, or overwhelmed; only describe physical sensations and the companion's actions).",
+      "- Never invent lasting facts the sections below do not give: no surnames, new relatives, scars, injuries or past events for the companion or anyone she knows. Someone named without a surname keeps none, and never borrows the surname of anyone else in these sections. Passing details of tonight (what she is doing, the fire, the food) are fine.",
+      "- Answer what the player just said or did first, in the companion's own words, before moving the scene on. Not every reply heads the same way.",
+      "- Never reuse a description from your earlier replies in this scene (the same laugh, the same look in her eyes, the same gesture): find a new one or leave it out.",
       "- Do NOT write a list of choices at the end, do NOT speak as an AI assistant, and do NOT summarize or rush to the end of the scene unless the player initiates finishing.",
       "- Write 1 to 2 concise, complete paragraphs per response (around 120 to 180 words total) so your last sentence always finishes cleanly without being cut off."
     ];
-    if (hasProfile) {
-      lines.push(
-        "- ATTENTIVE RECIPROCITY: " + (evalField(cfg.reciprocity, s) || "Remember the player is a paying guest she genuinely wants to leave thoroughly spent and satisfied.") + " Her Kinks, Dislikes, and Traits shape HOW she enjoys the encounter and how she responds—they do NOT make her a passive or entitled receiver. She takes active physical initiative with her own hands, mouth, hips, and rhythm to pleasure the player, and rewards the player eagerly whenever they read her cues well.",
-        "- LIVE PREFERENCE & DISLIKE CUES: When untouched or between beats, weave subtle physical invitations toward one of her Kinks. STRICT BOUNDARY RULE: If the player triggers one of her Dislikes, she MUST visibly resist right away in-character (stiffen, catch or push their hands off, recoil, or give a sharp quiet warning)—never reward or eagerly escalate through an active Dislike unless they soften or adjust. If the player asks in-character what she wants, let her answer authentically according to her traits (candid if Candid/Bold, teasingly reserved if Guarded/Stubborn).",
-        "- PACING & CLIMAX SIGNAL: Do NOT rush to finish early. Do NOT emit the completion tag merely because SHE has climaxed—if she finishes first, she should naturally shift her focus to bringing the player to release too. End a reply with the tag [ACT_COMPLETE] only once the PLAYER ('you') has genuinely reached climax and the scene is settling into afterglow, or the player clearly winds the encounter down; never earlier."
-      );
-    }
+    lines = lines.concat(kind.rules(cfg, s, hasProfile));
     lines.push("");
-    return lines.concat(buildContextBlocks(cfg, s, memBlock)).join("\n");
+    return lines.concat(buildContextBlocks(cfg, s)).join("\n");
   }
 
-  function buildAdvisorSystemPrompt(cfg, s, memBlock) {
+  function buildAdvisorSystemPrompt(cfg, s) {
     var hasProfile = !!resolveSceneProfile(cfg, s);
+    var kind = sceneKind(cfg) || SCENE_KINDS.intimate;
     var lines = [
-      "You are an interactive roleplay advisor for the player ('You') in an uncensored, gritty low-fantasy scene.",
+      kind.advisorRole,
       "Based on the room, companion persona, memories, and where the scene stands right now, suggest 4 distinct, immediately playable next actions or spoken lines the player can take next.",
+      whoIsWhoRule(cfg, s),
       "VARIETY GUIDELINES:",
-      "- Offer 4 noticeably different directions (for example: letting the companion take the lead/reacting to them, a gentle or observant touch, a bolder escalation or physical shift, and a quiet spoken line or question grounded in the scene).",
+      kind.advisorVariety,
       "- Keep every option grounded strictly in the physical details, clothing, and tone established in the scene."
     ];
     if (hasProfile) {
@@ -515,11 +699,11 @@
       "OUTPUT FORMAT (STRICT):",
       "Output ONLY 4 lines, one option per line, using this exact format:",
       "Short Label || Complete 1-sentence player action or dialogue direction.",
-      "- Short Label: 2 to 4 words for a UI button (e.g. 'Trace her collarbone', 'Let her lead', 'Ask about the scar').",
+      "- Short Label: 2 to 4 words for a UI button (e.g. " + kind.advisorLabels + ").",
       "- Action direction: 1 concise, vivid sentence under 16 words written for the player's next turn (no preamble, no numbering, no extra commentary).",
       ""
     );
-    return lines.concat(buildContextBlocks(cfg, s, memBlock)).join("\n");
+    return lines.concat(buildContextBlocks(cfg, s)).join("\n");
   }
 
   function buildEvaluationSystemPrompt(cfg, s, profile) {
@@ -572,7 +756,9 @@
     }).join("\n\n");
   }
 
-  function buildUserPrompt(playerAction, sysPrompt, mode, modelId) {
+  // turnContext (buildTurnContext): goes after the conversation, right before the player's action, so the system prompt and
+  // the conversation before it stay the same from turn to turn and can be cached.
+  function buildUserPrompt(playerAction, sysPrompt, mode, modelId, turnContext) {
     function assemble(turnsSlice) {
       var historyLines = [];
       if (session.openingText) {
@@ -581,6 +767,7 @@
       if (turnsSlice.length > 0) {
         historyLines.push("RECENT TURNS:\n" + formatTurnsForPrompt(turnsSlice));
       }
+      if (turnContext) historyLines.push(turnContext);
       historyLines.push("CURRENT PLAYER ACTION / DIRECTION:\n" + playerAction);
       if (turnsSlice.length === 0 && resolveSceneProfile(session.cfg, statsNow())) {
         historyLines.push(
@@ -609,7 +796,7 @@
     return assemble(fitted);
   }
 
-  function buildAdvisorUserPrompt(sysPrompt, mode, modelId) {
+  function buildAdvisorUserPrompt(sysPrompt, mode, modelId, turnContext) {
     function assemble(turnsSlice) {
       var historyLines = [];
       if (session.openingText) {
@@ -618,6 +805,7 @@
       if (turnsSlice.length > 0) {
         historyLines.push("CONVERSATION SO FAR:\n" + formatTurnsForPrompt(turnsSlice));
       }
+      if (turnContext) historyLines.push(turnContext);
       historyLines.push(
         turnsSlice.length > 0
           ? "TASK: Advise 4 distinct next actions or lines the player can immediately take right after the latest turn."
@@ -822,14 +1010,38 @@
     };
   }
 
+  /*
+   * MEMORY ORDER (2026-11-25). A memory file is named msg_<order>_day<day>_<scene id>.txt in the character's room. The order
+   * is the game's page_id, which goes up every time the player advances a page and is restored with a save: so every
+   * session gets its own file (a talk and a tryst on one day no longer overwrite each other; the server replaces only a
+   * file with the same order, i.e. a refresh or a replayed page), and a reloaded earlier save hides memories made after it
+   * (the server drops orders above max_visit). It used to be intimate_encounters, which a Lina night never raises.
+   */
+  function memoryOrder(s) {
+    return Math.max(0, Number(s && s.page_id) || 0);
+  }
+
+  // Memories are always written through OpenRouter, never Perchance (its context is too short and its summaries too loose),
+  // by the OpenRouter model picked in the console's model list, even while the scene itself runs on Perchance.
+  function memoryModel() {
+    return settings.model;
+  }
+
+  // What the lore lookup reads: the player's latest words, then the turns before them, newest first (the opening prose last).
+  function loreFocusParts(playerText) {
+    var texts = (session.turns || []).map(function (t) { return t && t.text; }).filter(Boolean).reverse();
+    if (playerText && texts[0] !== playerText) texts.unshift(playerText);
+    var parts = texts.slice(0, 3);
+    if (parts.length < 3 && session.openingText) parts.push(session.openingText);
+    return parts;
+  }
+
   function fetchMemories(threadId, queryText) {
     var baseUrl = getServerUrl();
     if (!baseUrl || !threadId) return Promise.resolve("");
     var s = statsNow();
     var currentDay = Number(s.campaign_day) || 1;
-    // s.intimate_encounters counts completed encounters (incremented after the act finishes),
-    // so during an active visit past completed visits have order <= s.intimate_encounters.
-    var maxVisit = Math.max(0, Number(s.intimate_encounters) || 0);
+    var maxVisit = memoryOrder(s);
     return fetch(baseUrl + "/get_npc_memories", {
       method: "POST",
       headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
@@ -847,6 +1059,14 @@
       .catch(function () { return ""; });
   }
 
+  // The transcript sent to be summarised: whole when it fits, otherwise its start and its end (where names, promises and
+  // goodbyes usually are) with the middle cut. It used to be cut at 3500 characters, which lost every ending.
+  function memoryTranscript(text) {
+    var MAX = 24000;
+    if (text.length <= MAX) return text;
+    return text.slice(0, 6000) + "\n\n[... middle of the scene left out ...]\n\n" + text.slice(text.length - (MAX - 6000));
+  }
+
   function commitSessionToMemPalace() {
     var baseUrl = getServerUrl();
     if (!baseUrl || !session.cfg || session.cfg.memory === false || session.saveMemory === false || session.turns.length === 0) return;
@@ -856,9 +1076,8 @@
     var transcript = session.turns.map(function (t) {
       return (t.role === "user" ? "Player: " : "Scene: ") + t.text;
     }).join("\n\n");
-    var visitNum = Number(s.intimate_encounters) || 1;
     var dayNum = Number(s.campaign_day) || 1;
-    var memId = "msg_" + visitNum + "_day" + dayNum + "_rp";
+    var memId = "msg_" + Math.max(1, memoryOrder(s)) + "_day" + dayNum + "_" + String(session.cfg.id || "rp").replace(/[^A-Za-z0-9_]/g, "");
     var npcName = evalField(session.cfg.npcName, s) || evalField(session.cfg.title, s).split("—")[0].trim() || "the companion";
     var locName = evalField(session.cfg.title, s) || "the scene";
     var dateLabel = formatMemoryDateLabel(s);
@@ -868,13 +1087,15 @@
       body: JSON.stringify({
         thread_id: threadId,
         id: memId,
-        text: transcript.slice(0, 3500),
+        text: memoryTranscript(transcript),
         distill: true,
         npc_name: npcName,
         location: locName,
         date_label: dateLabel,
-        mode: settings.mode,
-        model: settings.model
+        player_name: companionKnowsName(session.cfg, s) ? String(s.name || "") : "",
+        mode: "openrouter",
+        model: memoryModel(),
+        timeout: 120
       })
     }).catch(function () {});
   }
@@ -921,6 +1142,14 @@
   RP.boonFor = boonFor;
   // For tools/rp_prompt_preview.js: the exact prompts a session would send, built from a scene id and a stats object.
   RP.resolveSceneConfig = resolveSceneConfig;
+  RP.sceneKind = sceneKind;
+  RP.SCENE_KINDS = SCENE_KINDS;
+  RP.loreMatches = loreMatches;
+  RP.buildTurnContext = buildTurnContext;
+  RP.companionKnowsName = companionKnowsName;
+  RP.memoryOrder = memoryOrder;
+  RP.memoryTranscript = memoryTranscript;
+  RP.formatMemoryDateLabel = formatMemoryDateLabel;
   RP.buildSystemPrompt = buildSystemPrompt;
   RP.buildAdvisorSystemPrompt = buildAdvisorSystemPrompt;
   RP.buildEvaluationSystemPrompt = buildEvaluationSystemPrompt;
@@ -1051,7 +1280,7 @@
     if (memBtn && session.cfg && session.cfg.memory !== false) {
       var threadId = resolveThreadId(session.cfg, statsNow());
       if (threadId) {
-        var maxV = Math.max(0, Number(statsNow().intimate_encounters) || 0);
+        var maxV = memoryOrder(statsNow());
         fetch(baseUrl + "/get_npc_memories", {
           method: "POST",
           headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
@@ -1319,7 +1548,7 @@
         return;
       }
       memList.innerHTML = '<div class="rp-status">Loading memories...</div>';
-      var maxV = Math.max(0, Number(statsNow().intimate_encounters) || 0);
+      var maxV = memoryOrder(statsNow());
       fetch(baseUrl + "/get_npc_memories", {
         method: "POST",
         headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
@@ -1628,12 +1857,13 @@
       var threadId = resolveThreadId(cfg, statsNow());
 
       fetchMemories(threadId, playerText || "Continue the scene").then(function (memBlock) {
-        var sysPrompt = buildSystemPrompt(cfg, statsNow(), memBlock);
+        var sysPrompt = buildSystemPrompt(cfg, statsNow());
+        var turnContext = buildTurnContext(cfg, statsNow(), memBlock, loreFocusParts(playerText));
         return dispatchRpGenerate(
           chosenMode,
           sysPrompt,
           function (m, mid) {
-            return buildUserPrompt(playerText || "Continue the scene naturally from where it left off.", sysPrompt, m, mid);
+            return buildUserPrompt(playerText || "Continue the scene naturally from where it left off.", sysPrompt, m, mid, turnContext);
           },
           600,
           "Generating"
@@ -1688,12 +1918,13 @@
 
       fetchMemories(threadId, recentHint || "Advise choices for this scene").then(function (memBlock) {
         if (mySeq !== session.adviseSeq) return null;
-        var sysPrompt = buildAdvisorSystemPrompt(cfg, statsNow(), memBlock);
+        var sysPrompt = buildAdvisorSystemPrompt(cfg, statsNow());
+        var turnContext = buildTurnContext(cfg, statsNow(), memBlock, loreFocusParts(""));
         return dispatchRpGenerate(
           chosenMode,
           sysPrompt,
           function (m, mid) {
-            return buildAdvisorUserPrompt(sysPrompt, m, mid);
+            return buildAdvisorUserPrompt(sysPrompt, m, mid, turnContext);
           },
           1400,
           "Advising choices"
