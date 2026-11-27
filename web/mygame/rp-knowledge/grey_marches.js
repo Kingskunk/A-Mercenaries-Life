@@ -1,9 +1,14 @@
 /*
- * RP KNOWLEDGE: THE GREY MARCHES (the realm). What anyone living in the Marches knows of the realm, its four powers and its
- * places. Every town and village has an entry here. Big places (Port Valen, Dunmow) are common knowledge everywhere; a
- * small place's common text is known only to people of its own region (`commonIn`), and anyone else needs learned standing.
- * The regions' own pools (western_vale, valen_reach, stenmark, great_sedge) and the local pools hold what their own people
- * know beyond this. Format: rp-knowledge/registry.js.
+ * RP KNOWLEDGE: THE GREY MARCHES (kingdom-wide pool). What people living in the Marches know of this kingdom, its four
+ * regions/duchies, and its places. Characters from other kingdoms do not include this pool (they only share a future
+ * continent-level pool unless traveled). Inside this kingdom pool:
+ *   - Capitals & realm-wide facts (Port Valen, Dunmow, the four regions): no commonIn — known across the whole kingdom.
+ *   - Major road/market towns (Alderford, Timbermouth, Langston, Hartwell, Brandreth, Gryke): commonIn includes
+ *     "grey_marches" plus their own region/local pools — known at common level across the kingdom, and upgraded to
+ *     learned for learned characters of their own region/town.
+ *   - Small villages & hamlets (Barleycross, Ashrun Holt, Redvein, Oxworth, Palmcote, etc.): commonIn lists only their
+ *     own region/local pools — unknown outside their region unless a character has grey_marches: "learned".
+ * Format: rp-knowledge/registry.js.
  */
 RPKnowledge.pool("grey_marches", {
   title: "The Grey Marches",
@@ -63,7 +68,7 @@ RPKnowledge.pool("grey_marches", {
       learned: "A free city since the Old Charter of Meridian, where the Grey and the Ashrun meet and spread into the estuary. From Civic Heights its Council and factors administer the whole Reach. It runs down in layers: the Heights and the Patrician Quarter, the workshops of the Middle Ward, the harbor quays, and Dredge-End by the canal, old, poor and run by the Black Oath."
     },
     {
-      id: "alderford", title: "Alderford", aliases: ["the weir"], see: "alderford", commonIn: ["valen_reach", "stenmark"],
+      id: "alderford", title: "Alderford", aliases: ["the weir"], see: "alderford", commonIn: ["grey_marches", "valen_reach", "stenmark"],
       common: "A river town at the old imperial weir where the highland road meets the head of the Grey. Sawmills, curing lofts and barges loading salt fish for the run downriver.",
       learned: "A small salt-and-plank town built around an imperial limestone weir at the head of the Grey, where the highland road comes down from the Crags. Salt comes up the High Grey Road from Valen; the river catch is cured and packed into firkins for the barges. The Scales' barges and freight rates carry the power there, not the town."
     },
@@ -78,7 +83,7 @@ RPKnowledge.pool("grey_marches", {
       learned: "A mining village in a fold of the Coldspine's southern foothills on the Eastcut Road. Ore is sorted, weighed and sold at the yard before the mine mouths; the Gather House handles its public business and the Red Lantern is its inn."
     },
     {
-      id: "timbermouth", title: "Timbermouth", aliases: [], see: "timbermouth", commonIn: ["valen_reach"],
+      id: "timbermouth", title: "Timbermouth", aliases: [], see: "timbermouth", commonIn: ["grey_marches", "valen_reach"],
       common: "A timber road town at the edge of the Longshade forest, on the Ashrun. Sawmill, ash timber and a Scales factor's hall.",
       learned: "A road town of timber houses around a paved square at the edge of the Longshade, with roads toward the river, the forest and the farm country. The Ashrun turns its sawmill, graded ash stands under open sheds, and the Gilded Scales keep a factor's hall on the square."
     },
@@ -121,7 +126,7 @@ RPKnowledge.pool("grey_marches", {
       learned: "House Gault's walled seat on the shore of Azure Lake, with a wood along the lake's southwest side. Gault kept its storehouses shut and its gates manned when the legions left, and has held it since."
     },
     {
-      id: "langston", title: "Langston", aliases: ["Langston Hall"], see: "langston", commonIn: ["western_vale"],
+      id: "langston", title: "Langston", aliases: ["Langston Hall"], see: "langston", commonIn: ["grey_marches", "western_vale"],
       common: "A walled market town on the Vale's wagon road, with a market square, a fountain and a hall up the steps.",
       learned: "A walled trading town on the Vale's wagon road, held directly by the Countess rather than any viscount; Gault's arms hang over Langston Hall, where the mayor hears disputes. The villages of Fallowmere, Barolo and Broadmead lie around it."
     },
@@ -141,7 +146,7 @@ RPKnowledge.pool("grey_marches", {
       learned: "A stone-and-thatch village along one lane and a humped bridge, its meadows cut up by fences of every age: branded post-and-rail around the best grass, older walls and hedges up toward the common on the down. Who may graze where is a running quarrel there."
     },
     {
-      id: "hartwell", title: "Hartwell", aliases: ["the Viscountess", "Viscountess Odile", "Odile Falwick", "the patrol"], commonIn: ["western_vale", "hartwell"],
+      id: "hartwell", title: "Hartwell", aliases: ["the Viscountess", "Viscountess Odile", "Odile Falwick", "the patrol"], commonIn: ["grey_marches", "western_vale", "hartwell"],
       common: "The town where the villages under it sell their olives, oil, cattle and hides. The Viscountess Odile Falwick governs it, and her patrol rides the roads around it. Above her are the Gaults at Dunmow.",
       learned: "The viscounty town, seat of Viscountess Odile Falwick of House Falwick, who answers to Countess Avelina Gault. The downland and hillside villages under it, Oxworth and Palmcote among them, send their goods to its storehouses and markets. Minor noble houses with estates in those villages, such as House Ferrand, live in Hartwell, not on their land."
     },
@@ -159,7 +164,7 @@ RPKnowledge.pool("grey_marches", {
     /* ------------------------------------------------------------------ STENMARK AND THE SEDGE */
 
     {
-      id: "brandreth", title: "Brandreth", aliases: ["Karr's Keep"], see: "karrs_keep", commonIn: ["stenmark"],
+      id: "brandreth", title: "Brandreth", aliases: ["Karr's Keep"], see: "karrs_keep", commonIn: ["grey_marches", "stenmark"],
       common: "Stenmark's market town, under Karr's Keep, the Baron's granite fortress in the Crags.",
       learned: "Stenmark's market town, under Karr's Keep. Karr's guards hold the roads south through Black Pike Gate and west through Iron Gap."
     },
@@ -169,7 +174,7 @@ RPKnowledge.pool("grey_marches", {
       learned: "A tenant village in the high valley foothills, burned by Karr's riders while his collectors seized the grain tax by force. It is the example people give of the Baron's tax."
     },
     {
-      id: "gryke", title: "Gryke", aliases: ["the sinking fort"], see: "great_sedge", commonIn: ["great_sedge"],
+      id: "gryke", title: "Gryke", aliases: ["the sinking fort"], see: "great_sedge", commonIn: ["grey_marches", "great_sedge"],
       common: "The warlord's seat: an old legion fort out in the fen, slowly sinking into it.",
       learned: "The warlord's seat: an old legion fort out in the fen, slowly sinking into it. The legion fort whose garrison dissolved where it stood thirty years ago. Skell took command of the ruins and holds the Sedge from there."
     }

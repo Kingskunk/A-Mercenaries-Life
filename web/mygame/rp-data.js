@@ -358,7 +358,7 @@
         if (s.pc_sw_shelter === "room") f.push("- " + N + " took her to The Green Branch. Odda the innkeeper looked once at her split lip, barred the front door without a word, and " + N + " hid her in the room " + N + " had upstairs.");
         else f.push("- " + N + " hid with her in the stone drying shed below the lower terrace wall, the door wedged shut.");
         if (truthy(s.pc_sw_proof_verified)) f.push("- " + N + " found the cheat: the brass weights were bored hollow, packed with lead shot and capped with wax. They robbed the pickers, House Ferrand and the Viscountess's cut alike.");
-        if (truthy(s.pc_sw_lina_close)) f.push("- While Kelm's men searched the lane, " + N + " sat with her on the bed and steadied her shaking hands; she kissed " + N + " first and they slept together under the grey wool blanket. Afterward she said: 'You don't owe me anything for tonight. Whatever happens up on that hill, I'm glad it was you by the well.' She thinks about that night more than she admits.");
+        if (truthy(s.pc_sw_lina_close)) f.push("- While Kelm's men searched the lane, " + N + " sat with her on the bed and steadied her shaking hands; she kissed " + N + " first and they had sex under the grey wool blanket for a stolen hour. Afterward she said: 'You don't owe me anything for tonight. Whatever happens up on that hill, I'm glad it was you by the well.' She thinks about that night more than she admits.");
         else if (truthy(s.pc_sw_room_rested)) f.push("- " + N + " kept watch in the room while Kelm's men passed and let her rest, and never laid a hand on her. She noticed.");
         if (e === "exposed") {
           f.push("- At first light " + N + " took the weights to Nora Greer, the village head, at the Gathering Hall, with Lina standing behind " + N + ". Kelm burst in" + (patrolAlive ? " with his two estate hands" : " alone (his two men lay dead by the well)") + ", called " + N + " a thief and demanded the weights and the girl.");
@@ -483,7 +483,7 @@
           } else if (s.ox_hh_vera_way === "open_door") {
             exitNote = " When Daven rattled the latch, " + p + " opened the door right in his face and let him see Vera sitting shamelessly on his bed.";
           }
-          lines.push("- That night while Daven threw dice downstairs, " + p + " knocked on her door and they spent a reckless, heated hour together in Daven's own bed." + exitNote);
+          lines.push("- That night while Daven threw dice downstairs, " + p + " knocked on her door and they had reckless, heated sex in Daven's own bed." + exitNote);
         }
         if (truthy(s.ox_hh_finished)) {
           if (truthy(s.ox_hh_daven_dead)) {
@@ -498,9 +498,11 @@
           if (truthy(s.ox_hh_flask_shown_vera)) {
             lines.push("- " + p + " kept Daven's engraved silver hip flask from that first night and showed it to Vera upstairs; she laughed and told " + p + " to keep it as a souvenir.");
           }
-          var priorTrysts = Math.max(0, Number(s.vm_trysts) || 0);
+          // vm_tryst increments vm_trysts before [RP_SESSION:vera_marsh] mounts; talk/escalated visits have not incremented it yet.
+          var directTryst = s.rp_active_scene === "vera_marsh" && !truthy(s.rp_escalated);
+          var priorTrysts = Math.max(0, (Number(s.vm_trysts) || 0) - (directTryst ? 1 : 0));
           if (priorTrysts > 0) {
-            lines.push("- Since the quest ended, Vera and " + p + " have shared her upstairs room at The Yoke & Horn on " + priorTrysts + " market " + (priorTrysts === 1 ? "night." : "nights."));
+            lines.push("- Since the quest ended, Vera and " + p + " have had sex in her upstairs room at The Yoke & Horn on " + priorTrysts + " market " + (priorTrysts === 1 ? "night." : "nights."));
           }
         }
         return lines.join("\n");
@@ -570,8 +572,12 @@
             "- " + p + " cleared the undead miners out of Redvein's Old South Tunnel and exposed Overseer Berek's six-year cover-up of Malkin's five-man crew to Mara Venn, earning a 1-copper room rate and kitchen access at The Red Lantern."
           );
         }
-        if (truthy(s.rv_od_bedded)) {
-          lines.push("- Ilyra and " + p + " have already blown off steam upstairs at The Red Lantern with no strings attached.");
+        var directIlyraTryst = s.rp_active_scene === "ilyra_fen" && !truthy(s.rp_escalated);
+        var priorIlyraTrysts = Math.max(0, (Number(s.if_trysts) || 0) - (directIlyraTryst ? 1 : 0));
+        if (priorIlyraTrysts > 0) {
+          lines.push("- Ilyra and " + p + " have already had rough, no-strings sex upstairs at The Red Lantern (" + priorIlyraTrysts + " " + (priorIlyraTrysts === 1 ? "time" : "times") + " before).");
+        } else if (directIlyraTryst || truthy(s.rp_escalated)) {
+          lines.push("- Tonight is the first time Ilyra and " + p + " have gone upstairs together.");
         }
         return lines.join("\n");
       },
@@ -723,7 +729,12 @@
           ? Math.max(0, Number(s.lv_trysts) || 0)
           : Math.max(0, (Number(s.lv_trysts) || 0) - 1);
         var N = s.name || "the player";
-        if (before === 0) return "This is the first time Lina and " + N + " have been to bed together in her own room.";
+        if (before === 0) {
+          if (truthy(s.pc_sw_lina_close)) {
+            return "This is not their first time together: they already had sex in " + N + "'s upstairs room at The Green Branch the night Kelm's men hunted her. Tonight is the first time in her own bed at the old olive store with nobody chasing them.";
+          }
+          return "This is the first time Lina and " + N + " have been intimate together.";
+        }
         if (before === 1) return N + " has shared her bed here once before; they know each other's bodies a little.";
         if (before === 2) return N + " has shared her bed here twice before; they know what the other likes.";
         return N + " has shared her bed here " + before + " times before; they know each other's bodies well.";
@@ -803,7 +814,8 @@
         allowed: function (s) {
           var day = Math.max(1, Number(s.campaign_day) || 1);
           var w = Math.floor((day - 1) / 7) + 1;
-          return truthy(s.lv_in_mood) && Number(s.lv_tryst_week) !== w && (s.time_period === "Dusk" || s.time_period === "Night");
+          var lateEvening = s.time_period === "Dusk" || s.time_period === "Night" || (s.time_period === "Pre-Dawn" && Number(s.clock_hour) < 2);
+          return truthy(s.lv_in_mood) && Number(s.lv_tryst_week) !== w && lateEvening;
         },
         buttonLabel: "Draw her to bed",
         promptTitle: "Lina is ready to move this to the bed",
@@ -1039,7 +1051,8 @@
         allowed: function (s) {
           var day = Math.max(1, Number(s.campaign_day) || 1);
           var w = Math.floor((day - 1) / 7) + 1;
-          return s.rv_od_ending === "soren_dead" && s.time_period === "Night" && truthy(s.if_in_mood) && Number(s.if_tryst_week) !== w;
+          var lateNight = s.time_period === "Night" || (s.time_period === "Pre-Dawn" && Number(s.clock_hour) < 2);
+          return s.rv_od_ending === "soren_dead" && lateNight && truthy(s.if_in_mood) && Number(s.if_tryst_week) !== w;
         },
         buttonLabel: "Head upstairs",
         promptTitle: "Ilyra bars the taproom door and nods toward the stairs",

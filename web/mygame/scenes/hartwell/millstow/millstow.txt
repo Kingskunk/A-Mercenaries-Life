@@ -1,0 +1,196 @@
+*comment ====================================================================================
+*comment MILLSTOW: a lakeside milling village on the southeastern shore of Azure Lake under the Viscounty of Hartwell (overworld tile "ml").
+*comment Built so far: the hub with its three description layers (place, sky, street), rotating vignettes, arrival from overworld tile "ml" (ml_arrive), and the road back out.
+*comment Planned stops (to be wired into ml_menu as each file is built):
+*comment   - millstow_gathering_hall.txt (The Gathering Hall + notice board; village head Merrit Appleby)
+*comment   - turning_sail.txt (The Turning Sail inn; innkeeper Willem Halstead)
+*comment   - millstow_market.txt (Millstow Market)
+*comment   - lake_landing.txt (The Lake Landing & Boatwright's Shed; boatwright Orik)
+*comment Backdrop: millstow (scenery.js SCENE_PLACES, Wallpaper/Millstow_Day.jpg & Millstow_Night.jpg); ambience: "village" with soft "small_waves_river" overlay (ambience.js).
+*comment ====================================================================================
+
+*label millstow
+*gosub ml_enter
+*gosub ml_header
+*gosub ml_layers
+*goto ml_menu
+
+*comment Shared setup so a direct visit and a later return land in the same state. ml_first_hub is true only on the first visit.
+*label ml_enter
+*temp ml_first_hub false
+*if (not(ml_seen))
+  *set ml_first_hub true
+*set current_district "millstow"
+*set scenery_subplace ""
+*set ml_seen true
+*gosub_scene calendar update_hub_condition
+*return
+
+*comment The overworld's Millstow tile (ml) enters here. The last stretch of lakeside lane costs five minutes once per arrival.
+*label ml_arrive
+*set minutes_to_pass 5
+*set time_advance_call_id "ml_arrive_1"
+*gosub ml_walk_time
+*temp ml_first_arrival false
+*if (not(ml_arrival_seen))
+  *set ml_first_arrival true
+*set ml_arrival_seen true
+*gosub ml_enter
+*gosub ml_header
+*if (ml_first_arrival)
+  *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+    The road skirts the black expanse of Azure Lake and narrows into a gravel track. Ahead, a few warm windows shine from the right-hand dwellings beneath the tall silhouettes of two windmills on the knoll.
+  *elseif (time_period = "Dusk")
+    The road curves beside Azure Lake as daylight fades over the shallows, leading past leaning timber posts and reed beds into a line of stone dwellings beneath two mills on the slope.
+  *else
+    The road curves beside Azure Lake and narrows into a packed-earth track bordered by weathered posts and reed beds. Stone cottages line the landward side beneath two windmills turning on the knoll ahead.
+*else
+  *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+    You follow the unlit shore track past the posts toward Millstow's lit windows.
+  *elseif (time_period = "Dusk")
+    You come in beside Azure Lake as evening settles over the shore.
+  *else
+    You follow the shore track between the reeds and the cottages into Millstow.
+*gosub ml_layers
+*goto ml_menu
+
+*label ml_walk_time
+*set hours_to_pass 0
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return
+
+*label ml_header
+[b]◈ MILLSTOW[/b]
+*line_break
+*return
+
+*label ml_layers
+*gosub ml_place
+*gosub ml_sky
+*gosub ml_street
+*return
+
+*comment Places return here without repeating the full village description.
+*label ml_return
+*gosub ml_enter
+*gosub ml_header
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  You step back out onto the quiet track beside the ink-black surface of Azure Lake.
+*elseif (time_period = "Dusk")
+  You step back out onto the shore track as evening settles over the lake.
+*else
+  You come back out onto Millstow's shore track.
+*goto ml_menu
+
+*label ml_menu
+*comment Open-world free time: the sidebar's Wait and Rest work on this page. Azure Lake's shore gives fresh water at hand.
+*set wait_ok_page page_id
+*set fresh_water_page page_id
+*choice
+  # [b]The road out of the village[/b]: leave Millstow.
+    *set ow_pos "ml"
+    *goto_scene overworld/overworld ow_here
+
+*comment ── LAYER 1: PLACE ── Fixed geography only. The long description prints once. Nothing here changes with the season or the hour.
+*label ml_place
+*if (ml_first_hub)
+  Millstow strings itself along the southeastern bank of Azure Lake on a single gravel-and-earth lane. On the water side, a rough grass verge and a line of leaning timber fence posts drop gently down to reed beds and a wide stretch of slate-blue lake reaching toward a distant wooded bank.
+
+  On the landward side sit cottages of fieldstone and weathered timber under moss-patched thatch and shingled roofs, divided by drystone walls, kitchen gardens, stacked firewood, oak barrels, and a plain handcart resting against the masonry. Ahead on a turf knoll above the roofs rise two stone-and-timber windmills, their lattice sails angled toward the lake breeze. Thin chimney smoke hangs over the eaves, and the air smells of cold water, woodsmoke, milled grain, and baking barley.
+*else
+  Millstow stretches along the southeastern bank of Azure Lake, its gravel lane running between the reedy shallows and a row of fieldstone-and-thatch cottages beneath the two windmills on the turf knoll.
+*return
+
+*comment ── LAYER 2: SKY ── Weather and light only, followed by the ground's recent-weather state. No people here.
+*label ml_sky
+*temp ml_dark false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set ml_dark true
+*if (weather = "Rain")
+  Rain dimples the broad surface of Azure Lake, drips steadily from the thatched eaves, and turns the packed gravel muddy-brown.
+*elseif (weather = "Storm")
+  Gale wind drives whitecaps over Azure Lake and whips the reeds down against the bank. Rain hammers the shingles and stonework, and the windmills on the knoll hold their sails reefed bare against the gusts.
+*elseif (weather = "Fog")
+  Thick lake mist rolls inland off the shallows, hiding the far bank and swallowing the upper mill towers in pale cloud.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Wet snow dusts the thatched roofs, the drystone garden walls, and the leaning posts by the reeds, while the lake lies leaden beside the whitened shore.
+*elseif (weather = "Blizzard")
+  Driven snow sweeps unchecked off the open lake, burying the grass edge and blotting out the mills and the far bank behind a moving wall of white.
+*elseif (weather = "Clear")
+  *if (ml_dark)
+    Stars show bright above the knoll, and a pale sheen of moonlight lies over the calm expanse of Azure Lake.
+  *elseif (time_period = "Dusk")
+    The setting sun lays long copper streaks over Azure Lake, and the shadows of the roofs and fence posts stretch far up the lane.
+  *else
+    Bright open daylight spreads over the lake and the turf knoll, warming the stonework and catching the slow turn of the mill vanes.
+*else
+  *if (ml_dark)
+    Heavy cloud hides the stars, leaving Azure Lake a sheer black void beside the warm lamplight of the cottage windows.
+  *else
+    Overcast cloud sits over the lake and turns the surface a cool slate-blue beneath the pale sky.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Puddles linger in the grass beside the reeds, and the gravel track feels heavy and sodden underfoot.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The track is damp from recent rain, and moisture clings to the fence rails and garden masonry.
+*return
+
+*comment ── LAYER 3: STREET ── Current village activity. Daytime work follows the season; the rotating vignette follows the clock.
+*label ml_street
+*temp ml_vignette (((campaign_day * 24) + clock_hour) modulo 6) + 1
+*temp ml_night false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set ml_night true
+*if ((street_life = "empty") and (not(ml_night)))
+  The village track is empty. Shutters are fastened tight, handcarts rest pulled close under the eaves, and not a single skiff moves on the lake.
+  *return
+*if (ml_night)
+  *if (ml_vignette = 1)
+    Water laps softly through the reeds below the bank, and a lone lantern bobs briefly near the dwellings before vanishing indoors.
+  *elseif (ml_vignette = 2)
+    The heavy timber brake on one of the windmills groans once in a shift of breeze, then falls still.
+  *elseif (ml_vignette = 3)
+    Hushed voices and the scrape of a bench carry faintly from a doorway before a latch clicks shut.
+  *elseif (ml_vignette = 4)
+    A dog barks twice behind a garden hedge, answered by the rustle of waterfowl settling in the rushes.
+  *elseif (ml_vignette = 5)
+    The faint, sweet smell of banked bakehouse embers drifts down the track on the cool air off the lake.
+  *else
+    A timber shutter rattles once in a passing gust off the shallows, and the village settles back into quiet.
+  *return
+*if (time_period = "Dusk")
+  Lamps are coming on behind the casements, flour-dusted hands head down the slope from the mills, and a shallow-draft skiff glides into the reeds for the night.
+  *return
+*if (day_of_week = "Hallowday")
+  The mill vanes hang tied still above the roofs and the handcarts sit empty by the walls. Villagers in clean wool sit on the garden walls facing the lake, talking unhurriedly while children skip smooth pebbles out into the shallows.
+  *return
+*if (day_of_week = "Marketday")
+  Extra grain carts wait on the grass edge and travelers from the Hartwell road walk the lane asking after flour, loaves, and fresh lake fish, while sacks are hoisted onto shoulder-boards near the cottages.
+  *return
+*if (current_season = "Spring")
+  Garden plots behind the drystone walls are newly turned, and the spring breeze keeps both pairs of mill vanes turning briskly over the thaw.
+*elseif (current_season = "Summer")
+  Warm air carries the scent of cut grass and sun-heated rushes, and doors stay propped open to catch the breeze off Azure Lake.
+*elseif (current_season = "Autumn")
+  Sacks of newly threshed grain sit stacked under tarred cloth against the walls, and the mills turn steadily from morning onward to keep ahead of the harvest.
+*else
+  Woodsmoke hangs over the shingled eaves, thin crusted frost clings to the shaded rushes, and villagers move briskly between doors in heavy wool.
+*if (ml_vignette = 1)
+  A flour-dusted hand pushes a creaking handcart loaded with tied grain sacks down from the knoll.
+*elseif (ml_vignette = 2)
+  Two fishermen walk up from the reedy bank carrying a wicker creel between them on an oar.
+*elseif (ml_vignette = 3)
+  A woman leans over a garden wall to shake flour from an apron, sending a pale cloud drifting toward the shore.
+*elseif (ml_vignette = 4)
+  Far out on the slate-blue lake, a single skiff moves steadily past the reed line under short oar strokes.
+*elseif (ml_vignette = 5)
+  A carter pauses beside the fence posts to tighten the rope over a load of wrapped barley loaves bound for the Hartwell road.
+*else
+  A boy sits on a garden wall whittling a cork net float while watching the mill vanes turn overhead.
+*return

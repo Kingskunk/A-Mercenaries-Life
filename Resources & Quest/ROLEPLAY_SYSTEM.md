@@ -19,7 +19,7 @@ How an AI roleplay session works in this game, and the rules for adding or chang
   - The header chip shows the model, its cost per 100 turns and its context length. It opens a panel of cards: price per 1M tokens (in, out, cache), cost per 100 turns for this scene's prompt as it stands, context, maximum reply, release date, and the Thinking, Batch and ban badges.
   - Each card also shows the player's own record, kept in `Mempalace/model_stats.json` (server.py `MODEL RECORD`): turns, average seconds, average cost, share cached, failures.
   - **Best deal** (server.py `BEST DEAL`):
-    - OpenRouter's listed price for a model is one provider's price, often the maker's, not the cheapest. A paid card uses the provider the router tries first instead (`ranked_endpoints`: up providers first, then cheapest cache read, then cheapest input). The card says "via <provider>" and shows the input price range across providers.
+    - OpenRouter's listed price for a model is one provider's price, often the maker's, not the cheapest. A paid card uses the provider the router tries first instead (`ranked_endpoints`: up providers first, then cheapest input, cheapest output and cheapest cache read). The card says "via <provider>" and shows the input price range across providers.
     - "Providers (N)" lists every provider in that order, with uptime over the last 30 minutes.
     - The $0.50 budget cap uses the best deal too.
     - The server reads the provider lists for paid models listed at up to $2 per million tokens, 12 at a time. They're cached for an hour, and a failed read is retried after 5 minutes. The first load takes about 7 seconds.
@@ -148,11 +148,11 @@ knowledge: {
 | `/get_free_models`, `/perchance_bridge/status` | The console's model list and Perchance status |
 
 - **Perchance bridge limits:** at most 3 jobs queued (beyond that it returns 429 `PERCHANCE_BUSY`), one job at a time with a 2 second gap, and a job left waiting 120 seconds expires. Perchance is never used to write memories.
-- **Provider routing** (server.py `CHEAPEST CACHE, STAY WHILE CACHED`), for paid models only:
-  - A scene's first turn sends the model's providers ranked by cache-read price, and the next turn is pinned to whichever one served it.
-  - A pinned turn with no cache read or write leaves that provider out for the rest of the scene.
-  - Memory calls go to the cheapest provider. `:free` models keep OpenRouter's default routing.
-  - The server log shows each decision as `[CachePin]`.
+- **Provider routing** (server.py `CHEAPEST INPUT, THEN OUTPUT, THEN CACHE`, 2026-11-27), for paid models only:
+  - Every turn, roleplay and memory calls alike, sends the model's providers ranked by input price, then output price, then cache-read price, with any provider down over the last 30 minutes last. Fallbacks are on, so a provider that fails passes the turn to the next one.
+  - Nothing is pinned: talk and intimate scenes are too short for a cache to pay for itself, so each turn goes back to the cheapest provider.
+  - `:free` models keep OpenRouter's default routing.
+  - The server log shows who served each turn as `[Route]`, with "(fallback; cheapest is X)" when it was not the first choice.
 - **Bans:** a model that keeps failing is banned in `Mempalace/blacklist.json` (`auto_banned`). Remove its entry to lift the ban.
 - The server holds the OpenRouter key. Never search for keys.
 

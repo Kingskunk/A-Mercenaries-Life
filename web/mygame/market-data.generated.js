@@ -83,10 +83,10 @@ window.MARKET_DEFS = {
     }
    },
    "timber_axe": {
-    "base": 25,
+    "base": 40,
     "target": 9,
     "stock0": 9,
-    "buyPct": 0.48,
+    "buyPct": 0.5,
     "mult": 1,
     "world": {
      "tile": "pv",
@@ -99,10 +99,10 @@ window.MARKET_DEFS = {
     }
    },
    "stiletto": {
-    "base": 15,
+    "base": 20,
     "target": 9,
     "stock0": 9,
-    "buyPct": 0.467,
+    "buyPct": 0.5,
     "mult": 1,
     "world": {
      "tile": "pv",
@@ -137,6 +137,70 @@ window.MARKET_DEFS = {
     "buyPct": 0.5,
     "mult": 1
    },
+   "longsword": {
+    "base": 100,
+    "target": 6,
+    "stock0": 6,
+    "buyPct": 0.5,
+    "mult": 1,
+    "world": {
+     "tile": "pv",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
+   },
+   "rapier": {
+    "base": 120,
+    "target": 6,
+    "stock0": 6,
+    "buyPct": 0.5,
+    "mult": 1,
+    "world": {
+     "tile": "pv",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
+   },
+   "scimitar": {
+    "base": 70,
+    "target": 6,
+    "stock0": 6,
+    "buyPct": 0.5,
+    "mult": 1,
+    "world": {
+     "tile": "pv",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
+   },
+   "greatsword": {
+    "base": 150,
+    "target": 6,
+    "stock0": 6,
+    "buyPct": 0.5,
+    "mult": 1,
+    "world": {
+     "tile": "pv",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
+   },
    "scrap_steel": {
     "base": 10,
     "target": 45,
@@ -144,6 +208,108 @@ window.MARKET_DEFS = {
     "buyPct": 0.5,
     "mult": 1,
     "sells": false
+   },
+   "shortsword": {
+    "base": 60,
+    "target": 6,
+    "stock0": 6,
+    "buyPct": 0.5,
+    "mult": 1,
+    "sells": false,
+    "world": {
+     "tile": "pv",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
+   },
+   "warhammer": {
+    "base": 35,
+    "target": 9,
+    "stock0": 9,
+    "buyPct": 0.486,
+    "mult": 1,
+    "sells": false,
+    "world": {
+     "tile": "pv",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
+   },
+   "greataxe": {
+    "base": 50,
+    "target": 6,
+    "stock0": 6,
+    "buyPct": 0.5,
+    "mult": 1,
+    "sells": false,
+    "world": {
+     "tile": "pv",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
+   },
+   "mace": {
+    "base": 25,
+    "target": 9,
+    "stock0": 9,
+    "buyPct": 0.48,
+    "mult": 1,
+    "sells": false,
+    "world": {
+     "tile": "pv",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
+   },
+   "handaxe": {
+    "base": 15,
+    "target": 9,
+    "stock0": 9,
+    "buyPct": 0.467,
+    "mult": 1,
+    "sells": false,
+    "world": {
+     "tile": "pv",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
+   },
+   "maul": {
+    "base": 50,
+    "target": 6,
+    "stock0": 6,
+    "buyPct": 0.5,
+    "mult": 1,
+    "sells": false,
+    "world": {
+     "tile": "pv",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
    }
   }
  },
@@ -1112,18 +1278,18 @@ window.MARKET_DEFS = {
     "sells": false
    },
    "timber_axe": {
-    "base": 25,
+    "base": 40,
     "target": 9,
     "stock0": 9,
-    "buyPct": 0.32,
+    "buyPct": 0.35,
     "mult": 1,
     "sells": false
    },
    "stiletto": {
-    "base": 15,
+    "base": 20,
     "target": 9,
     "stock0": 9,
-    "buyPct": 0.333,
+    "buyPct": 0.35,
     "mult": 1,
     "sells": false
    },
@@ -1360,6 +1526,94 @@ window.MARKET_DEFS = {
     "mult": 1,
     "sells": false,
     "fixed": true
+   },
+   "longsword": {
+    "base": 100,
+    "target": 6,
+    "stock0": 6,
+    "buyPct": 0.35,
+    "mult": 1,
+    "sells": false
+   },
+   "shortsword": {
+    "base": 60,
+    "target": 6,
+    "stock0": 6,
+    "buyPct": 0.35,
+    "mult": 1,
+    "sells": false
+   },
+   "rapier": {
+    "base": 120,
+    "target": 6,
+    "stock0": 6,
+    "buyPct": 0.35,
+    "mult": 1,
+    "sells": false
+   },
+   "scimitar": {
+    "base": 70,
+    "target": 6,
+    "stock0": 6,
+    "buyPct": 0.343,
+    "mult": 1,
+    "sells": false
+   },
+   "warhammer": {
+    "base": 35,
+    "target": 9,
+    "stock0": 9,
+    "buyPct": 0.343,
+    "mult": 1,
+    "sells": false
+   },
+   "greataxe": {
+    "base": 50,
+    "target": 6,
+    "stock0": 6,
+    "buyPct": 0.34,
+    "mult": 1,
+    "sells": false
+   },
+   "mace": {
+    "base": 25,
+    "target": 9,
+    "stock0": 9,
+    "buyPct": 0.32,
+    "mult": 1,
+    "sells": false
+   },
+   "handaxe": {
+    "base": 15,
+    "target": 9,
+    "stock0": 9,
+    "buyPct": 0.333,
+    "mult": 1,
+    "sells": false
+   },
+   "longbow": {
+    "base": 60,
+    "target": 6,
+    "stock0": 6,
+    "buyPct": 0.35,
+    "mult": 1,
+    "sells": false
+   },
+   "greatsword": {
+    "base": 150,
+    "target": 6,
+    "stock0": 6,
+    "buyPct": 0.347,
+    "mult": 1,
+    "sells": false
+   },
+   "maul": {
+    "base": 50,
+    "target": 6,
+    "stock0": 6,
+    "buyPct": 0.34,
+    "mult": 1,
+    "sells": false
    }
   }
  },
@@ -1397,10 +1651,10 @@ window.MARKET_DEFS = {
     }
    },
    "longshade_shortbow": {
-    "base": 25,
+    "base": 35,
     "target": 6,
     "stock0": 6,
-    "buyPct": 0.48,
+    "buyPct": 0.486,
     "mult": 1
    },
    "wooden_clogs": {
@@ -1415,6 +1669,22 @@ window.MARKET_DEFS = {
       {
        "good": "leather",
        "share": 0.5
+      }
+     ]
+    }
+   },
+   "longbow": {
+    "base": 60,
+    "target": 4,
+    "stock0": 4,
+    "buyPct": 0.5,
+    "mult": 1,
+    "world": {
+     "tile": "tm",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
       }
      ]
     }
@@ -1585,6 +1855,22 @@ window.MARKET_DEFS = {
     "stock0": 38,
     "buyPct": 0.5,
     "mult": 1
+   },
+   "handaxe": {
+    "base": 15,
+    "target": 7,
+    "stock0": 7,
+    "buyPct": 0.467,
+    "mult": 1,
+    "world": {
+     "tile": "tm",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
    }
   }
  },
@@ -1733,10 +2019,10 @@ window.MARKET_DEFS = {
   },
   "goods": {
    "timber_axe": {
-    "base": 25,
+    "base": 40,
     "target": 7,
     "stock0": 7,
-    "buyPct": 0.48,
+    "buyPct": 0.5,
     "mult": 1,
     "world": {
      "tile": "af",
@@ -1749,10 +2035,10 @@ window.MARKET_DEFS = {
     }
    },
    "stiletto": {
-    "base": 15,
+    "base": 20,
     "target": 7,
     "stock0": 7,
-    "buyPct": 0.467,
+    "buyPct": 0.5,
     "mult": 1,
     "world": {
      "tile": "af",
@@ -1821,6 +2107,86 @@ window.MARKET_DEFS = {
      ]
     }
    },
+   "shortsword": {
+    "base": 60,
+    "target": 5,
+    "stock0": 5,
+    "buyPct": 0.5,
+    "mult": 1,
+    "world": {
+     "tile": "af",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
+   },
+   "warhammer": {
+    "base": 35,
+    "target": 7,
+    "stock0": 7,
+    "buyPct": 0.486,
+    "mult": 1,
+    "world": {
+     "tile": "af",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
+   },
+   "greataxe": {
+    "base": 50,
+    "target": 5,
+    "stock0": 5,
+    "buyPct": 0.5,
+    "mult": 1,
+    "world": {
+     "tile": "af",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
+   },
+   "mace": {
+    "base": 25,
+    "target": 7,
+    "stock0": 7,
+    "buyPct": 0.48,
+    "mult": 1,
+    "world": {
+     "tile": "af",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
+   },
+   "maul": {
+    "base": 50,
+    "target": 5,
+    "stock0": 5,
+    "buyPct": 0.5,
+    "mult": 1,
+    "world": {
+     "tile": "af",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
+   },
    "brigandine": {
     "base": 90,
     "target": 4,
@@ -1883,6 +2249,91 @@ window.MARKET_DEFS = {
     "buyPct": 0.5,
     "mult": 1,
     "sells": false
+   },
+   "longsword": {
+    "base": 100,
+    "target": 5,
+    "stock0": 5,
+    "buyPct": 0.5,
+    "mult": 1,
+    "sells": false,
+    "world": {
+     "tile": "af",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
+   },
+   "rapier": {
+    "base": 120,
+    "target": 5,
+    "stock0": 5,
+    "buyPct": 0.5,
+    "mult": 1,
+    "sells": false,
+    "world": {
+     "tile": "af",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
+   },
+   "scimitar": {
+    "base": 70,
+    "target": 5,
+    "stock0": 5,
+    "buyPct": 0.5,
+    "mult": 1,
+    "sells": false,
+    "world": {
+     "tile": "af",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
+   },
+   "handaxe": {
+    "base": 15,
+    "target": 7,
+    "stock0": 7,
+    "buyPct": 0.467,
+    "mult": 1,
+    "sells": false,
+    "world": {
+     "tile": "af",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
+   },
+   "greatsword": {
+    "base": 150,
+    "target": 5,
+    "stock0": 5,
+    "buyPct": 0.5,
+    "mult": 1,
+    "sells": false,
+    "world": {
+     "tile": "af",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
    }
   }
  },
@@ -7174,10 +7625,10 @@ window.MARKET_DEFS = {
    },
    "fish": {
     "base": 4,
-    "target": 85,
-    "stock0": 85,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
-    "mult": 1.17,
+    "mult": 1.14,
     "world": {
      "tile": "fm"
     },
@@ -7640,10 +8091,10 @@ window.MARKET_DEFS = {
    },
    "fish": {
     "base": 4,
-    "target": 87,
-    "stock0": 87,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
-    "mult": 1.095,
+    "mult": 1.065,
     "world": {
      "tile": "rn2"
     },
@@ -8106,10 +8557,10 @@ window.MARKET_DEFS = {
    },
    "fish": {
     "base": 4,
-    "target": 85,
-    "stock0": 85,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
-    "mult": 1.075,
+    "mult": 1.07,
     "world": {
      "tile": "pc"
     },
@@ -8572,10 +9023,10 @@ window.MARKET_DEFS = {
    },
    "fish": {
     "base": 4,
-    "target": 87,
-    "stock0": 87,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
-    "mult": 1.16,
+    "mult": 1.1,
     "world": {
      "tile": "bm"
     },
@@ -9037,10 +9488,10 @@ window.MARKET_DEFS = {
    },
    "fish": {
     "base": 4,
-    "target": 86,
-    "stock0": 86,
+    "target": 90,
+    "stock0": 90,
     "buyPct": 0.8,
-    "mult": 1.195,
+    "mult": 1.175,
     "world": {
      "tile": "nv"
     },

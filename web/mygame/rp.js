@@ -103,46 +103,63 @@
     freeModels: []
   };
 
+  var pendingLoadedSession = null;
+
   function currentPageKey(sceneId) {
     var s = statsNow();
     return String(sceneId || "") + "::" + String(s.page_id !== undefined ? s.page_id : "") + "::" + String(s.intimate_encounters !== undefined ? s.intimate_encounters : "");
   }
 
+  function buildActiveSessionPayload(draftText) {
+    if (!session.active || !session.originId) return null;
+    var cleanTurns = session.turns.map(function (t) {
+      return { role: t.role, text: t.text };
+    });
+    return {
+      key: session.pageId,
+      id: session.originId,
+      activeId: session.id,
+      phase: session.phase || "base",
+      escalated: !!session.escalated,
+      escalatedAtTurn: Number(session.escalatedAtTurn) || 0,
+      pendingEscalate: !!session.pendingEscalate,
+      lockedEvalResult: session.lockedEvalResult || null,
+      sessionNonce: session.sessionNonce || "",
+      turns: cleanTurns,
+      advisedStarters: Array.isArray(session.advisedStarters) ? session.advisedStarters : null,
+      advisedBeats: Array.isArray(session.advisedBeats) ? session.advisedBeats : null,
+      evalResult: session.evalResult || null,
+      sceneReady: !!session.sceneReady,
+      naturalComplete: !!session.naturalComplete,
+      saveMemory: session.saveMemory !== false,
+      draft: typeof draftText === "string" ? draftText : ""
+    };
+  }
+
   function saveActiveSession(draftText) {
-    if (!session.active || !session.originId) return;
+    var payload = buildActiveSessionPayload(draftText);
+    if (!payload) return;
     try {
-      var cleanTurns = session.turns.map(function (t) {
-        return { role: t.role, text: t.text };
-      });
-      var payload = {
-        key: session.pageId,
-        id: session.originId,
-        activeId: session.id,
-        phase: session.phase || "base",
-        escalated: !!session.escalated,
-        escalatedAtTurn: Number(session.escalatedAtTurn) || 0,
-        pendingEscalate: !!session.pendingEscalate,
-        lockedEvalResult: session.lockedEvalResult || null,
-        sessionNonce: session.sessionNonce || "",
-        turns: cleanTurns,
-        advisedStarters: Array.isArray(session.advisedStarters) ? session.advisedStarters : null,
-        advisedBeats: Array.isArray(session.advisedBeats) ? session.advisedBeats : null,
-        evalResult: session.evalResult || null,
-        sceneReady: !!session.sceneReady,
-        naturalComplete: !!session.naturalComplete,
-        saveMemory: session.saveMemory !== false,
-        draft: typeof draftText === "string" ? draftText : ""
-      };
       localStorage.setItem(ACTIVE_SESSION_KEY, JSON.stringify(payload));
     } catch (e) {}
   }
 
   function loadActiveSession(sceneId) {
+    var curKey = currentPageKey(sceneId);
+    if (pendingLoadedSession && typeof pendingLoadedSession === "object") {
+      var staged = pendingLoadedSession;
+      pendingLoadedSession = null;
+      if (staged.key === curKey || staged.id === sceneId || staged.activeId === sceneId) {
+        staged.key = curKey;
+        try { localStorage.setItem(ACTIVE_SESSION_KEY, JSON.stringify(staged)); } catch (e) {}
+        return staged;
+      }
+    }
     try {
       var raw = localStorage.getItem(ACTIVE_SESSION_KEY);
       if (!raw) return null;
       var data = JSON.parse(raw);
-      if (!data || data.key !== currentPageKey(sceneId)) return null;
+      if (!data || data.key !== curKey) return null;
       return data;
     } catch (e) {
       return null;
@@ -150,7 +167,30 @@
   }
 
   function clearActiveSession() {
+    pendingLoadedSession = null;
     try { localStorage.removeItem(ACTIVE_SESSION_KEY); } catch (e) {}
+  }
+
+  function exportActiveSession() {
+    if (!session.active || !session.originId) return null;
+    if (typeof document !== "undefined" && !document.getElementById("rpConsoleBox")) return null;
+    var draft = "";
+    try {
+      var box = typeof document !== "undefined" && document.getElementById("rpConsoleBox");
+      var ta = box && box.querySelector("textarea");
+      if (ta && typeof ta.value === "string") draft = ta.value;
+    } catch (e) {}
+    return buildActiveSessionPayload(draft);
+  }
+
+  function prepareForSaveLoad(rpSnapshot) {
+    // Drop live in-memory session state WITHOUT committing an abandoned RP to MemPalace.
+    resetMemorySessionState();
+    clearActiveSession();
+    if (rpSnapshot && typeof rpSnapshot === "object" && (rpSnapshot.id || rpSnapshot.activeId)) {
+      pendingLoadedSession = JSON.parse(JSON.stringify(rpSnapshot));
+      try { localStorage.setItem(ACTIVE_SESSION_KEY, JSON.stringify(pendingLoadedSession)); } catch (e) {}
+    }
   }
 
   function truthy(v) { return v === true || v === "true"; }
@@ -966,11 +1006,13 @@
 
   function parseSceneReadyResponse(rawText) {
     var s = String(rawText || "");
-    var actComplete = /\[{1,2}\s*ACT[\s_]+COMPLETE[\s.!]*\]{1,2}/i.test(s);
-    var escalateIntimate = /\[{1,2}\s*ESCALATE[\s_]+INTIMATE[\s.!]*\]{1,2}/i.test(s);
+    var actRe = /\\?\[{1,2}\s*ACT[\s_\\-]+COMPLETE[\s.!]*\\?\]{1,2}/i;
+    var escRe = /\\?\[{1,2}\s*ESCALATE[\s_\\-]+INTIMATE[\s.!]*\\?\]{1,2}/i;
+    var actComplete = actRe.test(s);
+    var escalateIntimate = escRe.test(s);
     var cleaned = s
-      .replace(/\s*\[{1,2}\s*ACT[\s_]+COMPLETE[\s.!]*\]{1,2}[.!\s]*/gi, "\n")
-      .replace(/\s*\[{1,2}\s*ESCALATE[\s_]+INTIMATE[\s.!]*\]{1,2}[.!\s]*/gi, "\n")
+      .replace(/\s*(?:\*{1,2}|`)?\\?\[{1,2}\s*ACT[\s_\\-]+COMPLETE[\s.!]*\\?\]{1,2}(?:\*{1,2}|`)?[!\s]*/gi, "\n")
+      .replace(/\s*(?:\*{1,2}|`)?\\?\[{1,2}\s*ESCALATE[\s_\\-]+INTIMATE[\s.!]*\\?\]{1,2}(?:\*{1,2}|`)?[!\s]*/gi, "\n")
       .trim();
     return { text: cleaned, actComplete: actComplete, escalateIntimate: escalateIntimate };
   }
@@ -1301,6 +1343,7 @@
     var npcName = evalField(session.cfg.npcName, s) || evalField(session.cfg.title, s).split("—")[0].trim() || "the companion";
     var locName = evalField(session.cfg.title, s) || "the scene";
     var dateLabel = formatMemoryDateLabel(s);
+    var devName = (window.ampSaveLoad && typeof window.ampSaveLoad.getDeviceName === "function") ? window.ampSaveLoad.getDeviceName() : "";
     fetch(baseUrl + "/append_memory", {
       method: "POST",
       headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
@@ -1313,6 +1356,9 @@
         location: locName,
         date_label: dateLabel,
         player_name: companionKnowsName(session.cfg, s) ? String(s.name || "") : "",
+        character: String(s.name || ""),
+        class_name: String(s.class_name || s.character_class || ""),
+        device: devName,
         mode: "openrouter",
         model: memoryModel(),
         timeout: 120
@@ -1360,6 +1406,8 @@
   };
 
   RP.getServerUrl = getServerUrl;
+  RP.exportActiveSession = exportActiveSession;
+  RP.prepareForSaveLoad = prepareForSaveLoad;
   RP.estimateTokens = estimateTokens;
   RP.getTokenBudget = getTokenBudget;
   RP.fitTurnsToTokenBudget = fitTurnsToTokenBudget;
@@ -2303,6 +2351,9 @@
     if (restored && typeof restored.pendingEscalate === "boolean") {
       session.pendingEscalate = restored.pendingEscalate;
     }
+    if (restored && restored.sessionNonce) {
+      session.sessionNonce = restored.sessionNonce;
+    }
     if (restored && Array.isArray(restored.advisedStarters)) {
       session.advisedStarters = restored.advisedStarters;
     }
@@ -2326,6 +2377,7 @@
       session.naturalComplete = restored.naturalComplete;
     }
     updateHeaderForCfg();
+    renderEscalateControls();
     renderChips();
     updateButtons();
     setTimeout(function () { syncChoiceScriptNextBtn(); }, 0);
@@ -2451,7 +2503,8 @@
       var m = modelById(settings.model);
       if (!m) { modelChip.textContent = settings.model.split("/").pop(); return; }
       var c = turnCost(m, scenePromptTokens());
-      var cost = m.is_free ? "Free" : (c ? "\u2248" + money(100 * (c.cached != null ? c.cached : c.plain)) + " / 100 turns" : "");
+      // The uncached cost (2026-11-27): talk and intimate scenes are short, so most turns pay the full input price; the card shows the cached figure beside it.
+      var cost = m.is_free ? "Free" : (c ? "\u2248" + money(100 * c.plain) + " / 100 turns" : "");
       modelChip.textContent = shortModelName(m) + " \u00B7 " + cost + " \u00B7 " + kTokens(m.context_length);
     }
 
@@ -2531,7 +2584,7 @@
         if (q && (String(m.name) + " " + m.id).toLowerCase().indexOf(q) === -1) return false;
         return true;
       });
-      var costOf = function (m) { var c = turnCost(m, promptTokens); return c ? (c.cached != null ? c.cached : c.plain) : 0; };
+      var costOf = function (m) { var c = turnCost(m, promptTokens); return c ? c.plain : 0; };
       var sorters = {
         cost: function (a, b) { return costOf(a) - costOf(b); },
         newest: function (a, b) { return (b.created || 0) - (a.created || 0); },
@@ -2684,6 +2737,9 @@
           setStatus("Error: " + errMsg + " (try another model or check Perchance tab).");
         }
         updateButtons();
+        if (session.pendingEscalate && escalateBarEl && !escalateBarEl.hidden && escalateBarEl.scrollIntoView) {
+          escalateBarEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
       }).catch(function (err) {
         session.busy = false;
         setStatus("Network error: " + (err && err.message ? err.message : String(err)));
@@ -2925,10 +2981,20 @@
         if (!memId || !ta || !threadId) return;
         actBtn.disabled = true;
         actBtn.textContent = "Saving...";
+        var stSave = statsNow();
+        var devSave = (window.ampSaveLoad && typeof window.ampSaveLoad.getDeviceName === "function") ? window.ampSaveLoad.getDeviceName() : "";
         fetch(getServerUrl() + "/append_memory", {
           method: "POST",
           headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
-          body: JSON.stringify({ thread_id: threadId, id: memId, text: ta.value.trim(), distill: false })
+          body: JSON.stringify({
+            thread_id: threadId,
+            id: memId,
+            text: ta.value.trim(),
+            distill: false,
+            character: String(stSave.name || ""),
+            class_name: String(stSave.class_name || stSave.character_class || ""),
+            device: devSave
+          })
         }).then(function () {
           actBtn.disabled = false;
           actBtn.textContent = "Saved \u2713";

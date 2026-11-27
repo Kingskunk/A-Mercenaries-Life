@@ -137,7 +137,7 @@ Hartwell's own castellan: **Lady Fenella Rourke** of **Rourkethwaite**, who guar
 
 **Hartwell's three villages:**
 
-- **Millstow** — grain and milling on the river, the plainest of the three: tenants, a mill, a grain market. No resident nobility; its friction is toll rates and whose grain gets milled first on a crowded day.
+- **Millstow** — grain, wind-milling, and lakeside fishing on the southeastern shore of Azure Lake: plain tenants under Hartwell, cottages along the water beneath two wind-driven mills on the rise, no resident nobility.
 - **Oxworth** — cattle and trade stock, a droving village hard against Hartwell's own gate and the downs road beyond it. Plain tenants; its friction is droving rights of way across other men's fields during the autumn drive.
 - **Palmcote** — the estate of **House Ferrand**, a minor house sworn under the Viscountess's own House Falwick. The family lives in Hartwell, as noble families do, not in the village: an **estate steward** runs the Palmcote estate from the grey house at the crest, with a **bailiff** over the weighing yard and the pressing house (settled 2026-11-25, Short Weight). The Ferrands bought their way into minor nobility two generations ago on trade money, same as the Durnells are trying to do now. This is the direct answer to Cellan Durnell's argument in Barolo: "the Ferrands managed it, why not us." The Ferrands have no public jurisdiction over Palmcote (the Veyre/Thorne model again), and old blood like the Veyres privately still consider them jumped-up merchants with an estate, three generations in or not.
 
@@ -177,7 +177,7 @@ Unlike everything above, this part is **live, not just planned** — the 11 new 
 | Caldby | 500 | Harwick's | Wool (major), timber/charcoal/raw hide/furs/boar meat (all minor, forest edge) |
 | Esthorpe | 300 | Harwick's | Farm eggs (minor), dressed chicken (minor) — a border hamlet, kept thin but no longer eggs-with-no-chickens |
 | Addercombe | 350 | Harwick's | Orchard apples (minor), honey (minor) — House Thorne's faded estate |
-| Millstow | 650 | Hartwell's | Grain (major), barley loaf (major), farm eggs/root veg/onions/cheese/butter (all minor) — a milling village with a proper mixed-farm tail, on par with Broadmead |
+| Millstow | 650 | Hartwell's | Grain (major), barley loaf (major), fish/farm eggs/root veg/onions/cheese/butter (all minor) — a lakeside milling village on Azure Lake with a proper mixed-farm tail and small lake fishery |
 | Oxworth | 550 | Hartwell's | Animal fat (minor), raw hide (minor), cheese/butter/farm eggs/dressed chicken (all minor) — cattle droving brings dairy and poultry with it; no dedicated beef commodity exists so byproducts still stand in for the meat |
 | Palmcote | 500 | Hartwell's | **Olives** (major), honey (minor) — picked and carted off, not pressed on the spot (see below) |
 | Dennholt (castle village) | 150 | Crown marcher, Lady Perrin Hollis | **Limestone** (minor) — a small penal quarry under the castle; Whitefold remains the Vale's main source |

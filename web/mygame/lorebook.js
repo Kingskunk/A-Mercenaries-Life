@@ -394,6 +394,31 @@
         '<div class="lb-meter-bar"><i style="width:' + r.meter.value + '%"></i></div></div>';
     }
     html += '<div class="lb-text">' + linkify(r.html, statsNow()) + '</div>';
+    var rpChar = rpCharFor(r.id);
+    if (rpChar) {
+      html +=
+        '<details class="lb-memories" data-rp-char="' + esc(r.id) + '">' +
+          '<summary class="lb-mem-summary">' +
+            '<span class="lb-mem-heading">Roleplay Memories</span>' +
+            '<span class="lb-mem-count"></span>' +
+          '</summary>' +
+          '<div class="lb-mem-body">' +
+            '<div class="lb-mem-bar">' +
+              '<button type="button" class="lb-mem-btn lb-mem-btn-add" data-act="lb-mem-add-toggle">+ Add memory</button>' +
+              '<button type="button" class="lb-mem-btn" data-act="lb-mem-refresh" title="Reload memories from MemPalace">\u21BB Refresh</button>' +
+              '<span class="lb-mem-status"></span>' +
+            '</div>' +
+            '<div class="lb-mem-add" hidden>' +
+              '<textarea class="lb-mem-ta lb-mem-add-ta" rows="3" placeholder="Write a memory note in third person (e.g. \'On Day 6 they shared supper and agreed to meet again...\')"></textarea>' +
+              '<div class="lb-mem-actions">' +
+                '<button type="button" class="lb-mem-btn lb-mem-btn-primary" data-act="lb-mem-add-save">Save Memory</button>' +
+                '<button type="button" class="lb-mem-btn" data-act="lb-mem-add-cancel">Cancel</button>' +
+              '</div>' +
+            '</div>' +
+            '<div class="lb-mem-list"><div class="lb-mem-empty">Loading memories\u2026</div></div>' +
+          '</div>' +
+        '</details>';
+    }
     var links = r.see.map(function (id) {
       return current.filter(function (x) { return x.id === id; })[0];
     }).filter(Boolean);
@@ -412,7 +437,118 @@
         if (pImg.parentNode) pImg.parentNode.style.display = "none";
       });
     }
+    if (rpChar) {
+      loadLoreMemories(r.id);
+    }
     elRead.scrollTop = 0;
+  }
+
+  /* ------------------------------------------------ RP memories in Lorebook */
+
+  var memReqSeq = 0;
+
+  function rpCharFor(entryId) {
+    var chars = window.RP_CHARACTERS;
+    if (!chars || !entryId) return null;
+    var ch = chars[entryId];
+    if (!ch || ch.memory === false) return null;
+    return ch;
+  }
+
+  function rpServerUrl() {
+    if (window.RPEngine && typeof window.RPEngine.getServerUrl === "function") {
+      return window.RPEngine.getServerUrl();
+    }
+    return "http://127.0.0.1:5000";
+  }
+
+  function rpMemoryOrder(s) {
+    if (window.RPEngine && typeof window.RPEngine.memoryOrder === "function") {
+      return window.RPEngine.memoryOrder(s);
+    }
+    return Math.max(1, Number(s.page_id) || 1);
+  }
+
+  function rpThreadFor(entryId, ch, s, createWorldId) {
+    var base = typeof ch.threadId === "function" ? ch.threadId(s) : (ch.threadId || ("cs_" + entryId));
+    if (!s.rp_world_id) {
+      if (!createWorldId) return "";
+      s.rp_world_id = "w" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    }
+    return base + "_" + s.rp_world_id;
+  }
+
+  function loadLoreMemories(entryId) {
+    var box = elRead && elRead.querySelector('.lb-memories[data-rp-char="' + entryId + '"]');
+    if (!box) return;
+    var ch = rpCharFor(entryId);
+    if (!ch) return;
+    var listEl = box.querySelector(".lb-mem-list");
+    var countEl = box.querySelector(".lb-mem-count");
+    var statusEl = box.querySelector(".lb-mem-status");
+    var s = statsNow();
+    var threadId = rpThreadFor(entryId, ch, s, false);
+    var baseUrl = rpServerUrl();
+    if (!threadId) {
+      if (countEl) countEl.textContent = "(0)";
+      if (listEl) listEl.innerHTML = '<div class="lb-mem-empty">No memories recorded for this playthrough yet.</div>';
+      if (statusEl) statusEl.textContent = "";
+      return;
+    }
+    var mySeq = ++memReqSeq;
+    if (statusEl) statusEl.textContent = "Loading\u2026";
+    fetch(baseUrl + "/get_npc_memories", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+      body: JSON.stringify({
+        thread_id: threadId,
+        current_day: Number(s.campaign_day) || 1,
+        max_visit: rpMemoryOrder(s)
+      })
+    }).then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (mySeq !== memReqSeq) return;
+        var liveBox = elRead && elRead.querySelector('.lb-memories[data-rp-char="' + entryId + '"]');
+        if (!liveBox) return;
+        var liveList = liveBox.querySelector(".lb-mem-list");
+        var liveCount = liveBox.querySelector(".lb-mem-count");
+        var liveStatus = liveBox.querySelector(".lb-mem-status");
+        var items = (d && Array.isArray(d.all)) ? d.all : [];
+        if (liveCount) liveCount.textContent = "(" + items.length + ")";
+        if (liveStatus) liveStatus.textContent = "";
+        if (!items.length) {
+          if (liveList) liveList.innerHTML = '<div class="lb-mem-empty">No memories recorded with this companion yet.</div>';
+          return;
+        }
+        if (liveList) {
+          liveList.innerHTML = items.map(function (m, idx) {
+            var label = m.order ? ("Visit #" + m.order) : ("Memory #" + (idx + 1));
+            if (m.saved_day) label += " \u00B7 Day " + m.saved_day;
+            return (
+              '<div class="lb-mem-item" data-mem-id="' + esc(m.source) + '">' +
+                '<div class="lb-mem-meta">' +
+                  '<span>' + esc(label) + '</span>' +
+                  '<div class="lb-mem-actions">' +
+                    '<button type="button" class="lb-mem-btn" data-act="lb-mem-save" data-mem-id="' + esc(m.source) + '">Save</button>' +
+                    '<button type="button" class="lb-mem-btn lb-mem-btn-del" data-act="lb-mem-del" data-mem-id="' + esc(m.source) + '">Delete</button>' +
+                  '</div>' +
+                '</div>' +
+                '<textarea class="lb-mem-ta" rows="4">' + esc(m.content) + '</textarea>' +
+              '</div>'
+            );
+          }).join("");
+        }
+      }).catch(function () {
+        if (mySeq !== memReqSeq) return;
+        var liveBox = elRead && elRead.querySelector('.lb-memories[data-rp-char="' + entryId + '"]');
+        if (!liveBox) return;
+        var liveList = liveBox.querySelector(".lb-mem-list");
+        var liveCount = liveBox.querySelector(".lb-mem-count");
+        var liveStatus = liveBox.querySelector(".lb-mem-status");
+        if (liveCount) liveCount.textContent = "(offline)";
+        if (liveStatus) liveStatus.textContent = "";
+        if (liveList) liveList.innerHTML = '<div class="lb-mem-empty">MemPalace server offline \u2014 start server.py to view or edit memories.</div>';
+      });
   }
 
   function select(id, opts) {
@@ -466,6 +602,127 @@
       if (prev) select(prev, { noHistory: true });
       return;
     }
+    if (act === "lb-mem-refresh" || act === "lb-mem-add-toggle" || act === "lb-mem-add-cancel" ||
+        act === "lb-mem-add-save" || act === "lb-mem-save" || act === "lb-mem-del") {
+      var memBox = t.closest ? t.closest(".lb-memories") : null;
+      var charId = memBox ? memBox.getAttribute("data-rp-char") : "";
+      var ch = rpCharFor(charId);
+      if (!memBox || !ch) return;
+      var memStatus = memBox.querySelector(".lb-mem-status");
+      var addPanel = memBox.querySelector(".lb-mem-add");
+      var addTa = memBox.querySelector(".lb-mem-add-ta");
+      if (act === "lb-mem-refresh") {
+        loadLoreMemories(charId);
+        return;
+      }
+      if (act === "lb-mem-add-toggle") {
+        if (addPanel) {
+          addPanel.hidden = !addPanel.hidden;
+          if (!addPanel.hidden && addTa) addTa.focus();
+        }
+        return;
+      }
+      if (act === "lb-mem-add-cancel") {
+        if (addPanel) addPanel.hidden = true;
+        if (addTa) addTa.value = "";
+        return;
+      }
+      if (act === "lb-mem-add-save") {
+        var newText = addTa ? addTa.value.trim() : "";
+        if (!newText) return;
+        var stAdd = statsNow();
+        var addThread = rpThreadFor(charId, ch, stAdd, true);
+        if (!addThread) return;
+        var dayNum = Number(stAdd.campaign_day) || 1;
+        var newId = "msg_" + rpMemoryOrder(stAdd) + "_day" + dayNum + "_manual_" + Date.now().toString(36);
+        t.disabled = true;
+        t.textContent = "Saving\u2026";
+        var devAdd = (window.ampSaveLoad && typeof window.ampSaveLoad.getDeviceName === "function") ? window.ampSaveLoad.getDeviceName() : "";
+        fetch(rpServerUrl() + "/append_memory", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+          body: JSON.stringify({
+            thread_id: addThread,
+            id: newId,
+            text: newText,
+            distill: false,
+            character: String(stAdd.name || ""),
+            class_name: String(stAdd.class_name || stAdd.character_class || ""),
+            device: devAdd
+          })
+        }).then(function (r) {
+          t.disabled = false;
+          t.textContent = "Save Memory";
+          if (r && r.ok) {
+            if (addTa) addTa.value = "";
+            if (addPanel) addPanel.hidden = true;
+            if (memStatus) memStatus.textContent = "Memory added.";
+            loadLoreMemories(charId);
+          } else if (memStatus) {
+            memStatus.textContent = "Could not save memory.";
+          }
+        }).catch(function () {
+          t.disabled = false;
+          t.textContent = "Save Memory";
+          if (memStatus) memStatus.textContent = "Server offline.";
+        });
+        return;
+      }
+      if (act === "lb-mem-save") {
+        var memId = t.getAttribute("data-mem-id");
+        var itemEl = t.closest ? t.closest(".lb-mem-item") : null;
+        var ta = itemEl ? itemEl.querySelector(".lb-mem-ta") : null;
+        var stSave = statsNow();
+        var saveThread = rpThreadFor(charId, ch, stSave, false);
+        if (!memId || !ta || !saveThread) return;
+        t.disabled = true;
+        t.textContent = "Saving\u2026";
+        var devSave = (window.ampSaveLoad && typeof window.ampSaveLoad.getDeviceName === "function") ? window.ampSaveLoad.getDeviceName() : "";
+        fetch(rpServerUrl() + "/append_memory", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+          body: JSON.stringify({
+            thread_id: saveThread,
+            id: memId,
+            text: ta.value.trim(),
+            distill: false,
+            character: String(stSave.name || ""),
+            class_name: String(stSave.class_name || stSave.character_class || ""),
+            device: devSave
+          })
+        }).then(function (r) {
+          t.disabled = false;
+          t.textContent = r && r.ok ? "Saved \u2713" : "Failed";
+          if (memStatus) memStatus.textContent = r && r.ok ? "Memory updated." : "Could not save.";
+          setTimeout(function () { t.textContent = "Save"; }, 1400);
+        }).catch(function () {
+          t.disabled = false;
+          t.textContent = "Save";
+          if (memStatus) memStatus.textContent = "Server offline.";
+        });
+        return;
+      }
+      if (act === "lb-mem-del") {
+        var delId = t.getAttribute("data-mem-id");
+        var delThread = rpThreadFor(charId, ch, statsNow(), false);
+        if (!delId || !delThread) return;
+        t.disabled = true;
+        t.textContent = "Deleting\u2026";
+        fetch(rpServerUrl() + "/delete_npc_memory", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+          body: JSON.stringify({ thread_id: delThread, id: delId })
+        }).then(function () {
+          if (memStatus) memStatus.textContent = "Memory deleted.";
+          loadLoreMemories(charId);
+        }).catch(function () {
+          t.disabled = false;
+          t.textContent = "Delete";
+          if (memStatus) memStatus.textContent = "Server offline.";
+        });
+        return;
+      }
+    }
     if (t.hasAttribute("data-cat")) {
       view.category = t.getAttribute("data-cat");
       renderList(false);
@@ -502,9 +759,12 @@
 
   function onKeydown(ev) {
     // The game listens for J, K, Q, W and digits on the whole document. Keep those keys
-    // inside the panel so typing a search never turns a page or opens the stats screen.
+    // inside the panel so typing a search or editing a memory never turns a page or opens Stats.
     ev.stopPropagation();
-    var typing = ev.target === elSearch;
+    var targetTag = ev.target && ev.target.tagName ? ev.target.tagName.toUpperCase() : "";
+    var inMemoryField = targetTag === "TEXTAREA" || (targetTag === "INPUT" && ev.target !== elSearch);
+    var typing = ev.target === elSearch || inMemoryField;
+    if (inMemoryField) return;
     if (ev.key === "Escape" && typing && elSearch.value) {
       ev.preventDefault();
       view.query = ""; elSearch.value = "";

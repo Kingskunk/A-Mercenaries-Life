@@ -117,6 +117,23 @@
       see: ["oxworth", "nora_greer", "odda_pellam"]
     },
 
+    {
+      id: "millstow", category: "places", title: "Millstow",
+      sub: "A lakeside milling village on Azure Lake under Hartwell",
+      tags: ["Millstow", "Hartwell", "Western Vale", "Trade"],
+      aliases: ["Millstow", "Azure Lake", "lakeside lane"],
+      link: ["Millstow"],
+      unlock: function (s) { return truthy(s.ml_seen) || truthy(s.ml_arrival_seen); },
+      body: function (s) {
+        var out = [
+          "A lakeside milling village on the southeastern shore of Azure Lake, north-west of Hartwell along the main road. Its gravel-and-earth lane runs between a reedy grassy verge along the water and a line of low fieldstone-and-timber cottages under moss-patched thatch and dark shingle roofs.",
+          "Two stone-and-timber windmills stand on the grassy rise behind the cottages, catching the steady breeze off Azure Lake to grind grain for the surrounding farms and supply barley loaves, flour, mixed farm goods, and lake fish along the shore and down the Hartwell road."
+        ];
+        return out;
+      },
+      see: ["western_vale", "oxworth", "palmcote"]
+    },
+
     /* ------------------------------------------------------------------ PEOPLE */
 
     {

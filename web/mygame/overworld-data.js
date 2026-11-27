@@ -88,7 +88,7 @@
   };
   var DEFAULT_WEATHER_ZONE = "reach";
   // A district (stats.current_district) the player is in while NOT on the overworld, where it is not the default zone. Langston is a town, not a tile; a Vale dungeon or farm would be listed here too.
-  var DISTRICT_ZONE = { langston: "vale", barolo: "vale", broadmead: "vale", fallowmere: "vale", oxworth: "vale", palmcote: "vale" };
+  var DISTRICT_ZONE = { langston: "vale", barolo: "vale", broadmead: "vale", fallowmere: "vale", oxworth: "vale", palmcote: "vale", millstow: "vale" };
   // The fields a zone owns: its key in a parked slot -> the stat it is swapped with. day/dayWet is the zone's actual rolled condition for today (calendar.txt weather_day/weather_day_wet); weather itself
   // is the live value calendar.txt's weather_now derives from day/winStart/winLen/winFiller and the clock, re-derived right after a swap, so parking it here is only a belt-and-braces copy.
   var WEATHER_FIELDS = { weather: "weather", day: "weather_day", dayWet: "weather_day_wet", tomorrow: "weather_tomorrow", missed: "forecast_missed", rain: "rain_streak", dry: "dry_streak", winStart: "wx_window_start", winLen: "wx_window_len", winFiller: "wx_window_filler" };
@@ -697,9 +697,12 @@
       territory: "gault",
       danger: 1,
       climate: -1,
-      walk: "The road follows the river toward a milling village, the turn of a waterwheel audible before the roofs come into view.",
-      info: "A small milling village on the river, built around its grain mill.",
-      here: "A grain mill turns slowly on the riverbank, with a cluster of roofs and storehouses gathered around it."
+      water: "the lake",
+      walk: "The road runs along the southeastern shore of Azure Lake toward a lakeside milling village, two stone-and-timber windmills turning on the rise above its cottages.",
+      info: "A lakeside milling village on the southeastern shore of Azure Lake, its cottages strung along the water beneath two wind-driven grain mills on the rise.",
+      here: "Low stone-and-thatch cottages line the eastern shore of Azure Lake beneath two stone-and-timber windmills turning in the lake breeze.",
+      hereNight: "Warm lamps glow in Millstow's lakeside cottages beneath the dark silhouettes of the two windmills, while moonlight lies pale across Azure Lake.",
+      hereStorm: "Whitecaps chop across Azure Lake and rain sweeps off the water across Millstow's lane, the windmill sails reefed bare against the gale."
     },
     ox: {
       name: "Fold Crossing", kind: "road", x: -10.40457923076923, y: -11.912846153846154,
