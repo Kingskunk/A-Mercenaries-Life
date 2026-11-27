@@ -57,7 +57,13 @@
       model: saved.model || "baidu/ernie-5.5-flash-preview:free",
       // AUTO REPLY (2026-11-26): off, Send posts the player's turn without a reply (the last word before /end);
       // "Get reply" (or Send with an empty box) asks for one. Kept per browser, like the mode and model.
-      autoReply: saved.autoReply !== false
+      autoReply: saved.autoReply !== false,
+      // MODEL PICKER (2026-11-26): starred model ids, and the picker's last filter, sort and hide-banned choice.
+      starredModels: Array.isArray(saved.starredModels) ? saved.starredModels : [],
+      modelFilter: saved.modelFilter || "all",
+      modelSort: saved.modelSort || "cost",
+      hideBanned: saved.hideBanned !== false,
+      hideModerated: saved.hideModerated === true
     };
   }
 
@@ -70,8 +76,15 @@
   var session = {
     active: false,
     id: null,
+    originId: null,
     pageId: null,
     cfg: null,
+    phase: "base",         // "base" | "escalated" (talk -> intimate) | "pillow_talk" (intimate -> locked-grade talk)
+    escalated: false,
+    escalatedAtTurn: 0,
+    pendingEscalate: false,
+    lockedEvalResult: null,
+    sessionNonce: "",      // suffix on sticky session_id when system prompt switches phase so cache re-pins cleanly
     openingText: "",
     turns: [],        // [{ role: "user" | "ai", text: "...", pEls: [<p>, ...] }]
     advisedStarters: null, // optional [{ label, prompt }] from manual AI advice
@@ -96,14 +109,21 @@
   }
 
   function saveActiveSession(draftText) {
-    if (!session.active || !session.id) return;
+    if (!session.active || !session.originId) return;
     try {
       var cleanTurns = session.turns.map(function (t) {
         return { role: t.role, text: t.text };
       });
       var payload = {
         key: session.pageId,
-        id: session.id,
+        id: session.originId,
+        activeId: session.id,
+        phase: session.phase || "base",
+        escalated: !!session.escalated,
+        escalatedAtTurn: Number(session.escalatedAtTurn) || 0,
+        pendingEscalate: !!session.pendingEscalate,
+        lockedEvalResult: session.lockedEvalResult || null,
+        sessionNonce: session.sessionNonce || "",
         turns: cleanTurns,
         advisedStarters: Array.isArray(session.advisedStarters) ? session.advisedStarters : null,
         advisedBeats: Array.isArray(session.advisedBeats) ? session.advisedBeats : null,
@@ -177,9 +197,12 @@
       }
     }
 
-    // Gear: either stripped/laid aside or worn. The scene's own `undressed` wins; otherwise its kind decides (SCENE_KINDS).
+    // Gear: either stripped/laid aside or worn. An escalated talk-to-intimate transition starts clothed so gear comes off naturally in prose;
+    // otherwise the scene's own `undressed` wins, or its kind decides (SCENE_KINDS).
     var kindGear = sceneKind(cfg);
-    var undressed = (cfg && cfg.undressed !== undefined) ? cfg.undressed !== false : (!kindGear || kindGear.undressed);
+    var undressed = (cfg && cfg._escalatedFromTalk)
+      ? false
+      : ((cfg && cfg.undressed !== undefined) ? cfg.undressed !== false : (!kindGear || kindGear.undressed));
     if (undressed) {
       if (s.weapon_prose && s.equipped_weapon_id !== "none") parts.push("Weapon laid nearby: " + s.weapon_prose);
       if (s.armor_prose && s.equipped_armor_id !== "none") parts.push("Armor removed: " + s.armor_prose);
@@ -365,10 +388,27 @@
     },
     talk: {
       role: "You are narrating an interactive roleplay scene inside a gritty low-fantasy RPG. This scene is a conversation, not a bedroom scene.",
-      rules: function () {
+      rules: function (cfg, s) {
+        if (cfg && cfg._pillowTalk) {
+          return [
+            "- POST-INTIMACY AFTERGLOW CONVERSATION: They have just finished being intimate and are resting together in quiet, unhurried afterglow. Keep the scene to relaxed talk, small affectionate gestures, and the quiet room around them. The companion speaks like a person, never like a guidebook, and does NOT push into another sexual round.",
+            "- SCENE END: End a reply with the tag [ACT_COMPLETE] once the talk reaches a natural close or the player takes their leave; never earlier."
+          ];
+        }
+        var esc = resolveEscalation(cfg, s);
+        if (esc && esc.allowed) {
+          return [
+            "- A CONVERSATION (OPEN TO ESCALATION): Begin grounded in talk, small actions, and the room around you. The companion has her own wants and moods: she can disagree, tease, banter, flirt warmly, ask the player things back, or lean close. She speaks like a person, never like a guidebook.",
+            "- ESCALATION SIGNAL: She is open to taking things further tonight. Do NOT coldly shut down flirtation or advances. If the player clearly initiates sex or invites her to bed (and she is willing in character), let her respond warmly and make her interest clear (pulling them toward the bed or barring the door), and end that reply with the tag [ESCALATE_INTIMATE]. Keep prose out of explicit sex until the transition occurs.",
+            "- SCENE END: End a reply with the tag [ACT_COMPLETE] once the talk reaches a natural close or the player takes their leave; never earlier."
+          ];
+        }
+        var boundary = (esc && esc.reasonNotNow)
+          ? esc.reasonNotNow
+          : "If the player pushes toward full sex, she answers naturally in character (teasing, naming another time, or simply declining for now) without turning weirdly cold, and the scene stays a conversation.";
         return [
-          "- A CONVERSATION: keep to talk, small actions and the room around you. The companion has her own wants and moods: she can disagree, tease, change the subject, ask the player things back, or fall quiet. She speaks like a person, never like a guidebook.",
-          "- If the player pushes toward sex, she answers in character (laughs it off, says not tonight, names another time, or simply says no) and the scene stays a conversation.",
+          "- A CONVERSATION: keep to talk, small actions and the room around you. The companion has her own wants and moods: she can disagree, tease, flirt warmly in character, change the subject, ask the player things back, or fall quiet. She speaks like a person, never like a guidebook.",
+          "- BOUNDARY FOR THIS VISIT: " + boundary,
           "- SCENE END: End a reply with the tag [ACT_COMPLETE] once the talk reaches a natural close or the player takes their leave; never earlier."
         ];
       },
@@ -379,6 +419,30 @@
       grader: null
     }
   };
+
+  function resolveEscalation(cfg, s) {
+    if (!cfg || !cfg.escalate || !cfg.escalate.target) return null;
+    var targetCfg = resolveSceneConfig(cfg.escalate.target);
+    if (!targetCfg) return null;
+    var allowed = typeof cfg.escalate.allowed === "function" ? !!cfg.escalate.allowed(s) : !!cfg.escalate.allowed;
+    var reasonNotNow = evalField(cfg.escalate.reasonNotNow, s) || "";
+    return {
+      spec: cfg.escalate,
+      targetCfg: targetCfg,
+      allowed: allowed,
+      reasonNotNow: reasonNotNow
+    };
+  }
+
+  function resolvePillowTalk(cfg) {
+    if (!cfg || !cfg.pillowTalk || !cfg.pillowTalk.target) return null;
+    var targetCfg = resolveSceneConfig(cfg.pillowTalk.target);
+    if (!targetCfg) return null;
+    return {
+      spec: cfg.pillowTalk,
+      targetCfg: targetCfg
+    };
+  }
 
   function sceneKind(cfg) {
     return SCENE_KINDS[(cfg && cfg.kind) || "intimate"] || null;
@@ -516,21 +580,88 @@
   }
 
   /*
-   * LORE ON DEMAND (2026-11-25). A character's `lore` (rp-data.js) names the lorebook entries (window.LOREBOOK, lorebook-*.js)
-   * they know: `know` (by tag or id) as a local knows them, `hearsay` (ids) as a name and a rumor only, `skip` (ids) never
-   * (their own entry, or one their notes already cover). Each turn, the entries whose title, aliases or link names appear in
-   * what is being said are sent, at most `max` (default 3): the player's latest words count most, then the last reply, then
-   * the turn before. Nothing matched, nothing sent. Only an entry's base text is used: the lines a lorebook body adds once the
-   * player has asked about something in a scene are the player's knowledge, not the character's.
-   * Keyword matching runs here in the page, so it works with the server down and the preview tool can test it offline.
-   * Semantic matches (the server's palace search) are meant to join these; see loreMatches' `extraIds`.
+   * KNOWLEDGE ON DEMAND (2026-11-26; Resources & Quest/RP_KNOWLEDGE_PLAN.md). A character's `knowledge` (rp-data.js) links them to
+   * knowledge pools (window.RPKnowledge, rp-knowledge/*.js) at a standing, "common", "learned" or "insider":
+   *   pools { poolId: standing }   rumors { entryId: "their own version" }   skip [entry ids]   max (default 3)
+   * A common character gets an entry's common text (no common text: unknown to them); learned gets the learned text, or the
+   * common where there is none; insider also gets the secret. A pool's rumors ride beside an entry as what folk say, or stand
+   * alone as hearsay when the entry itself is out of reach. Each turn, entries in reach whose title or aliases appear in what
+   * is being said are sent (the player's latest words count most, then the last reply, then the turn before), at most `max`.
+   * Entries found by meaning on the server rank below every keyword match. Keyword matching runs in the page, so it works
+   * with the server down and the preview tool can test it offline. The lorebook is the player's and is never read here.
    */
-  function loreEntryList() {
-    return (typeof window !== "undefined" && window.LOREBOOK && Array.isArray(window.LOREBOOK.entries)) ? window.LOREBOOK.entries : [];
+  function knowledgePools() {
+    var K = typeof window !== "undefined" && window.RPKnowledge;
+    return K && K.pools ? K.pools : {};
   }
-  function loreTerms(e) {
+  function knowledgeText(v, s) {
+    try { if (typeof v === "function") v = v(s || {}); } catch (err) { v = ""; }
+    return String(v || "").replace(/\s+/g, " ").trim();
+  }
+  function knowledgeIndex() {
+    var pools = knowledgePools(), idx = {};
+    Object.keys(pools).forEach(function (pid) {
+      (pools[pid].entries || []).forEach(function (e) { if (e && e.id && !idx[e.id]) idx[e.id] = e; });
+    });
+    return idx;
+  }
+  var STANDING_RANK = { common: 1, learned: 2, insider: 3 };
+  // Every entry the character can reach: { id: { entry, pool, standing, text, rumors: [..], hearsay } }.
+  function knowledgeReach(cfg, s) {
+    var scope = cfg && cfg.knowledge;
+    if (!scope || !scope.pools) return {};
+    var pools = knowledgePools(), skip = scope.skip || [], reach = {}, folk = {};
+    Object.keys(scope.pools).forEach(function (pid) {
+      var pool = pools[pid], st = scope.pools[pid], rank = STANDING_RANK[st] || 1;
+      if (!pool) return;
+      (pool.entries || []).forEach(function (e) {
+        if (!e || !e.id || skip.indexOf(e.id) !== -1) return;
+        if (typeof e.when === "function") {
+          var ok = false;
+          try { ok = !!e.when(s || {}); } catch (err) { ok = false; }
+          if (!ok) return;
+        }
+        var common = knowledgeText(e.common, s), er = rank, est = st;
+        // commonIn: a small place's common text is known only to people of the listed pools (its own region and its
+        // local pool), at their standing there; anyone else needs learned standing to know it at all.
+        if (Array.isArray(e.commonIn)) {
+          var local = 0;
+          e.commonIn.forEach(function (p) {
+            var r2 = Object.prototype.hasOwnProperty.call(scope.pools, p) ? (STANDING_RANK[scope.pools[p]] || 1) : 0;
+            if (r2 > local) local = r2;
+          });
+          if (!local && er < 2) common = "";
+          if (local > er) { er = local; est = Object.keys(STANDING_RANK).filter(function (k) { return STANDING_RANK[k] === local; })[0]; }
+        }
+        var text = er >= 2 ? (knowledgeText(e.learned, s) || common) : common;
+        if (er >= 3) { var sec = knowledgeText(e.secret, s); if (sec) text = text ? text + " " + sec : sec; }
+        if (!text) return;
+        if (!reach[e.id] || er > reach[e.id].rank) reach[e.id] = { entry: e, pool: pid, standing: est, rank: er, text: text, rumors: [], hearsay: false };
+      });
+      var rumors = pool.rumors || {};
+      Object.keys(rumors).forEach(function (eid) {
+        if (skip.indexOf(eid) !== -1) return;
+        var r = rumors[eid] || {};
+        var rt = rank >= 2 ? (knowledgeText(r.learned, s) || knowledgeText(r.common, s)) : knowledgeText(r.common, s);
+        if (rt) (folk[eid] = folk[eid] || []).push(rt);
+      });
+    });
+    var idx = knowledgeIndex(), own = scope.rumors || {};
+    Object.keys(folk).concat(Object.keys(own)).forEach(function (eid) {
+      var mine = own[eid] ? knowledgeText(own[eid], s) : "", said = folk[eid] || [];
+      if (!mine && !said.length) return;
+      if (!reach[eid]) {
+        if (!idx[eid]) return;
+        reach[eid] = { entry: idx[eid], pool: "", standing: "", rank: 0, text: "", rumors: [], hearsay: true };
+      }
+      reach[eid].rumors = said;
+      reach[eid].own = mine;
+    });
+    return reach;
+  }
+  function knowledgeTerms(e) {
     var seen = {}, out = [];
-    [e.title].concat(e.aliases || [], e.link || []).forEach(function (t) {
+    [e.title].concat(e.aliases || []).forEach(function (t) {
       t = String(t || "").trim();
       var k = t.toLowerCase();
       if (t.length >= 3 && !seen[k]) { seen[k] = true; out.push(t); }
@@ -540,60 +671,41 @@
   function termRegex(t) {
     return new RegExp("(^|[^A-Za-z])" + t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?=[^A-Za-z]|$)", "i");
   }
-  function cleanLoreText(txt) {
-    return String(txt || "").replace(/\[\[[^|\]]+\|([^\]]+)\]\]/g, "$1").replace(/\[\[([^\]]+)\]\]/g, "$1").replace(/\s+/g, " ").trim();
-  }
-  function loreBaseText(e) {
-    var b = e.body;
-    try { if (typeof b === "function") b = b({}); } catch (err) { b = ""; }
-    if (Array.isArray(b)) b = b[0];
-    return cleanLoreText(b);
-  }
   // focusParts: [the player's latest words, the last reply, the turn before], most important first.
-  function loreMatches(cfg, focusParts, extraIds) {
-    var scope = cfg && cfg.lore;
+  function knowledgeMatches(cfg, s, focusParts, extraIds) {
+    var scope = cfg && cfg.knowledge;
     if (!scope) return [];
-    var know = scope.know || {}, knowTags = (know.tags || []).map(function (x) { return String(x).toLowerCase(); });
-    // hearsay: a list of ids, or { id: "her own version of the rumor" } so a rumor sounds like hers, not the lorebook's.
-    var hearsayMap = Array.isArray(scope.hearsay) ? {} : (scope.hearsay || {});
-    var knowIds = know.ids || [], hearsay = Array.isArray(scope.hearsay) ? scope.hearsay : Object.keys(hearsayMap), skip = scope.skip || [];
+    var reach = knowledgeReach(cfg, s);
     var parts = (focusParts || []).map(function (p) { return String(p || ""); });
     var found = [];
-    loreEntryList().forEach(function (e) {
-      if (!e || !e.id || skip.indexOf(e.id) !== -1) return;
-      var isHearsay = hearsay.indexOf(e.id) !== -1;
-      var isKnown = knowIds.indexOf(e.id) !== -1 || (e.tags || []).some(function (t) { return knowTags.indexOf(String(t).toLowerCase()) !== -1; });
-      if (!isKnown && !isHearsay) return;
-      var score = 0, hit = "";
-      loreTerms(e).forEach(function (t) {
+    Object.keys(reach).forEach(function (id) {
+      var r = reach[id], score = 0, hit = "";
+      knowledgeTerms(r.entry).forEach(function (t) {
         var re = termRegex(t);
         for (var i = 0; i < parts.length; i++) {
           if (re.test(parts[i])) { var sc = (parts.length - i) * 10 + Math.min(t.length, 9); if (sc > score) { score = sc; hit = t; } break; }
         }
       });
       // A semantic hit (by meaning, from the server) ranks below every keyword match, in the server's order.
-      var semIdx = extraIds ? extraIds.indexOf(e.id) : -1;
+      var semIdx = extraIds ? extraIds.indexOf(id) : -1;
       if (!score && semIdx !== -1) { score = 1 + (extraIds.length - semIdx) / 100; hit = "(by meaning)"; }
-      if (score) found.push({ entry: e, hearsay: isHearsay && !isKnown, rumor: hearsayMap[e.id] || "", score: score, hit: hit });
+      if (score) found.push({ id: id, reach: r, score: score, hit: hit });
     });
     found.sort(function (a, b) { return b.score - a.score; });
     return found.slice(0, Math.max(1, Number(scope.max) || 3));
   }
-  function formatLoreMatch(m) {
-    var e = m.entry, head = e.title + (e.sub && !e.rp ? " (" + cleanLoreText(e.sub) + ")" : "");
-    if (m.hearsay) return "- " + e.title + ": hearsay only" + (m.rumor ? ", what she has heard: " + m.rumor : "") + ". She knows no more than that, and would say so.";
-    return "- " + head + ": " + loreRpText(e);
-  }
-  // The entry's `rp` line (lorebook-data.js: what a local would know, in brief) when it has one, else its base text.
-  // The server's lore room keeps the fuller base text (exportLoreEntries), which searches better.
-  function loreRpText(e) {
-    var rp = e.rp;
-    try { if (typeof rp === "function") rp = rp({}); } catch (err) { rp = ""; }
-    return rp ? cleanLoreText(rp) : loreBaseText(e);
+  function endStop(t) { t = String(t || "").trim(); return t && !/[.!?]["\u201d']?$/.test(t) ? t + "." : t; }
+  // name: the character, for their own version of a rumor ("Lina's own version: ...").
+  function formatKnowledgeMatch(m, name) {
+    var r = m.reach, title = r.entry.title;
+    var folk = r.rumors.length ? " Folk here say: " + r.rumors.map(endStop).join(" ") : "";
+    var own = r.own ? " " + (name ? name + "'s" : "Their") + " own version: " + endStop(r.own) : "";
+    if (r.hearsay) return "- " + title + ": hearsay only." + folk + own + " Knows no more than that, and would say so.";
+    return "- " + title + ": " + endStop(r.text) + folk + own;
   }
 
   function buildContextBlocks(cfg, s) {
-    var settingText = evalField(cfg.setting, s);
+    var settingText = [evalField(cfg.setting, s), evalField(cfg._transitionNote, s)].filter(Boolean).join(" ");
     var companionText = evalField(cfg.companion, s);
     // A scene adds its own lines after the character's (rp-data.js RP_CHARACTERS: scenePersona, sceneKnowledge).
     var personaText = [evalField(cfg.persona, s), evalField(cfg.scenePersona, s)].filter(Boolean).join(" ");
@@ -603,7 +715,7 @@
 
     // ORDER (2026-11-25), for prompt caching: a provider reuses only an identical start of the prompt, so what never changes
     // comes first (the companion, her persona, her world, her hidden tastes), then what changes from visit to visit (what she
-    // knows of the player, the calendar, the player, the room's light, NOW), and last what can change every turn (the lore
+    // knows of the player, the calendar, the player, the room's light, NOW), and last what can change every turn (the knowledge
     // matched to what is being said, and the memories fetched for it).
     var worldKnowledge = evalField(cfg.worldKnowledge, s);
     var P = playerRef(cfg, s), C = companionRef(cfg, s);
@@ -648,16 +760,16 @@
    * THE TURN'S CONTEXT (2026-11-25): what can change from one turn to the next goes in the user message, after the
    * conversation and just before the player's action, never in the system prompt. The system prompt then stays the same
    * for the whole visit and the conversation only grows at its end, so a provider can cache everything up to here.
-   * Holds: the lore matched to what is being said, the month list and week or the coins when they come up, and the
+   * Holds: the knowledge matched to what is being said, the month list and week or the coins when they come up, and the
    * memories fetched for this turn. Empty when none of them applies.
    */
   function buildTurnContext(cfg, s, memBlock, focusParts, semanticIds) {
     var C = companionRef(cfg, s), P = playerRef(cfg, s);
     var PU = P === "the player" ? "THE PLAYER" : P.toUpperCase() + " (THE PLAYER)";
     var out = [];
-    var lore = loreMatches(cfg, focusParts, semanticIds);
-    if (lore.length) {
-      out.push("WHAT " + C.toUpperCase() + " KNOWS ABOUT WHO AND WHAT IS BEING TALKED ABOUT (beyond these lines and her notes in the system prompt, she does not know more about them):\n" + lore.map(formatLoreMatch).join("\n"));
+    var known = knowledgeMatches(cfg, s, focusParts, semanticIds);
+    if (known.length) {
+      out.push("WHAT " + C.toUpperCase() + " KNOWS ABOUT WHO AND WHAT IS BEING TALKED ABOUT (beyond these lines and her notes in the system prompt, she does not know more about them):\n" + known.map(function (m) { return formatKnowledgeMatch(m, C); }).join("\n"));
     }
     var cal = calendarTriggered(focusParts), coin = coinTriggered(focusParts);
     if (cal || coin) {
@@ -744,13 +856,31 @@
   }
 
   function buildEvaluationUserPrompt(sysPrompt, mode, modelId) {
+    var escIdx = (session.escalated && session.escalatedAtTurn > 0) ? session.escalatedAtTurn : 0;
+    function formatEvalTurns(turnsSlice) {
+      if (!escIdx) return formatTurnsForPrompt(turnsSlice);
+      var startIdx = session.turns.length - turnsSlice.length;
+      var out = [];
+      for (var i = 0; i < turnsSlice.length; i++) {
+        if (startIdx + i === escIdx) {
+          out.push("--- INTIMATE ENCOUNTER BEGINS HERE (GRADE ONLY THIS PORTION) ---");
+        }
+        var t = turnsSlice[i];
+        out.push((t.role === "user" ? "PLAYER ACTION: " : "SCENE CONTINUATION:\n") + t.text);
+      }
+      return out.join("\n\n");
+    }
     function assemble(turnsSlice) {
       var historyLines = [];
       if (session.openingText) {
         historyLines.push("OPENING SCENE:\n" + session.openingText);
       }
-      historyLines.push("ENCOUNTER TRANSCRIPT:\n" + formatTurnsForPrompt(turnsSlice));
-      historyLines.push("TASK: Score the 4 categories strictly using the exact 5-line format (KINKS_SCORE, BOUNDARIES_SCORE, TRAITS_SCORE, PACING_SCORE, SUMMARY). Use exact Kink/Dislike labels from her profile and end every line with a period.");
+      historyLines.push("ENCOUNTER TRANSCRIPT:\n" + formatEvalTurns(turnsSlice));
+      historyLines.push(
+        escIdx
+          ? "TASK: This visit started as conversation and escalated at the marker above. Grade STRICTLY the intimate portion after the marker (using earlier talk only as background context) using the exact 5-line format (KINKS_SCORE, BOUNDARIES_SCORE, TRAITS_SCORE, PACING_SCORE, SUMMARY). Use exact Kink/Dislike labels from her profile and end every line with a period."
+          : "TASK: Score the 4 categories strictly using the exact 5-line format (KINKS_SCORE, BOUNDARIES_SCORE, TRAITS_SCORE, PACING_SCORE, SUMMARY). Use exact Kink/Dislike labels from her profile and end every line with a period."
+      );
       return historyLines.join("\n\n");
     }
 
@@ -837,8 +967,12 @@
   function parseSceneReadyResponse(rawText) {
     var s = String(rawText || "");
     var actComplete = /\[{1,2}\s*ACT[\s_]+COMPLETE[\s.!]*\]{1,2}/i.test(s);
-    var cleaned = s.replace(/\s*\[{1,2}\s*ACT[\s_]+COMPLETE[\s.!]*\]{1,2}[.!\s]*/gi, "\n").trim();
-    return { text: cleaned, actComplete: actComplete };
+    var escalateIntimate = /\[{1,2}\s*ESCALATE[\s_]+INTIMATE[\s.!]*\]{1,2}/i.test(s);
+    var cleaned = s
+      .replace(/\s*\[{1,2}\s*ACT[\s_]+COMPLETE[\s.!]*\]{1,2}[.!\s]*/gi, "\n")
+      .replace(/\s*\[{1,2}\s*ESCALATE[\s_]+INTIMATE[\s.!]*\]{1,2}[.!\s]*/gi, "\n")
+      .trim();
+    return { text: cleaned, actComplete: actComplete, escalateIntimate: escalateIntimate };
   }
 
   function shortenChipLabel(promptText) {
@@ -1039,8 +1173,8 @@
     return settings.model;
   }
 
-  // What the lore lookup reads: the player's latest words, then the turns before them, newest first (the opening prose last).
-  function loreFocusParts(playerText) {
+  // What the knowledge lookup reads: the player's latest words, then the turns before them, newest first (the opening prose last).
+  function knowledgeFocusParts(playerText) {
     var texts = (session.turns || []).map(function (t) { return t && t.text; }).filter(Boolean).reverse();
     if (playerText && texts[0] !== playerText) texts.unshift(playerText);
     var parts = texts.slice(0, 3);
@@ -1049,60 +1183,67 @@
   }
 
   /*
-   * SEMANTIC LORE (2026-11-26): the lorebook also lives on the Mempalace server as one room (server.py /sync_lore,
-   * /search_lore), so an entry can be found by meaning when nobody names it ("the old war", "the lords up north").
-   * The page sends its entries once per load when their version (a hash of the text) differs from the server's; each
-   * turn asks for hits above LORE_SEMANTIC_THRESHOLD. Hits only join the keyword matches, under the same character scope
-   * (loreMatches extraIds), ranked below any keyword match. With the server down, keyword matching still works alone.
+   * KNOWLEDGE BY MEANING (2026-11-26): every pool's entries also live on the Mempalace server as one room (server.py
+   * /sync_knowledge, /search_knowledge), so an entry can be found when nobody names it ("the old war", "the lords up north").
+   * One room for all pools: one search a turn, and the page keeps only hits inside the character's reach (knowledgeMatches
+   * extraIds), ranked below any keyword match. The page sends the entries once per load when their version (a hash of the
+   * text) differs from the server's. With the server down, keyword matching still works alone.
    */
-  var LORE_SEMANTIC_THRESHOLD = 0.45;
-  var loreSync = { done: false, busy: false };
-  function exportLoreEntries() {
-    return loreEntryList().filter(function (e) { return e && e.id; }).map(function (e) {
-      var head = e.title + (e.sub ? " (" + cleanLoreText(e.sub) + ")" : "");
-      var also = (e.aliases || []).filter(function (a) { return String(a).toLowerCase() !== String(e.title).toLowerCase(); });
-      return { id: e.id, text: head + "." + (also.length ? " Also called: " + also.join(", ") + "." : "") + " " + loreBaseText(e) };
+  var KNOWLEDGE_SEMANTIC_THRESHOLD = 0.45;
+  var knowledgeSync = { done: false, busy: false };
+  // What the room indexes for an entry: its pool, title, aliases and every text (as they read with no story flags set).
+  function exportKnowledgeEntries() {
+    var pools = knowledgePools(), out = [], seen = {};
+    Object.keys(pools).forEach(function (pid) {
+      (pools[pid].entries || []).forEach(function (e) {
+        if (!e || !e.id || seen[e.id]) return;
+        seen[e.id] = true;
+        var also = (e.aliases || []).filter(function (a) { return String(a).toLowerCase() !== String(e.title).toLowerCase(); });
+        var texts = [knowledgeText(e.common, {}), knowledgeText(e.learned, {}), knowledgeText(e.secret, {})].filter(Boolean);
+        out.push({ id: e.id, pool: pid, text: e.title + " (" + (pools[pid].title || pid) + ")." + (also.length ? " Also called: " + also.join(", ") + "." : "") + " " + texts.join(" ") });
+      });
     });
+    return out;
   }
-  function loreVersion(entries) {
+  function knowledgeVersion(entries) {
     var str = entries.map(function (e) { return e.id + "\u0001" + e.text; }).join("\u0002"), h = 5381;
     for (var i = 0; i < str.length; i++) h = ((h * 33) ^ str.charCodeAt(i)) >>> 0;
     return entries.length + "-" + h.toString(36);
   }
-  function syncLoreToServer() {
+  function syncKnowledgeToServer() {
     var baseUrl = getServerUrl();
-    if (!baseUrl || loreSync.done || loreSync.busy) return;
-    var entries = exportLoreEntries();
+    if (!baseUrl || knowledgeSync.done || knowledgeSync.busy) return;
+    var entries = exportKnowledgeEntries();
     if (!entries.length) return;
-    var version = loreVersion(entries);
+    var version = knowledgeVersion(entries);
     var post = function (body) {
-      return fetch(baseUrl + "/sync_lore", {
+      return fetch(baseUrl + "/sync_knowledge", {
         method: "POST",
         headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
         body: JSON.stringify(body)
       }).then(function (r) { return r.ok ? r.json() : null; });
     };
-    loreSync.busy = true;
+    knowledgeSync.busy = true;
     post({ version: version }).then(function (d) {
       if (d && d.current) return d;
       return post({ version: version, entries: entries });
-    }).then(function (d) { if (d) loreSync.done = true; })
+    }).then(function (d) { if (d) knowledgeSync.done = true; })
       .catch(function () {})
-      .then(function () { loreSync.busy = false; });
+      .then(function () { knowledgeSync.busy = false; });
   }
   // A search costs the server about 4.5s (it starts the mempalace command each time), so it only runs when the player's
   // line sounds like talk about something: a question, or words like know, heard, tell, remember, about.
-  var LORE_TALK_WORDS = /\?|\b(know|knew|heard|hear|tell|told|remember|about|who|what|where|why|ever|story|stories|rumou?rs?|news)\b/i;
+  var KNOWLEDGE_TALK_WORDS = /\?|\b(know|knew|heard|hear|tell|told|remember|about|who|what|where|why|ever|story|stories|rumou?rs?|news)\b/i;
   // Entry ids found by meaning for this turn, best first; [] when the line is not talk, or the server is down, slow (8s) or mining.
-  function fetchLoreHits(cfg, focusParts) {
+  function fetchKnowledgeHits(cfg, focusParts) {
     var baseUrl = getServerUrl();
     var query = (focusParts || []).slice(0, 2).join("\n").slice(0, 600);
-    if (!baseUrl || !cfg || !cfg.lore || !query || !LORE_TALK_WORDS.test(String((focusParts || [])[0] || ""))) return Promise.resolve([]);
+    if (!baseUrl || !cfg || !cfg.knowledge || !query || !KNOWLEDGE_TALK_WORDS.test(String((focusParts || [])[0] || ""))) return Promise.resolve([]);
     var timeout = new Promise(function (resolve) { setTimeout(function () { resolve([]); }, 8000); });
-    var ask = fetch(baseUrl + "/search_lore", {
+    var ask = fetch(baseUrl + "/search_knowledge", {
       method: "POST",
       headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
-      body: JSON.stringify({ query: query, limit: 6, threshold: LORE_SEMANTIC_THRESHOLD })
+      body: JSON.stringify({ query: query, limit: 6, threshold: KNOWLEDGE_SEMANTIC_THRESHOLD })
     }).then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) { return (d && Array.isArray(d.hits)) ? d.hits.map(function (h) { return h.id; }) : []; })
       .catch(function () { return []; });
@@ -1182,8 +1323,15 @@
   function resetMemorySessionState() {
     session.active = false;
     session.id = null;
+    session.originId = null;
     session.pageId = null;
     session.cfg = null;
+    session.phase = "base";
+    session.escalated = false;
+    session.escalatedAtTurn = 0;
+    session.pendingEscalate = false;
+    session.lockedEvalResult = null;
+    session.sessionNonce = "";
     session.openingText = "";
     session.turns = [];
     session.advisedStarters = null;
@@ -1221,13 +1369,16 @@
   RP.boonFor = boonFor;
   // For tools/rp_prompt_preview.js: the exact prompts a session would send, built from a scene id and a stats object.
   RP.resolveSceneConfig = resolveSceneConfig;
+  RP.resolveEscalation = resolveEscalation;
+  RP.resolvePillowTalk = resolvePillowTalk;
   RP.sceneKind = sceneKind;
   RP.SCENE_KINDS = SCENE_KINDS;
-  RP.loreMatches = loreMatches;
+  RP.knowledgeMatches = knowledgeMatches;
+  RP.knowledgeReach = knowledgeReach;
   RP.buildTurnContext = buildTurnContext;
-  RP.exportLoreEntries = exportLoreEntries;
-  RP.loreVersion = loreVersion;
-  RP.LORE_SEMANTIC_THRESHOLD = LORE_SEMANTIC_THRESHOLD;
+  RP.exportKnowledgeEntries = exportKnowledgeEntries;
+  RP.knowledgeVersion = knowledgeVersion;
+  RP.KNOWLEDGE_SEMANTIC_THRESHOLD = KNOWLEDGE_SEMANTIC_THRESHOLD;
   RP.companionKnowsName = companionKnowsName;
   RP.memoryOrder = memoryOrder;
   RP.memoryTranscript = memoryTranscript;
@@ -1315,7 +1466,7 @@
   }
 
   function checkServerAndModels(box) {
-    syncLoreToServer();
+    syncKnowledgeToServer();
     var dot = box.querySelector(".rp-dot");
     var badgeText = box.querySelector(".rp-badge-text");
     var modelSelect = box.querySelector(".rp-model-select");
@@ -1358,6 +1509,7 @@
           html += '<option value="' + esc(m.id) + '"' + sel + '>' + esc(m.name || m.id) + '</option>';
         });
         if (html) modelSelect.innerHTML = html;
+        if (typeof session.onModelsLoaded === "function") session.onModelsLoaded();
       })
       .catch(function () {});
 
@@ -1387,16 +1539,24 @@
   ];
 
   function mountConsole(markerParagraph, sceneId) {
-    var cfg = resolveSceneConfig(sceneId);
-    if (!cfg) return;
+    var baseCfg = resolveSceneConfig(sceneId);
+    if (!baseCfg) return;
+    var cfg = baseCfg;
     var textEl = markerParagraph.parentNode;
     if (!textEl) return;
 
     var s = statsNow();
     session.active = true;
     session.id = sceneId;
+    session.originId = sceneId;
     session.pageId = currentPageKey(sceneId);
     session.cfg = cfg;
+    session.phase = "base";
+    session.escalated = false;
+    session.escalatedAtTurn = 0;
+    session.pendingEscalate = false;
+    session.lockedEvalResult = null;
+    session.sessionNonce = "";
     session.turns = [];
     session.advisedStarters = null;
     session.advisedBeats = null;
@@ -1428,9 +1588,10 @@
       '<div class="rp-head">' +
         '<div class="rp-title-wrap">' +
           '<div class="rp-title">\u25C8 ' + esc(title) + '</div>' +
-          (subtitle ? '<div class="rp-sub">' + esc(subtitle) + '</div>' : '') +
+          '<div class="rp-sub"' + (subtitle ? '' : ' style="display:none"') + '>' + esc(subtitle) + '</div>' +
         '</div>' +
         '<div class="rp-controls">' +
+          '<span class="rp-locked-boon" hidden></span>' +
           '<span class="rp-badge" title="Connection status to MemPalace & Perchance">' +
             '<span class="rp-dot"></span><span class="rp-badge-text">Checking...</span>' +
           '</span>' +
@@ -1440,12 +1601,38 @@
             '<option value="perchance"' + (settings.mode === "perchance" ? " selected" : "") + '>Perchance AI (Unrestricted)</option>' +
             '<option value="openrouter"' + (settings.mode === "openrouter" ? " selected" : "") + '>OpenRouter Free Models</option>' +
           '</select>' +
-          '<select class="rp-select rp-model-select" title="OpenRouter Model"' + (settings.mode === "perchance" ? ' style="display:none"' : '') + '>' +
+          '<button type="button" class="rp-model-chip" data-act="models" title="Choose the OpenRouter model"' + (settings.mode === "perchance" ? ' style="display:none"' : '') + '>' + esc(settings.model.split("/").pop()) + '</button>' +
+          '<select class="rp-select rp-model-select" title="OpenRouter Model" style="display:none">' +
             '<option value="' + esc(settings.model) + '">' + esc(settings.model.split("/").pop()) + '</option>' +
           '</select>' +
         '</div>' +
       '</div>' +
       '<div class="rp-body">' +
+        '<div class="rp-drawer rp-model-drawer" hidden>' +
+          '<div class="rp-drawer-head">' +
+            '<span>Choose a model</span>' +
+            '<button type="button" class="rp-btn rp-btn-sm" data-act="close-models">\u00D7 Close</button>' +
+          '</div>' +
+          '<div class="rp-model-tools">' +
+            '<input type="search" class="rp-model-search" placeholder="Search models">' +
+            '<div class="rp-model-filters">' +
+              '<button type="button" data-mfilter="all">All</button>' +
+              '<button type="button" data-mfilter="free">Free</button>' +
+              '<button type="button" data-mfilter="paid">Paid</button>' +
+              '<button type="button" data-mfilter="starred">\u2605 Starred</button>' +
+            '</div>' +
+            '<label class="rp-mem-check"><input type="checkbox" class="rp-model-hide-banned"><span>Hide banned</span></label>' +
+            '<label class="rp-mem-check" title="OpenRouter screens these prompts and refuses ones it flags"><input type="checkbox" class="rp-model-hide-moderated"><span>Hide moderated</span></label>' +
+            '<select class="rp-select rp-model-sort" title="Sort">' +
+              '<option value="cost">Cheapest</option>' +
+              '<option value="newest">Newest</option>' +
+              '<option value="context">Largest context</option>' +
+              '<option value="used">Most used by you</option>' +
+            '</select>' +
+          '</div>' +
+          '<div class="rp-model-count"></div>' +
+          '<div class="rp-model-grid"></div>' +
+        '</div>' +
         '<div class="rp-drawer rp-mem-drawer" hidden>' +
           '<div class="rp-drawer-head">' +
             '<span>Companion Memories</span>' +
@@ -1458,6 +1645,7 @@
           '<span class="rp-typing-text">Writing response...</span>' +
         '</div>' +
         '<div class="rp-eval-card" hidden></div>' +
+        '<div class="rp-escalate-bar" hidden></div>' +
         '<div class="rp-composer">' +
           '<div class="rp-starters"></div>' +
           '<div class="rp-beats" style="display:none"></div>' +
@@ -1466,6 +1654,7 @@
             '<div class="rp-actions-left">' +
               '<button type="button" class="rp-btn rp-btn-primary" data-act="send">Send / Continue</button>' +
               '<button type="button" class="rp-btn rp-btn-advise" data-act="advise" title="Ask the AI to advise context-aware choices for this moment (replaces static chips)">\u2726 Advise</button>' +
+              '<button type="button" class="rp-btn rp-btn-escalate" data-act="escalate-manual" hidden title="Transition this conversation into the intimate scene (or type /intimate)"></button>' +
               '<button type="button" class="rp-btn rp-btn-reply" data-act="reply" title="Ask for a reply to what you have posted"' + (settings.autoReply ? ' hidden' : '') + '>Get reply</button>' +
             '</div>' +
             '<div class="rp-actions-right">' +
@@ -1479,6 +1668,11 @@
 
     textEl.replaceChild(box, markerParagraph);
 
+    var titleEl = box.querySelector(".rp-title");
+    var subEl = box.querySelector(".rp-sub");
+    var lockedBoonEl = box.querySelector(".rp-locked-boon");
+    var escalateBarEl = box.querySelector(".rp-escalate-bar");
+    var escalateManualBtn = box.querySelector('[data-act="escalate-manual"]');
     var inputEl = box.querySelector(".rp-input");
     var statusEl = box.querySelector(".rp-status");
     var sendBtn = box.querySelector('[data-act="send"]');
@@ -1494,8 +1688,185 @@
     var typingEl = box.querySelector(".rp-typing");
     var typingTextEl = box.querySelector(".rp-typing-text");
     var memDrawer = box.querySelector(".rp-mem-drawer");
+    var modelChip = box.querySelector(".rp-model-chip");
+    var modelDrawer = box.querySelector(".rp-model-drawer");
+    var modelGrid = box.querySelector(".rp-model-grid");
+    var modelCount = box.querySelector(".rp-model-count");
+    var modelSearch = box.querySelector(".rp-model-search");
+    var modelSortSel = box.querySelector(".rp-model-sort");
+    var modelHideBanned = box.querySelector(".rp-model-hide-banned");
+    var modelHideModerated = box.querySelector(".rp-model-hide-moderated");
     var memList = box.querySelector(".rp-mem-list");
     var saveMemCb = box.querySelector(".rp-save-mem-cb");
+
+    function insertPhaseDivider(labelText) {
+      if (!labelText || !box || !box.parentNode) return;
+      var div = document.createElement("div");
+      div.className = "rp-phase-divider";
+      div.textContent = "\u2014 " + labelText + " \u2014";
+      box.parentNode.insertBefore(div, box);
+    }
+
+    function updateHeaderForCfg() {
+      var st = statsNow();
+      var t = evalField(cfg.title, st) || "Roleplay Session";
+      var sub = evalField(cfg.subtitle, st) || "";
+      if (titleEl) titleEl.textContent = "\u25C8 " + t;
+      if (subEl) {
+        subEl.textContent = sub;
+        subEl.style.display = sub ? "" : "none";
+      }
+      if (lockedBoonEl) {
+        if (session.lockedEvalResult) {
+          var lockedRating = !session.lockedEvalResult.fallback ? (Number(session.lockedEvalResult.rating) || 0) : 0;
+          var lockedCfg = session.escalated && baseCfg.escalate ? resolveSceneConfig(baseCfg.escalate.target) : baseCfg;
+          var lb = boonFor(lockedCfg || cfg, lockedRating);
+          lockedBoonEl.textContent = "\u2605 Locked: " + (session.lockedEvalResult.fallback ? "Base" : (lockedRating + "/20")) + " \u00B7 " + lb.bonusLabel + " (" + lb.label + ")";
+          lockedBoonEl.hidden = false;
+        } else {
+          lockedBoonEl.hidden = true;
+          lockedBoonEl.textContent = "";
+        }
+      }
+    }
+
+    function renderEscalateControls() {
+      var st = statsNow();
+      var escInfo = session.phase === "base" ? resolveEscalation(baseCfg, st) : null;
+      var canEsc = !!(escInfo && escInfo.allowed && !session.evalResult && !session.lockedEvalResult);
+      if (escalateManualBtn) {
+        if (canEsc) {
+          escalateManualBtn.textContent = "\u2726 " + (escInfo.spec.buttonLabel || "Move to bed");
+          escalateManualBtn.hidden = false;
+          escalateManualBtn.disabled = !!session.busy;
+        } else {
+          escalateManualBtn.hidden = true;
+        }
+      }
+      if (escalateBarEl) {
+        if (canEsc && session.pendingEscalate) {
+          var promptTitle = evalField(escInfo.spec.promptTitle, st) || "She is ready to take this further";
+          var confirmLabel = escInfo.spec.confirmLabel || "Continue to intimate scene";
+          escalateBarEl.innerHTML =
+            '<span class="rp-escalate-text">\u2726 ' + esc(promptTitle) + '</span>' +
+            '<div class="rp-escalate-actions">' +
+              '<button type="button" class="rp-btn rp-btn-primary" data-act="confirm-escalate">' + esc(confirmLabel) + ' \u2192</button>' +
+              '<button type="button" class="rp-btn" data-act="dismiss-escalate">Keep talking</button>' +
+            '</div>';
+          escalateBarEl.hidden = false;
+        } else {
+          escalateBarEl.hidden = true;
+          escalateBarEl.innerHTML = "";
+        }
+      }
+    }
+
+    function performEscalation(isRestore) {
+      var st = statsNow();
+      var escInfo = resolveEscalation(baseCfg, st);
+      if (!escInfo || !escInfo.targetCfg) return false;
+      if (!isRestore && !escInfo.allowed) return false;
+      var nextCfg = {};
+      Object.keys(escInfo.targetCfg).forEach(function (k) { nextCfg[k] = escInfo.targetCfg[k]; });
+      nextCfg._escalatedFromTalk = true;
+      nextCfg._transitionNote = evalField(escInfo.spec.transitionNote, st) || "The conversation just turned physical; they are moving toward the bed and are still clothed until clothes come off in the scene.";
+      cfg = nextCfg;
+      session.cfg = cfg;
+      session.id = cfg.id || escInfo.spec.target;
+      session.phase = "escalated";
+      session.escalated = true;
+      session.pendingEscalate = false;
+      session.sceneReady = false;
+      session.naturalComplete = false;
+      session.sessionNonce = "_esc";
+      if (!isRestore) {
+        session.escalatedAtTurn = session.turns.length;
+        session.advisedStarters = null;
+        session.advisedBeats = null;
+        insertPhaseDivider(escInfo.spec.dividerText || "Moving to the bed");
+      }
+      staticStarters = cfg.starters || [];
+      staticBeats = cfg.beats || DEFAULT_BEATS;
+      st.rp_escalated = true;
+      st.ambience_intimacy = true;
+      if (escInfo.spec.subplace) {
+        st.scenery_subplace = escInfo.spec.subplace;
+        if (window.Scenery && typeof window.Scenery.refresh === "function") {
+          try { window.Scenery.refresh(); } catch (e) {}
+        }
+      }
+      if (window.Ambience && typeof window.Ambience.refresh === "function") {
+        try { window.Ambience.refresh(); } catch (e) {}
+      }
+      var nextBtn = document.querySelector("#main button.next");
+      if (nextBtn && escInfo.spec.nextBtnLabel) {
+        nextBtn.textContent = escInfo.spec.nextBtnLabel;
+      }
+      updateHeaderForCfg();
+      renderEscalateControls();
+      renderChips();
+      if (!isRestore) {
+        saveActiveSession(inputEl ? inputEl.value : "");
+        setStatus("Intimate scene active — hidden tastes and grading are now live. Type \"/end\" when finished.");
+      }
+      updateButtons();
+      return true;
+    }
+
+    function performPillowTalk(isRestore) {
+      var st = statsNow();
+      var sourceCfg = (session.escalated && baseCfg.escalate) ? resolveSceneConfig(baseCfg.escalate.target) : baseCfg;
+      var ptInfo = resolvePillowTalk(sourceCfg || cfg);
+      if (!ptInfo || !ptInfo.targetCfg) return false;
+      if (!isRestore) {
+        session.lockedEvalResult = session.evalResult;
+      }
+      var lockedRating = (session.lockedEvalResult && !session.lockedEvalResult.fallback) ? (Number(session.lockedEvalResult.rating) || 0) : 0;
+      st.rp_encounter_rating = lockedRating;
+      st.rp_escalated = !!session.escalated;
+      st.ambience_intimacy = false;
+      if (window.Ambience && typeof window.Ambience.refresh === "function") {
+        try { window.Ambience.refresh(); } catch (e) {}
+      }
+      var nextCfg = {};
+      Object.keys(ptInfo.targetCfg).forEach(function (k) { nextCfg[k] = ptInfo.targetCfg[k]; });
+      nextCfg.kind = "talk";
+      nextCfg._pillowTalk = true;
+      nextCfg.supportsEvaluation = false;
+      nextCfg.undressed = true;
+      nextCfg._transitionNote = evalField(ptInfo.spec.settingNote, st) || "They have just finished being intimate and are resting together in warm, quiet afterglow.";
+      cfg = nextCfg;
+      session.cfg = cfg;
+      session.id = ptInfo.spec.target;
+      session.phase = "pillow_talk";
+      session.pendingEscalate = false;
+      session.evalResult = null;
+      session.evalBypass = true;
+      session.sceneReady = true;
+      session.sessionNonce = "_pt";
+      if (!isRestore) {
+        session.advisedStarters = null;
+        session.advisedBeats = null;
+        insertPhaseDivider(ptInfo.spec.dividerText || "Quiet afterglow");
+      }
+      staticStarters = cfg.starters || [];
+      staticBeats = cfg.beats || DEFAULT_BEATS;
+      if (evalCardEl) {
+        evalCardEl.hidden = true;
+        evalCardEl.innerHTML = "";
+      }
+      if (composerEl) composerEl.hidden = false;
+      updateHeaderForCfg();
+      renderEscalateControls();
+      renderChips();
+      if (!isRestore) {
+        saveActiveSession(inputEl ? inputEl.value : "");
+        setStatus("Grade locked — linger and talk as long as you like, then click Next below when ready.");
+      }
+      updateButtons();
+      if (!isRestore && inputEl && inputEl.focus) inputEl.focus();
+      return true;
+    }
 
     function renderChips() {
       if (starterWrap) {
@@ -1572,10 +1943,13 @@
       sendBtn.disabled = session.busy;
       if (adviseBtn) adviseBtn.disabled = session.busy;
       if (replyBtn) replyBtn.disabled = session.busy || !!session.evalResult;
+      // The chip's cost a turn grows with the scene.
+      if (!session.busy) renderModelChip();
       Array.prototype.forEach.call(box.querySelectorAll(".rp-chip"), function (c) {
         c.disabled = session.busy;
       });
       if (typingEl) typingEl.hidden = !session.busy;
+      renderEscalateControls();
       updateChipsVisibility();
       syncChoiceScriptNextBtn();
     }
@@ -1596,8 +1970,9 @@
       var usrPrompt = buildPromptForMode(chosenMode, settings.model);
       // One id per scene on this page (and per job: the narrator, the helper and the grader each have their own prompt),
       // so OpenRouter keeps the scene on the provider that holds its prompt cache (server.py universal_core: session_id).
+      // sessionNonce separates cache buckets cleanly when a session escalates to intimate or shifts to pillow talk.
       var job = String(actionLabel || "Generating").toLowerCase().replace(/[^a-z]+/g, "");
-      var stickyId = ("cs_" + (session.pageId || session.id || "rp") + "_" + (statsNow().rp_world_id || "") + "_" + job).replace(/[^A-Za-z0-9_:.-]/g, "_").slice(0, 200);
+      var stickyId = ("cs_" + (session.pageId || session.id || "rp") + (session.sessionNonce || "") + "_" + (statsNow().rp_world_id || "") + "_" + job).replace(/[^A-Za-z0-9_:.-]/g, "_").slice(0, 200);
       return fetch(baseUrl + "/rp_generate", {
         method: "POST",
         headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
@@ -1762,6 +2137,11 @@
         if (result.misses) feedbackLines.push('<div><strong>Where you slipped:</strong> ' + esc(result.misses) + '</div>');
       }
 
+      var ptInfo = !session.lockedEvalResult ? resolvePillowTalk(cfg) : null;
+      var pillowBtnHtml = ptInfo
+        ? '<button type="button" class="rp-btn rp-btn-pillow" data-act="pillow-talk" title="Lock this grade and boon, then linger in quiet afterglow conversation">' + esc(ptInfo.spec.buttonLabel || "Accept Grade & Pillow Talk") + '</button>'
+        : '';
+
       evalCardEl.innerHTML =
         '<div class="rp-eval-head">' +
           '<div class="rp-eval-title">\u2726 Post-Scene Review</div>' +
@@ -1778,12 +2158,14 @@
           '<button type="button" class="rp-btn" data-act="resume-rp" title="Return to the scene and keep roleplaying before finishing">\u2190 Continue Roleplay</button>' +
           '<div class="rp-actions-left">' +
             '<button type="button" class="rp-btn rp-btn-advise" data-act="retry-eval" title="Re-run the AI evaluation before continuing (works with any engine or model selected above)">\u21BB Re-evaluate</button>' +
+            pillowBtnHtml +
             '<button type="button" class="rp-btn rp-btn-primary" data-act="finish-eval">Continue &amp; Rest \u2192</button>' +
           '</div>' +
         '</div>';
 
       evalCardEl.hidden = false;
       if (composerEl) composerEl.hidden = true;
+      renderEscalateControls();
       syncChoiceScriptNextBtn(nextBtn);
       if (evalCardEl.scrollIntoView) {
         evalCardEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -1791,6 +2173,14 @@
     }
 
     function runPostSceneEvaluation(nextBtn) {
+      if (session.lockedEvalResult) {
+        var lockedVal = !session.lockedEvalResult.fallback ? (Number(session.lockedEvalResult.rating) || 0) : 0;
+        statsNow().rp_encounter_rating = lockedVal;
+        statsNow().rp_escalated = !!session.escalated;
+        session.evalBypass = true;
+        if (nextBtn) nextBtn.click();
+        return;
+      }
       if (session.evalResult) {
         renderEvalCard(session.evalResult, nextBtn);
         return;
@@ -1813,7 +2203,10 @@
       setStatus(waitMsg);
       if (typingTextEl) typingTextEl.textContent = waitMsg;
 
-      var userTurnsCount = session.turns.filter(function (t) { return t.role === "user"; }).length;
+      var evalTurnsSlice = (session.escalated && session.escalatedAtTurn > 0)
+        ? session.turns.slice(session.escalatedAtTurn)
+        : session.turns;
+      var userTurnsCount = evalTurnsSlice.filter(function (t) { return t.role === "user"; }).length;
       var evalParseOpts = { userTurns: userTurnsCount, profile: profile };
       var evalSys = buildEvaluationSystemPrompt(cfg, statsNow(), profile);
       dispatchRpGenerate(
@@ -1879,14 +2272,36 @@
 
     session.triggerEval = runPostSceneEvaluation;
 
-    // Restore turns, advised chips, draft, or pending evaluation card if the page was refreshed or returned to from Show Stats / Menu
+    // Restore turns, phase (escalated / pillow talk), locked grade, advised chips, draft, or pending evaluation card
+    // if the page was refreshed or returned to from Show Stats / Menu
     var restored = loadActiveSession(sceneId);
     if (restored && Array.isArray(restored.turns) && restored.turns.length > 0) {
-      restored.turns.forEach(function (t) {
+      var escIdxRestore = (restored.escalated && Number(restored.escalatedAtTurn) > 0) ? Number(restored.escalatedAtTurn) : -1;
+      var escInfoRestore = resolveEscalation(baseCfg, statsNow());
+      restored.turns.forEach(function (t, idx) {
+        if (idx === escIdxRestore && escInfoRestore) {
+          insertPhaseDivider(escInfoRestore.spec.dividerText || "Moving to the bed");
+        }
         var turnObj = createTurnBlock(t.role, t.text, box);
         if (turnObj) session.turns.push(turnObj);
       });
+      if (escIdxRestore === restored.turns.length && escInfoRestore) {
+        insertPhaseDivider(escInfoRestore.spec.dividerText || "Moving to the bed");
+      }
       setStatus("Session restored (" + Math.ceil(session.turns.length / 2) + " exchange(s)).");
+    }
+    if (restored && restored.escalated) {
+      session.escalatedAtTurn = Number(restored.escalatedAtTurn) || 0;
+      performEscalation(true);
+    }
+    if (restored && restored.lockedEvalResult) {
+      session.lockedEvalResult = restored.lockedEvalResult;
+    }
+    if (restored && restored.phase === "pillow_talk") {
+      performPillowTalk(true);
+    }
+    if (restored && typeof restored.pendingEscalate === "boolean") {
+      session.pendingEscalate = restored.pendingEscalate;
     }
     if (restored && Array.isArray(restored.advisedStarters)) {
       session.advisedStarters = restored.advisedStarters;
@@ -1901,7 +2316,7 @@
       session.saveMemory = restored.saveMemory;
       if (saveMemCb) saveMemCb.checked = restored.saveMemory;
     }
-    if (restored && restored.evalResult) {
+    if (restored && restored.evalResult && session.phase !== "pillow_talk") {
       session.evalResult = restored.evalResult;
     }
     if (restored && typeof restored.sceneReady === "boolean") {
@@ -1910,6 +2325,7 @@
     if (restored && typeof restored.naturalComplete === "boolean") {
       session.naturalComplete = restored.naturalComplete;
     }
+    updateHeaderForCfg();
     renderChips();
     updateButtons();
     setTimeout(function () { syncChoiceScriptNextBtn(); }, 0);
@@ -1958,6 +2374,245 @@
       else postTurnOnly(playerText);
     }
 
+    /*
+     * MODEL PICKER (2026-11-26): cards built from /get_free_models (server.py MODEL CARDS and MODEL RECORD): prices, an
+     * estimated cost a turn for this scene's prompt, context, release date, thinking, ban status and the player's own
+     * record with the model. Picking a card sets the hidden select, which the rest of rp.js reads.
+     */
+    var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    var REPLY_TOKENS = 450;
+    function modelById(id) {
+      var list = session.freeModels || [];
+      for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+      return null;
+    }
+    function shortModelName(m) {
+      var n = String((m && m.name) || "");
+      var i = n.indexOf(": ");
+      return i !== -1 ? n.slice(i + 2) : n;
+    }
+    function modelMaker(m) {
+      var n = String((m && m.name) || "");
+      var i = n.indexOf(": ");
+      return i !== -1 ? n.slice(0, i) : String((m && m.id) || "").split("/")[0];
+    }
+    // This scene's prompt as it stands, in tokens: the system message, the opening and every turn, plus the turn's context.
+    function scenePromptTokens() {
+      var sys = "";
+      try { sys = buildSystemPrompt(cfg, statsNow()); } catch (e) {}
+      var turns = (session.turns || []).map(function (x) { return x.text; }).join("\n\n");
+      return estimateTokens(sys) + estimateTokens(session.openingText || "") + estimateTokens(turns) + 400;
+    }
+    function turnCost(m, promptTokens) {
+      if (!m || m.is_free) return null;
+      var inP = (m.prompt_per_1m || 0) / 1e6, outP = (m.completion_per_1m || 0) / 1e6;
+      var plain = promptTokens * inP + REPLY_TOKENS * outP;
+      var cached = null;
+      if (m.cache_read_per_1m != null) {
+        var fresh = Math.min(promptTokens, 300);
+        cached = (promptTokens - fresh) * (m.cache_read_per_1m / 1e6) + fresh * inP + REPLY_TOKENS * outP;
+      }
+      return { plain: plain, cached: cached };
+    }
+    function money(v) {
+      if (v == null) return "";
+      if (v === 0) return "$0";
+      if (v < 0.01) return "$" + v.toPrecision(2).replace(/0+$/, "").replace(/\.$/, "");
+      return "$" + v.toFixed(2);
+    }
+    function per1m(v) {
+      if (v == null) return "\u2013";
+      if (v === 0) return "$0";
+      return v < 0.01 ? "$" + v.toFixed(4) : v < 0.1 ? "$" + v.toFixed(3) : "$" + v.toFixed(2);
+    }
+    function kTokens(n) {
+      if (!n) return "\u2013";
+      if (n >= 1000000) return (Math.round(n / 100000) / 10) + "M";
+      return Math.round(n / 1000) + "k";
+    }
+    function released(ts) {
+      if (!ts) return "\u2013";
+      var d = new Date(ts * 1000);
+      return MONTHS[d.getMonth()] + " " + d.getFullYear();
+    }
+    function banInfo(m) {
+      var st = m.local_status || {};
+      if (st.is_shackled) {
+        var h = st.unban_at ? Math.max(1, Math.ceil((st.unban_at * 1000 - Date.now()) / 3600000)) : 0;
+        return { banned: true, label: h ? "Banned, back in " + h + "h" : "Banned" };
+      }
+      if (st.strikes) return { banned: false, label: st.strikes + "/3 strikes" };
+      return { banned: false, label: "" };
+    }
+    function isStarred(id) { return settings.starredModels.indexOf(id) !== -1; }
+
+    function renderModelChip() {
+      if (!modelChip) return;
+      var m = modelById(settings.model);
+      if (!m) { modelChip.textContent = settings.model.split("/").pop(); return; }
+      var c = turnCost(m, scenePromptTokens());
+      var cost = m.is_free ? "Free" : (c ? "\u2248" + money(100 * (c.cached != null ? c.cached : c.plain)) + " / 100 turns" : "");
+      modelChip.textContent = shortModelName(m) + " \u00B7 " + cost + " \u00B7 " + kTokens(m.context_length);
+    }
+
+    // BEST DEAL (server.py): a paid card is priced from the provider the router picks first (m.via); m.providers lists
+    // them all in that order, with uptime over the last 30 minutes.
+    function priceRange(m) {
+      var ps = m.providers || [];
+      if (ps.length < 2) return "";
+      var lo = Infinity, hi = 0;
+      ps.forEach(function (p) { lo = Math.min(lo, p.prompt); hi = Math.max(hi, p.prompt); });
+      return " · in " + per1m(lo) + "–" + per1m(hi) + " across " + ps.length + " providers";
+    }
+    function providersHtml(m) {
+      var ps = m.providers || [];
+      if (!ps.length) return "";
+      var rows = ps.map(function (p, i) {
+        var up = p.uptime == null ? "–" : Math.round(p.uptime) + "%";
+        return '<tr class="' + (i === 0 ? "best" : "") + (p.uptime != null && p.uptime <= 0 ? " down" : "") + '">' +
+          '<td>' + esc(p.name) + '</td><td>' + per1m(p.prompt) + '</td><td>' + per1m(p.completion) + '</td><td>' + per1m(p.cache_read) + '</td><td>' + up + '</td></tr>';
+      }).join("");
+      return '<details class="rp-mdesc rp-mproviders"><summary>Providers (' + ps.length + ')</summary>' +
+        '<table><thead><tr><th>Provider</th><th>In</th><th>Out</th><th>Cache</th><th>Up</th></tr></thead><tbody>' + rows + '</tbody></table></details>';
+    }
+
+    function modelCardHtml(m, promptTokens) {
+      var c = turnCost(m, promptTokens);
+      var ban = banInfo(m);
+      var u = m.usage;
+      var badges = [
+        m.is_free ? '<span class="rp-mbadge free">Free</span>' : '<span class="rp-mbadge paid">Paid</span>',
+        m.thinking ? '<span class="rp-mbadge think" title="Reasons before it replies: slower, often better">Thinking</span>' : '',
+        m.moderated ? '<span class="rp-mbadge warn" title="OpenRouter screens these prompts and refuses ones it flags">Moderated</span>' : '',
+        (u && u.refusals && u.turns && u.refusals / (u.turns + (u.failures || 0)) >= 0.2) ? '<span class="rp-mbadge bad" title="Refused often in your scenes">Refuses</span>' : '',
+        ban.label ? '<span class="rp-mbadge ' + (ban.banned ? "bad" : "warn") + '">' + esc(ban.label) + '</span>' : '',
+        m.id === settings.model ? '<span class="rp-mbadge cur">In use</span>' : ''
+      ].join("");
+      // Per 100 turns: a single turn of a cheap model is a fraction of a cent, too small to read.
+      var costLine = m.is_free ? "Free" :
+        ("\u2248" + money(100 * c.plain) + " / 100 turns" + (c.cached != null ? " \u00B7 \u2248" + money(100 * c.cached) + " cached" : ""));
+      var record = u && (u.turns || u.failures) ?
+        ("You: " + u.turns + " turn" + (u.turns === 1 ? "" : "s") +
+          (u.avg_secs != null ? " \u00B7 " + u.avg_secs + "s avg" : "") +
+          (u.avg_cost ? " \u00B7 " + money(100 * u.avg_cost) + " / 100 turns" : "") +
+          (u.cached_share ? " \u00B7 " + Math.round(u.cached_share * 100) + "% cached" : "") +
+          (u.failures ? " \u00B7 " + u.failures + " failed" : "") +
+          // REFUSALS (server.py looks_like_refusal): replies that read as the model declining the scene, and moderation 403s.
+          (u.refusals ? " \u00B7 refused " + u.refusals + " of " + (u.turns + (u.failures || 0)) : "")) : "Not used yet";
+      return '<div class="rp-model-card' + (m.id === settings.model ? " current" : "") + (ban.banned ? " banned" : "") + '" data-model-id="' + esc(m.id) + '">' +
+        '<div class="rp-mcard-top">' +
+          '<div class="rp-mcard-name"><span>' + esc(shortModelName(m)) + '</span><small>' + esc(modelMaker(m)) + '</small></div>' +
+          '<button type="button" class="rp-mstar' + (isStarred(m.id) ? " on" : "") + '" data-star="' + esc(m.id) + '" title="Star">' + (isStarred(m.id) ? "\u2605" : "\u2606") + '</button>' +
+        '</div>' +
+        '<div class="rp-mbadges">' + badges + '</div>' +
+        '<div class="rp-mcost">' + costLine + '</div>' +
+        (m.via ? '<div class="rp-mvia">via <b>' + esc(m.via) + '</b>' + priceRange(m) + '</div>' : '') +
+        '<div class="rp-mstats">' +
+          (m.is_free ? '' : '<span>In <b>' + per1m(m.prompt_per_1m) + '</b></span><span>Out <b>' + per1m(m.completion_per_1m) + '</b></span><span>Cache <b>' + per1m(m.cache_read_per_1m) + '</b></span>') +
+          '<span>Context <b>' + kTokens(m.context_length) + '</b></span><span>Reply max <b>' + kTokens(m.max_output) + '</b></span><span>Released <b>' + released(m.created) + '</b></span>' +
+        '</div>' +
+        '<div class="rp-mrecord">' + esc(record) + '</div>' +
+        providersHtml(m) +
+        (m.description ? '<details class="rp-mdesc"><summary>About</summary><p>' + esc(m.description) + '</p></details>' : '') +
+      '</div>';
+    }
+
+    function renderModelGrid() {
+      if (!modelGrid) return;
+      var list = (session.freeModels || []).slice(0);
+      var q = (modelSearch && modelSearch.value || "").trim().toLowerCase();
+      var promptTokens = scenePromptTokens();
+      list = list.filter(function (m) {
+        if (settings.modelFilter === "free" && !m.is_free) return false;
+        if (settings.modelFilter === "paid" && m.is_free) return false;
+        if (settings.modelFilter === "starred" && !isStarred(m.id)) return false;
+        if (settings.hideBanned && banInfo(m).banned && m.id !== settings.model) return false;
+        if (settings.hideModerated && m.moderated && m.id !== settings.model) return false;
+        if (q && (String(m.name) + " " + m.id).toLowerCase().indexOf(q) === -1) return false;
+        return true;
+      });
+      var costOf = function (m) { var c = turnCost(m, promptTokens); return c ? (c.cached != null ? c.cached : c.plain) : 0; };
+      var sorters = {
+        cost: function (a, b) { return costOf(a) - costOf(b); },
+        newest: function (a, b) { return (b.created || 0) - (a.created || 0); },
+        context: function (a, b) { return (b.context_length || 0) - (a.context_length || 0); },
+        used: function (a, b) { return ((b.usage && b.usage.turns) || 0) - ((a.usage && a.usage.turns) || 0); }
+      };
+      var sorter = sorters[settings.modelSort] || sorters.cost;
+      list.sort(function (a, b) {
+        var s = (isStarred(b.id) ? 1 : 0) - (isStarred(a.id) ? 1 : 0);
+        return s || sorter(a, b) || String(a.name).localeCompare(String(b.name));
+      });
+      if (modelCount) modelCount.textContent = list.length + " of " + (session.freeModels || []).length + " models \u00B7 costs for this scene's prompt, about " + kTokens(promptTokens) + " tokens";
+      modelGrid.innerHTML = list.length ? list.map(function (m) { return modelCardHtml(m, promptTokens); }).join("") :
+        '<div class="rp-model-empty">' + ((session.freeModels || []).length ? "No model matches." : "The model list has not loaded.") + '</div>';
+      Array.prototype.forEach.call(box.querySelectorAll("[data-mfilter]"), function (b) {
+        b.classList.toggle("on", b.getAttribute("data-mfilter") === settings.modelFilter);
+      });
+    }
+
+    function pickModel(id) {
+      if (!id) return;
+      if (!Array.prototype.some.call(modelSel.options, function (o) { return o.value === id; })) {
+        var opt = document.createElement("option");
+        opt.value = id;
+        opt.textContent = id;
+        modelSel.appendChild(opt);
+      }
+      modelSel.value = id;
+      settings.model = id;
+      saveSettings();
+      renderModelChip();
+      modelDrawer.hidden = true;
+      setStatus("Model: " + shortModelName(modelById(id) || { name: id }) + ".");
+    }
+
+    if (modelSortSel) modelSortSel.value = settings.modelSort;
+    if (modelHideBanned) modelHideBanned.checked = settings.hideBanned;
+    if (modelHideModerated) modelHideModerated.checked = settings.hideModerated;
+    if (modelHideModerated) modelHideModerated.addEventListener("change", function () {
+      settings.hideModerated = modelHideModerated.checked;
+      saveSettings();
+      renderModelGrid();
+    });
+    session.onModelsLoaded = function () {
+      renderModelChip();
+      if (modelDrawer && !modelDrawer.hidden) renderModelGrid();
+    };
+    if (modelSearch) modelSearch.addEventListener("input", renderModelGrid);
+    if (modelSortSel) modelSortSel.addEventListener("change", function () {
+      settings.modelSort = modelSortSel.value;
+      saveSettings();
+      renderModelGrid();
+    });
+    if (modelHideBanned) modelHideBanned.addEventListener("change", function () {
+      settings.hideBanned = modelHideBanned.checked;
+      saveSettings();
+      renderModelGrid();
+    });
+    if (modelDrawer) modelDrawer.addEventListener("click", function (ev) {
+      var tgt = ev.target;
+      var star = tgt.closest ? tgt.closest("[data-star]") : null;
+      if (star) {
+        var sid = star.getAttribute("data-star");
+        var at = settings.starredModels.indexOf(sid);
+        if (at === -1) settings.starredModels.push(sid); else settings.starredModels.splice(at, 1);
+        saveSettings();
+        renderModelGrid();
+        return;
+      }
+      var fb = tgt.closest ? tgt.closest("[data-mfilter]") : null;
+      if (fb) {
+        settings.modelFilter = fb.getAttribute("data-mfilter");
+        saveSettings();
+        renderModelGrid();
+        return;
+      }
+      if (tgt.closest && tgt.closest(".rp-mdesc")) return;
+      var card = tgt.closest ? tgt.closest(".rp-model-card") : null;
+      if (card) pickModel(card.getAttribute("data-model-id"));
+    });
+
     function runGeneration(playerText, isReroll) {
       if (session.busy) return;
       session.busy = true;
@@ -1980,8 +2635,8 @@
 
       var threadId = resolveThreadId(cfg, statsNow());
 
-      var genFocus = loreFocusParts(playerText);
-      Promise.all([fetchMemories(threadId, playerText || "Continue the scene"), fetchLoreHits(cfg, genFocus)]).then(function (got) {
+      var genFocus = knowledgeFocusParts(playerText);
+      Promise.all([fetchMemories(threadId, playerText || "Continue the scene"), fetchKnowledgeHits(cfg, genFocus)]).then(function (got) {
         var memBlock = got[0];
         var sysPrompt = buildSystemPrompt(cfg, statsNow());
         var turnContext = buildTurnContext(cfg, statsNow(), memBlock, genFocus, got[1]);
@@ -2005,10 +2660,19 @@
             session.sceneReady = true;
             session.naturalComplete = true;
           }
+          var escCheck = (session.phase === "base" && readyInfo.escalateIntimate) ? resolveEscalation(baseCfg, statsNow()) : null;
+          if (escCheck && escCheck.allowed) {
+            session.pendingEscalate = true;
+          }
           saveActiveSession(inputEl.value);
           var engineTag = res.mode === "perchance" ? "Perchance AI" : settings.model.split("/").pop();
-          if (readyInfo.actComplete) {
-            setStatus("Climax reached (" + engineTag + ") — click \"Rest together\u2026\" below when ready to review & finish.");
+          if (escCheck && escCheck.allowed) {
+            setStatus("Ready to move further (" + engineTag + ") — confirm below to switch to the intimate scene, or keep talking.");
+          } else if (readyInfo.actComplete) {
+            var isIntimatePhase = !!resolveSceneProfile(cfg, statsNow());
+            setStatus(isIntimatePhase
+              ? "Climax reached (" + engineTag + ") — click the Next button below when ready to review & finish."
+              : "Natural close reached (" + engineTag + ") — click the Next button below whenever you are ready to leave.");
           } else {
             setStatus("Turn complete (" + engineTag + ").");
           }
@@ -2042,8 +2706,8 @@
       var threadId = resolveThreadId(cfg, statsNow());
       var recentHint = session.turns.slice(-2).map(function (t) { return t.text; }).join(" ").slice(0, 300);
 
-      var advFocus = loreFocusParts("");
-      Promise.all([fetchMemories(threadId, recentHint || "Advise choices for this scene"), fetchLoreHits(cfg, advFocus)]).then(function (got) {
+      var advFocus = knowledgeFocusParts("");
+      Promise.all([fetchMemories(threadId, recentHint || "Advise choices for this scene"), fetchKnowledgeHits(cfg, advFocus)]).then(function (got) {
         var memBlock = got[0];
         if (mySeq !== session.adviseSeq) return null;
         var sysPrompt = buildAdvisorSystemPrompt(cfg, statsNow());
@@ -2087,7 +2751,8 @@
 
     modeSel.addEventListener("change", function () {
       settings.mode = modeSel.value;
-      modelSel.style.display = settings.mode === "perchance" ? "none" : "";
+      if (modelChip) modelChip.style.display = settings.mode === "perchance" ? "none" : "";
+      if (settings.mode === "perchance" && modelDrawer) modelDrawer.hidden = true;
       saveSettings();
     });
 
@@ -2149,9 +2814,27 @@
           runPostSceneEvaluation(document.querySelector("#main button.next"));
           return;
         }
+        if (act === "confirm-escalate" || act === "escalate-manual") {
+          if (session.busy || session.phase !== "base") return;
+          performEscalation(false);
+          return;
+        }
+        if (act === "dismiss-escalate") {
+          session.pendingEscalate = false;
+          renderEscalateControls();
+          saveActiveSession(inputEl.value);
+          setStatus("Staying with conversation.");
+          return;
+        }
+        if (act === "pillow-talk") {
+          if (session.busy || !session.evalResult) return;
+          performPillowTalk(false);
+          return;
+        }
         if (act === "finish-eval") {
           var ratingVal = (session.evalResult && !session.evalResult.fallback) ? (Number(session.evalResult.rating) || 0) : 0;
           statsNow().rp_encounter_rating = ratingVal;
+          statsNow().rp_escalated = !!session.escalated;
           session.evalBypass = true;
           var nextBtn = document.querySelector("#main button.next");
           if (nextBtn) {
@@ -2184,16 +2867,36 @@
       if (actName === "send") {
         var val = inputEl.value.trim();
         inputEl.value = "";
+        if (/^\/intimate(?:\s|$)/i.test(val)) {
+          if (session.busy || session.evalResult) return;
+          if (session.phase === "base") {
+            var escCmd = resolveEscalation(baseCfg, statsNow());
+            if (escCmd && escCmd.allowed) {
+              performEscalation(false);
+            } else {
+              setStatus("Not available right now (" + ((escCmd && escCmd.reasonNotNow) || "conversation only on this visit") + ").");
+            }
+          } else {
+            setStatus("Already past the talk phase.");
+          }
+          return;
+        }
         if (/^\/end(?:\s|$)/i.test(val)) {
           if (session.busy || session.evalResult) return;
           session.sceneReady = true;
           saveActiveSession("");
           updateButtons();
           var endNextBtn = document.querySelector("#main button.next");
-          if (session.turns.length > 0 && resolveSceneProfile(cfg, statsNow())) {
+          if (session.lockedEvalResult) {
+            var lVal = !session.lockedEvalResult.fallback ? (Number(session.lockedEvalResult.rating) || 0) : 0;
+            statsNow().rp_encounter_rating = lVal;
+            statsNow().rp_escalated = !!session.escalated;
+            session.evalBypass = true;
+            setStatus("Grade locked — click the Next button below to finish.");
+          } else if (session.turns.length > 0 && resolveSceneProfile(cfg, statsNow())) {
             runPostSceneEvaluation(endNextBtn);
           } else {
-            setStatus("Ended early — click \"Rest together\u2026\" below to continue.");
+            setStatus("Ended early — click the Next button below to continue.");
           }
           return;
         }
@@ -2201,6 +2904,14 @@
         else playerTurn(val);
       } else if (actName === "reply") {
         requestReply();
+      } else if (actName === "models") {
+        modelDrawer.hidden = !modelDrawer.hidden;
+        if (!modelDrawer.hidden) {
+          renderModelGrid();
+          if (modelSearch) modelSearch.focus();
+        }
+      } else if (actName === "close-models") {
+        modelDrawer.hidden = true;
       } else if (actName === "memories") {
         memDrawer.hidden = !memDrawer.hidden;
         if (!memDrawer.hidden) renderMemoriesDrawer();

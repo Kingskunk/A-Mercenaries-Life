@@ -383,6 +383,83 @@
       }
     },
     {
+      id: "oxworth_horn_hide",
+      title: "Horn & Hide",
+      place: "Oxworth",
+      giver: function (s) {
+        return truthy(s.met_daven_marsh) ? "Daven Marsh, The Yoke & Horn" : "A cattle buyer at The Yoke & Horn";
+      },
+      goal: function (s) {
+        if (truthy(s.ox_hh_book_read)) {
+          if (truthy(s.ox_hh_daven_dead)) return "Bring Daven Marsh's double tax books to Bram Tallow at the Village Head's Hall.";
+          return "Decide what to do with Daven Marsh's double tax books: bring them to Bram Tallow, or confront Marsh at The Yoke & Horn.";
+        }
+        if (truthy(s.ox_hh_has_bag)) return "Bring the trophy and saddlebag back to Daven Marsh at The Yoke & Horn.";
+        return "Track down the beast in the south sinkholes outside Oxworth and recover Daven Marsh's saddlebag.";
+      },
+      clues: function (s) {
+        var c = [];
+        if (truthy(s.ox_hh_vera_met_tip)) c.push("Vera Marsh warned you that her husband has two tax books inside his locked saddlebag, charging Oxworth herders double as foreign stock, and invited you to her upstairs room at night while he throws dice below.");
+        if (truthy(s.ox_hh_prep_bram)) c.push("Bram Tallow says the south pasture sits over collapsed limestone pits; armored burrowers there feel heavy footsteps through the dirt and spit burning bile.");
+        if (truthy(s.ox_hh_prep_tracks)) c.push("Acid burns and wide scrape tracks show a ten-foot burrowing beast waiting beneath the cracked rock ledge.");
+        if (truthy(s.ox_hh_vera_bedded)) c.push("You spent a night with Vera Marsh in Daven's own upstairs room while he threw bone dice below.");
+        if (truthy(s.ox_hh_beast_dead)) c.push("You killed the giant burrower in the south sinkholes and took one of its hooked front jaws as proof.");
+        if (truthy(s.ox_hh_book_read)) c.push("Marsh's saddlebag holds two tax books showing he pocketed over forty silver marks by marking local Oxworth herds as foreign stock.");
+        if (truthy(s.ox_hh_daven_dead)) c.push("Daven Marsh died fighting in the cart yard behind The Yoke & Horn.");
+        return c;
+      },
+      active: function (s) {
+        var st = Number(s.ox_hh_stage) || 0;
+        return st >= 2 && st < 5;
+      }
+    },
+    {
+      id: "redvein_singing_tunnel",
+      title: "The Singing Tunnel",
+      place: "Redvein",
+      giver: function (s) {
+        return truthy(s.met_overseer_berek) ? "Overseer Berek, The Eastcut Market" : "The Gather House notice rail";
+      },
+      goal: function (s) {
+        if (Number(s.rv_st_stage) === 1) return "Speak with Overseer Berek beside the barred South Tunnel at The Eastcut Market.";
+        if (Number(s.rv_st_stage) === 3) return "Decide whether to report back to Overseer Berek or bring the five brass shift tags and his wall mark to Mara Venn.";
+        return "Clear whatever is killing miners in the Old South Tunnel at Redvein's Eastcut.";
+      },
+      clues: function (s) {
+        var c = [];
+        if (truthy(s.rv_st_berek_nervous)) c.push("Overseer Berek grew tense warning you not to poke behind the rotted wooden wall at the far end of the South Tunnel.");
+        if (truthy(s.rv_st_clue_wounds)) c.push("The dead hauler's coat showed both bite marks and square iron pick punctures, and reeked of explosive mine gas.");
+        if (truthy(s.rv_st_clue_missing)) c.push("Six winters ago, five miners led by Malkin vanished from the South Tunnel; Berek claimed they ran off to the Crags so their widows got no burial coin.");
+        if (truthy(s.rv_st_has_berek_seal)) c.push("The old oak wall was spiked shut from the outside under Overseer Berek's brass mark, with fingernail scratches deep on the inside planks.");
+        if (truthy(s.rv_st_has_tags)) c.push("The flooded chamber is clear, and you recovered all five brass miner shift tags: Malkin, Peder, Wess, Gerric, and Bren.");
+        return c;
+      },
+      active: function (s) {
+        var st = Number(s.rv_st_stage) || 0;
+        return st >= 1 && st < 5;
+      }
+    },
+    {
+      id: "redvein_old_debt",
+      title: "Old Debt on the Ridge",
+      place: "Redvein",
+      giver: "Ilyra Fen, The Red Lantern",
+      goal: function (s) {
+        if (Number(s.rv_od_stage) === 1) return "Meet Ilyra Fen by the rear stable gate of The Red Lantern when you are ready to climb to the Stone Lookout.";
+        return "Go up to the Stone Lookout above Redvein with Ilyra Fen and deal with Soren and his crew.";
+      },
+      clues: function (s) {
+        var c = [];
+        if (truthy(s.met_soren)) c.push("Ten years ago, Soren sold Ilyra and her late husband Haldor out to Baron Karr's riders over a buried box of highland silver. Only Ilyra knows where Haldor hid it.");
+        if (truthy(s.met_soren)) c.push("Soren's scout spotted Ilyra's scarred eye at The Red Lantern and bolted up the trail toward the roofless Stone Lookout.");
+        return c;
+      },
+      active: function (s) {
+        var st = Number(s.rv_od_stage) || 0;
+        return st >= 1 && st < 5;
+      }
+    },
+    {
       id: "varren_errand", title: "Varren's Errand", place: "Port Valen",
       giver: "Sergeant Varren, the Carrion Compound",
       goal: function (s) {

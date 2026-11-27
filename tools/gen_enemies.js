@@ -97,6 +97,7 @@ types.forEach(function (t) {
   }
   if (t.stun !== undefined && (!t.stun || !t.stun.name || !t.stun.icon)) bad(t, "stun needs a name and an icon");
   if (t.vulnerable !== undefined) String(t.vulnerable).split(/\s+/).forEach(function (v) { dmgType(t, "vulnerable", v); });
+  if (t.immune !== undefined) String(t.immune).split(/\s+/).forEach(function (v) { dmgType(t, "immune", v); });
   // The type's own hit, miss and special-move lines: fight_narrate_enemy_turn finds them by flavor_type.
   if (prose.indexOf("*label flavor_type_" + t.id + "\n") === -1 && prose.indexOf("*label flavor_type_" + t.id + "\r\n") === -1) {
     bad(t, "has no *label flavor_type_" + t.id + " in combat_prose.txt (write its hit and miss lines first)");
@@ -160,6 +161,7 @@ function genTypeLabel(t) {
     }
   }
   if (t.vulnerable) L.push(set("vulnerable_types", q(t.vulnerable)));
+  if (t.immune) L.push(set("immune_types", q(t.immune)));
   if (t.stun) {
     L.push(set("inflicts_stun", "true"));
     L.push(set("stun_name", q(t.stun.name)));

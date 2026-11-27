@@ -336,6 +336,8 @@ function compile(){
   verifyFileName("hartwell/oxworth/yoke_and_horn.txt");
   verifyFileName("hartwell/oxworth/village_heads_hall.txt");
   verifyFileName("hartwell/oxworth/salting_yard.txt");
+  verifyFileName("hartwell/oxworth/horn_and_hide.txt");
+  verifyFileName("hartwell/oxworth/vera_marsh.txt");
   verifyFileName("hartwell/palmcote/palmcote.txt");
   verifyFileName("hartwell/palmcote/green_branch.txt");
   verifyFileName("hartwell/palmcote/palmcote_market.txt");
@@ -423,6 +425,8 @@ function compile(){
   verifyFileName("alderford/redvein/eastcut.txt");
   verifyFileName("alderford/redvein/gather_house.txt");
   verifyFileName("alderford/redvein/red_lantern.txt");
+  verifyFileName("alderford/redvein/singing_tunnel.txt");
+  verifyFileName("alderford/redvein/old_debt.txt");
   // Whitefold is Alderford's Coldspine limestone-and-wool village. Its three public places follow the same hub pattern as Redvein.
   verifyFileName("alderford/whitefold/whitefold.txt");
   verifyFileName("alderford/whitefold/stone_yard.txt");

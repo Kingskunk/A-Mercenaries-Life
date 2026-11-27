@@ -24,9 +24,6 @@
  *             May also be function(stats) -> that object, or null for no bar.
  *   body      HTML string, array of strings (one paragraph each) or function(stats) -> either.
  *             Inline HTML allowed (<b>, <i>). {{stat_name}} inserts a game variable.
- *   rp        optional: what a local would know of this, in one or two plain sentences, for the roleplay AI (rp.js
- *             loreMatches sends it instead of the body when a companion talks about this entry). Facts from the entry
- *             only: role, look in brief, what people say. The body stays the searchable text on the server.
  *   see       ids of related entries; only unlocked ones are shown
  *
  * Text rules still apply: names are only revealed once the player has met them, and prose
@@ -673,11 +670,55 @@
         link: ["Ilyra Fen"],
         tags: ["Redvein"], aliases: ["Ilyra", "Fen", "innkeeper", "Red Lantern", "rooms", "stable yard"],
         unlock: "rv_lantern_seen",
-        body: [
-          "The lean, tall keeper of the Red Lantern in her mid-forties, moving with quiet capability and grounded posture. She has weather-cured pale olive skin, a narrow angular face, and jet-black hair streaked with white at the temples pinned in a practical high coil with a carved darkwood skewer.",
-          "One scarred cloudy grey left eye is paired with a sharp, piercing dark charcoal right eye, and small pale scars mark the backs of her strong hands. Wearing a deep burgundy-and-charcoal wool tunic with rolled cuffs, a dark linen service apron, and a brass key ring at her belt, Ilyra tells travellers to warm themselves by the stove before deciding whether they need a bed, keeping the counter and keys within easy reach."
-        ],
-        see: ["redvein", "mara_venn"]
+        body: function (s) {
+          var out = [
+            "The lean, tall keeper of the Red Lantern in her mid-forties, moving with quiet capability and grounded posture. She has weather-cured pale olive skin, a narrow angular face, and jet-black hair streaked with white at the temples pinned in a practical high coil with a carved darkwood skewer.",
+            "One scarred cloudy grey left eye is paired with a sharp, piercing dark charcoal right eye, and small pale scars mark the backs of her strong hands. Wearing a deep burgundy-and-charcoal wool tunic with rolled cuffs, a dark linen service apron, and a brass key ring at her belt, Ilyra tells travellers to warm themselves by the stove before deciding whether they need a bed, keeping the counter and keys within easy reach."
+          ];
+          if (truthy(s.rv_lantern_kitchen_unlocked) && !truthy(s.rv_lantern_barred)) {
+            out.push("After you brought Malkin's five brass shift tags back to the surface, she cut your room rate to a single copper and opened her stove and kitchen pot to you whenever your road climbs the Eastcut.");
+          }
+          if (truthy(s.rv_ilyra_spark)) {
+            out.push("Over free stew and dark ale she hinted at a harder past behind her scarred eye.");
+          }
+          if (truthy(s.met_soren)) {
+            out.push("Ten years before buying The Red Lantern, she ran untaxed highland silver off [[baron_karr|Baron Karr]]'s mountain passes with her husband Haldor and their partner Soren until Soren sold them to Karr's riders, costing Haldor his life and Ilyra her left eye.");
+          }
+          if (s.rv_od_ending === "soren_dead") {
+            out.push("You climbed to the Stone Lookout beside her to watch her blind flank, put Soren down, and split Haldor's buried silver evenly.");
+          } else if (s.rv_od_ending === "betrayed") {
+            out.push("You pinned her knife arm from her blind side for twelve silver marks from Soren. She swore to put a knife in you if you ever cross The Red Lantern's threshold again.");
+          }
+          return out;
+        },
+        see: ["redvein", "mara_venn", "overseer_berek"]
+      },
+      {
+        id: "overseer_berek", category: "people", title: "Overseer Berek",
+        sub: "Gilded Scales mine overseer, Redvein",
+        role: "Mine overseer, The Eastcut Market (Redvein)",
+        link: ["Overseer Berek", "Berek"],
+        tags: ["Redvein", "Gilded Scales"], aliases: ["Berek", "overseer", "mine boss"],
+        unlock: "met_overseer_berek",
+        body: function (s) {
+          var out = [
+            "A thick-shouldered human mine overseer in his early fifties wearing a heavy leather vest and iron-stained sleeves, running ore quotas at [[redvein|Redvein]]'s Eastcut for Alderford's Factor's Hall."
+          ];
+          if (truthy(s.rv_st_has_berek_seal)) {
+            out.push("Six winters ago, when rain flooded the Old South Tunnel, he ordered the oak support wall spiked shut from the outside on five trapped miners led by Malkin and told their widows the men had walked off to the Crags.");
+          }
+          if (truthy(s.rv_st_berek_dead)) {
+            out.push("He died fighting behind the Eastcut sorting shed after trying to silence you with hired yard thugs.");
+          } else if (s.rv_st_ending === "exposed_to_mara") {
+            out.push("After you laid the five shift tags and his brass wall mark on [[mara_venn|Mara Venn]]'s table, the Scales guards bound him and hauled him down to Alderford before the miners tore the yard apart.");
+          } else if (s.rv_st_ending === "blackmail_greedy") {
+            out.push("He paid fourteen silver marks to buy back his brass wall mark and keep the five dead miners buried.");
+          } else if (s.rv_st_ending === "blackmail_widows") {
+            out.push("Forced under threat of exposure, he paid your fee and dropped six unmarked silver marks into the Gather House collection box for the five widows.");
+          }
+          return out;
+        },
+        see: ["redvein", "mara_venn", "ilyra_fen", "gilded_scales"]
       },
 
       /* ------------------------------------------------------------ PEOPLE: KARR */
@@ -995,9 +1036,14 @@
           if (truthy(s.rv_eastcut_seen)) {
             out.push("The Eastcut Market occupies the mine-gate yard, where ore tables, trestle stalls and the scale platform share the ground. Scales road wardens guard the strongbox and loaded wagons while trade is underway.");
           }
+          if (truthy(s.rv_st_mara_exposed)) {
+            out.push("A small marker stone beside the Gather House step now records the five miners sealed inside the Old South Tunnel six winters ago, and Alderford sent up a cautious new overseer for the Eastcut.");
+          } else if (s.rv_st_ending === "blackmail_widows") {
+            out.push("Six unmarked silver marks left at the Gather House door saw the five widows of Malkin's old shift through the winter.");
+          }
           return out;
         },
-        see: ["valen_reach", "alderford", "mara_venn", "ilyra_fen"]
+        see: ["valen_reach", "alderford", "mara_venn", "ilyra_fen", "overseer_berek"]
       },
       {
         id: "pells_stores", category: "places", title: "Pell's Stores",

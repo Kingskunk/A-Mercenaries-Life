@@ -4,23 +4,38 @@ How an AI roleplay session works in this game, and the rules for adding or chang
 
 | Part | Where |
 | --- | --- |
-| The engine: console, prompts, lore, memory calls | `web/mygame/rp.js` |
+| The engine: console, prompts, knowledge, memory calls | `web/mygame/rp.js` |
 | Characters and scenes | `web/mygame/rp-data.js` (`RP_CHARACTERS`, `RP_DATA`) |
-| World knowledge | `web/mygame/lorebook-*.js` (`window.LOREBOOK`), fields documented in `lorebook-data.js` |
+| World knowledge | `web/mygame/rp-knowledge/*.js` (`window.RPKnowledge`), format in `rp-knowledge/registry.js`, plan in `RP_KNOWLEDGE_PLAN.md`. The lorebook is the player's; the AI never reads it. |
 | The server | `C:\Users\Kwesey\Desktop\Mempalace\server.py`: a separate repo with its own uncommitted work, so read before you edit |
-| Offline and live checks | `tools/rp_prompt_preview.js`, `tools/rp_lore_search.js`, `tools/rp_memory_test.js` |
+| Offline and live checks | `tools/rp_prompt_preview.js`, `tools/rp_knowledge_check.js`, `tools/rp_knowledge_search.js`, `tools/rp_memory_test.js` |
 
 ## 1. A session in a scene file
 
 - A page becomes a roleplay page when it prints a paragraph that is exactly `[RP_SESSION:${rp_active_scene}]`. rp.js watches the page, finds the marker and mounts its console in its place.
 - Set `rp_active_scene` to the `RP_DATA` key in the choice that leads there. Offer a written version beside the `[Roleplay]` one, with `rp_active_scene "none"`, so the game plays without the server (see `lina_verner.txt` `lv_menu`).
 - Follow the marker with `*page_break <label>…`. The console hides that button until the scene ends, either when the AI writes `[ACT_COMPLETE]` or when the player ends it.
+- **Model picker** (rp.js `MODEL PICKER`):
+  - The header chip shows the model, its cost per 100 turns and its context length. It opens a panel of cards: price per 1M tokens (in, out, cache), cost per 100 turns for this scene's prompt as it stands, context, maximum reply, release date, and the Thinking, Batch and ban badges.
+  - Each card also shows the player's own record, kept in `Mempalace/model_stats.json` (server.py `MODEL RECORD`): turns, average seconds, average cost, share cached, failures.
+  - **Best deal** (server.py `BEST DEAL`):
+    - OpenRouter's listed price for a model is one provider's price, often the maker's, not the cheapest. A paid card uses the provider the router tries first instead (`ranked_endpoints`: up providers first, then cheapest cache read, then cheapest input). The card says "via <provider>" and shows the input price range across providers.
+    - "Providers (N)" lists every provider in that order, with uptime over the last 30 minutes.
+    - The $0.50 budget cap uses the best deal too.
+    - The server reads the provider lists for paid models listed at up to $2 per million tokens, 12 at a time. They're cached for an hour, and a failed read is retried after 5 minutes. The first load takes about 7 seconds.
+  - **Refusals:** server.py `looks_like_refusal` counts a reply that reads as the model declining the scene. It takes quoted dialogue out first, then looks for phrasing like "I can't continue", "as an AI" or "content policy". A moderation 403 also counts. The card shows "refused N of M", and a Refuses badge once refusals reach 20% of turns. It's a guide, not exact.
+  - **Moderated:** the badge comes from OpenRouter's `is_moderated`, meaning OpenRouter screens the prompt and refuses flagged ones. The "Hide moderated" checkbox hides these models.
+  - The panel has search, filters (all, free, paid, starred) and a sort. Starred models stay at the top. Stars and the last filter and sort are kept per browser.
+  - The hidden `.rp-model-select` still holds the value the rest of rp.js reads.
 - **Auto reply** (a console checkbox, kept per browser in `settings.autoReply`):
   - Unchecked, Send and the prompt chips post the player's turn without a reply, so the player can have the last word before `/end`.
   - "Get reply", or Send with an empty box, asks for a reply. The last posted turn is the action, as with a regenerate.
-- Clear `rp_active_scene` to `"none"` on the page after the roleplay, never on the roleplay page itself. Opening Stats replays the page, and a value cleared there breaks the replay. The memory is saved when rp.js sees a normal page with `rp_active_scene` set to `"none"`.
+- Clear `rp_active_scene` to `"none"` (and `rp_escalated` to `false`) on the page after the roleplay, never on the roleplay page itself. Opening Stats replays the page, and a value cleared there breaks the replay. The memory is saved when rp.js sees a normal page with `rp_active_scene` set to `"none"`.
 - A graded scene (kind `intimate`) writes its grade to `rp_encounter_rating` (0 to 20) when the player accepts the card. Set the variable to 0 before the marker and read it on the next page (`lv_tryst_after`). A companion's `formatBoon(rating)` in rp-data.js must use the same sum as the scene file.
-- The game variables are `rp_active_scene`, `rp_encounter_rating` and `rp_world_id`, in `startup_parts/41_gear_shop_and_companion_state.txt`. `rp_world_id` is set once per playthrough and keeps each save's memories apart.
+- **Talk ↔ Intimate bridge (`escalate` & `pillowTalk`):**
+  - A `talk` scene may declare `escalate: { target, allowed(s), buttonLabel, promptTitle, confirmLabel, dividerText, nextBtnLabel, transitionNote, subplace, reasonNotNow(s) }`. When `allowed(s)` is true, the narrator may emit `[ESCALATE_INTIMATE]` (showing a 1-click inline confirmation bar) and the player also gets a subtle console button and `/intimate` command. Confirming switches the live console to `target` in the same transcript, sets `rp_escalated = true`, keeps clothing until undressed in prose, starts a fresh cache `session_id`, and grades only the intimate portion (`escalatedAtTurn` onward). On exit, the scene's `*_after` label checks `*if (rp_escalated)`, stamps the same cooldown/time as a direct tryst, and jumps into `*_tryst_after` so there is no double-dipping.
+  - An `intimate` scene may declare `pillowTalk: { target, buttonLabel, dividerText, settingNote }`. On the post-scene evaluation card, clicking `Accept Grade & Pillow Talk` locks `rp_encounter_rating` permanently (no re-grading), switches the live console to an afterglow `talk` session, and preserves the locked rating on exit (and across Stats round-trips).
+- The game variables are `rp_active_scene`, `rp_encounter_rating`, `rp_escalated` and `rp_world_id`, in `startup_parts/41_gear_shop_and_companion_state.txt`. `rp_world_id` is set once per playthrough and keeps each save's memories apart.
 
 ## 2. Characters and scenes (rp-data.js)
 
@@ -34,7 +49,7 @@ A **character** (`RP_CHARACTERS`) is who the companion is in every scene. A **sc
 | `companion`, `persona` | Her looks, and her voice and manner |
 | `npcKnowledge` | What **she** knows: of the player, the quest and her own life. Written in the third person with the player's name (or "the player"), never "you". It never holds what only the player knows. |
 | `worldKnowledge` | The core of her horizon: a few lines that are always sent |
-| `lore` | Which lorebook entries she may be told about (section 5) |
+| `knowledge` | Which knowledge pools she reaches, at what standing (section 5) |
 | `profile`, `profileHeadings` | Hidden tastes, used only by a graded kind |
 
 | Scene field | Meaning |
@@ -65,7 +80,7 @@ Prompt caching only reuses an identical start of the prompt, so the order is fix
 the voice rules, the kind's rules, then `buildContextBlocks`: companion, persona, wider world, hidden profile, what she knows, the calendar core (two lines), the player as she sees them, setting, NOW.
 
 **The turn's context** (`buildTurnContext(cfg, s, memBlock, focusParts, semanticIds)`) goes in the user message, after the conversation and just before the player's action:
-the lore matched this turn, the month and week detail or the coin line when someone mentions them (`CALENDAR_WORDS`, `COIN_WORDS`), and the memories fetched for this turn.
+the knowledge matched this turn, the month and week detail or the coin line when someone mentions them (`CALENDAR_WORDS`, `COIN_WORDS`), and the memories fetched for this turn.
 
 Rules:
 - Anything that can change from one turn to the next goes in the turn's context, never in the system message. A system message that changes mid-visit stops the cache from working.
@@ -73,23 +88,41 @@ Rules:
 - Shared narrator rules name nobody. A rule that needs a name goes in that character's fields.
 - `dispatchRpGenerate` sends a `session_id` for each scene and each job (narrator, helper, grader), so OpenRouter keeps routing to the provider that holds the cache. Never send `provider.order`: it turns that stickiness off.
 
-## 5. Lore on demand
+## 5. Knowledge on demand
 
-A character's `lore` scope:
+What a character knows of the world comes from **knowledge pools** (`web/mygame/rp-knowledge/`, one file per pool), written for the AI only. Plan and reasoning: `RP_KNOWLEDGE_PLAN.md`. Entry format: the header of `rp-knowledge/registry.js`.
+
+- **Pools:**
+  - The realm (`grey_marches`) holds every town and village in the Marches.
+  - One pool per region (`western_vale`, `valen_reach`, `stenmark`, `great_sedge`) holds what its own people know beyond that: lords, Port Valen's quarters.
+  - Local pools (`hartwell`, `palmcote`, `oxworth`, `dredge_end`, `fallowmere`, `barolo`) hold a place's people and its own business.
+  - Trade pools (`trade.farming`).
+- **Places:** a place entry with `commonIn` (its region and local pool) is common knowledge only there. Anyone else needs learned standing to know it. Port Valen and Dunmow have no `commonIn`, so everyone knows them. A character gets their own region's places at their standing in that region. Add faction pools (`faction.<name>`) and new realms the same way. Each pool file needs a `<script>` tag in `index.html`, after `registry.js` and before `rp-data.js`.
+- **Entry texts:**
+  - `common` is what an ordinary person knows or believes. An entry with no common text is unknown to common folk.
+  - `learned` is what a lord, scholar or officer knows. Write it whole: it replaces the common text rather than adding to it.
+  - `secret` is for insiders only.
+  - Any text can be a function of the stats, so it follows the story. `when(s)` hides the whole entry until it is true.
+- **Rumors:** a pool's `rumors` are what its folk say about an entry, sent beside it ("Folk here say: ..."), or alone as hearsay when the entry itself is out of reach.
+
+A character's `knowledge`:
 
 ```js
-lore: {
-  know: { tags: ["Palmcote"], ids: [] },          // entries she knows as a local does
-  hearsay: { oxworth: "her own version of the rumor" }, // a name and a rumor only; she says she knows no more
-  skip: ["lina_verner", "bailiff_kelm"],          // never: her own entry, or one her notes already cover
-  max: 3                                          // at most this many a turn (default 3)
+knowledge: {
+  pools: { grey_marches: "common", western_vale: "common", palmcote: "learned" }, // standing: common, learned or insider
+  rumors: { broken_crown_war: "her own version" }, // only where hers differs from the pool's
+  skip: ["bailiff_kelm"],                           // never: an entry her notes already cover
+  max: 3                                            // at most this many a turn (default 3)
 }
 ```
 
-- **Keywords** (`loreMatches`, in the page, so they work with the server down): an entry inside her scope is sent when its title, an alias or a link name appears in the player's latest words, the last reply or the turn before, in that order of weight.
-- **Meaning** (`fetchLoreHits`): the server finds entries by meaning ("the old war"). It is only asked about lines that sound like talk (`LORE_TALK_WORDS`), with an 8 second timeout, and keeps hits scoring at least `LORE_SEMANTIC_THRESHOLD` (0.45). Hits pass through the same scope and rank below every keyword match. A search takes about 4.5 seconds.
-- An entry's `rp` field (`lorebook-data.js`) is the short version a local would know, and is sent in place of the full text. Write it neutral, never from one character's point of view ("her own village"): it is shared by everyone.
-- `syncLoreToServer` sends the lorebook once per page load when its version hash differs from the server's. After a lorebook edit, run `node tools/rp_lore_search.js --sync` to test before the game does it.
+- **Keywords** (`knowledgeMatches`, in the page, so they work with the server down): an entry in reach is sent when its title or an alias appears in the player's latest words, the last reply or the turn before, in that order of weight.
+- **Meaning** (`fetchKnowledgeHits`): the server finds entries by meaning ("the old war").
+  - It is only asked about lines that sound like talk (`KNOWLEDGE_TALK_WORDS`), with an 8 second timeout. A search takes about 4.5 seconds.
+  - It keeps hits scoring at least `KNOWLEDGE_SEMANTIC_THRESHOLD` (0.45).
+  - All pools share one room, so it is one search a turn. Hits pass through the character's reach and rank below every keyword match.
+- **Sync:** `syncKnowledgeToServer` sends every entry once per page load when the version hash differs from the server's. After editing a pool, run `node tools/rp_knowledge_search.js --sync`.
+- **Writing:** short plain facts, neutral, never one character's point of view, and no em dashes. Every character linked to the pool shares the text.
 
 ## 6. Memory
 
@@ -111,7 +144,7 @@ lore: {
 | --- | --- |
 | `/rp_generate` | A reply, with `mode` `"openrouter"` or `"perchance"`. It passes `session_id` through (`universal_core`). |
 | `/append_memory`, `/get_npc_memories`, `/delete_npc_memory` | Save, load and delete memories |
-| `/sync_lore`, `/search_lore` | The lore room `thread_cs_lore`, with its version in `data/cs_lore_version.txt` |
+| `/sync_knowledge`, `/search_knowledge` | The knowledge room `thread_cs_knowledge`, with its version in `data/cs_knowledge_version.txt`. The old lore room (`cs_lore`) is no longer used. |
 | `/get_free_models`, `/perchance_bridge/status` | The console's model list and Perchance status |
 
 - **Perchance bridge limits:** at most 3 jobs queued (beyond that it returns 429 `PERCHANCE_BUSY`), one job at a time with a 2 second gap, and a job left waiting 120 seconds expires. Perchance is never used to write memories.
@@ -125,17 +158,21 @@ lore: {
 
 ## 8. Checks
 
-1. **Offline first, always:** `node tools/rp_prompt_preview.js <scene id> --script <play script>`, with `--say "<line>"` to see the lore pulled, `--kind`, `--memory`, `--hits`, `--advisor` or `--eval` as needed. Read the system message and the turn's context as the AI will. Look for "undefined", empty sections, "you" for the player, and knowledge that doesn't match the ending.
-2. **Lore by meaning:** `node tools/rp_lore_search.js "<line>" --scene <id>`. It runs locally and calls no model, but run one query at a time.
+1. **Offline first, always:** `node tools/rp_prompt_preview.js <scene id> --script <play script>`, with `--say "<line>"` to see the knowledge pulled, `--kind`, `--memory`, `--hits`, `--advisor` or `--eval` as needed. Read the system message and the turn's context as the AI will. Look for "undefined", empty sections, "you" for the player, and knowledge that doesn't match the ending.
+2. **Knowledge:**
+   - `node tools/rp_knowledge_check.js` checks every pool and character.
+   - `node tools/rp_knowledge_check.js <character> [--set flag=value] [--say "<line>"]` lists what that character can reach and what a line would send.
+   - `node tools/rp_knowledge_search.js "<line>" --scene <id>` tests search by meaning. It runs locally and calls no model, but run one query at a time.
+   - Test that a character receives the right knowledge offline only. Whether a model then uses it is the model's business, not something to test live.
 3. **Live memory:** `node tools/rp_memory_test.js tools/rp_memory_samples/<character>.json --model <OpenRouter id>`. **Run one live test, read it, then decide whether to run another.** Several runs back to back get a free model rate-limited and banned. `lina_verner_long_talk.json` is a long talk full of small topics followed by a visit that settles two of its threads. Add `--chunk-over 4000` to send it through the long-scene path.
 4. The scene file has the usual checks (`lint_all`, `quicktest_parallel --changed`, `play_all`), plus a play script for each roleplay entry point and its written twin.
-5. Say plainly which live checks were not run (caching, stickiness, the in-browser lore sync, a full session). They are the designer's to do in the browser.
+5. Say plainly which live checks were not run (caching, stickiness, the in-browser knowledge sync, a full session). They are the designer's to do in the browser.
 
 ## 9. Adding a roleplay companion or scene
 
-1. **Character:** add or reuse an entry in `RP_CHARACTERS` with `npcName`, `memory`/`threadId`, `knowsName`, `companion`, `persona`, `npcKnowledge` (third person, branched on quest flags), `worldKnowledge` and a `lore` scope. Add `profile` only if a graded scene uses it.
+1. **Character:** add or reuse an entry in `RP_CHARACTERS` with `npcName`, `memory`/`threadId`, `knowsName`, `companion`, `persona`, `npcKnowledge` (third person, branched on quest flags), `worldKnowledge` (the few facts sent every turn) and `knowledge` (pools and standing). Add `profile` only if a graded scene uses it.
 2. **Scene:** add an `RP_DATA` entry with `kind`, `character`, `title`, `subtitle`, `setting`, `starters` and `beats`, plus `scenePersona`/`sceneKnowledge` for this visit's own facts.
-3. **Lorebook:** give the entries she will be asked about an `rp` line. Put her own entry in `skip`.
+3. **Knowledge:** link her pools and standing. Write a local pool for her place if none exists, and put entries her notes already cover in `skip`. Run `node tools/rp_knowledge_check.js <character>`.
 4. **Scene file:** the `[Roleplay]` choice and its written twin, the marker page with its `*page_break`, and the page afterwards that clears `rp_active_scene` (and reads `rp_encounter_rating` if the scene is graded).
 5. **Flags:** any fact she must remember from a quest needs a flag recorded where the quest decides it.
 6. **Checks:** section 8, offline first. For memory tests, add a sample in `tools/rp_memory_samples/`.

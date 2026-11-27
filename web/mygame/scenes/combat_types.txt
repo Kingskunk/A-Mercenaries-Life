@@ -142,6 +142,8 @@
   *set aeb_profile "guardian"
 *if (aeb_type = "hedge_mage")
   *set aeb_profile "caster"
+*if (aeb_type = "wight")
+  *set aeb_profile "bruiser"
 *comment GEN:END enemy_profile_map
 *comment Slot 0 is the inert placeholder quicktest's branch walk needs: it also walks the else branch below with slot 1, where this prefix would otherwise still be empty. Real slots 2 and up set it before use.
 *temp aeb_p "combat_enemy0_"
@@ -210,6 +212,8 @@
   *set aem_morale "skittish"
 *if (aem_type = "twig_blight")
   *set aem_morale "fearless"
+*if (aem_type = "wight")
+  *set aem_morale "fearless"
 *comment GEN:END enemy_morale_map
 *set {(("combat_enemy" & aem_slot) & "_morale")} aem_morale
 *return
@@ -267,6 +271,8 @@
   *set aect_value "humanoid"
 *if (aect_type = "twig_blight")
   *set aect_value "plant"
+*if (aect_type = "wight")
+  *set aect_value "undead"
 *comment GEN:END enemy_creature_type_map
 *if (aect_slot = 1)
   *set combat_enemy_creature_type aect_value
@@ -536,6 +542,8 @@
   *gosub apply_type_hedge_mage
 *if (combat_apply_type = "twig_blight")
   *gosub apply_type_twig_blight
+*if (combat_apply_type = "wight")
+  *gosub apply_type_wight
 *comment GEN:END enemy_type_dispatch
 *gosub assign_enemy_behavior_profile combat_apply_slot combat_apply_type
 *gosub assign_enemy_size combat_apply_slot combat_apply_type
@@ -866,6 +874,7 @@
 *gosub apply_ability_score_range apt_p "wisdom" 8 10
 *gosub apply_ability_score_range apt_p "charisma" 6 8
 *gosub apply_derived_combat_bonuses apt_p
+*set {(apt_p & "immune_types")} "poison"
 *return
 
 *label apply_type_zombie
@@ -894,6 +903,7 @@
 *gosub apply_ability_score_range apt_p "wisdom" 6 6
 *gosub apply_ability_score_range apt_p "charisma" 5 5
 *gosub apply_derived_combat_bonuses apt_p
+*set {(apt_p & "immune_types")} "poison"
 *return
 
 *label apply_type_beast
@@ -1005,6 +1015,32 @@
 *set {(apt_p & "atk_bonus")} 3
 *set {(apt_p & "dmg_bonus")} 2
 *set {(apt_p & "vulnerable_types")} "fire"
+*return
+
+*label apply_type_wight
+*comment A weapon-wielding undead warrior or boss (such as Malkin in Redvein's Singing Tunnel): 26 HP, AC 13, fearless bruiser with heavy iron strikes (1d8 piercing by default; a fight can override dmg_type for a blade or maul).
+*comment One block for every slot: apt_p is the bare combat_enemy_ prefix for slot 1 and combat_enemyN_ for the rest.
+*temp apt_p "combat_enemy_"
+*if (combat_apply_slot > 1)
+  *set apt_p (("combat_enemy" & combat_apply_slot) & "_")
+*set {(apt_p & "name")} "Wight"
+*set {(apt_p & "hp")} 26
+*set {(apt_p & "max_hp")} 26
+*set {(apt_p & "ac")} 13
+*set {(apt_p & "dmg_dice_sides")} 8
+*set {(apt_p & "epithet")} "the wight"
+*set {(apt_p & "dmg_type")} "piercing"
+*set {(apt_p & "prof")} 2
+*set {(("combat_enemy" & combat_apply_slot) & "_prof")} 2
+*set {(("combat_enemy" & combat_apply_slot) & "_resolve")} 3
+*gosub apply_ability_score_range apt_p "strength" 14 16
+*gosub apply_ability_score_range apt_p "dexterity" 11 13
+*gosub apply_ability_score_range apt_p "constitution" 14 16
+*gosub apply_ability_score_range apt_p "intelligence" 9 11
+*gosub apply_ability_score_range apt_p "wisdom" 10 12
+*gosub apply_ability_score_range apt_p "charisma" 10 12
+*gosub apply_derived_combat_bonuses apt_p
+*set {(apt_p & "immune_types")} "poison"
 *return
 *comment GEN:END enemy_type_labels
 
@@ -1132,6 +1168,10 @@
 *if (not(aat_epi_ov = ""))
   *set {(aat_p & "epithet")} aat_epi_ov
   *set {(aat_p & "epithet_override")} ""
+*comment STANCES (2026-11-27): an ally fights by its own judgement unless the player set another stance for it in an earlier fight; the sidebar writes
+*comment ally_stance_memory (a JSON map of ally name to stance) whenever a stance is picked, and it is read back here by the final name.
+*set {(aat_p & "stance")} "judgement"
+*script (function (s) { var m = {}; try { m = JSON.parse(s.ally_stance_memory || "{}") || {}; } catch (e) { m = {}; } var p = "combat_ally" + s.combat_apply_ally_slot + "_"; var v = m[s[p + "name"]]; if (v === "focus" || v === "guard" || v === "hold") s[p + "stance"] = v; })(stats);
 *return
 
 *label apply_allytype_lyra

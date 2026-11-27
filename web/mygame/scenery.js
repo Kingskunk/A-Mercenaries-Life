@@ -91,6 +91,8 @@
     "hartwell/oxworth/yoke_and_horn": "oxworth_yoke_and_horn",
     "hartwell/oxworth/village_heads_hall": "generic_village_gathering_hall",
     "hartwell/oxworth/salting_yard": "oxworth_salting_yard",
+    "hartwell/oxworth/horn_and_hide": "oxworth_yoke_and_horn",
+    "hartwell/oxworth/vera_marsh": "generic_village_inn_room",
     // Only a fallback: the dg_in_run RULES entry above (each dungeon's own rooms) matches first and wins
     // whenever a run is actually under way. This is what shows during the walk-in/out line, before dg_run_begin
     // has set dg_in_run (every entry calls dg_time -- a time advance, which can itself trigger the hub-condition
@@ -102,7 +104,7 @@
     "alderford/wagon_lot": "river_carters_lot",
     "timbermouth/wagon_lot": "timber_wagon_lot",
     "port_valen/radiant/caravan_lot": "vale_gate_wagon_lot",
-    "alderford/redvein/red_lantern": "generic_village_inn",
+    "alderford/redvein/red_lantern": "redvein_red_lantern",
     "alderford/whitefold/white_ram": "generic_village_inn",
     "Langston/barolo/red_stave": "barolo_red_stave",
     "port_valen/brinewick/reedhouse": "generic_village_inn",
@@ -309,6 +311,16 @@
     function (s) { return s.scenery_subplace === "village_inn_room" && (s.sceneName === "alderford/drowned_oar" || s.sceneName === "alderford/redvein/red_lantern" || s.sceneName === "alderford/whitefold/white_ram" || s.sceneName === "Langston/barolo/red_stave" || s.sceneName === "Langston/broadmead/crooked_halter" || s.sceneName === "port_valen/brinewick/reedhouse" || s.sceneName === "Langston/fallowmere/grey_gander" || s.sceneName === "hartwell/oxworth/yoke_and_horn" || s.sceneName === "hartwell/palmcote/green_branch" || s.sceneName === "port_valen/marlcross/wayfarers_rest") ? "generic_village_inn_room" : undefined; }, // village inns and Maura's Drowned Oar rooms
     function (s) { return s.sceneName === "Langston/fallowmere/grey_gander" && s.scenery_subplace === "fallowmere_grey_gander_yard" ? "village_stable_yard" : undefined; }, // the Grey Gander's open cart yard (the taproom keeps its own picture)
     function (s) { return s.sceneName === "hartwell/oxworth/yoke_and_horn" && s.scenery_subplace === "oxworth_yoke_and_horn_yard" ? "village_stable_yard" : undefined; }, // the Yoke & Horn's open cart yard (the common room keeps its own picture)
+    function (s) {
+      if (!/^hartwell\/oxworth\//.test(s.sceneName)) return undefined;
+      if (s.scenery_subplace === "village_inn_hall") return "oxworth_yoke_and_horn";
+      if (s.scenery_subplace === "village_inn_room") return "generic_village_inn_room";
+      if (s.scenery_subplace === "oxworth_yoke_and_horn_yard") return "village_stable_yard";
+      if (s.scenery_subplace === "oxworth_village_hall") return "generic_village_gathering_hall";
+      if (s.scenery_subplace === "oxworth_south_sinkholes") return "oxworth_south_sinkholes";
+      if (s.scenery_subplace === "overworld_hilly_road") return "overworld_hilly_road";
+      return undefined;
+    }, // Oxworth quest and inn subplaces (Yoke & Horn hall, upstairs room, cart yard, Village Head's Hall, south sinkholes)
     function (s) { return s.sceneName === "hartwell/palmcote/green_branch" && s.scenery_subplace === "palmcote_green_branch_yard" ? "village_stable_yard" : undefined; }, // the Green Branch's open stable yard (the common room keeps its own picture)
     function (s) {
       if (!/^hartwell\/palmcote\//.test(s.sceneName)) return undefined;
@@ -324,6 +336,22 @@
     function (s) { return s.sceneName === "alderford/drowned_oar" && s.scenery_subplace === "af_oar_stable_yard" ? "generic_town_stable" : undefined; }, // the Drowned Oar's raised stable court above the lower wharf
     function (s) { return s.sceneName === "port_valen/port_valen" && s.scenery_subplace ? s.scenery_subplace : undefined; }, // trusts any subplace this scene sets directly as a picture key; add new interior/exterior beats there with no scenery.js change
     function (s) { return s.sceneName === "alderford/redvein/red_lantern" && s.scenery_subplace === "village_stable_yard" ? "village_stable_yard" : undefined; },
+    function (s) {
+      if (s.sceneName !== "alderford/redvein/singing_tunnel") return undefined;
+      if (s.scenery_subplace === "redvein_gather_house") return "generic_village_gathering_hall";
+      if (s.scenery_subplace === "redvein_eastcut") return "redvein";
+      if (s.scenery_subplace === "redvein_south_tunnel") return "redvein_south_tunnel";
+      if (s.scenery_subplace === "village_inn_hall") return "redvein_red_lantern";
+      return "redvein";
+    }, // The Singing Tunnel moves between the Gather House, Eastcut Market, Old South Tunnel and Red Lantern
+    function (s) {
+      if (s.sceneName !== "alderford/redvein/old_debt") return undefined;
+      if (s.scenery_subplace === "village_inn_hall") return "redvein_red_lantern";
+      if (s.scenery_subplace === "village_inn_room") return "generic_village_inn_room";
+      if (s.scenery_subplace === "redvein_stone_lookout") return "redvein_stone_lookout";
+      if (s.scenery_subplace === "overworld_hilly_road") return "overworld_hilly_road";
+      return "redvein";
+    }, // Old Debt on the Ridge moves between the Red Lantern taproom, Stone Lookout ridge and Ilyra's upstairs room
     function (s) { return s.sceneName === "alderford/whitefold/white_ram" && s.scenery_subplace === "village_stable_yard" ? "village_stable_yard" : undefined; },
     function (s) { return s.sceneName === "port_valen/marlcross/wayfarers_rest" && s.scenery_subplace === "wayfarers_rest_stable_yard" ? "village_stable_yard" : undefined; }, // the Wayfarer's Rest stable yard (the hall keeps its own picture)
     function (s) { return (s.sceneName === "port_valen/port_valen_middle_ward" || /^port_valen\/MiddlewardQuest\//.test(s.sceneName)) && s.scenery_subplace === "middle_ward_lodgings" ? "generic_quiet_lodgings" : undefined; }, // Terrace Lodgings' ground-floor entry hall

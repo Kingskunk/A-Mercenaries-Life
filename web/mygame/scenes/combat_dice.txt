@@ -118,7 +118,7 @@
 *params dfl_prefix dfl_type
 *set combat_def_prefix dfl_prefix
 *set combat_defense_type dfl_type
-*script var p = String(stats.combat_def_prefix), t = " " + String(stats.combat_defense_type) + " "; function norm(v) { return " " + String(v || "").replace(/\s+/g, " ").trim() + " "; } function yes(v) { return v === true || v === "true"; } stats.combat_def_immune = norm(stats[p + "immune_types"]).indexOf(t) >= 0; stats.combat_def_resist = norm(stats[p + "resist_types"]).indexOf(t) >= 0; stats.combat_def_vulnerable = norm(stats[p + "vulnerable_types"]).indexOf(t) >= 0; stats.combat_def_nonmagic = String(stats[p + "nonmagic"] || ""); stats.combat_def_silvered = yes(stats[p + "nonmagic_silvered"]); stats.combat_def_adamantine = yes(stats[p + "nonmagic_adamantine"]);
+*script var p = String(stats.combat_def_prefix), t = " " + String(stats.combat_defense_type) + " "; function norm(v) { return " " + String(v || "").replace(/\s+/g, " ").trim() + " "; } function yes(v) { return v === true || v === "true"; } stats.combat_def_immune = (norm(stats[p + "immune_types"]).indexOf(t) >= 0) || (t === " poison " && String(stats[p + "creature_type"] || "") === "undead"); stats.combat_def_resist = norm(stats[p + "resist_types"]).indexOf(t) >= 0; stats.combat_def_vulnerable = norm(stats[p + "vulnerable_types"]).indexOf(t) >= 0; stats.combat_def_nonmagic = String(stats[p + "nonmagic"] || ""); stats.combat_def_silvered = yes(stats[p + "nonmagic_silvered"]); stats.combat_def_adamantine = yes(stats[p + "nonmagic_adamantine"]);
 *return
 
 *comment adjust_damage_packet <defender prefix> <amount> <damage type> <enemy slot>: ONE damage packet of one type against one defender. The slot (0 for an ally or the player) is the enemy whose "wet" state and defense_known apply; with slot 0 the player's or that ally's own Wet counter applies.
@@ -2972,6 +2972,13 @@ ${combat_player_dmg_roll_banner}
 
 *label condition_apply
 *params ca_prefix ca_name ca_rounds ca_dc ca_src
+*if (ca_name = "poisoned")
+  *temp ca_def_p ca_prefix
+  *if (ca_prefix = "combat_player_")
+    *set ca_def_p "player_"
+  *gosub defense_flags ca_def_p "poison"
+  *if (combat_def_immune)
+    *return
 *temp ca_field (ca_prefix & ca_name)
 *temp ca_dc_field (ca_field & "_dc")
 *temp ca_cur {(ca_field)}

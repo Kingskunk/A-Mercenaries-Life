@@ -1236,7 +1236,8 @@ function pageReplaySeed(seed) {
   G.__pageReplayRandom = function () { a = (a + 0x6D2B79F5) | 0; var t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
   Math.random = G.__pageReplayRandom;
 }
-var PAGE_REPLAY_CLICK_KEYS = ["combat_player_chosen_target"];
+// A stance picked on an ally's card (index.html ALLY_STANCES) is a click too, and survives a refresh like the target pick.
+var PAGE_REPLAY_CLICK_KEYS = ["combat_player_chosen_target", "combat_ally1_stance", "combat_ally2_stance", "combat_ally3_stance", "combat_ally4_stance", "ally_stance_memory"];
 function pageReplayKey(k) { return k !== "scene" && k !== "sceneName" && !/^page_replay_/.test(k) && !/^choice_/.test(k); }
 Scene.prototype.pageReplayGuard = function pageReplayGuard() {
   var S = this.stats;

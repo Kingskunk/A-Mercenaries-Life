@@ -86,6 +86,19 @@ either express or implied.
 <script src="scenery.js"></script>
 <script src="ambience-data.js"></script>
 <script src="ambience.js"></script>
+<script src="rp-knowledge/registry.js"></script>
+<script src="rp-knowledge/grey_marches.js"></script>
+<script src="rp-knowledge/western_vale.js"></script>
+<script src="rp-knowledge/valen_reach.js"></script>
+<script src="rp-knowledge/stenmark.js"></script>
+<script src="rp-knowledge/great_sedge.js"></script>
+<script src="rp-knowledge/hartwell.js"></script>
+<script src="rp-knowledge/palmcote.js"></script>
+<script src="rp-knowledge/oxworth.js"></script>
+<script src="rp-knowledge/dredge_end.js"></script>
+<script src="rp-knowledge/fallowmere.js"></script>
+<script src="rp-knowledge/barolo.js"></script>
+<script src="rp-knowledge/trade_farming.js"></script>
 <script src="rp-data.js"></script>
 <script src="rp.js"></script>
 <script src="scrollkeys.js"></script>
@@ -736,6 +749,10 @@ button#statSidebar .turnRow,
 #allyOrderTray button b { color: var(--ch-info); font: 700 18px var(--ch-font-head); line-height: 1; }
 #allyOrderTray button:hover, #allyOrderTray button:focus-visible { background: rgba(55, 115, 150, 0.32); color: #fff; outline: none; }
 #allyOrderTray button:active { transform: translateY(1px); }
+#allyOrderTray .allyStanceButtons { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+#allyOrderTray .allyStanceButtons button { min-height: 42px; }
+#allyOrderTray .allyStanceButtons button.on { background: rgba(55, 115, 150, 0.42); border-color: var(--ch-info); color: #fff; }
+#allyOrderTray .allyOrderSub { margin: 9px 2px 5px; color: var(--ch-info); font: 600 9px var(--ch-font-ui); letter-spacing: 0.12em; text-transform: uppercase; }
 
 /* folding sections (Stats, Today): the same header look as the spellbook, with a short summary kept on the line while closed */
 #statSidebar .sbFold > summary {
@@ -1500,21 +1517,52 @@ button#statSidebar .turnRow,
     var tray = document.getElementById("allyOrderTray");
     if (tray) tray.className = "";
   }
+  // ALLY STANCES (2026-11-27): how the ally fights (combat_ally<N>_stance, read by combat_ai.txt select_ally_attack_target). Picking one is a
+  // stats write, like a target click: no page, no choice. It is also kept by the ally's name in ally_stance_memory, which the next fight
+  // reads back (combat_types.txt apply_ally_type), so a companion keeps the stance the player gave it.
+  var ALLY_STANCES = [
+    { id: "judgement", icon: "\uD83E\uDDE0", label: "Own judgement", short: "Judgement", tip: "Picks its own target and stays on any foe that is on it" },
+    { id: "focus", icon: "\uD83C\uDFAF", label: "Focus my target", short: "Focus", tip: "Goes for the enemy you have picked, even off a foe that is on it" },
+    { id: "guard", icon: "\uD83D\uDEE1\uFE0F", label: "Guard me", short: "Guard", tip: "Stays beside you and fights only foes on you or on it" },
+    { id: "hold", icon: "\u270B", label: "Hold back", short: "Hold", tip: "Keeps out of the melee and covers up; an archer keeps shooting" }
+  ];
+  function allyStanceOf(s, slot) {
+    var v = String(s["combat_ally" + slot + "_stance"] || "judgement");
+    for (var i = 0; i < ALLY_STANCES.length; i++) if (ALLY_STANCES[i].id === v) return ALLY_STANCES[i];
+    return ALLY_STANCES[0];
+  }
+  function setAllyStance(slot, id) {
+    var s = window.stats;
+    if (!s || !slot) return;
+    s["combat_ally" + slot + "_stance"] = id;
+    var name = fmt(s["combat_ally" + slot + "_name"]), m = {};
+    try { m = JSON.parse(s.ally_stance_memory || "{}") || {}; } catch (e) { m = {}; }
+    if (name) {
+      if (id === "judgement") delete m[name]; else m[name] = id;
+      s.ally_stance_memory = JSON.stringify(m);
+    }
+  }
   function renderAllyOrders() {
     var tray = document.getElementById("allyOrderTray"), s = window.stats || {};
-    if (!allyOrderSlot || !allyCanReceiveChokepointOrders(s, allyOrderSlot)) {
+    if (!allyOrderSlot || !isTruthy(s.combat_engaged) || (Number(s["combat_ally" + allyOrderSlot + "_hp"]) || 0) <= 0) {
       if (tray) tray.className = "";
       return;
     }
     var anchor = document.querySelector("[data-ally-orders=\"" + allyOrderSlot + "\"]");
     if (!anchor) { closeAllyOrders(); return; }
     var name = fmt(s["combat_ally" + allyOrderSlot + "_name"]) || "Ally";
+    var cur = allyStanceOf(s, allyOrderSlot).id;
     tray = allyOrderTray();
-    tray.innerHTML = "<div class=\"allyOrderHead\"><span>" + esc(name) + "</span><small>Orders</small></div>" +
-      "<div class=\"allyOrderButtons\">" +
-        "<button type=\"button\" data-ally-order=\"trade_places\" data-tip=\"Spend movement to take this ally's place in the chokepoint\"><b>⇄</b><span>Swap with me</span></button>" +
-        "<button type=\"button\" data-ally-order=\"call_ally_back\" data-tip=\"Spend movement to have this ally yield the chokepoint\"><b>↩</b><span>Yield opening</span></button>" +
-      "</div>";
+    tray.innerHTML = "<div class=\"allyOrderHead\"><span>" + esc(name) + "</span><small>Stance</small></div>" +
+      "<div class=\"allyStanceButtons\">" + ALLY_STANCES.map(function (st) {
+        return "<button type=\"button\" class=\"" + (st.id === cur ? "on" : "") + "\" data-ally-stance=\"" + st.id + "\" aria-pressed=\"" + (st.id === cur) +
+          "\" data-tip=\"" + esc(st.tip) + "\"><b>" + st.icon + "</b><span>" + esc(st.label) + "</span></button>";
+      }).join("") + "</div>" +
+      (allyCanReceiveChokepointOrders(s, allyOrderSlot) ?
+        "<div class=\"allyOrderSub\">Chokepoint</div><div class=\"allyOrderButtons\">" +
+          "<button type=\"button\" data-ally-order=\"trade_places\" data-tip=\"Spend movement to take this ally's place in the chokepoint\"><b>⇄</b><span>Swap with me</span></button>" +
+          "<button type=\"button\" data-ally-order=\"call_ally_back\" data-tip=\"Spend movement to have this ally yield the chokepoint\"><b>↩</b><span>Yield opening</span></button>" +
+        "</div>" : "");
     tray.className = "open";
     // The sidebar is fixed to the right edge, so the tray grows left into open game space rather than making
     // the sidebar taller or widening it. Clamp only against the viewport's left edge.
@@ -1732,10 +1780,12 @@ button#statSidebar .turnRow,
           // current holder has an order; a later wider chokepoint can expose the same compact control on every
           // eligible holder without adding a new row of player actions per ally.
           var cOrder = "";
-          if ((kind === "ally") && !friendlyOn && (cHp > 0) && allyCanReceiveChokepointOrders(s, slot)) {
+          if ((kind === "ally") && !friendlyOn && (cHp > 0)) {
+            // Every living ally has the control: it names the ally's stance (ALLY_STANCES) and opens the tray, which adds the chokepoint orders when they apply.
+            var cStance = allyStanceOf(s, slot);
             cOrder = "<button type=\"button\" class=\"allyOrderToggle" + (allyOrderSlot === slot ? " open" : "") +
               "\" data-ally-orders=\"" + slot + "\" aria-expanded=\"" + (allyOrderSlot === slot) +
-              "\" data-tip=\"Open " + esc(cName) + "'s combat orders\">Orders</button>";
+              "\" data-tip=\"" + esc(cName) + ": " + esc(cStance.label) + "\">" + esc(cStance.short) + "</button>";
           }
           var cChip = cDead ? "" : chipHtml({ kind: kind, slot: slot, chip: kind === "enemy" ? String(slot) : String.fromCharCode(64 + slot) }, "idChip");
           var cNameHtml = "<span class=\"turnMain\"><span>" + cDartsTag + cChip + "<span class=\"" +
@@ -3019,6 +3069,14 @@ button#statSidebar .turnRow,
   // open left into the play area without changing the sidebar's height. Its controls call BattleHud.pick,
   // which selects the existing ChoiceScript choice rather than reproducing any combat rule in JavaScript.
   document.addEventListener("click", function (ev) {
+    var stanceEl = ev.target && ev.target.closest ? ev.target.closest("[data-ally-stance]") : null;
+    if (stanceEl && allyOrderSlot) {
+      ev.preventDefault();
+      setAllyStance(allyOrderSlot, stanceEl.getAttribute("data-ally-stance"));
+      renderStatSidebar();
+      renderAllyOrders();
+      return;
+    }
     var el = ev.target && ev.target.closest ? ev.target.closest("[data-ally-order]") : null;
     if (el) {
       ev.preventDefault();

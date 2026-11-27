@@ -1,0 +1,1794 @@
+### 1. New Startup Part: `web/mygame/scenes/startup_parts/61_redvein_tunnel.txt`
+
+```choicescript
+*comment ====================================================================================
+*comment THE SINGING TUNNEL (Redvein village quest, alderford/redvein/singing_tunnel.txt)
+*comment Stage 0: not started; 1: notice taken, talk to Berek; 2: contract active (prep & delve);
+*comment 3: undead cleared & proof gathered; 5: resolved (rv_st_finished = true).
+*comment Endings (rv_st_ending):
+*comment   "", "paid_clean", "blackmail_greedy", "blackmail_widows",
+*comment   "exposed_to_mara", "berek_killed", "fled_berek"
+*comment ====================================================================================
+*create rv_st_stage 0
+*create rv_st_ending ""
+*create rv_st_finished false
+*create rv_st_success false
+*create rv_st_reward_claimed false
+*create rv_st_insignia_credited false
+*create rv_st_berek_nervous false
+*create rv_st_clue_wounds false
+*create rv_st_clue_missing false
+*create rv_st_borrowed_lamp false
+*create rv_st_gas_intact true
+*create rv_st_gas_blasted false
+*create rv_st_gas_burned_player false
+*create rv_st_found_wall false
+*create rv_st_has_berek_seal false
+*create rv_st_malkin_spared false
+*create rv_st_undead_dead false
+*create rv_st_has_tags false
+*create rv_st_berek_dead false
+*create rv_st_berek_looted false
+*create rv_st_mara_exposed false
+*create rv_st_aftermath_eastcut false
+*create rv_st_aftermath_gather false
+*create rv_st_aftermath_lantern false
+*create rv_lantern_kitchen_unlocked false
+*create rv_ilyra_spark false
+*create met_overseer_berek false
+```
+
+*(Run `node tools/build_startup.js` after adding this file.)*
+
+---
+
+### 2. Main Quest Scene: `web/mygame/scenes/alderford/redvein/singing_tunnel.txt`
+
+*(Every `[b]◈ ...[/b]` heading is strictly a real location name or omitted; zero em dashes; plain modern language; every `#` choice strictly under 100 characters; all combats lethal with spread enemy tiles and authored terrain.)*
+
+```choicescript
+*comment ====================================================================================
+*comment THE SINGING TUNNEL (Redvein village quest)
+*comment Triggered from Redvein's Gather House notice rail (nb_read, cr_origin = "rv")
+*comment under the Gilded Scales page, or by meeting Overseer Berek at the Eastcut gate.
+*comment Uses real catalog gear (hooded_lantern + lamp_oil, moonshard, night_eye_ring,
+*comment pitch_torch, alchemists_fire, fire_arrow, iron_crowbar) and spells (light,
+*comment detect_magic, fire_bolt, burning_hands, thaumaturgy).
+*comment All combats are lethal (combat_player_can_die = true, combat_is_nonlethal = false).
+*comment ====================================================================================
+
+*comment ====================================================================================
+*comment BEAT 1A: NOTICE BOARD ENTRY (GATED ON CONTRACTOR'S INSIGNIA)
+*comment ====================================================================================
+
+*label rv_st_notice_take
+*set scenery_subplace "redvein_gather_house"
+*set met_overseer_berek true
+*if (rv_st_stage = 0)
+  *set rv_st_stage 1
+[b]◈ THE GATHER HOUSE[/b]
+*line_break
+You press your Contractor's Insignia to the heavy card pinned beneath the slats. Thin pale lines settle onto the brass face: eight silver marks for clearing whatever broke into the Old South Tunnel at the Eastcut, paid on proof by Overseer Berek.
+
+Mara Venn glances up from her narrow book without stopping her pen. "Three haulers went down there three days back," she says quietly. "Only one made it to the surface, and he died on Ilyra's back table last night. Speak to Berek at the Eastcut gate if you mean to go down."
+*choice
+  # Walk up to the Eastcut Market and find Overseer Berek. [~5 min]
+    *goto rv_st_meet_berek
+  # Step back to the Gather House.
+    *goto_scene alderford/redvein/gather_house rv_gather_house_main
+
+*label rv_st_notice_need
+*set scenery_subplace "redvein_gather_house"
+[b]◈ THE GATHER HOUSE[/b]
+*line_break
+You reach for the Eastcut mine posting, and the wax mark at its foot belongs to the Gilded Scales. The work goes to a bearer of a Contractor's Insignia, which the Seals window in Port Valen or the Factor's Hall in Timbermouth sells.
+*page_break Step back from the notice rail…
+*set cr_origin "rv"
+*goto_scene port_valen/radiant/notice_board nb_read
+
+*comment ====================================================================================
+*comment BEAT 1B: MEETING OVERSEER BEREK AT THE EASTCUT GATE
+*comment ====================================================================================
+
+*label rv_st_meet_berek
+*set scenery_subplace "redvein_eastcut"
+*set met_overseer_berek true
+*set minutes_to_pass 5
+*set time_advance_call_id "rv_st_meet_berek"
+*gosub rv_st_advance_time
+
+[b]◈ THE EASTCUT MARKET[/b]
+*line_break
+At the far edge of the packed ore yard, thick oak boards have been nailed loosely across a dark tunnel opening in the red slope. Beside it stands a thick-shouldered man in his early fifties wearing a heavy leather vest and iron-stained sleeves, tapping a short measuring rod against his palm. Twenty paces away by the scale platform, two Scales guards watch the strongbox without looking over.
+
+"Overseer Berek," the man says sharply as you stop beside the barred opening. "You took my card off Mara's rail?"
+
+"Eight silver marks for whatever killed your haulers," you say. "What broke into the tunnel?"
+
+"Cave beasts or mountain ghouls, most likely," Berek says fast, jerking his chin at the dark boards. "Crews cut into a deeper side chamber three days back and something came out in the dark. The Scales guards only watch the ore wagons and the strongbox, and my miners won't step back inside till it's dead."
+
+He fixes cold, practical eyes on you. "Kill whatever lives down in the Old South Tunnel, bring me proof it's done, and I'll count eight silver marks into your hand and close your brass. Just don't waste time poking behind the rotted wooden wall at the far end. Kill the beasts and come straight back up."
+
+*choice
+  # Watch his face and ask what sits behind that rotted wooden wall.@{show_stat_hints  [Insight DC 12]|}
+    *goto rv_st_berek_insight
+  # Take the contract and prepare before going underground.
+    *set rv_st_stage 2
+    "I'll take the job," you tell him. "Leave the boards loose enough to pull."
+
+    Berek nods once and steps back toward the sorting sheds. "Sooner the better. Every day this tunnel stays shut costs Alderford ten carts of ore."
+    *goto rv_st_prep_hint
+  # Step back to the Eastcut Market for now.
+    *goto_scene alderford/redvein/eastcut rv_eastcut_main
+
+*label rv_st_berek_insight
+*set scenery_subplace "redvein_eastcut"
+"Funny thing to warn a stranger about," you say evenly, watching his jaw. "Why do you care what sits behind an old wooden wall?"
+*gosub_scene dice_engine roll_skill_check 12 "insight" "" "" "" "" ""
+*if (check_success)
+  *set rv_st_berek_nervous true
+  Sweat beads faintly along Berek's temple despite the cold foothill wind, and his grip tightens on the measuring rod. "Weak roof beams, nothing more," he snaps too fast. "You poke at six-year-old wet timber and you bring the hill down on your own head. Take the eight silver or walk away." He is hiding something behind that wall.
+*else
+  Berek shrugs one wide shoulder without blinking. "Old flooded roof beams. You pull at rotted wood and the ceiling drops on your neck. Simple as that."
+*choice
+  # Take the contract and look around Redvein before going down.
+    *set rv_st_stage 2
+    "Fair enough," you say. "Keep the outer bar loose."
+    *goto rv_st_prep_hint
+  # Leave him at the tunnel mouth for now.
+    *goto_scene alderford/redvein/eastcut rv_eastcut_main
+
+*label rv_st_prep_hint
+Before stepping down into the dark, you can head straight for the Old South Tunnel, or talk to Ilyra Fen at The Red Lantern and Mara Venn at the Gather House to learn what they know.
+*choice
+  # Go straight down into the Old South Tunnel now. [~10 min]
+    *goto rv_st_tunnel_enter
+  # Step back to the Eastcut Market to prepare first.
+    *goto_scene alderford/redvein/eastcut rv_eastcut_main
+
+*comment ====================================================================================
+*comment BEAT 2: OPTIONAL FORENSIC INVESTIGATION IN REDVEIN
+*comment ====================================================================================
+
+*label rv_st_talk_ilyra
+*set scenery_subplace "village_inn_hall"
+*set minutes_to_pass 10
+*set time_advance_call_id "rv_st_talk_ilyra"
+*gosub rv_st_advance_time
+
+[b]◈ THE RED LANTERN[/b]
+*line_break
+You lean against the counter beside the warm stove. "I took Berek's job for the Old South Tunnel," you tell Ilyra Fen. "Mara said the hauler who made it out died on your table last night. What did he say before he went?"
+
+Ilyra sets her cloth down and looks at you with her one sharp dark eye. "His legs locked stiff as oak planks an hour after they carried him in," she says quietly. "Cold sweat, grey lips, shivering so hard his teeth chipped. He kept saying the tunnel was singing. Iron tapping on rock in the dark, slow and steady, right before hands grabbed him out of the black water."
+
+She jerks her chin toward a wooden tub by the rear door. "His bloody coat is still waiting to be burned out back if you want to look at the cuts yourself."
+*choice
+  # Inspect the dead hauler's bloody coat closely.@{show_stat_hints  [Medicine or Investigation DC 12]|}
+    *goto rv_st_ilyra_coat
+  # Thank Ilyra and return to the common room.
+    *goto_scene alderford/redvein/red_lantern rv_lantern_main
+
+*label rv_st_ilyra_coat
+*set scenery_subplace "village_inn_hall"
+You pull the stiff, dark-stained canvas coat from the tub and spread it under the lamp by the rear door.
+*gosub_scene dice_engine roll_skill_check 12 "medicine" "" "investigation" "" "" ""
+*if (check_success)
+  *set rv_st_clue_wounds true
+  Two completely different wounds tore through this wool: ragged, dirty bite marks along the forearm that explain the stiffening poison, and deep, clean square holes punched straight through his ribs by a miner's iron pick. Worse, when you lift the wet sleeve, a sharp sour stink rises off the cloth, like rotten eggs and trapped mine gas. An open torch down in that tunnel could blow the ceiling right into your face.
+
+  Ilyra catches your grimace. "Bad gas down there too?" she asks low. "Don't carry an open flame into it. Mara keeps shuttered spare lamps on the Gather House shelf if you don't own a hooded lantern."
+*else
+  The coat is ripped wide across the chest and crusted with red ore mud and dried blood. Whatever caught him down in the dark hit hard and dragged him through foul standing water, though the tears are too ragged to read clearly.
+*page_break Return to the common room…
+*goto_scene alderford/redvein/red_lantern rv_lantern_main
+
+*label rv_st_talk_mara
+*set scenery_subplace "redvein_gather_house"
+*set minutes_to_pass 10
+*set time_advance_call_id "rv_st_talk_mara"
+*gosub rv_st_advance_time
+
+[b]◈ THE GATHER HOUSE[/b]
+*line_break
+You stop beside Mara Venn's table near the stove. "You told me Redvein shuts the yard when work below goes wrong until every person is clear," you say. "What happened in the Old South Tunnel six years back?"
+
+Mara's hand stills on her pen. Slowly, she pulls a thicker, older book from under the table and flips back through worn pages until her finger stops near an autumn entry.
+
+"Six winters ago," Mara says quietly. "Heavy rain flooded the lower seams. Five men on the south shift vanished the same week: Malkin, who led the crew, along with Tovin, Hobb, Gerric, and young Bren. Overseer Berek came down from the yard and swore the south tunnel was empty and dry, and told their five wives the men had packed up in the night to chase better pay up in the Crags."
+
+Her eyes harden slightly. "Because Berek logged them as runaways, Alderford never paid a single copper of burial silver. Five widows spent two winters leaning on my tin box by the door."
+
+*set rv_st_clue_missing true
+*if ((rv_st_clue_wounds) and ((not(has_hooded_lantern)) and (not(rv_st_borrowed_lamp))))
+  "Ilyra also said the dead hauler's coat smelled of trapped mine gas," you add.
+
+  Mara stands up at once, lifts a small iron shuttered lamp and an oil flask off the door shelf, and sets them on the table. "Take one of our spare hooded lamps for the tunnel," she says firmly. "Keep the shutter half-closed if the air turns sour, and bring it back when you're done."
+  *set rv_st_borrowed_lamp true
+
+*choice
+  # Thank Mara and step back to the Gather House.
+    *goto_scene alderford/redvein/gather_house rv_gather_house_main
+  # Head straight up to the Old South Tunnel. [~10 min]
+    *goto rv_st_tunnel_enter
+
+*comment ====================================================================================
+*comment BEAT 3: INSIDE THE OLD SOUTH TUNNEL (GAS PUZZLE + CRIME SCENE + CLIMAX)
+*comment ====================================================================================
+
+*label rv_st_tunnel_enter
+*set scenery_subplace "generic_cave"
+*set minutes_to_pass 10
+*set time_advance_call_id "rv_st_tunnel_enter"
+*gosub rv_st_advance_time
+
+*gosub_scene dungeon dg_spell_source "light" "Light" 0 "cantrip"
+*temp st_can_light dg_ss_can
+*temp st_word_light dg_ss_word
+*gosub_scene dungeon dg_spell_source "detect_magic" "Detect Magic" 10 "ritual"
+*temp st_can_dm dg_ss_can
+*temp st_tag_dm dg_ss_tag
+
+*temp st_has_safe_light false
+*if (((has_hooded_lantern) and (has_lamp_oil)) or ((rv_st_borrowed_lamp) or ((sees_in_dark) or (has_moonshard))))
+  *set st_has_safe_light true
+
+[b]◈ THE OLD SOUTH TUNNEL[/b]
+*line_break
+You slip the loose oak plank aside at the Eastcut wall and step into the Old South Tunnel. Cool air smelling of wet iron and clay closes around you as the daylight shrinks to a pale square behind your back.
+
+*if (rv_st_undead_dead)
+  The tunnel lies silent and still now, only water dripping softly from the timber beams into the dark puddles below. You already took everything worth carrying out of the flooded chamber.
+  *page_break Step back out to the Eastcut…
+  *goto_scene alderford/redvein/eastcut rv_eastcut_main
+
+Forty paces down the sloping passage, the roof drops lower between thick damp support posts. Ahead in the pitch black, a slow, steady ring carries off the wet stone.
+
+Tink… tink… tink…
+
+Like an iron pick tapping a wall in the dark.
+
+*if (rv_st_gas_intact)
+  *if (rv_st_clue_wounds)
+    Instantly you catch the sharp, rotten-egg sting you smelled on the dead hauler's coat. A heavy pocket of trapped mine gas hangs right under the low roof bend ahead.
+  *else
+    The air ahead turns oddly thick and sour, carrying a faint, bitter tang of damp sulfur and stagnant mud.
+  *choice
+    *if (st_has_safe_light)
+      # Use your safe light and move quietly past the gas pocket.
+        *goto rv_st_gas_safe
+    *if (st_can_light)
+      # [${st_word_light}: Light] Kindle cool magic light and pass the gas pocket safely.
+        *goto rv_st_gas_light_spell
+    *if (st_can_dm)
+      # [${st_tag_dm}] Check the tunnel bend ahead for magic before stepping in.
+        *goto rv_st_gas_detect_magic
+    *if (not(rv_st_clue_wounds))
+      # Pause and read the sour air before carrying flame forward.@{show_stat_hints  [Perception or Nature DC 12]|}
+        *goto rv_st_gas_check
+    # Push straight ahead through the bend with an open light.
+      *goto rv_st_gas_boom_player
+    # Back out to the Eastcut Market to prepare first.
+      *goto_scene alderford/redvein/eastcut rv_eastcut_main
+*else
+  The burnt stink of scorched air still clings to the blackened ceiling beams at the bend as you move carefully down toward the broken wooden wall.
+  *goto rv_st_broken_wall
+
+*label rv_st_gas_safe
+*set scenery_subplace "generic_cave"
+*if (sees_in_dark)
+  Keeping flame away altogether, you let your darkvision pick out the damp posts and slick tracks along the tunnel floor, moving cleanly beneath the pooled gas without sparking a single ember.
+*elseif (has_moonshard)
+  You hold Moonshard low so its cold pale shimmer lights the wet red stone without heat or flame, slipping cleanly beneath the trapped mine gas.
+*elseif ((has_hooded_lantern) and (has_lamp_oil))
+  You slide the tin shutter on your hooded lantern almost shut so only a thin band of yellow light hits the floor, moving low and steady beneath the heavy pocket of gas.
+*else
+  You turn down the shutter on Mara's borrowed hooded lamp until only a narrow strip of light reaches your boots, stepping carefully beneath the pooled mine gas without sparking it.
+*goto rv_st_broken_wall
+
+*label rv_st_gas_light_spell
+*set scenery_subplace "generic_cave"
+*gosub_scene dungeon dg_spell_source "light" "Light" 0 "cantrip"
+*gosub_scene dungeon dg_spell_cast "light"
+You touch your hand to a gear strap and kindle a clean, flameless glow. Cold white light fills the damp red walls without a spark of heat, letting you slip safely underneath the trapped gas pocket.
+*goto rv_st_broken_wall
+
+*label rv_st_gas_detect_magic
+*set scenery_subplace "generic_cave"
+*gosub_scene dungeon dg_spell_source "detect_magic" "Detect Magic" 10 "ritual"
+*gosub_scene dungeon dg_spell_cast "detect_magic"
+*if (dg_ss_cost = "ritual")
+  *set minutes_to_pass 10
+  *set time_advance_call_id "rv_st_dm_tunnel"
+  *gosub rv_st_advance_time
+*set rv_st_clue_wounds true
+Your senses stretch through the dark bend. The sour air overhead holds no magic at all: it is ordinary, explosive mine gas pooled against the low timber roof. Thirty paces further in, however, a cold, sickly pulse of death magic clings to something moving slowly behind a broken wall.
+*goto rv_st_tunnel_enter
+
+*label rv_st_gas_check
+*set scenery_subplace "generic_cave"
+You stop five paces short of the low roof bend, sniffing the sour air and watching thin misty ripples hang against the damp timbers overhead.
+*gosub_scene dice_engine roll_skill_check 12 "perception" "" "nature" "" "" ""
+*if (check_success)
+  *set rv_st_clue_wounds true
+  Mine gas, trapped thick under the low timber bend. An open torch will blow the whole stretch into blue fire. You douse any naked flame and edge low along the floor in the thin gloom until you clear the pocket safely, leaving the gas intact behind you.
+  *goto rv_st_broken_wall
+*else
+  It smells only of rotten mine mud and rust. You step straight into the low bend with your light held up.
+  *goto rv_st_gas_boom_player
+
+*label rv_st_gas_boom_player
+*set scenery_subplace "generic_cave"
+*set rv_st_gas_intact false
+*set rv_st_gas_burned_player true
+The instant open flame hits the low ceiling bend, the sour air catches with a deafening whoosh! A rolling sheet of blue fire sweeps across the timbers right over your head!
+*gosub_scene dice_engine resolve_save "combat_player_" "dexterity" 12
+*if (not(save_success))
+  *if ((not(stat_bump_locked)) or (not(locked_stat_bump_page_id = page_id)))
+    *temp st_burn_dmg 3
+    *rand st_burn_dmg 1 6
+    *set hp_current (hp_current - st_burn_dmg)
+    *if (hp_current < 1)
+      *set hp_current 1
+    *set stat_bump_locked true
+    *set locked_stat_bump_page_id page_id
+    You drop flat a heartbeat too late as searing blue heat scorches across your shoulders and hair!
+    [b][🔥 Mine Gas Blast: -${st_burn_dmg} HP | HP: ${hp_current} / ${hp_max}][/b]
+*else
+  You throw yourself flat into the wet mud just as the rolling wave of blue flame rushes harmlessly across the timbers above your back, leaving your ears ringing.
+
+Down the tunnel ahead, the steady tapping of iron stops dead. Ragged, wet shrieks echo up from the flooded dark as footsteps splash fast toward the broken wall!
+*goto rv_st_broken_wall
+
+*comment ====================================================================================
+*comment STAGE 3B: THE BROKEN WOODEN WALL (THE CRIME SCENE)
+*comment ====================================================================================
+
+*label rv_st_broken_wall
+*set scenery_subplace "generic_cave"
+*set rv_st_found_wall true
+Just past the bend, the tunnel widens before a thick wall of black, water-rotted oak planks braced from floor to roof, with a jagged gap hacked straight through its center by the haulers three days ago.
+
+Even a single glance tells a cold story. Heavy square iron spikes sealing those oak planks together were hammered in from this outside face. On the far side of the splintered wood, dark gouges and deep parallel scratches score the planks at shoulder height, made by desperate fingers clawing in the dark.
+
+Pinned beside the top crossbeam is a corroded brass plate stamped with an overseer's mark: a hammer crossed over two scales, with the initial B punched deep into the corner.
+
+*if (not(rv_st_has_berek_seal))
+  *if (has_iron_crowbar)
+    Using your iron prybar, you slip the edge cleanly behind the corroded nail and pop Overseer Berek's brass wall mark loose in one silent pull, tucking it into your pack.
+  *else
+    You work the rusted nail loose from the damp oak with your fingers and slip Overseer Berek's brass wall mark into your pack as hard proof.
+  *set rv_st_has_berek_seal true
+
+*page_break Look through the breach into the chamber…
+*goto rv_st_chamber_approach
+
+*comment ====================================================================================
+*comment STAGE 3C: THE FLOODED CHAMBER (APPROACH & LETHAL COMBAT)
+*comment ====================================================================================
+
+*label rv_st_chamber_approach
+*set scenery_subplace "generic_cave"
+*gosub_scene dungeon dg_spell_source "fire_bolt" "Fire Bolt" 0 "cantrip"
+*temp st_can_fb dg_ss_can
+*temp st_word_fb dg_ss_word
+*gosub_scene dungeon dg_spell_source "thaumaturgy" "Thaumaturgy" 0 "cantrip"
+*temp st_can_thaum dg_ss_can
+*temp st_word_thaum dg_ss_word
+*temp st_can_ignite false
+*if ((rv_st_gas_intact) and ((st_can_fb) or ((has_pitch_torch) or ((has_alchemists_fire) or (has_fire_arrow)))))
+  *set st_can_ignite true
+
+[b]◈ THE FLOODED CHAMBER[/b]
+*line_break
+Through the jagged gap in the oak wall opens a wide, low dig chamber knee-deep in black standing water. Two rusted iron ore carts lie tipped on their sides in the shallows, and five small brass miner shift tags glint faintly near skeletal scraps along the far wall.
+
+Inside the dark water, three grey-skinned, starved dead figures turn slowly toward the breach. Two crouch low behind the overturned ore carts with cracked teeth bared and ragged nails dripping dark muck. Deeper in the flooded chamber stands a taller, hollow-eyed figure dragging a heavy square-headed iron pickaxe through the water, its jaw hanging loose.
+
+*if (rv_st_gas_burned_player)
+  Alerted by the gas blast in the bend, all three surge straight toward the breach before you can catch your breath!
+  *set combat_enemy_advantage true
+  *page_break Hold the breach…
+  *goto rv_st_mine_fight
+
+*choice
+  *if ((rv_st_clue_missing) and (rv_st_has_berek_seal))
+    # Call Malkin by name and hold up Berek's wall mark.@{show_stat_hints  [Persuasion or Religion DC 13]|}
+      *goto rv_st_call_malkin
+  *if (st_can_ignite)
+    # Draw them toward the bend and ignite the trapped mine gas!
+      *goto rv_st_blow_gas
+  # Hold the narrow breach with your ${weapon} ready and fight. [Lethal Combat]
+    *set combat_enemy_advantage false
+    *goto rv_st_mine_fight
+  # Pull back out of the Old South Tunnel before they spot you.
+    *goto_scene alderford/redvein/eastcut rv_eastcut_main
+
+*label rv_st_call_malkin
+*set scenery_subplace "generic_cave"
+*if (st_can_thaum)
+  *gosub_scene dungeon dg_spell_source "thaumaturgy" "Thaumaturgy" 0 "cantrip"
+  *gosub_scene dungeon dg_spell_cast "thaumaturgy"
+  *set advantage true
+  You let the cantrip carry your voice clear and ringing across the black water, holding Overseer Berek's brass wall mark high in the gap.
+*else
+  *set advantage true
+  You hold Overseer Berek's brass wall mark clearly in the breach and call straight across the flooded chamber.
+
+"Malkin! Berek told Redvein you ran off to the Crags and cheated your widows out of burial coin. I have his brass mark in my hand. Let the dead rest, and I swear I'll lay your five tags on Mara Venn's table!"
+*gosub_scene dice_engine roll_skill_check 13 "persuasion" "" "religion" "" "" ""
+*if (check_success)
+  *set rv_st_malkin_spared true
+  The tall undead shift-boss stops dead in knee-deep water. A long, rattling sigh tears out of his grey throat as the iron pick slips from his stiff fingers and splashes beneath the surface. He stays frozen beside the far support beam while the two mindless, starving ghouls behind the ore carts shriek and lunge straight at the breach!
+  *set combat_enemy_advantage false
+  *page_break Hold the breach against the ghouls…
+  *goto rv_st_mine_fight
+*else
+  Six winters trapped in suffocating dark have eaten whatever man Malkin used to be. At the sound of Berek's name, the hollow-eyed boss lets out a terrible scraping howl, lifts his heavy iron pick, and splashes forward behind both ghouls!
+  *set combat_enemy_advantage false
+  *page_break Hold the breach…
+  *goto rv_st_mine_fight
+
+*label rv_st_blow_gas
+*set scenery_subplace "generic_cave"
+You strike the oak frame hard twice to draw all three dead miners shuffling toward the bend, then step back behind a thick timber post just outside the sour gas pocket.
+*if (st_can_fb)
+  *gosub_scene dungeon dg_spell_source "fire_bolt" "Fire Bolt" 0 "cantrip"
+  *gosub_scene dungeon dg_spell_cast "fire_bolt"
+  *set rv_st_gas_intact false
+  *set rv_st_gas_blasted true
+  As the undead crowd into the low breach, you snap a bright mote of fire straight into the hanging mist! A thunderous wall of blue flame roars back through the breach, blasting all three figures backward into the water in a shower of sparks and scorched rags!
+  *set combat_enemy_advantage false
+  *page_break Charge through the smoke…
+  *goto rv_st_mine_fight
+*elseif (has_alchemists_fire)
+  *set rv_st_gas_intact false
+  *set rv_st_gas_blasted true
+  *gosub_scene equipment consume_gear "alchemists_fire"
+  As the undead crowd toward the breach, you hurl a glass flask of Alchemist's Fire straight against the low ceiling beam! The glass shatters, igniting the pocket in a roaring blue blast that hurls all three dead miners backward across the flooded stone!
+  *set combat_enemy_advantage false
+  *page_break Charge through the smoke…
+  *goto rv_st_mine_fight
+*else
+  You light a pine pitch torch (or fire arrow) low to the floor and whip it straight through the breach into the pooled gas overhead!
+  *gosub_scene dice_engine roll_skill_check 12 "athletics" "" "sleight_of_hand" "" "" ""
+  *set rv_st_gas_intact false
+  *if (check_success)
+    *set rv_st_gas_blasted true
+    The flame catches right over their heads! A roaring wave of blue fire hammers through the breach, searing all three dead miners and leaving tongues of flame dancing across the slick oil film on the water!
+    *set combat_enemy_advantage false
+  *else
+    The flame tumbles short and blows early in the gap, singeing your sleeve as the blue fire clears the bend without reaching the chamber—bringing all three screaming out of the smoke!
+    *set combat_enemy_advantage true
+  *page_break Hold the breach…
+  *goto rv_st_mine_fight
+
+*comment ====================================================================================
+*comment LETHAL MINE FIGHT: SPREAD ACROSS TILES 1, 2, 3
+*comment Terrain: chokepoint at 0 (wall breach), cover at 1 (ore cart), water/fire at 2.
+*comment ====================================================================================
+
+*label rv_st_mine_fight
+*set scenery_combat_place "generic_cave"
+*set combat_player_can_die true
+*set combat_is_nonlethal false
+*set combat_open_sky false
+*set combat_no_morale true
+*set combat_terrain_layout "fixed"
+*set combat_terrain1_type "chokepoint"
+*set combat_terrain1_position 0
+*set combat_terrain2_type "cover"
+*set combat_terrain2_position 1
+*if (rv_st_gas_blasted)
+  *set combat_terrain3_type "fire"
+*else
+  *set combat_terrain3_type "water"
+*set combat_terrain3_position 2
+*set combat_lib_1 "lacedon"
+*set combat_enemy_name_override "Mine Ghoul"
+*set combat_enemy_epithet_override "the first mine ghoul"
+*if (rv_st_gas_blasted)
+  *set combat_enemy_hp_override 8
+*else
+  *set combat_enemy_hp_override 14
+*set combat_enemy_ac_override 12
+*set combat_enemy_atk_override 3
+*set combat_enemy_range 1
+*set combat_lib_2 "lacedon"
+*set combat_enemy2_name_override "Second Mine Ghoul"
+*set combat_enemy2_epithet_override "the second mine ghoul"
+*if (rv_st_gas_blasted)
+  *set combat_enemy2_hp_override 8
+*else
+  *set combat_enemy2_hp_override 14
+*set combat_enemy2_ac_override 12
+*set combat_enemy2_atk_override 3
+*set combat_enemy2_range 2
+*if (not(rv_st_malkin_spared))
+  *set combat_lib_3 "wight"
+  *set combat_enemy3_name_override "Malkin"
+  *set combat_enemy3_epithet_override "Malkin"
+  *set combat_enemy3_creature_type_override "undead"
+  *if (rv_st_gas_blasted)
+    *set combat_enemy3_hp_override 18
+  *else
+    *set combat_enemy3_hp_override 26
+  *set combat_enemy3_ac_override 13
+  *set combat_enemy3_atk_override 5
+  *set combat_enemy3_dmg_sides_override 8
+  *set combat_enemy3_dmg_type_override "piercing"
+  *set combat_enemy3_range 3
+*else
+  *set combat_lib_3 ""
+*gosub_scene combat fight_library
+*set scenery_combat_place ""
+*set scenery_subplace "generic_cave"
+*if (combat_outcome = "player_died")
+  *set death_cause "combat"
+  *goto_scene death death_screen
+*if (combat_outcome = "victory")
+  *set rv_st_undead_dead true
+  *set rv_st_has_tags true
+  *set rv_st_stage 3
+  *set minutes_to_pass 20
+  *set time_advance_call_id "rv_st_mine_win"
+  *gosub rv_st_advance_time
+  *if (rv_st_malkin_spared)
+    As the second starving ghoul drops motionless into the black water, Malkin gives one slow, hollow nod from the far beam. His grey frame crumples quietly down beside his sunken iron pick, turning still for good.
+  *else
+    Silence finally settles over the flooded dig chamber, broken only by cold water dripping off the red roof rock.
+
+  Wading carefully around the overturned ore carts, you gather all five tarnished brass miner shift tags off the wet stone: Malkin, Tovin, Hobb, Gerric, and Bren. Together with Overseer Berek's brass wall mark, you hold complete proof of what happened behind that oak wall six winters ago.
+  *page_break Climb back up to the Eastcut…
+  *goto_scene alderford/redvein/eastcut rv_eastcut_main
+*else
+  *set minutes_to_pass 15
+  *set time_advance_call_id "rv_st_mine_flee"
+  *gosub rv_st_advance_time
+  You fall back through the narrow breach and sprint up the red slope, slamming the heavy oak board back across the outer tunnel gate while scraping nails hammer vainly behind it. You made it out alive, though the dead still hold the South Tunnel.
+  *page_break Catch your breath at the Eastcut…
+  *goto_scene alderford/redvein/eastcut rv_eastcut_main
+
+*comment ====================================================================================
+*comment BEAT 4A: REPORTING TO OVERSEER BEREK (CLEAN PAY OR BLACKMAIL)
+*comment ====================================================================================
+
+*label rv_st_berek_report
+*set scenery_subplace "redvein_eastcut"
+*set minutes_to_pass 10
+*set time_advance_call_id "rv_st_berek_report"
+*gosub rv_st_advance_time
+
+[b]◈ THE EASTCUT MARKET[/b]
+*line_break
+Overseer Berek meets you behind the long sorting shed, out of earshot of the Scales guards at the gate. His eyes dart straight to the mud on your boots and the dark iron pick mark across your sleeve.
+
+"Is the South Tunnel clear?" he asks briskly. "Tell me it's done so I can put crews back on the face tomorrow."
+
+*choice
+  # Tell him the dead are cleared and keep quiet about the wall for 8 silver marks.
+    *goto rv_st_end_clean
+  # Show him his brass wall mark and demand 14 silver marks for your silence.@{show_stat_hints  [Intimidation or Persuasion DC 14]|}
+    *goto rv_st_blackmail_greedy
+  # Demand your 8 silver plus 6 silver dropped in Mara's box for the five widows.@{show_stat_hints  [Intimidation or Persuasion DC 13]|}
+    *goto rv_st_blackmail_widows
+  # Walk away and take the five brass tags straight to Mara Venn instead.
+    *goto rv_st_mara_expose
+
+*label rv_st_end_clean
+*set scenery_subplace "redvein_eastcut"
+*set rv_st_stage 5
+*set rv_st_finished true
+*set rv_st_ending "paid_clean"
+*if (rv_st_borrowed_lamp)
+  *set rv_st_borrowed_lamp false
+*if (not(rv_st_reward_claimed))
+  *set rv_st_reward_claimed true
+  *set rv_st_success true
+  *set currency_add_amount 80
+  *gosub_scene economy currency_add
+  *if (has_hall_insignia)
+    *set rv_st_insignia_credited true
+    *script window.Insignia.credit(stats, "scales");
+  *gosub_scene character_progression refresh_level_up_progress
+
+"The tunnel is empty," you tell him flatly, setting the five tarnished brass shift tags and his corroded wall mark onto a timber crate between you. "Nothing left moving down there."
+
+Berek stares at the brass pieces for two cold seconds, then sweeps them all into a glowing brazier beside the sorting shed. Without changing expression, he counts eight silver marks into your palm and taps a small brass chime-key against your Contractor's Insignia.
+
+"Clean work," Berek says evenly. "And smart enough to know old dirt belongs buried."
+
+[b][💰 Received: 8 Silver Marks][/b]
+*if (rv_st_insignia_credited)
+  *line_break
+  [b][🏷️ Insignia: Port Valen page, ${hall_jobs_scales} @{(hall_jobs_scales = 1) job|jobs} finished][/b]
+*page_break Step back to the Eastcut Market…
+*goto_scene alderford/redvein/eastcut rv_eastcut_main
+
+*label rv_st_blackmail_greedy
+*set scenery_subplace "redvein_eastcut"
+*if (rv_st_clue_missing)
+  *set advantage true
+You hold up Berek's corroded brass wall mark alongside Malkin's shift tag. "Spikes hammered from the outside, fingernails scratched into the planks, and five widows told their husbands walked off to the Crags," you say flatly. "Eight silver pays for the fighting. Six more buys my silence and puts this brass in your hand instead of Mara Venn's. Fourteen silver marks, right now."
+*gosub_scene dice_engine roll_skill_check 14 "intimidation" "" "persuasion" "" "" ""
+*if (check_success)
+  *set rv_st_stage 5
+  *set rv_st_finished true
+  *set rv_st_ending "blackmail_greedy"
+  *if (rv_st_borrowed_lamp)
+    *set rv_st_borrowed_lamp false
+  *if (not(rv_st_reward_claimed))
+    *set rv_st_reward_claimed true
+    *set rv_st_success true
+    *set currency_add_amount 140
+    *gosub_scene economy currency_add
+    *if (has_hall_insignia)
+      *set rv_st_insignia_credited true
+      *script window.Insignia.credit(stats, "scales");
+    *gosub_scene character_progression refresh_level_up_progress
+  Berek's jaw locks hard enough to crack a tooth. He glances once toward the busy miners by the ore tables, then unlocks his personal iron box behind the shed boards and counts fourteen silver marks into your hand before tapping your Contractor's Insignia shut.
+
+  "Take your blood money and get off my yard," he hisses as he snatches his wall mark and the five tags out of your fingers.
+
+  [b][💰 Received: 14 Silver Marks][/b]
+  *if (rv_st_insignia_credited)
+    *line_break
+    [b][🏷️ Insignia: Port Valen page, ${hall_jobs_scales} @{(hall_jobs_scales = 1) job|jobs} finished][/b]
+  *page_break Step back to the Eastcut Market…
+  *goto_scene alderford/redvein/eastcut rv_eastcut_main
+*else
+  Berek's eyes go flat and lethal. "Six years I kept that tunnel shut," he snarls. "I'm not paying blackmail to a drifter!" He gives one sharp whistle, and two thick-armed yard bruisers step around the sorting shed behind you with iron bars in hand!
+  *set combat_enemy_advantage true
+  *page_break Defend yourself behind the sorting shed…
+  *goto rv_st_berek_fight
+
+*label rv_st_blackmail_widows
+*set scenery_subplace "redvein_eastcut"
+*if (rv_st_clue_missing)
+  *set advantage true
+You lay his brass wall mark beside the five miner tags on the crate. "Spikes driven from outside, Berek. If I walk these down to the Gather House, the miners tear this yard apart before noon. Pay me my promised eight silver, and drop six silver marks unmarked into Mara Venn's tin collection box tonight so those five widows stop starving. Do that, and the seal stays buried."
+*gosub_scene dice_engine roll_skill_check 13 "intimidation" "" "persuasion" "" "" ""
+*if (check_success)
+  *set rv_st_stage 5
+  *set rv_st_finished true
+  *set rv_st_ending "blackmail_widows"
+  *if (rv_st_borrowed_lamp)
+    *set rv_st_borrowed_lamp false
+  *if (not(rv_st_reward_claimed))
+    *set rv_st_reward_claimed true
+    *set rv_st_success true
+    *set currency_add_amount 80
+    *gosub_scene economy currency_add
+    *if (has_hall_insignia)
+      *set rv_st_insignia_credited true
+      *script window.Insignia.credit(stats, "scales");
+    *gosub_scene character_progression refresh_level_up_progress
+  Berek exhales slowly through his nose, weighing six silver against a lynching. He counts eight silver marks into your palm, taps your Contractor's Insignia closed, and seals six more silver marks inside a plain cloth wrap, handing it to a yard boy to leave at Mara's door after dark.
+
+  "Cheap price to keep the ore carts rolling," Berek mutters coldly, throwing his brass mark into the coals.
+
+  [b][💰 Received: 8 Silver Marks | 6 Silver Sent to Redvein's Collection Box][/b]
+  *if (rv_st_insignia_credited)
+    *line_break
+    [b][🏷️ Insignia: Port Valen page, ${hall_jobs_scales} @{(hall_jobs_scales = 1) job|jobs} finished][/b]
+  *page_break Step back to the Eastcut Market…
+  *goto_scene alderford/redvein/eastcut rv_eastcut_main
+*else
+  Berek laughs harshly, gripping his heavy iron measuring bar. "You think I'll empty my strongbox for dead miners? Boys, bury this stranger behind the rock heap!" Two heavy-shouldered yard thugs rush around the corner of the shed!
+  *set combat_enemy_advantage true
+  *page_break Defend yourself behind the sorting shed…
+  *goto rv_st_berek_fight
+
+*comment ====================================================================================
+*comment LETHAL FIGHT: BEREK + 2 YARD THUGS (SPREAD ACROSS TILES 1, 2, 3)
+*comment Terrain: cover at 0 (sorting table), difficult_terrain at 1 (loose rock), high_ground at 3.
+*comment ====================================================================================
+
+*label rv_st_berek_fight
+*set scenery_combat_place "redvein_eastcut"
+*set combat_player_can_die true
+*set combat_is_nonlethal false
+*set combat_open_sky true
+*set combat_no_morale true
+*set combat_terrain_layout "fixed"
+*set combat_terrain1_type "cover"
+*set combat_terrain1_position 0
+*set combat_terrain2_type "difficult_terrain"
+*set combat_terrain2_position 1
+*set combat_terrain3_type "high_ground"
+*set combat_terrain3_position 3
+*set combat_lib_1 "swordsman"
+*set combat_enemy_name_override "Yard Thug"
+*set combat_enemy_epithet_override "the first yard thug"
+*set combat_enemy_hp_override 12
+*set combat_enemy_ac_override 12
+*set combat_enemy_atk_override 3
+*set combat_lib_2 "swordsman"
+*set combat_enemy2_name_override "Second Yard Thug"
+*set combat_enemy2_epithet_override "the second yard thug"
+*set combat_enemy2_hp_override 12
+*set combat_enemy2_ac_override 12
+*set combat_enemy2_atk_override 3
+*set combat_enemy2_range 2
+*set combat_lib_3 "swordsman"
+*set combat_enemy3_name_override "Overseer Berek"
+*set combat_enemy3_epithet_override "Overseer Berek"
+*set combat_enemy3_hp_override 20
+*set combat_enemy3_ac_override 13
+*set combat_enemy3_atk_override 4
+*set combat_enemy3_dmg_sides_override 8
+*set combat_enemy3_dmg_type_override "bludgeoning"
+*set combat_enemy3_range 3
+*gosub_scene combat fight_library
+*set scenery_combat_place ""
+*set scenery_subplace "redvein_eastcut"
+*if (combat_outcome = "player_died")
+  *set death_cause "combat"
+  *goto_scene death death_screen
+*if (combat_outcome = "victory")
+  *set rv_st_berek_dead true
+  *set rv_st_stage 5
+  *set rv_st_finished true
+  *set rv_st_ending "berek_killed"
+  *if (not(rv_st_berek_looted))
+    *set rv_st_berek_looted true
+    *set currency_add_amount 100
+    *gosub_scene economy currency_add
+  *if (not(rv_st_reward_claimed))
+    *set rv_st_reward_claimed true
+    *set rv_st_success true
+    *gosub_scene character_progression refresh_level_up_progress
+  *set minutes_to_pass 15
+  *set time_advance_call_id "rv_st_berek_win"
+  *gosub rv_st_advance_time
+  Overseer Berek drops hard across the red ore gravel, his heavy iron bar rolling beside his two fallen yard thugs. You cut the heavy silver pouch from his belt, counting ten silver marks inside.
+
+  [b][💰 Looted from Overseer Berek: 10 Silver Marks][/b]
+
+  You still hold the five brass miner shift tags and Berek's wall mark in your pack.
+  *choice
+    # Carry the five tags and Berek's mark down to Mara Venn at the Gather House.
+      *goto rv_st_mara_expose
+    # Drop the brass tags beside Berek's body and walk away with his silver.
+      *if (rv_st_borrowed_lamp)
+        *set rv_st_borrowed_lamp false
+      *page_break Leave the sorting shed…
+      *goto_scene alderford/redvein/redvein redvein
+*else
+  *set rv_st_stage 5
+  *set rv_st_finished true
+  *set rv_st_ending "fled_berek"
+  *if (rv_st_borrowed_lamp)
+    *set rv_st_borrowed_lamp false
+  *set minutes_to_pass 10
+  *set time_advance_call_id "rv_st_berek_flee"
+  *gosub rv_st_advance_time
+  You vault the low sorting table and break out toward the Eastcut gate while Berek bellows behind you. He retreats straight behind the Scales guards at the strongbox and bars you from his contract pay.
+  *page_break Return to Redvein…
+  *goto_scene alderford/redvein/redvein redvein
+
+*comment ====================================================================================
+*comment BEAT 4B: EXPOSING BEREK TO MARA VENN AT THE GATHER HOUSE
+*comment Works day or night (Mara answers your knock for Malkin's tags).
+*comment ====================================================================================
+
+*label rv_st_mara_expose
+*set scenery_subplace "redvein_gather_house"
+*set rv_st_stage 5
+*set rv_st_finished true
+*set rv_st_mara_exposed true
+*set rv_lantern_kitchen_unlocked true
+*set rv_lantern_rate_copper 1
+*if (rv_st_borrowed_lamp)
+  *set rv_st_borrowed_lamp false
+*if (not(rv_st_berek_dead))
+  *set rv_st_ending "exposed_to_mara"
+
+*temp st_mara_pay 50
+*if (rv_st_berek_dead)
+  *set st_mara_pay 0
+
+*if (not(rv_st_reward_claimed))
+  *set rv_st_reward_claimed true
+  *set rv_st_success true
+  *if (st_mara_pay > 0)
+    *set currency_add_amount st_mara_pay
+    *gosub_scene economy currency_add
+  *if (has_hall_insignia)
+    *set rv_st_insignia_credited true
+    *script window.Insignia.credit(stats, "scales");
+  *gosub_scene character_progression refresh_level_up_progress
+*elseif ((rv_st_berek_dead) and ((has_hall_insignia) and (not(rv_st_insignia_credited))))
+  *set rv_st_insignia_credited true
+  *script window.Insignia.credit(stats, "scales");
+
+*set minutes_to_pass 20
+*set time_advance_call_id "rv_st_mara_done"
+*gosub rv_st_advance_time
+
+[b]◈ THE GATHER HOUSE[/b]
+*line_break
+*if (((time_period = "Dusk") or (time_period = "Night")) or (time_period = "Pre-Dawn"))
+  Though the Gather House is banked down for the night, Mara Venn answers your knock with a shuttered lamp, catches sight of Malkin's tarnished brass tag in your palm, and pulls the door wide.
+*else
+  You step straight up to Mara Venn's table beside the stove and lay all five tarnished brass miner shift tags and Overseer Berek's corroded wall mark out on the wood.
+
+Mara picks up Malkin's tag first, her thumb moving slowly over the stamped letters, then studies the iron-scarred wall mark beside it. Her face goes quiet and hard as cold granite.
+
+"Spikes hammered in from outside," she says softly, voice barely shaking. "Six winters we thought those five men left their wives behind."
+
+*if (rv_st_berek_dead)
+  "Berek tried to bury me behind the sorting shed when I confronted him," you tell her plainly. "He won't seal any more tunnels."
+
+  Mara draws a long breath and nods once. Within twenty minutes, two Scales guards inspect the broken wall below, log the Old South Tunnel clear, and tap your Contractor's Insignia shut without defending Berek. "You already took his silver," Mara says quietly, resting a steady hand on your arm. "Redvein won't forget you brought our men's names back to the surface."
+*else
+  Within ten minutes, word runs through every stone cottage in Redvein. Two dozen miners march up to the Eastcut gate gripping iron picks and shovels. Faced with Berek's own brass wall mark and an angry yard, the two Scales guards refuse to bleed for a murderer: they bind Overseer Berek's wrists in heavy rope to haul him down to Factor Morzan in Alderford, and the senior guard taps your Contractor's Insignia closed to mark the South Tunnel cleared.
+
+  Back inside the Gather House, Mara counts five silver marks out of the village box into your palm. "Five silver is all the village chest can spare, ${name}," she says quietly. "It is less than Berek offered, and worth ten times as much to every household on this hill."
+
+  [b][💰 Received: 5 Silver Marks][/b]
+
+*if (rv_st_insignia_credited)
+  *line_break
+  [b][🏷️ Insignia: Port Valen page, ${hall_jobs_scales} @{(hall_jobs_scales = 1) job|jobs} finished][/b]
+
+"And go see Ilyra at The Red Lantern when you have a quiet hour," Mara adds softly. "Malkin and his boys drank at her stove every night."
+*page_break Step back out into Redvein…
+*goto_scene alderford/redvein/redvein redvein
+
+*comment ====================================================================================
+*comment BEAT 5 (AFTERMATH AT THE RED LANTERN): ILYRA FEN'S FREE MEAL & OPTIONAL FLIRT HOOK
+*comment ====================================================================================
+
+*label rv_st_ilyra_aftermath
+*set scenery_subplace "village_inn_hall"
+*set rv_st_aftermath_lantern true
+*set minutes_to_pass 25
+*set time_advance_call_id "rv_st_ilyra_aftermath"
+*gosub rv_st_advance_time
+
+[b]◈ THE RED LANTERN[/b]
+*line_break
+When you step through the door of The Red Lantern, Ilyra Fen sets down her towel, ladles a steaming bowl of beef, turnip, and barley stew straight from the pot, and slides it across the corner table beside a full earthenware mug of dark ridge ale.
+
+"Put your purse away," Ilyra says flatly, pulling out the stool across from you and setting a second mug down for herself. "Rooms upstairs are one copper for you from today on, and you're welcome to use my stove and pot whenever you need to cook off the road."
+
+She takes a slow drink, her sharp dark right eye resting steadily on you over the rim. "Malkin used to sit right where you're sitting. Used to complain my turnips weren't soft enough, then scrape the bowl clean anyway. Thank you for not letting Berek burn their names."
+
+Her scarred fingers brush briefly along the cloudy white line crossing her left cheek. "Fighting dead men in a flooded tunnel takes steady nerves. Most travelers take the easy silver and keep riding."
+
+*choice
+  # Raise your mug to the five miners and keep it simple.
+    You lift the earthenware mug toward hers. "They deserved better than a nailed-up wall. Here's to Malkin and his crew."
+
+    Ilyra touches her mug cleanly against yours, a rare, genuine warmth easing the corners of her mouth. "To the five of them," she murmurs. "Eat up while it's hot, ${name}."
+  # Meet her eye and tell her the stove isn't the only reason to ride back up the Eastcut Road.
+    *set rv_ilyra_spark true
+    You hold her dark eye over the rim of your mug. "Good stew and a warm stove help, Ilyra. Though a woman who doesn't flinch at blood or ghosts is a better reason to ride back up this hill."
+
+    Ilyra goes still for one beat, then lets out a dry, genuine laugh. She leans forward across the scrubbed oak just enough to brush her scarred knuckles lightly across the back of your wrist.
+
+    "Careful, ${name}," she says low, a wicked glint catching in her good eye. "I've outlived two hard men and buried a worse past before."
+
+*set tavern_item_cost_copper 0
+*set tavern_item_hp_heal 0
+*set tavern_item_temp_hp 2
+*set tavern_item_type "food"
+*set tavern_item_buff_name "Ridge Stew"
+*set tavern_item_buff_desc "+1 CON"
+*set tavern_item_buff_stat "con"
+*set tavern_item_buff_bonus 1
+*set tavern_item_buff_minutes 240
+*gosub_scene economy buy_tavern_item
+
+[b][Hot Stew & Ale on the House: +2 Temp HP | +1 CON for 4 Hours | Rooms Now 1 Copper | Kitchen Access Unlocked][/b]
+*page_break Return to the common room…
+*goto_scene alderford/redvein/red_lantern rv_lantern_main
+
+*comment ====================================================================================
+*comment HELPERS & LEVEL-UP COUNTER
+*comment ====================================================================================
+
+*label rv_st_advance_time
+*set hours_to_pass 0
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return
+
+*comment replay-ok: refresh_quests_finished resets quests_finished to 0 before calling each counter.
+*label count_finished_redvein_tunnel
+*if (rv_st_success)
+  *set quests_finished + 1
+*return
+```
+
+---
+
+### 3. Wiring Hooks in Existing Files + Kitchen Reminder
+
+* **Reminder for `red_lantern.txt`:** `rv_st_mara_expose` sets **`rv_lantern_kitchen_unlocked true`** and drops `rv_lantern_rate_copper` to `1`. When wiring `singing_tunnel.txt` into Redvein, hook your inn-kitchen cooking choice in `red_lantern.txt` behind `*if (rv_lantern_kitchen_unlocked)` (same pattern as `wf_ram_kitchen_unlocked` in Whitefold)!
+
+#### A. `port_valen/radiant/notice_board.txt` (under `cr_origin = "rv"`):
+Add the Redvein notice-board posting while `rv_st_stage = 0`:
+* If `has_hall_insignia` -> `*goto_scene alderford/redvein/singing_tunnel rv_st_notice_take`
+* Else -> `*goto_scene alderford/redvein/singing_tunnel rv_st_notice_need`
+
+#### B. `alderford/redvein/eastcut.txt` (`*label rv_eastcut_main` `*choice`):
+```choicescript
+  *if ((rv_st_stage = 1) or ((rv_st_stage = 0) and (has_hall_insignia)))
+    # Speak with the mine overseer beside the barred South Tunnel. [~5 min]
+      *goto_scene alderford/redvein/singing_tunnel rv_st_meet_berek
+  *if (rv_st_stage = 2)
+    # Enter the Old South Tunnel. [~10 min]
+      *goto_scene alderford/redvein/singing_tunnel rv_st_tunnel_enter
+  *if ((rv_st_stage = 3) and (not(rv_st_berek_dead)))
+    # Report back to Overseer Berek behind the sorting shed. [~10 min]
+      *goto_scene alderford/redvein/singing_tunnel rv_st_berek_report
+```
+*(Plus a one-time aftermath line in `rv_eastcut_main` when `(rv_st_mara_exposed) and (not(rv_st_aftermath_eastcut))`: Alderford sent up a quiet, cautious new overseer who counts every miner above ground before shutting a gate.)*
+
+#### C. `alderford/redvein/gather_house.txt`:
+* Inside `*label rv_gather_house_main` `*choice` (daytime):
+```choicescript
+  *if ((rv_st_stage = 2) and (not(rv_st_clue_missing)))
+    # Ask Mara Venn about the Old South Tunnel's history. [~10 min]
+      *goto_scene alderford/redvein/singing_tunnel rv_st_talk_mara
+  *if (rv_st_stage = 3)
+    # Lay the five brass shift tags and Berek's wall mark on Mara's table.
+      *goto_scene alderford/redvein/singing_tunnel rv_st_mara_expose
+```
+* Also inside the closed/night branch of `rv_gather_house_main` when `rv_st_stage = 3`:
+```choicescript
+    # Knock on the door with Malkin's brass shift tag in hand.
+      *goto_scene alderford/redvein/singing_tunnel rv_st_mara_expose
+```
+* One-time aftermath line in `rv_gather_house_main`: if `rv_st_mara_exposed` and `not(rv_st_aftermath_gather)` -> Mara notes she entered all five men's true dates in the village book and a small marker stone now sits beside the Gather House step (or if `rv_st_ending = "blackmail_widows"`, Mara wonders aloud who dropped six unmarked silver marks into the tin box for the five widows!).
+
+#### D. `alderford/redvein/red_lantern.txt` (`*label rv_lantern_main`):
+* Right before `*choice`, if `(rv_st_mara_exposed) and (not(rv_st_aftermath_lantern))` -> `*goto_scene alderford/redvein/singing_tunnel rv_st_ilyra_aftermath`!
+* Inside `*choice` while `(rv_st_stage = 2) and (not(rv_st_clue_wounds))`:
+```choicescript
+  *if ((rv_st_stage = 2) and (not(rv_st_clue_wounds)))
+    # Ask Ilyra Fen about the hauler who died here last night. [~10 min]
+      *goto_scene alderford/redvein/singing_tunnel rv_st_talk_ilyra
+```
+
+#### E. `character_progression.txt`:
+Inside `*label refresh_quests_finished`:
+```choicescript
+*gosub_scene alderford/redvein/singing_tunnel count_finished_redvein_tunnel
+```
+
+---
+
+### 4. Quest Log Entry: `web/mygame/quest-data.js`
+
+```javascript
+    {
+      id: "redvein_singing_tunnel",
+      title: "The Singing Tunnel",
+      place: "Redvein",
+      giver: function (s) {
+        return truthy(s.met_overseer_berek) ? "Overseer Berek, The Eastcut Market" : "The Gather House notice rail";
+      },
+      goal: function (s) {
+        if (Number(s.rv_st_stage) === 1) return "Speak with Overseer Berek beside the barred South Tunnel at The Eastcut Market.";
+        if (Number(s.rv_st_stage) === 3) return "Decide whether to report back to Overseer Berek or bring the five brass shift tags and his wall mark to Mara Venn.";
+        return "Clear whatever is killing miners in the Old South Tunnel at Redvein's Eastcut.";
+      },
+      clues: function (s) {
+        var c = [];
+        if (truthy(s.rv_st_berek_nervous)) c.push("Overseer Berek grew tense warning you not to poke behind the rotted wooden wall at the far end of the South Tunnel.");
+        if (truthy(s.rv_st_clue_wounds)) c.push("The dead hauler's coat showed both bite marks and square iron pick punctures, and reeked of explosive mine gas.");
+        if (truthy(s.rv_st_clue_missing)) c.push("Six winters ago, five miners led by Malkin vanished from the South Tunnel; Berek claimed they ran off to the Crags so their widows got no burial coin.");
+        if (truthy(s.rv_st_has_berek_seal)) c.push("The old oak wall was spiked shut from the outside under Overseer Berek's brass mark, with fingernail scratches deep on the inside planks.");
+        if (truthy(s.rv_st_has_tags)) c.push("The flooded chamber is clear, and you recovered all five brass miner shift tags: Malkin, Tovin, Hobb, Gerric, and Bren.");
+        return c;
+      },
+      active: function (s) {
+        var st = Number(s.rv_st_stage) || 0;
+        return st >= 1 && st < 5;
+      }
+    },
+```
+
+---
+
+### 5. Lorebook Updates: `web/mygame/lorebook-data.js`
+
+#### A. New Person Entry (`overseer_berek`)
+```javascript
+      {
+        id: "overseer_berek", category: "people", title: "Overseer Berek",
+        sub: "Gilded Scales mine overseer, Redvein",
+        role: "Mine overseer, The Eastcut Market (Redvein)",
+        link: ["Overseer Berek", "Berek"],
+        tags: ["Redvein", "Gilded Scales"], aliases: ["Berek", "overseer", "mine boss"],
+        unlock: "met_overseer_berek",
+        body: function (s) {
+          var out = [
+            "A thick-shouldered human mine overseer in his early fifties wearing a heavy leather vest and iron-stained sleeves, running ore quotas at [[redvein|Redvein]]'s Eastcut for Alderford's Factor's Hall."
+          ];
+          if (truthy(s.rv_st_has_berek_seal)) {
+            out.push("Six winters ago, when rain flooded the Old South Tunnel, he ordered the oak support wall spiked shut from the outside on five trapped miners led by Malkin and told their widows the men had walked off to the Crags.");
+          }
+          if (truthy(s.rv_st_berek_dead)) {
+            out.push("He died fighting behind the Eastcut sorting shed after trying to silence you with hired yard thugs.");
+          } else if (s.rv_st_ending === "exposed_to_mara") {
+            out.push("After you laid the five shift tags and his brass wall mark on [[mara_venn|Mara Venn]]'s table, the Scales guards bound him and hauled him down to Alderford before the miners tore the yard apart.");
+          } else if (s.rv_st_ending === "blackmail_greedy") {
+            out.push("He paid fourteen silver marks to buy back his brass wall mark and keep the five dead miners buried.");
+          } else if (s.rv_st_ending === "blackmail_widows") {
+            out.push("Forced under threat of exposure, he paid your fee and dropped six unmarked silver marks into the Gather House collection box for the five widows.");
+          }
+          return out;
+        },
+        see: ["redvein", "mara_venn", "ilyra_fen", "gilded_scales"]
+      },
+```
+
+#### B. Gated Aftermath Lines to Append Inside Existing `redvein` & `ilyra_fen` Entries
+* Inside `redvein`:
+```javascript
+          if (truthy(s.rv_st_mara_exposed)) {
+            out.push("A small marker stone beside the Gather House step now records the five miners sealed inside the Old South Tunnel six winters ago, and Alderford sent up a cautious new overseer for the Eastcut.");
+          } else if (s.rv_st_ending === "blackmail_widows") {
+            out.push("Six unmarked silver marks left at the Gather House door saw the five widows of Malkin's old shift through the winter.");
+          }
+```
+* Inside `ilyra_fen` (convert `body` to `function (s)`):
+```javascript
+          if (truthy(s.rv_lantern_kitchen_unlocked)) {
+            out.push("After you brought Malkin's five brass shift tags back to the surface, she cut your room rate to a single copper and opened her stove and kitchen pot to you whenever your road climbs the Eastcut.");
+          }
+          if (truthy(s.rv_ilyra_spark)) {
+            out.push("Over free stew and dark ale she hinted at a harder past behind her scarred eye.");
+          }
+```
+
+---
+--
+
+### 1. New Startup Part: `web/mygame/scenes/startup_parts/62_redvein_old_debt.txt`
+
+```choicescript
+*comment ====================================================================================
+*comment OLD DEBT ON THE RIDGE (Redvein follow-up quest, alderford/redvein/old_debt.txt)
+*comment Unlocks >= 2 days after exposing Berek (rv_st_aftermath_lantern and rv_st_mara_exposed),
+*comment arriving at The Red Lantern at Dusk or Night.
+*comment Stage 0: not started; 1: waiting at stable gate to gear up; 2: climbing to lookout;
+*comment 5: resolved (rv_od_finished = true).
+*comment Endings (rv_od_ending): "", "soren_dead", "betrayed", "declined", "fled_ruin"
+*comment ====================================================================================
+*create rv_od_stage 0
+*create rv_od_ending ""
+*create rv_od_finished false
+*create rv_od_success false
+*create rv_od_reward_claimed false
+*create rv_od_scout_down false
+*create rv_od_ilyra_hurt false
+*create rv_od_bedded false
+*create rv_lantern_barred false
+*create met_soren false
+*comment Weekly casual hookup tracking for Ilyra Fen at The Red Lantern (Night only, 40% mood)
+*create if_mood_week 0
+*create if_in_mood false
+*create if_tryst_week 0
+*create if_trysts 0
+```
+
+*(Run `node tools/build_startup.js` after adding this file.)*
+
+---
+
+### 2. Main Quest Scene: `web/mygame/scenes/alderford/redvein/old_debt.txt`
+
+```choicescript
+*comment ====================================================================================
+*comment OLD DEBT ON THE RIDGE (Redvein follow-up quest for Ilyra Fen)
+*comment Triggered at The Red Lantern (Dusk or Night) at least 2 days after rv_st_mara_exposed.
+*comment Ilyra fights beside the player as combat_ally_lib_1 "guard" against Soren and his
+*comment cutthroats at the Stone Lookout up on the Coldspine ridge.
+*comment Betraying her pays 12 silver marks, gives NO level-up credit, and permanently bars
+*comment the player from The Red Lantern (rv_lantern_barred = true).
+*comment Standing by her splits 8 silver marks + optional rough, no-strings hookup
+*comment (written or [RP_SESSION:ilyra_fen]) granting Ilyra's Grit (+1 STR for 24h-48h).
+*comment ====================================================================================
+
+*comment ====================================================================================
+*comment BEAT 1: THE SCOUT BY THE STOVE
+*comment ====================================================================================
+
+*label rv_od_trigger
+*set scenery_subplace "village_inn_hall"
+*set minutes_to_pass 10
+*set time_advance_call_id "rv_od_trigger"
+*gosub rv_od_advance_time
+
+[b]◈ THE RED LANTERN[/b]
+*line_break
+The taproom is nearly empty when you push inside out of the cold air. Near the broad iron stove sits one wiry stranger in a rain-darkened riding cloak with a shortbow propped beside his bench.
+
+Ilyra Fen carries a fresh earthenware mug over to his table. As she leans down to set it on the oak, warm stove light catches the crooked white scar crossing her cloudy grey left eye.
+
+The stranger's fingers freeze on the table edge. His face goes pale. Without touching the ale, he shoves his bench back hard, grabs his bow, and bolts straight out the front door into the dark toward the Coldspine trail.
+
+Ilyra does not chase him. She stands completely still for three heartbeats, listening to boots pound away up the road, then walks calmly behind the counter and pulls a long, heavy iron butcher's knife from beneath the plank.
+
+"Sit down, ${name}, and shut the bar across that door," Ilyra says flatly, laying the blade beside the lamp.
+
+You drop the timber bar across the door and step back to the counter. "Friend of yours?" you ask.
+
+"Scout for a man named Soren," Ilyra replies, her single dark eye hard as flint. "Ten years back, I ran untaxed highland silver down off Baron Karr's mountain passes with two men: my husband Haldor, and our partner Soren. Soren sold us out to Karr's riders over a buried iron box of silver bars. Haldor died in the snow. A rider's blade took my left eye and chewed up the backs of my hands when I grabbed the steel."
+
+*set met_soren true
+She taps the heavy iron knife once against the wood. "Soren left me to freeze in a ditch. Only hitch was, Haldor had moved that silver box the night before, and only I know which stone it sits under. That scout just rode up the hill to tell Soren I'm alive."
+
+"Where is Soren?" you ask.
+
+"Old roofless stone lookout thirty minutes up the Coldspine track," Ilyra says, reaching for a dark wool cloak behind the counter. "He won't wait until morning. Either he brings hired knives down onto Redvein tonight, or I climb up there first and put him in the ground."
+
+She looks straight across the wood at you. "I have one blind side, ${name}. Anyone steps to my left in the dark and I'm dead. Watch my left flank up at that lookout tonight, and half of Haldor's silver is yours. Eight silver marks."
+
+*choice
+  # Agree to climb up to the stone lookout with her tonight. [~30 min]
+    *set rv_od_stage 2
+    "Let's go before his scout finishes catching his breath," you tell her.
+
+    Ilyra gives one sharp, approving nod, tucks the heavy knife into her belt, and motions you out through the rear stable gate onto the dark hill trail.
+    *page_break Climb the Coldspine trail…
+    *goto rv_od_lookout_arrive
+  # Tell her to wait by the stable gate while you gear up first.
+    *set rv_od_stage 1
+    "Give me ten minutes to check my gear," you tell her.
+
+    "Don't take all night," Ilyra says, pulling her cloak over her shoulders. "I'll wait by the back stable gate."
+    *goto_scene alderford/redvein/red_lantern rv_lantern_main
+  # Tell her this isn't your blood debt and step back.
+    *set rv_od_stage 5
+    *set rv_od_finished true
+    *set rv_od_ending "declined"
+    "Your old partners aren't my fight, Ilyra," you tell her plainly.
+
+    Her dark eye cools a notch, though she does not argue or beg. She lifts the heavy iron knife off the plank and slides it cleanly into her belt. "Fair enough. Every sword sets its own price. Lock up after yourself when you go."
+
+    She slips out the back door into the night alone. By morning, villagers find two dead strangers dumped off the upper Eastcut Road, and Ilyra works the counter with a fresh white bandage wrapped tight around her left forearm, strictly business from then on.
+    *page_break Step back out into Redvein…
+    *goto_scene alderford/redvein/redvein redvein
+
+*comment ====================================================================================
+*comment BEAT 2: THE STONE LOOKOUT (APPROACH, PARLEY, OR BETRAYAL)
+*comment ====================================================================================
+
+*label rv_od_lookout_arrive
+*set scenery_subplace "overworld_hilly_road"
+*set rv_od_stage 2
+*set minutes_to_pass 30
+*set time_advance_call_id "rv_od_climb"
+*gosub rv_od_advance_time
+
+[b]◈ THE STONE LOOKOUT[/b]
+*line_break
+Thirty minutes up the steep, rocky trail above Redvein stands a roofless square watchtower broken down to chest height, surrounded by loose fallen shale.
+*gosub rv_od_ridge_sky
+
+Through the jagged doorway flickers a low orange campfire. Inside the ruins, three men wait. Near the doorway leans a broad-shouldered cutthroat testing the edge of a shortblade. Perched atop the crumbled side wall with an arrow already nocked sits the wiry scout from the inn. Deeper in by the firepit stands a grey-bearded, limping veteran in scarred dark leather with a long blade strapped high on his hip.
+
+"Soren," Ilyra breathes softly beside your shoulder, her fingers gripping the handle of her heavy knife. "The archer on the wall will pick us off if we charge blind."
+
+*choice
+  # Creep along the outer rubble to drop the archer scout first.@{show_stat_hints  [Stealth DC 13]|}
+    *goto rv_od_stealth_scout
+  # Walk into the firelight beside Ilyra and face Soren.
+    *goto rv_od_parley
+  # Rush the broken archway beside Ilyra with your ${weapon} ready. [Lethal Combat]
+    *set combat_enemy_advantage false
+    "Take the doorway, Ilyra. I've got your left!" you call out, rushing straight through the jagged opening as Soren's men scramble for iron!
+    *goto rv_od_ruin_fight
+  # Back off down the hill and come back later.
+    "Not like this," you whisper. Ilyra scowls once, then slips quietly back down the dark shale with you toward Redvein.
+    *set rv_od_stage 1
+    *goto_scene alderford/redvein/red_lantern rv_lantern_main
+
+*label rv_od_stealth_scout
+*set scenery_subplace "overworld_hilly_road"
+*if (((weather = "Rain") or (weather = "Storm")) or (weather = "Fog"))
+  *set advantage true
+Motioning Ilyra to hold by the outer archway, you circle low along the shadowed stone rubble beneath the crumbled side wall where the wiry scout watches the trail.
+*gosub_scene dice_engine roll_skill_check 13 "stealth" "" "" "" "" ""
+*if (check_success)
+  *set rv_od_scout_down true
+  Your boots never shift a single loose slate. Reaching up from the dark beneath the wall, you hook the scout cleanly by the collar, drag him silent off the stones, and put him down before a sound leaves his throat.
+
+  A heartbeat later Ilyra vaults through the front archway with a sharp shout, catching the cutthroat and Soren completely flat-footed with their lookout already gone!
+  *set combat_enemy_advantage false
+  *page_break Join Ilyra inside the ruin…
+  *goto rv_od_ruin_fight
+*else
+  Loose shale shears away under your boot heel with a loud clatter! The scout whips round on the wall, screams an alarm straight at Soren, and snaps an arrow down at your chest while the cutthroat charges out the archway!
+  *set combat_enemy_advantage true
+  *page_break Fight through the ruins…
+  *goto rv_od_ruin_fight
+
+*label rv_od_parley
+*set scenery_subplace "overworld_hilly_road"
+*gosub_scene dungeon dg_spell_source "thaumaturgy" "Thaumaturgy" 0 "cantrip"
+*temp od_can_thaum dg_ss_can
+*temp od_word_thaum dg_ss_word
+
+You step openly into the orange firelight through the broken archway with Ilyra right on your right shoulder. All three men snap upright, weapons lifting fast.
+
+Soren lets out a dry, crooked laugh when firelight hits Ilyra's scarred left eye. "Well, well. Should've checked your pulse in that snowbank, Ilyra. And smart enough to hire a second blade for your blind side."
+
+His cold eyes slide straight onto you. "Wait a heartbeat, stranger. How much did she promise you for dying on a cold hill? Half of Haldor's buried silver? Eight marks?" Soren grins thinly. "Step to her left and pin her knife arm for me, and I'll count twelve silver marks straight out of that iron box into your palm. She even walks away breathing once she shows us which rock it sits under."
+
+Beside you, Ilyra does not even turn her head toward you. Her knuckles go white on her iron handle. "Your call, ${name}," she says flatly.
+
+*choice
+  # Call out Soren's hired hands to rattle their nerve.@{show_stat_hints  [Intimidation DC 14]|}
+    *goto rv_od_parley_intimidate
+  *if (od_can_thaum)
+    # [${od_word_thaum}: Thaumaturgy] Boom your voice across the ruins to scare his men.@{show_stat_hints  [Intimidation DC 14, Adv]|}
+      *goto rv_od_parley_thaum
+  # Tell Soren to choke on it and fight beside Ilyra. [Lethal Combat]
+    "Keep your silver, Soren," you tell him coldly. "We'll pry it off your dead body."
+
+    Ilyra lets out a fierce, jagged grin and lunges straight into the firelight beside you!
+    *set combat_enemy_advantage false
+    *goto rv_od_ruin_fight
+  # Grab Ilyra's knife arm from her blind side and take Soren's 12 silver.
+    *goto rv_od_betray
+
+*label rv_od_parley_intimidate
+*set scenery_subplace "overworld_hilly_road"
+You look straight past Soren at the wiry scout on the wall and the cutthroat by the doorway, voice level and cold. "Soren sold his last two partners to Karr's riders over this exact iron box. Think he's paying you two when the digging's done? Walk down that hill now, or bleed for a traitor."
+*gosub_scene dice_engine roll_skill_check 14 "intimidation" "" "" "" "" ""
+*if (check_success)
+  *set rv_od_scout_down true
+  The wiry scout hesitates on the wall, glances once at Soren's tight jaw, and drops his bow down the outer slope. "Not dying on a cold rock for Soren," he mutters, vaulting off the wall and bolting into the dark!
+
+  Soren spits a furious curse and charges with his remaining cutthroat!
+  *set combat_enemy_advantage false
+  *page_break Meet them in the firelight…
+  *goto rv_od_ruin_fight
+*else
+  Soren barks a harsh laugh. "Nice try, drifter! Cut them both down!" All three surge forward together!
+  *set combat_enemy_advantage false
+  *page_break Hold your ground…
+  *goto rv_od_ruin_fight
+
+*label rv_od_parley_thaum
+*set scenery_subplace "overworld_hilly_road"
+*gosub_scene dungeon dg_spell_source "thaumaturgy" "Thaumaturgy" 0 "cantrip"
+*gosub_scene dungeon dg_spell_cast "thaumaturgy"
+You flare the campfire embers ten feet high with the cantrip and boom your voice rolling off the cold stone walls: "Soren sold his last crew to Karr's riders! Drop your bows and run, or die beside him!"
+*set advantage true
+*gosub_scene dice_engine roll_skill_check 14 "intimidation" "" "" "" "" ""
+*if (check_success)
+  *set rv_od_scout_down true
+  Blinded by the sudden pillar of sparks and rattling voice, the wiry scout scrambles backwards off the stone wall and sprints down the dark hillside without looking back! Soren curses wildly and rushes forward with his remaining cutthroat!
+  *set combat_enemy_advantage false
+  *page_break Meet them in the firelight…
+  *goto rv_od_ruin_fight
+*else
+  "Magic tricks won't stop steel—kill them!" Soren roars, lunging through the falling sparks with both hired men right behind him!
+  *set combat_enemy_advantage false
+  *page_break Hold your ground…
+  *goto rv_od_ruin_fight
+
+*comment ====================================================================================
+*comment BETRAYAL ENDING: PERMANENTLY BARRED FROM THE RED LANTERN, NO LEVEL-UP CREDIT
+*comment ====================================================================================
+
+*label rv_od_betray
+*set scenery_subplace "overworld_hilly_road"
+*set rv_od_stage 5
+*set rv_od_finished true
+*set rv_od_ending "betrayed"
+*set rv_lantern_barred true
+*set rv_lantern_room_active false
+*set rv_lantern_kitchen_unlocked false
+*set rv_ilyra_spark false
+*if (not(rv_od_reward_claimed))
+  *set rv_od_reward_claimed true
+  *set currency_add_amount 120
+  *gosub_scene economy currency_add
+*set minutes_to_pass 30
+*set time_advance_call_id "rv_od_betray"
+*gosub rv_od_advance_time
+
+You shift cleanly into Ilyra's blind left side before she can pivot, lock her right wrist hard behind her back, and wrench the heavy butcher's knife loose onto the shale.
+
+She drives an elbow sharp into your ribs, snarling low, before Soren's cutthroat slams his shoulder into her and forces her knees into the gravel while binding her wrists with hemp cord. Ilyra twists her head up toward you, her single dark eye burning with cold hatred.
+
+"Should've known better than to trust a blade off the road," she spits into the dirt at your feet.
+
+Soren squats in front of her, holding a burning branch an inch from her face, and calmly names Redvein's cottages and Mara Venn's Gather House until Ilyra's jaw locks and she jerks her chin toward a collapsed chimney base twenty paces east of the lookout.
+
+Ten minutes later Soren's men pry up the flat hearth stone and haul out Haldor's rusted iron box. True to his crooked word, Soren counts twelve heavy silver marks into your palm, slices Ilyra's wrist rope with a mocking grin, and mounts up with his cutthroats to ride north into the dark.
+
+Ilyra pushes herself slowly off the wet dirt, wiping blood from her split cheek with the back of her scarred hand. She does not yell. Her voice drops flat as frozen iron.
+
+"Set one foot inside The Red Lantern ever again, ${name}, and I'll bury a knife in your guts before you clear the sill. Get off my hill."
+
+[b][💰 Received: 12 Silver Marks | Permanently Barred from The Red Lantern][/b]
+*page_break Walk back down to Redvein alone…
+*goto_scene alderford/redvein/redvein redvein
+
+*comment ====================================================================================
+*comment LETHAL FIGHT: PLAYER + ILYRA (GUARD ALLY) VS CUTTHROAT (1), SCOUT ARCHER (2), SOREN (3)
+*comment Terrain: cover at 0 (outer wall), difficult_terrain at 1 (rubble), cover at 2 (parapet).
+*comment ====================================================================================
+
+*label rv_od_ruin_fight
+*set scenery_combat_place "overworld_hilly_road"
+*set combat_player_can_die true
+*set combat_is_nonlethal false
+*set combat_open_sky true
+*set combat_no_morale true
+*set combat_terrain_layout "fixed"
+*set combat_terrain1_type "cover"
+*set combat_terrain1_position 0
+*set combat_terrain2_type "difficult_terrain"
+*set combat_terrain2_position 1
+*set combat_terrain3_type "cover"
+*set combat_terrain3_position 2
+*set combat_ally_lib_1 "guard"
+*set combat_ally1_name_override "Ilyra"
+*set combat_ally1_epithet_override "Ilyra"
+*set combat_ally1_range 1
+*set combat_ally1_strength_override 14
+*set combat_ally1_constitution_override 14
+*set combat_lib_1 "swordsman"
+*set combat_enemy_name_override "Cutthroat"
+*set combat_enemy_epithet_override "the cutthroat"
+*set combat_enemy_hp_override 13
+*set combat_enemy_ac_override 12
+*set combat_enemy_atk_override 3
+*if (not(rv_od_scout_down))
+  *set combat_lib_2 "archer"
+  *set combat_enemy2_name_override "Ridge Scout"
+  *set combat_enemy2_epithet_override "the ridge scout"
+  *set combat_enemy2_hp_override 11
+  *set combat_enemy2_ac_override 12
+  *set combat_enemy2_atk_override 4
+  *set combat_enemy2_range 2
+*else
+  *set combat_lib_2 ""
+*set combat_lib_3 "swordsman"
+*set combat_enemy3_name_override "Soren"
+*set combat_enemy3_epithet_override "Soren"
+*set combat_enemy3_hp_override 22
+*set combat_enemy3_ac_override 14
+*set combat_enemy3_atk_override 5
+*set combat_enemy3_dmg_sides_override 8
+*set combat_enemy3_dmg_type_override "slashing"
+*set combat_enemy3_range 3
+*gosub_scene combat fight_library
+*set scenery_combat_place ""
+*set scenery_subplace "overworld_hilly_road"
+*if (combat_outcome = "player_died")
+  *set death_cause "combat"
+  *goto_scene death death_screen
+*if (combat_outcome = "victory")
+  *if (combat_ally1_hp <= 0)
+    *set rv_od_ilyra_hurt true
+  *goto rv_od_victory
+*else
+  *set rv_od_stage 5
+  *set rv_od_finished true
+  *set rv_od_ending "fled_ruin"
+  *set minutes_to_pass 20
+  *set time_advance_call_id "rv_od_flee"
+  *gosub rv_od_advance_time
+  You break backward out of the stone archway and scramble down the dark shale trail while Soren's men shout behind you. By dawn, Ilyra makes it back down to Redvein battered and tight-lipped, refusing to speak a word about the ridge again.
+  *page_break Return to Redvein…
+  *goto_scene alderford/redvein/redvein redvein
+
+*comment ====================================================================================
+*comment BEAT 3: DIGGING UP THE SILVER & BACK AT THE RED LANTERN
+*comment ====================================================================================
+
+*label rv_od_victory
+*set scenery_subplace "overworld_hilly_road"
+*set rv_od_stage 5
+*set rv_od_finished true
+*set rv_od_ending "soren_dead"
+*if (not(rv_od_reward_claimed))
+  *set rv_od_reward_claimed true
+  *set rv_od_success true
+  *set currency_add_amount 80
+  *gosub_scene economy currency_add
+  *gosub_scene character_progression refresh_level_up_progress
+*set minutes_to_pass 35
+*set time_advance_call_id "rv_od_dig_home"
+*gosub rv_od_advance_time
+
+Soren lies dead beside his own guttering firepit, his grey beard dark with blood, with his hired killers down in the broken shale.
+
+*if (rv_od_ilyra_hurt)
+  Ilyra sits slumped against the broken stone wall clutching a deep, bleeding slash across her left shoulder, teeth clenched against the pain. You kneel beside her fast, press clean cloth tight over the cut to stop the bleeding, and help her upright.
+
+  "Still alive," she grunts through gritted teeth, nodding east toward a collapsed chimney stone twenty paces outside the wall. "Under the flat hearth rock. Dig it out before my knees quit."
+*else
+  Ilyra stands breathing hard in the firelight, wiping red iron off her long kitchen knife onto Soren's cloak. She looks down at his body for two silent seconds, spits once onto the stones, and gives you a sharp, fierce grin. "Ten years overdue. Come on, the silver's twenty paces east."
+
+At the collapsed chimney base, you pry up the flat hearth stone @{(has_iron_crowbar) cleanly with your iron prybar|with Soren's camp spade} and lift out a heavy, rusted iron strongbox. Inside sit sixteen silver marks' worth of dull stamped bars and old border coin.
+
+Ilyra divides the weight right down the middle and drops eight silver marks straight into your hand. "Fair split, ${name}. Now let's get off this ridge before the wind freezes us."
+
+[b][💰 Received: 8 Silver Marks][/b]
+*page_break Walk back down to The Red Lantern…
+*goto rv_od_lantern_night
+
+*label rv_od_lantern_night
+*set scenery_subplace "village_inn_hall"
+
+[b]◈ THE RED LANTERN[/b]
+*line_break
+Back inside The Red Lantern, the taproom lies silent and empty except for the banked glow of the iron stove. Ilyra drops the heavy timber bar across the front door.
+
+*if (rv_od_ilyra_hurt)
+  She sinks slowly onto a bench beside the stove, letting out a long breath as she pours two stiff tin cups of highland spirits with her good right hand and slides one across the wood to you.
+
+  "You pulled me off that hill in one piece," Ilyra says flatly, touching her cup to yours. "I'm too patched up for anything tonight except a pillow, ${name}, though you've earned a roof here for life. Get some sleep."
+  *page_break Step back to the common room…
+  *goto_scene alderford/redvein/red_lantern rv_lantern_main
+
+Both of you still smell of pine smoke, sweat, and dried blood. Ilyra pours two tin cups of sharp highland spirits, drains half of hers in one swallow, and steps right inside your reach beside the warm stove. She hooks one scarred thumb firmly into your belt, looking straight up at you with that dark, steady right eye.
+
+"Ten years buried, Soren's cold on the ridge, and my blood is still hammering like an ore mill," she says low, zero sweetness in her voice. "I'm too old for romance, ${name}. Upstairs, if you want to work the fight out of your veins, or take your drink and turn in."
+
+*choice
+  # Take her upstairs. [~1 hour]
+    *set rp_active_scene "none"
+    *goto rv_od_tryst
+  # [Roleplay] Take her upstairs. [~1 hour]
+    *set rp_active_scene "ilyra_fen"
+    *goto rv_od_tryst
+  # Clink your tin cup against hers and take your own room.
+    You tap your tin cup cleanly against hers and down the sharp spirits. "Get some rest, Ilyra. We earned a quiet night."
+
+    Ilyra gives a brief, amused grunt and drops her hand from your belt. "Suit yourself. Your room's waiting whenever you climb the ridge again."
+    *goto_scene alderford/redvein/red_lantern rv_lantern_main
+
+*comment ====================================================================================
+*comment CASUAL PRIMAL HOOKUP (INITIAL & WEEKLY NIGHT REPEAT AT THE RED LANTERN)
+*comment ====================================================================================
+
+*label if_week_now
+*set if_week_scratch ((((campaign_day - 1) - ((campaign_day - 1) modulo 7)) / 7) + 1)
+*return
+
+*label rv_od_repeat_door
+*set scenery_subplace "village_inn_room"
+*set minutes_to_pass 5
+*set time_advance_call_id "if_repeat_walk"
+*gosub rv_od_advance_time
+[b]◈ THE RED LANTERN[/b]
+*line_break
+The last drinker has gone home and the stove is banked down low. Ilyra slides the iron bar across the front door, wipes her scarred palms on her apron, and jerks her chin once toward the back stair.
+
+"Taproom's dead and the wind's loud," she says bluntly. "Upstairs, if you want to blow off steam."
+*choice
+  # Follow her upstairs. [~1 hour]
+    *set rp_active_scene "none"
+    *goto rv_od_tryst
+  # [Roleplay] Follow her upstairs. [~1 hour]
+    *set rp_active_scene "ilyra_fen"
+    *goto rv_od_tryst
+  # Pass tonight and stay in the common room.
+    *goto_scene alderford/redvein/red_lantern rv_lantern_main
+
+*label rv_od_tryst
+*set scenery_subplace "village_inn_room"
+*temp if_cur_week ((((campaign_day - 1) - ((campaign_day - 1) modulo 7)) / 7) + 1)
+*if (not(if_tryst_week = if_cur_week))
+  *set if_trysts + 1
+*set if_tryst_week if_cur_week
+*set rv_od_bedded true
+*set minutes_to_pass 60
+*set time_advance_call_id "rv_od_tryst"
+*gosub rv_od_advance_time
+*set ambience_intimacy true
+*if (not(rp_active_scene = "none"))
+  *set rp_encounter_rating 0
+  Ilyra shoves her bedroom door shut behind you with one boot, pulls the wooden skewer from her dark hair so it falls loose around her shoulders, and grabs the front of your shirt without a single soft word.
+
+  [RP_SESSION:${rp_active_scene}]
+  *page_break Catch your breath…
+  *goto rv_od_tryst_after
+
+*temp if_v (if_trysts modulo 3)
+*if (if_v = 1)
+  There is nothing gentle or shy about Ilyra Fen. The instant her bedroom door shuts, she grabs you by the collar, shoves your back against the plank wall, and kisses you hard enough to bruise. Her scarred hands work fast, stripping away belts and heavy wool until she drops straight onto the narrow mattress and drags you down between her thighs.
+
+  She meets every thrust head-on, gripping your shoulders with wiry strength, swearing low and breathless against your ear when you pick up the pace until the plank bed slams loud against the stone gable and both of you end up sweating and spent under the coarse wool blanket.
+*elseif (if_v = 2)
+  Ilyra pulls the carved skewer out of her hair, shoves her dark tunic over her head without a word, and pushes you back onto the edge of the bed. She climbs straight into your lap, taking hold of your neck with one scarred hand and setting a hard, hungry pace of her own, dark eye fixed sharply on yours in the dim lamplight.
+
+  When you catch her by the hips and roll her flat onto the straw mattress, she lets out a rough, satisfied laugh and locks her heels tight around your back until neither of you has breath left to talk.
+*else
+  You barely make it two steps past the latch before Ilyra turns you round, braces both palms flat against the heavy wooden chest under the window, and glances back over her bare shoulder with a wicked half-grin. "Don't go gentle on me now, ${name}."
+
+  It is fast, hot, and completely shameless, skin slapping loud over the wind rattling the shutter until she shudders hard under your hands and drops back beside you onto the bed, chest heaving.
+*goto rv_od_tryst_after
+
+*label rv_od_tryst_after
+*set scenery_subplace "village_inn_room"
+*temp if_rating 0
+*if (not(rp_active_scene = "none"))
+  *set if_rating rp_encounter_rating
+*if (if_rating < 0)
+  *set if_rating 0
+*if (if_rating > 20)
+  *set if_rating 20
+*temp if_boon_min 1440
+*if (if_rating > 5)
+  *set if_boon_min (1440 + ((if_rating - 5) * 96))
+*temp if_boon_m (if_boon_min modulo 60)
+*temp if_boon_h ((if_boon_min - if_boon_m) / 60)
+*temp if_boon_label "${if_boon_h} hours"
+*if (if_boon_m > 0)
+  *set if_boon_label "${if_boon_h} hours ${if_boon_m} minutes"
+
+*set unique_buff_input_name "Ilyra's Grit"
+*set unique_buff_input_desc "+1 STR (Rough Night at the Lantern)"
+*set unique_buff_input_stat "str"
+*set unique_buff_input_bonus 1
+*set unique_buff_input_minutes if_boon_min
+*gosub_scene economy apply_unique_buff
+
+[b][❤️ Ilyra's Grit: +1 STR for ${if_boon_label}][/b]
+
+Ilyra lies flat on her back for a minute with one forearm thrown across her brow, catching her breath, then reaches over to pour a splash of water from the jug. "Better," she grunts, handing you the cup with a dry smirk. "Sleep here if you want, or clear out before the morning carts roll in."
+
+*choice
+  # Stay the night in her bed. [~8 Hours]
+    *set ambience_intimacy false
+    *set rp_active_scene "none"
+    *goto rv_od_sleep
+  # Pull your clothes on and head back to the taproom.
+    *set ambience_intimacy false
+    *set rp_active_scene "none"
+    You dress in the dim light while Ilyra pulls the wool blanket up to her waist. "Good night's work, ${name}," she says evenly. "Pull the door shut on your way down."
+    *goto_scene alderford/redvein/red_lantern rv_lantern_main
+
+*label rv_od_sleep
+*set scenery_subplace "village_inn_room"
+*set hours_to_pass 8
+*set minutes_to_pass 0
+*set time_advance_call_id "rv_od_sleep"
+*gosub_scene calendar advance_time
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*set sleep_location_id "redvein_ilyra_bed"
+*set sleep_is_shared false
+*set sleep_is_permanent_home false
+*set sleep_is_paid_inn true
+*set sleep_tier_name "none"
+*set sleep_tier_stat1 "none"
+*set sleep_tier_bonus1 0
+*set sleep_tier_stat2 "none"
+*set sleep_tier_bonus2 0
+*gosub_scene calendar resolve_sleep
+*gosub_scene calendar update_hub_condition
+
+You sleep hard and heavy beside her while the mountain wind rattles the shutter. By the time daylight slips through the cracks, Ilyra is already downstairs banging pots over the morning stove, leaving a fresh towel beside the wash basin.
+*if (not(sleep_gear_note = ""))
+  *line_break
+  ${sleep_gear_note}
+*choice
+  # Head downstairs to the taproom.
+    *goto_scene alderford/redvein/red_lantern rv_lantern_main
+  # Step back out onto Redvein's road.
+    *goto_scene alderford/redvein/redvein redvein
+
+*comment ====================================================================================
+*comment BARRED FROM THE RED LANTERN (PERMANENT BETRAYAL PENALTY)
+*comment ====================================================================================
+
+*label rv_od_barred_door
+*set scenery_subplace "village_inn_hall"
+[b]◈ THE RED LANTERN[/b]
+*line_break
+The moment your boot crosses the threshold, Ilyra Fen stops wiping the counter and sets her heavy iron butcher's knife squarely on the scrubbed wood in front of her. Her single sharp dark eye fixes on you without blinking.
+
+"I told you once up on the ridge, ${name}," she says coldly, loud enough to quiet the nearest table. "No bed, no stew, no ale, and no stove under my roof. Turn around and get out before I throw this."
+*choice
+  # Leave The Red Lantern before she throws her knife.
+    *goto_scene alderford/redvein/redvein redvein
+
+*comment ====================================================================================
+*comment HELPERS & LEVEL-UP COUNTER
+*comment ====================================================================================
+
+*label rv_od_ridge_sky
+*if (weather = "Rain")
+  Cold mountain rain hammers the broken stone walls and turns the loose shale slick underfoot.
+*elseif (weather = "Storm")
+  Howling wind drives sheets of rain sideways across the ridge, whipping sparks out of the ruined lookout.
+*elseif (weather = "Fog")
+  Thick grey mountain fog wraps the lookout ruin, swallowing the hillside thirty paces out.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Sharp sleet stings across the open ridge and crusts the broken stonework white.
+*else
+  Clear starlight sits cold over the jagged ridge above Redvein's dark roofs.
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Water trickles through the loose shale ruts along the trail from recent rain.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The flat stones around the lookout remain dark and damp underfoot.
+*return
+
+*label rv_od_advance_time
+*set hours_to_pass 0
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return
+
+*comment replay-ok: refresh_quests_finished resets quests_finished to 0 before calling each counter.
+*label count_finished_redvein_old_debt
+*if (rv_od_success)
+  *set quests_finished + 1
+*return
+```
+
+---
+
+### 3. Wiring Hooks
+
+#### A. `alderford/redvein/red_lantern.txt`
+1. At the very top of `*label rv_lantern_main` (right after `*set scenery_subplace "village_inn_hall"`):
+```choicescript
+*if (rv_lantern_barred)
+  *goto_scene alderford/redvein/old_debt rv_od_barred_door
+*if (((rv_od_stage = 0) and ((rv_st_aftermath_lantern) and (campaign_day >= (rv_st_done_day + 2)))) and ((time_period = "Dusk") or (time_period = "Night")))
+  *goto_scene alderford/redvein/old_debt rv_od_trigger
+```
+2. Inside `*label rv_lantern_main`, compute Ilyra's weekly casual mood roll (40% once per campaign week on Night visits after `rv_od_ending = "soren_dead"`):
+```choicescript
+*temp if_cur_w ((((campaign_day - 1) - ((campaign_day - 1) modulo 7)) / 7) + 1)
+*if ((rv_od_ending = "soren_dead") and ((time_period = "Night") and (not(if_mood_week = if_cur_w))))
+  *set if_mood_week if_cur_w
+  *temp if_roll 1
+  *rand if_roll 1 100
+  *set if_in_mood (if_roll <= 40)
+```
+3. Inside `*label rv_lantern_main` `*choice`:
+```choicescript
+  *if (rv_od_stage = 1)
+    # Meet Ilyra at the rear stable gate for the climb up to the lookout. [~30 min]
+      *goto_scene alderford/redvein/old_debt rv_od_lookout_arrive
+  *if ((rv_od_ending = "soren_dead") and (((time_period = "Night") and (if_in_mood)) and (not(if_tryst_week = if_cur_w))))
+    # Catch Ilyra's eye by the banked stove and head upstairs. [~1 hour]
+      *goto_scene alderford/redvein/old_debt rv_od_repeat_door
+```
+
+#### B. `character_progression.txt`
+Inside `*label refresh_quests_finished`:
+```choicescript
+*gosub_scene alderford/redvein/old_debt count_finished_redvein_old_debt
+```
+
+---
+
+### 4. `web/mygame/quest-data.js`
+```javascript
+    {
+      id: "redvein_old_debt",
+      title: "Old Debt on the Ridge",
+      place: "Redvein",
+      giver: "Ilyra Fen, The Red Lantern",
+      goal: function (s) {
+        if (Number(s.rv_od_stage) === 1) return "Meet Ilyra Fen by the rear stable gate of The Red Lantern when you are ready to climb to the Stone Lookout.";
+        return "Go up to the Stone Lookout above Redvein with Ilyra Fen and deal with Soren and his crew.";
+      },
+      clues: function (s) {
+        var c = [];
+        if (truthy(s.met_soren)) c.push("Ten years ago, Soren sold Ilyra and her late husband Haldor out to Baron Karr's riders over a buried box of highland silver. Only Ilyra knows where Haldor hid it.");
+        if (truthy(s.met_soren)) c.push("Soren's scout spotted Ilyra's scarred eye at The Red Lantern and bolted up the trail toward the roofless Stone Lookout.");
+        return c;
+      },
+      active: function (s) {
+        var st = Number(s.rv_od_stage) || 0;
+        return st >= 1 && st < 5;
+      }
+    },
+```
+
+---
+
+### 5. `web/mygame/lorebook-data.js` (Gated Updates to `ilyra_fen`)
+Append inside `ilyra_fen`'s `body: function (s)`:
+```javascript
+          if (truthy(s.met_soren)) {
+            out.push("Ten years before buying The Red Lantern, she ran untaxed highland silver off Baron Karr's mountain passes with her husband Haldor and their partner Soren until Soren sold them to Karr's riders, costing Haldor his life and Ilyra her left eye.");
+          }
+          if (s.rv_od_ending === "soren_dead") {
+            out.push("You climbed to the Stone Lookout beside her to watch her blind flank, put Soren down, and split Haldor's buried silver evenly.");
+          } else if (s.rv_od_ending === "betrayed") {
+            out.push("You pinned her knife arm from her blind side for twelve silver marks from Soren. She swore to put a knife in you if you ever cross The Red Lantern's threshold again.");
+          }
+```
+
+---
+
+### 6. `web/mygame/rp-data.js` (`ilyra_fen`)
+Built strictly for her **primal, rough, zero-romance veteran tone** (matching `ROLEPLAY_SYSTEM.md`):
+
+```javascript
+// In RP_CHARACTERS:
+ilyra_fen: {
+  npcName: "Ilyra Fen",
+  memory: true,
+  threadId: "cs_ilyra_fen",
+  knowsName: true,
+  companion: "Ilyra Fen, mid-forties, tall and lean human woman with wiry strength, pale olive skin, dark hair streaked with white pulled loose from a wooden skewer, a crooked scar across a cloudy grey left eye, one sharp dark charcoal right eye, and small pale knife scars across the backs of her hands.",
+  persona: "Blunt, rough, direct, unsentimental, and fiercely physical. Too old and scarred for sweet talk or romance; treats sex as hot, primal stress relief between equals who know how to handle steel. Dry humor, coarse edges, zero shyness, hates being handled like fragile glass.",
+  npcKnowledge: function (s) {
+    var p = s.name || "the player";
+    var lines = [
+      "Ilyra runs The Red Lantern in Redvein. Ten years ago she smuggled highland silver out of Baron Karr's passes until her partner Soren sold her and her husband Haldor out to Karr's riders, taking her left eye and killing Haldor.",
+      p + " exposed Overseer Berek's murder of five Redvein miners and later climbed up to the Stone Lookout beside Ilyra to watch her blind flank, kill Soren, and split Haldor's buried silver."
+    ];
+    if (s.rv_od_bedded === true || s.rv_od_bedded === "true") {
+      lines.push("Ilyra and " + p + " have already blown off steam upstairs at The Red Lantern with no strings attached.");
+    }
+    return lines.join(" ");
+  },
+  worldKnowledge: "Redvein is an iron mining village in the southern Coldspine foothills above Alderford, governed by the Gilded Scales' customs district. North over the ridges lies Baron Aldous Karr's Stenmark.",
+  lore: {
+    know: { tags: ["Redvein", "Alderford"], ids: ["baron_karr", "stenmark"] },
+    skip: ["ilyra_fen"],
+    max: 3
+  },
+  profile: [
+    "Loves rough, confident, unapologetic physical intensity: grabbing hips, pinning wrists, biting, pressing against the wall or chest, and taking her hard without hesitation.",
+    "Enjoys taking charge on top just as much as being flipped onto her back, trading dry rough talk.",
+    "Dislikes mushy romance, flowery love confessions, timid hesitation, or anyone pitying her scarred eye."
+  ],
+  profileHeadings: ["Turn-ons", "Pace & Style", "Turn-offs"]
+},
+
+// In RP_DATA:
+ilyra_fen: {
+  character: "ilyra_fen",
+  kind: "intimate",
+  title: "Ilyra Fen",
+  subtitle: "Upstairs at The Red Lantern",
+  setting: "Ilyra's plain, dry upstairs room at The Red Lantern in Redvein. Thick stone gable against the mountain wind, narrow timber bed with a coarse wool blanket, heavy wooden chest beneath the latched shutter, dim lamp on the washstand.",
+  starters: [
+    "Back her straight against the shut door and kiss her hard.",
+    "Pull the wooden skewer from her hair and tell her to stop talking.",
+    "Drop onto the edge of the bed and pull her down into your lap."
+  ],
+  beats: [
+    "Rough, impatient stripping by the door with zero sweet talk",
+    "Hard, primal physical intensity where both trade control",
+    "Sweaty, breathless drop onto the wool blanket with dry veteran banter"
+  ],
+  supportsEvaluation: true,
+  formatBoon: function (rating) {
+    var r = Math.max(0, Math.min(20, Number(rating) || 0));
+    var mins = r > 5 ? 1440 + (r - 5) * 96 : 1440;
+    var m = mins % 60;
+    var h = (mins - m) / 60;
+    return "+1 STR (Ilyra's Grit) for " + h + " hours" + (m > 0 ? " " + m + " minutes" : "");
+  }
+}
+```
+
+---

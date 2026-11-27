@@ -20,7 +20,10 @@
 *temp nb_mare_open false
 *if ((cr_origin = "bm") and (bm_mare_stage = 0))
   *set nb_mare_open true
-*temp nb_any_quest (((nb_peddler_open) or (nb_forge_open)) or (nb_mare_open))
+*temp nb_rv_tunnel_open false
+*if ((cr_origin = "rv") and ((rv_st_stage = 0) and ((character_level >= 2) and ((rv_hall_seen) and (rv_lantern_seen)))))
+  *set nb_rv_tunnel_open true
+*temp nb_any_quest ((((nb_peddler_open) or (nb_forge_open)) or (nb_mare_open)) or (nb_rv_tunnel_open))
 *temp cr_lot_here false
 *if (((cr_origin = "lg") or ((cr_origin = "tm") or (cr_origin = "af"))) and (cr_lot_link))
   *set cr_lot_here true
@@ -53,6 +56,8 @@
   *set cr_where "Under the chalked heading beside the back door"
 *elseif (cr_origin = "pc")
   *set cr_where "Pinned along the wooden notice rack by the back wall"
+*elseif (cr_origin = "rv")
+  *set cr_where "Beside the hauling lists on the rail"
 *temp cr_head "THE NOTICE BOARD"
 *temp cr_seal "the city's"
 *if (cr_origin = "lg")
@@ -80,6 +85,11 @@
   A card pinned beneath STRAYS AND BRANDS carries a dark blue wax seal bearing a horse, written in a tidy clerk's hand:
 
   [i]"STRAYED. Spotted black and white mare out of the Remount Yard, Countess's brand on the left shoulder, wearing shoes with our forge mark. Four silver marks for her return unharmed. Apply at the Remount Yard gate. Sgt. Dagny Marren."[/i]
+
+*if (nb_rv_tunnel_open)
+  A heavy card pinned under the wooden slats bears the green wax mark of the Gilded Scales, written in bold, hurried block letters:
+
+  [i]"EASTCUT CLEARANCE. Beasts or worse broke into the Old South Tunnel three days back and killed two haulers. Eight silver marks on proof the passage is clear. Licensed bearers only. Apply at the Eastcut gate. Overseer Berek."[/i]
 
 *if (cr_any)
   ${cr_where}, a few sheets are ruled like forms, each headed with a posting number and sealed twice, the patron's in wax and ${cr_seal} pressed beside it.
@@ -111,6 +121,12 @@
   *if ((nb_mare_open) and (not(cr_can)))
     # Take the stray-mare notice from the Remount Yard.
       *goto_scene Langston/broadmead/bolted_mare bm_mare_notice_need
+  *if ((nb_rv_tunnel_open) and (cr_can))
+    # Press your insignia to Overseer Berek's mine-clearance notice.
+      *goto_scene alderford/redvein/singing_tunnel rv_st_notice_take
+  *if ((nb_rv_tunnel_open) and (not(cr_can)))
+    # Take Overseer Berek's Eastcut tunnel notice.
+      *goto_scene alderford/redvein/singing_tunnel rv_st_notice_need
   *if ((crp1_open) and (cr_can))
     # Press your insignia to the posting and take the courier job to ${crp1_to_name}.
       *set cr_pick 1

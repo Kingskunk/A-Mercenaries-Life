@@ -61,6 +61,12 @@
         if (truthy(s.ox_yard_seen)) {
           out.push("The Salting & Cattle Yard pairs a long stone curing shed and stacked oak salt casks with hide-stretching racks and slatted holding pens, hiring steady backs by the half-day to haul salt or mend hurdles.");
         }
+        if (truthy(s.ox_hh_beast_dead)) {
+          out.push("A ten-foot armored burrower that dragged down cattle in the south sinkholes was killed outside the outer pens.");
+        }
+        if (s.ox_hh_ending === "exposed_to_bram") {
+          out.push("Hartwell tax collector [[daven_marsh|Daven Marsh]] was caught with double tax books in Oxworth and hauled off in rope by local cattlemen.");
+        }
         return out;
       },
       see: ["western_vale", "broadmead", "palmcote", "bram_tallow", "sigrin_copperpot"]
@@ -69,7 +75,6 @@
     {
       id: "palmcote", category: "places", title: "Palmcote",
       sub: "An olive-grove village on a sun-facing slope under Hartwell",
-      rp: "An olive village under Hartwell: one steep lane of pale stone houses under red tile roofs, with drystone terraces of olive trees all around. Everyone picks, carts or presses olives; along the lane are the Gathering Hall, The Green Branch inn and the market.",
       tags: ["Palmcote", "Hartwell", "Trade", "Lodging"],
       aliases: [
         "Palmcote", "olive terraces", "olive groves", "Gathering Hall",
@@ -139,6 +144,11 @@
         if (truthy(s.ox_hl_asked_dues)) {
           out.push("Quietly, he admits Hartwell's gate collectors sometimes classify borderline Oxworth calves as outsider stock to extract stiffer silver dues before winter, leaving him to haggle back half the overcharge from the road steward.");
         }
+        if (s.ox_hh_ending === "exposed_to_bram") {
+          out.push("With [[daven_marsh|Daven Marsh]]'s double tax books in hand, he sent Oxworth cattlemen across the lane to bind Marsh for the Viscountess's road patrol, giving the village hard proof against Hartwell's inflated foreign-stock counts.");
+        } else if (truthy(s.ox_hh_bram_goodwill) && truthy(s.ox_hh_daven_dead)) {
+          out.push("After Daven Marsh died in the inn's cart yard, you brought Bram the taxman's double books to clear Oxworth's herd counts with Hartwell.");
+        }
         return out;
       },
       see: ["oxworth", "sigrin_copperpot"]
@@ -174,7 +184,6 @@
     {
       id: "nora_greer", category: "people", title: "Nora Greer",
       sub: "Village head of Palmcote",
-      rp: "Palmcote's village head: a spare, watchful woman in her late fifties with silver-streaked hair pinned tight, ink on her knuckles and an ash walking stick. She keeps the village register at the Gathering Hall.",
       role: "Village Head, the Gathering Hall (Palmcote)",
       tags: ["Palmcote", "Hartwell"],
       aliases: ["Nora", "Greer", "village head"],
@@ -199,7 +208,6 @@
     {
       id: "odda_pellam", category: "people", title: "Odda Pellam",
       sub: "Innkeeper of The Green Branch",
-      rp: "Keeps The Green Branch: a stout woman in her sixties with a long grey braid and flour to the elbows. She bakes the bread, ladles bean-and-olive stew and rents the rooms upstairs.",
       role: "Innkeeper, The Green Branch (Palmcote)",
       tags: ["Palmcote", "Lodging"],
       aliases: ["Odda", "Pellam", "innkeeper", "Green Branch"],
@@ -223,7 +231,6 @@
     {
       id: "house_ferrand", category: "factions", title: "House Ferrand",
       sub: "The noble house above Palmcote",
-      rp: "The noble family who own Palmcote's estate: the grey stone house behind the high wall at the crest, the terraces, the leases and the pressing house. They live in Hartwell; their estate steward runs it, with a bailiff over the weighing yard. Villagers call it the big house; its burned olive-tree crest is on every cart, lease and scale box.",
       tags: ["Palmcote", "Hartwell"],
       aliases: ["Ferrand", "House Ferrand", "the big house", "house on the hill"],
       link: ["House Ferrand"],
@@ -303,6 +310,60 @@
         return out;
       },
       see: ["palmcote", "house_ferrand", "lina_verner", "nora_greer"]
+    },
+
+    {
+      id: "daven_marsh", category: "people", title: "Daven Marsh",
+      sub: "Hartwell cattle buyer and tax collector",
+      role: "Cattle buyer & tax collector, Hartwell",
+      tags: ["Oxworth", "Hartwell", "Trade"],
+      aliases: ["Daven", "Marsh", "tax collector", "cattle buyer"],
+      link: ["Daven Marsh"],
+      unlock: "met_daven_marsh",
+      body: function (s) {
+        var out = [
+          "A loud, heavy-set human cattle buyer and tax collector out of Hartwell in his early forties, wearing fur-trimmed wool and traveling with two hired drovers. He hired you at [[oxworth|The Yoke & Horn]] to kill an armored beast in the south sinkholes and recover his locked leather saddlebag."
+        ];
+        if (truthy(s.ox_hh_book_read)) {
+          out.push("Inside his saddlebag sat two sets of tax books proving he charged Oxworth herders double as foreign stock and pocketed more than forty silver marks behind Hartwell's back.");
+        }
+        if (truthy(s.ox_hh_daven_dead)) {
+          out.push("He died fighting in the muddy cart yard behind The Yoke & Horn.");
+        } else if (s.ox_hh_ending === "exposed_to_bram") {
+          out.push("After you gave his double tax books to [[bram_tallow|Bramwell \"Bram\" Tallow]], Oxworth cattlemen bound him for the Hartwell road patrol.");
+        } else if (s.ox_hh_ending === "extorted") {
+          out.push("You forced him to pay heavily in the cart yard to buy back his crooked tax books before riding back to Hartwell.");
+        } else if (s.ox_hh_ending === "paid_clean") {
+          out.push("He paid six silver marks once you brought back the beast's jaw and his unopened saddlebag.");
+        }
+        return out;
+      },
+      see: ["oxworth", "vera_marsh", "bram_tallow"]
+    },
+
+    {
+      id: "vera_marsh", category: "people", title: "Vera Marsh",
+      sub: "Wife of Daven Marsh, of Hartwell",
+      role: "Hartwell townswoman, visiting Oxworth",
+      tags: ["Oxworth", "Hartwell"],
+      aliases: ["Vera", "Marsh", "Widow Marsh"],
+      link: ["Vera Marsh"],
+      unlock: "met_vera_marsh",
+      body: function (s) {
+        var out = [
+          "A tall, sharp-eyed human woman in her late twenties wearing dark green wool, married to [[daven_marsh|Daven Marsh]] for his stone house in Hartwell rather than his company. Dragged out to [[oxworth|Oxworth]] while he worked the cattle pens and night dice table, she quietly warned you about the rigged tax books inside his lost saddlebag."
+        ];
+        if (truthy(s.ox_hh_vera_bedded)) {
+          out.push("While her husband threw bone dice downstairs at The Yoke & Horn, she invited you up to his rented room for the night.");
+        }
+        if (truthy(s.ox_hh_daven_dead)) {
+          out.push("After Daven died in the cart yard, she slipped his gold signet ring off his finger and prepared to return to her house in Hartwell as Widow Marsh.");
+        } else if (s.ox_hh_ending === "exposed_to_bram") {
+          out.push("She watched Oxworth's cattlemen haul Daven away in rope without raising her voice, packing her trunks to return alone to Hartwell.");
+        }
+        return out;
+      },
+      see: ["oxworth", "daven_marsh", "sigrin_copperpot"]
     }
 
   ]);

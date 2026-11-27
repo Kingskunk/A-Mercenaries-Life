@@ -1,0 +1,591 @@
+*comment ====================================================================================
+*comment OLD DEBT ON THE RIDGE (Redvein follow-up quest for Ilyra Fen)
+*comment Triggered at The Red Lantern (Dusk or Night) at least 2 days after rv_st_mara_exposed.
+*comment Ilyra fights beside the player as combat_ally_lib_1 "guard" against Soren and his
+*comment cutthroats at the Stone Lookout up on the Coldspine ridge.
+*comment Betraying her pays 12 silver marks, gives NO level-up credit, and permanently bars
+*comment the player from The Red Lantern (rv_lantern_barred = true).
+*comment Standing by her splits 8 silver marks + optional rough, no-strings hookup
+*comment (written or [RP_SESSION:ilyra_fen]) granting Ilyra's Grit (+1 STR for 24h-48h).
+*comment ====================================================================================
+
+*comment ====================================================================================
+*comment BEAT 1: THE SCOUT BY THE STOVE
+*comment ====================================================================================
+
+*label rv_od_trigger
+*set scenery_subplace "village_inn_hall"
+*set minutes_to_pass 10
+*set time_advance_call_id "rv_od_trigger"
+*gosub rv_od_advance_time
+
+[b]◈ THE RED LANTERN[/b]
+*line_break
+The taproom is nearly empty when you push inside out of the cold air. Near the broad iron stove sits one wiry stranger in a rain-darkened riding cloak with a shortbow propped beside his bench.
+
+Ilyra Fen carries a fresh earthenware mug over to his table. As she leans down to set it on the oak, warm stove light catches the crooked white scar crossing her cloudy grey left eye.
+
+The stranger's fingers freeze on the table edge. His face goes pale. Without touching the ale, he shoves his bench back hard, grabs his bow, and bolts straight out the front door into the dark toward the Coldspine trail.
+
+Ilyra does not chase him. She stands completely still for three heartbeats, listening to footsteps pound away up the road, then walks calmly behind the counter and pulls a long, heavy iron butcher's knife from beneath the plank.
+
+"Sit down, ${name}, and shut the bar across that door," Ilyra says flatly, laying the blade beside the lamp.
+
+You drop the timber bar across the door and step back to the counter. "Friend of yours?" you ask.
+
+"Scout for a man named Soren," Ilyra replies, her single dark eye hard as flint. "Ten years back, I ran untaxed highland silver down off Baron Karr's mountain passes with two men: my husband Haldor, and our partner Soren. Soren sold us out to Karr's riders over a buried iron box of silver bars. Haldor died in the snow. A rider's blade took my left eye and chewed up the backs of my hands when I grabbed the steel."
+
+*set met_soren true
+She taps the heavy iron knife once against the wood. "Soren left me to freeze in a ditch. Only hitch was, Haldor had moved that silver box the night before, and only I know which stone it sits under. That scout just rode up the hill to tell Soren I'm alive."
+
+"Where is Soren?" you ask.
+
+"Old roofless stone lookout thirty minutes up the Coldspine track," Ilyra says, reaching for a dark wool cloak behind the counter. "He won't wait until morning. Either he brings hired knives down onto Redvein tonight, or I climb up there first and put him in the ground."
+
+She looks straight across the wood at you. "I have one blind side, ${name}. Anyone steps to my left in the dark and I'm dead. Watch my left flank up at that lookout tonight, and half of Haldor's silver is yours. Eight silver marks."
+
+*choice
+  # Agree to climb up to the stone lookout with her tonight. [~30 min]
+    *set rv_od_stage 2
+    "Let's go before his scout finishes catching his breath," you tell her.
+
+    Ilyra gives one sharp, approving nod, tucks the heavy knife into her belt, and motions you out through the rear stable gate onto the dark hill trail.
+    *page_break Climb the Coldspine trail…
+    *goto rv_od_lookout_arrive
+  # Tell her to wait by the stable gate while you gear up first.
+    *set rv_od_stage 1
+    "Give me ten minutes to check my gear," you tell her.
+
+    "Don't take all night," Ilyra says, pulling her cloak over her shoulders. "I'll wait by the back stable gate."
+    *goto_scene alderford/redvein/red_lantern rv_lantern_main
+  # Tell her this isn't your blood debt and step back.
+    *set rv_od_stage 5
+    *set rv_od_finished true
+    *set rv_od_ending "declined"
+    "Your old partners aren't my fight, Ilyra," you tell her plainly.
+
+    Her dark eye cools a notch, though she does not argue or beg. She lifts the heavy iron knife off the plank and slides it cleanly into her belt. "Fair enough. Every sword sets its own price. Lock up after yourself when you go."
+
+    She slips out the back door into the night alone. By morning, villagers find two dead strangers dumped off the upper Eastcut Road, and Ilyra works the counter with a fresh white bandage wrapped tight around her left forearm, strictly business from then on.
+    *page_break Step back out into Redvein…
+    *goto_scene alderford/redvein/redvein redvein
+
+*comment ====================================================================================
+*comment BEAT 2: THE STONE LOOKOUT (APPROACH, PARLEY, OR BETRAYAL)
+*comment ====================================================================================
+
+*label rv_od_lookout_arrive
+*set scenery_subplace "redvein_stone_lookout"
+*set rv_od_stage 2
+*set minutes_to_pass 30
+*set time_advance_call_id "rv_od_climb"
+*gosub rv_od_advance_time
+
+[b]◈ THE STONE LOOKOUT[/b]
+*line_break
+Thirty minutes up the steep, rocky trail above Redvein stands a roofless square watchtower broken down to chest height, surrounded by loose fallen shale.
+*gosub rv_od_ridge_sky
+
+Through the jagged doorway flickers a low orange campfire. Inside the ruins, three men wait. Near the doorway leans a broad-shouldered cutthroat testing the edge of a shortblade. Perched atop the crumbled side wall with an arrow already nocked sits the wiry scout from the inn. Deeper in by the firepit stands a grey-bearded, limping veteran in scarred dark leather with a long blade strapped high on his hip.
+
+"Soren," Ilyra breathes softly beside your shoulder, her fingers gripping the handle of her heavy knife. "The archer on the wall will pick us off if we charge blind."
+
+*choice
+  # Creep along the outer rubble to drop the archer scout first.@{show_stat_hints  [Stealth DC 13]|}
+    *goto rv_od_stealth_scout
+  # Walk into the firelight beside Ilyra and face Soren.
+    *goto rv_od_parley
+  # Rush the broken archway beside Ilyra with your ${weapon} ready. [Lethal Combat]
+    *set combat_enemy_advantage false
+    "Take the doorway, Ilyra. I've got your left!" you call out, rushing straight through the jagged opening as Soren's men scramble for iron!
+    *goto rv_od_ruin_fight
+  # Back off down the hill and come back later.
+    "Not like this," you whisper. Ilyra scowls once, then slips quietly back down the dark shale with you toward Redvein.
+    *set rv_od_stage 1
+    *goto_scene alderford/redvein/red_lantern rv_lantern_main
+
+*label rv_od_stealth_scout
+*set scenery_subplace "redvein_stone_lookout"
+*if ((weather_wet) or (weather = "Fog"))
+  *set advantage true
+Motioning Ilyra to hold by the outer archway, you circle low along the shadowed stone rubble beneath the crumbled side wall where the wiry scout watches the trail.
+*gosub_scene dice_engine roll_skill_check 13 "stealth" "" "" "" "" ""
+*if (check_success)
+  *set rv_od_scout_down true
+  Your feet never shift a single loose slate. Reaching up from the dark beneath the wall, you hook the scout cleanly by the collar, drag him silent off the stones, and put him down before a sound leaves his throat.
+
+  A heartbeat later Ilyra vaults through the front archway with a sharp shout, catching the cutthroat and Soren completely flat-footed with their lookout already gone!
+  *set combat_enemy_advantage false
+  *page_break Join Ilyra inside the ruin…
+  *goto rv_od_ruin_fight
+*else
+  Loose shale shears away under your heel with a loud clatter! The scout whips round on the wall, screams an alarm straight at Soren, and snaps an arrow down at your chest while the cutthroat charges out the archway!
+  *set combat_enemy_advantage true
+  *page_break Fight through the ruins…
+  *goto rv_od_ruin_fight
+
+*label rv_od_parley
+*set scenery_subplace "redvein_stone_lookout"
+*gosub_scene dungeon dg_spell_source "thaumaturgy" "Thaumaturgy" 0 "cantrip"
+*temp od_can_thaum dg_ss_can
+*temp od_word_thaum dg_ss_word
+
+You step openly into the orange firelight through the broken archway with Ilyra right on your right shoulder. All three men snap upright, weapons lifting fast.
+
+Soren lets out a dry, crooked laugh when firelight hits Ilyra's scarred left eye. "Well, well. Should've checked your pulse in that snowbank, Ilyra. And smart enough to hire a second blade for your blind side."
+
+His cold eyes slide straight onto you. "Wait a heartbeat, stranger. How much did she promise you for dying on a cold hill? Half of Haldor's buried silver? Eight marks?" Soren grins thinly. "Step to her left and pin her knife arm for me, and I'll count twelve silver marks straight out of that iron box into your palm. She even walks away breathing once she shows us which rock it sits under."
+
+Beside you, Ilyra does not even turn her head toward you. Her knuckles go white on her iron handle. "Your call, ${name}," she says flatly.
+
+*choice
+  # Call out Soren's hired hands to rattle their nerve.@{show_stat_hints  [Intimidation DC 14]|}
+    *goto rv_od_parley_intimidate
+  *if (od_can_thaum)
+    # [${od_word_thaum}: Thaumaturgy] Boom across the ruins to rattle his men.@{show_stat_hints  [Intimidation DC 14, Adv]|}
+      *goto rv_od_parley_thaum
+  # Tell Soren to choke on it and fight beside Ilyra. [Lethal Combat]
+    "Keep your silver, Soren," you tell him coldly. "We'll pry it off your dead body."
+
+    Ilyra lets out a fierce, jagged grin and lunges straight into the firelight beside you!
+    *set combat_enemy_advantage false
+    *goto rv_od_ruin_fight
+  # Grab Ilyra's knife arm from her blind side and take Soren's 12 silver.
+    *goto rv_od_betray
+
+*label rv_od_parley_intimidate
+*set scenery_subplace "redvein_stone_lookout"
+You look straight past Soren at the wiry scout on the wall and the cutthroat by the doorway, voice level and cold. "Soren sold his last two partners to Karr's riders over this exact iron box. Think he's paying you two when the digging's done? Walk down that hill now, or bleed for a traitor."
+*gosub_scene dice_engine roll_skill_check 14 "intimidation" "" "" "" "" ""
+*if (check_success)
+  *set rv_od_scout_down true
+  The wiry scout hesitates on the wall, glances once at Soren's tight jaw, and drops his bow down the outer slope. "Not dying on a cold rock for Soren," he mutters, vaulting off the wall and bolting into the dark!
+
+  Soren spits a furious curse and charges with his remaining cutthroat!
+  *set combat_enemy_advantage false
+  *page_break Meet them in the firelight…
+  *goto rv_od_ruin_fight
+*else
+  Soren barks a harsh laugh. "Nice try, drifter! Cut them both down!" All three surge forward together!
+  *set combat_enemy_advantage false
+  *page_break Hold your ground…
+  *goto rv_od_ruin_fight
+
+*label rv_od_parley_thaum
+*set scenery_subplace "redvein_stone_lookout"
+*gosub_scene dungeon dg_spell_source "thaumaturgy" "Thaumaturgy" 0 "cantrip"
+*gosub_scene dungeon dg_spell_cast "thaumaturgy"
+You flare the campfire embers ten feet high with the cantrip and boom your voice rolling off the cold stone walls: "Soren sold his last crew to Karr's riders! Drop your bows and run, or die beside him!"
+*set advantage true
+*gosub_scene dice_engine roll_skill_check 14 "intimidation" "" "" "" "" ""
+*if (check_success)
+  *set rv_od_scout_down true
+  Blinded by the sudden pillar of sparks and rattling voice, the wiry scout scrambles backwards off the stone wall and sprints down the dark hillside without looking back! Soren curses wildly and rushes forward with his remaining cutthroat!
+  *set combat_enemy_advantage false
+  *page_break Meet them in the firelight…
+  *goto rv_od_ruin_fight
+*else
+  "Magic tricks won't stop steel. Kill them!" Soren roars, lunging through the falling sparks with both hired men right behind him!
+  *set combat_enemy_advantage false
+  *page_break Hold your ground…
+  *goto rv_od_ruin_fight
+
+*comment ====================================================================================
+*comment BETRAYAL ENDING: PERMANENTLY BARRED FROM THE RED LANTERN, NO LEVEL-UP CREDIT
+*comment ====================================================================================
+
+*label rv_od_betray
+*set scenery_subplace "redvein_stone_lookout"
+*set rv_od_stage 5
+*set rv_od_finished true
+*set rv_od_ending "betrayed"
+*set rv_lantern_barred true
+*set rv_lantern_room_active false
+*set rv_lantern_kitchen_unlocked false
+*set rv_ilyra_spark false
+*if (not(rv_od_reward_claimed))
+  *set rv_od_reward_claimed true
+  *set currency_add_amount 120
+  *gosub_scene economy currency_add
+*set minutes_to_pass 30
+*set time_advance_call_id "rv_od_betray"
+*gosub rv_od_advance_time
+
+You shift cleanly into Ilyra's blind left side before she can pivot, lock her right wrist hard behind her back, and wrench the heavy butcher's knife loose onto the shale.
+
+She drives an elbow sharp into your ribs, snarling low, before Soren's cutthroat slams his shoulder into her and forces her knees into the gravel while binding her wrists with hemp cord. Ilyra twists her head up toward you, her single dark eye burning with cold hatred.
+
+"Should've known better than to trust a blade off the road," she spits into the dirt at your feet.
+
+Soren squats in front of her, holding a burning branch an inch from her face, and calmly names Redvein's cottages and Mara Venn's Gather House until Ilyra's jaw locks and she jerks her chin toward a collapsed chimney base twenty paces east of the lookout.
+
+Ten minutes later Soren's men pry up the flat hearth stone and haul out Haldor's rusted iron box. True to his crooked word, Soren counts twelve heavy silver marks into your palm, slices Ilyra's wrist rope with a mocking grin, and mounts up with his cutthroats to ride north into the dark.
+
+Ilyra pushes herself slowly off the wet dirt, wiping blood from her split cheek with the back of her scarred hand. She does not yell. Her voice drops flat as frozen iron.
+
+"Set one foot inside The Red Lantern ever again, ${name}, and I'll bury a knife in your guts before you clear the sill. Get off my hill."
+
+[b][💰 Received: 12 Silver Marks | Permanently Barred from The Red Lantern][/b]
+*page_break Walk back down to Redvein alone…
+*goto_scene alderford/redvein/redvein redvein
+
+*comment ====================================================================================
+*comment LETHAL FIGHT: PLAYER + ILYRA (GUARD ALLY) VS CUTTHROAT (1), SCOUT ARCHER (2), SOREN (3)
+*comment Terrain: cover at 0 (outer wall), difficult_terrain at 1 (rubble), cover at 2 (parapet).
+*comment ====================================================================================
+
+*label rv_od_ruin_fight
+*set scenery_combat_place "redvein_stone_lookout"
+*set combat_player_can_die true
+*set combat_is_nonlethal false
+*set combat_open_sky true
+*set combat_no_morale true
+*set combat_terrain_layout "fixed"
+*set combat_terrain1_type "cover"
+*set combat_terrain1_position 3
+*set combat_terrain2_type "difficult_terrain"
+*set combat_terrain2_position 4
+*set combat_terrain3_type "cover"
+*set combat_terrain3_position 5
+*set combat_ally_lib_1 "guard"
+*set combat_ally1_name_override "Ilyra"
+*set combat_ally1_epithet_override "Ilyra"
+*set combat_ally1_range 1
+*set combat_ally1_strength_override 14
+*set combat_ally1_constitution_override 14
+*set combat_lib_1 "swordsman"
+*set combat_enemy_name_override "Cutthroat"
+*set combat_enemy_epithet_override "the cutthroat"
+*set combat_enemy_hp_override 13
+*set combat_enemy_ac_override 12
+*set combat_enemy_atk_override 3
+*set combat_enemy_range 1
+*if (not(rv_od_scout_down))
+  *set combat_lib_2 "archer"
+  *set combat_enemy2_name_override "Ridge Scout"
+  *set combat_enemy2_epithet_override "the ridge scout"
+  *set combat_enemy2_hp_override 11
+  *set combat_enemy2_ac_override 12
+  *set combat_enemy2_atk_override 4
+  *set combat_enemy2_range 2
+  *set combat_lib_3 "swordsman"
+  *set combat_enemy3_name_override "Soren"
+  *set combat_enemy3_epithet_override "Soren"
+  *set combat_enemy3_hp_override 22
+  *set combat_enemy3_ac_override 14
+  *set combat_enemy3_atk_override 5
+  *set combat_enemy3_range 3
+*else
+  *comment The scout is gone: Soren takes slot 2, since the fight library reads the slots in order and an empty one shows as a dead "none".
+  *set combat_lib_2 "swordsman"
+  *set combat_enemy2_name_override "Soren"
+  *set combat_enemy2_epithet_override "Soren"
+  *set combat_enemy2_hp_override 22
+  *set combat_enemy2_ac_override 14
+  *set combat_enemy2_atk_override 5
+  *set combat_enemy2_range 3
+  *set combat_lib_3 ""
+*gosub_scene combat fight_library
+*set scenery_combat_place ""
+*set scenery_subplace "redvein_stone_lookout"
+*if (combat_outcome = "player_died")
+  *set death_cause "combat"
+  *goto_scene death death_screen
+*if (combat_outcome = "victory")
+  *if (combat_ally1_hp <= 0)
+    *set rv_od_ilyra_hurt true
+  *goto rv_od_victory
+*else
+  *set rv_od_stage 5
+  *set rv_od_finished true
+  *set rv_od_ending "fled_ruin"
+  *set minutes_to_pass 20
+  *set time_advance_call_id "rv_od_flee"
+  *gosub rv_od_advance_time
+  You break backward out of the stone archway and scramble down the dark shale trail while Soren's men shout behind you. By dawn, Ilyra makes it back down to Redvein battered and tight-lipped, refusing to speak a word about the ridge again.
+  *page_break Return to Redvein…
+  *goto_scene alderford/redvein/redvein redvein
+
+*comment ====================================================================================
+*comment BEAT 3: DIGGING UP THE SILVER & BACK AT THE RED LANTERN
+*comment ====================================================================================
+
+*label rv_od_victory
+*set scenery_subplace "redvein_stone_lookout"
+*set rv_od_stage 5
+*set rv_od_finished true
+*set rv_od_ending "soren_dead"
+*if (not(rv_od_reward_claimed))
+  *set rv_od_reward_claimed true
+  *set rv_od_success true
+  *set currency_add_amount 80
+  *gosub_scene economy currency_add
+  *gosub_scene character_progression refresh_level_up_progress
+*set minutes_to_pass 35
+*set time_advance_call_id "rv_od_dig_home"
+*gosub rv_od_advance_time
+
+Soren lies dead beside his own guttering firepit, his grey beard dark with blood, with his hired killers down in the broken shale.
+
+*if (rv_od_ilyra_hurt)
+  Ilyra sits slumped against the broken stone wall clutching a deep, bleeding slash across her left shoulder, teeth clenched against the pain. You kneel beside her fast, press clean cloth tight over the cut to stop the bleeding, and help her upright.
+
+  "Still alive," she grunts through gritted teeth, nodding east toward a collapsed chimney stone twenty paces outside the wall. "Under the flat hearth rock. Dig it out before my knees quit."
+*else
+  Ilyra stands breathing hard in the firelight, wiping red iron off her long kitchen knife onto Soren's cloak. She looks down at his body for two silent seconds, spits once onto the stones, and gives you a sharp, fierce grin. "Ten years overdue. Come on, the silver's twenty paces east."
+
+At the collapsed chimney base, you pry up the flat hearth stone @{(has_iron_crowbar) cleanly with your iron prybar|with Soren's camp spade} and lift out a heavy, rusted iron strongbox. Inside sit sixteen silver marks' worth of dull stamped bars and old border coin.
+
+Ilyra divides the weight right down the middle and drops eight silver marks straight into your hand. "Fair split, ${name}. Now let's get off this ridge before the wind freezes us."
+
+[b][💰 Received: 8 Silver Marks][/b]
+*page_break Walk back down to The Red Lantern…
+*goto rv_od_lantern_night
+
+*label rv_od_lantern_night
+*set scenery_subplace "village_inn_hall"
+
+[b]◈ THE RED LANTERN[/b]
+*line_break
+Back inside The Red Lantern, the taproom lies silent and empty except for the banked glow of the iron stove. Ilyra drops the heavy timber bar across the front door.
+
+*if (rv_od_ilyra_hurt)
+  She sinks slowly onto a bench beside the stove, letting out a long breath as she pours two stiff tin cups of highland spirits with her good right hand and slides one across the wood to you.
+
+  "You pulled me off that hill in one piece," Ilyra says flatly, touching her cup to yours. "I'm too patched up for anything tonight except a pillow, ${name}, though you've earned a roof here for life. Get some sleep."
+  *page_break Step back to the common room…
+  *goto_scene alderford/redvein/red_lantern rv_lantern_main
+
+Both of you still smell of pine smoke, sweat, and dried blood. Ilyra pours two tin cups of sharp highland spirits, drains half of hers in one swallow, and steps right inside your reach beside the warm stove. She hooks one scarred hand firmly at your hip, looking straight up at you with that dark, steady right eye.
+
+"Ten years buried, Soren's cold on the ridge, and my blood is still hammering like an ore mill," she says low, zero sweetness in her voice. "I'm too old for romance, ${name}. Upstairs, if you want to work the fight out of your veins, or take your drink and turn in."
+
+*choice
+  # Take her upstairs. [~1 hour]
+    *set rp_active_scene "none"
+    *goto rv_od_tryst
+  # [Roleplay] Take her upstairs. [~1 hour]
+    *set rp_active_scene "ilyra_fen"
+    *goto rv_od_tryst
+  # Clink your tin cup against hers and take your own room.
+    You tap your tin cup cleanly against hers and down the sharp spirits. "Get some rest, Ilyra. We earned a quiet night."
+
+    Ilyra gives a brief, amused grunt and drops her hand from your hip. "Suit yourself. Your room's waiting whenever you climb the ridge again."
+    *goto_scene alderford/redvein/red_lantern rv_lantern_main
+
+*comment ====================================================================================
+*comment CASUAL PRIMAL HOOKUP (INITIAL & WEEKLY NIGHT REPEAT AT THE RED LANTERN)
+*comment ====================================================================================
+
+*label rv_od_rp_talk
+*set scenery_subplace "village_inn_hall"
+*set minutes_to_pass 30
+*set time_advance_call_id "rv_od_rp_talk"
+*gosub rv_od_advance_time
+[b]◈ THE RED LANTERN[/b]
+*line_break
+Ilyra pours two earthenware mugs from the cask behind the counter, carries them over beside the warm iron stove, and drops onto the opposite bench with her sleeves rolled to her forearms. "Take a load off," she says bluntly. "Tell me what the roads look like."
+
+[RP_SESSION:${rp_active_scene}]
+*page_break Set down your mug…
+*goto rv_od_rp_talk_after
+
+*label rv_od_rp_talk_after
+*if (rp_escalated)
+  *set scenery_subplace "village_inn_room"
+  *set minutes_to_pass 60
+  *set time_advance_call_id "rv_od_talk_tryst"
+  *gosub rv_od_advance_time
+  *temp if_esc_week ((((campaign_day - 1) - ((campaign_day - 1) modulo 7)) / 7) + 1)
+  *if (not(if_tryst_week = if_esc_week))
+    *comment replay-ok: guarded by if_tryst_week = if_esc_week right after time advance.
+    *set if_trysts + 1
+  *set if_tryst_week if_esc_week
+  *set rv_od_bedded true
+  *goto rv_od_tryst_after
+*set scenery_subplace "village_inn_hall"
+*set rp_active_scene "none"
+*set rp_escalated false
+*goto_scene alderford/redvein/red_lantern rv_lantern_main
+
+*label rv_od_repeat_door
+*set scenery_subplace "village_inn_room"
+*set minutes_to_pass 5
+*set time_advance_call_id "if_repeat_walk"
+*gosub rv_od_advance_time
+[b]◈ THE RED LANTERN[/b]
+*line_break
+The last drinker has gone home and the stove is banked down low. Ilyra slides the iron bar across the front door, wipes her scarred palms on her apron, and jerks her chin once toward the back stair.
+
+"Taproom's dead and the wind's loud," she says bluntly. "Upstairs, if you want to blow off steam."
+*choice
+  # Follow her upstairs. [~1 hour]
+    *set rp_active_scene "none"
+    *goto rv_od_tryst
+  # [Roleplay] Follow her upstairs. [~1 hour]
+    *set rp_active_scene "ilyra_fen"
+    *goto rv_od_tryst
+  # Pass tonight and stay in the common room.
+    *goto_scene alderford/redvein/red_lantern rv_lantern_main
+
+*label rv_od_tryst
+*set scenery_subplace "village_inn_room"
+*set minutes_to_pass 60
+*set time_advance_call_id "rv_od_tryst"
+*gosub rv_od_advance_time
+*temp if_cur_week ((((campaign_day - 1) - ((campaign_day - 1) modulo 7)) / 7) + 1)
+*if (not(if_tryst_week = if_cur_week))
+  *comment replay-ok: guarded by if_tryst_week = if_cur_week on the next line (after time advance so midnight crossings stay stable on refresh).
+  *set if_trysts + 1
+*set if_tryst_week if_cur_week
+*set rv_od_bedded true
+*set ambience_intimacy true
+*if (not(rp_active_scene = "none"))
+  *set rp_encounter_rating 0
+  Ilyra shoves her bedroom door shut behind you with one foot, pulls the wooden skewer from her dark hair so it falls loose around her shoulders, and grabs you by the shoulders without a single soft word.
+
+  [RP_SESSION:${rp_active_scene}]
+  *page_break Catch your breath…
+  *goto rv_od_tryst_after
+
+*temp if_v (if_trysts modulo 3)
+*if (if_v = 1)
+  There is nothing gentle or shy about Ilyra Fen. The instant her bedroom door shuts, she grabs you by the shoulders, shoves your back against the plank wall, and kisses you hard enough to bruise. Her scarred hands work fast, stripping away layers and straps until she drops straight onto the narrow mattress and drags you down between her thighs.
+
+  She meets every thrust head-on, gripping your shoulders with wiry strength, swearing low and breathless against your ear when you pick up the pace until the plank bed slams loud against the stone gable and both of you end up sweating and spent under the coarse wool blanket.
+*elseif (if_v = 2)
+  Ilyra pulls the carved skewer out of her hair, shoves her dark tunic over her head in one swift motion, and pushes you back onto the edge of the bed. She climbs straight into your lap, taking hold of your neck with one scarred hand and setting a hard, hungry pace of her own, dark eye fixed sharply on yours in the dim lamplight.
+
+  When you catch her by the hips and roll her flat onto the straw mattress, she lets out a rough, satisfied laugh and locks her heels tight around your back until neither of you has breath left to talk.
+*else
+  You barely make it two steps past the latch before Ilyra turns you round, braces both palms flat against the heavy wooden chest under the window, and glances back over her bare shoulder with a wicked half-grin. "Don't go gentle on me now, ${name}."
+
+  It is fast, hot, and completely shameless, skin slapping loud over the wind rattling the shutter until she shudders hard under your hands and drops back beside you onto the bed, chest heaving.
+*goto rv_od_tryst_after
+
+*label rv_od_tryst_after
+*set scenery_subplace "village_inn_room"
+*temp if_rating 0
+*if (not(rp_active_scene = "none"))
+  *set if_rating rp_encounter_rating
+*if (if_rating < 0)
+  *set if_rating 0
+*if (if_rating > 20)
+  *set if_rating 20
+*temp if_boon_min 1440
+*if (if_rating > 5)
+  *set if_boon_min (1440 + ((if_rating - 5) * 96))
+*temp if_boon_m (if_boon_min modulo 60)
+*temp if_boon_h ((if_boon_min - if_boon_m) / 60)
+*temp if_boon_label "${if_boon_h} hours"
+*if (if_boon_m > 0)
+  *set if_boon_label "${if_boon_h} hours ${if_boon_m} minutes"
+
+*set unique_buff_input_name "Ilyra's Grit"
+*set unique_buff_input_desc "+1 STR (Rough Night at the Lantern)"
+*set unique_buff_input_stat "str"
+*set unique_buff_input_bonus 1
+*set unique_buff_input_minutes if_boon_min
+*gosub_scene economy apply_unique_buff
+
+[b][❤️ Ilyra's Grit: +1 STR for ${if_boon_label}][/b]
+
+Ilyra lies flat on her back for a minute with one forearm thrown across her brow, catching her breath, then reaches over to pour a splash of water from the jug. "Better," she grunts, handing you the cup with a dry smirk. "Sleep here if you want, or clear out before the morning carts roll in."
+
+*choice
+  # Stay the night in her bed. [~8 Hours]
+    *set ambience_intimacy false
+    *set rp_active_scene "none"
+    *set rp_escalated false
+    *goto rv_od_sleep
+  # Dress and head back to the taproom.
+    *set ambience_intimacy false
+    *set rp_active_scene "none"
+    *set rp_escalated false
+    You dress in the dim light while Ilyra pulls the wool blanket up to her waist. "Good night's work, ${name}," she says evenly. "Pull the door shut on your way down."
+    *goto_scene alderford/redvein/red_lantern rv_lantern_main
+
+*label rv_od_sleep
+*set scenery_subplace "village_inn_room"
+*set hours_to_pass 8
+*set minutes_to_pass 0
+*set time_advance_call_id "rv_od_sleep"
+*gosub_scene calendar advance_time
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*set sleep_location_id "redvein_ilyra_bed"
+*set sleep_is_shared false
+*set sleep_is_permanent_home false
+*set sleep_is_paid_inn true
+*set sleep_tier_name "none"
+*set sleep_tier_stat1 "none"
+*set sleep_tier_bonus1 0
+*set sleep_tier_stat2 "none"
+*set sleep_tier_bonus2 0
+*gosub_scene calendar resolve_sleep
+*gosub_scene calendar update_hub_condition
+
+You sleep hard and heavy beside her while the mountain wind rattles the shutter. By the time daylight slips through the cracks, Ilyra is already downstairs banging pots over the morning stove, leaving a fresh towel beside the wash basin.
+*if (not(sleep_gear_note = ""))
+  *line_break
+  ${sleep_gear_note}
+*choice
+  # Head downstairs to the taproom.
+    *goto_scene alderford/redvein/red_lantern rv_lantern_main
+  # Step back out onto Redvein's road.
+    *goto_scene alderford/redvein/redvein redvein
+
+*comment ====================================================================================
+*comment BARRED FROM THE RED LANTERN (PERMANENT BETRAYAL PENALTY)
+*comment ====================================================================================
+
+*label rv_od_barred_door
+*set scenery_subplace "village_inn_hall"
+[b]◈ THE RED LANTERN[/b]
+*line_break
+The moment your foot crosses the threshold, Ilyra Fen stops wiping the counter and sets her heavy iron butcher's knife squarely on the scrubbed wood in front of her. Her single sharp dark eye fixes on you without blinking.
+
+"I told you once up on the ridge, ${name}," she says coldly, loud enough to quiet the nearest table. "No bed, no stew, no ale, and no stove under my roof. Turn around and get out before I throw this."
+*page_break Leave The Red Lantern…
+*goto_scene alderford/redvein/redvein redvein
+
+*comment ====================================================================================
+*comment HELPERS & LEVEL-UP COUNTER
+*comment ====================================================================================
+
+*label rv_od_ridge_sky
+*if (weather = "Rain")
+  Cold mountain rain hammers the broken stone walls and turns the loose shale slick underfoot.
+*elseif (weather = "Storm")
+  Howling wind drives sheets of rain sideways across the ridge, whipping sparks out of the ruined lookout.
+*elseif (weather = "Fog")
+  Thick grey mountain fog wraps the lookout ruin, swallowing the hillside thirty paces out.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Sharp sleet stings across the open ridge and crusts the broken stonework white.
+*else
+  Clear starlight sits cold over the jagged ridge above Redvein's dark roofs.
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Water trickles through the loose shale ruts along the trail from recent rain.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The flat stones around the lookout remain dark and damp underfoot.
+*return
+
+*label rv_od_advance_time
+*set hours_to_pass 0
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return
+
+*comment replay-ok: refresh_quests_finished resets quests_finished to 0 before calling each counter.
+*label count_finished_redvein_old_debt
+*if (rv_od_success)
+  *set quests_finished + 1
+*return

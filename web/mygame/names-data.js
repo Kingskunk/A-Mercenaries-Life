@@ -31,7 +31,7 @@
   // Every named person the player can already meet, first or last name. The generator skips these.
   var RESERVED = ["Kestrel", "Tolliver", "Ysolde", "Varren", "Vane", "Voss", "Thale", "Elric", "Halda", "Ambrose", "Hollis",
     "Vael", "Lyra", "Karr", "Skell", "Gault", "Rorik", "Odessa", "Bran", "Brant", "Hendryk", "Torvald", "Janna", "Maura",
-    "Talia", "Morzan", "Rennick", "Farrow", "Marda", "Corwen", "Oswin", "Maret", "Odalie", "Hollowell", "Olof", "Dagny", "Marren", "Mardred", "Birchstone", "Aubrey", "Fenn", "Ione", "Brackett", "Sigrin", "Copperpot", "Bramwell", "Bram", "Tallow", "Odda", "Pellam", "Myles", "Buckman", "Thistle", "Agnes", "Fenwick", "Nora", "Greer", "Korrigan", "Anwen", "Jory", "Flùràlainn"];
+    "Talia", "Morzan", "Rennick", "Farrow", "Marda", "Corwen", "Oswin", "Maret", "Odalie", "Hollowell", "Olof", "Dagny", "Marren", "Mardred", "Birchstone", "Aubrey", "Fenn", "Ione", "Brackett", "Sigrin", "Copperpot", "Bramwell", "Bram", "Tallow", "Odda", "Pellam", "Myles", "Buckman", "Thistle", "Agnes", "Fenwick", "Nora", "Greer", "Korrigan", "Anwen", "Jory", "Flùràlainn", "Daven", "Vera", "Marsh"];
 
   var HUMAN = {
     male: [
@@ -41,7 +41,7 @@
       "Darion", "Alistair", "Garrett", "Bram", "Cedric", "Eric", "Felix", "Gideon", "Hugo", "Kenneth", "Lucas", "Myles", "Nolan",
       "Orin", "Quentin", "Raymond", "Silas", "Tristram", "Ulric", "Vance", "Walter", "Yorick", "Alden", "Beric", "Cassian",
       "Edmund", "Francis", "Gavin", "Hal", "Idris", "Julian", "Kellan", "Leif", "Merrick", "Nash", "Owen", "Pascal", "Roland",
-      "Soren", "Tobin", "Urban", "Vaughn", "Wade"
+      "Tobin", "Urban", "Vaughn", "Wade"
     ],
     female: [
       "Angeline", "Dona", "Kathleen", "Maira", "Atala", "Elena", "Kaya", "Marta", "Priska", "Betha", "Esvele", "Keri", "Maura",

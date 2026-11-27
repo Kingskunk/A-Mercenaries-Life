@@ -20,7 +20,7 @@
 *line_break
 The work yard lies below a raw red slope where several dark mine mouths have been cut into the hill. Thick timber frames hold the ground above their entrances, and a bell rope hangs beside the nearest gate. The packed ground before the shelters is Redvein's market: carters' wagons and trestle stalls line its edge, miners' wives sell bread, roots and wool between the long tables of broken stone, and a raised scale platform takes the weight of each loaded wagon before it goes down the ridge. A large wooden wheel turns slowly at the far end of the yard, winding rope over a sheltered shaft.
 
-Two Scales road wardens work the market edge while ore is weighed and coin changes hands. One remains with the scale-keeper and the strongbox; the other watches the loaded wagons at the Eastcut gate. The crews handle safety below ground, and the wardens leave village quarrels to the Gather House.
+Two Scales guards work the market edge while ore is weighed and coin changes hands. One remains with the scale-keeper and the strongbox; the other watches the loaded wagons at the Eastcut gate. The crews handle safety below ground, and the guards leave village quarrels to the Gather House.
 
 *if (weather = "Rain")
   Rain darkens the cut slope and taps steadily on the timber roofs over the mine mouths.
@@ -29,7 +29,7 @@ Two Scales road wardens work the market edge while ore is weighed and coin chang
 *elseif ((weather = "Snow") or (weather = "Sleet"))
   Wet snow gathers on the timber frames and melts where it touches the churned red ground.
 *elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
-  A few covered lamps burn near the gate, the stalls stand bare under their tarpaulins, and the work faces beyond the frames are black. The road-warden pair trades the gate watch and the scale-platform round while the night crew works below.
+  A few covered lamps burn near the gate, the stalls stand bare under their tarpaulins, and the work faces beyond the frames are black. The guard pair trades the gate watch and the scale-platform round while the night crew works below.
 
 *if ((ground_state = "sodden") and (not(weather_wet)))
   The yard stays soft around the cart tracks, with water darkening the ground beside the scale platform.
@@ -43,6 +43,10 @@ Two Scales road wardens work the market edge while ore is weighed and coin chang
 *else
   Stone, rope, wagon wheels and shoppers move through the yard in separate lines, each leaving space for the next.
 
+*if ((rv_st_mara_exposed) and (not(rv_st_aftermath_eastcut)))
+  *set rv_st_aftermath_eastcut true
+  Near the far mine gate, a quiet, cautious new overseer sent up from Alderford checks each crew's brass shift tags on a slate before letting any timber bar drop across a tunnel mouth.
+
 *comment The market is open by day (the hub shuts the yard in storm weather); the panel and its hidden settle option are on this page only then.
 *temp rv_market_open false
 *if ((not(time_period = "Night")) and (not(time_period = "Pre-Dawn")))
@@ -55,6 +59,15 @@ Two Scales road wardens work the market edge while ore is weighed and coin chang
 *comment Open-world free time: the sidebar's Wait and Rest work on this page (web/mygame/pagegate.js).
 *set wait_ok_page page_id
 *choice
+  *if ((rv_st_stage = 1) or ((rv_st_stage = 0) and ((has_hall_insignia) and ((character_level >= 2) and ((rv_hall_seen) and (rv_lantern_seen))))))
+    # Speak with the mine overseer beside the barred South Tunnel. [~5 min]
+      *goto_scene alderford/redvein/singing_tunnel rv_st_meet_berek
+  *if (rv_st_stage = 2)
+    # Enter the Old South Tunnel. [~10 min]
+      *goto_scene alderford/redvein/singing_tunnel rv_st_tunnel_enter
+  *if ((rv_st_stage = 3) and (not(rv_st_berek_dead)))
+    # Report back to Overseer Berek behind the sorting shed. [~10 min]
+      *goto_scene alderford/redvein/singing_tunnel rv_st_berek_report
   *if (rv_market_open)
     # ⚖ Settle up at the scale and the stalls.
       *goto rv_market_settle

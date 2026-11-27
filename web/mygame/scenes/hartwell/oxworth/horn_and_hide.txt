@@ -1,0 +1,995 @@
+*comment ====================================================================================
+*comment HORN & HIDE (Oxworth village quest)
+*comment Triggered from The Yoke & Horn (ox_yh_hall).
+*comment Daven Marsh (Hartwell tax collector and cattle buyer) offers 6 silver marks to kill
+*comment a burrowing beast in the South Sinkholes and bring back his locked saddlebag
+*comment unopened. His wife Vera Marsh tips the player off about the fake tax books inside
+*comment and invites the player to Daven's upstairs room while he plays dice downstairs.
+*comment All combats are lethal (combat_player_can_die = true, combat_is_nonlethal = false).
+*comment ====================================================================================
+
+*comment ====================================================================================
+*comment BEAT 1: MEETING DAVEN MARSH AT THE YOKE & HORN
+*comment ====================================================================================
+
+*label ox_hh_meet_daven
+*set scenery_subplace "village_inn_hall"
+*temp hh_revisit (ox_hh_stage = 1)
+*set ox_hh_stage 1
+*set met_daven_marsh true
+*set minutes_to_pass 10
+*set time_advance_call_id "ox_hh_meet_daven"
+*gosub ox_hh_advance_time
+
+[b]◈ THE YOKE & HORN[/b]
+*line_break
+*if (hh_revisit)
+  Daven Marsh sits on the same hearth bench with his two hired drovers at the end of the table, swirling the last of his ale. He looks up as you stop beside the oak planks. "Changed your mind?" he asks. "Six silver marks for the beast in the south sinkholes and my saddlebag back with the lock untouched."
+*else
+  Beside the wide stone hearth sits a heavy-set man in his early forties wearing a dark wool coat trimmed with good brown fur, his boots cleaner than anyone else's in Oxworth. Two thick-necked hired drovers sit at the end of his bench with heavy clubs leaning against their knees.
+
+  He is slapping his palm on the oak table while @{(met_sigrin) Sigrin|the dwarf innkeeper} ignores him from behind the counter. "Forty silver marks that red bull cost me in Hartwell!" he snaps. "And the village head tells me his boys aren't paid to climb down into sinkholes. Useless country."
+
+  He notices you standing by the bench and looks you up and down. "You look like someone who works for coin instead of speeches," he says loudly. "Daven Marsh, cattle buyer and tax collector out of Hartwell. Want six silver marks for an afternoon's work?"
+
+  "What happened to your bull?" you ask.
+
+  Marsh takes a swallow of ale and wipes his mouth. "Something big came up out of a sinkhole in the south pasture yesterday. Tore the belly out of my breeding bull and chased my drover off on foot. Worst of it is, my leather saddlebag dropped right beside the dead bull."
+
+  He leans forward, tapping one fat finger on the table. "Six silver marks if you kill whatever lives in that pit, bring me a piece of it so I know it's dead, and bring back my saddlebag with the lock untouched. No peeking inside. Just my business papers from Hartwell, and I pay people to carry, not read."
+
+  At the foot of the corner stair, a tall woman in her late twenties watches him over the rim of a clay wine cup. She wears dark green wool that makes the smoky room look twice as grey, her dark hair pinned loose over one shoulder and a sharp, bored look in her eyes.
+
+  "And stay away from my wife while you're in this house," Marsh adds with a loud laugh, not even glancing back at the stairs. "She's only out here in the mud because men in Hartwell don't know how to keep their eyes to themselves. Well? Do we have a deal?"
+
+*choice
+  # Take the job for six silver marks.
+    "Six silver marks for the beast's head and your bag," you say. "Where are these sinkholes?"
+
+    "Twenty minutes south past the outer cattle pens, where the pasture drops into white rock pits," Marsh says, tossing a copper bit onto the table for another ale. "Do it quick. I don't want to spend one more night in this pigpen than I have to."
+    *set ox_hh_stage 2
+    *page_break Step away from his table…
+    *goto ox_hh_vera_hook
+  # Ask why a locked bag of tax papers matters so much.@{show_stat_hints  [Insight DC 12]|}
+    *goto ox_hh_daven_insight
+  # Turn him down for now and step back to the counter.
+    "Not right now," you tell him.
+
+    Marsh waves a hand dismissively and turns back to his ale. "Suit yourself. Offer stands till somebody with a spine walks in."
+    *goto_scene hartwell/oxworth/yoke_and_horn ox_yh_hall
+
+*label ox_hh_daven_insight
+*set scenery_subplace "village_inn_hall"
+"Six silver marks is high pay for one bull and a leather bag," you say evenly, watching his eyes. "What's inside that bag that has you sweating?"
+*gosub_scene dice_engine roll_skill_check 12 "insight" "" "" "" "" ""
+*if (check_success)
+  Marsh's thick fingers tighten around his mug for half a second before he forces a loud laugh. "Hartwell counting-house business, stranger. Private tax rolls and buyers' contracts. Not for country eyes." He is lying through his teeth about something in that bag, and he is far more worried about the papers than the dead bull.
+*else
+  Marsh snorts and waves a ringed hand. "Private buying papers, stranger. Worth more than you make in a winter. Take the six silver or walk away."
+*choice
+  # Take the job for six silver marks.
+    "Six silver marks, then," you say. "Where are these sinkholes?"
+
+    "Twenty minutes south past the outer pens, where the pasture drops into white rock pits," Marsh says. "Bring back the bag locked and a piece of the beast."
+    *set ox_hh_stage 2
+    *page_break Step away from his table…
+    *goto ox_hh_vera_hook
+  # Leave him to his ale for now.
+    *goto_scene hartwell/oxworth/yoke_and_horn ox_yh_hall
+
+*comment ====================================================================================
+*comment BEAT 2: VERA MARSH'S PROPOSITION
+*comment ====================================================================================
+
+*label ox_hh_vera_hook
+*set scenery_subplace "oxworth_yoke_and_horn_yard"
+*set met_vera_marsh true
+*set ox_hh_vera_met_tip true
+*set minutes_to_pass 5
+*set time_advance_call_id "ox_hh_vera_hook"
+*gosub ox_hh_advance_time
+
+[b]◈ THE YOKE & HORN: CART YARD[/b]
+*line_break
+As you step out toward the cart yard for air, the tall woman from the stairs slips out behind you, pulling the wooden door shut to keep the noise of the taproom inside. Up close, she is not frightened or beaten down at all. She has dark, amused eyes, a clean jawline, and the relaxed posture of someone who has been bored for three days and just found a game worth playing.
+
+"Vera Marsh," she says smoothly, leaning one shoulder against the stone wall beside the water trough. "And before you look sorry for me, don't. I married Daven for a stone house in Hartwell, not for his manners."
+
+"I'm ${name}," you say plainly. "And you want something from me."
+
+Her mouth curves in a slow smirk. "Two things, maybe. First, free advice. Daven told you not to open his saddlebag down in the sinkholes. Open it anyway. He has two tax books inside. One honest list for Hartwell's counting-house, and a second list where he charges Oxworth herders double as foreign stock and pockets the difference. @{(met_ox_head) Bram Tallow|The village head across the lane} would pay good coin for that book. Or you can hold it under Daven's nose and bleed him for twice what he promised you."
+
+"Why hand me a knife to stick in your own husband?" you ask.
+
+"Because he dragged me out to a mud village to punish me for smiling at someone in Hartwell, and then left me upstairs alone while he drinks and throws dice every night," Vera says, her voice dropping warm and low. She steps a pace closer, smelling of cedar soap and red wine. "Which brings me to the second thing. After dark, Daven sits at the hearth dice table until midnight. Our room is the end door at the top of the corner stair. If you want to make his stay in Oxworth really memorable, knock once when the dice come out."
+
+She gives you one slow look from head to toe, turns on her heel, and heads back inside before Daven even notices she stepped out.
+*choice
+  # Head back into Oxworth's cattle lane to plan your move.
+    *goto_scene hartwell/oxworth/oxworth ox_return
+  # Step back inside The Yoke & Horn.
+    *goto_scene hartwell/oxworth/yoke_and_horn ox_yh_hall
+
+*comment ====================================================================================
+*comment OPTIONAL PREP BEAT: BRAM TALLOW ON THE SOUTH SINKHOLES
+*comment ====================================================================================
+
+*label ox_hh_prep_bram_talk
+*set scenery_subplace "oxworth_village_hall"
+*set ox_hh_prep_bram true
+*set met_ox_head true
+*set minutes_to_pass 10
+*set time_advance_call_id "ox_hh_prep_bram"
+*gosub ox_hh_advance_time
+
+[b]◈ THE VILLAGE HEAD'S HALL[/b]
+*line_break
+You step up to the oak counter. "Daven Marsh hired me to clear whatever killed his bull in the south sinkholes," you tell Bram Tallow. "You grazed forty head out there for twenty years. What lives down there?"
+
+Bram lets out a slow grunt and sets his chalk down. "No love lost between me and Marsh, but I won't let a killer beast sit half a mile from our pens either. That pasture sits over old collapsed limestone pits. Years back, a big armored burrower came up out of those cracks during a wet autumn."
+
+He taps his ash stick twice against the stone floor. "Thick brown shell across its back, huge hooked jaws, spits burning green bile if you let it square up on you. Worst trick is how it hunts. It waits underground and feels heavy boots or hooves thumping through the dirt, then bursts straight up under your feet. Stand on bare white rock or toss a heavy stone to the far side of the grass first, and you'll force it up where you want it."
+*choice
+  # Thank Bram and return to the Village Head's Hall.
+    *goto_scene hartwell/oxworth/village_heads_hall ox_hall_front
+  # Head straight out to the south sinkholes. [~20 min]
+    *goto ox_hh_hollow_arrive
+
+*comment ====================================================================================
+*comment BEAT 3 (OPTIONAL, NIGHT ONLY): VERA MARSH UPSTAIRS AT THE YOKE & HORN
+*comment ====================================================================================
+
+*label ox_hh_vera_door
+*set scenery_subplace "village_inn_room"
+*set minutes_to_pass 5
+*set time_advance_call_id "ox_hh_vera_door"
+*gosub ox_hh_advance_time
+
+[b]◈ THE YOKE & HORN: UPSTAIRS[/b]
+*line_break
+Downstairs in the common room, bone dice rattle loud against the oak table. Daven Marsh's voice booms up through the floor planks, bragging over a lucky throw while another cattleman groans.
+
+At the far end of the narrow loft landing, you knock once on the end door. It opens almost at once.
+
+Vera stands inside in a loose cream linen shift, dark hair down over her bare shoulders, a tallow candle burning on the washstand behind her. A pair of Daven's polished riding boots sit neatly under the window, and his silver hip flask rests on the wooden chest beside the bed.
+
+"Right on time," Vera murmurs, catching your wrist and pulling you inside before sliding the wooden latch home. "He's three mugs deep and losing track of his silver. We have at least an hour before he even remembers I exist."
+
+She presses her back against the timber door, dark eyes bright in the candlelight, looking up at you with a wicked smile. "Come here, ${name}. Let's put his bed to better use than he ever does."
+
+*choice
+  # Pull her to the bed. [~1 hour]
+    *set rp_active_scene "none"
+    *goto ox_hh_vera_tryst
+  # [Roleplay] Pull her to the bed. [~1 hour]
+    *set rp_active_scene "vera_marsh"
+    *goto ox_hh_vera_tryst
+  # Tell her you only came to talk business and leave.
+    "Save the bed for another night," you tell her dryly. "I just wanted to make sure your husband is still glued to that dice cup."
+
+    Vera raises one dark eyebrow, laughs softly, and opens the latch. "Shame. Good luck with the beast, then."
+    *goto_scene hartwell/oxworth/yoke_and_horn ox_yh_hall
+
+*label ox_hh_vera_tryst
+*set scenery_subplace "village_inn_room"
+*set ox_hh_vera_done true
+*set ox_hh_vera_bedded true
+*set minutes_to_pass 60
+*set time_advance_call_id "ox_hh_vera_tryst"
+*gosub ox_hh_advance_time
+*set ambience_intimacy true
+*if (not(rp_active_scene = "none"))
+  *set rp_encounter_rating 0
+  Vera pushes your shoulders back toward Daven's wide wool blanket, slipping the thin straps of her linen shift off her shoulders while Daven's muffled laughter carries up through the floorboards below.
+
+  [RP_SESSION:${rp_active_scene}]
+  *page_break Catch your breath…
+  *goto ox_hh_vera_after
+Vera does not wait for polite words. She catches your face in both hands and kisses you hard against the timber door, laughing softly when you lift her onto Daven's bed and drag the linen shift up over her head.
+
+She is bold, impatient, and completely shameless about where you are. Every time Daven's loud voice carries up through the floorboards from the dice table below, her smile only turns sharper. She wraps her legs tightly around your waist, digging her fingernails into your shoulders and biting her lip to stifle a gasp when the heavy timber bedframe knocks twice against the stone wall.
+
+When she climbs on top of you to take what she wants at her own pace, dark hair falling over her flushed skin in the candlelight, she leans down to whisper hotly against your ear, "Listen to him bragging downstairs. He has no idea." Neither of you slows down until you are both slick with sweat and breathing hard under the twisted wool blanket.
+*goto ox_hh_vera_after
+
+*comment Reads rp_encounter_rating before clearing rp_active_scene on the next choice (safe on Stats replay).
+*label ox_hh_vera_after
+*set scenery_subplace "village_inn_room"
+*temp vm_rating 0
+*if (not(rp_active_scene = "none"))
+  *set vm_rating rp_encounter_rating
+*if (vm_rating < 0)
+  *set vm_rating 0
+*if (vm_rating > 20)
+  *set vm_rating 20
+*temp vm_boon_min 1440
+*if (vm_rating > 5)
+  *set vm_boon_min (1440 + ((vm_rating - 5) * 96))
+*temp vm_boon_m (vm_boon_min modulo 60)
+*temp vm_boon_h ((vm_boon_min - vm_boon_m) / 60)
+*temp vm_boon_label "${vm_boon_h} hours"
+*if (vm_boon_m > 0)
+  *set vm_boon_label "${vm_boon_h} hours ${vm_boon_m} minutes"
+
+*set unique_buff_input_name "Vera's Fire"
+*set unique_buff_input_desc "+1 CHA (A Stolen Night)"
+*set unique_buff_input_stat "cha"
+*set unique_buff_input_bonus 1
+*set unique_buff_input_minutes vm_boon_min
+*gosub_scene economy apply_unique_buff
+
+[b][❤️ Vera's Fire: +1 CHA for ${vm_boon_label}][/b]
+
+Before your breathing has even settled, heavy boots stomp loudly up the corner stair outside. Someone curses in Daven Marsh's voice, loud and sour from losing a throw at the dice table, and iron knuckles rattle hard against the locked bedroom door.
+
+"Vera! Open this blasted latch! The pot's cleaned out and I'm freezing!"
+
+Vera sits up naked to the waist in the candlelit bed, hair tangled, cheeks flushed, and shoots you a wicked, delighted grin. She points once toward the low side window overlooking the cart yard roof, then back at the door.
+
+*gosub_scene dungeon dg_spell_source "feather_fall" "Feather Fall" 0 "spell"
+*temp vm_can_ff dg_ss_can
+*temp vm_tag_ff dg_ss_tag
+*gosub_scene dungeon dg_spell_source "minor_illusion" "Minor Illusion" 0 "cantrip"
+*temp vm_can_ill dg_ss_can
+*temp vm_word_ill dg_ss_word
+
+*choice
+  # Grab your clothes and Daven's flask, then slip out the window.@{show_stat_hints  [Stealth or Acrobatics DC 12]|}
+    *set ambience_intimacy false
+    *set rp_active_scene "none"
+    *goto ox_hh_vera_window
+  *if (vm_can_ff)
+    # [${vm_tag_ff}] Grab your gear and drift out the window to the yard.
+      *set ambience_intimacy false
+      *set rp_active_scene "none"
+      *goto ox_hh_vera_ff
+  *if (vm_can_ill)
+    # [${vm_word_ill}: Minor Illusion] Fake a shout downstairs to pull Daven away.
+      *set ambience_intimacy false
+      *set rp_active_scene "none"
+      *goto ox_hh_vera_illusion
+  # Pull on your gear, open the door yourself, and let Daven see.
+    *set ambience_intimacy false
+    *set rp_active_scene "none"
+    *goto ox_hh_vera_open_door
+
+*label ox_hh_vera_window
+*set scenery_subplace "oxworth_yoke_and_horn_yard"
+You pull your clothes on fast, snatch Daven's polished silver hip flask off the chest with a grin, and ease the shutter open while Vera pulls the blanket up to her collarbone and calls out sweetly, "Hold your horses, Daven, I'm putting my slippers on!"
+*gosub_scene dice_engine roll_skill_check 12 "stealth" "" "acrobatics" "" "" ""
+*if (check_success)
+  *set ox_hh_vera_flask true
+  *set ox_hh_vera_way "window"
+  You slide cleanly out onto the low stable roof and drop softly into a heap of dry straw in the cart yard without making a sound. Above you, the bedroom door creaks open, Daven grumbles about the cold draft from the window, and Vera calmly sends him right back downstairs for hot spiced ale. You tuck his silver flask into your pack and stroll back out onto the cattle lane.
+  *page_break Step out into Oxworth's lane…
+  *goto_scene hartwell/oxworth/oxworth ox_return
+*else
+  Your heel catches a loose roof slat as you swing over the sill. A wooden shingle snaps loud as a cracking branch and clatters onto the cobbles below just as you hit the straw. Above you, Daven roars at the open window, spots you scrambling up in the yard lantern light, and bellows for his two hired drovers!
+  *set ox_hh_daven_cucked_open true
+  *set ox_hh_vera_way "caught_window"
+  *goto ox_hh_yard_confront_cuck
+
+*label ox_hh_vera_ff
+*set scenery_subplace "oxworth_yoke_and_horn_yard"
+*gosub_scene dungeon dg_spell_source "feather_fall" "Feather Fall" 0 "spell"
+*gosub_scene dungeon dg_spell_cast "feather_fall"
+*set ox_hh_vera_flask true
+*set ox_hh_vera_way "window"
+Snatching your clothes and Daven's silver hip flask off the chest, you swing straight out the side window and speak the quick words of the spell. You drift down like ash into the dark cart yard without a single creak or thud. Above you, the bedroom latch clicks open, and Vera smoothly sends her grumbling husband right back downstairs for a fresh jug of ale.
+*page_break Step out into Oxworth's lane…
+*goto_scene hartwell/oxworth/oxworth ox_return
+
+*label ox_hh_vera_illusion
+*set scenery_subplace "village_inn_room"
+*gosub_scene dungeon dg_spell_source "minor_illusion" "Minor Illusion" 0 "cantrip"
+*gosub_scene dungeon dg_spell_cast "minor_illusion"
+*set ox_hh_vera_flask true
+*set ox_hh_vera_way "window"
+You flick two fingers toward the stairwell. Down by the front door, a loud voice shouts, "Hey! Somebody's unhitched that taxman's wagon in the lane!"
+
+Outside the bedroom door, Daven curses furiously and thunders straight back down the corner stair. Vera laughs softly against the pillow, tosses you his silver hip flask off the chest as a parting gift, and waves you down the empty landing while her husband searches an empty lane.
+*page_break Slip out into Oxworth's lane…
+*goto_scene hartwell/oxworth/oxworth ox_return
+
+*label ox_hh_vera_open_door
+*set scenery_subplace "village_inn_room"
+*set ox_hh_daven_cucked_open true
+*set ox_hh_vera_way "open_door"
+You take your time pulling on your clothes, lift your ${weapon} into easy reach, and slide the wooden latch back yourself.
+
+The door swings wide. Daven Marsh freezes on the narrow landing, mouth dropping open as his eyes jump from you to Vera, who sits up casually on his bed with the blanket draped low across her chest and a faint, shameless smile on her lips.
+
+His face turns deep purple. "You filthy little tramp!" he chokes out, then glares straight at you. "You crawl into my bed in my own room?!"
+
+*choice
+  # Hold his stare and tell him to step aside.@{show_stat_hints  [Intimidation DC 14]|}
+    *goto ox_hh_vera_humiliate
+  # Tell him to bring his men out to the cart yard to settle it. [Lethal Combat]
+    "Your wife looked bored, Marsh," you tell him coldly. "If you want to settle it with steel, bring your hired men out to the cart yard."
+
+    Down at the bottom of the stair, @{(met_sigrin) Sigrin|the dwarf innkeeper} slams a heavy iron ladle onto the counter. "Out in the mud, all of you! Draw iron on my floor and I'll break both your knees!"
+
+    Snarling with rage, Marsh waves his two hired drovers after you out the back door into the dark cart yard.
+    *goto ox_hh_daven_fight_start
+
+*label ox_hh_vera_humiliate
+*set scenery_subplace "village_inn_room"
+*if ((ox_hh_beast_dead) or (ox_hh_book_read))
+  *set advantage true
+You step right up into his doorway, utterly still, meeting his bloodshot eyes without blinking.
+*if (ox_hh_book_read)
+  "Lower your voice, Marsh," you say quietly. "I've seen what's inside your saddlebag, and I know how much silver you skim off Oxworth's herds. Step out of my way, or every cattleman downstairs hears about your tax books and your wife in the same breath."
+*elseif (ox_hh_beast_dead)
+  "I just killed the ten-foot monster you were too scared to look at, Marsh," you say flatly. "Do you really want to see what happens next on this narrow stair?"
+*else
+  "Step off the landing, Marsh," you say quietly. "Unless you want your wife watching you bleed out in the hallway."
+*gosub_scene dice_engine roll_skill_check 14 "intimidation" "" "" "" "" ""
+*if (check_success)
+  Daven Marsh's thick hand shakes beside his belt. He looks at your steady eyes, glances past your shoulder at Vera smirking calmly over the blanket, and swallows hard. Slowly, face burning dark red, he backs a pace down the stair to clear the landing.
+
+  "Get out of my sight," he mutters through clenched teeth, refusing to meet your eyes as you brush calmly past his shoulder and head downstairs.
+  *page_break Walk down to Oxworth's lane…
+  *goto_scene hartwell/oxworth/oxworth ox_return
+*else
+  Humiliation in front of his wife snaps the last thread of his caution. "Boys! Up here! Kill this bastard in the yard!" he roars, shoving down the stairs behind you as @{(met_sigrin) Sigrin|the dwarf innkeeper} yells from the counter to take steel outside!
+  *goto ox_hh_yard_confront_cuck
+
+*label ox_hh_yard_confront_cuck
+*set scenery_subplace "oxworth_yoke_and_horn_yard"
+[b]◈ THE YOKE & HORN: CART YARD[/b]
+*line_break
+The back door of The Yoke & Horn slams open onto the muddy cart yard. Daven Marsh strides into the lantern light with a heavy shortblade drawn, backed by both of his thick-necked hired drovers gripping heavy wooden clubs. Up above, Vera leans calmly on the open window sill to watch.
+*set combat_enemy_advantage false
+*goto ox_hh_daven_fight_start
+
+*comment ====================================================================================
+*comment BEAT 4: THE SOUTH SINKHOLES (MONSTER CONTRACT)
+*comment ====================================================================================
+
+*label ox_hh_hollow_arrive
+*set scenery_subplace "oxworth_south_sinkholes"
+*set minutes_to_pass 20
+*set time_advance_call_id "ox_hh_hollow_walk"
+*gosub ox_hh_advance_time
+
+[b]◈ THE SOUTH SINKHOLES[/b]
+*line_break
+Twenty minutes south of Oxworth's outer cattle pens, the grassy pasture dips into a wide sunken bowl where pale limestone breaks cleanly through the dirt.
+*gosub ox_hh_down_sky
+
+Near the center of the pit lies the torn body of a huge red breeding bull, surrounded by churned earth and three wide funnel-shaped sinkholes punched straight up through the grass. Ten paces from the dead bull sits Daven Marsh's muddy leather saddlebag, its small brass buckle shut tight.
+
+*if (ox_hh_beast_dead)
+  The giant armored burrower lies motionless beside the central sinkhole, dark green bile dried across the broken rock.
+  *if (not(ox_hh_has_bag))
+    You step cleanly down into the pit, lift Daven Marsh's heavy leather saddlebag out of the grass, and sling the strap over your shoulder.
+    *set ox_hh_has_bag true
+    *set ox_hh_stage 3
+    *page_break Check the saddlebag…
+    *goto ox_hh_bag_beat
+  You already took what you came for here. Only wind moves over the pale rock.
+  *page_break Walk back to Oxworth…
+  *goto_scene hartwell/oxworth/oxworth ox_return
+
+Along the upper northern rim sits a shelf of solid white rock overhanging the nearest sinkhole, with a cracked lip of stone and several heavy boulders balanced near the edge.
+
+*gosub_scene dungeon dg_spell_source "mage_hand" "Mage Hand" 0 "cantrip"
+*temp hh_can_mh dg_ss_can
+*temp hh_word_mh dg_ss_word
+*gosub_scene dungeon dg_spell_source "shatter" "Shatter" 0 "spell"
+*temp hh_can_shatter dg_ss_can
+*temp hh_tag_shatter dg_ss_tag
+
+*choice
+  *if (not(ox_hh_prep_tracks))
+    # Study the sinkholes and dead bull from the rock rim. [~10 min]@{show_stat_hints  [Survival or Nature DC 12]|}
+      *goto ox_hh_hollow_study
+  # Toss a boulder into the grass to bait it from high ground.@{show_stat_hints  [Survival or Nature DC 12]|}
+    *goto ox_hh_hollow_bait
+  # Pry loose the cracked rock ledge to crush it first.@{show_stat_hints  [Athletics or Investigation DC 13]|}
+    *goto ox_hh_hollow_collapse
+  *if (hh_can_shatter)
+    # [${hh_tag_shatter}] Blast the cracked rock ledge down onto the sinkhole.
+      *goto ox_hh_hollow_shatter
+  *if (not(ox_hh_has_bag))
+    # Creep along the bare rock to steal only the saddlebag.@{show_stat_hints  [Stealth DC 14]|}
+      *goto ox_hh_hollow_steal
+  *if ((not(ox_hh_has_bag)) and (hh_can_mh))
+    # [${hh_word_mh}: Mage Hand] Drag the saddlebag clear from the rock rim.
+      *goto ox_hh_hollow_mh
+  # Walk down into the pit with your ${weapon} ready. [Lethal Combat]
+    *goto ox_hh_hollow_direct
+  # Head back to Oxworth to prepare first. [~20 min]
+    *set minutes_to_pass 20
+    *set time_advance_call_id "ox_hh_hollow_back"
+    *gosub ox_hh_advance_time
+    *goto_scene hartwell/oxworth/oxworth ox_return
+
+*label ox_hh_hollow_study
+*set scenery_subplace "oxworth_south_sinkholes"
+You stay well back on bare limestone where your steps make no thud in the dirt, scanning the smooth sinkhole rims and the dark burn marks along the bull's ribs.
+*gosub_scene dice_engine roll_skill_check 12 "survival" "" "nature" "" "" ""
+*set minutes_to_pass 10
+*set time_advance_call_id "ox_hh_hollow_study"
+*gosub ox_hh_advance_time
+*if (check_success)
+  *set ox_hh_prep_tracks true
+  Wide scraping marks show six hooked legs dragging a heavy body underground, and the bull's hide is eaten raw by strong green acid. A giant burrowing bug, ten feet long, waiting just beneath the central dirt funnel for footsteps overhead. That cracked rock ledge sits right above its resting shelf.
+*else
+  Deep dirt funnels and torn grass tell you something huge hides underneath, though you cannot tell how fast it moves or which hole it favors.
+*goto ox_hh_hollow_menu_stay
+
+*label ox_hh_hollow_menu_stay
+*gosub_scene dungeon dg_spell_source "mage_hand" "Mage Hand" 0 "cantrip"
+*temp hh_can_mh2 dg_ss_can
+*temp hh_word_mh2 dg_ss_word
+*gosub_scene dungeon dg_spell_source "shatter" "Shatter" 0 "spell"
+*temp hh_can_shatter2 dg_ss_can
+*temp hh_tag_shatter2 dg_ss_tag
+*choice
+  # Toss a boulder into the grass to bait it from high ground.@{show_stat_hints  [Survival or Nature DC 12]|}
+    *goto ox_hh_hollow_bait
+  # Pry loose the cracked rock ledge to crush it first.@{show_stat_hints  [Athletics or Investigation DC 13]|}
+    *goto ox_hh_hollow_collapse
+  *if (hh_can_shatter2)
+    # [${hh_tag_shatter2}] Blast the cracked rock ledge down onto the sinkhole.
+      *goto ox_hh_hollow_shatter
+  *if (not(ox_hh_has_bag))
+    # Creep along the bare rock to steal only the saddlebag.@{show_stat_hints  [Stealth DC 14]|}
+      *goto ox_hh_hollow_steal
+  *if ((not(ox_hh_has_bag)) and (hh_can_mh2))
+    # [${hh_word_mh2}: Mage Hand] Drag the saddlebag clear from the rock rim.
+      *goto ox_hh_hollow_mh
+  # Walk down into the pit with your ${weapon} ready. [Lethal Combat]
+    *goto ox_hh_hollow_direct
+  # Head back to Oxworth first. [~20 min]
+    *set minutes_to_pass 20
+    *set time_advance_call_id "ox_hh_hollow_back2"
+    *gosub ox_hh_advance_time
+    *goto_scene hartwell/oxworth/oxworth ox_return
+
+*label ox_hh_hollow_bait
+*set scenery_subplace "oxworth_south_sinkholes"
+*if ((ox_hh_prep_bram) or (ox_hh_prep_tracks))
+  *set advantage true
+Standing firm on the high white rock ledge, you heave a heavy boulder across the grass beside the far sinkhole.
+*gosub_scene dice_engine roll_skill_check 12 "survival" "" "nature" "" "" ""
+*if (check_success)
+  The boulder thuds deep into the soft dirt. Two heartbeats later the ground erupts right beside the rock: ten feet of glossy brown armor plates, six hooked legs, and dripping pincer jaws bursting into the open while you hold the clean high ground above it!
+  *set combat_terrain_layout "fixed"
+  *set combat_terrain1_type "high_ground"
+  *set combat_terrain1_position 0
+  *set combat_terrain2_type "difficult_terrain"
+  *set combat_terrain2_position 1
+  *set combat_terrain3_type "cover"
+  *set combat_terrain3_position 2
+  *set combat_enemy_advantage false
+  *goto ox_hh_beast_fight
+*else
+  The boulder rolls short onto solid stone with barely a clatter. You step down onto the grass edge to shift your stance, and the dirt directly beneath your feet heaves upward as huge hooked jaws burst straight out of the ground!
+  *set combat_terrain_layout "fixed"
+  *set combat_terrain1_type "difficult_terrain"
+  *set combat_terrain1_position 1
+  *set combat_terrain2_type "cover"
+  *set combat_terrain2_position 2
+  *set combat_terrain3_type "high_ground"
+  *set combat_terrain3_position 3
+  *set combat_enemy_advantage true
+  *goto ox_hh_beast_fight
+
+*label ox_hh_hollow_collapse
+*set scenery_subplace "oxworth_south_sinkholes"
+*if ((ox_hh_prep_bram) or (ox_hh_prep_tracks))
+  *set advantage true
+You wedge your weight behind the cracked limestone ledge perched above the central dirt funnel and heave with everything you have.
+*gosub_scene dice_engine roll_skill_check 13 "athletics" "" "investigation" "" "" ""
+*if (check_success)
+  *set ox_hh_beast_weakened true
+  A half-ton slab of white rock shears cleanly away and crashes straight down into the central sinkhole! A wet, hissing shriek tears up from below as the giant armored burrower scrambles half-crushed out of the dust, dark green fluid leaking through cracked brown plates along its back!
+  *set combat_terrain_layout "fixed"
+  *set combat_terrain1_type "difficult_terrain"
+  *set combat_terrain1_position 1
+  *set combat_terrain2_type "cover"
+  *set combat_terrain2_position 2
+  *set combat_terrain3_type "high_ground"
+  *set combat_terrain3_position 3
+  *set combat_enemy_advantage false
+  *goto ox_hh_beast_fight
+*else
+  The wet stone slips under your hands and tumbles harmlessly wide of the hole, sending heavy tremors straight down the slope. The dirt beside your feet explodes upward as the giant armored burrower lunges straight at you!
+  *set combat_terrain_layout "fixed"
+  *set combat_terrain1_type "difficult_terrain"
+  *set combat_terrain1_position 1
+  *set combat_terrain2_type "cover"
+  *set combat_terrain2_position 2
+  *set combat_terrain3_type "high_ground"
+  *set combat_terrain3_position 3
+  *set combat_enemy_advantage true
+  *goto ox_hh_beast_fight
+
+*label ox_hh_hollow_shatter
+*set scenery_subplace "oxworth_south_sinkholes"
+*gosub_scene dungeon dg_spell_source "shatter" "Shatter" 0 "spell"
+*gosub_scene dungeon dg_spell_cast "shatter"
+*set ox_hh_beast_weakened true
+You level your hand at the split rock rim above the central sinkhole and loose a brutal crack of thunder. The white ledge explodes inward in a roar of stone and dust, burying the tunnel mouth. Seconds later the huge brown burrower claws its way out of the rubble, half its back plates cracked open and leaking dark green bile!
+*set combat_terrain_layout "fixed"
+*set combat_terrain1_type "difficult_terrain"
+*set combat_terrain1_position 1
+*set combat_terrain2_type "cover"
+*set combat_terrain2_position 2
+*set combat_terrain3_type "high_ground"
+*set combat_terrain3_position 3
+*set combat_enemy_advantage false
+*goto ox_hh_beast_fight
+
+*label ox_hh_hollow_steal
+*set scenery_subplace "oxworth_south_sinkholes"
+*if (ox_hh_prep_bram)
+  *set advantage true
+Keeping your weight light on the exposed seams of white rock, you edge carefully toward Daven Marsh's muddy leather saddlebag without setting a heavy foot on the soft dirt.
+*gosub_scene dice_engine roll_skill_check 14 "stealth" "" "" "" "" ""
+*if (check_success)
+  *set ox_hh_has_bag true
+  *set ox_hh_stage 3
+  Your fingers close around the muddy leather strap. Somewhere deep beneath the grass, loose pebbles trickle down a dark shaft, yet nothing breaks the surface. You back smoothly up onto the rock rim with Daven Marsh's saddlebag in hand. The monster still owns the pit, which means Marsh will not pay his bounty, but his secrets are yours.
+  *page_break Check the saddlebag…
+  *goto ox_hh_bag_beat
+*else
+  Your foot slips off a wet rock edge onto the soft dirt with a sharp thud. Instantly the ground ten feet ahead heaves upward, and ten feet of armored brown legs and snapping jaws erupt between you and the rim!
+  *set combat_terrain_layout "fixed"
+  *set combat_terrain1_type "difficult_terrain"
+  *set combat_terrain1_position 1
+  *set combat_terrain2_type "cover"
+  *set combat_terrain2_position 2
+  *set combat_terrain3_type "high_ground"
+  *set combat_terrain3_position 3
+  *set combat_enemy_advantage true
+  *goto ox_hh_beast_fight
+
+*label ox_hh_hollow_mh
+*set scenery_subplace "oxworth_south_sinkholes"
+*gosub_scene dungeon dg_spell_source "mage_hand" "Mage Hand" 0 "cantrip"
+*gosub_scene dungeon dg_spell_cast "mage_hand"
+*set ox_hh_has_bag true
+*set ox_hh_stage 3
+Staying safely on the solid stone lip, you send a floating spectral hand gliding out over the grass. It hooks cleanly through the strap of Daven Marsh's muddy saddlebag and drags it smoothly across the dirt into your waiting grip without sending a single heavy step through the ground. The beast stays buried below, leaving Marsh's bounty unclaimed, while his locked bag rests safely in your hands.
+*page_break Check the saddlebag…
+*goto ox_hh_bag_beat
+
+*label ox_hh_hollow_direct
+*set scenery_subplace "oxworth_south_sinkholes"
+You step straight down off the white rock onto the torn grass with your ${weapon} ready and stomp your heel hard twice against the dirt.
+
+Three heartbeats later the ground ahead of you splits open in a shower of dirt and pale stone. Ten feet of dark brown armor plates and hooked, bile-dripping jaws rear out of the earth with a loud, rattling hiss!
+*set combat_terrain_layout "fixed"
+*set combat_terrain1_type "difficult_terrain"
+*set combat_terrain1_position 1
+*set combat_terrain2_type "cover"
+*set combat_terrain2_position 2
+*set combat_terrain3_type "high_ground"
+*set combat_terrain3_position 3
+*set combat_enemy_advantage false
+*goto ox_hh_beast_fight
+
+*label ox_hh_beast_fight
+*set scenery_combat_place "oxworth_south_sinkholes"
+*set combat_player_can_die true
+*set combat_is_nonlethal false
+*set combat_open_sky true
+*set combat_no_morale true
+*set combat_lib_1 "beast"
+*set combat_enemy_name_override "Giant Burrower"
+*set combat_enemy_epithet_override "the giant burrower"
+*if (ox_hh_beast_weakened)
+  *set combat_enemy_hp_override 20
+  *set combat_enemy_ac_override 13
+*else
+  *set combat_enemy_hp_override 30
+  *set combat_enemy_ac_override 14
+*set combat_enemy_atk_override 5
+*set combat_enemy_dmg_sides_override 8
+*set combat_enemy_dmg_type_override "slashing"
+*set combat_lib_2 ""
+*set combat_lib_3 ""
+*gosub_scene combat fight_library
+*set scenery_combat_place ""
+*set scenery_subplace "oxworth_south_sinkholes"
+*if (combat_outcome = "player_died")
+  *set death_cause "combat"
+  *goto_scene death death_screen
+*if (combat_outcome = "victory")
+  *set ox_hh_beast_dead true
+  *set ox_hh_has_bag true
+  *set ox_hh_stage 3
+  *set minutes_to_pass 15
+  *set time_advance_call_id "ox_hh_beast_win"
+  *gosub ox_hh_advance_time
+  With a final wet shudder, the giant armored burrower curls inward and goes still beside the dead bull. Dark green fluid hisses faintly against the white rock.
+
+  You pry loose one of its heavy hooked front jaws as proof for Marsh, wipe the worst of the dirt off your hands, and scoop up his muddy leather saddlebag from the torn grass.
+  *page_break Look over the saddlebag…
+  *goto ox_hh_bag_beat
+*else
+  *set minutes_to_pass 20
+  *set time_advance_call_id "ox_hh_beast_flee"
+  *gosub ox_hh_advance_time
+  You scramble back up the white rock ledge and break away across the open grass while the giant burrower hisses from the lip of its tunnel, unwilling to chase far over bare stone. You make it back to Oxworth alive, though the beast still owns the sinkholes.
+  *page_break Return to Oxworth…
+  *goto_scene hartwell/oxworth/oxworth ox_return
+
+*comment ====================================================================================
+*comment BEAT 5: CRACKING THE SADDLEBAG
+*comment ====================================================================================
+
+*label ox_hh_bag_beat
+*set scenery_subplace "oxworth_south_sinkholes"
+*if (ox_hh_book_read)
+  *goto ox_hh_bag_return_walk
+Up on the quiet rock rim, you turn Daven Marsh's heavy leather saddlebag over across your knees. A thin wax cord loops through the small brass padlock so Marsh can tell at a glance whether anyone opened it.
+*if (ox_hh_vera_met_tip)
+  Vera's warning sits fresh in your head: two tax books inside, proving Marsh has been robbing Oxworth's herds behind Hartwell's back.
+
+*choice
+  # Pick the padlock without snapping the wax cord.@{show_stat_hints  [Sleight of Hand DC 12]|}
+    *goto ox_hh_bag_pick
+  # Cut the leather strap open and check inside.
+    *set ox_hh_bag_cut true
+    *set ox_hh_book_read true
+    You force the strap free beneath the brass padlock and pull out two matching leather notebooks.
+
+    One book carries neat columns for Hartwell's counting-house, listing every Oxworth cattle herd at the low local tax rate. The second, hidden inside an oilcloth sleeve, records the double "foreign stock" fee Marsh actually forced Oxworth herders to pay, with more than forty silver marks of stolen extra coin totaled cleanly in his own hand at the bottom.
+    *goto ox_hh_bag_return_walk
+  *if (not(ox_hh_daven_dead))
+    # Leave the lock untouched and carry it back to Oxworth.
+      You leave the wax cord intact and sling the heavy leather bag over your shoulder. Whatever Marsh hides inside is his own business if his silver spends clean.
+      *goto ox_hh_bag_return_walk
+
+*label ox_hh_bag_pick
+*set scenery_subplace "oxworth_south_sinkholes"
+*if (has_lockpick_set)
+  *set advantage true
+Working carefully around the thin wax cord, you slide a metal pin into the cheap brass padlock.
+*gosub_scene dice_engine roll_skill_check 12 "sleight_of_hand" "" "" "" "" ""
+*if (check_success)
+  *set ox_hh_book_read true
+  The padlock clicks smoothly open without snapping the cord. Inside sit two matching leather notebooks: one clean copy for Hartwell's counting-house listing Oxworth herds at the low local rate, and a second private book showing Marsh charging local cattlemen double as "foreign stock" and pocketing more than forty silver marks a season. You slip both books back inside and click the lock shut, leaving the wax untouched.
+*else
+  *set ox_hh_bag_cut true
+  *set ox_hh_book_read true
+  The pin slips and snaps the brittle wax cord clean in half before the lock pops open. Marsh will know someone looked, though the prize inside is worth it: two matching tax books proving he charged Oxworth herders double as "foreign stock" and pocketed more than forty silver marks behind Hartwell's back.
+*goto ox_hh_bag_return_walk
+
+*label ox_hh_bag_return_walk
+*set minutes_to_pass 20
+*set time_advance_call_id "ox_hh_hollow_home"
+*gosub ox_hh_advance_time
+*page_break Walk back to Oxworth…
+*goto_scene hartwell/oxworth/oxworth ox_return
+
+*comment ====================================================================================
+*comment BEAT 6A: SETTLING WITH DAVEN MARSH (CLEAN PAY OR EXTORTION)
+*comment ====================================================================================
+
+*label ox_hh_daven_settle
+*set scenery_subplace "village_inn_hall"
+*set minutes_to_pass 10
+*set time_advance_call_id "ox_hh_daven_settle"
+*gosub ox_hh_advance_time
+
+[b]◈ THE YOKE & HORN[/b]
+*line_break
+Daven Marsh sits at his usual hearth bench in The Yoke & Horn, his two hired drovers leaning close by the wall.
+*if (ox_hh_daven_cucked_open)
+  His jaw tightens the instant you walk in, and his face flushes dark red, though he forces himself to stay seated while his eyes dart toward the heavy bag on your shoulder.
+*elseif (ox_hh_vera_bedded)
+  Up on the corner stair landing, Vera leans lightly on the rail with a clay cup in hand, watching her husband with a quiet, wicked smile he never once notices.
+*else
+  He sets his mug down eagerly as you stop beside his table, eyes locking onto his muddy saddlebag.
+
+"Well?" Marsh snaps. "Is the thing dead, and did you keep your fingers out of my bag?"
+
+*choice
+  *if ((ox_hh_beast_dead) and (not(ox_hh_bag_cut)))
+    # Hand over the beast's jaw and his unopened bag for six silver marks.
+      *goto ox_hh_end_clean
+  *if (ox_hh_book_read)
+    # Tell him quietly to step out to the cart yard over his tax books.
+      *goto ox_hh_extort_scene
+  *if ((not(ox_hh_beast_dead)) and (not(ox_hh_book_read)))
+    # Tell him you got his bag back, though the beast is still alive.
+      "I got your bag clear," you say. "The burrower's still down in the pit."
+
+      Marsh snatches the saddlebag off the wood and checks the intact wax cord with a sour grunt. "Half a job gets nothing from me until that pit is cleared. Go back and finish the beast if you want your six marks."
+      *page_break Step back to the common room…
+      *goto_scene hartwell/oxworth/yoke_and_horn ox_yh_hall
+  # Step back from his table for now.
+    *goto_scene hartwell/oxworth/yoke_and_horn ox_yh_hall
+
+*label ox_hh_end_clean
+*set scenery_subplace "village_inn_hall"
+*set ox_hh_stage 5
+*set ox_hh_finished true
+*set ox_hh_ending "paid_clean"
+*if (not(ox_hh_reward_claimed))
+  *set ox_hh_reward_claimed true
+  *set ox_hh_success true
+  *set currency_add_amount 60
+  *gosub_scene economy currency_add
+  *gosub_scene character_progression refresh_level_up_progress
+
+You drop the massive, acid-stained jaw onto the scrubbed oak with a heavy thud and set his leather saddlebag beside it, wax cord unbroken.
+
+Marsh checks the wax with greedy relief, then counts six silver marks out of his heavy belt purse onto the table. "Clean work, and you knew better than to poke your nose in Hartwell business," he says smugly.
+*if (ox_hh_vera_bedded)
+  *if (ox_hh_daven_cucked_open)
+    His voice stays clipped and sour, refusing to meet your eyes. Above on the stair, Vera raises her wine cup once to you with an amused little smile.
+  *else
+    Behind his broad back, Vera leans over the stair rail, lifts her cup silently in your direction, and winks before turning back up to her room.
+
+[b][💰 Received: 6 Silver Marks][/b]
+*page_break Step back into The Yoke & Horn…
+*goto_scene hartwell/oxworth/yoke_and_horn ox_yh_hall
+
+*label ox_hh_extort_scene
+*set scenery_subplace "oxworth_yoke_and_horn_yard"
+[b]◈ THE YOKE & HORN: CART YARD[/b]
+*line_break
+You lean in low enough that only Marsh hears. "Forty silver marks in fake foreign-stock fees, Daven. Step out into the cart yard if you want to buy that second book back before I walk it across the lane to @{(met_ox_head) Bram Tallow|the village head}."
+
+Marsh goes pale around the mouth. He stands abruptly, jerks his chin once at his two hired drovers to follow at a distance, and marches out into the muddy cart yard behind the inn.
+
+*temp hh_extort_pay 100
+*temp hh_extort_label "10 Silver Marks"
+*if (ox_hh_beast_dead)
+  *set hh_extort_pay 120
+  *set hh_extort_label "12 Silver Marks"
+
+"Name your price, you highway thief," Marsh hisses beside the water trough, his two drovers fanning out ten paces back by the stable stalls.
+
+"Burn the second book in front of you, walk away quiet, and leave your Hartwell counting-house none the wiser," you tell him evenly. "Costs you ${hh_extort_label}."
+
+*if ((ox_hh_daven_cucked_open) or (ox_hh_beast_dead))
+  *set advantage true
+*gosub_scene dice_engine roll_skill_check 14 "intimidation" "" "persuasion" "" "" ""
+*if (check_success)
+  *set ox_hh_stage 5
+  *set ox_hh_finished true
+  *set ox_hh_ending "extorted"
+  *if (not(ox_hh_reward_claimed))
+    *set ox_hh_reward_claimed true
+    *set ox_hh_success true
+    *set currency_add_amount hh_extort_pay
+    *gosub_scene economy currency_add
+    *gosub_scene character_progression refresh_level_up_progress
+  Marsh sweats through his collar, eyeing your calm stance against a Hartwell jail cell. With a bitter curse, he signals his drovers to stay back, unhooks a heavy leather pouch from inside his fur-trimmed coat, and counts ${hh_extort_label} straight into your hand.
+
+  "Give me the books and get out of my sight," he spits. You toss the leather saddlebag onto the wet cobbles at his feet. By morning, his wagon will be rolling fast back toward Hartwell.
+
+  [b][💰 Received: ${hh_extort_label}][/b]
+  *page_break Walk back out to Oxworth's lane…
+  *goto_scene hartwell/oxworth/oxworth ox_return
+*else
+  Marsh's eyes go mean and desperate. "Nobody bleeds a taxman in a cow-mud village!" he snaps, gesturing sharply at his two drovers as steel flashes in the yard!
+  *set combat_enemy_advantage true
+  *page_break Defend yourself in the cart yard…
+  *goto ox_hh_daven_fight_start
+
+*comment ====================================================================================
+*comment LETHAL CART-YARD FIGHT: 2 HIRED DROVERS + DAVEN MARSH
+*comment Spread across tiles 1, 2, 3 (no AoE turn-1 wipe).
+*comment Terrain: cover at 0 (stone yard wall/woodpile), difficult_terrain at 1 (mud),
+*comment water at 2 (overflowing stone water trough).
+*comment ====================================================================================
+
+*label ox_hh_daven_fight_start
+*set scenery_combat_place "village_stable_yard"
+*set combat_player_can_die true
+*set combat_is_nonlethal false
+*set combat_open_sky true
+*set combat_no_morale true
+*set combat_terrain_layout "fixed"
+*set combat_terrain1_type "cover"
+*set combat_terrain1_position 0
+*set combat_terrain2_type "difficult_terrain"
+*set combat_terrain2_position 1
+*set combat_terrain3_type "water"
+*set combat_terrain3_position 2
+*set combat_lib_1 "swordsman"
+*set combat_enemy_name_override "Hired Drover"
+*set combat_enemy_epithet_override "the first drover"
+*set combat_enemy_hp_override 12
+*set combat_enemy_ac_override 12
+*set combat_enemy_atk_override 3
+*set combat_enemy_range 1
+*set combat_lib_2 "swordsman"
+*set combat_enemy2_name_override "Second Drover"
+*set combat_enemy2_epithet_override "the second drover"
+*set combat_enemy2_hp_override 12
+*set combat_enemy2_ac_override 12
+*set combat_enemy2_atk_override 3
+*set combat_enemy2_range 2
+*set combat_lib_3 "swordsman"
+*set combat_enemy3_name_override "Daven Marsh"
+*set combat_enemy3_epithet_override "Daven Marsh"
+*set combat_enemy3_hp_override 16
+*set combat_enemy3_ac_override 13
+*set combat_enemy3_atk_override 4
+*set combat_enemy3_range 3
+*gosub_scene combat fight_library
+*set scenery_combat_place ""
+*set scenery_subplace "oxworth_yoke_and_horn_yard"
+*if (combat_outcome = "player_died")
+  *set death_cause "combat"
+  *goto_scene death death_screen
+*if (combat_outcome = "victory")
+  *set ox_hh_daven_dead true
+  *set minutes_to_pass 15
+  *set time_advance_call_id "ox_hh_yard_win"
+  *gosub ox_hh_advance_time
+  Daven Marsh lies face-down in the churned mud beside the stone water trough, his fine wool coat soaked red, with both of his hired drovers dead beside the stable rail.
+
+  *if (not(ox_hh_daven_looted))
+    *set ox_hh_daven_looted true
+    *set currency_add_amount 80
+    *gosub_scene economy currency_add
+  You cut the heavy coin pouch from Marsh's belt, counting eight silver marks inside.
+
+  [b][💰 Looted from Daven Marsh: 8 Silver Marks][/b]
+
+  The back door of The Yoke & Horn opens slowly. Vera Marsh steps out onto the wooden sill wrapped in a dark shawl, looks down once at her dead husband in the mud without a flicker of grief, and bends calmly to slip his gold signet ring off his finger.
+
+  "Well," Vera says evenly, wiping mud off the gold band with her sleeve. "It seems I own a very quiet stone house in Hartwell now. @{(ox_hh_vera_bedded) If your road ever brings you past the oil yards, ask for Widow Marsh.|He picked the wrong stranger to bully.}"
+
+  *if ((ox_hh_beast_dead) or (ox_hh_book_read))
+    *set ox_hh_stage 5
+    *set ox_hh_finished true
+    *set ox_hh_ending "yard_blood"
+    *if (not(ox_hh_reward_claimed))
+      *set ox_hh_reward_claimed true
+      *set ox_hh_success true
+      *gosub_scene character_progression refresh_level_up_progress
+    *if (ox_hh_book_read)
+      You still hold Marsh's double tax books in his saddlebag. You can walk them over to @{(met_ox_head) Bram Tallow|the village head} to clear Oxworth's herd counts, or burn them and walk away.
+      *choice
+        # Carry the double tax books across to @{(met_ox_head) Bram Tallow|the village head} right away.
+          *goto ox_hh_bram_turnin
+        # Burn the crooked books in the inn fire and keep Marsh's silver.
+          You drop both leather books onto the hearth coals on your way through the common room and watch the inked pages curl black before stepping out to the lane.
+          *page_break Step out into Oxworth's lane…
+          *goto_scene hartwell/oxworth/oxworth ox_return
+    *page_break Step out into Oxworth's lane…
+    *goto_scene hartwell/oxworth/oxworth ox_return
+  *else
+    Daven Marsh is dead, though the armored beast still sits in the south sinkholes beside his saddlebag. You can still clear the pit and bring Marsh's tax books to @{(met_ox_head) Bram Tallow|the village head} if you want to finish the job.
+    *page_break Step out into Oxworth's lane…
+    *goto_scene hartwell/oxworth/oxworth ox_return
+*else
+  *set ox_hh_stage 5
+  *set ox_hh_finished true
+  *set ox_hh_ending "fled_yard"
+  *set minutes_to_pass 10
+  *set time_advance_call_id "ox_hh_yard_flee"
+  *gosub ox_hh_advance_time
+  You vault the low timber rail of the cart yard and break out onto the dark grass while Marsh's hired drovers shout behind you. By dawn Marsh packs his wagon, locks his wife inside the cab, and rolls fast back toward Hartwell.
+  *page_break Return to Oxworth's lane…
+  *goto_scene hartwell/oxworth/oxworth ox_return
+
+*comment ====================================================================================
+*comment BEAT 6B: TURNING DAVEN'S DOUBLE TAX BOOKS OVER TO BRAM TALLOW
+*comment ====================================================================================
+
+*label ox_hh_bram_turnin
+*set scenery_subplace "oxworth_village_hall"
+*set met_ox_head true
+*set ox_hall_seen true
+*set ox_hh_stage 5
+*set ox_hh_finished true
+*set ox_hh_bram_goodwill true
+*if (not(ox_hh_daven_dead))
+  *set ox_hh_ending "exposed_to_bram"
+*else
+  *set ox_hh_ending "yard_blood"
+
+*temp hh_bram_pay 50
+*if (ox_hh_daven_dead)
+  *set hh_bram_pay 20
+*elseif (not(ox_hh_beast_dead))
+  *set hh_bram_pay 30
+
+*if (not(ox_hh_reward_claimed))
+  *set ox_hh_reward_claimed true
+  *set ox_hh_success true
+  *set currency_add_amount hh_bram_pay
+  *gosub_scene economy currency_add
+  *gosub_scene character_progression refresh_level_up_progress
+*elseif ((ox_hh_daven_dead) and (not(ox_hh_bram_paid_extra)))
+  *set ox_hh_bram_paid_extra true
+  *set currency_add_amount 20
+  *gosub_scene economy currency_add
+
+*set minutes_to_pass 15
+*set time_advance_call_id "ox_hh_bram_turnin"
+*gosub ox_hh_advance_time
+
+[b]◈ THE VILLAGE HEAD'S HALL[/b]
+*line_break
+*if (not(ox_ok_hall))
+  Though the Village Head's Hall shutters are drawn, Bram Tallow answers your hard knock with an oil lamp in his right hand, catches sight of the two leather tax books under your arm, and waves you straight to his oak counter.
+*else
+  You step up to Bram Tallow's scarred oak counter and lay both of Daven Marsh's leather tax books open side by side.
+
+Bram leans over on his braced forearm, squinting down at the neat columns of local herds beside the inflated "foreign stock" counts and the forty-silver skim totaled in Marsh's own hand. Slowly, a hard, satisfied crease forms beside his mouth.
+
+"Every single autumn," Bram growls softly. "I knew those Hartwell tax men were cooking the gate counts, and now I have Marsh's own ink to lay in front of the Viscountess's road steward."
+
+*if (ox_hh_daven_dead)
+  "Marsh is already dead in the inn's cart yard," you tell him plainly. "Took a swing at me with his hired men."
+
+  Bram rubs his grey stubble and shakes his head once. "Saves Hartwell a rope, then, and saves Oxworth forty marks a year. Two silver marks from the village box for bringing me the books instead of burning them."
+
+  [b][💰 Received: 2 Silver Marks][/b]
+*else
+  *if (ox_hh_beast_dead)
+    "And the armored beast in the south sinkholes is dead too," you add, showing him the heavy hooked jaw.
+
+    Bram whistles low and counts five silver marks straight out of Oxworth's iron herd box into your palm. "Five silver marks from the herd pool, well earned. Wait here five minutes and you can watch four of our cattlemen haul Master Marsh's wagon out to the Hartwell patrol in irons."
+
+    [b][💰 Received: 5 Silver Marks][/b]
+  *else
+    "The beast is still down in the sinkholes," you warn him. "I lifted his bag clean without waking it."
+
+    Bram nods once and counts three silver marks onto the wood. "Three silver marks for these books, and I'll warn the herders off the south pasture till somebody clears it. Now let's go pull Master Marsh off his barstool before he smells trouble."
+
+    [b][💰 Received: 3 Silver Marks][/b]
+
+  Ten minutes later, four heavy-shouldered Oxworth cattlemen march a red-faced, swearing Daven Marsh out of The Yoke & Horn with his wrists bound in hemp cord. On the inn porch, Vera Marsh watches her husband hauled onto a cart without raising her voice once. Before turning back inside to pack her trunks for Hartwell, she catches your eye across the lane and gives you one slow, appreciative nod.
+
+*page_break Step back out into Oxworth's lane…
+*goto_scene hartwell/oxworth/oxworth ox_return
+
+*comment ====================================================================================
+*comment HELPERS & LEVEL-UP COUNTER
+*comment ====================================================================================
+
+*label ox_hh_down_sky
+*if (weather = "Rain")
+  Cold rain sweeps across the open grass and turns the rocky slope slick underfoot.
+*elseif (weather = "Storm")
+  Hard wind hammers rain sideways over the pasture, flattening the grass around the sinkholes.
+*elseif (weather = "Blizzard")
+  Blowing snow swallows the far pasture and drifts deep into the limestone hollows.
+*elseif (weather = "Fog")
+  Thick white mist sits inside the pit, hiding the far grass rim in grey cloud.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Cold sleet stings across the pasture and dusts the pale rock rim.
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  Dark sky opens wide above the pit, pale rock catching the thin starlight.
+*elseif (time_period = "Dusk")
+  Fading evening light stretches dark shadows across the sunken grass bowl.
+*elseif (weather = "Clear")
+  Wide open daylight shows every torn patch of grass and pale rock shelf across the pit.
+*else
+  Flat grey light sits over the sunken grass bowl and dulls the white rock rim.
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Water pools dark at the bottom of the hoof ruts and sinkhole rims from recent rain.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The grass around the stone rim stays damp and slick from earlier rain.
+*return
+
+*label ox_hh_advance_time
+*set hours_to_pass 0
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return
+
+*comment replay-ok: refresh_quests_finished resets quests_finished to 0 before calling each counter.
+*label count_finished_oxworth_horn_hide
+*if (ox_hh_success)
+  *set quests_finished + 1
+*return

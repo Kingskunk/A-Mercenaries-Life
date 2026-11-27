@@ -11,6 +11,18 @@
 
 *label rv_lantern_main
 *set scenery_subplace "village_inn_hall"
+*if (rv_lantern_barred)
+  *goto_scene alderford/redvein/old_debt rv_od_barred_door
+*if ((rv_st_mara_exposed) and (not(rv_st_aftermath_lantern)))
+  *goto_scene alderford/redvein/singing_tunnel rv_st_ilyra_aftermath
+*if (((rv_od_stage = 0) and ((rv_st_aftermath_lantern) and (campaign_day >= (rv_st_done_day + 2)))) and ((time_period = "Dusk") or (time_period = "Night")))
+  *goto_scene alderford/redvein/old_debt rv_od_trigger
+*temp if_cur_w ((((campaign_day - 1) - ((campaign_day - 1) modulo 7)) / 7) + 1)
+*if ((rv_od_ending = "soren_dead") and ((time_period = "Night") and (not(if_mood_week = if_cur_w))))
+  *set if_mood_week if_cur_w
+  *temp if_roll 1
+  *rand if_roll 1 100
+  *set if_in_mood (if_roll <= 40)
 *temp rv_lantern_now (((campaign_day * 1440) + (clock_hour * 60)) + clock_minute)
 *if (rv_lantern_now >= rv_lantern_room_until)
   *set rv_lantern_room_active false
@@ -78,7 +90,21 @@ The Red Lantern is a two-storey inn with stone walls below and dark boards above
 
 *comment Open-world free time: the sidebar's Wait and Rest work on this page (web/mygame/pagegate.js).
 *set wait_ok_page page_id
+*gosub_scene crafting cook_site_set "red_lantern"
 *choice
+  *if ((rv_st_stage = 2) and (not(rv_st_clue_wounds)))
+    # Ask Ilyra Fen about the hauler who died here last night. [~10 min]
+      *goto_scene alderford/redvein/singing_tunnel rv_st_talk_ilyra
+  *if (rv_od_stage = 1)
+    # Meet Ilyra at the rear stable gate for the climb up to the lookout. [~30 min]
+      *goto_scene alderford/redvein/old_debt rv_od_lookout_arrive
+  *if ((rv_od_ending = "soren_dead") and (((time_period = "Night") and (if_in_mood)) and (not(if_tryst_week = if_cur_w))))
+    # Catch Ilyra's eye by the banked stove and head upstairs. [~1 hour]
+      *goto_scene alderford/redvein/old_debt rv_od_repeat_door
+  *if (rv_st_aftermath_lantern)
+    # [Roleplay] Sit by the stove and talk with Ilyra. [~30 min]
+      *set rp_active_scene "ilyra_fen_talk"
+      *goto_scene alderford/redvein/old_debt rv_od_rp_talk
   *if ((((gold * 100) + (silver * 10)) + copper) >= 2)
     # [2 Copper Bits] Buy a bowl of beef, turnip and barley. [~20 min]@{show_stat_hints  [+2 Temp HP, +1 CON for 4h]|}
       *set tavern_item_cost_copper 2
@@ -262,6 +288,7 @@ The raised yard is small but dry. Fresh straw lies in the stalls, a pump fills t
 *comment A rented private room is open-world free time for the sidebar's Wait and Rest controls.
 *set wait_ok_page page_id
 *set fresh_water_page page_id
+*gosub_scene crafting cook_site_set "red_lantern"
 [b]◈ YOUR ROOM: THE RED LANTERN[/b]
 *line_break
 The room beneath the roof holds a plank bed, straw mattress, folded wool blanket and a tin basin beside a jug of water. A shuttered window looks across the stable yard to the red slope above the village. The room is plain and dry, with the smell of smoke caught in the boards.

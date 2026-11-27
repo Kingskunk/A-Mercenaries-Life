@@ -200,6 +200,13 @@
       npcName: "Sable",
       memory: true,
       threadId: "cs_corve_sable",
+      // What she knows of the world (rp-knowledge/*.js): Dredge-End inside out, the rest of the city and the realm as common
+      // folk do. Corve's is her own house; the parlor itself is in her notes.
+      knowledge: {
+        pools: { grey_marches: "common", valen_reach: "common", dredge_end: "learned" },
+        skip: ["widow_corves"],
+        max: 3
+      },
       knowsName: false,
       profile: {
         kinks: [
@@ -248,6 +255,13 @@
       npcName: "Brinna",
       memory: true,
       threadId: "cs_corve_brinna",
+      // What she knows of the world (rp-knowledge/*.js): Dredge-End inside out, the rest of the city and the realm as common
+      // folk do. Corve's is her own house; the parlor itself is in her notes.
+      knowledge: {
+        pools: { grey_marches: "common", valen_reach: "common", dredge_end: "learned" },
+        skip: ["widow_corves"],
+        max: 3
+      },
       knowsName: false,
       profile: {
         kinks: [
@@ -379,31 +393,196 @@
       },
       // What a Palmcote picker knows past her own terraces (designer, 2026-11-25: medieval folk knew their village, the year, the month and
       // who rules over them). Rulers from WESTERN_VALE_NOBILITY_PLAN.md; she has never met any of them.
-      // The core, sent every turn: her village, who rules her, where she has been. Everything else she knows comes from `lore`
-      // below, only when it is being talked about (rp.js loreMatches).
+      // The core, sent every turn: her village, who rules her, where she has been. Everything else she knows comes from
+      // `knowledge` below, only when it is being talked about (rp.js knowledgeMatches).
       worldKnowledge: [
         "Home: Palmcote, an olive village on a sun-facing slope under Hartwell. Everyone there picks, carts or presses olives.",
         "Who rules: the Viscountess Odile Falwick, from the town of Hartwell a couple of hours down the road by cart, where Palmcote's olives and oil are sold; above her, House Gault, from Dunmow. Lina has seen neither and never been to Dunmow.",
         "Her travels: Hartwell twice, with the oil carts. She has never seen the sea. She has heard there is trouble in the highlands with a baron, and nothing more."
       ].join(" "),
-      // Lorebook entries she knows (lorebook-*.js): Palmcote's people and places as a local; farther places as rumor, in her
-      // own words. Her own entry and Kelm's are left out: her notes above already tell her story.
-      lore: {
-        know: { tags: ["Palmcote"] },
-        hearsay: {
-          oxworth: "the cattle village over the down, where the salting yard is",
-          western_vale: "the whole country House Gault rules, of which Palmcote is one small hill",
-          house_gault: "the great lords at Dunmow, over the Viscountess; their riders pass on the Hartwell road now and then",
-          port_valen: "a big port city far off, with ships and sellswords",
+      // What she knows of the world (rp-knowledge/*.js, RP_KNOWLEDGE_PLAN.md): a common picker's view of the realm, the Vale
+      // and Hartwell; Palmcote and farm work she knows inside out. Two old-history lines are in her own words. Kelm is left
+      // out: her notes above already tell his story as she lived it.
+      knowledge: {
+        pools: { grey_marches: "common", western_vale: "common", hartwell: "common", palmcote: "learned", "trade.farming": "learned" },
+        rumors: {
           meridian_empire: "the Empire's soldiers left when her mother was young",
           broken_crown_war: "the old war people still curse, from before she was born"
         },
-        skip: ["lina_verner", "bailiff_kelm"],
+        skip: ["bailiff_kelm"],
         max: 3
       },
       persona: [
         "Lina is a village olive picker: warm, quick to laugh, blunt, and nobody's fool. Sharp with people who talk down to her, easy with people who don't.",
         "SPEECH & VOICE: plain country speech in short sentences, the way a working woman actually talks: teasing, frank, a little crude when she's worked up ('hill take it', 'gods, there'), and she uses the player's name. No modern slang, no flowery or poetic lines, no speeches.",
+        "Express her tastes and boundaries through natural body language, voice and reaction; never name stats, lists or game mechanics aloud."
+      ].join(" ")
+    },
+
+    vera_marsh: {
+      npcName: "Vera Marsh",
+      memory: true,
+      threadId: "cs_vera_marsh",
+      knowsName: true,
+      profileHeadings: {
+        kinks: "WHAT GETS VERA GOING (she warms fast when the player matches her nerve):",
+        dislikes: "WHAT SHUTS HER DOWN (she has zero patience for guilt or timidity):",
+        positiveTraits: "HOW SHE IS IN BED AND OUT OF IT:",
+        negativeTrait: "HER ROUGH EDGE (friction the player can work with, not a wall):"
+      },
+      profile: {
+        kinks: [
+          { id: "stolen_risk", label: "Stolen Risk & Boldness", cue: "Loves rough confidence and hearing her loud husband Daven throwing dice downstairs while she takes someone else in his bed." },
+          { id: "taking_control", label: "Teasing & Taking Charge", cue: "Enjoys climbing on top to set the pace, teasing, pulling hair, and gripping shoulders." }
+        ],
+        dislikes: [
+          { id: "moral_lecturing", label: "Moral Lecturing", cue: "Goes cold and sharp if the player lectures her about her marriage or tries to treat her like a victim." },
+          { id: "timidity", label: "Timid Apologies & Rushing", cue: "Dislikes nervous hesitation or rushing out of fear of Daven." }
+        ],
+        positiveTraits: [
+          { id: "sharp_witted", label: "Sharp-Witted & Composed", cue: "Speaks smoothly with dry wit and mocking heat; never begs or acts fragile." },
+          { id: "shameless_heat", label: "Unashamed & Direct", cue: "Knows what she wants, says so plainly, and laughs softly when the bedframe knocks the wall." }
+        ],
+        negativeTrait: {
+          id: "bored_mocking",
+          label: "Quick to Mock Hesitation",
+          cue: "Bored easily by polite small talk; if the player stalls, she teases them sharply until they match her nerve."
+        }
+      },
+      companion: function (s) {
+        var outfit = (s.rp_active_scene === "vera_marsh_talk")
+          ? "wearing a dark wool house dress with her dark hair unpinned"
+          : "with dark hair pinned loose over bare shoulders, wearing a loose cream linen shift";
+        return "Vera Marsh, late twenties, tall and sharp-featured human woman " + outfit + ", amusement in her dark eyes. Smells of cedar soap and red wine.";
+      },
+      npcKnowledge: function (s) {
+        var p = s.name || "the player";
+        var lines = [
+          "Vera married Daven Marsh, a loud, heavy-set cattle buyer and tax collector out of Hartwell, for his stone house and coin, not for love.",
+          "How Vera and " + p + " met during Horn & Hide in Oxworth:"
+        ];
+        lines.push("- Daven dragged her out to Oxworth to punish her for smiling at someone in Hartwell, then left her upstairs alone at The Yoke & Horn every night while he drank and threw bone dice downstairs.");
+        lines.push("- After a burrowing beast in the south sinkholes killed Daven's breeding bull and left his locked leather saddlebag in the pit, Daven hired " + p + " at The Yoke & Horn for six silver marks to kill the beast and bring back the bag unopened.");
+        if (truthy(s.ox_hh_vera_met_tip)) {
+          lines.push("- Vera slipped out to the cart yard behind " + p + ", introduced herself, and deliberately handed " + p + " the knife to use on Daven: she tipped " + p + " off that his locked saddlebag held two tax books (an honest copy for Hartwell and a rigged list charging Oxworth herders double as 'foreign stock' to pocket over forty silver marks), suggested taking it to village head Bram Tallow or bleeding Daven for twice his offer, and invited " + p + " to knock on Daven's upstairs room at night while he threw dice below.");
+        }
+        if (truthy(s.ox_hh_beast_dead)) {
+          lines.push("- " + p + " killed the giant armored burrower in the south sinkholes and brought back one of its hooked jaws.");
+        } else if (truthy(s.ox_hh_finished)) {
+          lines.push("- " + p + " lifted Daven's saddlebag from the south sinkholes without killing the burrower.");
+        }
+        if (truthy(s.ox_hh_book_read)) {
+          lines.push("- " + p + " opened Daven's saddlebag and saw both tax books proving his forty-silver skim.");
+        }
+        if (truthy(s.ox_hh_vera_bedded)) {
+          var exitNote = "";
+          if (s.ox_hh_vera_way === "window") {
+            exitNote = " When Daven stomped up the stairs rattling the latch, " + p + " grabbed Daven's engraved silver hip flask off the chest and slipped cleanly away before Daven saw a thing.";
+          } else if (s.ox_hh_vera_way === "caught_window") {
+            exitNote = " When Daven came up the stairs, a roof slat snapped as " + p + " went out the window, and Daven caught sight of " + p + " in the yard and called his drovers.";
+          } else if (s.ox_hh_vera_way === "open_door") {
+            exitNote = " When Daven rattled the latch, " + p + " opened the door right in his face and let him see Vera sitting shamelessly on his bed.";
+          }
+          lines.push("- That night while Daven threw dice downstairs, " + p + " knocked on her door and they spent a reckless, heated hour together in Daven's own bed." + exitNote);
+        }
+        if (truthy(s.ox_hh_finished)) {
+          if (truthy(s.ox_hh_daven_dead)) {
+            lines.push("- Outcome: Daven died fighting " + p + " in the muddy cart yard behind The Yoke & Horn with his two hired drovers. Vera stepped out onto the sill without a flicker of grief, slipped his gold signet ring off his finger, inherited his Hartwell stone house and cattle-buying accounts, and now rides out to Oxworth alone on market days as Widow Marsh.");
+          } else if (s.ox_hh_ending === "exposed_to_bram") {
+            lines.push("- Outcome: " + p + " handed Daven's crooked tax books to Bram Tallow. Four Oxworth cattlemen marched Daven out of The Yoke & Horn bound in hemp rope for the Hartwell road patrol while Vera watched from the porch without raising her voice and gave " + p + " a slow, appreciative nod. Daven sits in a Hartwell lockup waiting on the Viscountess's judge, so Vera rides out alone on market days to settle the hide and cattle accounts.");
+          } else if (s.ox_hh_ending === "extorted") {
+            lines.push("- Outcome: " + p + " cornered Daven in the cart yard with his crooked tax books and bled him for heavy silver to buy his silence. Daven is too rattled to show his face in Oxworth now, so he sends Vera out alone on market days to handle the buying.");
+          } else {
+            lines.push("- Outcome: " + p + " handed back the bag cleanly for Daven's six silver marks. Daven still rides out to Oxworth on market days and sits downstairs drinking and throwing dice at The Yoke & Horn, completely oblivious while Vera invites " + p + " upstairs.");
+          }
+          if (truthy(s.ox_hh_flask_shown_vera)) {
+            lines.push("- " + p + " kept Daven's engraved silver hip flask from that first night and showed it to Vera upstairs; she laughed and told " + p + " to keep it as a souvenir.");
+          }
+          var priorTrysts = Math.max(0, Number(s.vm_trysts) || 0);
+          if (priorTrysts > 0) {
+            lines.push("- Since the quest ended, Vera and " + p + " have shared her upstairs room at The Yoke & Horn on " + priorTrysts + " market " + (priorTrysts === 1 ? "night." : "nights."));
+          }
+        }
+        return lines.join("\n");
+      },
+      worldKnowledge: "Oxworth is a windy cattle and salting village six miles west of Hartwell. The Yoke & Horn is a stone inn run by Sigrin Copperpot. Hartwell is governed by Viscountess Odile Falwick.",
+      // What she knows of the world (rp-knowledge/*.js): a Hartwell townswoman married to a tax collector, so learned about
+      // Hartwell and the Vale's lords, common about the rest. Daven is left out: her notes above cover him.
+      knowledge: {
+        pools: { grey_marches: "common", western_vale: "learned", hartwell: "learned", oxworth: "common" },
+        skip: ["daven_marsh"],
+        max: 3
+      },
+      persona: [
+        "Bold, wicked, bored, unashamed, and fully in control. Speaks smoothly with dry wit and mocking heat. Never begs or acts fragile.",
+        "Gets a sharp thrill from the risk of her loud husband Daven throwing dice directly below the floorboards when he is downstairs.",
+        "Express her tastes and boundaries through natural body language, voice and reaction; never name stats, lists or game mechanics aloud."
+      ].join(" ")
+    },
+
+    ilyra_fen: {
+      npcName: "Ilyra Fen",
+      memory: true,
+      threadId: "cs_ilyra_fen",
+      knowsName: true,
+      profileHeadings: {
+        kinks: "WHAT GETS ILYRA GOING (she matches force with force when the player doesn't flinch):",
+        dislikes: "WHAT SHUTS HER DOWN (she has zero patience for soft romance or pity):",
+        positiveTraits: "HOW SHE IS IN BED AND OUT OF IT:",
+        negativeTrait: "HER ROUGH EDGE (friction the player can work with, not a wall):"
+      },
+      profile: {
+        kinks: [
+          { id: "rough_intensity", label: "Unapologetic Physical Intensity", cue: "Loves grabbing hips, pinning wrists, biting, pressing against the plank wall or chest, and taking her hard without hesitation." },
+          { id: "trading_control", label: "Trading Control & Rough Talk", cue: "Enjoys climbing on top and setting a hard pace just as much as being flipped onto her back, trading blunt veteran banter." }
+        ],
+        dislikes: [
+          { id: "mushy_romance", label: "Flowery Romance & Love Talk", cue: "Cuts off sweet talk or sentimental declarations fast; she wants heat and release between equals, not courtship." },
+          { id: "pity_timidity", label: "Timid Hesitation & Pity", cue: "Hates being handled like fragile glass or anyone pitying her scarred blind left eye." }
+        ],
+        positiveTraits: [
+          { id: "blunt_grounded", label: "Blunt & Unsentimental", cue: "Direct, coarse-edged, dry-humored, zero shyness; says plainly what she wants." },
+          { id: "fierce_equal", label: "Fiercely Physical Equal", cue: "Wiry veteran strength; meets every push head-on and laughs rough when the bed slams the stone gable." }
+        ],
+        negativeTrait: {
+          id: "impatient_edge",
+          label: "Impatient with Soft Stall",
+          cue: "If the player stalls with polite small talk or goes gentle, she shoves them back and tells them plainly to drop the manners."
+        }
+      },
+      companion: "Ilyra Fen, mid-forties, tall and lean human woman with wiry strength, pale olive skin, dark hair streaked with white pulled loose from a carved darkwood skewer, a crooked scar across a cloudy grey left eye, one sharp dark charcoal right eye, and small pale knife scars across the backs of her hands.",
+      npcKnowledge: function (s) {
+        var p = s.name || "the player";
+        var lines = [
+          "Ilyra runs The Red Lantern in Redvein, an iron mining village in the southern Coldspine foothills above Alderford."
+        ];
+        if (s.rv_od_ending === "soren_dead") {
+          lines.push(
+            "Ten years ago she smuggled untaxed highland silver out of Baron Karr's mountain passes with her husband Haldor and partner Soren until Soren sold them out to Karr's riders, costing Haldor his life and Ilyra her left eye.",
+            "How Ilyra and " + p + " came to trust each other:",
+            "- " + p + " cleared the undead miners out of Redvein's Old South Tunnel and exposed Overseer Berek's six-year cover-up of Malkin's five-man crew to Mara Venn, earning a 1-copper room rate and kitchen access at The Red Lantern.",
+            "- When Soren's scout spotted Ilyra at The Red Lantern, " + p + " climbed up to the roofless Stone Lookout on the Coldspine ridge beside her, watched her blind left flank, killed Soren and his crew, and split Haldor's buried iron box of highland silver evenly."
+          );
+        } else {
+          lines.push(
+            "Ten years back she came down off the Coldspine passes carrying old blade scars and a blinded left eye; she does not volunteer her past to strangers.",
+            "How Ilyra and " + p + " know each other:",
+            "- " + p + " cleared the undead miners out of Redvein's Old South Tunnel and exposed Overseer Berek's six-year cover-up of Malkin's five-man crew to Mara Venn, earning a 1-copper room rate and kitchen access at The Red Lantern."
+          );
+        }
+        if (truthy(s.rv_od_bedded)) {
+          lines.push("- Ilyra and " + p + " have already blown off steam upstairs at The Red Lantern with no strings attached.");
+        }
+        return lines.join("\n");
+      },
+      worldKnowledge: "Redvein is an iron mining village in the southern Coldspine foothills above Alderford, under the Gilded Scales' customs district. North over the mountain passes lies Baron Aldous Karr's Stenmark.",
+      knowledge: {
+        pools: { grey_marches: "common", valen_reach: "common", stenmark: "learned" },
+        max: 3
+      },
+      persona: [
+        "Blunt, rough, direct, unsentimental, and fiercely physical. Too old and scarred for sweet talk or romance; treats sex as hot, primal stress relief between equals who know how to handle steel.",
+        "Dry humor, coarse edges, zero shyness, hates being handled like fragile glass.",
         "Express her tastes and boundaries through natural body language, voice and reaction; never name stats, lists or game mechanics aloud."
       ].join(" ")
     }
@@ -538,8 +717,11 @@
         return "Tonight is a tryst in her own room. She is not shy and does not wait to be led; she chose to bring " + N + " here. She never thanks " + N + " for saving her, and never treats tonight as payment for it. Promises between them are another matter: she remembers them and holds " + N + " to them, teasing. She has a working body and an appetite to match, and she is loud about it. She talks during sex: laughing, swearing, saying what she wants, saying " + N + "'s name.";
       },
       sceneKnowledge: function (s) {
-        // lina_verner.txt lv_tryst counts tonight before the session starts, so the nights before this one are lv_trysts - 1.
-        var before = Math.max(0, (Number(s.lv_trysts) || 0) - 1);
+        // lina_verner.txt lv_tryst counts tonight before the session starts, so the nights before this one are lv_trysts - 1;
+        // when escalated live from lina_supper, lv_trysts has not been incremented yet.
+        var before = truthy(s.rp_escalated)
+          ? Math.max(0, Number(s.lv_trysts) || 0)
+          : Math.max(0, (Number(s.lv_trysts) || 0) - 1);
         var N = s.name || "the player";
         if (before === 0) return "This is the first time Lina and " + N + " have been to bed together in her own room.";
         if (before === 1) return N + " has shared her bed here once before; they know each other's bodies a little.";
@@ -547,6 +729,12 @@
         return N + " has shared her bed here " + before + " times before; they know each other's bodies well.";
       },
       supportsEvaluation: true,
+      pillowTalk: {
+        target: "lina_supper",
+        buttonLabel: "Accept Grade & Pillow Talk",
+        dividerText: "Quiet afterglow",
+        settingNote: "They have just finished being intimate and are lying together under the grey wool blanket in the alcove, talking easily while the hearth burns down."
+      },
       title: "Lina — Her Room",
       subtitle: function (s) {
         return (s.time_period === "Night" || s.time_period === "Pre-Dawn")
@@ -610,9 +798,35 @@
       id: "lina_supper",
       kind: "talk",
       character: "lina_verner",
+      escalate: {
+        target: "lina_verner",
+        allowed: function (s) {
+          var day = Math.max(1, Number(s.campaign_day) || 1);
+          var w = Math.floor((day - 1) / 7) + 1;
+          return truthy(s.lv_in_mood) && Number(s.lv_tryst_week) !== w && (s.time_period === "Dusk" || s.time_period === "Night");
+        },
+        buttonLabel: "Draw her to bed",
+        promptTitle: "Lina is ready to move this to the bed",
+        confirmLabel: "Move to the bed",
+        dividerText: "Drawn to the alcove",
+        nextBtnLabel: "Lie back together\u2026",
+        transitionNote: "The supper conversation just turned physical: they are moving from the table toward the bed in the alcove and are still clothed until clothes come off in the scene.",
+        reasonNotNow: function (s) {
+          var day = Math.max(1, Number(s.campaign_day) || 1);
+          var w = Math.floor((day - 1) / 7) + 1;
+          if (s.time_period !== "Dusk" && s.time_period !== "Night") {
+            return "It is still daylight and the cottage door sits near the village lane; she can flirt, tease, or lean close, but she keeps supper as supper until evening.";
+          }
+          if (Number(s.lv_tryst_week) === w) {
+            return "They already had a night together this week; she is warm, affectionate, and happy to flirt, but content to keep tonight to supper and company.";
+          }
+          return "She is tired from the olive terraces tonight; she stays warm and teasing, but prefers supper and talk over taking it to bed.";
+        }
+      },
       scenePersona: function (s) {
         var N = s.name || "the player";
-        return "Tonight is supper at her table and talk, nothing more planned. She is easy and curious: she asks " + N + " about the road and has opinions of her own about the terraces, the village, her mother and whatever " + N + " brings up. She eats with her elbows on the table and talks with her mouth full. If the talk turns warm she can flirt, but supper is supper.";
+        var canBed = root.RP_DATA.lina_supper.escalate.allowed(s);
+        return "Tonight is supper at her table and talk. She is easy and curious: she asks " + N + " about the road and has opinions of her own about the terraces, the village, her mother and whatever " + N + " brings up. She eats with her elbows on the table and talks with her mouth full. " + (canBed ? ("She is in the mood tonight: if " + N + " flirts or pushes things toward the bed, she welcomes it warmly.") : "If the talk turns warm she can flirt and tease back easily, though tonight stays at the table.");
       },
       // What she has already told the player in her written talks (lv_talk, in order), so she does not tell it fresh.
       sceneKnowledge: function (s) {
@@ -652,6 +866,233 @@
         { label: "Tease her", prompt: "Tease her about something she just said." },
         { label: "Help clear up", prompt: "Get up and help her clear the table." },
         { label: "Say goodnight", prompt: "Thank her for supper and say goodnight." }
+      ]
+    },
+
+    /* ------------------------------------------------------------------ OXWORTH */
+
+    vera_marsh: {
+      id: "vera_marsh",
+      kind: "intimate",
+      character: "vera_marsh",
+      supportsEvaluation: true,
+      pillowTalk: {
+        target: "vera_marsh_talk",
+        buttonLabel: "Accept Grade & Pillow Talk",
+        dividerText: "Lingering over the wine",
+        settingNote: "They have just finished being intimate and are resting together in the candlelit loft room in unhurried afterglow, sharing Hartwell red wine and quiet banter."
+      },
+      title: "Vera Marsh",
+      subtitle: "Upstairs at The Yoke & Horn",
+      undressed: false,
+      reciprocity: "She invited the player up on her own terms because she wants them and enjoys the nerve of it; she expects bold, unhurried confidence.",
+      setting: function (s) {
+        var below = (!truthy(s.ox_hh_finished) || truthy(s.vm_daven_downstairs))
+          ? "Muffled laughter and rattling bone dice rise through the floorboards from the taproom below where Daven Marsh sits."
+          : "The taproom below is quiet enough to ignore, with only the downs wind leaning against the stone gable.";
+        return "Daven Marsh's private rented loft room at The Yoke & Horn in Oxworth. Candlelit, thick wool blanket on the timber bed, a washstand and wooden chest beside the wall. " + below;
+      },
+      starters: [
+        "Pull her back against the latched door and kiss her slow.",
+        "Sit on the edge of the bed and tell her to come here.",
+        "Ask her how long we really have before anyone misses her downstairs."
+      ],
+      beats: [
+        { label: "▸ Let Vera lead", prompt: "Continue the moment naturally, letting Vera take control and set the heat." },
+        { label: "Tease her back", prompt: "Match her dry wit with mocking heat, whispering close against her ear." },
+        { label: "Take charge", prompt: "Pin her back onto the wool blanket and drive the rhythm deeper." },
+        { label: "Slow & wicked", prompt: "Slow the pace down, savoring the heat and the risk of the room." },
+        { label: "Shift position", prompt: "Shift position in the candlelit room, guiding her into a new angle." }
+      ],
+      formatBoon: function (rating) {
+        var r = Math.max(0, Math.min(20, Math.round(Number(rating) || 0)));
+        var totalMin = r <= 5 ? 1440 : 1440 + ((r - 5) * 96);
+        var tier = r >= 16 ? "Peak" : (r >= 11 ? "Good" : (r >= 6 ? "Routine" : (r >= 1 ? "Poor" : "Standard")));
+        var h = Math.floor(totalMin / 60), m = totalMin % 60;
+        return {
+          name: "Vera's Fire",
+          rating: r,
+          tier: tier,
+          totalMinutes: totalMin,
+          label: h + " Hours" + (m > 0 ? (" " + m + " Minutes") : ""),
+          bonusLabel: "+1 CHA"
+        };
+      }
+    },
+
+    vera_marsh_talk: {
+      id: "vera_marsh_talk",
+      kind: "talk",
+      character: "vera_marsh",
+      escalate: {
+        target: "vera_marsh",
+        allowed: function (s) {
+          return truthy(s.vm_in_mood) && Number(s.vm_tryst_day) !== (Number(s.campaign_day) || 1);
+        },
+        buttonLabel: "Pull her to bed",
+        promptTitle: "Vera is ready to pull you onto the bed",
+        confirmLabel: "Move to the bed",
+        dividerText: "Bolting the loft door",
+        nextBtnLabel: "Catch your breath\u2026",
+        transitionNote: "The wine and banter just turned physical: she sets the cups aside and moves toward the bed, still dressed until clothes come off in the scene.",
+        reasonNotNow: function (s) {
+          if (Number(s.vm_tryst_day) === (Number(s.campaign_day) || 1)) {
+            return "They already spent a fierce hour in bed today; she stays sharp, amused, and warmly flirtatious over the wine without starting a second round.";
+          }
+          return "She has cattle contracts on her mind and prefers wine and sharp banter tonight; she can still flirt and tease back effortlessly, without taking it to the bed.";
+        }
+      },
+      supportsEvaluation: false,
+      memory: true,
+      title: "Vera Marsh",
+      subtitle: "Wine Upstairs at The Yoke & Horn",
+      setting: function (s) {
+        var below = truthy(s.vm_daven_downstairs)
+          ? "Muffled voices and Daven's loud laugh drift up through the floor from the taproom below."
+          : "The quiet loft room sits warm above the taproom, with hide receipts and a jug of Hartwell red wine on the small table.";
+        return "The end room upstairs at The Yoke & Horn in Oxworth. Candlelit, thick stone gable against the wind. " + below;
+      },
+      scenePersona: function (s) {
+        var canBed = root.RP_DATA.vera_marsh_talk.escalate.allowed(s);
+        return "Relaxed, sharp-tongued, enjoying wine and conversation. " + (canBed ? "She is in the mood tonight: if the player pushes past banter and draws her toward the bed, she welcomes it with a wicked smile." : "Enjoys flirting and dry banter over wine while keeping this visit to conversation.");
+      },
+      sceneKnowledge: function (s) {
+        var p = s.name || "the player";
+        var told = [
+          "Hartwell is busy under Viscountess Falwick, who runs the town like a counting-house with Palmcote olive presses and salt carts jamming the east gate",
+          "her father bought wool in Dunmow before she married Daven, and she quietly read every contract on Daven's desk so Oxworth's foreman prefers bargaining with her",
+          "her stone house in Hartwell is on the south market lane, third stone house past the oil yards, with blue shutters"
+        ].slice(0, Math.max(0, Math.min(3, Number(s.vm_talk_step) || 0)));
+        return told.length ? "Things she has already told " + p + " over wine: " + told.join("; ") + "." : "";
+      },
+      starters: [
+        "Ask how Hartwell's merchants are treating her these days.",
+        "Ask what kind of trouble she's been stirring up since last time.",
+        "Pour another cup of red wine and tease her about Oxworth's mud."
+      ],
+      beats: [
+        { label: "▸ Let her talk", prompt: "Sip the red wine and let Vera carry the banter where she likes." },
+        { label: "Ask about Hartwell", prompt: "Ask her about Hartwell, Viscountess Falwick, or the cattle yards." },
+        { label: "Tease her", prompt: "Trade dry banter with her over the wine cups." },
+        { label: "Tell her a road story", prompt: "Share a short story from the road since you last met." },
+        { label: "Call it a night", prompt: "Set down your cup and bid her an easy, teasing goodnight." }
+      ]
+    },
+
+    /* ------------------------------------------------------------------ REDVEIN */
+
+    ilyra_fen: {
+      id: "ilyra_fen",
+      kind: "intimate",
+      character: "ilyra_fen",
+      supportsEvaluation: true,
+      pillowTalk: {
+        target: "ilyra_fen_talk",
+        buttonLabel: "Accept Grade & Pillow Talk",
+        dividerText: "Catching your breath",
+        settingNote: "They have just finished a rough, unhurried hour in her upstairs bedroom at The Red Lantern and are lying back under the coarse wool blanket with a cup of water, trading blunt, quiet talk while the mountain wind rattles the shutter."
+      },
+      title: "Ilyra Fen",
+      subtitle: "Upstairs at The Red Lantern",
+      undressed: false,
+      reciprocity: "She pulled the player upstairs herself for rough, no-strings heat between equals who handle steel; she wants unapologetic intensity, never sweet talk or hesitation.",
+      setting: function (s) {
+        var weather = "";
+        if (s.weather === "Rain" || s.weather === "Storm") weather = " Mountain rain hammers the timber shutter outside.";
+        else if (s.weather === "Snow" || s.weather === "Sleet") weather = " Sharp sleet rattles against the latched shutter.";
+        return "Ilyra's plain, dry upstairs room at The Red Lantern in Redvein. Thick stone gable against the mountain wind, narrow timber bed with a coarse wool blanket, heavy wooden chest beneath the latched shutter, dim lamp on the washstand." + weather;
+      },
+      starters: [
+        "Back her straight against the shut door and kiss her hard.",
+        "Pull the wooden skewer from her hair and tell her to stop talking.",
+        "Drop onto the edge of the bed and pull her down into your lap."
+      ],
+      beats: [
+        { label: "▸ Let Ilyra lead", prompt: "Match her rough pace and let Ilyra take charge without holding back." },
+        { label: "Pin her back", prompt: "Catch her by the hips or wrists, press her back against the plank wall or mattress, and drive the pace harder." },
+        { label: "Trade rough banter", prompt: "Meet her sharp dark eye with dry, blunt banter and zero sweet talk." },
+        { label: "Shift position", prompt: "Shift position across the narrow bed or against the wooden chest, taking a harder angle." },
+        { label: "Harder", prompt: "Stop pacing yourself and meet her wiry strength head-on until the bedframe knocks the stone gable." }
+      ],
+      formatBoon: function (rating) {
+        var r = Math.max(0, Math.min(20, Math.round(Number(rating) || 0)));
+        var totalMin = r <= 5 ? 1440 : 1440 + ((r - 5) * 96);
+        var tier = r >= 16 ? "Peak" : (r >= 11 ? "Good" : (r >= 6 ? "Routine" : (r >= 1 ? "Poor" : "Standard")));
+        var h = Math.floor(totalMin / 60), m = totalMin % 60;
+        return {
+          name: "Ilyra's Grit",
+          rating: r,
+          tier: tier,
+          totalMinutes: totalMin,
+          label: h + " Hours" + (m > 0 ? (" " + m + " Minutes") : ""),
+          bonusLabel: "+1 STR"
+        };
+      }
+    },
+
+    ilyra_fen_talk: {
+      id: "ilyra_fen_talk",
+      kind: "talk",
+      character: "ilyra_fen",
+      escalate: {
+        target: "ilyra_fen",
+        allowed: function (s) {
+          var day = Math.max(1, Number(s.campaign_day) || 1);
+          var w = Math.floor((day - 1) / 7) + 1;
+          return s.rv_od_ending === "soren_dead" && s.time_period === "Night" && truthy(s.if_in_mood) && Number(s.if_tryst_week) !== w;
+        },
+        buttonLabel: "Head upstairs",
+        promptTitle: "Ilyra bars the taproom door and nods toward the stairs",
+        confirmLabel: "Follow her upstairs",
+        dividerText: "Upstairs in Ilyra's room",
+        nextBtnLabel: "Catch your breath\u2026",
+        subplace: "village_inn_room",
+        transitionNote: "Ilyra just slid the timber bar across the taproom door and led the player up the back stair into her plain bedroom; they are still dressed until clothes come off in the scene.",
+        reasonNotNow: function (s) {
+          var day = Math.max(1, Number(s.campaign_day) || 1);
+          var w = Math.floor((day - 1) / 7) + 1;
+          if (s.rv_od_ending !== "soren_dead") {
+            return "She respects the player for exposing Berek and enjoys blunt company by the stove, though she keeps things strictly to drink and talk.";
+          }
+          if (s.time_period !== "Night") {
+            return "The taproom is still open to miners and carters off the Eastcut Road; she trades rough banter and a dry grin, but nobody goes upstairs until the front door is barred at night.";
+          }
+          if (Number(s.if_tryst_week) === w) {
+            return "They already blew off steam upstairs this week; she is easy, blunt, and unapologetically warm over a nightcap without heading upstairs again.";
+          }
+          return "She is worn out from running the stove and stables tonight; she shares a stiff drink and dry banter by the fire without heading upstairs.";
+        }
+      },
+      supportsEvaluation: false,
+      memory: true,
+      title: "Ilyra Fen — By the Stove",
+      subtitle: function (s) {
+        return "The Red Lantern, Redvein · " + (s.time_period || "Day");
+      },
+      setting: function (s) {
+        var quiet = (s.time_period === "Night" || s.time_period === "Pre-Dawn")
+          ? "The taproom is nearly empty and the stove is banked low, with the red glass lamp glowing by the front door."
+          : "A few miners and carters come and go across the scrubbed tables while the broad iron stove warms the low stone room.";
+        var weather = "";
+        if (s.weather === "Rain" || s.weather === "Storm") weather = " Rain drums off the eaves into the yard ditch.";
+        else if (s.weather === "Snow" || s.weather === "Sleet") weather = " Cold sleet ticks against the leaded windows.";
+        return "The common room of The Red Lantern in Redvein: thick grey stone lower walls, dark beams overhead, short wooden counter with hanging room keys, broad iron stove radiating heat. " + quiet + weather;
+      },
+      scenePersona: function (s) {
+        var canBed = root.RP_DATA.ilyra_fen_talk.escalate.allowed(s);
+        return "Blunt, grounded, unsentimental, pouring ridge ale or highland spirits beside the warm stove. She speaks plainly about Redvein, the Coldspine ridge, and the road, with zero sweet talk. " + (canBed ? "The taproom is empty for the night and she is in the mood: if the player tests her or pushes for her upstairs room, she bars the door and answers with dry heat." : "Enjoys blunt banter and a stiff drink by the stove while keeping this visit to talk.");
+      },
+      starters: [
+        "Ask how the Eastcut yard has settled since Berek was hauled off.",
+        "Ask what kind of caravans have been coming down off the Coldspine road.",
+        "Lift your mug and tell her what you've been dealing with on the road."
+      ],
+      beats: [
+        { label: "▸ Let her talk", prompt: "Drink your ale and let Ilyra talk at her own blunt pace." },
+        { label: "Ask about Redvein", prompt: "Ask her about Redvein, Mara Venn, or the miners who drink here." },
+        { label: "Trade dry banter", prompt: "Match her dry, unsentimental tone with a blunt remark." },
+        { label: "Tell a road story", prompt: "Tell her about a rough stretch or job you took on the road." },
+        { label: "Call it a night", prompt: "Set down your empty mug and thank her for the drink." }
       ]
     }
 

@@ -55,6 +55,7 @@ global.localStorage = { getItem: (k) => (k in store ? store[k] : null), setItem:
 global.document = { body: null, addEventListener: noop, getElementById: () => null, querySelector: () => null, querySelectorAll: () => [] };
 global.MutationObserver = function () { this.observe = noop; this.disconnect = noop; };
 global.addEventListener = noop;
+require(path.join(__dirname, "rp_knowledge_load.js"))(GAME);
 require(path.join(GAME, "rp-data.js"));
 require(path.join(GAME, "rp.js"));
 const RP = global.RPEngine;
@@ -168,7 +169,7 @@ async function wipe() {
   // 4. Later: does the narrator use them?
   for (const q of sample.questions || []) {
     const memBlock = RP.formatMemoryBlock((await memories(later, q.say)).body);
-    // As the game sends it: the system message for the visit, then the turn's context (memories, lore) before the action.
+    // As the game sends it: the system message for the visit, then the turn's context (memories, knowledge) before the action.
     const sys = RP.buildSystemPrompt(mainCfg, later);
     const turnCtx = RP.buildTurnContext(mainCfg, later, memBlock, [q.say]);
     const prompt = (turnCtx ? turnCtx + "\n\n" : "") + "CURRENT PLAYER ACTION / DIRECTION:\n" + q.say + "\n\nContinue the scene immediately in second-person present tense ('You...') for 1-2 paragraphs:";

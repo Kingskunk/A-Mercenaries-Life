@@ -17,6 +17,7 @@
 //   --built   opens play_game.html instead (what ships; only as fresh as the last compile)
 //   --out     folder for the screenshots (default <tmp>/probe_fight/<script name>)
 //   --hover   at the end, hovers the battle-bar slot with this name and screenshots its tooltip card; "css:<selector>" hovers any element instead
+//   --click   at the end, clicks each element matching these CSS selectors in turn ("a|b" for several, e.g. a sidebar toggle then a button in the tray it opens), screenshots after each
 //   --open    at the end, clicks the battle-bar slot with this name so its fly-out opens (Throw, Shoot, Potions...), lists its buttons and screenshots it;
 //             --open-hover=<text> then hovers the fly-out button whose label holds the text and screenshots its card
 // It starts its own Chrome profile and its own server and stops only those processes. CHROME=... if Chrome is not in the usual place.
@@ -40,6 +41,7 @@ const OUT = flag("out") || path.join(os.tmpdir(), "probe_fight", NAME);
 const built = !!flag("built");
 const hover = flag("hover");
 const openSlot = flag("open"), openHover = flag("open-hover");
+const clickSel = flag("click");
 
 function randValue(v) { return v === "low" ? 0 : v === "high" ? 0.9999 : v === "mid" || v === undefined ? 0.5 : Number(v); }
 
@@ -202,6 +204,20 @@ async function main() {
         await cmd("Input.dispatchMouseEvent", { type: "mouseMoved", x: box.x, y: box.y });
         await sleep(1600);
         shots.push(await shot("zz_hover_" + String(hover).replace(/[^A-Za-z0-9]+/g, "_")));
+      }
+    }
+
+    // --click (2026-11-27): click page elements by CSS selector, in order, with a screenshot after each (the ally stance tray, for one).
+    if (clickSel) {
+      const sels = String(clickSel).split("|");
+      for (let ci = 0; ci < sels.length; ci++) {
+        const cbox = await ev(`(function(){ var e = document.querySelector(${JSON.stringify(sels[ci])}); if (!e) return null; var r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`);
+        if (!cbox) { console.log("  click: nothing matches '" + sels[ci] + "'"); problems++; break; }
+        await cmd("Input.dispatchMouseEvent", { type: "mouseMoved", x: cbox.x, y: cbox.y });
+        await cmd("Input.dispatchMouseEvent", { type: "mousePressed", x: cbox.x, y: cbox.y, button: "left", clickCount: 1 });
+        await cmd("Input.dispatchMouseEvent", { type: "mouseReleased", x: cbox.x, y: cbox.y, button: "left", clickCount: 1 });
+        await sleep(900);
+        shots.push(await shot("zz_click_" + (ci + 1)));
       }
     }
 

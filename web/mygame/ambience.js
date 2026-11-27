@@ -84,6 +84,7 @@
     // grounds outside are the town's edge, so a hushed village by day and open night nature after dark.
     temple_hall: { all: "indoor_underground_silence_needstobeplayedverysoftly", level: 0.32, indoor: true },
     temple_crypt: { all: "indoor_underground_silence_needstobeplayedverysoftly", level: 0.26, indoor: true },
+    mine_tunnel: { all: "cave_tunnel_underground_quiet_calm_heavysilence", level: 0.45, indoor: true },
     temple_grounds: { day: "generic_village", night: "nature_outdoors_night", level: 0.4 },
     siege: { all: "siege_battle" },
     // A street or lane mid-panic (a chase, a shout, a shock) replaces the normal city day/night bed outright rather than
@@ -110,6 +111,7 @@
     fallowmere_market: "village",         // the open market on the green
     fallowmere_grey_gander: "tavern",     // the common room: a quiet tavern by day that fills as the day ends
     oxworth_yoke_and_horn: "tavern",      // the common room: a quiet tavern by day that fills as the day ends
+    oxworth_south_sinkholes: "open_road", // open downland pasture hollow: grassland by day, night nature after dark
     broadmead: "village",                 // the village hub and the overworld tile: a village by day, a hushed one at night
     barolo: "village",                    // the village hub and the overworld tile: a village by day, a hushed one at night
     palmcote: "village",                  // the village hub and the overworld tile: a village by day, a hushed one at night
@@ -155,6 +157,9 @@
     grey_river_barge: "boat_travel",
     port_valen_weigh_house: "civic_indoor",
     alderford: "village", whitefold: "village", redvein: "village", marlcross: "village", brinewick: "village", barleycross: "village", oxworth: "village", oxworth_market: "village", oxworth_salting_yard: "village", village: "village",
+    redvein_south_tunnel: "mine_tunnel",
+    redvein_stone_lookout: "open_road",
+    redvein_red_lantern: "tavern",
     village_green: "village",
     village_stable_yard: "village",
     town_market: "village",
@@ -235,6 +240,7 @@
     black_sinks_gilded_scales_toll_fort: [{ all: "wind_against_stone_creeking_timber_distantsound_needstobelayerd", level: 0.18 }],
     stonewatch: [{ all: "wind_against_stone_creeking_timber_distantsound_needstobelayerd", level: 0.24 }],
     fellgate: [{ all: "wind_against_stone_creeking_timber_distantsound_needstobelayerd", level: 0.22 }],
+    redvein_stone_lookout: [{ all: "wind_against_stone_creeking_timber_distantsound_needstobelayerd", level: 0.16 }],
     langston_true_sun_temple_rotunda: [{ all: "wind_against_stone_creeking_timber_distantsound_needstobelayerd", level: 0.12 }],
     port_valen_patrician_gala_salon: [{ all: "noble_gala_party_talking_glassclinking_softlaughter_nomusic", level: 0.30 }],
     // the coins-shuffling bed above is the primary layer; whispering and chatter ride alongside it at the same

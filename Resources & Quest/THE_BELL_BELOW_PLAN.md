@@ -17,7 +17,7 @@ The five rooms are *functions in one adventure*: entrance and guardian, roleplay
 ## Existing Redvein Foundation
 
 - The Eastcut Market occupies the mine-gate yard. Its ore tables, scale platform, timbered mine mouths, gate bell, and wheel over a sheltered shaft are already in the scene.
-- The crews handle safety below ground. Two Scales road wardens watch the strongbox, scale, gate, and loaded wagons; they do not command the mine or replace its rescue crew.
+- The crews handle safety below ground. Two Scales guards watch the strongbox, scale, gate, and loaded wagons; they do not command the mine or replace its rescue crew.
 - Mara Venn keeps the Gather House's notices, lamps, blankets, and household relief collection. She can organize help and record the aftermath without becoming the mine's owner or commander.
 - Ilyra Fen runs the Red Lantern. Its warm room and stable yard make it a credible place for survivors and families to gather after the rescue.
 - Redvein retains its own local council. Alderford's Factor handles outward contracts and disputed trade agreements, not every decision made at the mine.

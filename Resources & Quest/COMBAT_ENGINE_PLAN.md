@@ -155,4 +155,5 @@ None open. Add a row (the question, and the options with a recommendation) when 
 
 - A refresh on a targeting prompt page (Magic Missile darts, a healing target) forgets the clicks. Nothing is rolled on those pages, so the player clicks again.
 - The opening page of a fight entered from another scene is not covered by the replay guard. A refresh resumes at the choice instead of re-running the page. The test tool skips those pages.
+- An opportunity attack by or at an ally reuses that fighter's ordinary attack narration, so a free swing can read "closes in and lands a solid blow"; the `[⚡ Opportunity Attack: ...]` banner above it names what it is. Reaction-specific lines would go in `fight_narrate_ally_attack` (2026-11-27).
 - Test-tool limit, not a game bug: `fight_library` throws "invalid return" when the player kills its enemy, so a script there must not end the fight.

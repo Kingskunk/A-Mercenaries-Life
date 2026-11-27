@@ -1687,6 +1687,7 @@
   *set {(("combat_ally" & fc_a_i) & "_out")} ""
   *set {(("combat_ally" & fc_a_i) & "_intimidated")} false
   *set {(("combat_ally" & fc_a_i) & "_dodging")} false
+  *set {(("combat_ally" & fc_a_i) & "_stance")} "judgement"
   *set {(("combat_ally" & fc_a_i) & "_prev_target_kind")} ""
   *set {(("combat_ally" & fc_a_i) & "_prev_target_slot")} 0
   *set {(("combat_ally" & fc_a_i) & "_last_hit_page")} 0
@@ -2691,8 +2692,10 @@
   *gosub fight_sync_target_in
   *comment An opportunity attack is a reaction to movement, so it lands before the player has done anything else
   *comment on this page -- including picking a new target. The sync above is what makes that safe.
+  *gosub combat_unlock_attack "enemy" roa_candidate
   *gosub_scene combat_dice resolve_enemy_attack
   *gosub_scene combat_prose fight_narrate_enemy_turn "enemy" roa_candidate
+  *gosub combat_unlock_attack "enemy" roa_candidate
 *return
 
 *label resolve_opportunity_attack_on_ally
@@ -2712,8 +2715,10 @@
   *set {(("combat_enemy" & roaa_candidate) & "_oa_used")} true
   *set combat_active_target roaa_candidate
   *gosub fight_sync_target_in
+  *gosub combat_unlock_attack "enemy" roaa_candidate
   *gosub_scene combat_dice resolve_enemy_attack_on_ally roaa_ally_slot
   *gosub_scene combat_prose fight_narrate_ally_attack "enemy" roaa_candidate "ally" roaa_ally_slot combat_enemy_atk_on_ally_hit
+  *gosub combat_unlock_attack "enemy" roaa_candidate
 *return
 
 *comment ============================================================================
@@ -2910,8 +2915,132 @@
 *comment resolve_player_weapon_hit, and the enemy-side's own resolve_opportunity_attack reusing
 *comment resolve_enemy_attack: a reaction should hit exactly like that combatant's normal attack does, no forked
 *comment math or parallel narration path.
+*gosub combat_unlock_attack "ally" droa_ally_slot
 *gosub_scene combat_dice resolve_ally_attack droa_ally_slot combat_active_target
 *gosub_scene combat_prose fight_narrate_ally_attack "ally" droa_ally_slot "enemy" combat_active_target combat_ally_atk_hit
+*gosub combat_unlock_attack "ally" droa_ally_slot
+*return
+
+*comment ATTACK LOCKS AND REACTIONS (2026-11-27): resolve_enemy_attack, resolve_enemy_attack_on_ally and resolve_ally_attack lock their roll per slot per page, so
+*comment a second attack by the same slot on one page would only replay the first. A reaction is that second attack, so each opportunity attack opens its
+*comment slot's lock before it rolls and again after, and the slot's own attack later on the page rolls fresh. A refresh still replays the page exactly:
+*comment the page replay guard (web/scene.js pageReplayGuard) restores the page's start and its dice. Each slot is named outright (quicktest walks every branch).
+*label combat_unlock_attack
+*params cua_kind cua_slot
+*if (cua_kind = "enemy")
+  *if (cua_slot = 1)
+    *set combat_enemy_atk_locked_1 false
+    *set combat_enemy_narrate_locked_1 false
+  *if (cua_slot = 2)
+    *set combat_enemy_atk_locked_2 false
+    *set combat_enemy_narrate_locked_2 false
+  *if (cua_slot = 3)
+    *set combat_enemy_atk_locked_3 false
+    *set combat_enemy_narrate_locked_3 false
+  *if (cua_slot = 4)
+    *set combat_enemy_atk_locked_4 false
+    *set combat_enemy_narrate_locked_4 false
+  *if (cua_slot = 5)
+    *set combat_enemy_atk_locked_5 false
+    *set combat_enemy_narrate_locked_5 false
+  *if (cua_slot = 6)
+    *set combat_enemy_atk_locked_6 false
+    *set combat_enemy_narrate_locked_6 false
+*else
+  *if (cua_slot = 1)
+    *set combat_ally_atk_locked_1 false
+  *if (cua_slot = 2)
+    *set combat_ally_atk_locked_2 false
+  *if (cua_slot = 3)
+    *set combat_ally_atk_locked_3 false
+  *if (cua_slot = 4)
+    *set combat_ally_atk_locked_4 false
+*return
+
+*comment LEAVING A FOE'S REACH (2026-11-27, RAW): a creature that walks off a lane tile where a hostile stands gives one of them a free swing first, unless it
+*comment Disengaged or was moved by force (a shove, a push, a spell). One swing per step at most, from whoever can react (combat_dice.txt combat_can_react) with a
+*comment melee or reach weapon, the weakest first, the same rules and resolvers as the retreats above. Called before each voluntary step: an ally's closing steps,
+*comment its tactical step and the Guard stance's step (combat_ally_leave_reach); an enemy's closing steps and terrain steps (combat_enemy_leave_reach). The
+*comment player's own moves (Fall Back, Push past) already have theirs.
+*comment An ally leaving: the swing is at the ally, before it steps. Its own target is put back afterwards. The caller stops the move if the ally went down.
+*label combat_ally_leave_reach
+*params calr_slot
+*temp calr_pos {(("combat_ally" & calr_slot) & "_position")}
+*set combat_oa_candidate 0
+*temp calr_best_hp 0
+*temp calr_i 1
+*label combat_ally_leave_reach_loop
+*if (calr_i <= combat_enemy_count)
+  *temp calr_hp {(("combat_enemy" & calr_i) & "_hp")}
+  *temp calr_w {(("combat_enemy" & calr_i) & "_weapon_type")}
+  *temp calr_epos {(("combat_enemy" & calr_i) & "_position")}
+  *gosub_scene combat_dice combat_can_react "enemy" calr_i
+  *if (((combat_can_react_ok) and ((calr_w = "melee") or (calr_w = "reach"))) and (calr_epos = calr_pos))
+    *if ((combat_oa_candidate = 0) or (calr_hp < calr_best_hp))
+      *set combat_oa_candidate calr_i
+      *set calr_best_hp calr_hp
+  *set calr_i + 1
+  *goto combat_ally_leave_reach_loop
+*if (combat_oa_candidate > 0)
+  *temp calr_target combat_active_target
+  *temp calr_ename {(("combat_enemy" & combat_oa_candidate) & "_name")}
+  *temp calr_aname {(("combat_ally" & calr_slot) & "_name")}
+  *gosub_scene combat_ai ai_trace calr_aname "leaves ${calr_ename}'s reach → free swing"
+  [b][⚡ Opportunity Attack: ${calr_ename} on ${calr_aname}][/b]
+  *line_break
+  *gosub resolve_opportunity_attack_on_ally calr_slot
+  *set combat_active_target calr_target
+  *if (calr_target > 0)
+    *gosub fight_sync_target_in
+  *set combat_attacker_name {(("combat_ally" & calr_slot) & "_name")}
+  *set combat_attacker_epithet {(("combat_ally" & calr_slot) & "_epithet")}
+*return
+
+*comment An enemy leaving: the enemy in cel_slot is the active target (its own turn), so the player's swing (resolve_reverse_oa_player) or an ally's reads its
+*comment scratch fields. The player swings first, as at a retreat. combat_leave_killed tells the caller the enemy fell and its turn is over.
+*label combat_enemy_leave_reach
+*params cel_slot
+*set combat_leave_killed false
+*temp cel_pos {(("combat_enemy" & cel_slot) & "_position")}
+*temp cel_kind ""
+*temp cel_ally 0
+*temp cel_best_hp 0
+*gosub_scene combat_dice combat_can_react "player" 0
+*if (((((weapon_type = "melee") or (weapon_type = "finesse")) or (weapon_type = "reach")) and (combat_lane_player_position = cel_pos)) and (combat_can_react_ok))
+  *set cel_kind "player"
+*else
+  *temp cel_i 1
+  *label combat_enemy_leave_reach_loop
+  *if (cel_i <= combat_ally_slot_cap)
+    *temp cel_hp {(("combat_ally" & cel_i) & "_hp")}
+    *temp cel_w {(("combat_ally" & cel_i) & "_weapon_type")}
+    *temp cel_apos {(("combat_ally" & cel_i) & "_position")}
+    *gosub_scene combat_dice combat_can_react "ally" cel_i
+    *if (((combat_can_react_ok) and ((cel_w = "melee") or (cel_w = "reach"))) and (cel_apos = cel_pos))
+      *if ((cel_ally = 0) or (cel_hp < cel_best_hp))
+        *set cel_ally cel_i
+        *set cel_best_hp cel_hp
+    *set cel_i + 1
+    *goto combat_enemy_leave_reach_loop
+  *if (cel_ally > 0)
+    *set cel_kind "ally"
+*if (cel_kind = "player")
+  *gosub_scene combat_ai ai_trace combat_enemy_name "leaves your reach → your free swing"
+  *set player_oa_used true
+  *set roll_locked false
+  *set combat_player_hit_locked false
+  *gosub resolve_reverse_oa_player
+  *gosub fight_sync_target_out
+*elseif (cel_kind = "ally")
+  *temp cel_aname {(("combat_ally" & cel_ally) & "_name")}
+  *gosub_scene combat_ai ai_trace combat_enemy_name "leaves ${cel_aname}'s reach → free swing"
+  [b][⚡ Opportunity Attack: ${cel_aname} on ${combat_enemy_name}][/b]
+  *line_break
+  *set {(("combat_ally" & cel_ally) & "_oa_used")} true
+  *gosub resolve_reverse_oa_ally cel_ally
+  *gosub fight_sync_target_in
+*if ((not(cel_kind = "")) and (combat_enemy_hp <= 0))
+  *set combat_leave_killed true
 *return
 
 *label combat_cornered_decide
@@ -8255,6 +8384,7 @@ ${combat_dw_dmg_banner}
   *set combat_reach_pinned true
 *gosub combat_hidden_attack_roll
 *gosub_scene dice_engine roll_d20_check
+*temp ros_poison_immune false
 *if (check_success)
   *comment 2d8 Poison (3d8 at 2nd level) needs real dice, which resolve_player_hit cannot roll (one die plus a
   *comment flat bonus only) -- resolve_cast_ray_of_sickness (combat_spells.txt) rolls its own total instead,
@@ -8264,8 +8394,12 @@ ${combat_dw_dmg_banner}
   *comment next turn) -- only the attack-roll half is modeled, reusing the same per-slot disadvantage flag
   *comment Vicious Mockery sets above, which is already consumed and cleared on this enemy's own very next
   *comment attack roll (resolve_enemy_attack, combat_dice.txt) -- exactly the "until your next turn" window,
-  *comment since the enemy only gets the one turn in between.
-  *set {(("combat_enemy" & combat_active_target) & "_disadvantage")} true
+  *comment since the enemy only gets the one turn in between. Undead and poison-immune targets are immune
+  *comment to the Poisoned condition as well as poison damage.
+  *if ((combat_def_immune) or (combat_enemy_creature_type = "undead"))
+    *set ros_poison_immune true
+  *else
+    *set {(("combat_enemy" & combat_active_target) & "_disadvantage")} true
   *if (combat_enemy_hp <= 0)
     *gosub_scene combat_prose pick_spell_death_flavor
 *comment Reset last -- resolve_cast_ray_of_sickness has already read it by now if this was a hit; a miss never
@@ -8280,7 +8414,10 @@ ${combat_dw_dmg_banner}
   *else
     ${fsh}
     *line_break
-    [b][☣️ Ray of Sickness: Hit | ${combat_player_dmg_dealt} Poison damage${combat_outgoing_dmg_suffix} | ⚠️ Poisoned — disadvantage on ${combat_enemy_epithet}'s next attack][/b]
+    *if (ros_poison_immune)
+      [b][☣️ Ray of Sickness: Hit | ${combat_player_dmg_dealt} Poison damage${combat_outgoing_dmg_suffix} | 🛡️ Immune to Poisoned][/b]
+    *else
+      [b][☣️ Ray of Sickness: Hit | ${combat_player_dmg_dealt} Poison damage${combat_outgoing_dmg_suffix} | ⚠️ Poisoned — disadvantage on ${combat_enemy_epithet}'s next attack][/b]
 *else
   ${fsm}
   *line_break
@@ -10147,6 +10284,79 @@ The air along your ${weapon} thickens and begins to hum, a clap of thunder drawn
 *set combat_turn_advanced_this_page true
 *return
 
+*comment STANCES (2026-11-27): the turn of an ally whose stance gave it no target (combat_ai.txt select_ally_attack_target). Guard me: one legal step toward
+*comment the player (a free swing first if a foe stands on its tile), or, beside them already, it stands guard. Hold back (a melee ally): it covers up where it
+*comment stands, as the Dodge action (attacks on it at disadvantage until its next turn, combat_dice.txt resolve_enemy_attack_on_ally).
+*label combat_ally_stance_idle
+*params casi_slot
+*temp casi_p (("combat_ally" & casi_slot) & "_")
+*temp casi_name {(casi_p & "name")}
+*temp casi_epi {(casi_p & "epithet")}
+*temp casi_stance {(casi_p & "stance")}
+*temp casi_pos {(casi_p & "position")}
+*temp casi_v 1
+*rand casi_v 1 3
+*if (casi_stance = "guard")
+  *comment Up to two steps, its move and a Dash (it has no attack to give up), each one legal (combat_ai_terrain_destination_is_legal) and stopped by a fall.
+  *temp casi_steps 0
+  *temp casi_n 1
+  *label casi_step_loop
+  *if ((casi_n <= 2) and ({(casi_p & "hp")} > 0))
+    *set casi_pos {(casi_p & "position")}
+    *temp casi_dest casi_pos
+    *if (casi_pos > combat_lane_player_position)
+      *set casi_dest (casi_pos - 1)
+    *if (casi_pos < combat_lane_player_position)
+      *set casi_dest (casi_pos + 1)
+    *if (not(casi_dest = casi_pos))
+      *gosub_scene combat_ai combat_ai_terrain_destination_is_legal "ally" casi_slot casi_dest
+      *if (combat_ai_terrain_destination_legal)
+        *gosub combat_ally_leave_reach casi_slot
+        *if ({(casi_p & "hp")} > 0)
+          *gosub_scene combat_movement combat_lane_move_ally_to_position casi_slot 0 casi_dest
+          *set casi_steps + 1
+    *set casi_n + 1
+    *goto casi_step_loop
+  *if ({(casi_p & "hp")} <= 0)
+    *return
+  *temp casi_dashed (casi_steps > 1)
+  *if (casi_steps > 0)
+    *if ({(casi_p & "position")} = combat_lane_player_position)
+      *if (casi_v = 1)
+        $!{casi_epi} returns to your side, eyes on the nearest blade.
+      *if (casi_v = 2)
+        $!{casi_epi} gives up the space ahead and comes to stand with you.
+      *if (casi_v = 3)
+        $!{casi_epi} drops in beside you, blade low and ready.
+      *line_break
+      [b][🛡️ ${casi_name} Falls In Beside You@{casi_dashed  (Dashed the extra distance)|}][/b]
+    *else
+      $!{casi_epi} gives up the space ahead and heads your way.
+      *line_break
+      [b][🛡️ ${casi_name} Falls Back Toward You@{casi_dashed  (Dashed the extra distance)|}][/b]
+  *else
+    *if (casi_v = 1)
+      $!{casi_epi} holds at your shoulder, watching for anyone who comes at you.
+    *if (casi_v = 2)
+      $!{casi_epi} stays at your elbow, weight forward, waiting for the first of them to try you.
+    *if (casi_v = 3)
+      $!{casi_epi} keeps beside you and lets them come to you both.
+    *line_break
+    [b][🛡️ ${casi_name} Stands Guard][/b]
+*else
+  *set {(casi_p & "dodging")} true
+  *if (casi_v = 1)
+    $!{casi_epi} keeps out of it, guard up, giving nobody an easy opening.
+  *if (casi_v = 2)
+    $!{casi_epi} hangs off to one side and covers up, every move spent on staying whole.
+  *if (casi_v = 3)
+    $!{casi_epi} keeps well clear of the blades, weapon held across the body.
+  *line_break
+  [b][✋ ${casi_name} Holds Back][/b]
+*line_break
+*set combat_turn_advanced_this_page true
+*return
+
 *comment A broken enemy's turn: surrender, flee a step further, or leave the field. Its scratch fields are synced (the active target is this slot).
 *comment Output for the caller: the slot may now be out (HP 0), or have died to a free swing on the way; the turn tail checks for victory either way.
 *label combat_enemy_broken_act
@@ -11184,6 +11394,9 @@ ${fes_banner}
       *comment A genuinely cornered archer has combat_enemy_range 0 and therefore skips this, preserving the
       *comment existing quick-draw/retreat behavior above.
       *if ((((combat_enemy_weapon_type = "ranged") and (combat_enemy_range > 0)) and (not(combat_ranged_cornered))) and (combat_ai_terrain_step_direction != "none"))
+        *gosub combat_enemy_leave_reach cnt_slot
+        *if (combat_leave_killed)
+          *goto cnt_boom_tail
         *gosub_scene combat_movement combat_lane_move_enemy_to_position cnt_slot combat_ai_terrain_step_destination
         *gosub_scene combat_movement combat_range_name combat_enemy_range
         *if (combat_ai_terrain_step_reason = "cover")
@@ -11227,6 +11440,9 @@ ${fes_banner}
       *if (cnt_e_pos > cnt_g_pos)
         *set cnt_g_step (0 - 1)
       *set cnt_e_pos (cnt_e_pos + cnt_g_step)
+      *gosub combat_enemy_leave_reach cnt_slot
+      *if (combat_leave_killed)
+        *goto cnt_boom_tail
       *gosub_scene combat_movement combat_lane_move_enemy_to_position cnt_slot cnt_e_pos
       *gosub_scene combat_movement combat_difficult_terrain_crossing_query cnt_g_from cnt_e_pos
       *temp cnt_g_diff1 combat_difficult_terrain_blocks_dash
@@ -11235,6 +11451,9 @@ ${fes_banner}
       *temp cnt_g_diff2 combat_difficult_terrain_blocks_dash
       *temp cnt_g_dashed false
       *if (((cnt_e_pos != cnt_g_pos) and (cnt_slowed <= 0)) and ((not(cnt_g_diff1)) and (not(cnt_g_diff2))))
+        *gosub combat_enemy_leave_reach cnt_slot
+        *if (combat_leave_killed)
+          *goto cnt_boom_tail
         *gosub_scene combat_movement combat_lane_move_enemy_to_position cnt_slot cnt_g_next
         *set cnt_e_pos cnt_g_next
         *set cnt_g_dashed true
@@ -11330,9 +11549,15 @@ ${fes_banner}
     *elseif (cnt_e_out)
       *comment A ranged enemy out of its own reach (2026-10-12): it closes one step (a second if it Dashes and is not slowed) and shoots this same turn only if the first step put you within its reach. Placed after the cornered, interception, hidden and chase branches,
       *comment which still win where they apply, and ahead of the melee closing branch and the plain ranged one.
-      *gosub_scene combat_movement combat_lane_move_enemy_relative_to_player cnt_slot "toward"
       *temp cnt_o_dashed false
+      *gosub combat_enemy_leave_reach cnt_slot
+      *if (combat_leave_killed)
+        *goto cnt_boom_tail
+      *gosub_scene combat_movement combat_lane_move_enemy_relative_to_player cnt_slot "toward"
       *if (((combat_enemy_range > cnt_e_tier) and (cnt_slowed <= 0)) and (not(combat_ai_terrain_hold_position)))
+        *gosub combat_enemy_leave_reach cnt_slot
+        *if (combat_leave_killed)
+          *goto cnt_boom_tail
         *gosub_scene combat_movement combat_lane_move_enemy_relative_to_player cnt_slot "toward"
         *set cnt_o_dashed true
       *gosub_scene combat_movement combat_range_name combat_enemy_range
@@ -11372,8 +11597,11 @@ ${fes_banner}
         *if (combat_boom_killed)
           *goto cnt_boom_tail
       *else
-        *gosub_scene combat_movement combat_lane_move_enemy_relative_to_player cnt_slot "toward"
         *temp cnt_dashed false
+        *gosub combat_enemy_leave_reach cnt_slot
+        *if (combat_leave_killed)
+          *goto cnt_boom_tail
+        *gosub_scene combat_movement combat_lane_move_enemy_relative_to_player cnt_slot "toward"
         *temp cnt_after_first_step {("combat_enemy" & cnt_slot) & "_position"}
         *temp cnt_dash_side {(("combat_enemy" & cnt_slot) & "_side")}
         *temp cnt_before_first_step (cnt_after_first_step + cnt_dash_side)
@@ -11388,6 +11616,9 @@ ${fes_banner}
         *temp cnt_difficult_dash_path combat_difficult_terrain_blocks_dash
         *comment Slow and Difficult Terrain both prevent the extra Dash tier; each still permits the ordinary close.
         *if (((combat_enemy_range > 0) and (cnt_slowed <= 0)) and ((not(cnt_difficult_after_first_step)) and (not(cnt_difficult_dash_path))))
+          *gosub combat_enemy_leave_reach cnt_slot
+          *if (combat_leave_killed)
+            *goto cnt_boom_tail
           *gosub_scene combat_movement combat_lane_move_enemy_relative_to_player cnt_slot "toward"
           *set cnt_dashed true
         *comment Same reasoning as the surprise-round variants above: three lines each, none epithet-first.
@@ -11400,7 +11631,7 @@ ${fes_banner}
           *if (cnt_rv = 3)
             The last of the gap disappears fast, and ${combat_enemy_epithet} is finally within striking distance.
           *line_break
-          [b][🏃 ${combat_enemy_name} Closes to Engagement@{cnt_dashed  (Dashed the extra distance)|}][/b]
+          [b][🏃 ${combat_enemy_name} Closes on You — Engaged@{cnt_dashed  (Dashed the extra distance)|}][/b]
         *else
           *gosub_scene combat_movement combat_range_name combat_enemy_range
           *if (cnt_rv = 1)
@@ -11410,7 +11641,7 @@ ${fes_banner}
           *if (cnt_rv = 3)
             Step by step, ${combat_enemy_epithet} narrows the distance, closing in fast.
           *line_break
-          [b][🏃 ${combat_enemy_name} Closes to ${combat_range_display_name}@{cnt_dashed  (Dashed the extra distance)|}][/b]
+          [b][🏃 ${combat_enemy_name} Closes on You — ${combat_range_display_name}@{cnt_dashed  (Dashed the extra distance)|}][/b]
         *line_break
         *set combat_turn_advanced_this_page true
         *gosub fight_booming_trigger
@@ -11434,6 +11665,9 @@ ${fes_banner}
       *comment Ranged terrain users can reposition one legal lane step and still take their normal attack. The
       *comment chooser refuses a step into melee range, so this cannot bypass the existing quick-draw/retreat rules.
       *if ((combat_enemy_weapon_type = "ranged") and (combat_ai_terrain_step_direction != "none"))
+        *gosub combat_enemy_leave_reach cnt_slot
+        *if (combat_leave_killed)
+          *goto cnt_boom_tail
         *gosub_scene combat_movement combat_lane_move_enemy_to_position cnt_slot combat_ai_terrain_step_destination
         *gosub_scene combat_movement combat_range_name combat_enemy_range
         *if (combat_ai_terrain_step_reason = "cover")
@@ -11776,6 +12010,9 @@ ${fes_banner}
         *if ((cnt_a_weapon = "ranged") and (not(cnt_a_cast)))
           *gosub_scene combat_ai combat_choose_ranged_tactical_step "ally" cnt_slot cnt_a_target_position
           *if (combat_ai_terrain_step_direction != "none")
+            *gosub combat_ally_leave_reach cnt_slot
+            *if ({(("combat_ally" & cnt_slot) & "_hp")} <= 0)
+              *goto cnt_ally_tail
             *gosub_scene combat_movement combat_lane_move_ally_to_position cnt_slot combat_active_target combat_ai_terrain_step_destination
             *set cnt_a_range {(("combat_ally" & cnt_slot) & "_range")}
             *if (combat_ai_terrain_step_reason = "cover")
@@ -11853,6 +12090,9 @@ ${fes_banner}
           *else
             *comment Moves from the ally's REAL lane coordinate, one step toward its target in whichever direction that is (the old helper rebuilt the position from the stored range and only ever walked one way).
             *temp cnt_a_before_first_step {(("combat_ally" & cnt_slot) & "_position")}
+            *gosub combat_ally_leave_reach cnt_slot
+            *if ({(("combat_ally" & cnt_slot) & "_hp")} <= 0)
+              *goto cnt_ally_tail
             *gosub_scene combat_movement combat_lane_step_ally_from_position cnt_slot combat_active_target "toward"
             *set cnt_a_range {(("combat_ally" & cnt_slot) & "_range")}
             *temp cnt_a_dashed false
@@ -11868,9 +12108,14 @@ ${fes_banner}
             *gosub_scene combat_movement combat_difficult_terrain_crossing_query cnt_a_after_first_step cnt_a_next_dash_position
             *temp cnt_a_difficult_dash_path combat_difficult_terrain_blocks_dash
             *if ((((cnt_a_range > 0) and (not(cnt_a_stood))) and ((not(cnt_a_difficult_after_first_step)) and (not(cnt_a_difficult_dash_path)))) and ({(("combat_ally" & cnt_slot) & "_hobbled")} <= 0))
+              *gosub combat_ally_leave_reach cnt_slot
+              *if ({(("combat_ally" & cnt_slot) & "_hp")} <= 0)
+                *goto cnt_ally_tail
               *gosub_scene combat_movement combat_lane_step_ally_from_position cnt_slot combat_active_target "toward"
               *set cnt_a_range {(("combat_ally" & cnt_slot) & "_range")}
               *set cnt_a_dashed true
+            *comment The label names whom it closes on: its range is its distance to its own target, not to the player.
+            *temp cnt_a_goal_name {(("combat_enemy" & combat_active_target) & "_name")}
             *temp cnt_arv 1
             *rand cnt_arv 1 3
             *if (cnt_a_range <= 0)
@@ -11881,7 +12126,7 @@ ${fes_banner}
               *if (cnt_arv = 3)
                 The last of the gap disappears fast, and ${combat_attacker_epithet} is finally within striking distance.
               *line_break
-              [b][🏃 ${combat_attacker_name} Closes to Engagement@{cnt_a_dashed  (Dashed the extra distance)|}][/b]
+              [b][🏃 ${combat_attacker_name} Closes on ${cnt_a_goal_name} — Engaged@{cnt_a_dashed  (Dashed the extra distance)|}][/b]
             *else
               *gosub_scene combat_movement combat_range_name cnt_a_range
               *if (cnt_arv = 1)
@@ -11891,7 +12136,7 @@ ${fes_banner}
               *if (cnt_arv = 3)
                 Step by step, ${combat_attacker_epithet} narrows the distance, closing in fast.
               *line_break
-              [b][🏃 ${combat_attacker_name} Closes to ${combat_range_display_name}@{cnt_a_dashed  (Dashed the extra distance)|}][/b]
+              [b][🏃 ${combat_attacker_name} Closes on ${cnt_a_goal_name} — ${combat_range_display_name}@{cnt_a_dashed  (Dashed the extra distance)|}][/b]
             *line_break
             *set combat_turn_advanced_this_page true
             *comment STEPPING IN (3.9a 5), as above.
@@ -11913,6 +12158,8 @@ ${fes_banner}
               *if (combat_all_enemies_dead)
                 *goto fight_victory
               *line_break
+      *else
+        *gosub combat_ally_stance_idle cnt_slot
     *label cnt_ally_tail
     *comment WEB BURNS (3.4): an ally's fire on a webbed enemy burns the patch, and that fire can finish the fight.
     *gosub_scene combat_spells web_burn_check ("ally" & cnt_slot)

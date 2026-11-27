@@ -1,0 +1,294 @@
+*comment ====================================================================================
+*comment VERA MARSH'S MARKETDAY VISITS (The Yoke & Horn, Oxworth, after Horn & Hide)
+*comment Available on Marketday evenings (Dusk or Night) once Horn & Hide finishes cleanly
+*comment (any ending except fled_yard).
+*comment   - paid_clean: Daven is downstairs at the hearth/dice table; Vera takes the end room
+*comment     upstairs and invites repeat cuckolding nights.
+*comment   - yard_blood / exposed_to_bram / extorted: Vera rides out alone from Hartwell to
+*comment     handle the cattle-buying accounts and takes the end room upstairs.
+*comment 60% mood roll per Marketday (vm_mood_day, vm_in_mood). Supports both written trysts
+*comment and [RP_SESSION:vera_marsh] / [RP_SESSION:vera_marsh_talk].
+*comment All headings strictly location-based; zero em dashes; all choices <= 109 chars.
+*comment ====================================================================================
+
+*comment Checks whether Vera is at The Yoke & Horn right now. Sets vm_here and vm_daven_downstairs.
+*label vm_check_here
+*set vm_here false
+*set vm_daven_downstairs false
+*if ((not(ox_hh_finished)) or (ox_hh_ending = "fled_yard"))
+  *return
+*if (not(day_of_week = "Marketday"))
+  *return
+*if ((time_period = "Dusk") or (time_period = "Night"))
+  *set vm_here true
+  *if (ox_hh_ending = "paid_clean")
+    *set vm_daven_downstairs true
+*return
+
+*label vm_door
+*set minutes_to_pass 5
+*set time_advance_call_id "vm_walk_1"
+*gosub_scene hartwell/oxworth/oxworth ox_walk_time
+*gosub vm_check_here
+*if (not(vm_here))
+  *goto_scene hartwell/oxworth/yoke_and_horn ox_yh_hall
+*set scenery_subplace "village_inn_room"
+*if (not(vm_mood_day = campaign_day))
+  *set vm_mood_day campaign_day
+  *temp vm_roll 1
+  *rand vm_roll 1 100
+  *set vm_in_mood (vm_roll <= 60)
+*if (not(vm_visit_page = page_id))
+  *set vm_visit_page page_id
+  *set vm_visits + 1
+
+[b]◈ THE YOKE & HORN: UPSTAIRS[/b]
+*line_break
+*if (vm_daven_downstairs)
+  Down in the common room, Daven Marsh's voice booms out near the hearth as he argues over cattle weights and calls for another mug of ale. You climb the corner stair quietly and knock once on the end door.
+*else
+  You climb the corner stair to the end door at the far side of the loft landing and knock once.
+
+*gosub vm_greeting
+*goto vm_menu
+
+*label vm_greeting
+*temp vm_g (vm_visits modulo 3)
+*if (vm_visits = 1)
+  Vera pulls the door open in a dark wool house dress with her hair unpinned, holding a half-full cup of red wine. Her mouth curves into a slow, pleased smile when she sees who knocked.
+
+  "${name}," she says smoothly, stepping aside to let you in and dropping the latch. "I wondered if you'd still be riding these roads."
+  *if (ox_hh_daven_dead)
+    "Widow Marsh owns the buying accounts now, so I ride out from Hartwell on market days to keep the yards honest. Much quieter without Daven shouting at the foreman."
+  *elseif (ox_hh_ending = "exposed_to_bram")
+    "Daven is still sitting in a Hartwell lockup waiting on the Viscountess's judge, so someone has to ride out on market days and settle our hide contracts. I can't say I miss him."
+  *elseif (ox_hh_ending = "extorted")
+    "Daven won't show his face in Oxworth after what you cost him, so he sends me out on market days to buy hides instead. Smartest mistake he ever made."
+  *else
+    She tilts her head toward the floorboards, where Daven's laugh carries faintly up from the taproom. "He never learns, does he? Back at the hearth cup before his boots are even dry."
+  *return
+
+*if ((vm_in_mood) and (not(vm_tryst_day = campaign_day)))
+  *if (vm_g = 0)
+    Vera opens the door already wearing only her thin cream shift, leaning casually against the frame before catching your sleeve to pull you inside and drop the latch.
+  *elseif (vm_g = 1)
+    Vera is sitting on the edge of the bed unlacing her riding boots when she lets you in, looking up through her dark lashes with a wicked smile and nodding for you to shut the door.
+  *else
+    Vera slides the latch open, presses one palm flat against your chest to guide you back inside, and kisses the corner of your mouth before shutting out the hall.
+*else
+  *if (vm_g = 0)
+    Vera sits by the washstand table pouring Hartwell red into two clay cups, a stack of hide receipts pinned under a stone beside her elbow, and nods you toward a stool.
+  *elseif (vm_g = 1)
+    Vera opens the door with ink smudged across one thumb and a dry smirk, motioning you toward the wine jug after a long afternoon haggling with carters.
+  *else
+    Vera is brushing road dust out of her dark hair beside the tallow candle. She nods toward the wooden stool by the chest and reaches for the wine jug.
+*return
+
+*label vm_menu
+*set wait_ok_page page_id
+*choice
+  *if ((vm_in_mood) and (not(vm_tryst_day = campaign_day)))
+    # Pull her toward the bed. [~1 hour]
+      *set rp_active_scene "none"
+      *goto vm_tryst
+  *if ((vm_in_mood) and (not(vm_tryst_day = campaign_day)))
+    # [Roleplay] Pull her toward the bed. [~1 hour]
+      *set rp_active_scene "vera_marsh"
+      *goto vm_tryst
+  *if ((ox_hh_vera_flask) and ((not(ox_hh_flask_sold)) and (not(ox_hh_flask_shown_vera))))
+    # Show her Daven's silver hip flask.
+      *goto vm_show_flask
+  *if ((vm_talk_step < 3) and (not(vm_talk_day = campaign_day)))
+    # Share a cup of wine and talk a while. [~15 min]
+      *goto vm_talk
+  # [Roleplay] Share a cup of wine and talk over the fire. [~30 min]
+    *set rp_active_scene "vera_marsh_talk"
+    *goto vm_rp_talk
+  # Head back downstairs to the common room.
+    *goto_scene hartwell/oxworth/yoke_and_horn ox_yh_hall
+
+*label vm_show_flask
+*set scenery_subplace "village_inn_room"
+*set ox_hh_flask_shown_vera true
+You pull Daven's polished silver hip flask out of your pack and set it gently on the chest beside her wine jug.
+
+Vera stares at the engraved silver for one beat, then lets out a real, sharp laugh, covering her mouth with two fingers.
+*if (ox_hh_daven_dead)
+  "You kept his favorite flask?" she asks, turning it over in her palm before sliding it back toward you. "Keep it, ${name}. Looks far better in your hand than it ever did in his. Bring it with you if you ever knock on my door in Hartwell."
+*elseif (vm_daven_downstairs)
+  "He spent two whole days tearing our Hartwell stable apart swearing a tavern boy lifted that," she whispers, eyes dancing as Daven's voice rumbles below the floorboards. "You really are shameless. Keep it."
+*else
+  "He swore up and down a road boy stole that off his wagon," Vera says, grinning wickedly as she taps the silver cap. "Keep it. Consider it a souvenir of Oxworth."
+*goto vm_menu
+
+*label vm_talk
+*set scenery_subplace "village_inn_room"
+*comment replay-ok: vm_talk_day is stamped to campaign_day inside this once-per-day guard.
+*if (not(vm_talk_day = campaign_day))
+  *set vm_talk_now vm_talk_step
+  *set vm_talk_step + 1
+  *set vm_talk_day campaign_day
+*set minutes_to_pass 15
+*set time_advance_call_id "vm_talk"
+*gosub_scene hartwell/oxworth/oxworth ox_walk_time
+
+*if (vm_talk_now = 0)
+  "How is Hartwell treating you lately?" you ask, leaning back with a clay cup of red wine.
+
+  "Busy and noisy as ever," Vera says, resting her chin on her palm. "Viscountess Falwick runs the whole town like a counting-house. Oil presses turning all day from the Palmcote olives, salt carts jamming the east gate, and half the merchants grumbling that Langston gets all the fancy trade charters while Hartwell brings in the real coin."
+*elseif (vm_talk_now = 1)
+  "You seem comfortable enough running cattle contracts on your own," you remark.
+
+  Vera smiles faintly over her cup. "My father bought wool in Dunmow before I married Daven. Daven liked pretending I was only good for velvet dresses and pouring wine, so he never noticed I read every contract he left on his desk. Turns out Oxworth's foreman would much rather bargain with someone who pays straight and doesn't shout."
+*else
+  "Will I find you in Hartwell if my road runs east?" you ask.
+
+  "Near the south market lane, third stone house past the oil yards, blue shutters," Vera answers without hesitation, her dark eyes steady on yours.
+  *if (vm_daven_downstairs)
+    "Just knock in the afternoon while Daven is down at the gate office. Or bring a spare pair of climbing boots."
+  *else
+    "My name is on the door now. Knock whenever you want a real glass of wine and a bed that doesn't smell of hay."
+*goto vm_menu
+
+*label vm_rp_talk
+*set scenery_subplace "village_inn_room"
+*set minutes_to_pass 30
+*set time_advance_call_id "vm_rp_talk"
+*gosub_scene hartwell/oxworth/oxworth ox_walk_time
+Vera pours two deep cups of Hartwell red wine, hands one across the small table, and leans back on the edge of the bed with an amused look. "Go on, then. Entertain me."
+
+[RP_SESSION:${rp_active_scene}]
+*page_break Set down the cups…
+*goto vm_rp_talk_after
+
+*label vm_rp_talk_after
+*set scenery_subplace "village_inn_room"
+*if (rp_escalated)
+  *set minutes_to_pass 60
+  *set time_advance_call_id "vm_talk_tryst"
+  *gosub_scene hartwell/oxworth/oxworth ox_walk_time
+  *comment replay-ok: vm_tryst_day is stamped to campaign_day inside this once-per-day guard.
+  *if (not(vm_tryst_day = campaign_day))
+    *set vm_trysts + 1
+    *set vm_tryst_day campaign_day
+  *goto vm_tryst_after
+*set rp_active_scene "none"
+*set rp_escalated false
+Vera sets her empty cup beside the candle and stretches lazily.
+*goto vm_menu
+
+*label vm_tryst
+*set scenery_subplace "village_inn_room"
+*comment replay-ok: vm_tryst_day is stamped to campaign_day inside this once-per-day guard.
+*if (not(vm_tryst_day = campaign_day))
+  *set vm_trysts + 1
+  *set vm_tryst_day campaign_day
+*set minutes_to_pass 60
+*set time_advance_call_id "vm_tryst"
+*gosub_scene hartwell/oxworth/oxworth ox_walk_time
+*set ambience_intimacy true
+*if (not(rp_active_scene = "none"))
+  *set rp_encounter_rating 0
+  Vera slides the wooden bolt tight across the door, pulls the pins from her dark hair, and backs toward the wool blanket with a wicked smile.
+
+  [RP_SESSION:${rp_active_scene}]
+  *page_break Catch your breath…
+  *goto vm_tryst_after
+
+*temp vm_v (vm_trysts modulo 3)
+*if (vm_daven_downstairs)
+  *if (vm_v = 1)
+    Downstairs, the bone dice clatter across the hearth table and Daven laughs loudly at a bad throw. Up here, Vera pulls you straight onto his bed, hiking her skirt over her hips and biting your lower lip hard enough to make you grin. She rides you slow at first, keeping one palm over your mouth whenever the timber frame creaks, then stops caring about the noise at all as her nails dig into your shoulders.
+  *elseif (vm_v = 2)
+    Vera pushes you down onto the narrow wooden chair beside the bed, straddling your lap in only her open shift while Daven's muffled complaints about market dues float up through the cracks. She guides you inside her with a sharp intake of breath, rolling her hips slow and bold, whispering against your throat how much better you fill his room than he ever has.
+  *else
+    She turns you against the closed door itself, pressing her cheek to the timber as you lift her hips and take her from behind while heavy boots cross the taproom below. Every quiet gasp turns hotter from the chance of footsteps on the stair, until you both collapse laughing and breathless across Daven's wool blanket.
+*else
+  *if (vm_v = 1)
+    Without Daven's boots anywhere near the stairs, Vera takes her time. She unbuttons your clothes piece by piece in the candlelight, pushes you flat onto the wool blanket, and climbs over you with dark hair spilling across your chest. She sets a fierce, demanding rhythm, laughing low in her throat when you flip her onto her back and pin her wrists beside the pillows.
+  *elseif (vm_v = 2)
+    Vera sets her wine cup down, hooks a finger in your collar, and walks you backward to the bed. She is warm from the wine and completely unhurried, mouth trailing down your neck and collarbone before she drags you between her thighs, wrapping her heels behind your back and pulling you deeper until the candle guttering on the chest is the only sound left in the room.
+  *else
+    She kisses you hard before the latch even clicks shut, backing onto the edge of the bed with her shift pulled over her head. It starts rough and impatient, skin slick in the firelight from the chimney wall, and slows down only when she is shivering under your hands and whispering your name into the blanket.
+*goto vm_tryst_after
+
+*label vm_tryst_after
+*set scenery_subplace "village_inn_room"
+*temp vm_rating 0
+*if (not(rp_active_scene = "none"))
+  *set vm_rating rp_encounter_rating
+*if (vm_rating < 0)
+  *set vm_rating 0
+*if (vm_rating > 20)
+  *set vm_rating 20
+*temp vm_boon_min 1440
+*if (vm_rating > 5)
+  *set vm_boon_min (1440 + ((vm_rating - 5) * 96))
+*temp vm_boon_m (vm_boon_min modulo 60)
+*temp vm_boon_h ((vm_boon_min - vm_boon_m) / 60)
+*temp vm_boon_label "${vm_boon_h} hours"
+*if (vm_boon_m > 0)
+  *set vm_boon_label "${vm_boon_h} hours ${vm_boon_m} minutes"
+
+*set unique_buff_input_name "Vera's Fire"
+*set unique_buff_input_desc "+1 CHA (A Stolen Night)"
+*set unique_buff_input_stat "cha"
+*set unique_buff_input_bonus 1
+*set unique_buff_input_minutes vm_boon_min
+*gosub_scene economy apply_unique_buff
+
+[b][❤️ Vera's Fire: +1 CHA for ${vm_boon_label}][/b]
+
+*if (vm_daven_downstairs)
+  Vera stretches out naked under Daven's wool blanket, flushed and smiling, listening for a moment to the steady murmur of the dice table downstairs. "Better slip down before he runs out of coppers again," she murmurs, tracing two fingers down your arm. "Unless you want another fight in the mud."
+*else
+  Vera curls warm along your side under the wool blanket, tracing lazy circles over your collarbone while the wind hums against the gable stone. "The bed's paid for till morning, and nobody's coming up that stair," she murmurs.
+
+*choice
+  *if (not(vm_daven_downstairs))
+    # Stay the night with her. [~8 Hours]
+      *set ambience_intimacy false
+      *set rp_active_scene "none"
+      *set rp_escalated false
+      *goto vm_sleep
+  # Dress quietly and head back downstairs.
+    *set ambience_intimacy false
+    *set rp_active_scene "none"
+    *set rp_escalated false
+    You pull your clothes back on by the last of the candlelight. Vera watches you from the pillows with a lazy smile. "Next market night, ${name}. Or in Hartwell, if you get there first."
+    *goto_scene hartwell/oxworth/yoke_and_horn ox_yh_hall
+
+*label vm_sleep
+*set scenery_subplace "village_inn_room"
+*set hours_to_pass 8
+*set minutes_to_pass 0
+*set time_advance_call_id "vm_sleep"
+*gosub_scene calendar advance_time
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*set sleep_location_id "oxworth_vera_marsh"
+*set sleep_is_shared false
+*set sleep_is_permanent_home false
+*set sleep_is_paid_inn true
+*set sleep_tier_name "none"
+*set sleep_tier_stat1 "none"
+*set sleep_tier_bonus1 0
+*set sleep_tier_stat2 "none"
+*set sleep_tier_bonus2 0
+*gosub_scene calendar resolve_sleep
+*gosub_scene calendar update_hub_condition
+
+You sleep deep beside her while the downs wind leans against the stone gable. By the time pale morning light slips past the shutter, Vera is already dressed in her dark riding wool, fastening her cloak by the chest with her leather pack slung over one shoulder.
+
+"Cart leaves for Hartwell in ten minutes," she tells you, leaning down to brush one quick, warm kiss across your mouth. "Leave the key with Sigrin when you go down."
+*if (not(sleep_gear_note = ""))
+  *line_break
+  ${sleep_gear_note}
+*choice
+  # Head downstairs to the common room.
+    *goto_scene hartwell/oxworth/yoke_and_horn ox_yh_hall
+  # Slip back out into Oxworth's lane.
+    *goto_scene hartwell/oxworth/oxworth ox_return

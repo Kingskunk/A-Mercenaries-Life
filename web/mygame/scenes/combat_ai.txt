@@ -966,6 +966,9 @@
   *set cso_d (0 - cso_d)
 *if ((cso_d > cst_tier) or ((cst_cornered) and (cso_d > 0)))
   *return
+*comment GUARD STANCE (2026-11-27): only foes on the player's tile (combat_score_guard_pos) or on the actor's own.
+*if ((combat_score_guard_on) and ((cso_d > 0) and (not(cso_pos = combat_score_guard_pos))))
+  *return
 *comment close
 *temp cso_close (10 - (2 * cso_d))
 *if (cso_close < 0)
@@ -1177,7 +1180,10 @@
 *comment ============================================================================
 *label select_ally_attack_target
 *params saat_slot
-*if (combat_player_chosen_target > 0)
+*comment STANCES (2026-11-27): the player's clicked target moves an ally only in the Focus stance (combat_ally<N>_stance, startup_parts/31). The other
+*comment stances pick by the ally's own judgement below; Guard narrows it to foes on the player or on the ally, and a melee ally Holding back picks none.
+*temp saat_stance {(("combat_ally" & saat_slot) & "_stance")}
+*if ((combat_player_chosen_target > 0) and (saat_stance = "focus"))
   *gosub_scene combat_movement fight_pick_target
   *comment A clicked target changes a MELEE ally's target too, so its distance is re-read from the lane coordinates (below), exactly as after its own pick.
   *if (combat_active_target > 0)
@@ -1187,12 +1193,23 @@
 *comment it weighs who is hurting the player or another ally most; a ranged ally is a sharpshooter. A ranged ally with an enemy in its own tile is
 *comment cornered and only considers the enemies there (resolve_ally_attack then draws the knife, because the ally's own range, re-derived below, is 0).
 *temp saat_weapon {(("combat_ally" & saat_slot) & "_weapon_type")}
+*temp saat_name {(("combat_ally" & saat_slot) & "_name")}
+*if ((saat_stance = "hold") and (not(saat_weapon = "ranged")))
+  *set combat_active_target 0
+  *gosub ai_trace saat_name "stance: hold back → covers up, no target"
+  *return
 *temp saat_pref_target 0
-*temp saat_cornered false
-*if (saat_weapon = "ranged")
-  *gosub combat_ai_ally_cornered saat_slot
-  *set saat_cornered combat_ally_cornered
+*comment A foe on the ally's own tile keeps it there (stances, 2026-11-27): only those foes are weighed, so it never walks off one and gives it a free swing.
+*comment A ranged ally in the same spot is cornered and draws its knife (resolve_ally_attack).
+*gosub combat_ai_ally_cornered saat_slot
+*temp saat_cornered combat_ally_cornered
+*if (saat_stance = "guard")
+  *set combat_score_guard_on true
+  *set combat_score_guard_pos combat_lane_player_position
 *gosub combat_score_targets "ally" saat_slot 999 saat_cornered
+*set combat_score_guard_on false
+*if (saat_cornered)
+  *gosub ai_trace saat_name "engaged: only the foes on its own tile"
 *gosub combat_ai_note_target "ally" saat_slot
 *if (combat_score_best_kind = "enemy")
   *set saat_pref_target combat_score_best_slot
@@ -1202,6 +1219,10 @@
   *comment An ally's own range IS its distance to its target, so it is re-read from the lane coordinates whenever the target is picked (it used to be left at whatever the previous target set). For a ranged ally this is
   *comment what makes the knife come out exactly when its target stands in its own tile (resolve_ally_attack quick-draws at range 0).
   *gosub combat_ai_reseed_ally_range saat_slot saat_pref_target
+*elseif (saat_stance = "guard")
+  *comment Nobody on the player or on the ally: the Guard stance takes no target (combat.txt combat_ally_stance_idle falls in beside the player).
+  *set combat_active_target 0
+  *gosub ai_trace saat_name "stance: guard, no foe on you or on it → no target"
 *else
   *gosub_scene combat_movement fight_pick_target
 *return

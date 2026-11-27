@@ -20,6 +20,10 @@
 *if (not(ox_yh_seen))
   *set yh_first true
 *set ox_yh_seen true
+*gosub_scene hartwell/oxworth/vera_marsh vm_check_here
+*if ((((ox_hh_bram_goodwill) or (ox_hh_beast_dead)) and (not(ox_hh_ending = "fled_yard"))) and (not(ox_hh_sigrin_discount)))
+  *set ox_hh_sigrin_discount true
+  *set ox_yh_rate_copper 1
 *temp yh_state "day"
 *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
   *set yh_state "night"
@@ -57,7 +61,7 @@
     # Go up to your room.
       *goto ox_yh_room
   *elseif ((((gold * 100) + (silver * 10)) + copper) >= ox_yh_rate_copper)
-    # [${ox_yh_rate_copper} Copper Bits] Take a room for 24 hours.
+    # [${ox_yh_rate_copper} Copper @{(ox_yh_rate_copper = 1) Bit|Bits}] Take a room for 24 hours.
       *if (not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id))
         *set currency_add_amount (0 - ox_yh_rate_copper)
         *gosub_scene economy currency_add
@@ -73,7 +77,7 @@
     # Ask what a room costs.
       "What do you charge for a room?" you ask.
 
-      "Three coppers," @{(met_sigrin) Sigrin|the dwarf woman} says, squinting at the chalk slate. "Dry straw, heavy blanket, and the wind stays outside."
+      "@{(ox_yh_rate_copper = 1) One copper|Three coppers}," @{(met_sigrin) Sigrin|the dwarf woman} says, squinting at the chalk slate. "Dry straw, heavy blanket, and the wind stays outside."
       *choice
         # Step back from the counter.
           *goto ox_yh_hall
@@ -83,6 +87,30 @@
         # ⇥ [pvgo:home:oxworth]
           *goto_scene hartwell/oxworth/oxworth ox_return
         *comment GEN:END place_steps home:oxworth
+  *if (((ox_hh_stage < 2) and (not(ox_hh_finished))) and (not(ox_hh_daven_dead)))
+    # Step over to @{(met_daven_marsh) Daven Marsh's|the loud cattle buyer's} table by the hearth. [~10 min]
+      *goto_scene hartwell/oxworth/horn_and_hide ox_hh_meet_daven
+  *if (((ox_hh_stage = 3) and (not(ox_hh_finished))) and (not(ox_hh_daven_dead)))
+    # Settle the contract with Daven Marsh by the hearth. [~10 min]
+      *goto_scene hartwell/oxworth/horn_and_hide ox_hh_daven_settle
+  *if (((((ox_hh_stage = 2) or (ox_hh_stage = 3)) and (not(ox_hh_finished))) and ((not(ox_hh_daven_dead)) and (ox_hh_vera_met_tip))) and ((not(ox_hh_vera_done)) and (yh_dice_open)))
+    # Slip up the corner stair to Vera Marsh's room. [~5 min]
+      *goto_scene hartwell/oxworth/horn_and_hide ox_hh_vera_door
+  *if (vm_here)
+    # Slip up the corner stair to Vera Marsh's room. [~5 min]
+      *goto_scene hartwell/oxworth/vera_marsh vm_door
+  *if ((ox_hh_vera_flask) and (not(ox_hh_flask_sold)))
+    # Sell Daven Marsh's engraved silver flask at the counter. [+15 Copper Bits]
+      *set ox_hh_flask_sold true
+      *if ((not(currency_txn_locked)) or (not(locked_currency_txn_page_id = page_id)))
+        *set currency_add_amount 15
+        *gosub_scene economy currency_add
+        *set currency_txn_locked true
+        *set locked_currency_txn_page_id page_id
+      @{(met_sigrin) Sigrin|The dwarf woman} turns the polished silver flask over once, raises a thick eyebrow at the engraved initials, and drops fifteen copper bits onto the plank without asking where it came from.
+
+      [b][💰 Sold Silver Flask: +15 Copper Bits][/b]
+      *goto ox_yh_hall
   # Go out to the cart yard.
     *goto ox_yh_yard
   # Step back out into the cattle lane.
@@ -142,6 +170,23 @@
   Sigrin stands behind the plank counter, wiping a stoneware jug with a coarse cloth while keeping an eye on the hearth.
 *else
   The dwarf woman stands behind the plank counter, wiping a stoneware jug with a coarse cloth while keeping an eye on the hearth.
+
+*if ((ox_hh_finished) and (not(ox_hh_sigrin_aftermath_seen)))
+  *set ox_hh_sigrin_aftermath_seen true
+  *if (ox_hh_daven_dead)
+    @{(met_sigrin) Sigrin|The dwarf woman} nods once across the counter. "Took two buckets of well water to scrub Marsh off my yard cobbles," she says dryly. "Still, nobody in Oxworth is losing sleep over him. Rooms are a single copper for you whenever you pass through."
+  *elseif (ox_hh_ending = "exposed_to_bram")
+    @{(met_sigrin) Sigrin|The dwarf woman} grins briefly over her stoneware jug. "Never saw a loud man go quieter than Marsh when four cattlemen marched him out in hemp rope. Rooms are a single copper for you from here on."
+  *elseif (ox_hh_beast_dead)
+    @{(met_sigrin) Sigrin|The dwarf woman} taps the plank counter with one inked thumb. "Heard you killed that burrower in the south sinkholes. Good for the herds. Rooms are a single copper for you whenever you stay."
+*if (((ox_hh_stage < 2) and (not(ox_hh_finished))) and (not(ox_hh_daven_dead)))
+  *if (met_daven_marsh)
+    Beside the hearth, Daven Marsh sits loud over his ale with his two hired drovers at the end of his bench.
+  *else
+    Beside the hearth sits a heavy-set man in a fur-trimmed wool coat, slapping his palm on the oak over a dead bull while two thick-necked drovers lean on clubs at the end of his bench.
+
+*if (vm_here)
+  Near the foot of the corner stair, Vera Marsh rests one elbow on the rail with a cup of Hartwell red, catching your eye briefly before turning up toward the end room.
 
 *if (street_life = "empty")
   Herdsmen and carters pack the benches waiting out the storm, damp wool steaming near the fire while @{(met_sigrin) Sigrin|the dwarf woman} passes mugs down the counter.

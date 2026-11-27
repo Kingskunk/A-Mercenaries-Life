@@ -20,13 +20,13 @@
  *   --script <file>  take the save state from a play script's "stats" (and its "time" and "weather")
  *   --stats <file>   a JSON object of variables
  *   --kind <kind>    play the scene as another kind (rp.js SCENE_KINDS, e.g. talk) to read that kind's prompt
- *   --say "<text>"   what the player just said or did; the lore lookup reads it (rp.js loreMatches)
- *   --last "<text>"  the companion's last reply, read by the lore lookup after --say
+ *   --say "<text>"   what the player just said or did; the knowledge lookup reads it (rp.js knowledgeMatches)
+ *   --last "<text>"  the companion's last reply, read by the knowledge lookup after --say
  *   --memory "<text>" stands in for a memory the server would return this turn
- *   --hits id,id     stands in for lore entries the server found by meaning this turn (rp_lore_search.js shows real ones)
+ *   --hits id,id     stands in for knowledge entries the server found by meaning this turn (rp_knowledge_search.js shows real ones)
  *
  * The output has two parts: the system message (the same for the whole visit, so it can be cached) and this turn's
- * context (lore, calendar or coin when they come up, memories), which goes in the user message before the player's action.
+ * context (knowledge, calendar or coin when they come up, memories), which goes in the user message before the player's action.
  *
  * Example:
  *   node tools/rp_prompt_preview.js lina_verner time_period=Dusk pc_sw_ending=heist pc_sw_lina_close=true lv_trysts=2
@@ -81,9 +81,8 @@ global.document = { body: null, addEventListener: noop, getElementById: () => nu
 global.MutationObserver = function () { this.observe = noop; this.disconnect = noop; };
 global.addEventListener = noop;
 
-// The lorebook first (rp.js reads window.LOREBOOK for lore on demand): lorebook-data.js makes it, the other lorebook-*.js add to it.
-["lorebook-data.js"].concat(fs.readdirSync(GAME).filter((f) => /^lorebook-.+[.]js$/.test(f) && f !== "lorebook-data.js").sort())
-  .forEach((f) => require(path.join(GAME, f)));
+// The knowledge pools first (rp.js reads window.RPKnowledge for knowledge on demand), in the page's order.
+require(path.join(__dirname, "rp_knowledge_load.js"))(GAME);
 require(path.join(GAME, "rp-data.js"));
 require(path.join(GAME, "rp.js"));
 const RP = global.RPEngine;
@@ -139,7 +138,7 @@ if (RP.sceneKind(cfg) && RP.sceneKind(cfg).grader && !RP.resolveSceneProfile(cfg
 }
 
 const focus = [say, last].filter(Boolean);
-const lorePulled = RP.loreMatches(cfg, focus, hits);
+const knowledgePulled = RP.knowledgeMatches(cfg, s, focus, hits);
 let prompt;
 if (mode === "eval" && !RP.resolveSceneProfile(cfg, s)) { console.log("A " + (cfg.kind || "intimate") + " scene has no grader: nothing is graded after it."); process.exit(problems.length ? 1 : 0); }
 if (mode === "advisor") prompt = RP.buildAdvisorSystemPrompt(cfg, s);
@@ -163,7 +162,7 @@ lines.forEach((line, i) => {
   if (/^[A-Z][A-Z &'()\-:,/]+:\s*$/.test(line) && (i + 1 >= lines.length || lines[i + 1].trim() === "")) problems.push("line " + (i + 1) + ": empty section: " + line);
 });
 console.log("\n" + "-".repeat(60));
-if (cfg.lore) console.log("Lore pulled" + (focus.length ? "" : " (no --say given)") + ": " + (lorePulled.length ? lorePulled.map((m) => m.entry.id + (m.hearsay ? " [hearsay]" : "") + " on '" + m.hit + "'").join(", ") : "none"));
+if (cfg.knowledge) console.log("Knowledge pulled" + (focus.length ? "" : " (no --say given)") + ": " + (knowledgePulled.length ? knowledgePulled.map((m) => m.id + (m.reach.hearsay ? " [hearsay]" : " [" + m.reach.pool + ", " + m.reach.standing + "]") + " on '" + m.hit + "'").join(", ") : "none"));
 console.log("Scene " + sceneId + " (" + (cfg.kind || "intimate") + ")" + (scene.character ? " + character " + scene.character : "") + " · " + mode + " prompt · system about " + RP.estimateTokens(prompt) + " tokens" + (mode === "eval" ? "" : ", this turn's context about " + (turnCtx ? RP.estimateTokens(turnCtx) : 0) + " tokens"));
 if (problems.length) {
   console.log(problems.length + " problem(s):");
