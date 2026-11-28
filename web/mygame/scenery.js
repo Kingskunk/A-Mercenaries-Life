@@ -88,6 +88,11 @@
     "hartwell/palmcote/short_weight": "palmcote",
     "hartwell/palmcote/lina_verner": "palmcote",
     "hartwell/millstow/millstow": "millstow",
+    "hartwell/millstow/millstow_market": "millstow_market",
+    "hartwell/millstow/turning_sail": "generic_village_inn",
+    "hartwell/millstow/millstow_gathering_hall": "generic_village_gathering_hall",
+    "hartwell/millstow/lake_landing": "millstow_lake_landing",
+    "hartwell/millstow/tar_and_teeth": "millstow_lake_landing",
     "hartwell/oxworth/oxworth_market": "oxworth_market",
     "hartwell/oxworth/yoke_and_horn": "oxworth_yoke_and_horn",
     "hartwell/oxworth/village_heads_hall": "generic_village_gathering_hall",
@@ -309,7 +314,7 @@
     function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_inn_room" ? "generic_town_inn_room" : undefined; }, // Wagoner's Rest guest room and Kess's rented chamber
     function (s) { return s.sceneName === "timbermouth/split_pine_inn" && s.scenery_subplace === "town_inn_room" ? "generic_town_inn_room" : undefined; }, // Split Pine guest room
     function (s) { return s.sceneName === "Langston/pickled_hen" && s.scenery_subplace === "pickled_hen_room" ? "generic_town_inn_room" : undefined; }, // Pickled Hen guest room
-    function (s) { return s.scenery_subplace === "village_inn_room" && (s.sceneName === "alderford/drowned_oar" || s.sceneName === "alderford/redvein/red_lantern" || s.sceneName === "alderford/whitefold/white_ram" || s.sceneName === "Langston/barolo/red_stave" || s.sceneName === "Langston/broadmead/crooked_halter" || s.sceneName === "port_valen/brinewick/reedhouse" || s.sceneName === "Langston/fallowmere/grey_gander" || s.sceneName === "hartwell/oxworth/yoke_and_horn" || s.sceneName === "hartwell/palmcote/green_branch" || s.sceneName === "port_valen/marlcross/wayfarers_rest") ? "generic_village_inn_room" : undefined; }, // village inns and Maura's Drowned Oar rooms
+    function (s) { return s.scenery_subplace === "village_inn_room" && (s.sceneName === "alderford/drowned_oar" || s.sceneName === "alderford/redvein/red_lantern" || s.sceneName === "alderford/whitefold/white_ram" || s.sceneName === "Langston/barolo/red_stave" || s.sceneName === "Langston/broadmead/crooked_halter" || s.sceneName === "port_valen/brinewick/reedhouse" || s.sceneName === "Langston/fallowmere/grey_gander" || s.sceneName === "hartwell/oxworth/yoke_and_horn" || s.sceneName === "hartwell/palmcote/green_branch" || s.sceneName === "hartwell/millstow/turning_sail" || s.sceneName === "port_valen/marlcross/wayfarers_rest") ? "generic_village_inn_room" : undefined; }, // village inns and Maura's Drowned Oar rooms
     function (s) { return s.sceneName === "Langston/fallowmere/grey_gander" && s.scenery_subplace === "fallowmere_grey_gander_yard" ? "village_stable_yard" : undefined; }, // the Grey Gander's open cart yard (the taproom keeps its own picture)
     function (s) { return s.sceneName === "hartwell/oxworth/yoke_and_horn" && s.scenery_subplace === "oxworth_yoke_and_horn_yard" ? "village_stable_yard" : undefined; }, // the Yoke & Horn's open cart yard (the common room keeps its own picture)
     function (s) {
@@ -323,6 +328,13 @@
       return undefined;
     }, // Oxworth quest and inn subplaces (Yoke & Horn hall, upstairs room, cart yard, Village Head's Hall, south sinkholes)
     function (s) { return s.sceneName === "hartwell/palmcote/green_branch" && s.scenery_subplace === "palmcote_green_branch_yard" ? "village_stable_yard" : undefined; }, // the Green Branch's open stable yard (the common room keeps its own picture)
+    function (s) { return s.sceneName === "hartwell/millstow/turning_sail" && s.scenery_subplace === "millstow_turning_sail_yard" ? "village_stable_yard" : undefined; }, // the Turning Sail's open stable yard (the common room keeps its own picture)
+    function (s) {
+      if (s.sceneName !== "hartwell/millstow/tar_and_teeth") return undefined;
+      if (s.scenery_subplace === "millstow_lake_landing" || s.scenery_subplace === "generic_curing_shed" || s.scenery_subplace === "generic_village_gathering_hall") return s.scenery_subplace;
+      if (s.scenery_subplace === "village_inn_hall") return "generic_village_inn";
+      return undefined;
+    }, // Millstow Tar & Teeth quest subplaces (cove landing, boathouse loft, Turning Sail, Gathering Hall)
     function (s) {
       if (!/^hartwell\/palmcote\//.test(s.sceneName)) return undefined;
       if (s.scenery_subplace === "palmcote_olive_yard" || s.scenery_subplace === "palmcote_pressing_house" || s.scenery_subplace === "palmcote_verner_cottage" || s.scenery_subplace === "generic_curing_shed" || s.scenery_subplace === "generic_village_gathering_hall") return s.scenery_subplace;

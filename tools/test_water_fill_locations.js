@@ -104,6 +104,8 @@ const expectedScenes = [
   { file: 'web/mygame/scenes/hartwell/palmcote/green_branch.txt', label: 'Green Branch counter and loft' },
   // Millstow
   { file: 'web/mygame/scenes/hartwell/millstow/millstow.txt', label: 'Millstow lakeside shore' },
+  { file: 'web/mygame/scenes/hartwell/millstow/turning_sail.txt', label: 'Turning Sail counter, room, and stable yard' },
+  { file: 'web/mygame/scenes/hartwell/millstow/lake_landing.txt', label: 'Millstow Lake Landing shore' },
   // Longshade Forest
   { file: 'web/mygame/scenes/longshade/longshade_forest.txt', label: 'Longshade Hidden Spring & Clear Pool' }
 ];

@@ -272,15 +272,42 @@
   ];
   var CAL_WEEK = ["Ironday", "Tideday", "Marketday", "Hearthday", "Forgeday", "Greyday", "Hallowday"];
 
-  // The date the way people in the game say it: "Forgeday, the 17th of Scorpio, 428 IR (autumn) · Dusk (20:20) · Weather: Clear".
+  function currentClockMinutes(s) {
+    if (!s) return null;
+    if (s.clock_hour !== undefined && s.clock_hour !== null && s.clock_hour !== "" && !isNaN(Number(s.clock_hour))) {
+      var h = Math.floor(Number(s.clock_hour));
+      var m = (s.clock_minute !== undefined && s.clock_minute !== null && !isNaN(Number(s.clock_minute))) ? Math.floor(Number(s.clock_minute)) : 0;
+      if (h >= 0 && h < 24 && m >= 0 && m < 60) return h * 60 + m;
+    }
+    var cm = String(s.clock_time || "").match(/^(\d{1,2}):(\d{2})$/);
+    if (cm) {
+      var h2 = parseInt(cm[1], 10), m2 = parseInt(cm[2], 10);
+      if (h2 >= 0 && h2 < 24 && m2 >= 0 && m2 < 60) return h2 * 60 + m2;
+    }
+    return null;
+  }
+
+  function formatClock24(s) {
+    var mins = currentClockMinutes(s);
+    if (mins === null) return "";
+    var h = Math.floor(mins / 60), m = mins % 60;
+    return (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m;
+  }
+
+  // The date the way people in the game say it, plus an OOC [HH:MM] 24-hour reference so the AI knows exact hours passed.
   function getCurrentDateSummary(s) {
     var parts = [];
     var dow = s.day_of_week ? s.day_of_week + ", " : "";
     if (s.calendar_date) parts.push(dow + "the " + s.calendar_date + (s.current_season ? " (" + String(s.current_season).toLowerCase() + ")" : ""));
     else parts.push("Day " + (Number(s.campaign_day) || 1) + (s.day_of_week ? " (" + s.day_of_week + ")" : ""));
-    // The hour in words, never clock digits: people here tell time by the light, meals and bells.
     var HOURS = { "Pre-Dawn": "before dawn, still dark", "Morning": "morning", "Midday": "midday", "Afternoon": "afternoon", "Dusk": "dusk, the light going", "Night": "night" };
-    if (s.time_period) parts.push(HOURS[s.time_period] || String(s.time_period).toLowerCase());
+    var clock24 = formatClock24(s);
+    if (s.time_period) {
+      var tod = HOURS[s.time_period] || String(s.time_period).toLowerCase();
+      parts.push(clock24 ? (tod + " [" + clock24 + "]") : tod);
+    } else if (clock24) {
+      parts.push("[" + clock24 + "]");
+    }
     if (s.weather) parts.push("weather: " + String(s.weather).toLowerCase());
     return parts.join(" · ");
   }
@@ -292,7 +319,7 @@
   function getCalendarCore(s) {
     var year = s.calendar_year || "428";
     return [
-      "- Months and weekdays have their own names here; never use real-world ones (no January, no Monday). Nobody owns a clock: time goes by the light, meals and bells.",
+      "- Months and weekdays have their own names here; never use real-world ones (no January, no Monday). Nobody owns a clock: time goes by the light, meals and bells. Any [HH:MM] or (HH:MM) clock timestamps in NOW or past memories are out-of-character reference only so you know how many hours passed — characters never say clock digits aloud.",
       "- The year is " + year + " IR, the Imperial Reckoning: the old Meridian Empire's count of years, still used though its legions left about thirty years ago. Ordinary folk say 'this year' or 'the year " + year + "'."
     ].join("\n");
   }
@@ -327,10 +354,12 @@
     var dayNum = Number(s.campaign_day) || 1;
     var dow = s.day_of_week ? ", " + s.day_of_week : "";
     var tp = s.time_period ? " " + s.time_period : "";
+    var clock24 = formatClock24(s);
+    var clk = clock24 ? " (" + clock24 + ")" : "";
     var seas = s.current_season ? " (" + s.current_season + ")" : "";
     var date = s.calendar_date ? ", the " + s.calendar_date : "";
-    // "Day 10, Ironday Night, the 14th of Scorpio, 428 IR (Autumn)": the time of day sits with the weekday, not after the year.
-    return "Day " + dayNum + dow + tp + date + seas;
+    // "Day 10, Ironday Night (22:15), the 14th of Scorpio, 428 IR (Autumn)": exact 24h time sits with time of day.
+    return "Day " + dayNum + dow + tp + clk + date + seas;
   }
 
   /**
@@ -420,9 +449,8 @@
           "- PACING & CLIMAX SIGNAL: Do NOT rush to finish early. Do NOT emit the completion tag merely because SHE has climaxed—if she finishes first, she should naturally shift her focus to bringing the player to release too. End a reply with the tag [ACT_COMPLETE] only once the PLAYER ('you') has genuinely reached climax and the scene is settling into afterglow, or the player clearly winds the encounter down; never earlier."
         ];
       },
-      advisorRole: "You are an interactive roleplay advisor for the player ('You') in an uncensored, gritty low-fantasy scene.",
-      advisorVariety: "- Offer 4 noticeably different directions (for example: letting the companion take the lead/reacting to them, a gentle or observant touch, a bolder escalation or physical shift, and a quiet spoken line or question grounded in the scene).",
-      advisorLabels: "'Trace her collarbone', 'Let her lead', 'Ask about the scar'",
+      advisorRole: "You are a roleplay co-writer drafting ready-to-send in-character replies for the player ('You') in an uncensored, gritty low-fantasy scene.",
+      advisorVariety: "- Offer 4 genuinely distinct responses shaped by this exact moment—each taking a different intent, tone, or angle drawn naturally from what the companion just said or did, her personality and cues, and the player's character. Never force fixed archetypes or repeat the same formula across turns.",
       undressed: true,
       grader: "intimate"
     },
@@ -452,9 +480,8 @@
           "- SCENE END: End a reply with the tag [ACT_COMPLETE] once the talk reaches a natural close or the player takes their leave; never earlier."
         ];
       },
-      advisorRole: "You are an interactive roleplay advisor for the player ('You') in a gritty low-fantasy conversation scene.",
-      advisorVariety: "- Offer 4 noticeably different directions (for example: a question about her or her life, a remark about the place or the day, something of your own story, and a practical action or gesture grounded in the scene).",
-      advisorLabels: "'Ask about her mother', 'Mention the road', 'Help with the fire'",
+      advisorRole: "You are a roleplay co-writer drafting ready-to-send in-character replies for the player ('You') in a gritty low-fantasy conversation scene.",
+      advisorVariety: "- Offer 4 genuinely distinct responses shaped by this exact moment—each taking a different intent, tone, or angle drawn naturally from what the companion just said or did, her mood and personality, and the player's character. Never force fixed archetypes or repeat the same formula across turns.",
       undressed: false,
       grader: null
     }
@@ -817,7 +844,7 @@
         [cal ? getCalendarDetail(s) : "", coin ? COIN_LINE : ""].filter(Boolean).join("\n"));
     }
     if (memBlock) {
-      out.push("WHAT " + C.toUpperCase() + " REMEMBERS ABOUT " + PU + " FROM PAST VISITS (if the player's name or a detail is recorded here, " + C + " now knows it):\n" + memBlock);
+      out.push("WHAT " + C.toUpperCase() + " REMEMBERS ABOUT " + PU + " FROM PAST VISITS (these happened on earlier days — treat temporary logistics like travel, meals, or stabling a horse as past events unless repeated today; if the player's name or a personal detail is recorded here, " + C + " now knows it):\n" + memBlock);
     }
     return out.join("\n\n");
   }
@@ -837,7 +864,7 @@
       "- Answer what the player just said or did first, in the companion's own words, before moving the scene on. Not every reply heads the same way.",
       "- Never reuse a description from your earlier replies in this scene (the same laugh, the same look in her eyes, the same gesture): find a new one or leave it out.",
       "- Do NOT write a list of choices at the end, do NOT speak as an AI assistant, and do NOT summarize or rush to the end of the scene unless the player initiates finishing.",
-      "- Write 1 to 2 concise, complete paragraphs per response (around 120 to 180 words total) so your last sentence always finishes cleanly without being cut off."
+      "- Write 1 or 2 paragraphs per response, as long as the moment needs, and end on a finished sentence. Write it once and send it: no drafts, no revisions, no counting."
     ];
     lines = lines.concat(kind.rules(cfg, s, hasProfile));
     lines.push("");
@@ -847,24 +874,34 @@
   function buildAdvisorSystemPrompt(cfg, s) {
     var hasProfile = !!resolveSceneProfile(cfg, s);
     var kind = sceneKind(cfg) || SCENE_KINDS.intimate;
+    var p = playerRef(cfg, s), c = companionRef(cfg, s);
+    var advisorWho = p === "the player"
+      ? "- WHO IS WHO: You are drafting first-person ('I...') replies for the player speaking and acting toward " + c + "."
+      : "- WHO IS WHO: You are drafting first-person ('I...') replies for " + p + " speaking and acting toward " + c + ".";
     var lines = [
       kind.advisorRole,
-      "Based on the room, companion persona, memories, and where the scene stands right now, suggest 4 distinct, immediately playable next actions or spoken lines the player can take next.",
-      whoIsWhoRule(cfg, s),
+      "Based on the room, companion persona, memories, and where the scene stands right now, draft 4 distinct, ready-to-send in-character roleplay replies written AS the player character.",
+      advisorWho,
+      "STRICT SCENE-GROUNDING (NO HALLUCINATIONS):",
+      "- Reference ONLY people, objects, clothing, posture, wounds, locations, and facts explicitly established in the Opening Scene, Conversation So Far, Memories, or Player Context.",
+      "- NEVER invent new props, drinks, furniture, scars, weather, NPCs, or backstory events that were not already mentioned in the scene.",
+      "- React directly to what the companion just said or did in the latest turn (or the opening moment if the scene has just begun).",
+      "- NO GODMODING: Write ONLY the player's own actions, expressions, and spoken words. Never narrate the companion's reaction, dialogue, thoughts, or feelings, and never skip time or change locations.",
+      "VOICE & DETAIL:",
+      "- Write each reply in first person ('I...') as natural, vivid roleplay prose (a brief 2–3 sentence reply blending grounded physical action or body language with spoken dialogue in \"double quotes\" when natural).",
+      "- Write the actual reply the player would send—never meta stage directions or summaries like 'Ask her about...'.",
       "VARIETY GUIDELINES:",
-      kind.advisorVariety,
-      "- Keep every option grounded strictly in the physical details, clothing, and tone established in the scene."
+      kind.advisorVariety
     ];
     if (hasProfile) {
       lines.push("- Keep the 4 choices balanced across distinct styles and never name or spoil hidden kink, dislike, or trait labels outright.");
     }
     lines.push(
       "",
-      "OUTPUT FORMAT (STRICT):",
-      "Output ONLY 4 lines, one option per line, using this exact format:",
-      "Short Label || Complete 1-sentence player action or dialogue direction.",
-      "- Short Label: 2 to 4 words for a UI button (e.g. " + kind.advisorLabels + ").",
-      "- Action direction: 1 concise, vivid sentence under 16 words written for the player's next turn (no preamble, no numbering, no extra commentary).",
+      "OUTPUT FORMAT (STRICT — KEEP ANY INTERNAL PLANNING BRIEF, THEN OUTPUT ONLY THESE 4 LINES):",
+      "Short Label || Ready-to-send first-person player reply on a single line.",
+      "- Short Label: 2 to 4 words summarizing the beat for a UI button.",
+      "- Reply: A vivid, strictly grounded first-person reply ready for the player to send or edit (all on one line, no line breaks inside an option, no preamble, no numbering, no extra commentary).",
       ""
     );
     return lines.concat(buildContextBlocks(cfg, s)).join("\n");
@@ -990,8 +1027,8 @@
       if (turnContext) historyLines.push(turnContext);
       historyLines.push(
         turnsSlice.length > 0
-          ? "TASK: Advise 4 distinct next actions or lines the player can immediately take right after the latest turn."
-          : "TASK: Advise 4 distinct opening actions or lines the player can immediately take to begin this scene."
+          ? "TASK: Draft 4 distinct, ready-to-send first-person in-character player replies (2-3 sentences each) reacting directly to the companion's latest turn above. Stay strictly grounded in what is already in the scene—do not invent new objects, details, or companion reactions."
+          : "TASK: Draft 4 distinct, ready-to-send first-person in-character opening replies (2-3 sentences each) for the player to begin this scene. Stay strictly grounded in the opening scene above—do not invent new objects, details, or companion reactions."
       );
       return historyLines.join("\n\n");
     }
@@ -1297,6 +1334,7 @@
     if (!baseUrl || !threadId) return Promise.resolve("");
     var s = statsNow();
     var currentDay = Number(s.campaign_day) || 1;
+    var currentMinute = currentClockMinutes(s);
     var maxVisit = memoryOrder(s);
     return fetch(baseUrl + "/get_npc_memories", {
       method: "POST",
@@ -1304,6 +1342,7 @@
       body: JSON.stringify({
         thread_id: threadId,
         current_day: currentDay,
+        current_minute: currentMinute,
         max_visit: maxVisit,
         query: queryText || ""
       })
@@ -1312,12 +1351,15 @@
       .catch(function () { return ""; });
   }
 
-  // The memories as the prompt lists them. OPEN THREADS (2026-11-26): the server returns the last visit's unresolved
-  // threads on their own (server.py get_npc_memories), listed last so the companion can follow up on them.
+  // The memories as the prompt lists them. PROMISES & FOLLOW-UPS: the server returns only the last visit's unresolved
+  // promises/plans on their own (server.py get_npc_memories), tagged with elapsed time so stale visit-night logistics never confuse the AI.
   function formatMemoryBlock(d) {
     if (!d || !Array.isArray(d.memories) || !d.memories.length) return "";
     var lines = d.memories.map(function (m) { return "- " + m.content; });
-    if (d.threads) lines.push("- LEFT OPEN AT THE LAST VISIT (worth following up on or bringing up when it fits): " + d.threads);
+    if (d.threads) {
+      var when = d.threads_elapsed ? ("from " + d.threads_elapsed) : "from the last visit";
+      lines.push("- UNRESOLVED PROMISES & PLANS (" + when + " — bring up only if still relevant, and never assume temporary details from that night still apply today): " + d.threads);
+    }
     return lines.join("\n");
   }
 
@@ -1954,18 +1996,29 @@
 
       if (beatsWrap) {
         var useAdvisedBeats = Array.isArray(session.advisedBeats) && session.advisedBeats.length > 0;
-        var list = useAdvisedBeats ? session.advisedBeats : staticBeats;
-        var heading = useAdvisedBeats
-          ? '<span class="rp-beats-label rp-beats-label-adv">\u2726 Advised:</span>'
-          : '<span class="rp-beats-label">Next Beat:</span>';
-        var chipsHtml = list.map(function (b) {
-          var cls = "rp-chip rp-chip-beat" + (useAdvisedBeats ? " rp-chip-advised" : "");
-          return '<button type="button" class="' + cls + '" data-beat="' + esc(b.prompt) + '" title="' + esc(b.prompt) + '">' + esc(b.label) + '</button>';
-        }).join("");
-        var resetHtml = useAdvisedBeats
-          ? '<button type="button" class="rp-chip rp-chip-beat rp-chip-reset rp-chip-reset-end" data-act="reset-chips" title="Restore the static fallback choices">\u21A9 Default</button>'
-          : "";
-        beatsWrap.innerHTML = heading + chipsHtml + resetHtml;
+        beatsWrap.classList.toggle("rp-beats-advised", useAdvisedBeats);
+        if (useAdvisedBeats) {
+          beatsWrap.innerHTML =
+            '<div class="rp-chips-head">' +
+              '<span class="rp-beats-label rp-beats-label-adv">\u2726 Advised Moves</span>' +
+              '<button type="button" class="rp-chip rp-chip-reset" data-act="reset-chips" title="Restore the static fallback choices">\u21A9 Default</button>' +
+            '</div>' +
+            '<div class="rp-starters-grid">' +
+              session.advisedBeats.map(function (b) {
+                return (
+                  '<button type="button" class="rp-chip rp-chip-advised rp-chip-card" data-beat="' + esc(b.prompt) + '" title="Click to load this draft into the text box">' +
+                    '<span class="rp-card-title">' + esc(b.label) + '</span>' +
+                    '<span class="rp-card-desc">' + esc(b.prompt) + '</span>' +
+                  '</button>'
+                );
+              }).join("") +
+            '</div>';
+        } else {
+          var chipsHtml = staticBeats.map(function (b) {
+            return '<button type="button" class="rp-chip rp-chip-beat" data-beat="' + esc(b.prompt) + '" title="' + esc(b.prompt) + '">' + esc(b.label) + '</button>';
+          }).join("");
+          beatsWrap.innerHTML = '<span class="rp-beats-label">Next Beat:</span>' + chipsHtml;
+        }
       }
     }
 
@@ -2013,7 +2066,7 @@
       return settings.mode;
     }
 
-    function dispatchRpGenerate(chosenMode, sysPrompt, buildPromptForMode, maxTokens, actionLabel) {
+    function dispatchRpGenerate(chosenMode, sysPrompt, buildPromptForMode, maxTokens, actionLabel, extraOpts) {
       var baseUrl = getServerUrl();
       var usrPrompt = buildPromptForMode(chosenMode, settings.model);
       // One id per scene on this page (and per job: the narrator, the helper and the grader each have their own prompt),
@@ -2021,36 +2074,44 @@
       // sessionNonce separates cache buckets cleanly when a session escalates to intimate or shifts to pillow talk.
       var job = String(actionLabel || "Generating").toLowerCase().replace(/[^a-z]+/g, "");
       var stickyId = ("cs_" + (session.pageId || session.id || "rp") + (session.sessionNonce || "") + "_" + (statsNow().rp_world_id || "") + "_" + job).replace(/[^A-Za-z0-9_:.-]/g, "_").slice(0, 200);
+      var reqBody = {
+        mode: chosenMode,
+        model: settings.model,
+        raw_mode: true,
+        max_tokens: maxTokens,
+        system: sysPrompt,
+        prompt: usrPrompt,
+        session_id: stickyId
+      };
+      if (extraOpts && extraOpts.reasoning_effort) {
+        reqBody.reasoning_effort = extraOpts.reasoning_effort;
+      }
       return fetch(baseUrl + "/rp_generate", {
         method: "POST",
         headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
-        body: JSON.stringify({
-          mode: chosenMode,
-          model: settings.model,
-          raw_mode: true,
-          max_tokens: maxTokens,
-          system: sysPrompt,
-          prompt: usrPrompt,
-          session_id: stickyId
-        })
+        body: JSON.stringify(reqBody)
       }).then(function (r) { return r.json(); })
         .then(function (res) {
           if (res.status !== "SUCCESS" && settings.mode === "auto" && chosenMode === "perchance") {
             setStatus("Perchance tab asleep — falling back to OpenRouter...");
             if (typingTextEl) typingTextEl.textContent = actionLabel + " (OpenRouter fallback)...";
             var fallbackPrompt = buildPromptForMode("openrouter", settings.model);
+            var fbBody = {
+              mode: "openrouter",
+              model: settings.model,
+              raw_mode: true,
+              max_tokens: maxTokens,
+              system: sysPrompt,
+              prompt: fallbackPrompt,
+              session_id: stickyId
+            };
+            if (extraOpts && extraOpts.reasoning_effort) {
+              fbBody.reasoning_effort = extraOpts.reasoning_effort;
+            }
             return fetch(baseUrl + "/rp_generate", {
               method: "POST",
               headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
-              body: JSON.stringify({
-                mode: "openrouter",
-                model: settings.model,
-                raw_mode: true,
-                max_tokens: maxTokens,
-                system: sysPrompt,
-                prompt: fallbackPrompt,
-                session_id: stickyId
-              })
+              body: JSON.stringify(fbBody)
             }).then(function (r2) { return r2.json(); });
           }
           return res;
@@ -2066,11 +2127,12 @@
         return;
       }
       memList.innerHTML = '<div class="rp-status">Loading memories...</div>';
-      var maxV = memoryOrder(statsNow());
+      var st = statsNow();
+      var maxV = memoryOrder(st);
       fetch(baseUrl + "/get_npc_memories", {
         method: "POST",
         headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
-        body: JSON.stringify({ thread_id: threadId, current_day: Number(statsNow().campaign_day) || 1, max_visit: maxV })
+        body: JSON.stringify({ thread_id: threadId, current_day: Number(st.campaign_day) || 1, current_minute: currentClockMinutes(st), max_visit: maxV })
       }).then(function (r) { return r.ok ? r.json() : null; })
         .then(function (d) {
           var items = (d && Array.isArray(d.all)) ? d.all : [];
@@ -2699,7 +2761,7 @@
           function (m, mid) {
             return buildUserPrompt(playerText || "Continue the scene naturally from where it left off.", sysPrompt, m, mid, turnContext);
           },
-          2000,
+          4000,
           "Generating"
         );
       }).then(function (res) {
@@ -2774,8 +2836,9 @@
           function (m, mid) {
             return buildAdvisorUserPrompt(sysPrompt, m, mid, turnContext);
           },
-          1400,
-          "Advising choices"
+          4000,
+          "Advising choices",
+          { reasoning_effort: "low" }
         );
       }).then(function (res) {
         if (mySeq !== session.adviseSeq) return;
@@ -2788,7 +2851,7 @@
             renderChips();
             saveActiveSession(inputEl.value);
             var engineLabel = res.mode === "perchance" ? "Perchance AI" : settings.model.split("/").pop();
-            setStatus("Advised " + choices.length + " choices (" + engineLabel + "). Click one or press \u21A9 Default.");
+            setStatus("Advised " + choices.length + " drafts (" + engineLabel + "). Click one to fill the text box, or press \u21A9 Default.");
           } else {
             setStatus("Could not parse advised choices — keeping static fallback.");
           }
@@ -2902,18 +2965,34 @@
         }
       }
 
+      function fillComposerFromChip(chipEl, draftText) {
+        if (!inputEl) return;
+        var val = String(draftText || "").trim();
+        inputEl.value = val;
+        inputEl.style.height = "auto";
+        var targetH = Math.min(Math.max(inputEl.scrollHeight + 4, 140), 320);
+        inputEl.style.height = targetH + "px";
+        Array.prototype.forEach.call(box.querySelectorAll(".rp-chip-selected"), function (el) {
+          el.classList.remove("rp-chip-selected");
+        });
+        if (chipEl && chipEl.classList) chipEl.classList.add("rp-chip-selected");
+        if (inputEl.focus) inputEl.focus();
+        if (inputEl.setSelectionRange) {
+          try { inputEl.setSelectionRange(val.length, val.length); } catch (e) {}
+        }
+        saveActiveSession(inputEl.value);
+        setStatus("Draft loaded into text box — edit as you like, then click Send.");
+      }
+
       var starterBtn = target.closest ? target.closest("[data-starter]") : null;
       if (starterBtn && !session.busy) {
-        var stText = starterBtn.getAttribute("data-starter");
-        inputEl.value = "";
-        playerTurn(stText);
+        fillComposerFromChip(starterBtn, starterBtn.getAttribute("data-starter"));
         return;
       }
 
       var beatBtn = target.closest ? target.closest("[data-beat]") : null;
       if (beatBtn && !session.busy) {
-        var bText = beatBtn.getAttribute("data-beat");
-        playerTurn(bText);
+        fillComposerFromChip(beatBtn, beatBtn.getAttribute("data-beat"));
         return;
       }
 
@@ -2923,6 +3002,7 @@
       if (actName === "send") {
         var val = inputEl.value.trim();
         inputEl.value = "";
+        inputEl.style.height = "";
         if (/^\/intimate(?:\s|$)/i.test(val)) {
           if (session.busy || session.evalResult) return;
           if (session.phase === "base") {

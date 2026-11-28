@@ -345,6 +345,11 @@ function compile(){
   verifyFileName("hartwell/palmcote/short_weight.txt");
   verifyFileName("hartwell/palmcote/lina_verner.txt");
   verifyFileName("hartwell/millstow/millstow.txt");
+  verifyFileName("hartwell/millstow/millstow_market.txt");
+  verifyFileName("hartwell/millstow/turning_sail.txt");
+  verifyFileName("hartwell/millstow/millstow_gathering_hall.txt");
+  verifyFileName("hartwell/millstow/lake_landing.txt");
+  verifyFileName("hartwell/millstow/tar_and_teeth.txt");
   verifyFileName("Langston/market.txt");
   verifyFileName("Langston/cord_and_kettle.txt");
   verifyFileName("Langston/pickled_hen.txt");

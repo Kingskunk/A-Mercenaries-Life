@@ -121,17 +121,41 @@
       id: "millstow", category: "places", title: "Millstow",
       sub: "A lakeside milling village on Azure Lake under Hartwell",
       tags: ["Millstow", "Hartwell", "Western Vale", "Trade"],
-      aliases: ["Millstow", "Azure Lake", "lakeside lane"],
-      link: ["Millstow"],
+      aliases: ["Millstow", "Azure Lake", "lakeside lane", "Millstow Market", "The Turning Sail", "Turning Sail", "Gathering Hall"],
+      link: ["Millstow", "Millstow Market", "The Turning Sail", "Turning Sail"],
       unlock: function (s) { return truthy(s.ml_seen) || truthy(s.ml_arrival_seen); },
       body: function (s) {
         var out = [
           "A lakeside milling village on the southeastern shore of Azure Lake, north-west of Hartwell along the main road. Its gravel-and-earth lane runs between a reedy grassy verge along the water and a line of low fieldstone-and-timber cottages under moss-patched thatch and dark shingle roofs.",
           "Two stone-and-timber windmills stand on the grassy rise behind the cottages, catching the steady breeze off Azure Lake to grind grain for the surrounding farms and supply barley loaves, flour, mixed farm goods, and lake fish along the shore and down the Hartwell road."
         ];
+        if (truthy(s.ml_hall_seen)) {
+          if (truthy(s.met_ml_head)) {
+            out.push("The Gathering Hall is a wide timber-and-plaster building just off the lakeside lane. Inside, village head [[merrit_appleby|Merrit Appleby]] keeps the grain-measure books and shore-mooring tallies at a heavy trestle table while road dispatches from Hartwell and village errands hang on a slatted notice rack.");
+          } else {
+            out.push("The Gathering Hall is a wide timber-and-plaster building just off the lakeside lane with two heavy trestle tables, an iron stove, and a slatted wooden notice rack holding road postings from Hartwell.");
+          }
+        }
+        if (truthy(s.ml_ts_seen)) {
+          if (truthy(s.met_willem)) {
+            out.push("The Turning Sail is Millstow's stone-and-timber inn along the lakeside lane, run by [[willem_halstead|Willem Halstead]]. Its flagstone common room serves lake-perch stew from a hanging hearth cauldron, fresh barley bread, crisp apple cider, upstairs rooms, and a cobbled stable yard behind the wall.");
+          } else {
+            out.push("The Turning Sail is Millstow's stone-and-timber inn along the lakeside lane, serving lake-perch stew, fresh barley bread, apple cider, upstairs rooms, and a cobbled stable yard behind the wall.");
+          }
+        }
+        if (truthy(s.ml_market_seen)) {
+          out.push("Millstow Market fills a gravel yard between the fieldstone cottages and a low drystone lake wall, where timber stalls under patched canvas awnings and a hanging iron beam-scale trade grain, barley loaves, cheese, eggs, vegetables, cloth, ironware, and lake fish.");
+        }
+        if (truthy(s.ml_landing_seen)) {
+          if (truthy(s.met_orik)) {
+            out.push("The Lake Landing drops down to Azure Lake's reedy bank with a weathered wooden jetty, moored flat-bottomed skiffs, and a tarred-timber boatwright's shed tended by [[orik|Orik]], who builds and patches skiffs for Millstow, Oatcroft, and Reedmere.");
+          } else {
+            out.push("The Lake Landing drops down to Azure Lake's reedy bank with a weathered wooden jetty, moored flat-bottomed skiffs, and a tarred-timber boatwright's shed surrounded by stacked oak planks and pitch barrels.");
+          }
+        }
         return out;
       },
-      see: ["western_vale", "oxworth", "palmcote"]
+      see: ["western_vale", "oxworth", "palmcote", "merrit_appleby", "willem_halstead", "orik"]
     },
 
     /* ------------------------------------------------------------------ PEOPLE */
@@ -381,6 +405,112 @@
         return out;
       },
       see: ["oxworth", "daven_marsh", "sigrin_copperpot"]
+    },
+
+    {
+      id: "willem_halstead", category: "people", title: "Willem Halstead",
+      sub: "Innkeeper of The Turning Sail",
+      role: "Innkeeper, The Turning Sail (Millstow)",
+      tags: ["Millstow", "Hartwell", "Lodging"],
+      aliases: ["Willem", "Halstead", "innkeeper", "Turning Sail"],
+      link: ["Willem Halstead", "Willem"],
+      unlock: "met_willem",
+      body: function (s) {
+        var out = [
+          "The tall, lean human innkeeper of [[millstow|The Turning Sail]] in his late thirties, with pale wind-chapped skin, a neat brown beard flecked with grey, tied-back dark hair, and easygoing blue-grey eyes. He wears a heavy oatmeal linen shirt with rolled sleeves, a dark wool waistcoat, and a flour-smudged apron, with a faint oven burn scar across the back of his left hand."
+        ];
+        if (truthy(s.ml_ts_asked_self)) {
+          out.push("Raised a baker's son in Hartwell, he married a Millstow miller's daughter and took over the old roadside house eight years ago. They split the work down the middle: she handles the morning baking, upstairs linen, and harvest help at her father's windmill while he tends the perch cauldron, cider cask, and common room.");
+        }
+        if (truthy(s.ml_ts_asked_traffic)) {
+          out.push("He watches a steady mix of Hartwell grain wagons, Dunmow riders, and flat-bottomed skiffs putting in from Reedmere and Oatcroft, pointing travelers to the market yard or the lakeside landing for news.");
+        }
+        if (truthy(s.ml_ts_asked_lanterns)) {
+          out.push("He has heard late boatmen coming in through the fog report hooded lanterns moving low along the southern cove toward the Oatcroft reeds, with locals split over whether it is night-poachers or smugglers running untagged goods across the lake.");
+        }
+        return out;
+      },
+      see: ["millstow"]
+    },
+
+    {
+      id: "merrit_appleby", category: "people", title: "Merrit Appleby",
+      sub: "Village head of Millstow",
+      role: "Village Head, the Gathering Hall (Millstow)",
+      tags: ["Millstow", "Hartwell"],
+      aliases: ["Merrit", "Appleby", "village head"],
+      link: ["Merrit Appleby", "Merrit"],
+      unlock: "met_ml_head",
+      body: function (s) {
+        var out = [
+          "The village head of [[millstow|Millstow]], a sturdy, round-cheeked halfling woman in her early fifties with sun-tanned skin, keen hazel eyes crinkling behind low-perched brass spectacles, and thick auburn-grey hair tucked under a plain linen kerchief. Wearing a faded blue wool vest over a chalk-dusted rolled-sleeve shirt, she sits on a tall wooden chair with a worn leather satchel slung over its back.",
+          "Crisp, practical, and briskly polite, she keeps Millstow's grain-measure books and shore-mooring tallies at the Gathering Hall while tending the slatted notice rack."
+        ];
+        if (truthy(s.ml_gh_asked_mills)) {
+          out.push("She sums up Millstow in three words: wind, grain, and ovens. The two windmills on the rise grind grain for the southeastern shore, the bakers supply barley loaves for the Hartwell road, and lakeside skiffs bring in fresh perch.");
+        }
+        if (truthy(s.ml_gh_asked_roads)) {
+          out.push("She lays out the four roads meeting Millstow (Hartwell, Fold Crossing, Verdant Way, and Maple Turn) alongside the calm-weather skiff crossings toward Dunmow, Reedmere, and Oatcroft.");
+        }
+        if (truthy(s.ml_gh_asked_trouble)) {
+          out.push("She quietly notes two recent worries on the shore: fishing skiffs returning from the southern cove with slashed drift-nets and splintered lower planking, and lake-edge sheep bolting over a stone wall at night after something moved along the water.");
+        }
+        return out;
+      },
+      see: ["millstow", "willem_halstead", "orik"]
+    },
+
+    {
+      id: "orik", category: "people", title: "Orik",
+      sub: "Boatwright of Millstow's Lake Landing",
+      role: "Boatwright, the Lake Landing (Millstow)",
+      tags: ["Millstow", "Hartwell"],
+      aliases: ["Orik", "boatwright", "Lake Landing", "boat-shed"],
+      link: ["Orik"],
+      unlock: "met_orik",
+      body: function (s) {
+        var out = [
+          "The boatwright at [[millstow|Millstow]]'s Lake Landing, a broad-shouldered half-orc man in his mid-forties with weather-beaten olive-grey skin, blunted lower tusks, short black hair silvering at the temples, and steady brown eyes. Wearing a sleeveless oiled-leather vest over a coarse grey linen shirt with pitch-stained forearms and a canvas tool-roll belted at his hip, he works beside the tarred-timber boat-shed."
+        ];
+        if (truthy(s.ml_ld_asked_craft)) {
+          out.push("After ten years hanging ribs on salt-water merchant hulls in Port Valen's shipyards, he settled on Azure Lake twelve years ago to build and patch flat-bottomed oak skiffs for Millstow, Oatcroft, and Reedmere.");
+        }
+        if (truthy(s.ml_ld_asked_lake)) {
+          out.push("He warns travelers that afternoon winds swing hard out of the northwest across Azure Lake, reed beds choke the north and south banks, and any skiff caught by building clouds should hug the eastern shore back to Millstow's jetty.");
+        }
+        if (truthy(s.ml_ld_asked_hulls)) {
+          out.push("He has patched two skiffs from the southern cove bearing deep, clean-angled waterline gouges unlike any rock scrape, and three nights back someone stole six lengths of seasoned oak planking and a small keg of pine pitch from his drying rack after sundown.");
+        }
+        return out;
+      },
+      see: ["millstow", "merrit_appleby", "willem_halstead", "sabine_kess"]
+    },
+
+    {
+      id: "sabine_kess", category: "people", title: "Sabine Kess",
+      sub: "Dunmow lake-smuggling quartermaster",
+      role: "Smuggling quartermaster, Azure Lake",
+      tags: ["Millstow", "Hartwell", "Dunmow", "Trade"],
+      aliases: ["Sabine", "Kess", "quartermaster", "smuggler"],
+      link: ["Sabine Kess", "Sabine"],
+      unlock: "met_sabine_kess",
+      body: function (s) {
+        var out = [
+          "A sharp-eyed human woman in her early thirties with dark hair pinned up by a carved bone pin, wearing an oiled canvas coat over dark wool and a silver-hilted dagger at her hip. Running untaxed Dunmow silver-ore and fine dyed wool across Azure Lake in black-tarred skiffs, she lifted six seasoned oak planks from [[orik|Orik]]'s rack after a twelve-foot Lake Jaw trapped her crew in Millstow's southern cove."
+        ];
+        if (truthy(s.ml_tt_sabine_bedded)) {
+          out.push("While waiting out the beast's hunting wake in the boathouse loft over Dunmow plum brandy, you shared her blankets behind the crate stacks.");
+        }
+        if (!truthy(s.ml_tt_sabine_alive)) {
+          out.push("She died in the bloody reckoning at Millstow's southern cove.");
+        } else if (s.ml_tt_ending === "smuggler_deal") {
+          out.push("After you killed the Lake Jaw, she paid you in stamped Dunmow silver and slipped out into the lake mist toward Oatcroft and Dunmow.");
+        } else if (s.ml_tt_ending === "village_clean") {
+          out.push("Confronted on the pier after the Lake Jaw fell, she cut her losses, abandoned Orik's oak and the Dunmow crates, and rowed back across Azure Lake alive.");
+        }
+        return out;
+      },
+      see: ["millstow", "orik", "merrit_appleby", "willem_halstead"]
     }
 
   ]);

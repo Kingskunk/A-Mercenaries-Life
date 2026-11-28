@@ -414,6 +414,35 @@
       }
     },
     {
+      id: "millstow_tar_and_teeth",
+      title: "Tar & Teeth",
+      place: "Millstow",
+      giver: function (s) {
+        return truthy(s.met_orik) ? "Orik, the Lake Landing" : "Millstow's lakeside rumors";
+      },
+      goal: function (s) {
+        var st = Number(s.ml_tt_stage) || 0;
+        if (st === 1) return "Follow the reedy shore track south of Millstow to the old flooded boathouse, or gather local prep from Orik, Willem, and Merrit.";
+        if (st === 2) return "Clear the Lake Jaw from the southern cove and decide how to deal with Sabine Kess's smuggling crew.";
+        return "Finish matters in Millstow's southern cove.";
+      },
+      clues: function (s) {
+        var c = [];
+        if (truthy(s.ml_tt_prep_orik)) c.push("Orik identified the hull-gouging predator as a twelve-foot Lake Jaw that hates burning pine-pitch smoke, and gave you a tar-soaked pitch bundle.");
+        if (truthy(s.ml_tt_prep_willem)) c.push("Willem learned the smugglers' lantern signal: two low blinks through green glass, pause, then two more.");
+        if (truthy(s.ml_tt_prep_merrit)) c.push("Merrit confirmed Hartwell posted a 3-silver seizure bonus on top of Millstow's 7-silver pool if the Dunmow contraband crates are turned in intact.");
+        if (truthy(s.met_sabine_kess)) c.push("Dunmow quartermaster Sabine Kess and her crew stole Orik's oak planks to patch their black-tarred skiff, but the Lake Jaw trapped them inside the southern cove.");
+        if (truthy(s.ml_tt_sabine_bedded)) c.push("During a quiet hour in the loft, Sabine Kess let slip that her strongbox key sits under a loose floorboard beside the chest.");
+        if (truthy(s.ml_tt_pier_oil)) c.push("Sabine mentioned a cask of cheap lamp-oil lashed to the third piling on the lower pier.");
+        if (truthy(s.ml_tt_beast_dead)) c.push("You killed the Lake Jaw in the southern cove and took a foot-long serrated fang as proof.");
+        return c;
+      },
+      active: function (s) {
+        var st = Number(s.ml_tt_stage) || 0;
+        return st >= 1 && st < 5;
+      }
+    },
+    {
       id: "redvein_singing_tunnel",
       title: "The Singing Tunnel",
       place: "Redvein",

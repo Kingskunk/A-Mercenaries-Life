@@ -116,6 +116,8 @@
     barolo: "village",                    // the village hub and the overworld tile: a village by day, a hushed one at night
     palmcote: "village",                  // the village hub and the overworld tile: a village by day, a hushed one at night
     millstow: "village",                  // the lakeside village hub and the overworld tile: village by day, hushed at night (see OVERLAY for lake water)
+    millstow_market: "village",           // open-air market yard beside the lake wall (see OVERLAY for softer lake water)
+    millstow_lake_landing: "village",     // open-air shore landing & boatwright's shed right on Azure Lake (see OVERLAY for lake water)
     palmcote_market: "village",           // the open market lane is open air
     palmcote_olive_yard: "village",       // the open olive-weighing yard
     palmcote_pressing_house: "undercroft", // the enclosed stone pressing house
@@ -235,6 +237,8 @@
     talia_loft: [{ all: "river_current_stream", level: 0.18 }],
     alderford: [{ all: "watermill_ambience_needs_to_be_layered_on_top_water_and_mill_sound_only", level: 0.34 }],
     millstow: [{ all: "small_waves_river", level: 0.24 }],
+    millstow_market: [{ all: "small_waves_river", level: 0.18 }],
+    millstow_lake_landing: [{ all: "small_waves_river", level: 0.30 }],
     generic_village_inn_room: [{ day: "quiet_tavern", night: "crowded_tavern", level: 0.24 }],
     prologue_camp_night: [{ all: "marshland_night_crickets_shallowwater_ambience", level: 0.24 }],
     black_sinks_causeway_before: [{ day: "marshland_ambience_wind_birds_shallowwater_reeds", night: "marshland_night_crickets_shallowwater_ambience", level: 0.24 }],

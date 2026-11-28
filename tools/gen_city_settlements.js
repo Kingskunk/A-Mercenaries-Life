@@ -108,6 +108,16 @@ const SETTLEMENTS = {
       leave: { name: "Leave Palmcote", steps: [S("pc_menu", "ow_here", "hartwell/palmcote/palmcote.txt")], done: "You take the road out of Palmcote." }
     }
   },
+  // Millstow: the Notice Board is in the Gathering Hall, the inn is The Turning Sail, and the way out is the road out of the village.
+  millstow: {
+    name: "Millstow", start: "millstow", startScene: "hartwell/millstow/millstow", hubFile: "hartwell/millstow/millstow.txt", hubLabels: ["millstow", "ml_menu", "ml_return"],
+    files: ["hartwell/millstow/turning_sail.txt", "hartwell/millstow/millstow_gathering_hall.txt", "hartwell/millstow/millstow_market.txt", "hartwell/millstow/lake_landing.txt"],
+    services: {
+      board: { name: "Notice Board", seen: "ml_hall_seen", steps: [S("ml_menu", "ml_gh", "hartwell/millstow/millstow.txt"), S("ml_gh_front", "ml_gh_board", "hartwell/millstow/millstow_gathering_hall.txt")], done: "You are at the Notice Board." },
+      inn: { name: "The Turning Sail", seen: "ml_ts_seen", steps: [S("ml_menu", "ml_ts", "hartwell/millstow/millstow.txt")], done: "You are at the Turning Sail." },
+      leave: { name: "Leave Millstow", steps: [S("ml_menu", "ow_here", "hartwell/millstow/millstow.txt")], done: "You take the road out of Millstow." }
+    }
+  },
   brinewick: {
     name: "Brinewick", start: "brinewick", startScene: "port_valen/brinewick/brinewick", hubFile: "port_valen/brinewick/brinewick.txt", hubLabels: ["brinewick"],
     files: ["port_valen/brinewick/reedhouse.txt", "port_valen/brinewick/saltworks.txt", "port_valen/brinewick/tide_house.txt"],

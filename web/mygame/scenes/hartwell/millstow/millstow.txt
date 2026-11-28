@@ -1,10 +1,9 @@
 *comment ====================================================================================
 *comment MILLSTOW: a lakeside milling village on the southeastern shore of Azure Lake under the Viscounty of Hartwell (overworld tile "ml").
-*comment Built so far: the hub with its three description layers (place, sky, street), rotating vignettes, arrival from overworld tile "ml" (ml_arrive), and the road back out.
-*comment Planned stops (to be wired into ml_menu as each file is built):
+*comment Wired stops:
 *comment   - millstow_gathering_hall.txt (The Gathering Hall + notice board; village head Merrit Appleby)
 *comment   - turning_sail.txt (The Turning Sail inn; innkeeper Willem Halstead)
-*comment   - millstow_market.txt (Millstow Market)
+*comment   - millstow_market.txt (Millstow Market; trade hub ml_market)
 *comment   - lake_landing.txt (The Lake Landing & Boatwright's Shed; boatwright Orik)
 *comment Backdrop: millstow (scenery.js SCENE_PLACES, Wallpaper/Millstow_Day.jpg & Millstow_Night.jpg); ambience: "village" with soft "small_waves_river" overlay (ambience.js).
 *comment ====================================================================================
@@ -24,6 +23,56 @@
 *set scenery_subplace ""
 *set ml_seen true
 *gosub_scene calendar update_hub_condition
+*gosub ml_hours
+*gosub ml_hall_hours
+*gosub ml_landing_hours
+*return
+
+*comment Lake Landing hours: Morning through Dusk, shut at night, on the rest day and while dangerous weather has emptied the lane.
+*label ml_landing_hours
+*set ml_ok_landing false
+*set ml_landing_closed_reason "quiet for the night"
+*if (day_of_week = "Hallowday")
+  *set ml_landing_closed_reason "quiet for the rest day"
+  *return
+*if (street_life = "empty")
+  *set ml_landing_closed_reason "deserted in the weather"
+  *return
+*if ((((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon")) or (time_period = "Dusk"))
+  *set ml_ok_landing true
+  *set ml_landing_closed_reason ""
+*return
+
+*comment Gathering Hall hours: Morning through Afternoon, shut at dusk, at night, on the rest day and while dangerous weather has emptied the lane.
+*label ml_hall_hours
+*set ml_ok_hall false
+*set ml_hall_closed_reason "barred for the night"
+*if (day_of_week = "Hallowday")
+  *set ml_hall_closed_reason "shut for the rest day"
+  *return
+*if (street_life = "empty")
+  *set ml_hall_closed_reason "bolted against the weather"
+  *return
+*if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
+  *set ml_ok_hall true
+  *set ml_hall_closed_reason ""
+*elseif (time_period = "Dusk")
+  *set ml_hall_closed_reason "closed for the evening"
+*return
+
+*comment Millstow Market hours: Morning through Dusk, shut at night, on the rest day and while dangerous weather has emptied the lane.
+*label ml_hours
+*set ml_ok_market false
+*set ml_market_closed_reason "cleared and sheeted for the night"
+*if (day_of_week = "Hallowday")
+  *set ml_market_closed_reason "closed for the rest day"
+  *return
+*if (street_life = "empty")
+  *set ml_market_closed_reason "empty in the weather"
+  *return
+*if ((((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon")) or (time_period = "Dusk"))
+  *set ml_ok_market true
+  *set ml_market_closed_reason ""
 *return
 
 *comment The overworld's Millstow tile (ml) enters here. The last stretch of lakeside lane costs five minutes once per arrival.
@@ -93,9 +142,42 @@
 *set wait_ok_page page_id
 *set fresh_water_page page_id
 *choice
+  *if (ml_ok_hall)
+    # [b]The Gathering Hall[/b]: @{(met_ml_head) Merrit Appleby's|the village head's} hall and the notice board. [~5 min]
+      *goto_scene hartwell/millstow/millstow_gathering_hall ml_gh
+  *else
+    # [b]The Gathering Hall[/b] (${ml_hall_closed_reason}).
+      *goto_scene hartwell/millstow/millstow_gathering_hall ml_gh_closed
+  # [b]The Turning Sail[/b]: meals, a room upstairs, and a word with the innkeeper. [~5 min]
+    *goto_scene hartwell/millstow/turning_sail ml_ts
+  *if (ml_ok_market)
+    # [b]Millstow Market[/b]: canvas-awning stalls and the beam-scale yard off the lane. [~5 min]
+      *goto_scene hartwell/millstow/millstow_market ml_market
+  *else
+    # [b]Millstow Market[/b] (${ml_market_closed_reason}).
+      *goto_scene hartwell/millstow/millstow_market ml_market_closed
+  *if (ml_ok_landing)
+    # [b]The Lake Landing[/b]: the wooden jetty, moored skiffs, and @{(met_orik) Orik's|the boatwright's} shed. [~5 min]
+      *goto_scene hartwell/millstow/lake_landing ml_landing
+  *else
+    # [b]The Lake Landing[/b] (${ml_landing_closed_reason}).
+      *goto_scene hartwell/millstow/lake_landing ml_landing_closed
+  *if ((not(ml_tt_finished)) and (((ml_tt_stage >= 1) or (ml_ts_asked_lanterns)) or ((ml_gh_asked_trouble) or (ml_ld_asked_hulls))))
+    # [b]The Southern Cove[/b]: follow the reedy shore track south. [~20 min]
+      *goto_scene hartwell/millstow/tar_and_teeth ml_tt_cove_approach
   # [b]The road out of the village[/b]: leave Millstow.
     *set ow_pos "ml"
     *goto_scene overworld/overworld ow_here
+  *comment GEN:BEGIN place_steps ml_menu:ml_gh ml_menu:ml_ts ml_menu:ow_here -- generated by tools/gen_city_settlements.js from its registry; edit the registry, not this block
+  *if (ml_ok_hall)
+    # ⇥ [pvgo:ml_menu:ml_gh]
+      *goto_scene hartwell/millstow/millstow_gathering_hall ml_gh
+  # ⇥ [pvgo:ml_menu:ml_ts]
+    *goto_scene hartwell/millstow/turning_sail ml_ts
+  # ⇥ [pvgo:ml_menu:ow_here]
+    *set ow_pos "ml"
+    *goto_scene overworld/overworld ow_here
+  *comment GEN:END place_steps ml_menu:ml_gh ml_menu:ml_ts ml_menu:ow_here
 
 *comment ── LAYER 1: PLACE ── Fixed geography only. The long description prints once. Nothing here changes with the season or the hour.
 *label ml_place

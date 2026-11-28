@@ -962,8 +962,8 @@ window.CITY_SETTLEMENTS = {
      "pc_gh_front:pc_gh_board"
     ],
     "stepMin": [
-     0,
-     0
+     5,
+     5
     ]
    },
    {
@@ -977,7 +977,7 @@ window.CITY_SETTLEMENTS = {
      "pc_menu:pc_gb"
     ],
     "stepMin": [
-     0
+     5
     ]
    },
    {
@@ -989,6 +989,61 @@ window.CITY_SETTLEMENTS = {
     "done": "You take the road out of Palmcote.",
     "steps": [
      "pc_menu:ow_here"
+    ],
+    "stepMin": [
+     0
+    ]
+   }
+  ]
+ },
+ "millstow": {
+  "name": "Millstow",
+  "keys": [
+   "ml_menu:ml_gh",
+   "ml_gh_front:ml_gh_board",
+   "ml_menu:ml_ts",
+   "ml_menu:ow_here"
+  ],
+  "services": [
+   {
+    "id": "board",
+    "name": "Notice Board",
+    "seen": "ml_hall_seen",
+    "lock": "",
+    "lockReason": "",
+    "done": "You are at the Notice Board.",
+    "steps": [
+     "ml_menu:ml_gh",
+     "ml_gh_front:ml_gh_board"
+    ],
+    "stepMin": [
+     5,
+     5
+    ]
+   },
+   {
+    "id": "inn",
+    "name": "The Turning Sail",
+    "seen": "ml_ts_seen",
+    "lock": "",
+    "lockReason": "",
+    "done": "You are at the Turning Sail.",
+    "steps": [
+     "ml_menu:ml_ts"
+    ],
+    "stepMin": [
+     5
+    ]
+   },
+   {
+    "id": "leave",
+    "name": "Leave Millstow",
+    "seen": "",
+    "lock": "",
+    "lockReason": "",
+    "done": "You take the road out of Millstow.",
+    "steps": [
+     "ml_menu:ow_here"
     ],
     "stepMin": [
      0

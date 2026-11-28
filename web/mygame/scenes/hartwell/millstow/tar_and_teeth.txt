@@ -1,0 +1,752 @@
+*comment ====================================================================================
+*comment TAR & TEETH (Millstow village quest)
+*comment Pays off all three Millstow southern-cove rumors (Willem's hooded lanterns,
+*comment Merrit's slashed drift-nets and spooked sheep, Orik's gouged hulls and stolen oak/pitch).
+*comment All combats are lethal (combat_player_can_die = true, combat_is_nonlethal = false).
+*comment Tracks ml_tt_sabine_alive for future Dunmow / Oatcroft quest continuity.
+*comment ====================================================================================
+
+*comment ====================================================================================
+*comment BEAT 0: ORIK'S CONTRACT OFFER & OPTIONAL VILLAGE PREP
+*comment ====================================================================================
+
+*label ml_tt_orik_offer
+*set scenery_subplace "millstow_lake_landing"
+*set minutes_to_pass 5
+*set time_advance_call_id "ml_tt_orik_offer"
+*gosub ml_tt_advance_time
+
+[b]◈ THE LAKE LANDING[/b]
+*line_break
+Orik drops a splintered ash oar across the sawhorse, its blade sheared clean through with deep crescent tooth-marks.
+
+"Third boat this week," he grunts, wiping pine tar off his thumb. "Fishermen put four silver into a leather sack for whoever clears whatever is tearing up hulls in the southern cove. Merrit Appleby promised three more out of Millstow's chest if you also find who lifted my six oak planks and pitch keg."
+
+He looks straight at you. "Seven silver marks for honest work. There is a narrow reed track running south off the village lane straight down to the old flooded boathouse. You want it?"
+*choice
+  # Take the contract and ask Orik what kind of beast leaves those marks.
+    *set ml_tt_stage 1
+    *goto ml_tt_prep_orik
+  # Take the contract and head straight for the southern cove. [~20 min]
+    *set ml_tt_stage 1
+    *goto ml_tt_cove_approach
+  # Leave the southern cove to the boatmen for now.
+    "I'll pass for now," you say.
+
+    Orik shrugs one heavy shoulder and turns back to the splintered oar. "Suit yourself. Offer stands if you change your mind."
+    *page_break Back to the Lake Landing…
+    *goto_scene hartwell/millstow/lake_landing ml_landing_front
+
+*label ml_tt_prep_orik
+*set scenery_subplace "millstow_lake_landing"
+*set ml_tt_prep_orik true
+*set ml_tt_has_pitch true
+*set minutes_to_pass 10
+*set time_advance_call_id "ml_tt_prep_orik"
+*gosub ml_tt_advance_time
+
+[b]◈ THE LAKE LANDING[/b]
+*line_break
+Orik taps the curved bite marks in the ash oar with one calloused knuckle. "Lake Jaw," he says flatly. "Big armored snapping-lurker, twelve feet nose to tail when it grows fat in deep reeds. Tough shell-back, serrated bite, and it hunts by waiting under floating timber."
+
+He ducks into the boat-shed and comes back holding a tight bundle of pine-pitch rags wrapped in oiled twine. "They hate burning pitch smoke. Chokes their nostrils and drives them out of cover blind. Toss that on driftwood and touch a spark to it when the water boils."
+
+[b][Prep: Received Orik's Pine-Pitch Bundle | Lake Jaw weakness learned][/b]
+*choice
+  # Head down the shore track to the southern cove now. [~20 min]
+    *goto ml_tt_cove_approach
+  # Step back to the Lake Landing to check the village first.
+    *goto_scene hartwell/millstow/lake_landing ml_landing_front
+
+*label ml_tt_prep_willem
+*set scenery_subplace "village_inn_hall"
+*set ml_tt_prep_willem true
+*set ml_tt_knows_signal true
+*set minutes_to_pass 5
+*set time_advance_call_id "ml_tt_prep_willem"
+*gosub ml_tt_advance_time
+
+[b]◈ THE TURNING SAIL[/b]
+*line_break
+Willem lowers his voice as he wipes down the sideboard. "If you are walking down to that southern cove, listen closely. Two fishermen who drifted near the reeds in the fog swore the hooded lantern never stays lit."
+
+He taps two slow beats on the plank wood. "Two low blinks through green glass, pause, then two more. That is how they call a skiff in from the far bank. Flash that from the reeds and whoever is hiding in the old boathouse will think you belong there."
+
+[b][Prep: Learned the Smugglers' Two-Beat Lantern Signal][/b]
+*page_break Back to the common room…
+*goto_scene hartwell/millstow/turning_sail ml_ts_hall
+
+*label ml_tt_prep_merrit
+*set scenery_subplace "generic_village_gathering_hall"
+*set ml_tt_prep_merrit true
+*set ml_tt_knows_bounty true
+*set minutes_to_pass 5
+*set time_advance_call_id "ml_tt_prep_merrit"
+*gosub ml_tt_advance_time
+
+[b]◈ THE GATHERING HALL[/b]
+*line_break
+Merrit Appleby pulls a folded wax-sealed slip from beneath her grain ledger and slides it across the trestle table.
+
+"Word from Hartwell's road bailiff arrived yesterday," she says crisply. "Someone is running untaxed Dunmow silver-ore and fine dyed wool across Azure Lake in black-tarred skiffs. Hartwell put a three-silver seizure bonus on top of our seven-silver village pool if the contraband crates are turned over to me intact."
+
+[b][Prep: Hartwell Contraband Bounty confirmed (+3 Silver on lawful seizure)][/b]
+*page_break Back to the Gathering Hall…
+*goto_scene hartwell/millstow/millstow_gathering_hall ml_gh_front
+
+*comment ====================================================================================
+*comment BEAT 1: THE REEDY SOUTHERN COVE (APPROACH BEAT)
+*comment ====================================================================================
+
+*label ml_tt_cove_approach
+*set scenery_subplace "millstow_lake_landing"
+*if (ml_tt_stage < 2)
+  *set ml_tt_stage 2
+*set minutes_to_pass 20
+*set time_advance_call_id "ml_tt_cove_walk"
+*gosub ml_tt_advance_time
+
+*gosub_scene dungeon dg_spell_source "minor_illusion" "Minor Illusion" 0 "cantrip"
+*temp tt_can_illusion dg_ss_can
+*temp tt_word_illusion dg_ss_word
+*gosub_scene dungeon dg_spell_source "light" "Light" 0 "cantrip"
+*temp tt_can_light dg_ss_can
+*temp tt_word_light dg_ss_word
+*gosub_scene dungeon dg_spell_source "speak_with_animals" "Speak with Animals" 0 "spell"
+*temp tt_can_swa dg_ss_can
+*temp tt_tag_swa dg_ss_tag
+
+[b]◈ THE SOUTHERN COVE[/b]
+*line_break
+A narrow reed-choked track winds south from Millstow until the shoreline bends around a sheltered bay thick with rushes. Half-sunk on rotten timber pilings sits an old two-story boathouse, its lower pier sagging just above the black water.
+*gosub ml_tt_cove_sky
+
+A freshly patched, black-tarred skiff rides beside the lower pier. Up in the loft, a thin chink of warm light leaks around a shuttered window, and a broad-shouldered boatman leans against a piling below with a hooked iron pole across his knees. Thirty paces out in the reed channel, a wide, silent wake curls across the surface and vanishes beneath the rushes.
+
+*temp tt_sig_hint " [Deception DC 11]"
+*if (ml_tt_knows_signal)
+  *set tt_sig_hint " [Deception DC 11, Adv]"
+*choice
+  # Slip along the reed bank to listen under the loft boards.@{show_stat_hints  [Stealth DC 12]|}
+    *goto ml_tt_approach_stealth
+  *if ((ml_tt_knows_signal) or ((has_hooded_lantern) or (tt_can_light)))
+    # Flash a two-beat lantern signal from the reeds.@{show_stat_hints ${tt_sig_hint}|}
+      *goto ml_tt_approach_signal
+  *if (tt_can_swa)
+    # [${tt_tag_swa}] Ask a marsh heron in the rushes what hunts the water below.
+      *goto ml_tt_approach_swa
+  *if (tt_can_illusion)
+    # [${tt_word_illusion}: Minor Illusion] Throw a splash down-cove to draw the lookout off the pier.
+      *goto ml_tt_approach_illusion
+  # Bait the cove waters to drive the beast into their pilings.@{show_stat_hints  [Survival or Nature DC 13]|}
+    *goto ml_tt_approach_bait
+  # Walk straight onto the lower pier in plain sight.
+    *goto ml_tt_approach_direct
+  # Slip back up the shore track to Millstow first.
+    *goto_scene hartwell/millstow/millstow ml_return
+
+*label ml_tt_approach_stealth
+*set scenery_subplace "millstow_lake_landing"
+*if ((weather = "Fog") or (weather_wet))
+  *set advantage true
+You stay low in the shoulder-high rushes and ease onto the mossy stones beneath the boathouse pilings, listening up through the damp floorboards.
+*gosub_scene dice_engine roll_skill_check 12 "stealth" "" "" "" "" ""
+*if (check_success)
+  *set ml_tt_overheard true
+  A sharp woman's voice carries cleanly down through the loft gaps. "Six planks from the half-orc's rack barely patched the starboard strake, and if that horned bastard in the reeds cracks us again we sink forty marks of Dunmow silver-ore and wool into ten feet of mud. Keep your crossbow cocked."
+
+  You step quietly onto the outer steps with the whole layout clear in your head before the boatman below even blinks.
+  *page_break Step up to the boathouse…
+  *goto ml_tt_loft_enter
+*else
+  A rotten plank cracks sharply beneath your heel. The boatman spins around, leveling his hooked iron pole while a crossbow clicks cocked from the loft doorway above.
+
+  "Hold your steel!" a sharp woman's voice snaps from the upper shutter. "Send them up the stair. If they walked past that reed channel in one piece, I want to talk to them."
+  *page_break Climb up to the boathouse loft…
+  *goto ml_tt_loft_enter
+
+*label ml_tt_approach_signal
+*set scenery_subplace "millstow_lake_landing"
+*if (ml_tt_knows_signal)
+  *set advantage true
+*if ((not(has_hooded_lantern)) and (tt_can_light))
+  *gosub_scene dungeon dg_spell_source "light" "Light" 0 "cantrip"
+  *gosub_scene dungeon dg_spell_cast "light"
+  You cup a dim spark of conjured light between your fingers and pulse it twice low over the rushes, pause, and pulse it twice more.
+*else
+  You shutter a low glow twice over the rushes, pause, and flash it twice more, matching the cadence of a Dunmow lake skiff.
+*gosub_scene dice_engine roll_skill_check 11 "deception" "" "" "" "" ""
+*if (check_success)
+  *set ml_tt_overheard true
+  The boatman lowers his hooked pole and waves you smoothly onto the pier. "You're early, and on foot," he mutters as he jerks his chin toward the loft ladder. "Sabine's upstairs counting crates. Go on up."
+  *page_break Climb into the boathouse loft…
+  *goto ml_tt_loft_enter
+*else
+  The boatman squints at the uneven rhythm and hefts his hooked iron pole. "That's no Dunmow blink," he barks as a crossbow levels from the upper doorway.
+
+  "Easy!" a woman's voice calls down from the loft. "Let them climb up where I can see their hands. Might be we can use a spare blade."
+  *page_break Climb into the boathouse loft…
+  *goto ml_tt_loft_enter
+
+*label ml_tt_approach_swa
+*set scenery_subplace "millstow_lake_landing"
+*gosub_scene dungeon dg_spell_source "speak_with_animals" "Speak with Animals" 0 "spell"
+*gosub_scene dungeon dg_spell_cast "speak_with_animals"
+*set ml_tt_overheard true
+*set ml_tt_prep_orik true
+You breathe the quick syllables of the spell and speak softly to a grey heron frozen ankle-deep in the rushes. The bird tilts one yellow eye toward the dark channel.
+
+"Old shell-tooth lies under the sunk alder log," the heron clicks back sharply. "Soft belly, hard back, hates hot smoke. Ate one of the lantern-men three nights ago. Stay off the wet planks."
+
+Armed with the beast's exact lair, you step cleanly up onto the dry approach toward the boathouse pier.
+*page_break Approach the boathouse…
+*goto ml_tt_approach_direct
+
+*label ml_tt_approach_illusion
+*set scenery_subplace "millstow_lake_landing"
+*gosub_scene dungeon dg_spell_source "minor_illusion" "Minor Illusion" 0 "cantrip"
+*gosub_scene dungeon dg_spell_cast "minor_illusion"
+*set ml_tt_overheard true
+You flick two fingers toward the far bend of the reeds, throwing the heavy splash of a grounded hull thirty paces away. The lookout hurries down the bank with his boat-hook raised, giving you a clean, quiet climb straight up the outer loft stair to look over the crates before anyone notices.
+*page_break Step into the boathouse loft…
+*goto ml_tt_loft_enter
+
+*label ml_tt_approach_direct
+*set scenery_subplace "millstow_lake_landing"
+You step out of the reeds onto the dry plank approach in plain view. The boatman snaps upright, leveling a heavy hooked pole across your chest while a second man leans out of the loft doorway with a cocked crossbow.
+
+"Hold it!" a woman's voice cuts sharply from the upper loft. "Drop the hook, Gar. If a hired sword walked down here alone, they're worth more talking than floating in the reeds. Climb up, stranger, and keep your hands where I can see them."
+*page_break Climb up to the boathouse loft…
+*goto ml_tt_loft_enter
+
+*label ml_tt_approach_bait
+*set scenery_subplace "millstow_lake_landing"
+You stay hidden back in the reeds, heave a heavy jagged stone tied with a strip of jerky into the black channel right beside the moored black-tarred skiff, and slam an iron buckle rhythmically against a sunken piling to mimic a thrashing boat.
+*gosub_scene dice_engine roll_skill_check 13 "survival" "" "nature" "" "" ""
+*set minutes_to_pass 15
+*set time_advance_call_id "ml_tt_bait_cove"
+*gosub ml_tt_advance_time
+*if (check_success)
+  *set ml_tt_baited_cove true
+  *set ml_tt_smugglers_dead true
+  *set ml_tt_sabine_alive false
+  *set met_sabine_kess true
+  The dark water beside the pier erupts in white foam! A twelve-foot armored monstrosity with a ridged shell-back and serrated jaws slams straight up under the black-tarred skiff, flipping it clear off its tether.
+
+  Shouting breaks out on the pier. The boatman jabs wildly with his hooked pole before the beast drags him under in a spray of red water. Crossbow bolts snap from the loft doorway, sticking deep into the creature's flank as a dark-haired woman in an oiled coat bolts down the stair with a silver dagger drawn. The monster's heavy tail sweeps the sagging pier planks out from under both of them, sending timber, lantern oil, and bodies crashing into the shallows.
+
+  Minutes later, the shouting dies. Bleeding from two crossbow bolts, the wounded Lake Jaw drags itself half onto the broken pier to guard its kill.
+  *page_break Finish the wounded Lake Jaw…
+  *goto ml_tt_beast_fight
+*else
+  The splash draws only a sharp whistle from the boatman on the pier. Two seconds later a crossbow bolt thunks into the willow trunk inches from your ear!
+
+  "Step out of those rushes with your hands high," a cold woman's voice calls from the loft, "or the next bolt goes through your throat!"
+  *page_break Step out onto the pier…
+  *goto ml_tt_loft_enter
+
+*comment ====================================================================================
+*comment BEAT 2: THE BOATHOUSE LOFT — SABINE KESS'S PITCH & OPTIONAL LOFT HOUR
+*comment ====================================================================================
+
+*label ml_tt_loft_enter
+*set scenery_subplace "generic_curing_shed"
+*set met_sabine_kess true
+*set minutes_to_pass 10
+*set time_advance_call_id "ml_tt_loft_enter"
+*gosub ml_tt_advance_time
+
+[b]◈ THE COVE BOATHOUSE[/b]
+*line_break
+The upper loft smells strongly of pine tar, wet hemp, and dry oak. Tarred crates stamped with Dunmow warehouse marks sit stacked along the far wall beside six lengths of fresh seasoned oak planking and a half-empty pine-pitch keg clearly lifted from Orik's drying rack.
+
+Beside a shuttered iron brazier stands a sharp-eyed human woman in her early thirties with dark hair pinned up by a carved bone pin, wearing an oiled canvas coat over dark wool and a silver-hilted dagger at her hip. Her crossbowman watches from the open stair landing behind you.
+
+"Sabine Kess," she says coolly, sizing you up without flinching. "Save the sermon. Yes, we took the half-orc's oak and pitch. Better than sinking forty marks of untaxed Dunmow silver-ore and fine wool in ten feet of mud."
+
+She jerks her chin toward the dark reed channel outside the shutter. "A twelve-foot Lake Jaw moved into this cove two weeks back. It tore the bottom out of two Millstow skiffs, ate one of my rowers three nights ago, and circles our pilings every time we touch an oar. Clear that beast out of the water so we can push off for Oatcroft before dawn, keep Millstow's village head in the dark, and I will put ten silver marks of clean Dunmow coin in your hand."
+
+*goto ml_tt_loft_menu
+
+*label ml_tt_loft_menu
+*temp tt_hag_hint " [Persuasion or Intimidation DC 13]"
+*if (ml_tt_overheard)
+  *set tt_hag_hint " [Persuasion or Intimidation DC 13, Adv]"
+*choice
+  *if (ml_tt_sabine_deal_rate = 100)
+    # Press her for twelve silver marks instead of ten.@{show_stat_hints ${tt_hag_hint}|}
+      *goto ml_tt_loft_haggle
+  *if (not(ml_tt_loft_rested))
+    # Share a cup of brandy by the brazier while waiting for the beast's wake. [~1 hour]
+      *goto ml_tt_loft_hour
+  # Take the deal and head down to the pier to hunt the Lake Jaw.
+    @{(ml_tt_sabine_deal_rate = 120) "Twelve silver when it's dead,"|"Ten silver when it's dead,"} you say.
+    Sabine nods once. "Kill it, bring up a jaw-tooth, and the coin is yours."
+    *page_break Head down to the broken pier…
+    *goto ml_tt_hunt_approach
+  # Refuse her deal and draw your ${weapon} right here in the loft. [Lethal Combat]
+    *goto ml_tt_loft_brawl
+  # Leave the loft and slip back to Millstow to prepare.
+    "I'll think on it," you tell her.
+
+    Sabine's eyes narrow a fraction, then she waves her crossbowman aside. "Don't take all week. And if you bring Hartwell's road bailiff down here, we won't be waiting."
+    *goto_scene hartwell/millstow/millstow ml_return
+
+*label ml_tt_loft_haggle
+*set scenery_subplace "generic_curing_shed"
+*if (ml_tt_overheard)
+  *set advantage true
+"Forty marks of Dunmow cargo sitting trapped over black water," you say evenly. "Twelve silver marks, or you can try rowing past those teeth yourself."
+*gosub_scene dice_engine roll_skill_check 13 "persuasion" "" "intimidation" "" "" ""
+*if (check_success)
+  *set ml_tt_sabine_deal_rate 120
+  Sabine holds your gaze for two slow heartbeats, then lets out a short, dry laugh. "Twelve silver. You've got a trader's nerve, I'll give you that. Kill the beast and it's yours."
+*else
+  *set ml_tt_sabine_deal_rate 101
+  Sabine's mouth flattens. "Ten silver is already more than Millstow's fishermen make in a season. Take it or walk back up the mud."
+*goto ml_tt_loft_menu
+
+*label ml_tt_loft_hour
+*set scenery_subplace "generic_curing_shed"
+*set ml_tt_loft_rested true
+*set minutes_to_pass 60
+*set time_advance_call_id "ml_tt_loft_hour"
+*gosub ml_tt_advance_time
+
+Sabine nods to her crossbowman to keep watch down on the lower pier, bolts the loft hatch, and pours two tin cups of dark Dunmow plum brandy beside the glowing brazier. Outside, water laps slow against the pilings as the cove settles into stillness.
+
+She leans back against a stack of tarred wool crates, loosening her oiled coat. Her grey-green eyes hold yours over the rim of her cup. "Three nights stuck over black water with a monster below and Hartwell patrols on the road," she murmurs, voice dropping lower. "Makes a woman tired of counting coin. We have an hour before that brute swings back into the channel."
+*choice
+  # Set your cup down and join her on the folded blankets behind the crates.
+    *set ml_tt_sabine_bedded true
+    *set ml_tt_knows_chest true
+    You set your tin cup beside the brazier and step across the boards. Sabine does not look away; she catches the front of your shirt with one cool hand and pulls you down onto the heavy wool blankets piled behind the Dunmow crates.
+
+    There is nothing soft or sentimental about it, just sharp heat, quick breath, and the smell of plum brandy and pine tar while black water slaps the pilings below. When the quiet returns, she lies half-propped on one elbow in the dim brazier glow, tracing a scar along your shoulder before reaching over to tuck a small iron key back beneath a loose floorboard beside her strongbox.
+
+    "Don't get soft on me now," she murmurs dryly, fastening her shirt again. "That thing in the reeds still wants its supper. And if we both walk out of this cove, look for me in Dunmow."
+    *goto ml_tt_loft_menu
+  # Keep your seat across the crate and trade road talk over the brandy.
+    *set ml_tt_sabine_respect true
+    *set ml_tt_pier_oil true
+    You stay across the crate, letting the sharp plum brandy warm your chest while you trade practical talk about the Hartwell roads and Dunmow tariffs.
+
+    Sabine gives an approving, crooked smile as she corks the bottle. "Smart to keep a cool head before a fight. Listen: my boatman lashed a small cask of cheap lamp-oil to the third piling down on the pier. Crack it open and drop a spark on the water when the beast surfaces, and you'll save yourself half a fight."
+
+    [b][Prep: Learned about the Lamp-Oil Cask on the Lower Pier][/b]
+    *goto ml_tt_loft_menu
+  # Finish the cup in silence and check your gear until the wake returns.
+    You drink the brandy down in two swallows and check the edge of your ${weapon} beside the brazier. Sabine watches you quietly, then stands and unbolts the loft hatch as the ripples stir outside.
+    *goto ml_tt_loft_menu
+
+*label ml_tt_loft_brawl
+*set scenery_subplace "generic_curing_shed"
+"Keep your Dunmow coin," you say flatly, drawing your ${weapon}. "Orik wants his oak back, and Hartwell pays for smugglers."
+
+Sabine's face goes ice-cold as she whips her silver dagger clear. "Kill them! Don't let them off this floor!"
+*page_break Fight Sabine and her crew…
+*goto ml_tt_smuggler_fight
+
+*comment ====================================================================================
+*comment BEAT 3: THE HUNT IN THE REEDS — THE LAKE JAW (BOSS FIGHT)
+*comment ====================================================================================
+
+*label ml_tt_hunt_approach
+*set scenery_subplace "millstow_lake_landing"
+*gosub_scene dungeon dg_spell_source "fire_bolt" "Fire Bolt" 0 "cantrip"
+*temp tt_can_fb dg_ss_can
+*temp tt_word_fb dg_ss_word
+*gosub_scene dungeon dg_spell_source "burning_hands" "Burning Hands" 0 "spell"
+*temp tt_can_bh dg_ss_can
+*temp tt_tag_bh dg_ss_tag
+*temp tt_can_burn false
+*if ((ml_tt_has_pitch) or ((ml_tt_pier_oil) or ((has_alchemists_fire) or ((has_pitch_torch) or ((tt_can_fb) or (tt_can_bh))))))
+  *set tt_can_burn true
+
+[b]◈ THE SOUTHERN COVE[/b]
+*line_break
+You step down onto the sagging lower pier. Ten paces out from the broken planks, the black water bulges upward in a broad, silent V. Two pale yellow eyes break the surface beneath a moss-dark ridge of armored shell, jaws parting wide enough to snap an oar clean in half.
+
+Up in the boathouse doorway, Sabine's crew pulls back inside out of reach, leaving the pier to you.
+*choice
+  *if (tt_can_burn)
+    # Ignite pitch or oil across the channel as the Lake Jaw lunges!
+      *goto ml_tt_hunt_burn
+  # Wait on the catwalk and drive a spare boat-hook behind its shell-plate.@{show_stat_hints  [Athletics or Stealth DC 13]|}
+    *goto ml_tt_hunt_pin
+  # Plant your stance on the broken pier and meet it head-on. [Lethal Combat]
+    *set combat_enemy_advantage false
+    *goto ml_tt_beast_fight
+
+*label ml_tt_hunt_burn
+*set scenery_subplace "millstow_lake_landing"
+*set ml_tt_beast_burned true
+*if (tt_can_fb)
+  *gosub_scene dungeon dg_spell_source "fire_bolt" "Fire Bolt" 0 "cantrip"
+  *gosub_scene dungeon dg_spell_cast "fire_bolt"
+  You crack open the tarred driftwood beside the pilings and snap a bright lance of fire straight into the slick! Flames roar across the water just as the Lake Jaw lunges, searing its eyes and cracking the resin-coated shell!
+*elseif (tt_can_bh)
+  *gosub_scene dungeon dg_spell_source "burning_hands" "Burning Hands" 0 "spell"
+  *gosub_scene dungeon dg_spell_cast "burning_hands"
+  You fan a roaring sheet of flame straight across the oil-slicked shallows as the Lake Jaw surges up! Thick pine smoke blinds it and scorches the soft flesh beneath its armored jaw!
+*elseif (has_alchemists_fire)
+  *gosub_scene equipment consume_gear "alchemists_fire"
+  You hurl a flask of Alchemist's Fire straight into the surging wake! Green-gold flames burst across the water and cling fiercely across the beast's snout as it thrashes half-blind onto the pier!
+*elseif (ml_tt_has_pitch)
+  You strike spark to Orik's pine-pitch bundle and pitch it squarely onto the floating driftwood just as the water boils! Heavy black resin-smoke and bright flame billow straight into the Lake Jaw's face, driving it thrashing and seared onto the planks!
+*elseif (ml_tt_pier_oil)
+  You split the lamp-oil cask Sabine pointed out on the third piling and drop a lit splinter into the spreading sheen! Fire rushes across the cove shallows right under the beast's jaw, scorching its hide before it can strike!
+*else
+  You whip a lit pine-pitch torch straight down into the surging wake, driving flames and choking smoke across the Lake Jaw's eyes as it lunges onto the broken planks!
+*set combat_enemy_advantage false
+*page_break Strike the seared Lake Jaw…
+*goto ml_tt_beast_fight
+
+*label ml_tt_hunt_pin
+*set scenery_subplace "millstow_lake_landing"
+You snatch a heavy iron boat-hook off the piling, wait motionless on the catwalk overhang until the moss-dark shell surges beneath the planks, and drive the steel point down toward the seam behind its neck!
+*gosub_scene dice_engine roll_skill_check 13 "athletics" "" "stealth" "" "" ""
+*if (check_success)
+  *set ml_tt_beast_pinned true
+  The iron hook bites deep beneath the edge of its armored plate and snags hard against the piling rope! The Lake Jaw thrashes violently in the shallows, pinned short of a clean lunge as you drop onto the pier with the opening strike!
+  *set combat_enemy_advantage false
+  *page_break Press your advantage…
+  *goto ml_tt_beast_fight
+*else
+  The iron hook skids screeching off the wet armored ridge! The Lake Jaw whips its massive head up and slams straight through the lower planks beneath you before you can recover your footing!
+  *set combat_enemy_advantage true
+  *page_break Brace for its jaws…
+  *goto ml_tt_beast_fight
+
+*label ml_tt_beast_fight
+*set scenery_combat_place "millstow_lake_landing"
+*set combat_player_can_die true
+*set combat_is_nonlethal false
+*set combat_open_sky true
+*set combat_no_morale true
+*set combat_terrain_layout "fixed"
+*set combat_terrain1_type "chokepoint"
+*set combat_terrain1_position 0
+*if (ml_tt_beast_burned)
+  *set combat_terrain2_type "fire"
+*else
+  *set combat_terrain2_type "water"
+*set combat_terrain2_position 1
+*set combat_terrain3_type "cover"
+*set combat_terrain3_position 2
+*set combat_lib_1 "beast"
+*set combat_enemy_name_override "Lake Jaw"
+*set combat_enemy_epithet_override "the lake jaw"
+*if (ml_tt_baited_cove)
+  *set combat_enemy_hp_override 20
+*elseif (ml_tt_beast_burned)
+  *set combat_enemy_hp_override 24
+*else
+  *set combat_enemy_hp_override 34
+*set combat_enemy_ac_override 14
+*set combat_enemy_atk_override 5
+*set combat_enemy_range 1
+*set combat_lib_2 ""
+*set combat_lib_3 ""
+*gosub_scene combat fight_library
+*set scenery_combat_place ""
+*set scenery_subplace "millstow_lake_landing"
+*if (combat_outcome = "player_died")
+  *set death_cause "combat"
+  *goto_scene death death_screen
+*if (combat_outcome = "victory")
+  *set ml_tt_beast_dead true
+  *set ml_tt_has_trophy true
+  *set ml_tt_stage 3
+  *set minutes_to_pass 20
+  *set time_advance_call_id "ml_tt_beast_win"
+  *gosub ml_tt_advance_time
+
+  [b]◈ THE SOUTHERN COVE[/b]
+  *line_break
+  With one final, shuddering thrash that sprays dark water across the pier planks, the Lake Jaw goes limp and rolls half onto its pale belly in the reeds. You pry a foot-long serrated fang cleanly from its upper jaw as proof.
+
+  *if (ml_tt_baited_cove)
+    *goto ml_tt_end_cove_bait
+  *if (ml_tt_smugglers_dead)
+    *goto ml_tt_post_all_dead
+  *goto ml_tt_pier_reckoning
+*else
+  *goto ml_tt_end_fled
+
+*comment ====================================================================================
+*comment BEAT 4: THE RECKONING ON THE PIER (CLIMAX DIVERGENCE)
+*comment ====================================================================================
+
+*label ml_tt_pier_reckoning
+*set scenery_subplace "millstow_lake_landing"
+*temp tt_int_hint " [Intimidation DC 14]"
+*if ((ml_tt_knows_bounty) or (ml_tt_beast_burned))
+  *set tt_int_hint " [Intimidation DC 14, Adv]"
+Boots clatter down the outer loft stair. Sabine Kess steps onto the lower pier holding a heavy leather purse in one hand and her silver dagger loose in the other, flanked by her boatman and crossbowman.
+
+She looks down at the dead Lake Jaw floating beside the pilings, then up at you with a sharp, measuring look. "Clean work," she says smoothly. "@{(ml_tt_sabine_deal_rate = 120) Twelve silver marks, as agreed.|Ten silver marks, as agreed.} Take it, walk back up to Millstow, tell the village head you killed the beast in the reeds, and forget you ever saw our skiff."
+*choice
+  # Take Sabine's silver and let her crew launch before dawn.
+    *goto ml_tt_end_smuggler_deal
+  # Order them to leave Orik's oak and the crates and row off empty-handed.@{show_stat_hints ${tt_int_hint}|}
+    *goto ml_tt_pier_intimidate
+  # Turn your ${weapon} on Sabine and her crew right here on the pier. [Lethal Combat]
+    *goto ml_tt_pier_double_cross
+
+*label ml_tt_end_smuggler_deal
+*set scenery_subplace "millstow_lake_landing"
+*set ml_tt_stage 5
+*set ml_tt_finished true
+*set ml_tt_ending "smuggler_deal"
+*set ml_tt_sabine_alive true
+*temp tt_pay 100
+*if (ml_tt_sabine_deal_rate = 120)
+  *set tt_pay 120
+*if (not(ml_tt_reward_claimed))
+  *set ml_tt_reward_claimed true
+  *set ml_tt_success true
+  *set currency_add_amount (tt_pay + 30)
+  *gosub_scene economy currency_add
+  *gosub_scene character_progression refresh_level_up_progress
+
+Sabine tosses the heavy leather purse into your palm, then nods to her crew to haul the tarred Dunmow crates down to the patched skiff.
+*if (ml_tt_sabine_bedded)
+  She pauses one heartbeat beside you on the pier, fingers brushing your sleeve. "Smart, practical, and good in the dark," she murmurs with a wry half-smile. "We'll cross paths again in Dunmow."
+*else
+  "Pleasure doing business with someone who understands numbers," she says dryly, stepping down into the skiff as it glides quietly out into the lake mist.
+
+Back in Millstow, you lay the foot-long serrated fang on Merrit Appleby's trestle table and tell her the cove predator is dead. She counts out three silver marks from the village chest with crisp thanks, though down at the Lake Landing, Orik still scowls at his empty timber rack and mutters about whoever walked off with his oak.
+
+*if (tt_pay = 120)
+  [b][💰 Received: 12 Silver Marks from Sabine Kess + 3 Silver Marks from Millstow (15 Silver Total)][/b]
+*else
+  [b][💰 Received: 10 Silver Marks from Sabine Kess + 3 Silver Marks from Millstow (13 Silver Total)][/b]
+*page_break Return to Millstow…
+*goto_scene hartwell/millstow/millstow ml_return
+
+*label ml_tt_pier_intimidate
+*set scenery_subplace "millstow_lake_landing"
+*if ((ml_tt_knows_bounty) or (ml_tt_beast_burned))
+  *set advantage true
+You leave your hand resting squarely on your ${weapon}, your clothes still slick with the Lake Jaw's blood. "Row out empty-handed, Sabine. Leave Orik's oak, leave the Dunmow crates, and take your skin back across the lake while you still have it. Hartwell already has a bounty posted on your skiff."
+*gosub_scene dice_engine roll_skill_check 14 "intimidation" "" "" "" "" ""
+*if (check_success)
+  *set ml_tt_stage 5
+  *set ml_tt_finished true
+  *set ml_tt_ending "village_clean"
+  *set ml_tt_sabine_alive true
+  *set ml_tt_oak_returned true
+  *set ml_tt_willem_free_meal true
+  *if (not(ml_tt_reward_claimed))
+    *set ml_tt_reward_claimed true
+    *set ml_tt_success true
+    *set currency_add_amount 100
+    *gosub_scene economy currency_add
+    *gosub_scene character_progression refresh_level_up_progress
+  Sabine glances from the twelve-foot dead monster in the reeds to your unblinking eyes, then back at her nervous deckhands. Slowly, she slides her silver dagger back into its sheath.
+
+  "Forty marks of wool isn't worth bleeding out on rotten planks," she says coldly. "Untie the skiff, boys. We're cutting our losses."
+  *if (ml_tt_sabine_bedded)
+    Before stepping into the boat, she gives you one sharp, rueful glance over her shoulder. "Expensive hour, that was. Next time we meet in Dunmow, you're buying the brandy."
+
+  Within minutes the unlit skiff vanishes into the mist, leaving Orik's six oak planks, his pine-pitch keg, and the stacked Dunmow crates intact in the loft. Back in Millstow, Orik hauls his timber home with a rare, approving grunt, Merrit Appleby seals the contraband for Hartwell's road bailiff and counts out the full ten silver marks, and Willem waves you over at The Turning Sail with a promise that your next hot bowl and cider mug are on the house.
+
+  [b][💰 Received: 10 Silver Marks (Village Pool + Hartwell Contraband Bounty) | Free Meal & Cider Waiting at The Turning Sail][/b]
+  *page_break Return to Millstow…
+  *goto_scene hartwell/millstow/millstow ml_return
+*else
+  Sabine's eyes flash cold and furious. "Walk away from forty marks of silver-ore? Not for you, not for Hartwell!" She lunges forward with her silver dagger as her boatman swings his hooked iron pole!
+  *set combat_enemy_advantage false
+  *page_break Defend yourself on the pier…
+  *goto ml_tt_smuggler_fight
+
+*label ml_tt_pier_double_cross
+*set scenery_subplace "millstow_lake_landing"
+*if (ml_tt_sabine_bedded)
+  "Keep the purse where I can take it off you," you say flatly, raising your ${weapon}.
+
+  Sabine's face hardens to flint. "Cold bastard," she hisses, whipping her silver dagger clear. "Not even an hour off the blanket! Gut them, boys!"
+*else
+  You step forward with your ${weapon} raised. "I'll take the whole strongbox, Sabine, and Orik's oak along with it."
+
+  Sabine snarls and darts back behind her boatman, drawing steel. "Kill them! Dump the body in the reeds!"
+*set combat_enemy_advantage false
+*page_break Fight Sabine and her crew…
+*goto ml_tt_smuggler_fight
+
+*comment ====================================================================================
+*comment LETHAL SMUGGLER FIGHT: SPREAD ACROSS TILES 1, 2, 3
+*comment ====================================================================================
+
+*label ml_tt_smuggler_fight
+*set scenery_combat_place "millstow_lake_landing"
+*set combat_player_can_die true
+*set combat_is_nonlethal false
+*set combat_open_sky true
+*set combat_no_morale false
+*set combat_terrain_layout "fixed"
+*set combat_terrain1_type "chokepoint"
+*set combat_terrain1_position 0
+*set combat_terrain2_type "water"
+*set combat_terrain2_position 1
+*set combat_terrain3_type "cover"
+*set combat_terrain3_position 2
+*set combat_lib_1 "hookman"
+*set combat_enemy_name_override "Smuggler Boatman"
+*set combat_enemy_epithet_override "the smuggler boatman"
+*set combat_enemy_hp_override 13
+*set combat_enemy_ac_override 12
+*set combat_enemy_atk_override 3
+*set combat_enemy_range 1
+*set combat_lib_2 "archer"
+*set combat_enemy2_name_override "Smuggler Crossbowman"
+*set combat_enemy2_epithet_override "the smuggler crossbowman"
+*set combat_enemy2_hp_override 11
+*set combat_enemy2_ac_override 12
+*set combat_enemy2_atk_override 3
+*set combat_enemy2_range 2
+*set combat_lib_3 "knifeman"
+*set combat_enemy3_name_override "Sabine Kess"
+*set combat_enemy3_epithet_override "Sabine Kess"
+*set combat_enemy3_hp_override 18
+*set combat_enemy3_ac_override 14
+*set combat_enemy3_atk_override 4
+*set combat_enemy3_range 3
+*gosub_scene combat fight_library
+*set scenery_combat_place ""
+*set scenery_subplace "millstow_lake_landing"
+*if (combat_outcome = "player_died")
+  *set death_cause "combat"
+  *goto_scene death death_screen
+*if (combat_outcome = "victory")
+  *set ml_tt_smugglers_dead true
+  *set ml_tt_sabine_alive false
+  *set minutes_to_pass 15
+  *set time_advance_call_id "ml_tt_smuggler_win"
+  *gosub ml_tt_advance_time
+  *if (not(ml_tt_beast_dead))
+    [b]◈ THE COVE BOATHOUSE[/b]
+    *line_break
+    Silence settles over the blood-slick loft boards. Sabine Kess lies motionless beside the Dunmow crates, her silver dagger dropped near her fingers, while both deckhands lie still by the stair.
+
+    Outside the open shutter, the water beside the lower pier churns violently. The Lake Jaw is still hunting the reed channel below, and you will need to clear it before anyone can haul Orik's oak out of this cove.
+    *page_break Go down to face the Lake Jaw…
+    *goto ml_tt_hunt_approach
+  *goto ml_tt_post_all_dead
+*else
+  *goto ml_tt_end_fled
+
+*label ml_tt_post_all_dead
+*set scenery_subplace "generic_curing_shed"
+*set ml_tt_stage 5
+*set ml_tt_finished true
+*set ml_tt_ending "double_cross_blood"
+*set ml_tt_oak_returned true
+*temp tt_loot 140
+*if (ml_tt_knows_chest)
+  *set tt_loot 160
+*if (not(ml_tt_reward_claimed))
+  *set ml_tt_reward_claimed true
+  *set ml_tt_success true
+  *set currency_add_amount (tt_loot + 50)
+  *gosub_scene economy currency_add
+  *gosub_scene character_progression refresh_level_up_progress
+
+[b]◈ BLOOD ON THE COVE PIER[/b]
+*line_break
+The cove goes dead still except for water lapping over the broken pilings. Sabine Kess and her two deckhands lie motionless on the wet planks beside the floating carcass of the Lake Jaw.
+
+*if (ml_tt_knows_chest)
+  Up in the loft, you lift the loose floorboard she showed you earlier, take the small iron key, and empty her personal strongbox along with the smuggler purse: sixteen silver marks in clean stamped coin.
+*else
+  Up in the loft, you pry open Sabine's iron strongbox with an iron spike and gather fourteen silver marks in stamped Dunmow coin.
+
+Back in Millstow, Orik hauls his six seasoned oak planks and pine-pitch keg home without asking how much blood stayed on the pier, and Merrit Appleby counts out five silver marks for the Lake Jaw fang and the seized crates, her hazel eyes lingering quietly on the dark stains along your sleeves.
+
+*if (tt_loot = 160)
+  [b][💰 Looted: 16 Silver Marks + 5 Silver Marks from Millstow (21 Silver Total)][/b]
+*else
+  [b][💰 Looted: 14 Silver Marks + 5 Silver Marks from Millstow (19 Silver Total)][/b]
+*page_break Return to Millstow…
+*goto_scene hartwell/millstow/millstow ml_return
+
+*label ml_tt_end_cove_bait
+*set scenery_subplace "generic_curing_shed"
+*set ml_tt_stage 5
+*set ml_tt_finished true
+*set ml_tt_ending "cove_bait"
+*set ml_tt_oak_returned true
+*if (not(ml_tt_reward_claimed))
+  *set ml_tt_reward_claimed true
+  *set ml_tt_success true
+  *set currency_add_amount 170
+  *gosub_scene economy currency_add
+  *gosub_scene character_progression refresh_level_up_progress
+
+[b]◈ SILENCE IN THE REEDS[/b]
+*line_break
+The wounded Lake Jaw sinks motionless beside the splintered remains of the black-tarred skiff. Between the beast and the dark water, none of the smuggling crew survived the collapse of the pier.
+
+Climbing into the quiet loft, you pry open the quartermaster's iron strongbox for fourteen silver marks, then carry the Lake Jaw's serrated fang back to Millstow and tell Orik where his six oak planks and pine-pitch keg sit waiting. Merrit Appleby adds three silver marks for the beast, shaking her head quietly at the wreck left in the southern cove.
+
+[b][💰 Looted: 14 Silver Marks + 3 Silver Marks from Millstow (17 Silver Total)][/b]
+*page_break Return to Millstow…
+*goto_scene hartwell/millstow/millstow ml_return
+
+*label ml_tt_end_fled
+*set scenery_subplace "millstow_lake_landing"
+*set ml_tt_stage 5
+*set ml_tt_finished true
+*set ml_tt_ending "fled_cove"
+*set minutes_to_pass 15
+*set time_advance_call_id "ml_tt_fled_cove"
+*gosub ml_tt_advance_time
+
+[b]◈ RETREAT THROUGH THE RUSHES[/b]
+*line_break
+You break clear of the sagging pier and tear back through the shoulder-high rushes toward the village track. Behind you in the cove, angry shouts and the crackle of burning pitch rise above the reeds: before morning, the boathouse loft stands gutted and empty, Orik's oak planks reduced to wet charcoal, and whatever survived the night has vanished across Azure Lake.
+
+Merrit Appleby closes the village bounty pool with a tight frown and no coin paid.
+*page_break Return to Millstow…
+*goto_scene hartwell/millstow/millstow ml_return
+
+*comment ====================================================================================
+*comment HELPERS: SKY LAYER, TIME ADVANCE, AND LEVEL-UP QUEST CREDIT
+*comment ====================================================================================
+
+*label ml_tt_cove_sky
+*if (weather = "Fog")
+  Thick white mist clings to the rushes, muffling every ripple across the black water.
+*elseif ((weather = "Rain") or (weather = "Storm"))
+  Cold rain lashes the rushes and drums loudly across the boathouse shingles, masking the slap of water against the pilings.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Wet sleet drifts over the reeds and coats the sagging pier timbers in slick frost.
+*elseif ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  Night hangs heavy over Azure Lake, leaving only faint starlight gleaming on the dark reed channel.
+*elseif (time_period = "Dusk")
+  Fading copper light slips across the water, turning the reed beds to dark silhouettes.
+*else
+  Pale daylight filters through the willow branches above the quiet, reed-choked bay.
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Mud and standing water pool along the reed bank from recent rain.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The mossy bank and sagging pier planks remain slick from recent rain.
+*return
+
+*label ml_tt_advance_time
+*set hours_to_pass 0
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return
+
+*comment replay-ok: refresh_quests_finished resets quests_finished to 0 before calling each counter.
+*label count_finished_millstow_cove
+*if (ml_tt_success)
+  *set quests_finished + 1
+*return
