@@ -19,6 +19,43 @@
     /* ------------------------------------------------------------------ PLACES */
 
     {
+      id: "hartwell", category: "places", title: "Hartwell",
+      sub: "A walled castle and market town, seat of the Viscounty of Hartwell",
+      tags: ["Hartwell", "Western Vale", "Trade"],
+      aliases: ["Hartwell", "Hartwell Keep", "House Falwick", "Hartwell Market", "The Golden Press", "Golden Press", "Hartwell Hall"],
+      link: ["Hartwell", "Hartwell Keep", "Hartwell Market", "The Golden Press", "Golden Press", "Hartwell Hall"],
+      unlock: function (s) { return truthy(s.ht_seen) || truthy(s.ht_arrival_seen); },
+      body: function (s) {
+        var out = [
+          "A busy walled castle and market town rising among well-kept Western Vale fields, seat of the Viscounty of Hartwell under House Falwick. Inside its modest limestone curtain wall and broad cart gate sit arched olive press-houses that press Palmcote's harvest into oil, timber-and-stone storehouses, and cobbled lanes climbing around a central stone water conduit.",
+          "Above the clustered roofs on the upper crest stands Hartwell Keep, a compact, square-towered stone castle flying House Falwick's banner over the town and its trade roads."
+        ];
+        if (truthy(s.ht_hall_seen)) {
+          if (truthy(s.met_ht_steward)) {
+            out.push("Hartwell Hall is House Falwick's timber-and-stone town hall beneath House Gault's golden-horse banners. Inside, Town Steward [[harland_kemp|Harland Kemp]] and his clerks handle oil-press weigh-rolls, road warrants, and village dispatches beside the ruled Contract Board.");
+          } else {
+            out.push("Hartwell Hall is House Falwick's timber-and-stone town hall beneath House Gault's banners, holding the clerks' counters and the ruled Contract Board.");
+          }
+        }
+        if (truthy(s.ht_gp_seen)) {
+          if (truthy(s.met_renata)) {
+            out.push("The Golden Press is Hartwell's merchant inn along the climbing street, run by [[renata_dray|Renata Dray]]. Its flagstone common hall serves olive-roasted mutton, spiced perry, private rooms upstairs, and a cobbled stable yard through the stone arch.");
+          } else {
+            out.push("The Golden Press is Hartwell's merchant inn along the climbing street, serving olive-roasted mutton, spiced perry, private rooms upstairs, and a cobbled stable yard through the stone arch.");
+          }
+        }
+        if (truthy(s.ht_market_seen)) {
+          out.push("Hartwell Market spreads across a cobbled square off the main street under timber-and-canvas bays, where town merchants weigh out pressed olive oil, grain, hides, wool, and provisions beneath House Falwick's iron beam-scale.");
+        }
+        if (truthy(s.ht_terrace_seen)) {
+          out.push("Stonehouse Lane climbs quietly beneath the outer wall of Hartwell Keep, lined with walled limestone townhouses including Ferrand House and the dark-shuttered carriage gate of Rourke House.");
+        }
+        return out;
+      },
+      see: ["western_vale", "oxworth", "palmcote", "millstow", "renata_dray"]
+    },
+
+    {
       id: "oxworth", category: "places", title: "Oxworth",
       sub: "A cattle and salting village on the open down under Hartwell",
       tags: ["Oxworth", "Hartwell", "Western Vale", "Trade", "Lodging"],
@@ -511,6 +548,98 @@
         return out;
       },
       see: ["millstow", "orik", "merrit_appleby", "willem_halstead"]
+    },
+
+    {
+      id: "renata_dray", category: "people", title: "Renata Dray",
+      sub: "Innkeeper of The Golden Press",
+      role: "Innkeeper, The Golden Press (Hartwell)",
+      tags: ["Hartwell", "Lodging"],
+      aliases: ["Renata", "Dray", "innkeeper", "Golden Press"],
+      link: ["Renata Dray", "Renata"],
+      unlock: "met_renata",
+      body: function (s) {
+        var out = [
+          "The composed tiefling innkeeper of [[hartwell|The Golden Press]] in her mid-thirties, with warm bronze-red skin, swept-back dark horns, sleek black hair pinned neatly behind her ears, and cool pale-grey eyes. She wears a tailored dark plum wool waistcoat over crisp cream linen."
+        ];
+        if (truthy(s.ht_gp_asked_self)) {
+          out.push("After ten years keeping books for a Port Valen Middle Ward shipping house, she bought the lease on The Golden Press six years ago, preferring Hartwell's practical oil merchants to Port Valen's guild inspectors.");
+        }
+        if (truthy(s.ht_gp_asked_falwick)) {
+          out.push("She describes House Falwick's rule as a counting house with battlements: Viscountess Odile keeps clean cobbles, punctual watchmen, and sharp taxes, nursing a quiet rivalry with Langston over regional market charters.");
+        }
+        if (truthy(s.ht_gp_asked_town)) {
+          out.push("She points travelers cleanly between Hartwell Market, Hartwell Hall, Hartwell Keep, Tradesmen's Row for town shops, and Stonehouse Lane beneath the keep wall.");
+        }
+        return out;
+      },
+      see: ["hartwell", "harland_kemp"]
+    },
+
+    {
+      id: "harland_kemp", category: "people", title: "Harland Kemp",
+      sub: "Town Steward of Hartwell",
+      role: "Town Steward, Hartwell Hall (Hartwell)",
+      tags: ["Hartwell", "Western Vale"],
+      aliases: ["Harland", "Kemp", "Steward", "Town Steward"],
+      link: ["Harland Kemp", "Steward Harland Kemp"],
+      unlock: "met_ht_steward",
+      body: function (s) {
+        var out = [
+          "The Town Steward of [[hartwell|Hartwell]] for House Falwick, a lean, brisk human man in his early fifties with silver-streaked dark hair combed flat, observant pale-blue eyes, and an ink-stained right thumb. Wearing a slate-blue wool coat fastened with House Falwick's brass clasp, he oversees the clerks' counters and Contract Board in Hartwell Hall."
+        ];
+        if (truthy(s.ht_hl_asked_duties)) {
+          out.push("He handles oil-press weigh-rolls, road warrants, trade charters, and village dispatches from Palmcote, Oxworth, and Millstow, referring noble petitions up to Viscountess Odile Falwick at Hartwell Keep.");
+        }
+        if (truthy(s.ht_hl_asked_langston)) {
+          out.push("He frames Hartwell's quiet friction with Langston diplomatically: House Falwick is sworn true to Countess Avelina, but Viscountess Odile believes a town pressing half the Vale's oil deserves regional market standing equal to Langston's old charter.");
+        }
+        return out;
+      },
+      see: ["hartwell", "renata_dray"]
+    },
+
+    {
+      id: "tamsin_webb", category: "people", title: "Tamsin Webb",
+      sub: "Outfitter of The Measure & Pack",
+      role: "General storekeeper, Tradesmen's Row (Hartwell)",
+      tags: ["Hartwell", "Trade"],
+      aliases: ["Tamsin", "Webb", "Measure & Pack"],
+      link: ["Tamsin Webb"],
+      unlock: "met_tamsin",
+      body: function (s) {
+        var out = [
+          "The trim, sharp-eyed human outfitter running The Measure & Pack on [[hartwell|Hartwell]]'s Tradesmen's Row, in her late forties with grey-streaked chestnut hair pinned tight, weathered hands, dark brown eyes, and an olive-green wool bodice under a canvas apron."
+        ];
+        if (truthy(s.ht_st_asked_road)) {
+          out.push("She supplies Vale couriers, oil-wagon crews, and travelers bound north toward the Crags with rope, hooded lanterns, lamp oil, waxed oilcloth, and camp gear.");
+        }
+        return out;
+      },
+      see: ["hartwell", "gavin_holt"]
+    },
+
+    {
+      id: "gavin_holt", category: "people", title: "Gavin Holt",
+      sub: "Blacksmith of The Anvil & Bit",
+      role: "Blacksmith & armorer, Tradesmen's Row (Hartwell)",
+      tags: ["Hartwell", "Trade"],
+      aliases: ["Gavin", "Holt", "Anvil & Bit", "smith"],
+      link: ["Gavin Holt"],
+      unlock: "met_gavin",
+      body: function (s) {
+        var out = [
+          "The broad-shouldered human blacksmith running The Anvil & Bit on [[hartwell|Hartwell]]'s Tradesmen's Row, in his late forties with ash-flecked close-cropped brown hair, grey jaw stubble, steady dark-hazel eyes, and a scorched leather apron."
+        ];
+        if (truthy(s.ht_sm_asked_craft)) {
+          out.push("After twelve years shoeing chargers and riveting mail for House Falwick's riders, he leased the town forge to keep the watchmen's blades dressed while forging practical weapons and armor for Vale travelers.");
+        }
+        if (truthy(s.ht_sm_asked_iron)) {
+          out.push("Because House Gault has no local iron mines, every bar on his rack arrives from Stenmark via Gilded Scales wagons, making him eager to buy back sound blades, mail, and scrap steel.");
+        }
+        return out;
+      },
+      see: ["hartwell", "tamsin_webb"]
     }
 
   ]);

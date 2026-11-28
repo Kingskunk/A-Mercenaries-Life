@@ -350,6 +350,12 @@ function compile(){
   verifyFileName("hartwell/millstow/millstow_gathering_hall.txt");
   verifyFileName("hartwell/millstow/lake_landing.txt");
   verifyFileName("hartwell/millstow/tar_and_teeth.txt");
+  verifyFileName("hartwell/hartwell/hartwell.txt");
+  verifyFileName("hartwell/hartwell/hartwell_market.txt");
+  verifyFileName("hartwell/hartwell/golden_press.txt");
+  verifyFileName("hartwell/hartwell/hartwell_hall.txt");
+  verifyFileName("hartwell/hartwell/hartwell_trades_row.txt");
+  verifyFileName("hartwell/hartwell/hartwell_terrace.txt");
   verifyFileName("Langston/market.txt");
   verifyFileName("Langston/cord_and_kettle.txt");
   verifyFileName("Langston/pickled_hen.txt");

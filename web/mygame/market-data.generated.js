@@ -2717,6 +2717,402 @@ window.MARKET_DEFS = {
    }
   }
  },
+ "htstore": {
+  "id": "htstore",
+  "title": "The Measure & Pack",
+  "tier": "town shop",
+  "purseTarget": 1500,
+  "regen": {
+   "stock": 0.1,
+   "purse": 0.1
+  },
+  "goods": {
+   "hemp_rope": {
+    "base": 8,
+    "target": 18,
+    "stock0": 18,
+    "buyPct": 0.5,
+    "mult": 1
+   },
+   "pitch_torch": {
+    "base": 2,
+    "target": 29,
+    "stock0": 29,
+    "buyPct": 0.5,
+    "mult": 1
+   },
+   "lamp_oil": {
+    "base": 3,
+    "target": 29,
+    "stock0": 29,
+    "buyPct": 0.333,
+    "mult": 1
+   },
+   "hooded_lantern": {
+    "base": 12,
+    "target": 11,
+    "stock0": 11,
+    "buyPct": 0.5,
+    "mult": 1
+   },
+   "tool_kit": {
+    "base": 20,
+    "target": 11,
+    "stock0": 11,
+    "buyPct": 0.5,
+    "mult": 1
+   },
+   "shovel": {
+    "base": 8,
+    "target": 18,
+    "stock0": 18,
+    "buyPct": 0.5,
+    "mult": 1
+   },
+   "tinderbox": {
+    "base": 4,
+    "target": 18,
+    "stock0": 18,
+    "buyPct": 0.5,
+    "mult": 1
+   },
+   "water_jug": {
+    "base": 5,
+    "target": 18,
+    "stock0": 18,
+    "buyPct": 0.4,
+    "mult": 1
+   },
+   "cooking_pot": {
+    "base": 6,
+    "target": 18,
+    "stock0": 18,
+    "buyPct": 0.5,
+    "mult": 1
+   },
+   "chalk_sticks": {
+    "base": 2,
+    "target": 29,
+    "stock0": 29,
+    "buyPct": 0.5,
+    "mult": 1
+   },
+   "camp_kit": {
+    "base": 30,
+    "target": 11,
+    "stock0": 11,
+    "buyPct": 0.5,
+    "mult": 1
+   },
+   "waxed_oilcloth": {
+    "base": 6,
+    "target": 18,
+    "stock0": 18,
+    "buyPct": 0.5,
+    "mult": 1
+   },
+   "lye_soap": {
+    "base": 2,
+    "target": 38,
+    "stock0": 38,
+    "buyPct": 0.5,
+    "mult": 1,
+    "world": {
+     "tile": "ht",
+     "inputs": [
+      {
+       "good": "animal_fat",
+       "share": 0.5
+      }
+     ]
+    }
+   },
+   "trail_rations": {
+    "base": 2,
+    "target": 38,
+    "stock0": 38,
+    "buyPct": 0.5,
+    "mult": 1
+   }
+  }
+ },
+ "htsmith": {
+  "id": "htsmith",
+  "title": "The Anvil & Bit",
+  "tier": "town shop",
+  "purseTarget": 1800,
+  "regen": {
+   "stock": 0.1,
+   "purse": 0.1
+  },
+  "goods": {
+   "brigandine": {
+    "base": 90,
+    "target": 4,
+    "stock0": 4,
+    "buyPct": 0.5,
+    "mult": 1,
+    "world": {
+     "tile": "ht",
+     "inputs": [
+      {
+       "good": "leather",
+       "share": 0.3
+      },
+      {
+       "good": "iron_bar",
+       "share": 0.2
+      }
+     ]
+    }
+   },
+   "chain_jack": {
+    "base": 260,
+    "target": 3,
+    "stock0": 3,
+    "buyPct": 0.5,
+    "mult": 1,
+    "world": {
+     "tile": "ht",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.55
+      }
+     ]
+    }
+   },
+   "shield": {
+    "base": 30,
+    "target": 5,
+    "stock0": 5,
+    "buyPct": 0.5,
+    "mult": 1,
+    "buys": false,
+    "world": {
+     "tile": "ht",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.3
+      }
+     ]
+    }
+   },
+   "longsword": {
+    "base": 100,
+    "target": 5,
+    "stock0": 5,
+    "buyPct": 0.5,
+    "mult": 1,
+    "world": {
+     "tile": "ht",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
+   },
+   "shortsword": {
+    "base": 60,
+    "target": 5,
+    "stock0": 5,
+    "buyPct": 0.5,
+    "mult": 1,
+    "world": {
+     "tile": "ht",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
+   },
+   "rapier": {
+    "base": 120,
+    "target": 5,
+    "stock0": 5,
+    "buyPct": 0.5,
+    "mult": 1,
+    "world": {
+     "tile": "ht",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
+   },
+   "mace": {
+    "base": 25,
+    "target": 7,
+    "stock0": 7,
+    "buyPct": 0.48,
+    "mult": 1,
+    "world": {
+     "tile": "ht",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
+   },
+   "warhammer": {
+    "base": 35,
+    "target": 7,
+    "stock0": 7,
+    "buyPct": 0.486,
+    "mult": 1,
+    "world": {
+     "tile": "ht",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
+   },
+   "timber_axe": {
+    "base": 40,
+    "target": 7,
+    "stock0": 7,
+    "buyPct": 0.5,
+    "mult": 1,
+    "world": {
+     "tile": "ht",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
+   },
+   "stiletto": {
+    "base": 20,
+    "target": 7,
+    "stock0": 7,
+    "buyPct": 0.5,
+    "mult": 1,
+    "world": {
+     "tile": "ht",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
+   },
+   "iron_crowbar": {
+    "base": 18,
+    "target": 11,
+    "stock0": 11,
+    "buyPct": 0.5,
+    "mult": 1
+   },
+   "plate_harness": {
+    "base": 950,
+    "target": 3,
+    "stock0": 3,
+    "buyPct": 0.5,
+    "mult": 1,
+    "sells": false,
+    "world": {
+     "tile": "ht",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.6
+      }
+     ]
+    }
+   },
+   "scimitar": {
+    "base": 70,
+    "target": 5,
+    "stock0": 5,
+    "buyPct": 0.5,
+    "mult": 1,
+    "sells": false,
+    "world": {
+     "tile": "ht",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
+   },
+   "greatsword": {
+    "base": 150,
+    "target": 5,
+    "stock0": 5,
+    "buyPct": 0.5,
+    "mult": 1,
+    "sells": false,
+    "world": {
+     "tile": "ht",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
+   },
+   "greataxe": {
+    "base": 50,
+    "target": 5,
+    "stock0": 5,
+    "buyPct": 0.5,
+    "mult": 1,
+    "sells": false,
+    "world": {
+     "tile": "ht",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
+   },
+   "maul": {
+    "base": 50,
+    "target": 5,
+    "stock0": 5,
+    "buyPct": 0.5,
+    "mult": 1,
+    "sells": false,
+    "world": {
+     "tile": "ht",
+     "inputs": [
+      {
+       "good": "iron_bar",
+       "share": 0.35
+      }
+     ]
+    }
+   },
+   "scrap_steel": {
+    "base": 10,
+    "target": 36,
+    "stock0": 36,
+    "buyPct": 0.5,
+    "mult": 1,
+    "sells": false
+   }
+  }
+ },
  "barley_farm": {
   "id": "barley_farm",
   "title": "Barleycross Lane Market",
@@ -9231,6 +9627,471 @@ window.MARKET_DEFS = {
   },
   "tile": "ml",
   "rumorDc": 10
+ },
+ "ht_market": {
+  "id": "ht_market",
+  "title": "Hartwell Market",
+  "tier": "town market",
+  "purseTarget": 4500,
+  "regen": {
+   "stock": 0.2,
+   "purse": 0.1
+  },
+  "goods": {
+   "honey": {
+    "base": 4,
+    "target": 92,
+    "stock0": 92,
+    "buyPct": 0.8,
+    "mult": 1.035,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.2
+   },
+   "boar_meat": {
+    "base": 6,
+    "target": 116,
+    "stock0": 116,
+    "buyPct": 0.8,
+    "mult": 1.125,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.5
+   },
+   "venison": {
+    "base": 7,
+    "target": 75,
+    "stock0": 75,
+    "buyPct": 0.8,
+    "mult": 1.155,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.4
+   },
+   "beef": {
+    "base": 7,
+    "target": 125,
+    "stock0": 125,
+    "buyPct": 0.8,
+    "mult": 0.93,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.4
+   },
+   "barley_loaf": {
+    "base": 2,
+    "target": 160,
+    "stock0": 160,
+    "buyPct": 0.8,
+    "mult": 0.935,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 1
+   },
+   "grain": {
+    "base": 2,
+    "target": 240,
+    "stock0": 240,
+    "buyPct": 0.8,
+    "mult": 0.935,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 1
+   },
+   "cheese": {
+    "base": 3,
+    "target": 160,
+    "stock0": 160,
+    "buyPct": 0.8,
+    "mult": 0.965,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.6
+   },
+   "butter": {
+    "base": 5,
+    "target": 150,
+    "stock0": 150,
+    "buyPct": 0.8,
+    "mult": 0.965,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.6
+   },
+   "animal_fat": {
+    "base": 3,
+    "target": 213,
+    "stock0": 213,
+    "buyPct": 0.8,
+    "mult": 1.03,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.5
+   },
+   "orchard_apple": {
+    "base": 1,
+    "target": 160,
+    "stock0": 160,
+    "buyPct": 0.8,
+    "mult": 1.04,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.4
+   },
+   "grapes": {
+    "base": 2,
+    "target": 83,
+    "stock0": 83,
+    "buyPct": 0.8,
+    "mult": 1.04,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.4
+   },
+   "wine": {
+    "base": 30,
+    "target": 47,
+    "stock0": 47,
+    "buyPct": 0.8,
+    "mult": 1.04,
+    "hi": 1.57,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.3
+   },
+   "olives": {
+    "base": 2,
+    "target": 130,
+    "stock0": 130,
+    "buyPct": 0.8,
+    "mult": 0.935,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.4
+   },
+   "oil": {
+    "base": 18,
+    "target": 90,
+    "stock0": 90,
+    "buyPct": 0.8,
+    "mult": 0.9,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.3
+   },
+   "flax": {
+    "base": 5,
+    "target": 90,
+    "stock0": 90,
+    "buyPct": 0.8,
+    "mult": 1,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.5
+   },
+   "linen": {
+    "base": 18,
+    "target": 55,
+    "stock0": 55,
+    "buyPct": 0.8,
+    "mult": 0.995,
+    "hi": 1.548,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.5
+   },
+   "root_vegetable_bundle": {
+    "base": 2,
+    "target": 240,
+    "stock0": 240,
+    "buyPct": 0.8,
+    "mult": 1.005,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.9
+   },
+   "farm_eggs": {
+    "base": 3,
+    "target": 240,
+    "stock0": 240,
+    "buyPct": 0.8,
+    "mult": 1.03,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.7
+   },
+   "onions": {
+    "base": 2,
+    "target": 240,
+    "stock0": 240,
+    "buyPct": 0.8,
+    "mult": 1.005,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.8
+   },
+   "potatoes": {
+    "base": 1,
+    "target": 240,
+    "stock0": 240,
+    "buyPct": 0.8,
+    "mult": 1.005,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.9
+   },
+   "tomatoes": {
+    "base": 3,
+    "target": 86,
+    "stock0": 86,
+    "buyPct": 0.8,
+    "mult": 1.245,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.3
+   },
+   "dressed_chicken": {
+    "base": 7,
+    "target": 118,
+    "stock0": 118,
+    "buyPct": 0.8,
+    "mult": 1.06,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.6
+   },
+   "fish": {
+    "base": 4,
+    "target": 150,
+    "stock0": 150,
+    "buyPct": 0.8,
+    "mult": 1.035,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.8
+   },
+   "cabbage": {
+    "base": 2,
+    "target": 240,
+    "stock0": 240,
+    "buyPct": 0.8,
+    "mult": 1.005,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.8
+   },
+   "pumpkin": {
+    "base": 3,
+    "target": 86,
+    "stock0": 86,
+    "buyPct": 0.8,
+    "mult": 1.245,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.4
+   },
+   "iron_ore": {
+    "base": 3,
+    "target": 71,
+    "stock0": 71,
+    "buyPct": 0.8,
+    "mult": 1.375,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.1
+   },
+   "limestone": {
+    "base": 2,
+    "target": 91,
+    "stock0": 91,
+    "buyPct": 0.8,
+    "mult": 1.095,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.4
+   },
+   "iron_bar": {
+    "base": 8,
+    "target": 38,
+    "stock0": 38,
+    "buyPct": 0.8,
+    "mult": 1.335,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.5
+   },
+   "longshade_timber": {
+    "base": 6,
+    "target": 117,
+    "stock0": 117,
+    "buyPct": 0.8,
+    "mult": 1.125,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.4
+   },
+   "charcoal": {
+    "base": 3,
+    "target": 199,
+    "stock0": 199,
+    "buyPct": 0.8,
+    "mult": 1.125,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.8
+   },
+   "salt": {
+    "base": 6,
+    "target": 43,
+    "stock0": 43,
+    "buyPct": 0.8,
+    "mult": 1.395,
+    "hi": 1.748,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.8
+   },
+   "beeswax": {
+    "base": 8,
+    "target": 56,
+    "stock0": 56,
+    "buyPct": 0.8,
+    "mult": 1.245,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.5
+   },
+   "furs": {
+    "base": 14,
+    "target": 73,
+    "stock0": 73,
+    "buyPct": 0.8,
+    "mult": 1.125,
+    "hi": 1.563,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.3
+   },
+   "leather": {
+    "base": 12,
+    "target": 90,
+    "stock0": 90,
+    "buyPct": 0.8,
+    "mult": 0.99,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.4
+   },
+   "wool": {
+    "base": 4,
+    "target": 150,
+    "stock0": 150,
+    "buyPct": 0.8,
+    "mult": 0.965,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.4
+   },
+   "hemp": {
+    "base": 5,
+    "target": 22,
+    "stock0": 22,
+    "buyPct": 0.8,
+    "mult": 1.105,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.5
+   },
+   "wool_cloth": {
+    "base": 15,
+    "target": 90,
+    "stock0": 90,
+    "buyPct": 0.8,
+    "mult": 0.99,
+    "hi": 1.545,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.5
+   },
+   "raw_hide": {
+    "base": 8,
+    "target": 150,
+    "stock0": 150,
+    "buyPct": 0.8,
+    "mult": 1.03,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.2
+   },
+   "boar_tusk": {
+    "base": 10,
+    "target": 75,
+    "stock0": 75,
+    "buyPct": 0.8,
+    "mult": 1.155,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.1
+   },
+   "elk_antler": {
+    "base": 7,
+    "target": 75,
+    "stock0": 75,
+    "buyPct": 0.8,
+    "mult": 1.155,
+    "world": {
+     "tile": "ht"
+    },
+    "need": 0.1
+   }
+  },
+  "commodities": true,
+  "appetite": {
+   "_readme": "A commodity market spends at most this share of its purse (its target) on ONE good a day (2026-10-24, the user: a hill village would not throw all its gold at wool or timber it has lived without). stocked: a good the market holds; unstocked: a good with no maker in its reach.",
+   "stocked": 0.1,
+   "unstocked": 0.03
+  },
+  "tile": "ht",
+  "rumorDc": 12
  },
  "bm_fair": {
   "id": "bm_fair",

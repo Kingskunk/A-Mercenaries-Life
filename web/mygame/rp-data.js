@@ -368,7 +368,7 @@
           else if (truthy(s.pc_sw_kelm_dead)) f.push("- Kelm drew on " + N + ", and " + N + " killed him on Nora's plank floor, in front of Nora and Lina.");
           var pay = truthy(s.pc_sw_blood_in_lane) ? "two" : truthy(s.pc_sw_kelm_dead) ? "three" : "four";
           f.push("- Nora drew a black line through the Verners' debt in the village register and paid " + N + " " + pay + " silver marks.");
-          if (purse === "refused") f.push("- On the porch Lina offered " + N + " a silver mark from Kelm's purse; " + N + " told her to keep it for her mother's winter, and she kissed " + N + "'s cheek and asked " + N + " to come to her place.");
+          if (purse === "refused") f.push("- On the porch Lina offered " + N + " a silver mark from Kelm's purse; " + N + " told her to keep it for her mother's winter, and she kissed " + N + "'s cheek and told " + N + " to come to her place at the foot of the lane whenever " + N + " passes through Palmcote and needs a meal and a warm bed.");
           else if (purse === "took_one") f.push("- On the porch she gave " + N + " a silver mark from Kelm's purse and asked " + N + " to come to her place when nobody was chasing them.");
         } else if (e === "raided") {
           f.push("- That night " + N + " went up to the pressing house, killed Kelm, burned the debt note he made her mother sign and emptied his cashbox. The estate steward is calling it a road robbery.");
@@ -383,11 +383,11 @@
         }
         var kelmNow = (e === "exposed" && hallWay === "proof") ? "Kelm was taken away by the Viscountess's patrol; the estate sent down a new man for the scale and the weights are honest."
           : (e === "exposed" && truthy(s.pc_sw_kelm_dead)) || e === "raided" ? "Kelm is dead; the estate sent down a new man for the scale."
-          : e === "exposed" ? "Kelm is gone; the estate sent down a new man for the scale and the weights are honest."
-          : e === "heist" ? "Kelm is still the bailiff, robbed and quiet: he cannot tell the steward why his weights went missing."
-          : e === "blackmail" ? "Kelm is still the bailiff, but he leaves the Verners alone."
-          : "";
-        f.push("Now: " + (kelmNow ? kelmNow + " " : "") + "The debt is gone and her mother Berta is recovering in her cottage at the foot of the lane. Lina picks on the terraces by day and lives alone in her late father's old olive store two doors up.");
+            : e === "exposed" ? "Kelm is gone; the estate sent down a new man for the scale and the weights are honest."
+              : e === "heist" ? "Kelm is still the bailiff, robbed and quiet: he cannot tell the steward why his weights went missing."
+                : e === "blackmail" ? "Kelm is still the bailiff, but he leaves the Verners alone."
+                  : "";
+        f.push("Now: " + (kelmNow ? kelmNow + " " : "") + "The debt is gone and her mother Berta is recovering in her cottage at the foot of the lane. Lina picks on the terraces by day and lives alone two doors up, in a one-room cottage her late father once used to store olives; it is her home now, with no stock and no customers.");
         f.push("She knows nothing of " + N + "'s other travels, lovers or business beyond what " + N + " has told her.");
         return f.join("\n");
       },
@@ -432,12 +432,12 @@
       },
       profile: {
         kinks: [
-          { id: "stolen_risk", label: "Stolen Risk & Boldness", cue: "Loves rough confidence and hearing her loud husband Daven throwing dice downstairs while she takes someone else in his bed." },
+          { id: "stolen_risk", label: "Stolen Risk & Boldness", cue: "Loves rough, shameless confidence and the thrill of taking what she wants on her own terms, especially when there is a real risk of being caught." },
           { id: "taking_control", label: "Teasing & Taking Charge", cue: "Enjoys climbing on top to set the pace, teasing, pulling hair, and gripping shoulders." }
         ],
         dislikes: [
           { id: "moral_lecturing", label: "Moral Lecturing", cue: "Goes cold and sharp if the player lectures her about her marriage or tries to treat her like a victim." },
-          { id: "timidity", label: "Timid Apologies & Rushing", cue: "Dislikes nervous hesitation or rushing out of fear of Daven." }
+          { id: "timidity", label: "Timid Apologies & Rushing", cue: "Dislikes nervous hesitation, apologizing, or rushing the moment." }
         ],
         positiveTraits: [
           { id: "sharp_witted", label: "Sharp-Witted & Composed", cue: "Speaks smoothly with dry wit and mocking heat; never begs or acts fragile." },
@@ -502,7 +502,7 @@
           var directTryst = s.rp_active_scene === "vera_marsh" && !truthy(s.rp_escalated);
           var priorTrysts = Math.max(0, (Number(s.vm_trysts) || 0) - (directTryst ? 1 : 0));
           if (priorTrysts > 0) {
-            lines.push("- Since the quest ended, Vera and " + p + " have had sex in her upstairs room at The Yoke & Horn on " + priorTrysts + " market " + (priorTrysts === 1 ? "night." : "nights."));
+            lines.push("- Since the quest ended, Vera and " + p + " have been intimate on " + priorTrysts + (priorTrysts === 1 ? " occasion" : " occasions") + " across Oxworth and Hartwell.");
           }
         }
         return lines.join("\n");
@@ -515,11 +515,23 @@
         skip: ["daven_marsh"],
         max: 3
       },
-      persona: [
-        "Bold, wicked, bored, unashamed, and fully in control. Speaks smoothly with dry wit and mocking heat. Never begs or acts fragile.",
-        "Gets a sharp thrill from the risk of her loud husband Daven throwing dice directly below the floorboards when he is downstairs.",
-        "Express her tastes and boundaries through natural body language, voice and reaction; never name stats, lists or game mechanics aloud."
-      ].join(" ")
+      persona: function (s) {
+        var davenLine;
+        if (s.current_district === "hartwell") {
+          davenLine = (s.ox_hh_ending === "paid_clean" || s.ox_hh_ending === "extorted")
+            ? "Gets a sharp thrill from taking what she wants in Daven's own Hartwell house while he is out at the counting-house for the day."
+            : "Enjoys the quiet luxury of running her own Hartwell townhouse and accounts on her own terms, with nobody left to answer to.";
+        } else if (!truthy(s.ox_hh_finished) || truthy(s.vm_daven_downstairs)) {
+          davenLine = "Gets a sharp thrill from the risk of her loud husband Daven throwing dice directly below the floorboards when he is downstairs.";
+        } else {
+          davenLine = "Enjoys the quiet luxury of running her own accounts and nights on her own terms, with Daven out of her hair.";
+        }
+        return [
+          "Bold, wicked, bored, unashamed, and fully in control. Speaks smoothly with dry wit and mocking heat. Never begs or acts fragile.",
+          davenLine,
+          "Express her tastes and boundaries through natural body language, voice and reaction; never name stats, lists or game mechanics aloud."
+        ].join(" ");
+      }
     },
 
     ilyra_fen: {
@@ -731,7 +743,7 @@
         var N = s.name || "the player";
         if (before === 0) {
           if (truthy(s.pc_sw_lina_close)) {
-            return "This is not their first time together: they already had sex in " + N + "'s upstairs room at The Green Branch the night Kelm's men hunted her. Tonight is the first time in her own bed at the old olive store with nobody chasing them.";
+            return "This is not their first time together: they already had sex in " + N + "'s upstairs room at The Green Branch the night Kelm's men hunted her. Tonight is the first time in her own bed at her home with nobody chasing them.";
           }
           return "This is the first time Lina and " + N + " have been intimate together.";
         }
@@ -749,8 +761,8 @@
       title: "Lina — Her Room",
       subtitle: function (s) {
         return (s.time_period === "Night" || s.time_period === "Pre-Dawn")
-          ? "The Old Olive Store, Palmcote · Night"
-          : "The Old Olive Store, Palmcote · Evening";
+          ? "Lina's Home, Palmcote · Night"
+          : "Lina's Home, Palmcote · Evening";
       },
       // The scene opens dressed (she has just barred the door), so the player's gear reads as worn, not already taken off.
       undressed: false,
@@ -780,7 +792,7 @@
         else if (s.weather === "Fog") weather = " Fog presses grey against the shutter cracks.";
         else if (s.weather === "Snow" || s.weather === "Sleet") weather = " Sleet ticks on the shutter, and the room is cold away from the hearth.";
         return [
-          "Lina Verner's room in Palmcote, a hillside olive village under Hartwell: her late father's old olive store near the foot of the lane, one whitewashed stone room with thick walls and a beamed ceiling.",
+          "Lina Verner's home in Palmcote, a hillside olive village under Hartwell: a one-room cottage near the foot of the lane that her late father once used to store olives. It is only her home now, not a shop or a storehouse: one whitewashed stone room with thick walls and a beamed ceiling.",
           "A black iron pot hangs on a trivet over the hearth. Bundles of thyme and oregano dry from the beams; wicker picking baskets hang on pegs. A plain table with two stools holds bread, cups and a bowl of olives. The bed sits in an alcove at the back: a rope-strung frame, a straw-ticked mattress and grey wool blankets. The frame creaks and knocks the wall.",
           light + weather,
           "The door is latched. Her mother Berta's cottage is two doors down the lane, and the thick stone walls keep the noise in."
@@ -808,6 +820,8 @@
     lina_supper: {
       id: "lina_supper",
       kind: "talk",
+      // lina_verner.txt lv_supper: the exit is "Step back from the table", then she sweeps the table clean (lv_supper_after).
+      sceneScope: "The whole scene happens in her one room, at the table and the hearth. When it ends, the player steps back from the table and she sweeps it clean herself, so never have her clear the table, see the player out or leave the room. Wherever the talk goes, it stays in this room.",
       character: "lina_verner",
       escalate: {
         target: "lina_verner",
@@ -827,7 +841,7 @@
           var day = Math.max(1, Number(s.campaign_day) || 1);
           var w = Math.floor((day - 1) / 7) + 1;
           if (s.time_period !== "Dusk" && s.time_period !== "Night") {
-            return "It is still daylight and the cottage door sits near the village lane; she can flirt, tease, or lean close, but she keeps supper as supper until evening.";
+            return "It is still daylight and the cottage door sits near the village lane; she can flirt, tease, or lean close, but she keeps the bed for the evening.";
           }
           if (Number(s.lv_tryst_week) === w) {
             return "They already had a night together this week; she is warm, affectionate, and happy to flirt, but content to keep tonight to supper and company.";
@@ -838,12 +852,12 @@
       scenePersona: function (s) {
         var N = s.name || "the player";
         var canBed = root.RP_DATA.lina_supper.escalate.allowed(s);
-        return "Tonight is supper at her table and talk. She is easy and curious: she asks " + N + " about the road and has opinions of her own about the terraces, the village, her mother and whatever " + N + " brings up. She eats with her elbows on the table and talks with her mouth full. " + (canBed ? ("She is in the mood tonight: if " + N + " flirts or pushes things toward the bed, she welcomes it warmly.") : "If the talk turns warm she can flirt and tease back easily, though tonight stays at the table.");
+        return "Tonight is supper and talk. She is easy and curious: she asks " + N + " questions and has opinions of her own and whatever " + N + " brings up. " + (canBed ? ("She is in the mood tonight: if " + N + " flirts or pushes things toward the bed, she welcomes it warmly.") : "If the talk turns warm she can flirt and tease back easily, though tonight she is not in the mood for sex.");
       },
-      // What she has already told the player in her written talks (lv_talk, in order), so she does not tell it fresh.
+      // Things she can tell (from the written talks, cut 2026-11-28 so every talk is the roleplay one and lands in her memories).
       sceneKnowledge: function (s) {
         var N = s.name || "the player";
-        // lina_verner.txt lv_talk: Kelm is gone after the Hall or the raid, still at the scale after the heist or the blackmail.
+        // Kelm is gone after the Hall or the raid, still at the scale after the heist or the blackmail.
         var kelmGone = s.pc_sw_ending === "exposed" || s.pc_sw_ending === "raided";
         var told = [
           kelmGone ? "her mother Berta is up on her feet again and nagging; she told the new man at the scale he held the beam wrong"
@@ -853,20 +867,30 @@
           "she has been to Hartwell twice and would like to see the sea once",
           "her father built every wall on the terrace and fed her uncured olives off the branch when she was small",
           "when someone grabs her wrist she is back at the scale with Kelm; it will pass, and she does not want " + N + " going soft over it"
-        ].slice(0, Math.max(0, Math.min(5, Number(s.lv_talk_step) || 0)));
-        return told.length ? "Things she has already told " + N + " by her fire: " + told.join("; ") + "." : "";
+        ];
+        return "Things she can tell " + N + " if the talk turns that way (her memories show what she has already said): " + told.join("; ") + ".";
       },
       supportsEvaluation: false,
       memory: true,
       title: "Lina — Supper",
       subtitle: function (s) {
-        return "The Old Olive Store, Palmcote · " + ((s.time_period === "Night" || s.time_period === "Pre-Dawn") ? "Night" : (s.time_period === "Dusk" ? "Evening" : "Supper"));
+        return "Lina's Home, Palmcote · " + ((s.time_period === "Night" || s.time_period === "Pre-Dawn") ? "Night" : (s.time_period === "Dusk" ? "Evening" : "Supper"));
       },
       setting: function (s) {
-        return root.RP_DATA.lina_verner.setting(s) + " Supper is on the table: a pot of beans and onion, a torn loaf, hard sheep's cheese and a saucer of green oil with salt in it.";
+        // lina_verner.txt lv_supper sets lv_supper_menu and prints the matching opening (1-4 a supper, 5-7 tea after one).
+        var tables = {
+          1: "Supper is on the table: bowls of beans and onion and a torn loaf.",
+          2: "Supper is on the table: lentils and garlic spooned over flatbread, a wedge of hard sheep's cheese with a knife, and two cups of water.",
+          3: "Supper is on the table: eggs fried with wild greens on thick slices of bread, and a bowl of black olives.",
+          4: "Supper is a cold one, laid out on the board: a heel of bread, hard sheep's cheese, black olives and a thin-sliced onion with salt.",
+          5: "Supper is already eaten; two cups of herb tea are on the table.",
+          6: "Supper is already eaten; she is picking leaves and twigs out of a basket of olives on the table, and there are two cups of herb tea.",
+          7: "Supper is already eaten; she is reweaving the split rim of a picking basket with willow strips by the hearth, and there are two cups of herb tea."
+        };
+        return root.RP_DATA.lina_verner.setting(s) + " " + (tables[Number(s.lv_supper_menu)] || tables[1]);
       },
       starters: [
-        "Tear off some bread and ask how her day on the terraces went.",
+        "Sit down with her and ask how her day on the terraces went.",
         "Ask what the village has been saying since the business with Kelm.",
         "Tell her something about where you've been since you last ate here.",
         "Ask what she'd do with a whole free day."
@@ -892,13 +916,21 @@
         target: "vera_marsh_talk",
         buttonLabel: "Accept Grade & Pillow Talk",
         dividerText: "Lingering over the wine",
-        settingNote: "They have just finished being intimate and are resting together in the candlelit loft room in unhurried afterglow, sharing Hartwell red wine and quiet banter."
+        settingNote: "They have just finished being intimate and are resting together in the quiet bedroom in unhurried afterglow, sharing Hartwell red wine and quiet banter."
       },
       title: "Vera Marsh",
-      subtitle: "Upstairs at The Yoke & Horn",
+      subtitle: function (s) {
+        return s.current_district === "hartwell" ? "Marsh House, Stonehouse Lane" : "Upstairs at The Yoke & Horn";
+      },
       undressed: false,
       reciprocity: "She invited the player up on her own terms because she wants them and enjoys the nerve of it; she expects bold, unhurried confidence.",
       setting: function (s) {
+        if (s.current_district === "hartwell") {
+          var davenNote = (s.ox_hh_ending === "paid_clean" || s.ox_hh_ending === "extorted")
+            ? "Daven Marsh is out at Hartwell's counting-house and cattle yards for the afternoon, leaving them a stolen hour before dusk."
+            : "The townhouse is completely hers now; nobody is coming up the oak stair.";
+          return "Vera Marsh's upstairs bedroom in her blue-shuttered limestone townhouse on Stonehouse Lane in Hartwell, just below Hartwell Keep. Wide oak bedstead with clean linen and a folded wool coverlet, latched blue shutters, brass candlestick. " + davenNote;
+        }
         var below = (!truthy(s.ox_hh_finished) || truthy(s.vm_daven_downstairs))
           ? "Muffled laughter and rattling bone dice rise through the floorboards from the taproom below where Daven Marsh sits."
           : "The taproom below is quiet enough to ignore, with only the downs wind leaning against the stone gable.";
@@ -907,7 +939,7 @@
       starters: [
         "Pull her back against the latched door and kiss her slow.",
         "Sit on the edge of the bed and tell her to come here.",
-        "Ask her how long we really have before anyone misses her downstairs."
+        "Ask her how long we really have before the world intrudes."
       ],
       beats: [
         { label: "▸ Let Vera lead", prompt: "Continue the moment naturally, letting Vera take control and set the heat." },
@@ -936,6 +968,13 @@
       id: "vera_marsh_talk",
       kind: "talk",
       character: "vera_marsh",
+      // Location-aware scope: Hartwell parlor (hartwell_terrace.txt) vs Oxworth loft room (vera_marsh.txt).
+      sceneScope: function (s) {
+        if (s.current_district === "hartwell") {
+          return "The whole scene happens in the front parlor of Vera's Stonehouse Lane townhouse, over wine. When it ends, the player sets down their glass by the hearth, so never have her see the player out, leave the parlor, or go upstairs unless the player escalates.";
+        }
+        return "The whole scene happens in the end room upstairs, over the wine. When it ends, the player sets down the cups and she puts her empty one by the candle, so never have her see the player out, go downstairs or leave the room.";
+      },
       escalate: {
         target: "vera_marsh",
         allowed: function (s) {
@@ -944,50 +983,77 @@
         buttonLabel: "Pull her to bed",
         promptTitle: "Vera is ready to pull you onto the bed",
         confirmLabel: "Move to the bed",
-        dividerText: "Bolting the loft door",
+        dividerText: "Bolting the bedroom door",
         nextBtnLabel: "Catch your breath\u2026",
-        transitionNote: "The wine and banter just turned physical: she sets the cups aside and moves toward the bed, still dressed until clothes come off in the scene.",
+        transitionNote: "The wine and banter just turned physical: she sets the wine aside and draws you toward the bed, still dressed until clothes come off in the scene.",
         reasonNotNow: function (s) {
+          var whenWord = (s.time_period === "Night" || s.time_period === "Dusk" || s.time_period === "Pre-Dawn") ? "tonight" : "today";
           if (Number(s.vm_tryst_day) === (Number(s.campaign_day) || 1)) {
             return "They already spent a fierce hour in bed today; she stays sharp, amused, and warmly flirtatious over the wine without starting a second round.";
           }
-          return "She has cattle contracts on her mind and prefers wine and sharp banter tonight; she can still flirt and tease back effortlessly, without taking it to the bed.";
+          return "She has cattle contracts on her mind and prefers wine and sharp banter " + whenWord + "; she can still flirt and tease back effortlessly, without taking it to the bed.";
         }
       },
       supportsEvaluation: false,
       memory: true,
       title: "Vera Marsh",
-      subtitle: "Wine Upstairs at The Yoke & Horn",
+      subtitle: function (s) {
+        return s.current_district === "hartwell" ? "Parlor at Marsh House, Hartwell" : "Wine Upstairs at The Yoke & Horn";
+      },
       setting: function (s) {
+        if (s.current_district === "hartwell") {
+          var htDaven = (s.ox_hh_ending === "paid_clean" || s.ox_hh_ending === "extorted")
+            ? "Daven is out at Hartwell's counting-house and cattle yards for the day, so the house is quiet until dusk."
+            : "The townhouse is completely hers, warm and quiet behind its bolted oak door.";
+          var parlor = {
+            1: "Two stemmed glasses of Hartwell red wine are poured at the sideboard; she sits comfortably by the warm coal hearth.",
+            2: "Her cattle contracts are squared neatly beside the brass candlestick on the parlor table with the wine decanter between them.",
+            3: "A fresh bottle of Vale red is uncorked beside the hearth with two full stemmed glasses.",
+            4: "The blue shutters are cracked open on quiet Stonehouse Lane; she leans lightly against the oak mantel with her glass."
+          };
+          return "The front parlor of Vera Marsh's blue-shuttered limestone townhouse on Stonehouse Lane in Hartwell, below Hartwell Keep. Small coal hearth, polished oak chairs, wine decanter and cattle ledgers on the sideboard. " + (parlor[Number(s.vm_talk_menu)] || parlor[1]) + " " + htDaven;
+        }
         var below = truthy(s.vm_daven_downstairs)
           ? "Muffled voices and Daven's loud laugh drift up through the floor from the taproom below."
           : "The quiet loft room sits warm above the taproom, with hide receipts and a jug of Hartwell red wine on the small table.";
-        return "The end room upstairs at The Yoke & Horn in Oxworth. Candlelit, thick stone gable against the wind. " + below;
+        // vera_marsh.txt vm_rp_talk sets vm_talk_menu and prints the matching opening.
+        var tables = {
+          1: "Two cups of Hartwell red wine are poured on the small table; she sits on the edge of the bed.",
+          2: "Her cattle contracts are squared into a pile on the chest; she sits cross-legged on the bed.",
+          3: "She has just washed the yard dust off at the washstand and opened a bottle of Hartwell red; two full cups are on the table.",
+          4: "The window is propped open over the inn yard; she leans on the sill with her cup of red wine, and a second cup waits on the table."
+        };
+        return "The end room upstairs at The Yoke & Horn in Oxworth. Candlelit, thick stone gable against the wind. " + (tables[Number(s.vm_talk_menu)] || tables[1]) + " " + below;
       },
       scenePersona: function (s) {
         var canBed = root.RP_DATA.vera_marsh_talk.escalate.allowed(s);
-        return "Relaxed, sharp-tongued, enjoying wine and conversation. " + (canBed ? "She is in the mood tonight: if the player pushes past banter and draws her toward the bed, she welcomes it with a wicked smile." : "Enjoys flirting and dry banter over wine while keeping this visit to conversation.");
+        var whenWord = (s.time_period === "Night" || s.time_period === "Dusk" || s.time_period === "Pre-Dawn") ? "tonight" : "today";
+        return "Relaxed, sharp-tongued, enjoying wine and conversation. " + (canBed ? ("She is in the mood " + whenWord + ": if the player pushes past banter and draws her toward the bed, she welcomes it with a wicked smile.") : "Enjoys flirting and dry banter over wine while keeping this visit to conversation.");
       },
       sceneKnowledge: function (s) {
         var p = s.name || "the player";
         var told = [
-          "Hartwell is busy under Viscountess Falwick, who runs the town like a counting-house with Palmcote olive presses and salt carts jamming the east gate",
-          "her father bought wool in Dunmow before she married Daven, and she quietly read every contract on Daven's desk so Oxworth's foreman prefers bargaining with her",
-          "her stone house in Hartwell is on the south market lane, third stone house past the oil yards, with blue shutters"
-        ].slice(0, Math.max(0, Math.min(3, Number(s.vm_talk_step) || 0)));
-        return told.length ? "Things she has already told " + p + " over wine: " + told.join("; ") + "." : "";
+          "Hartwell is busy under Viscountess Falwick, who runs the town like a counting-house with Palmcote olive presses and salt carts jamming the gate",
+          "her father bought wool in Dunmow before she married Daven, and she quietly read every contract on Daven's desk so Oxworth's foreman prefers bargaining with her"
+        ];
+        if (s.current_district === "hartwell") {
+          told.push("Ferrand House and Rourke House sit just up Stonehouse Lane toward Hartwell Keep");
+        } else {
+          told.push("her blue-shuttered limestone townhouse in Hartwell sits on Stonehouse Lane below Hartwell Keep, down the cobbles from Ferrand House and Rourke House");
+        }
+        return "Things she can tell " + p + " if the talk turns that way (her memories show what she has already said): " + told.join("; ") + ".";
       },
       starters: [
         "Ask how Hartwell's merchants are treating her these days.",
         "Ask what kind of trouble she's been stirring up since last time.",
-        "Pour another cup of red wine and tease her about Oxworth's mud."
+        "Pour a little more red wine and tease her about Oxworth's mud."
       ],
       beats: [
         { label: "▸ Let her talk", prompt: "Sip the red wine and let Vera carry the banter where she likes." },
         { label: "Ask about Hartwell", prompt: "Ask her about Hartwell, Viscountess Falwick, or the cattle yards." },
-        { label: "Tease her", prompt: "Trade dry banter with her over the wine cups." },
+        { label: "Tease her", prompt: "Trade dry banter with her over the wine." },
         { label: "Tell her a road story", prompt: "Share a short story from the road since you last met." },
-        { label: "Call it a night", prompt: "Set down your cup and bid her an easy, teasing goodnight." }
+        { label: "Take your leave", prompt: "Set down your wine and bid her an easy, teasing farewell." }
       ]
     },
 
@@ -1046,6 +1112,8 @@
       id: "ilyra_fen_talk",
       kind: "talk",
       character: "ilyra_fen",
+      // old_debt.txt rv_od_rp_talk: the exit is "Set down your mug", back to the Red Lantern's menu.
+      sceneScope: "The whole scene happens in the common room, by the stove and the counter. Other drinkers can come and go, but Ilyra stays. When it ends, the player sets down the mug and she goes back to her work, so never have her see the player out, go upstairs or leave the room.",
       escalate: {
         target: "ilyra_fen",
         allowed: function (s) {
@@ -1089,7 +1157,14 @@
         var weather = "";
         if (s.weather === "Rain" || s.weather === "Storm") weather = " Rain drums off the eaves into the yard ditch.";
         else if (s.weather === "Snow" || s.weather === "Sleet") weather = " Cold sleet ticks against the leaded windows.";
-        return "The common room of The Red Lantern in Redvein: thick grey stone lower walls, dark beams overhead, short wooden counter with hanging room keys, broad iron stove radiating heat. " + quiet + weather;
+        // old_debt.txt rv_od_rp_talk sets if_talk_menu and prints the matching opening.
+        var tables = {
+          1: "She has poured two earthenware mugs from the cask and sits on the bench across from the player by the stove.",
+          2: "She has been sharpening a kitchen knife behind the counter; she slid a mug of ridge ale across and leans on the player's side of the counter.",
+          3: "She has just fed split pine into the stove and poured two tin cups of highland spirits at the nearest table.",
+          4: "She sits on the bench by the stove oiling a bridle across her knees, with a mug of ale poured for the player across the table."
+        };
+        return "The common room of The Red Lantern in Redvein: thick grey stone lower walls, dark beams overhead, short wooden counter with hanging room keys, broad iron stove radiating heat. " + quiet + weather + " " + (tables[Number(s.if_talk_menu)] || tables[1]);
       },
       scenePersona: function (s) {
         var canBed = root.RP_DATA.ilyra_fen_talk.escalate.allowed(s);

@@ -1051,6 +1051,61 @@ window.CITY_SETTLEMENTS = {
    }
   ]
  },
+ "hartwell": {
+  "name": "Hartwell",
+  "keys": [
+   "ht_menu:ht_hall",
+   "ht_hall_front:ht_hall_board",
+   "ht_menu:ht_gp",
+   "ht_menu:ow_here"
+  ],
+  "services": [
+   {
+    "id": "board",
+    "name": "Contract Board",
+    "seen": "ht_hall_seen",
+    "lock": "",
+    "lockReason": "",
+    "done": "You are at the Contract Board.",
+    "steps": [
+     "ht_menu:ht_hall",
+     "ht_hall_front:ht_hall_board"
+    ],
+    "stepMin": [
+     5,
+     5
+    ]
+   },
+   {
+    "id": "inn",
+    "name": "The Golden Press",
+    "seen": "ht_gp_seen",
+    "lock": "",
+    "lockReason": "",
+    "done": "You are at The Golden Press.",
+    "steps": [
+     "ht_menu:ht_gp"
+    ],
+    "stepMin": [
+     5
+    ]
+   },
+   {
+    "id": "leave",
+    "name": "Leave Hartwell",
+    "seen": "",
+    "lock": "",
+    "lockReason": "",
+    "done": "You take the roads out of Hartwell.",
+    "steps": [
+     "ht_menu:ow_here"
+    ],
+    "stepMin": [
+     0
+    ]
+   }
+  ]
+ },
  "brinewick": {
   "name": "Brinewick",
   "keys": [

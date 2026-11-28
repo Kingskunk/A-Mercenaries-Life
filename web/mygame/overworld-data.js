@@ -88,7 +88,7 @@
   };
   var DEFAULT_WEATHER_ZONE = "reach";
   // A district (stats.current_district) the player is in while NOT on the overworld, where it is not the default zone. Langston is a town, not a tile; a Vale dungeon or farm would be listed here too.
-  var DISTRICT_ZONE = { langston: "vale", barolo: "vale", broadmead: "vale", fallowmere: "vale", oxworth: "vale", palmcote: "vale", millstow: "vale" };
+  var DISTRICT_ZONE = { langston: "vale", barolo: "vale", broadmead: "vale", fallowmere: "vale", oxworth: "vale", palmcote: "vale", millstow: "vale", hartwell: "vale" };
   // The fields a zone owns: its key in a parked slot -> the stat it is swapped with. day/dayWet is the zone's actual rolled condition for today (calendar.txt weather_day/weather_day_wet); weather itself
   // is the live value calendar.txt's weather_now derives from day/winStart/winLen/winFiller and the clock, re-derived right after a swap, so parking it here is only a belt-and-braces copy.
   var WEATHER_FIELDS = { weather: "weather", day: "weather_day", dayWet: "weather_day_wet", tomorrow: "weather_tomorrow", missed: "forecast_missed", rain: "rain_streak", dry: "dry_streak", winStart: "wx_window_start", winLen: "wx_window_len", winFiller: "wx_window_filler" };
@@ -643,7 +643,7 @@
       climate: -1,
       walk: "The road comes down among well-kept fields to a busy market town, carts and wagons thick along its approach and the smell of pressed olives on the air near the gate.",
       info: "A busy market town among well-kept fields, its approach thick with carts and wagons, with an olive press running near the gate.",
-      here: "Streets and storehouses crowd close behind a modest wall, busy with carts even at a distance, the press-house's oily smell drifting from near the gate.",
+      here: "Streets and storehouses crowd close behind a modest limestone wall beneath the square stone tower of Hartwell Keep, busy with carts even at a distance as the press-house's oily smell drifts from near the gate.",
       hereNight: "Lamps burn thick along the streets, busier at this hour than a town its size might suggest.",
       hereStorm: "Rain slicks the cobbles, and carts stand crowded under what shelter the eaves allow."
     },
@@ -1187,7 +1187,8 @@
     fm: { place: "the Village Head's Hall", setting: "village", region: "marches" },   // Fallowmere (2026-11-02): its thin Contract Board is in the Village Head's Hall (Langston/fallowmere/village_heads_hall.txt fm_hall_board); the village count [0, 2]
     rn2: { place: "the Village Head's Hall", setting: "village", region: "marches" },   // Oxworth (2026-11-16): its Contract Board is in the Village Head's Hall (hartwell/oxworth/village_heads_hall.txt ox_hall_board); the village count [0, 2]
     pc: { place: "the Gathering Hall", setting: "village", region: "marches" },   // Palmcote (2026-11-17): its notice rack is in the Gathering Hall (hartwell/palmcote/palmcote_gathering_hall.txt pc_gh_board); the village count [0, 2]
-    ml: { place: "the Gathering Hall", setting: "village", region: "marches" }   // Millstow: its notice rack is in the Gathering Hall (hartwell/millstow/millstow_gathering_hall.txt ml_gh_board); the village count [0, 2]
+    ml: { place: "the Gathering Hall", setting: "village", region: "marches" },   // Millstow: its notice rack is in the Gathering Hall (hartwell/millstow/millstow_gathering_hall.txt ml_gh_board); the village count [0, 2]
+    ht: { place: "Hartwell Hall", setting: "town", region: "marches" }   // Hartwell: its Contract Board is in Hartwell Hall (hartwell/hartwell/hartwell_hall.txt ht_hall_board); town count [1, 3]
   };
   // count is how many postings a board shows on a given day, rolled between the two numbers from the day and the origin (so a refresh and a return visit show the same board): a city is busiest and a village is
   // sometimes empty (the user's call, 2026-10-11). A COURIER_TILES entry may give its own count: [min, max].

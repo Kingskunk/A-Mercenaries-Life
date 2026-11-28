@@ -118,6 +118,16 @@ const SETTLEMENTS = {
       leave: { name: "Leave Millstow", steps: [S("ml_menu", "ow_here", "hartwell/millstow/millstow.txt")], done: "You take the road out of Millstow." }
     }
   },
+  // Hartwell: the Contract Board is in Hartwell Hall, the inn is The Golden Press, and the way out is the roads out of town.
+  hartwell: {
+    name: "Hartwell", start: "hartwell", startScene: "hartwell/hartwell/hartwell", hubFile: "hartwell/hartwell/hartwell.txt", hubLabels: ["hartwell", "ht_menu", "ht_return"],
+    files: ["hartwell/hartwell/golden_press.txt", "hartwell/hartwell/hartwell_hall.txt", "hartwell/hartwell/hartwell_market.txt", "hartwell/hartwell/hartwell_trades_row.txt", "hartwell/hartwell/hartwell_terrace.txt"],
+    services: {
+      board: { name: "Contract Board", seen: "ht_hall_seen", steps: [S("ht_menu", "ht_hall", "hartwell/hartwell/hartwell.txt"), S("ht_hall_front", "ht_hall_board", "hartwell/hartwell/hartwell_hall.txt")], done: "You are at the Contract Board." },
+      inn: { name: "The Golden Press", seen: "ht_gp_seen", steps: [S("ht_menu", "ht_gp", "hartwell/hartwell/hartwell.txt")], done: "You are at The Golden Press." },
+      leave: { name: "Leave Hartwell", steps: [S("ht_menu", "ow_here", "hartwell/hartwell/hartwell.txt")], done: "You take the roads out of Hartwell." }
+    }
+  },
   brinewick: {
     name: "Brinewick", start: "brinewick", startScene: "port_valen/brinewick/brinewick", hubFile: "port_valen/brinewick/brinewick.txt", hubLabels: ["brinewick"],
     files: ["port_valen/brinewick/reedhouse.txt", "port_valen/brinewick/saltworks.txt", "port_valen/brinewick/tide_house.txt"],

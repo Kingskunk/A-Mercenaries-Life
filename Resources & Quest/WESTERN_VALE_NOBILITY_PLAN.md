@@ -133,7 +133,7 @@ Her consort, **Milo Falwick**, is a cousin of **Master Cellan Durnell** of Barol
 
 Their heir, **Wren Falwick**, is as shrewd as her mother and the other live piece on the board.
 
-Hartwell's own castellan: **Lady Fenella Rourke** of **Rourkethwaite**, who guards a river crossing rather than a mountain pass and is, by implication rather than open accusation, comfortable looking the other way on an untithed cask or a quietly re-marked wagon when it serves her own purse — the same rural-underworld pattern `WESTERN_VALE_VILLAGES_PLAN.md` already uses for Broadmead and Harrowfield, just a tier higher up the ladder this time.
+**Walled castle town (retconned 2026-11-28):** Rather than maintaining a separate castle tile (*Rourkethwaite*), **Hartwell itself is a walled castle town**, with **Hartwell Keep** (a compact stone keep flying House Falwick's banner) rising inside the upper town wall above the market streets and olive press-houses. House Falwick governs the viscounty directly from Hartwell Keep.
 
 **Hartwell's three villages:**
 

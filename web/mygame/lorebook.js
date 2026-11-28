@@ -478,6 +478,27 @@
     return base + "_" + s.rp_world_id;
   }
 
+  function rpMemoryModel() {
+    if (window.RPEngine && typeof window.RPEngine.getMemoryModel === "function") {
+      return window.RPEngine.getMemoryModel();
+    }
+    try {
+      var saved = JSON.parse(localStorage.getItem("cs_rp_settings_v1") || "{}");
+      if (saved && saved.model) return saved.model;
+    } catch (e) {}
+    return "baidu/ernie-5.5-flash-preview:free";
+  }
+
+  function rpClockMinute(s) {
+    if (window.RPEngine && typeof window.RPEngine.currentClockMinutes === "function") {
+      return window.RPEngine.currentClockMinutes(s);
+    }
+    var h = Number(s && s.clock_hour);
+    var m = Number(s && s.clock_minute);
+    if (isFinite(h) && isFinite(m) && h >= 0 && h < 24 && m >= 0 && m < 60) return Math.floor(h) * 60 + Math.floor(m);
+    return null;
+  }
+
   function loadLoreMemories(entryId) {
     var box = elRead && elRead.querySelector('.lb-memories[data-rp-char="' + entryId + '"]');
     if (!box) return;
@@ -503,6 +524,7 @@
       body: JSON.stringify({
         thread_id: threadId,
         current_day: Number(s.campaign_day) || 1,
+        current_minute: rpClockMinute(s),
         max_visit: rpMemoryOrder(s)
       })
     }).then(function (r) { return r.ok ? r.json() : null; })
@@ -524,11 +546,15 @@
           liveList.innerHTML = items.map(function (m, idx) {
             var label = m.order ? ("Visit #" + m.order) : ("Memory #" + (idx + 1));
             if (m.saved_day) label += " \u00B7 Day " + m.saved_day;
+            var redistillBtn = m.has_transcript
+              ? '<button type="button" class="lb-mem-btn" data-act="lb-mem-redistill" data-mem-id="' + esc(m.source) + '" title="Re-distill this memory from the saved visit transcript (does not overwrite until you click Save)">\u21BB Re-distill</button>'
+              : '';
             return (
               '<div class="lb-mem-item" data-mem-id="' + esc(m.source) + '">' +
                 '<div class="lb-mem-meta">' +
                   '<span>' + esc(label) + '</span>' +
                   '<div class="lb-mem-actions">' +
+                    redistillBtn +
                     '<button type="button" class="lb-mem-btn" data-act="lb-mem-save" data-mem-id="' + esc(m.source) + '">Save</button>' +
                     '<button type="button" class="lb-mem-btn lb-mem-btn-del" data-act="lb-mem-del" data-mem-id="' + esc(m.source) + '">Delete</button>' +
                   '</div>' +
@@ -603,7 +629,7 @@
       return;
     }
     if (act === "lb-mem-refresh" || act === "lb-mem-add-toggle" || act === "lb-mem-add-cancel" ||
-        act === "lb-mem-add-save" || act === "lb-mem-save" || act === "lb-mem-del") {
+        act === "lb-mem-add-save" || act === "lb-mem-save" || act === "lb-mem-del" || act === "lb-mem-redistill") {
       var memBox = t.closest ? t.closest(".lb-memories") : null;
       var charId = memBox ? memBox.getAttribute("data-rp-char") : "";
       var ch = rpCharFor(charId);
@@ -611,6 +637,43 @@
       var memStatus = memBox.querySelector(".lb-mem-status");
       var addPanel = memBox.querySelector(".lb-mem-add");
       var addTa = memBox.querySelector(".lb-mem-add-ta");
+      if (act === "lb-mem-redistill") {
+        var rdId = t.getAttribute("data-mem-id");
+        var rdItem = t.closest ? t.closest(".lb-mem-item") : null;
+        var rdTa = rdItem ? rdItem.querySelector(".lb-mem-ta") : null;
+        var rdThread = rpThreadFor(charId, ch, statsNow(), false);
+        if (!rdId || !rdTa || !rdThread) return;
+        t.disabled = true;
+        t.textContent = "Re-distilling\u2026";
+        if (memStatus) memStatus.textContent = "Re-distilling from visit transcript\u2026";
+        fetch(rpServerUrl() + "/redistill_memory", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+          body: JSON.stringify({
+            thread_id: rdThread,
+            id: rdId,
+            model: rpMemoryModel(),
+            mode: "openrouter",
+            preview: true,
+            timeout: 120
+          })
+        }).then(function (r) { return r.json().catch(function () { return null; }); })
+          .then(function (res) {
+            t.disabled = false;
+            t.textContent = "\u21BB Re-distill";
+            if (res && res.status === "success" && res.memory) {
+              rdTa.value = res.memory;
+              if (memStatus) memStatus.textContent = "Re-distilled (" + String(res.model || "").split("/").pop() + ") \u2014 review and click Save to keep.";
+            } else if (memStatus) {
+              memStatus.textContent = "Re-distill failed: " + ((res && res.error) || "unknown error");
+            }
+          }).catch(function () {
+            t.disabled = false;
+            t.textContent = "\u21BB Re-distill";
+            if (memStatus) memStatus.textContent = "Server offline.";
+          });
+        return;
+      }
       if (act === "lb-mem-refresh") {
         loadLoreMemories(charId);
         return;

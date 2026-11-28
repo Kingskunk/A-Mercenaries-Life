@@ -103,6 +103,7 @@
     greybank_cottage_outside: "open_road", greybank_cottage_inside: "village_room",
     generic_town_street: "village",
     langston: "city",
+    hartwell: "city",                     // walled castle and market town: busy town street by day, quiet lamps at night
     longfold_fair_sun_pillar: "village",  // the open market ground: a village by day, a hushed one at night
     broadmead_villageheadhall: "langston_hall",   // an indoor government hall, the same soft room tone as Langston Hall
     remount_yard: "village",              // the open stable yard and muster field: a village's edge by day, a hushed one at night
@@ -118,6 +119,7 @@
     millstow: "village",                  // the lakeside village hub and the overworld tile: village by day, hushed at night (see OVERLAY for lake water)
     millstow_market: "village",           // open-air market yard beside the lake wall (see OVERLAY for softer lake water)
     millstow_lake_landing: "village",     // open-air shore landing & boatwright's shed right on Azure Lake (see OVERLAY for lake water)
+    millstow_southern_cove: "village",    // secluded reed-choked southern cove boathouse on Azure Lake (see OVERLAY for lake water)
     palmcote_market: "village",           // the open market lane is open air
     palmcote_olive_yard: "village",       // the open olive-weighing yard
     palmcote_pressing_house: "undercroft", // the enclosed stone pressing house
@@ -239,6 +241,7 @@
     millstow: [{ all: "small_waves_river", level: 0.24 }],
     millstow_market: [{ all: "small_waves_river", level: 0.18 }],
     millstow_lake_landing: [{ all: "small_waves_river", level: 0.30 }],
+    millstow_southern_cove: [{ all: "small_waves_river", level: 0.32 }],
     generic_village_inn_room: [{ day: "quiet_tavern", night: "crowded_tavern", level: 0.24 }],
     prologue_camp_night: [{ all: "marshland_night_crickets_shallowwater_ambience", level: 0.24 }],
     black_sinks_causeway_before: [{ day: "marshland_ambience_wind_birds_shallowwater_reeds", night: "marshland_night_crickets_shallowwater_ambience", level: 0.24 }],

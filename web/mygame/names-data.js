@@ -31,7 +31,7 @@
   // Every named person the player can already meet, first or last name. The generator skips these.
   var RESERVED = ["Kestrel", "Tolliver", "Ysolde", "Varren", "Vane", "Voss", "Thale", "Elric", "Halda", "Ambrose", "Hollis",
     "Vael", "Lyra", "Karr", "Skell", "Gault", "Rorik", "Odessa", "Bran", "Brant", "Hendryk", "Torvald", "Janna", "Maura",
-    "Talia", "Morzan", "Rennick", "Farrow", "Marda", "Corwen", "Oswin", "Maret", "Odalie", "Hollowell", "Olof", "Dagny", "Marren", "Mardred", "Birchstone", "Aubrey", "Fenn", "Ione", "Brackett", "Sigrin", "Copperpot", "Bramwell", "Bram", "Tallow", "Odda", "Pellam", "Myles", "Buckman", "Thistle", "Agnes", "Fenwick", "Nora", "Greer", "Korrigan", "Anwen", "Jory", "Flùràlainn", "Daven", "Vera", "Marsh", "Willem", "Halstead", "Merrit", "Appleby", "Orik", "Sabine", "Kess"];
+    "Talia", "Morzan", "Rennick", "Farrow", "Marda", "Corwen", "Oswin", "Maret", "Odalie", "Hollowell", "Olof", "Dagny", "Marren", "Mardred", "Birchstone", "Aubrey", "Fenn", "Ione", "Brackett", "Sigrin", "Copperpot", "Bramwell", "Bram", "Tallow", "Odda", "Pellam", "Myles", "Buckman", "Thistle", "Agnes", "Fenwick", "Nora", "Greer", "Korrigan", "Anwen", "Jory", "Flùràlainn", "Daven", "Vera", "Marsh", "Willem", "Halstead", "Merrit", "Appleby", "Orik", "Sabine", "Kess", "Renata", "Dray", "Harland", "Kemp", "Tamsin", "Webb", "Gavin", "Holt"];
 
   var HUMAN = {
     male: [

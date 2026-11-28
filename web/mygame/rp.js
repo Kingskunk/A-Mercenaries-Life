@@ -93,8 +93,14 @@
     evalSeq: 0,
     evalResult: null,      // optional { rating, hits, misses, summary, fallback, modelLabel }
     evalBypass: false,
+    memReviewSeq: 0,
+    memReview: null,       // optional { status, text, error, model, memId, threadId, dateLabel, npcName, location, playerName, transcript, chunked, fromEval }
+    memoryCommitted: false,
     sceneReady: false,     // true once AI emits [ACT_COMPLETE] or player runs /end
     naturalComplete: false,
+    settled: false,        // a talk the AI ended: the composer is swapped for "Keep talking" (setSettled)
+    triggerEval: null,
+    triggerMemReview: null,
     boxEl: null,
     handleTurnAction: null,
     saveMemory: true, // whether to distill & save this visit to MemPalace on exit
@@ -129,8 +135,23 @@
       advisedStarters: Array.isArray(session.advisedStarters) ? session.advisedStarters : null,
       advisedBeats: Array.isArray(session.advisedBeats) ? session.advisedBeats : null,
       evalResult: session.evalResult || null,
+      memReview: session.memReview ? {
+        status: session.memReview.status,
+        text: session.memReview.text || "",
+        error: session.memReview.error || "",
+        model: session.memReview.model || "",
+        memId: session.memReview.memId || "",
+        threadId: session.memReview.threadId || "",
+        dateLabel: session.memReview.dateLabel || "",
+        npcName: session.memReview.npcName || "",
+        location: session.memReview.location || "",
+        playerName: session.memReview.playerName || "",
+        chunked: !!session.memReview.chunked,
+        fromEval: !!session.memReview.fromEval
+      } : null,
       sceneReady: !!session.sceneReady,
       naturalComplete: !!session.naturalComplete,
+      settled: !!session.settled,
       saveMemory: session.saveMemory !== false,
       draft: typeof draftText === "string" ? draftText : ""
     };
@@ -463,22 +484,26 @@
             "- SCENE END: End a reply with the tag [ACT_COMPLETE] once the talk reaches a natural close or the player takes their leave; never earlier."
           ];
         }
+        // SCENE SCOPE (2026-11-28): where the talk happens and how the game closes it (rp-data.js sceneScope), and what
+        // [ACT_COMPLETE] does in a talk: it settles the console and shows the scene's exit, so the reply that carries it is the
+        // last one unless the player chooses to keep talking.
+        var scope = evalField(cfg && cfg.sceneScope, s);
+        var talkEnd = "- SCENE END: You decide when this talk is over. End a reply with the tag [ACT_COMPLETE] once the talk reaches a natural close or the player takes their leave; never earlier. That tag ends the scene: the game then offers the player the way out and writes the parting itself, so that reply leaves her where she is, without seeing the player out, tidying up or leaving the room.";
+        var scopeLines = scope ? ["- SCENE SCOPE: " + scope, talkEnd] : [talkEnd];
         var esc = resolveEscalation(cfg, s);
         if (esc && esc.allowed) {
           return [
             "- A CONVERSATION (OPEN TO ESCALATION): Begin grounded in talk, small actions, and the room around you. The companion has her own wants and moods: she can disagree, tease, banter, flirt warmly, ask the player things back, or lean close. She speaks like a person, never like a guidebook.",
-            "- ESCALATION SIGNAL: She is open to taking things further tonight. Do NOT coldly shut down flirtation or advances. If the player clearly initiates sex or invites her to bed (and she is willing in character), let her respond warmly and make her interest clear (pulling them toward the bed or barring the door), and end that reply with the tag [ESCALATE_INTIMATE]. Keep prose out of explicit sex until the transition occurs.",
-            "- SCENE END: End a reply with the tag [ACT_COMPLETE] once the talk reaches a natural close or the player takes their leave; never earlier."
-          ];
+            "- ESCALATION SIGNAL: She is open to taking things further tonight. Do NOT coldly shut down flirtation or advances. If the player clearly initiates sex or invites her to bed (and she is willing in character), let her respond warmly and make her interest clear (pulling them toward the bed or barring the door), and end that reply with the tag [ESCALATE_INTIMATE]. Keep prose out of explicit sex until the transition occurs."
+          ].concat(scopeLines);
         }
         var boundary = (esc && esc.reasonNotNow)
           ? esc.reasonNotNow
           : "If the player pushes toward full sex, she answers naturally in character (teasing, naming another time, or simply declining for now) without turning weirdly cold, and the scene stays a conversation.";
         return [
           "- A CONVERSATION: keep to talk, small actions and the room around you. The companion has her own wants and moods: she can disagree, tease, flirt warmly in character, change the subject, ask the player things back, or fall quiet. She speaks like a person, never like a guidebook.",
-          "- BOUNDARY FOR THIS VISIT: " + boundary,
-          "- SCENE END: End a reply with the tag [ACT_COMPLETE] once the talk reaches a natural close or the player takes their leave; never earlier."
-        ];
+          "- BOUNDARY FOR THIS VISIT: " + boundary
+        ].concat(scopeLines);
       },
       advisorRole: "You are a roleplay co-writer drafting ready-to-send in-character replies for the player ('You') in a gritty low-fantasy conversation scene.",
       advisorVariety: "- Offer 4 genuinely distinct responses shaped by this exact moment—each taking a different intent, tone, or angle drawn naturally from what the companion just said or did, her mood and personality, and the player's character. Never force fixed archetypes or repeat the same formula across turns.",
@@ -1371,36 +1396,53 @@
     return text.slice(0, 20000) + "\n\n[... middle of the scene left out ...]\n\n" + text.slice(text.length - (MAX - 20000));
   }
 
-  function commitSessionToMemPalace() {
-    var baseUrl = getServerUrl();
-    if (!baseUrl || !session.cfg || session.cfg.memory === false || session.saveMemory === false || session.turns.length === 0) return;
-    var s = statsNow();
-    var threadId = resolveThreadId(session.cfg, s);
-    if (!threadId) return;
+  function buildSessionMemoryMeta(activeCfg, s) {
+    var threadId = resolveThreadId(activeCfg, s);
+    if (!threadId) return null;
     var transcript = session.turns.map(function (t) {
       return (t.role === "user" ? "Player: " : "Scene: ") + t.text;
     }).join("\n\n");
     var dayNum = Number(s.campaign_day) || 1;
-    var memId = "msg_" + Math.max(1, memoryOrder(s)) + "_day" + dayNum + "_" + String(session.cfg.id || "rp").replace(/[^A-Za-z0-9_]/g, "");
-    var npcName = evalField(session.cfg.npcName, s) || evalField(session.cfg.title, s).split("—")[0].trim() || "the companion";
-    var locName = evalField(session.cfg.title, s) || "the scene";
+    var memId = "msg_" + Math.max(1, memoryOrder(s)) + "_day" + dayNum + "_" + String(activeCfg.id || "rp").replace(/[^A-Za-z0-9_]/g, "");
+    var npcName = evalField(activeCfg.npcName, s) || evalField(activeCfg.title, s).split("\u2014")[0].trim() || "the companion";
+    var locName = evalField(activeCfg.title, s) || "the scene";
     var dateLabel = formatMemoryDateLabel(s);
+    var playerName = companionKnowsName(activeCfg, s) ? String(s.name || "") : "";
     var devName = (window.ampSaveLoad && typeof window.ampSaveLoad.getDeviceName === "function") ? window.ampSaveLoad.getDeviceName() : "";
+    return {
+      threadId: threadId,
+      memId: memId,
+      npcName: npcName,
+      location: locName,
+      dateLabel: dateLabel,
+      playerName: playerName,
+      character: String(s.name || ""),
+      class_name: String(s.class_name || s.character_class || ""),
+      device: devName,
+      transcript: memoryTranscript(transcript)
+    };
+  }
+
+  function commitSessionToMemPalace() {
+    var baseUrl = getServerUrl();
+    if (!baseUrl || !session.cfg || session.cfg.memory === false || session.saveMemory === false || session.turns.length === 0 || session.memoryCommitted) return;
+    var meta = buildSessionMemoryMeta(session.cfg, statsNow());
+    if (!meta) return;
     fetch(baseUrl + "/append_memory", {
       method: "POST",
       headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
       body: JSON.stringify({
-        thread_id: threadId,
-        id: memId,
-        text: memoryTranscript(transcript),
+        thread_id: meta.threadId,
+        id: meta.memId,
+        text: meta.transcript,
         distill: true,
-        npc_name: npcName,
-        location: locName,
-        date_label: dateLabel,
-        player_name: companionKnowsName(session.cfg, s) ? String(s.name || "") : "",
-        character: String(s.name || ""),
-        class_name: String(s.class_name || s.character_class || ""),
-        device: devName,
+        npc_name: meta.npcName,
+        location: meta.location,
+        date_label: meta.dateLabel,
+        player_name: meta.playerName,
+        character: meta.character,
+        class_name: meta.class_name,
+        device: meta.device,
         mode: "openrouter",
         model: memoryModel(),
         timeout: 120
@@ -1428,9 +1470,13 @@
     session.evalSeq += 1;
     session.evalResult = null;
     session.evalBypass = false;
+    session.memReviewSeq += 1;
+    session.memReview = null;
+    session.memoryCommitted = false;
     session.sceneReady = false;
-    session.naturalComplete = false;
+    session.naturalComplete = false; session.settled = false;
     session.triggerEval = null;
+    session.triggerMemReview = null;
     session.handleTurnAction = null;
     session.syncNextBtn = null;
     session.boxEl = null;
@@ -1448,6 +1494,8 @@
   };
 
   RP.getServerUrl = getServerUrl;
+  RP.getMemoryModel = memoryModel;
+  RP.currentClockMinutes = currentClockMinutes;
   RP.exportActiveSession = exportActiveSession;
   RP.prepareForSaveLoad = prepareForSaveLoad;
   RP.estimateTokens = estimateTokens;
@@ -1654,9 +1702,13 @@
     session.evalSeq += 1;
     session.evalResult = null;
     session.evalBypass = false;
+    session.memReviewSeq += 1;
+    session.memReview = null;
+    session.memoryCommitted = false;
     session.sceneReady = false;
-    session.naturalComplete = false;
+    session.naturalComplete = false; session.settled = false;
     session.triggerEval = null;
+    session.triggerMemReview = null;
     session.handleTurnAction = null;
     session.syncNextBtn = null;
     session.saveMemory = cfg.memory !== false;
@@ -1735,7 +1787,12 @@
           '<span class="rp-typing-text">Writing response...</span>' +
         '</div>' +
         '<div class="rp-eval-card" hidden></div>' +
+        '<div class="rp-mem-review-card" hidden></div>' +
         '<div class="rp-escalate-bar" hidden></div>' +
+        '<div class="rp-settle-bar" hidden>' +
+          '<span class="rp-settle-text">The talk has come to a close.</span>' +
+          '<button type="button" class="rp-btn rp-btn-sm" data-act="keep-talking">Keep talking</button>' +
+        '</div>' +
         '<div class="rp-composer">' +
           '<div class="rp-starters"></div>' +
           '<div class="rp-beats" style="display:none"></div>' +
@@ -1772,7 +1829,15 @@
     var modeSel = box.querySelector(".rp-mode-select");
     var modelSel = box.querySelector(".rp-model-select");
     var composerEl = box.querySelector(".rp-composer");
+    var settleBarEl = box.querySelector(".rp-settle-bar");
+    // SETTLED (2026-11-28): a talk the AI ended with [ACT_COMPLETE] swaps the composer for "Keep talking"; the exit stays shown.
+    function setSettled(on) {
+      session.settled = !!on;
+      if (settleBarEl) settleBarEl.hidden = !on;
+      if (composerEl) composerEl.hidden = !!on;
+    }
     var evalCardEl = box.querySelector(".rp-eval-card");
+    var memReviewCardEl = box.querySelector(".rp-mem-review-card");
     var starterWrap = box.querySelector(".rp-starters");
     var beatsWrap = box.querySelector(".rp-beats");
     var typingEl = box.querySelector(".rp-typing");
@@ -1823,7 +1888,7 @@
     function renderEscalateControls() {
       var st = statsNow();
       var escInfo = session.phase === "base" ? resolveEscalation(baseCfg, st) : null;
-      var canEsc = !!(escInfo && escInfo.allowed && !session.evalResult && !session.lockedEvalResult);
+      var canEsc = !!(escInfo && escInfo.allowed && !session.evalResult && !session.lockedEvalResult && !session.memReview);
       if (escalateManualBtn) {
         if (canEsc) {
           escalateManualBtn.textContent = "\u2726 " + (escInfo.spec.buttonLabel || "Move to bed");
@@ -1867,7 +1932,7 @@
       session.escalated = true;
       session.pendingEscalate = false;
       session.sceneReady = false;
-      session.naturalComplete = false;
+      session.naturalComplete = false; setSettled(false);
       session.sessionNonce = "_esc";
       if (!isRestore) {
         session.escalatedAtTurn = session.turns.length;
@@ -2034,7 +2099,9 @@
       if (!liveBox || liveBox !== session.boxEl) return;
       var nb = nextBtn || document.querySelector("#main button.next");
       if (!nb) return;
-      var showNext = !session.evalResult && (!!session.sceneReady || !resolveSceneProfile(cfg, statsNow()));
+      // A talk scene (2026-11-28) shows its exit only once it is over: [ACT_COMPLETE] from the AI or /end from the player.
+      var isTalkScene = sceneKind(cfg) === SCENE_KINDS.talk;
+      var showNext = !session.evalResult && !session.memReview && (!!session.sceneReady || (!isTalkScene && !resolveSceneProfile(cfg, statsNow())));
       nb.style.display = showNext ? "" : "none";
       if (showNext) nb.disabled = !!session.busy;
     }
@@ -2043,7 +2110,7 @@
     function updateButtons() {
       sendBtn.disabled = session.busy;
       if (adviseBtn) adviseBtn.disabled = session.busy;
-      if (replyBtn) replyBtn.disabled = session.busy || !!session.evalResult;
+      if (replyBtn) replyBtn.disabled = session.busy || !!session.evalResult || !!session.memReview;
       // The chip's cost a turn grows with the scene.
       if (!session.busy) renderModelChip();
       Array.prototype.forEach.call(box.querySelectorAll(".rp-chip"), function (c) {
@@ -2144,12 +2211,16 @@
           }
           memList.innerHTML = items.map(function (m, idx) {
             var label = m.order ? ("Visit #" + m.order) : ("Memory #" + (idx + 1));
-            if (m.saved_day) label += " · Day " + m.saved_day;
+            if (m.saved_day) label += " \u00B7 Day " + m.saved_day;
+            var rdBtn = m.has_transcript
+              ? '<button type="button" class="rp-btn rp-btn-sm rp-btn-advise" data-act="redistill-mem" data-id="' + esc(m.source) + '" title="Re-distill this memory from the saved visit transcript using the currently selected model (does not overwrite until you click Save)">\u21BB Re-distill</button>'
+              : '';
             return (
               '<div class="rp-mem-item" data-mem-id="' + esc(m.source) + '">' +
                 '<div class="rp-mem-meta">' +
                   '<span>' + esc(label) + '</span>' +
                   '<div class="rp-actions-left">' +
+                    rdBtn +
                     '<button type="button" class="rp-btn rp-btn-sm" data-act="save-mem" data-id="' + esc(m.source) + '">Save</button>' +
                     '<button type="button" class="rp-btn rp-btn-sm" data-act="del-mem" data-id="' + esc(m.source) + '">Delete</button>' +
                   '</div>' +
@@ -2382,7 +2453,281 @@
 
     session.triggerEval = runPostSceneEvaluation;
 
-    // Restore turns, phase (escalated / pillow talk), locked grade, advised chips, draft, or pending evaluation card
+    function needsMemoryReview() {
+      return !!(cfg && cfg.memory !== false && session.saveMemory !== false &&
+        session.turns.length > 0 && !session.memoryCommitted &&
+        getServerUrl() && resolveThreadId(cfg, statsNow()));
+    }
+
+    function advanceChoiceScriptPage() {
+      session.evalBypass = true;
+      var nb = document.querySelector("#main button.next");
+      if (nb) {
+        nb.style.display = "";
+        nb.disabled = false;
+        nb.click();
+      }
+    }
+
+    function renderMemReviewCard(review, nextBtn) {
+      if (!memReviewCardEl || !review) return;
+      var modelShort = String(review.model || memoryModel() || "").split("/").pop();
+      var isErr = !!review.error;
+      var backLabel = (review.fromEval && session.evalResult) ? "\u2190 Back to Grade" : "\u2190 Continue Roleplay";
+      var metaBadge = (review.npcName || "Companion") + (review.dateLabel ? (" \u00B7 " + review.dateLabel) : "");
+      var statusBadge = isErr
+        ? '<span class="rp-eval-boon rp-mem-badge-err">Distill Failed</span>'
+        : '<span class="rp-eval-boon">' + esc(modelShort || "OpenRouter") + (review.chunked ? " \u00B7 chunked" : "") + '</span>';
+
+      memReviewCardEl.innerHTML =
+        '<div class="rp-eval-head">' +
+          '<div class="rp-eval-title">\u2726 Visit Memory Review</div>' +
+          '<div class="rp-eval-badges">' +
+            '<span class="rp-eval-boon">' + esc(metaBadge) + '</span>' +
+            statusBadge +
+          '</div>' +
+        '</div>' +
+        (isErr ? '<div class="rp-mem-review-error"><strong>Distillation error:</strong> ' + esc(review.error) + ' \u2014 pick another model above and click Re-distill, or write/edit the memory manually below.</div>' : '') +
+        '<textarea class="rp-mem-textarea rp-mem-review-ta" placeholder="Write or edit what this companion should remember from this visit..."></textarea>' +
+        '<div class="rp-mem-review-hint">Review or edit before saving to MemPalace. Switch models in the header above and click <strong>Re-distill</strong> to redo from this visit\u2019s transcript.</div>' +
+        '<div class="rp-eval-foot">' +
+          '<div class="rp-actions-left">' +
+            '<button type="button" class="rp-btn" data-act="back-from-mem-review">' + esc(backLabel) + '</button>' +
+            '<button type="button" class="rp-btn" data-act="skip-mem-review" title="Leave this scene without saving a memory">Leave without saving</button>' +
+          '</div>' +
+          '<div class="rp-actions-left">' +
+            '<button type="button" class="rp-btn rp-btn-advise" data-act="redistill-mem-review" title="Re-distill this visit\u2019s memory using the currently selected model">\u21BB Re-distill</button>' +
+            '<button type="button" class="rp-btn rp-btn-primary" data-act="save-mem-review">Save Memory &amp; Continue \u2192</button>' +
+          '</div>' +
+        '</div>';
+
+      var ta = memReviewCardEl.querySelector(".rp-mem-review-ta");
+      if (ta) {
+        ta.value = review.text || "";
+        ta.addEventListener("input", function () {
+          if (session.memReview) {
+            session.memReview.text = ta.value;
+            saveActiveSession(inputEl.value);
+          }
+        });
+      }
+
+      if (evalCardEl) evalCardEl.hidden = true;
+      if (composerEl) composerEl.hidden = true;
+      memReviewCardEl.hidden = false;
+      renderEscalateControls();
+      syncChoiceScriptNextBtn(nextBtn);
+      if (memReviewCardEl.scrollIntoView) {
+        memReviewCardEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    }
+
+    function runMemoryPreview(nextBtn, fromEval) {
+      if (session.busy) return;
+      if (!needsMemoryReview()) {
+        session.memoryCommitted = true;
+        advanceChoiceScriptPage();
+        return;
+      }
+      var meta = buildSessionMemoryMeta(cfg, statsNow());
+      if (!meta) {
+        session.memoryCommitted = true;
+        advanceChoiceScriptPage();
+        return;
+      }
+
+      var prevDraft = (session.memReview && session.memReview.text) ? session.memReview.text : "";
+      var keepFromEval = fromEval !== undefined ? !!fromEval : !!(session.memReview && session.memReview.fromEval);
+      var chosenModel = memoryModel();
+      var shortModel = String(chosenModel || "").split("/").pop();
+
+      session.busy = true;
+      var mySeq = ++session.memReviewSeq;
+      if (evalCardEl) evalCardEl.hidden = true;
+      if (memReviewCardEl) memReviewCardEl.hidden = true;
+      if (composerEl) composerEl.hidden = true;
+      if (nextBtn) nextBtn.disabled = true;
+      updateButtons();
+
+      var waitMsg = "Recording memory for " + meta.npcName + " (" + shortModel + ")...";
+      setStatus(waitMsg);
+      if (typingTextEl) typingTextEl.textContent = waitMsg;
+
+      fetch(getServerUrl() + "/append_memory", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+        body: JSON.stringify({
+          thread_id: meta.threadId,
+          id: meta.memId,
+          text: meta.transcript,
+          distill: true,
+          preview: true,
+          npc_name: meta.npcName,
+          location: meta.location,
+          date_label: meta.dateLabel,
+          player_name: meta.playerName,
+          character: meta.character,
+          class_name: meta.class_name,
+          device: meta.device,
+          mode: "openrouter",
+          model: chosenModel,
+          timeout: 120
+        })
+      }).then(function (r) {
+        return r.json().catch(function () { return { status: "failed", error: "HTTP " + r.status }; });
+      }).then(function (res) {
+        if (mySeq !== session.memReviewSeq) return;
+        session.busy = false;
+        if (res && res.status === "success" && res.memory) {
+          session.memReview = {
+            status: "ready",
+            text: res.memory,
+            error: "",
+            model: res.model || chosenModel,
+            memId: meta.memId,
+            threadId: meta.threadId,
+            dateLabel: meta.dateLabel,
+            npcName: meta.npcName,
+            location: meta.location,
+            playerName: meta.playerName,
+            chunked: !!res.chunked,
+            fromEval: keepFromEval
+          };
+          setStatus("Memory drafted \u2014 review, edit, or Re-distill before saving.");
+        } else {
+          var errMsg = (res && (res.error || res.reason)) || "Model returned no usable memory";
+          session.memReview = {
+            status: "error",
+            text: prevDraft || (meta.dateLabel ? ("[" + meta.dateLabel + "] ") : ""),
+            error: errMsg,
+            model: chosenModel,
+            memId: meta.memId,
+            threadId: meta.threadId,
+            dateLabel: meta.dateLabel,
+            npcName: meta.npcName,
+            location: meta.location,
+            playerName: meta.playerName,
+            chunked: false,
+            fromEval: keepFromEval
+          };
+          setStatus("Memory distillation failed \u2014 switch models and Re-distill, or edit manually.");
+        }
+        saveActiveSession(inputEl.value);
+        updateButtons();
+        renderMemReviewCard(session.memReview, nextBtn);
+      }).catch(function (err) {
+        if (mySeq !== session.memReviewSeq) return;
+        session.busy = false;
+        var netErr = (err && err.message) ? err.message : "Could not reach MemPalace server";
+        session.memReview = {
+          status: "error",
+          text: prevDraft || (meta.dateLabel ? ("[" + meta.dateLabel + "] ") : ""),
+          error: netErr,
+          model: chosenModel,
+          memId: meta.memId,
+          threadId: meta.threadId,
+          dateLabel: meta.dateLabel,
+          npcName: meta.npcName,
+          location: meta.location,
+          playerName: meta.playerName,
+          chunked: false,
+          fromEval: keepFromEval
+        };
+        saveActiveSession(inputEl.value);
+        updateButtons();
+        renderMemReviewCard(session.memReview, nextBtn);
+        setStatus("Memory server error \u2014 retry or leave without saving.");
+      });
+    }
+
+    function saveReviewedMemory(saveBtn) {
+      if (session.busy || !session.memReview) return;
+      var ta = memReviewCardEl ? memReviewCardEl.querySelector(".rp-mem-review-ta") : null;
+      var finalText = String((ta ? ta.value : session.memReview.text) || "").trim();
+      if (finalText.length < 10) {
+        session.memReview.error = "Memory text is too short (at least 10 characters). Edit it, Re-distill, or click Leave without saving.";
+        renderMemReviewCard(session.memReview);
+        return;
+      }
+      var meta = buildSessionMemoryMeta(cfg, statsNow());
+      var rev = session.memReview;
+      var threadId = rev.threadId || (meta && meta.threadId);
+      var memId = rev.memId || (meta && meta.memId);
+      if (!threadId || !memId) {
+        session.memoryCommitted = true;
+        session.memReview = null;
+        advanceChoiceScriptPage();
+        return;
+      }
+
+      session.busy = true;
+      var mySeq = ++session.memReviewSeq;
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = "Saving\u2026";
+      }
+      if (typingTextEl) typingTextEl.textContent = "Saving memory to MemPalace...";
+      setStatus("Saving memory to MemPalace...");
+      updateButtons();
+
+      fetch(getServerUrl() + "/append_memory", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+        body: JSON.stringify({
+          thread_id: threadId,
+          id: memId,
+          text: finalText,
+          distill: false,
+          preview: false,
+          transcript: meta ? meta.transcript : "",
+          npc_name: rev.npcName || (meta && meta.npcName) || "",
+          location: rev.location || (meta && meta.location) || "",
+          date_label: rev.dateLabel || (meta && meta.dateLabel) || "",
+          player_name: rev.playerName !== undefined ? rev.playerName : ((meta && meta.playerName) || ""),
+          character: (meta && meta.character) || String(statsNow().name || ""),
+          class_name: (meta && meta.class_name) || String(statsNow().class_name || statsNow().character_class || ""),
+          device: (meta && meta.device) || ""
+        })
+      }).then(function (r) {
+        return r.json().catch(function () { return null; }).then(function (d) {
+          return { ok: r.ok, status: r.status, data: d };
+        });
+      }).then(function (res) {
+        if (mySeq !== session.memReviewSeq) return;
+        session.busy = false;
+        if (res.ok && res.data && res.data.status === "success") {
+          session.memoryCommitted = true;
+          session.memReview = null;
+          if (memReviewCardEl) {
+            memReviewCardEl.hidden = true;
+            memReviewCardEl.innerHTML = "";
+          }
+          setStatus("Memory saved.");
+          advanceChoiceScriptPage();
+        } else {
+          var errMsg = (res.data && (res.data.error || res.data.reason)) || ("HTTP " + res.status);
+          session.memReview.text = finalText;
+          session.memReview.error = "Could not save memory (" + errMsg + ")";
+          saveActiveSession(inputEl.value);
+          updateButtons();
+          renderMemReviewCard(session.memReview);
+          setStatus("Save failed \u2014 your draft is preserved below.");
+        }
+      }).catch(function (err) {
+        if (mySeq !== session.memReviewSeq) return;
+        session.busy = false;
+        session.memReview.text = finalText;
+        session.memReview.error = "Could not reach MemPalace server (" + ((err && err.message) || "network error") + ")";
+        saveActiveSession(inputEl.value);
+        updateButtons();
+        renderMemReviewCard(session.memReview);
+        setStatus("Save failed \u2014 your draft is preserved below.");
+      });
+    }
+
+    session.triggerMemReview = runMemoryPreview;
+
+    // Restore turns, phase (escalated / pillow talk), locked grade, advised chips, draft, or pending evaluation / memory review card
     // if the page was refreshed or returned to from Show Stats / Menu
     var restored = loadActiveSession(sceneId);
     if (restored && Array.isArray(restored.turns) && restored.turns.length > 0) {
@@ -2432,18 +2777,26 @@
     if (restored && restored.evalResult && session.phase !== "pillow_talk") {
       session.evalResult = restored.evalResult;
     }
+    if (restored && restored.memReview) {
+      session.memReview = restored.memReview;
+    }
     if (restored && typeof restored.sceneReady === "boolean") {
       session.sceneReady = restored.sceneReady;
     }
     if (restored && typeof restored.naturalComplete === "boolean") {
       session.naturalComplete = restored.naturalComplete;
     }
+    if (restored && restored.settled && !session.evalResult && !session.memReview) {
+      setSettled(true);
+    }
     updateHeaderForCfg();
     renderEscalateControls();
     renderChips();
     updateButtons();
     setTimeout(function () { syncChoiceScriptNextBtn(); }, 0);
-    if (session.evalResult) {
+    if (session.memReview) {
+      renderMemReviewCard(session.memReview);
+    } else if (session.evalResult) {
       renderEvalCard(session.evalResult);
     }
 
@@ -2461,7 +2814,7 @@
 
     // Auto reply off: the player's turn is posted and nothing is generated.
     function postTurnOnly(playerText) {
-      if (session.busy || session.evalResult || !playerText) return;
+      if (session.busy || session.evalResult || session.memReview || !playerText) return;
       session.adviseSeq += 1;
       session.advisedStarters = null;
       session.advisedBeats = null;
@@ -2476,7 +2829,7 @@
 
     // A reply to what is already posted: the last turn, if it is the player's, is the action (as a regenerate does).
     function requestReply() {
-      if (session.busy || session.evalResult) return;
+      if (session.busy || session.evalResult || session.memReview) return;
       var last = session.turns.length ? session.turns[session.turns.length - 1] : null;
       if (last && last.role === "user") runGeneration(last.text, true);
       else runGeneration("Continue the moment naturally, letting the companion take the lead.", false);
@@ -2785,6 +3138,7 @@
             setStatus("Ready to move further (" + engineTag + ") — confirm below to switch to the intimate scene, or keep talking.");
           } else if (readyInfo.actComplete) {
             var isIntimatePhase = !!resolveSceneProfile(cfg, statsNow());
+            if (sceneKind(cfg) === SCENE_KINDS.talk) setSettled(true);
             setStatus(isIntimatePhase
               ? "Climax reached (" + engineTag + ") — click the Next button below when ready to review & finish."
               : "Natural close reached (" + engineTag + ") — click the Next button below whenever you are ready to leave.");
@@ -2903,8 +3257,16 @@
           return;
         }
         if (act === "advise") {
-          if (session.evalResult) return;
+          if (session.evalResult || session.memReview) return;
           runAdviseChoices();
+          return;
+        }
+        if (act === "keep-talking") {
+          setSettled(false);
+          saveActiveSession(inputEl.value);
+          updateButtons();
+          setStatus("Still talking. The way out stays below whenever you want it.");
+          if (inputEl && inputEl.focus) inputEl.focus();
           return;
         }
         if (act === "resume-rp") {
@@ -2954,13 +3316,58 @@
           var ratingVal = (session.evalResult && !session.evalResult.fallback) ? (Number(session.evalResult.rating) || 0) : 0;
           statsNow().rp_encounter_rating = ratingVal;
           statsNow().rp_escalated = !!session.escalated;
-          session.evalBypass = true;
           var nextBtn = document.querySelector("#main button.next");
-          if (nextBtn) {
-            nextBtn.style.display = "";
-            nextBtn.disabled = false;
-            nextBtn.click();
+          if (needsMemoryReview()) {
+            runMemoryPreview(nextBtn, true);
+          } else {
+            session.memoryCommitted = true;
+            advanceChoiceScriptPage();
           }
+          return;
+        }
+        if (act === "back-from-mem-review") {
+          if (session.busy) return;
+          var wasFromEval = !!(session.memReview && session.memReview.fromEval && session.evalResult);
+          session.memReviewSeq += 1;
+          session.memReview = null;
+          if (memReviewCardEl) {
+            memReviewCardEl.hidden = true;
+            memReviewCardEl.innerHTML = "";
+          }
+          if (wasFromEval && evalCardEl) {
+            renderEvalCard(session.evalResult);
+            setStatus("Returned to Post-Scene Review.");
+          } else {
+            if (composerEl) composerEl.hidden = false;
+            setStatus("Roleplay resumed — nothing was saved to memory yet.");
+            if (inputEl && inputEl.focus) inputEl.focus();
+          }
+          saveActiveSession(inputEl.value);
+          updateButtons();
+          return;
+        }
+        if (act === "redistill-mem-review") {
+          if (session.busy || !session.memReview) return;
+          var taCur = memReviewCardEl ? memReviewCardEl.querySelector(".rp-mem-review-ta") : null;
+          if (taCur) session.memReview.text = taCur.value;
+          runMemoryPreview(document.querySelector("#main button.next"), !!session.memReview.fromEval);
+          return;
+        }
+        if (act === "save-mem-review") {
+          saveReviewedMemory(actBtn);
+          return;
+        }
+        if (act === "skip-mem-review") {
+          if (session.busy) return;
+          session.memReviewSeq += 1;
+          session.memReview = null;
+          session.memoryCommitted = true;
+          if (memReviewCardEl) {
+            memReviewCardEl.hidden = true;
+            memReviewCardEl.innerHTML = "";
+          }
+          setStatus("Leaving without saving memory.");
+          advanceChoiceScriptPage();
           return;
         }
       }
@@ -3018,7 +3425,7 @@
           return;
         }
         if (/^\/end(?:\s|$)/i.test(val)) {
-          if (session.busy || session.evalResult) return;
+          if (session.busy || session.evalResult || session.memReview) return;
           session.sceneReady = true;
           saveActiveSession("");
           updateButtons();
@@ -3028,11 +3435,17 @@
             statsNow().rp_encounter_rating = lVal;
             statsNow().rp_escalated = !!session.escalated;
             session.evalBypass = true;
-            setStatus("Grade locked — click the Next button below to finish.");
+            if (needsMemoryReview()) {
+              runMemoryPreview(endNextBtn, false);
+            } else {
+              setStatus("Grade locked \u2014 click the Next button below to finish.");
+            }
           } else if (session.turns.length > 0 && resolveSceneProfile(cfg, statsNow())) {
             runPostSceneEvaluation(endNextBtn);
+          } else if (needsMemoryReview()) {
+            runMemoryPreview(endNextBtn, false);
           } else {
-            setStatus("Ended early — click the Next button below to continue.");
+            setStatus("Ended early \u2014 click the Next button below to continue.");
           }
           return;
         }
@@ -3053,6 +3466,41 @@
         if (!memDrawer.hidden) renderMemoriesDrawer();
       } else if (actName === "close-memories") {
         memDrawer.hidden = true;
+      } else if (actName === "redistill-mem") {
+        var rdId = actBtn.getAttribute("data-id");
+        var rdItem = actBtn.closest(".rp-mem-item");
+        var rdTa = rdItem ? rdItem.querySelector(".rp-mem-textarea") : null;
+        var rdThreadId = resolveThreadId(cfg, statsNow());
+        if (!rdId || !rdTa || !rdThreadId) return;
+        actBtn.disabled = true;
+        actBtn.textContent = "Re-distilling\u2026";
+        setStatus("Re-distilling past visit memory (" + String(memoryModel() || "").split("/").pop() + ")...");
+        fetch(getServerUrl() + "/redistill_memory", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
+          body: JSON.stringify({
+            thread_id: rdThreadId,
+            id: rdId,
+            model: memoryModel(),
+            mode: "openrouter",
+            preview: true,
+            timeout: 120
+          })
+        }).then(function (r) { return r.json().catch(function () { return null; }); })
+          .then(function (res) {
+            actBtn.disabled = false;
+            actBtn.textContent = "\u21BB Re-distill";
+            if (res && res.status === "success" && res.memory) {
+              rdTa.value = res.memory;
+              setStatus("Re-distilled (" + String(res.model || "").split("/").pop() + ") \u2014 review and click Save on that memory to keep it.");
+            } else {
+              setStatus("Re-distill failed: " + ((res && res.error) || "unknown error"));
+            }
+          }).catch(function () {
+            actBtn.disabled = false;
+            actBtn.textContent = "\u21BB Re-distill";
+            setStatus("Re-distill failed: could not reach MemPalace server.");
+          });
       } else if (actName === "save-mem") {
         var memId = actBtn.getAttribute("data-id");
         var itemEl = actBtn.closest(".rp-mem-item");
@@ -3108,7 +3556,7 @@
       var tact = btn.getAttribute("data-tact");
 
       if (tact === "del") {
-        if (session.busy || session.evalResult) return;
+        if (session.busy || session.evalResult || session.memReview) return;
         var idx = session.turns.indexOf(turn);
         if (idx !== -1) session.turns.splice(idx, 1);
         if (wrap.parentNode) wrap.parentNode.removeChild(wrap);
@@ -3116,7 +3564,7 @@
         updateButtons();
         setStatus("Message deleted.");
       } else if (tact === "regen") {
-        if (session.busy || session.evalResult) return;
+        if (session.busy || session.evalResult || session.memReview) return;
         var ridx = session.turns.indexOf(turn);
         if (ridx === -1) return;
         var cutFrom = turn.role === "user" ? ridx + 1 : ridx;
@@ -3125,13 +3573,13 @@
           if (rem && rem.wrap && rem.wrap.parentNode) rem.wrap.parentNode.removeChild(rem.wrap);
         }
         session.sceneReady = false;
-        session.naturalComplete = false;
+        session.naturalComplete = false; setSettled(false);
         saveActiveSession(inputEl.value);
         var promptTurn = session.turns.length ? session.turns[session.turns.length - 1] : null;
         var promptText = (promptTurn && promptTurn.role === "user") ? promptTurn.text : "Continue the moment naturally.";
         runGeneration(promptText, true);
       } else if (tact === "edit") {
-        if (session.busy || session.evalResult) return;
+        if (session.busy || session.evalResult || session.memReview) return;
         if (wrap.querySelector(".rp-inline-editor")) return;
         turn.content.style.display = "none";
         turn.actions.style.display = "none";
@@ -3220,28 +3668,40 @@
     }
   }, true);
 
-  // Intercept ChoiceScript's "Rest together..." (*page_break) button in capture phase when a
-  // rolled/static-profile RP console is live in the DOM and has active turns (never block Menu/Restart screens).
+  // Intercept ChoiceScript's Next (*page_break) button in capture phase when an RP console is live:
+  // 1. Intimate scenes run Post-Scene Evaluation first.
+  // 2. Any memory-enabled scene with turns runs the on-page Visit Memory Review before leaving the page.
   document.addEventListener("click", function (ev) {
-    if (!session.active || !session.boxEl || typeof session.triggerEval !== "function") return;
-    if (session.evalBypass) return;
+    if (!session.active || !session.boxEl) return;
     var liveBox = document.getElementById("rpConsoleBox");
     if (!liveBox || liveBox !== session.boxEl) return;
     var nextBtn = ev.target && ev.target.closest ? ev.target.closest("#main button.next") : null;
     if (!nextBtn) return;
-    if (!resolveSceneProfile(session.cfg, statsNow()) || session.turns.length === 0) return;
-    ev.preventDefault();
-    ev.stopPropagation();
-    ev.stopImmediatePropagation();
-    session.triggerEval(nextBtn);
+    if (!session.evalBypass && typeof session.triggerEval === "function" &&
+        resolveSceneProfile(session.cfg, statsNow()) && session.turns.length > 0) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      ev.stopImmediatePropagation();
+      session.triggerEval(nextBtn);
+      return;
+    }
+    if (!session.memoryCommitted && typeof session.triggerMemReview === "function" &&
+        session.cfg && session.cfg.memory !== false && session.saveMemory !== false && session.turns.length > 0) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      ev.stopImmediatePropagation();
+      session.triggerMemReview(nextBtn, false);
+      return;
+    }
   }, true);
 
   function scanForMarker() {
     var textEl = liveTextContainer();
     if (!textEl) return;
-    // If we moved to a normal story page where rp_active_scene is "none" (e.g. after clicking "Rest together...")
-    // and not in the temporary stats/menu view, commit the finished session once to MemPalace (if memory: true)
-    // and clear the persisted active session buffer.
+    // If we moved to a normal story page where rp_active_scene is "none" (e.g. after confirming exit)
+    // and not in the temporary stats/menu view, clear the persisted active session buffer.
+    // On-page Memory Review handles normal commits (setting session.memoryCommitted = true);
+    // commitSessionToMemPalace() remains a no-op safety net if already committed or skipped.
     var s = statsNow();
     if (s && s.name && !s.rp_world_id) {
       ensureWorldId(s);
@@ -3249,7 +3709,9 @@
     var isSecondary = s.scene && s.scene.secondaryMode === "stats";
     if (!isSecondary && (!s.rp_active_scene || s.rp_active_scene === "none") && !document.getElementById("rpConsoleBox")) {
       if (session.active) {
-        commitSessionToMemPalace();
+        if (!session.memoryCommitted) {
+          commitSessionToMemPalace();
+        }
         resetMemorySessionState();
         clearActiveSession();
       }

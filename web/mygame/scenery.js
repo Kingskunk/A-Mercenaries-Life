@@ -92,7 +92,13 @@
     "hartwell/millstow/turning_sail": "generic_village_inn",
     "hartwell/millstow/millstow_gathering_hall": "generic_village_gathering_hall",
     "hartwell/millstow/lake_landing": "millstow_lake_landing",
-    "hartwell/millstow/tar_and_teeth": "millstow_lake_landing",
+    "hartwell/millstow/tar_and_teeth": "millstow_southern_cove",
+    "hartwell/hartwell/hartwell": "hartwell",
+    "hartwell/hartwell/hartwell_market": "town_market",
+    "hartwell/hartwell/golden_press": "generic_town_inn",
+    "hartwell/hartwell/hartwell_hall": "langston_hall",
+    "hartwell/hartwell/hartwell_trades_row": "generic_town_street",
+    "hartwell/hartwell/hartwell_terrace": "generic_town_street",
     "hartwell/oxworth/oxworth_market": "oxworth_market",
     "hartwell/oxworth/yoke_and_horn": "oxworth_yoke_and_horn",
     "hartwell/oxworth/village_heads_hall": "generic_village_gathering_hall",
@@ -276,6 +282,7 @@
     function (s) { return s.sceneName === "overworld/camp" && s.has_camp_kit ? "generic_camp_tent_interior" : undefined; }, // the player-owned solo tent, never a company bivouac
     function (s) { return s.sceneName === "timbermouth/workshops" && s.shop_open === "works" ? "generic_workshop_smithy" : undefined; }, // Roan's enclosed trade bench; the lane remains Timbermouth
     function (s) { return s.sceneName === "alderford/timber_smithy" && s.shop_open === "torvald" ? "generic_workshop_smithy" : undefined; }, // Torvald trades from the Timber Smithy's waterwheel forge, not a generic shop counter
+    function (s) { return s.sceneName === "hartwell/hartwell/hartwell_trades_row" && (s.shop_open === "htsmith" || s.scenery_subplace === "ht_anvil_bit") ? "generic_workshop_smithy" : undefined; }, // Gavin Holt's Anvil & Bit forge in Hartwell's Tradesmen's Row
     function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_halda_forge" && s.shop_open === "halda" ? "generic_workshop_smithy" : undefined; }, // Halda trades from a working forge, not a goods shop
     function (s) { return s.sceneName === "port_valen/port_valen_upper_wharves" && s.scenery_subplace === "patrician_inner_gate" ? "patrician_inner_gate" : undefined; }, // the Patrician Quarter's writ gate
     function (s) { return s.sceneName === "port_valen/port_valen_upper_wharves" && s.scenery_subplace === "patrician_avenue" ? "patrician_avenue" : undefined; }, // Avenue of Estates, including its great-house stretch
@@ -314,6 +321,9 @@
     function (s) { return s.sceneName === "port_valen/port_valen_middle_ward" && s.scenery_subplace === "middle_ward_inn_room" ? "generic_town_inn_room" : undefined; }, // Wagoner's Rest guest room and Kess's rented chamber
     function (s) { return s.sceneName === "timbermouth/split_pine_inn" && s.scenery_subplace === "town_inn_room" ? "generic_town_inn_room" : undefined; }, // Split Pine guest room
     function (s) { return s.sceneName === "Langston/pickled_hen" && s.scenery_subplace === "pickled_hen_room" ? "generic_town_inn_room" : undefined; }, // Pickled Hen guest room
+    function (s) { return s.sceneName === "hartwell/hartwell/golden_press" && s.scenery_subplace === "golden_press_room" ? "generic_town_inn_room" : undefined; }, // Golden Press guest room
+    function (s) { return s.sceneName === "hartwell/hartwell/golden_press" && s.scenery_subplace === "ht_gp_yard" ? "generic_town_stable" : undefined; }, // Golden Press stable yard
+    function (s) { return s.sceneName === "hartwell/hartwell/hartwell_terrace" && s.scenery_subplace === "ht_marsh_parlor" ? "generic_town_inn_room" : undefined; }, // Vera Marsh's stone townhouse parlor on Stonehouse Lane
     function (s) { return s.scenery_subplace === "village_inn_room" && (s.sceneName === "alderford/drowned_oar" || s.sceneName === "alderford/redvein/red_lantern" || s.sceneName === "alderford/whitefold/white_ram" || s.sceneName === "Langston/barolo/red_stave" || s.sceneName === "Langston/broadmead/crooked_halter" || s.sceneName === "port_valen/brinewick/reedhouse" || s.sceneName === "Langston/fallowmere/grey_gander" || s.sceneName === "hartwell/oxworth/yoke_and_horn" || s.sceneName === "hartwell/palmcote/green_branch" || s.sceneName === "hartwell/millstow/turning_sail" || s.sceneName === "port_valen/marlcross/wayfarers_rest") ? "generic_village_inn_room" : undefined; }, // village inns and Maura's Drowned Oar rooms
     function (s) { return s.sceneName === "Langston/fallowmere/grey_gander" && s.scenery_subplace === "fallowmere_grey_gander_yard" ? "village_stable_yard" : undefined; }, // the Grey Gander's open cart yard (the taproom keeps its own picture)
     function (s) { return s.sceneName === "hartwell/oxworth/yoke_and_horn" && s.scenery_subplace === "oxworth_yoke_and_horn_yard" ? "village_stable_yard" : undefined; }, // the Yoke & Horn's open cart yard (the common room keeps its own picture)
@@ -331,7 +341,7 @@
     function (s) { return s.sceneName === "hartwell/millstow/turning_sail" && s.scenery_subplace === "millstow_turning_sail_yard" ? "village_stable_yard" : undefined; }, // the Turning Sail's open stable yard (the common room keeps its own picture)
     function (s) {
       if (s.sceneName !== "hartwell/millstow/tar_and_teeth") return undefined;
-      if (s.scenery_subplace === "millstow_lake_landing" || s.scenery_subplace === "generic_curing_shed" || s.scenery_subplace === "generic_village_gathering_hall") return s.scenery_subplace;
+      if (s.scenery_subplace === "millstow_southern_cove" || s.scenery_subplace === "millstow_lake_landing" || s.scenery_subplace === "generic_curing_shed" || s.scenery_subplace === "generic_village_gathering_hall") return s.scenery_subplace;
       if (s.scenery_subplace === "village_inn_hall") return "generic_village_inn";
       return undefined;
     }, // Millstow Tar & Teeth quest subplaces (cove landing, boathouse loft, Turning Sail, Gathering Hall)

@@ -98,12 +98,10 @@
   *if ((ox_hh_vera_flask) and ((not(ox_hh_flask_sold)) and (not(ox_hh_flask_shown_vera))))
     # Show her Daven's silver hip flask.
       *goto vm_show_flask
-  *if ((vm_talk_step < 3) and (not(vm_talk_day = campaign_day)))
-    # Share a cup of wine and talk a while. [~15 min]
-      *goto vm_talk
-  # [Roleplay] Share a cup of wine and talk over the fire. [~30 min]
-    *set rp_active_scene "vera_marsh_talk"
-    *goto vm_rp_talk
+  *if (not(vm_rp_talk_day = campaign_day))
+    # [Roleplay] Share a cup of wine and talk over the fire. [~30 min]
+      *set rp_active_scene "vera_marsh_talk"
+      *goto vm_rp_talk
   # Head back downstairs to the common room.
     *goto_scene hartwell/oxworth/yoke_and_horn ox_yh_hall
 
@@ -121,41 +119,23 @@ Vera stares at the engraved silver for one beat, then lets out a real, sharp lau
   "He swore up and down a road boy stole that off his wagon," Vera says, grinning wickedly as she taps the silver cap. "Keep it. Consider it a souvenir of Oxworth."
 *goto vm_menu
 
-*label vm_talk
-*set scenery_subplace "village_inn_room"
-*comment replay-ok: vm_talk_day is stamped to campaign_day inside this once-per-day guard.
-*if (not(vm_talk_day = campaign_day))
-  *set vm_talk_now vm_talk_step
-  *set vm_talk_step + 1
-  *set vm_talk_day campaign_day
-*set minutes_to_pass 15
-*set time_advance_call_id "vm_talk"
-*gosub_scene hartwell/oxworth/oxworth ox_walk_time
-
-*if (vm_talk_now = 0)
-  "How is Hartwell treating you lately?" you ask, leaning back with a clay cup of red wine.
-
-  "Busy and noisy as ever," Vera says, resting her chin on her palm. "Viscountess Falwick runs the whole town like a counting-house. Oil presses turning all day from the Palmcote olives, salt carts jamming the east gate, and half the merchants grumbling that Langston gets all the fancy trade charters while Hartwell brings in the real coin."
-*elseif (vm_talk_now = 1)
-  "You seem comfortable enough running cattle contracts on your own," you remark.
-
-  Vera smiles faintly over her cup. "My father bought wool in Dunmow before I married Daven. Daven liked pretending I was only good for velvet dresses and pouring wine, so he never noticed I read every contract he left on his desk. Turns out Oxworth's foreman would much rather bargain with someone who pays straight and doesn't shout."
-*else
-  "Will I find you in Hartwell if my road runs east?" you ask.
-
-  "Near the south market lane, third stone house past the oil yards, blue shutters," Vera answers without hesitation, her dark eyes steady on yours.
-  *if (vm_daven_downstairs)
-    "Just knock in the afternoon while Daven is down at the gate office. Or bring a spare pair of climbing boots."
-  *else
-    "My name is on the door now. Knock whenever you want a real glass of wine and a bed that doesn't smell of hay."
-*goto vm_menu
-
 *label vm_rp_talk
 *set scenery_subplace "village_inn_room"
+*set vm_rp_talk_day campaign_day
 *set minutes_to_pass 30
 *set time_advance_call_id "vm_rp_talk"
 *gosub_scene hartwell/oxworth/oxworth ox_walk_time
-Vera pours two deep cups of Hartwell red wine, hands one across the small table, and leans back on the edge of the bed with an amused look. "Go on, then. Entertain me."
+*comment The opening rotates by day and gives her no line (designer, 2026-11-28): the AI speaks for her first. rp-data.js
+*comment vera_marsh_talk describes the same room from vm_talk_menu.
+*set vm_talk_menu ((campaign_day modulo 4) + 1)
+*if (vm_talk_menu = 1)
+  Vera pours two deep cups of Hartwell red wine, hands one across the small table and settles on the edge of the bed with her cup resting on her knee.
+*elseif (vm_talk_menu = 2)
+  Vera sits cross-legged on the bed with cattle contracts spread over the blanket and a stub of charcoal behind her ear. She squares the pages into a pile, sets them on the chest and pats the blanket beside her.
+*elseif (vm_talk_menu = 3)
+  Vera is at the washstand scrubbing yard dust from her wrists. She tosses the cloth over the jug, pulls the cork from a bottle of Hartwell red with her teeth and fills two cups to the brim.
+*else
+  The window is propped open on the evening air, and Vera leans on the sill with a cup of red wine, watching the inn yard below. She tips her chin at a second cup waiting on the table.
 
 [RP_SESSION:${rp_active_scene}]
 *page_break Set down the cups…
@@ -189,7 +169,14 @@ Vera sets her empty cup beside the candle and stretches lazily.
 *set ambience_intimacy true
 *if (not(rp_active_scene = "none"))
   *set rp_encounter_rating 0
-  Vera slides the wooden bolt tight across the door, pulls the pins from her dark hair, and backs toward the wool blanket with a wicked smile.
+  *comment Rotates by day so a repeat night opens fresh (designer, 2026-11-28).
+  *temp vm_open ((campaign_day modulo 3) + 1)
+  *if (vm_open = 1)
+    Vera slides the wooden bolt tight across the door, pulls the pins from her dark hair and backs toward the wool blanket with a wicked smile.
+  *elseif (vm_open = 2)
+    Vera pinches out all but one candle, catches your wrist and walks backward to the bed, drawing you after her.
+  *else
+    Vera sits on the edge of the bed and lets one strap of her linen shift slide off her shoulder. She crooks a finger at you.
 
   [RP_SESSION:${rp_active_scene}]
   *page_break Catch your breath…

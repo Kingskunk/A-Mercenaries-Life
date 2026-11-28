@@ -4763,10 +4763,14 @@ if (window.location.hostname === 'localhost') {
                   memsHtml = '<div class="ampCompBody"><span class="ampSlotLabel empty">No memories saved for ' + esc(c.npc_name) + ' in this world.</span></div>';
                 } else {
                   memsHtml = '<div class="ampCompBody">' + mems.map(function(m) {
+                    var rdBtn = m.has_transcript
+                      ? '<button type="button" data-wact="redistill-mem" title="Re-distill this memory from the saved visit transcript (review &amp; click Save to keep)">\u21BB Re-distill</button>'
+                      : '';
                     return '<div class="ampMemRow" data-thread="' + esc(c.thread_id) + '" data-mem-id="' + esc(m.source) + '">' +
                       '<div class="ampMemMeta"><span>' + esc(m.source) + '</span><span>' + esc(m.mtime_str || '') + '</span></div>' +
                       '<textarea class="ampWorldMemTa">' + esc(m.content) + '</textarea>' +
                       '<div class="ampMemRowBtns">' +
+                        rdBtn +
                         '<button type="button" class="ampBtnSave" data-wact="save-mem">Save</button>' +
                         '<button type="button" class="ampBtnDel" data-wact="del-mem">Delete</button>' +
                       '</div>' +
@@ -4848,6 +4852,11 @@ if (window.location.hostname === 'localhost') {
           } else if (act === 'del-room') {
             ev.stopPropagation();
             self.deleteWorldRoom(btn.getAttribute('data-thread'), btn.getAttribute('data-npc') || '');
+          } else if (act === 'redistill-mem') {
+            ev.stopPropagation();
+            var rrow = btn.closest('.ampMemRow');
+            var rta = rrow && rrow.querySelector('.ampWorldMemTa');
+            if (rrow && rta) self.redistillWorldMem(rrow.getAttribute('data-thread'), rrow.getAttribute('data-mem-id'), rta, btn);
           } else if (act === 'save-mem') {
             ev.stopPropagation();
             var row = btn.closest('.ampMemRow');
@@ -4898,6 +4907,33 @@ if (window.location.hostname === 'localhost') {
           }
         })
         .catch(function() { toast('MemPalace server unreachable.'); });
+    },
+
+    redistillWorldMem: function(threadId, memId, ta, btn) {
+      if (!threadId || !memId || !ta) return;
+      var baseUrl = getServerUrl();
+      var model = (window.RPEngine && typeof window.RPEngine.getMemoryModel === 'function')
+        ? window.RPEngine.getMemoryModel()
+        : 'baidu/ernie-5.5-flash-preview:free';
+      if (btn) { btn.disabled = true; btn.textContent = 'Re-distilling\u2026'; }
+      fetch(baseUrl + '/redistill_memory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+        body: JSON.stringify({ thread_id: threadId, id: memId, model: model, mode: 'openrouter', preview: true, timeout: 120 })
+      }).then(function(r) { return r.json().catch(function() { return null; }); })
+        .then(function(res) {
+          if (btn) { btn.disabled = false; btn.textContent = '\u21BB Re-distill'; }
+          if (res && res.status === 'success' && res.memory) {
+            ta.value = res.memory;
+            toast('Re-distilled (' + String(res.model || '').split('/').pop() + ') \u2014 review and click Save to keep.');
+          } else {
+            toast('Re-distill failed: ' + ((res && res.error) || 'unknown error'));
+          }
+        })
+        .catch(function() {
+          if (btn) { btn.disabled = false; btn.textContent = '\u21BB Re-distill'; }
+          toast('MemPalace server unreachable.');
+        });
     },
 
     saveWorldMem: function(threadId, memId, text, btn) {

@@ -1,0 +1,260 @@
+*comment ====================================================================================
+*comment HARTWELL: a walled castle and market town in the Western Vale, seat of the Viscounty of Hartwell under House Falwick (overworld tile "ht").
+*comment Built so far: the town hub with its three description layers (place, sky, street), rotating vignettes, arrival from overworld tile "ht" (ht_arrive), and the roads back out.
+*comment Planned stops (to be wired into ht_menu as each file is built):
+*comment   - hartwell_hall.txt (Hartwell Hall: public chamber, contractor counter, Contract Board, Road Bailiff/Steward desk)
+*comment   - hartwell_keep.txt (Hartwell Keep: the small stone castle rising above the upper town wall, House Falwick's seat)
+*comment   - hartwell_market.txt (Hartwell Market: town-tier trade hub ht_market, pressed olive oil and regional goods)
+*comment   - golden_press.txt (The Golden Press: always-open town inn)
+*comment   - hartwell_trades_row.txt (Tradesmen's Row: shop lane sub-hub for outfitters and future town shops)
+*comment   - hartwell_terrace.txt (Stonehouse Lane: residential quarter below the keep for NPC townhouses like Vera Marsh and House Ferrand)
+*comment Backdrop: currently mapped to langston in scenery.js until Wallpaper/Hartwell_Day.jpg & Hartwell_Night.jpg are added; ambience: "city" (ambience.js).
+*comment ====================================================================================
+
+*label hartwell
+*gosub ht_enter
+*gosub ht_header
+*gosub ht_layers
+*goto ht_menu
+
+*comment Shared setup so a direct visit and a later return land in the same state. ht_first_hub is true only on the first visit.
+*label ht_enter
+*temp ht_first_hub false
+*if (not(ht_seen))
+  *set ht_first_hub true
+*set current_district "hartwell"
+*set scenery_subplace ""
+*set ht_seen true
+*gosub_scene calendar update_hub_condition
+*gosub ht_hours
+*gosub ht_hall_hours
+*return
+
+*comment Hartwell Hall hours: Morning through Afternoon, shut at dusk, at night, on the rest day and while dangerous weather has emptied the street.
+*label ht_hall_hours
+*set ht_ok_hall false
+*set ht_hall_closed_reason "barred for the night"
+*if (day_of_week = "Hallowday")
+  *set ht_hall_closed_reason "shut for the rest day"
+  *return
+*if (street_life = "empty")
+  *set ht_hall_closed_reason "bolted against the weather"
+  *return
+*if (((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon"))
+  *set ht_ok_hall true
+  *set ht_hall_closed_reason ""
+*elseif (time_period = "Dusk")
+  *set ht_hall_closed_reason "closed for the evening"
+*return
+
+*comment Hartwell Market hours: Morning through Dusk, shut at night, on the rest day and while dangerous weather has emptied the street.
+*label ht_hours
+*set ht_ok_market false
+*set ht_market_closed_reason "cleared and sheeted for the night"
+*if (day_of_week = "Hallowday")
+  *set ht_market_closed_reason "closed for the rest day"
+  *return
+*if (street_life = "empty")
+  *set ht_market_closed_reason "empty in the weather"
+  *return
+*if ((((time_period = "Morning") or (time_period = "Midday")) or (time_period = "Afternoon")) or (time_period = "Dusk"))
+  *set ht_ok_market true
+  *set ht_market_closed_reason ""
+*return
+
+*comment The overworld's Hartwell tile (ht) enters here. The walk beneath the gate costs five minutes once per arrival.
+*label ht_arrive
+*set minutes_to_pass 5
+*set time_advance_call_id "ht_arrive_1"
+*gosub ht_walk_time
+*temp ht_first_arrival false
+*if (not(ht_arrival_seen))
+  *set ht_first_arrival true
+*set ht_arrival_seen true
+*gosub ht_enter
+*gosub ht_header
+*if (ht_first_arrival)
+  *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+    The road approaches Hartwell beneath a sturdy limestone curtain wall. Lanterns hang thick inside the broad cart gate where two town watchmen lean on their halberds, and beyond the arch a cobbled street climbs past shuttered press-houses toward the square silhouette of Hartwell Keep rising above the roofs.
+  *elseif (time_period = "Dusk")
+    The road meets Hartwell at a busy stone gate in the town wall as the last olive and grain wagons roll beneath the arch. Iron street lamps flare along the cobbled rise while the square stone tower of Hartwell Keep catches the last copper light above the eaves.
+  *else
+    The road comes in among well-kept fields to a broad stone gate set in Hartwell's modest curtain wall. Carts and wagons crowd the approach, carrying the warm, oily scent of pressed olives from the arched press-houses just inside the arch, while the square stone keep of House Falwick rises cleanly above the steep town roofs.
+*else
+  *if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+    Watchmen nod you through Hartwell's lantern-lit cart gate onto the quiet cobbled rise.
+  *elseif (time_period = "Dusk")
+    You pass beneath Hartwell's gate among the last wagons rolling in before nightfall.
+  *else
+    You pass beneath Hartwell's stone gate with the steady cart traffic from the Vale roads.
+*gosub ht_layers
+*goto ht_menu
+
+*label ht_walk_time
+*set hours_to_pass 0
+*gosub_scene calendar advance_time
+*gosub_scene calendar recalc_hp_from_neglect
+*if (hp_current <= 0)
+  *set death_cause "starvation"
+  *if (neglect_damage_fatigue > neglect_damage_hunger)
+    *set death_cause "exhaustion"
+  *goto_scene death death_screen
+*return
+
+*label ht_header
+[b]◈ HARTWELL[/b]
+*line_break
+*return
+
+*label ht_layers
+*gosub ht_place
+*gosub ht_sky
+*gosub ht_street
+*return
+
+*comment Places return here without repeating the full town description.
+*label ht_return
+*gosub ht_enter
+*gosub ht_header
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  You step back out onto Hartwell's lantern-lit cobbles beneath the quiet eaves.
+*elseif (time_period = "Dusk")
+  You step back out onto the cobbled main street as evening lamps come on along the rise.
+*else
+  You come back out onto Hartwell's busy cobbled street.
+*goto ht_menu
+
+*label ht_menu
+*comment Open-world free time: the sidebar's Wait and Rest work on this page. The stone water conduit beside the central lane gives fresh water at hand.
+*set wait_ok_page page_id
+*set fresh_water_page page_id
+*choice
+  *if (ht_ok_hall)
+    # [b]Hartwell Hall[/b]: @{(met_ht_steward) Steward Harland Kemp's|the town steward's} counters and the Contract Board. [~5 min]
+      *goto_scene hartwell/hartwell/hartwell_hall ht_hall
+  *else
+    # [b]Hartwell Hall[/b] (${ht_hall_closed_reason}).
+      *goto_scene hartwell/hartwell/hartwell_hall ht_hall_closed
+  # [b]The Golden Press[/b]: hot meals, a private room upstairs, and a word with the innkeeper. [~5 min]
+    *goto_scene hartwell/hartwell/golden_press ht_gp
+  *if (ht_ok_market)
+    # [b]Hartwell Market[/b]: canvas-awning bays and the town beam-scale off the street. [~5 min]
+      *goto_scene hartwell/hartwell/hartwell_market ht_market
+  *else
+    # [b]Hartwell Market[/b] (${ht_market_closed_reason}).
+      *goto_scene hartwell/hartwell/hartwell_market ht_market_closed
+  # [b]Tradesmen's Row[/b]: outfitters, the town forge, and craft shopfronts off the street. [~5 min]
+    *goto_scene hartwell/hartwell/hartwell_trades_row ht_trades
+  # [b]Stonehouse Lane[/b]: walled townhouses and noble gates on the rise below the keep. [~5 min]
+    *goto_scene hartwell/hartwell/hartwell_terrace ht_terrace
+  # [b]The roads out of town[/b]: leave Hartwell.
+    *set ow_pos "ht"
+    *goto_scene overworld/overworld ow_here
+  *comment GEN:BEGIN place_steps ht_menu:ht_hall ht_menu:ht_gp ht_menu:ow_here -- generated by tools/gen_city_settlements.js from its registry; edit the registry, not this block
+  *if (ht_ok_hall)
+    # ⇥ [pvgo:ht_menu:ht_hall]
+      *goto_scene hartwell/hartwell/hartwell_hall ht_hall
+  # ⇥ [pvgo:ht_menu:ht_gp]
+    *goto_scene hartwell/hartwell/golden_press ht_gp
+  # ⇥ [pvgo:ht_menu:ow_here]
+    *set ow_pos "ht"
+    *goto_scene overworld/overworld ow_here
+  *comment GEN:END place_steps ht_menu:ht_hall ht_menu:ht_gp ht_menu:ow_here
+
+*comment ── LAYER 1: PLACE ── Fixed geography only. The long description prints once. Nothing here changes with the season or the hour.
+*label ht_place
+*if (ht_first_hub)
+  Hartwell packs tightly behind its modest limestone curtain wall on a gentle rise above the surrounding Vale fields. Just inside the broad cart gate, low arched stone press-houses sit stacked with banded oil casks and wicker olive baskets, sending a warm, earthy scent of crushed olives and lamp oil drifting down the cobbled street.
+
+  Timber-and-stone storehouses, tiled-roof merchant houses, and iron bracket lamps crowd both sides of the climbing lane around a carved stone water conduit at the town's center. Above the clustered gables on the upper crest rises Hartwell Keep, a compact, square-towered stone castle flying House Falwick's banner above the roofs. The air smells of pressed olive oil, horse harness, baking bread, and woodsmoke.
+*else
+  Hartwell climbs behind its modest stone wall from the arched olive press-houses near the cart gate past crowded timber-and-stone storehouses and the central water conduit toward Hartwell Keep on the upper crest.
+*return
+
+*comment ── LAYER 2: SKY ── Weather and light only, followed by the ground's recent-weather state. No people here.
+*label ht_sky
+*temp ht_night_sky false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set ht_night_sky true
+*if (weather = "Rain")
+  Steady rain slicks the grey cobbles, streams from the tiled eaves, and darkens the limestone battlements of Hartwell Keep above the street.
+*elseif (weather = "Storm")
+  Driving rain and hard wind sweep across the rooftops, rattling iron street-lamp brackets and forcing empty handcarts tight under the press-house arches.
+*elseif (weather = "Fog")
+  Thick Vale mist settles inside the town wall, softening the clustered roofs and hiding the upper tower of Hartwell Keep in pale cloud.
+*elseif ((weather = "Snow") or (weather = "Sleet"))
+  Wet snow coats the stone battlements, the tiled gables, and the rim of the central water conduit, turning the cobbles slick underfoot.
+*elseif (weather = "Blizzard")
+  Driven snow pours across the curtain wall and swirls blind between the storehouse fronts, blotting out the keep tower overhead.
+*elseif (weather = "Clear")
+  *if (ht_night_sky)
+    Clear starlight sits over the keep tower, while warm iron street lamps lay bright amber pools along the cobbled rise.
+  *elseif (time_period = "Dusk")
+    The setting sun lays long copper bars across the tiled roofs and limestone wall of Hartwell Keep while bracket lamps flicker to life below.
+  *else
+    Bright open daylight warms the pale limestone wall, the stacked oil casks by the gate, and the banner snapping cleanly atop Hartwell Keep.
+*else
+  *if (ht_night_sky)
+    Low cloud hides the stars above the keep, leaving the bracket lamps along the cobbled street to cast a steady warm glow between the storehouses.
+  *else
+    Flat grey cloud sits over the Vale, muting the pale stonework and keeping the cobbled lane in even daylight.
+
+*if ((ground_state = "sodden") and (not(weather_wet)))
+  Rainwater lingers between the uneven cobbles and runs in thin trickles along the gutter stones.
+*elseif ((ground_state = "wet") and (not(weather_wet)))
+  The cobbles remain damp from recent rain, catching pale reflections beneath the eaves.
+*return
+
+*comment ── LAYER 3: STREET ── Current town activity. Daytime work follows the season; the rotating vignette follows the clock.
+*label ht_street
+*temp ht_vignette (((campaign_day * 24) + clock_hour) modulo 6) + 1
+*temp ht_is_night false
+*if ((time_period = "Night") or (time_period = "Pre-Dawn"))
+  *set ht_is_night true
+*if ((street_life = "empty") and (not(ht_is_night)))
+  The cobbled street stands nearly deserted. Shop shutters are barred, wagons sit wedged beneath the press-house eaves, and only two watchmen huddle inside the shelter of the gate arch.
+  *return
+*if (ht_is_night)
+  *if (ht_vignette = 1)
+    Two watchmen in cloaks walk unhurriedly up the cobbled rise, a shuttered lantern swinging between them as they check storehouse bolts.
+  *elseif (ht_vignette = 2)
+    The low creak of a late-arriving wagon echoes under the cart gate, followed by the soft clink of harness chains settling for the night.
+  *elseif (ht_vignette = 3)
+    Warm light and muted laughter spill briefly from an upper window before a wooden shutter pulls neatly shut.
+  *elseif (ht_vignette = 4)
+    A liveried rider in House Falwick's colors walks a tired gelding slowly up the lane toward the keep gate.
+  *elseif (ht_vignette = 5)
+    The lingering, warm smell of pressed olives drifts down from the banked press-houses beside the quiet water conduit.
+  *else
+    Footsteps ring crisp across the cobbles and fade into a side alley, leaving only the steady drip of the central conduit.
+  *return
+*if (time_period = "Dusk")
+  Press-hands wipe oil from their forearms as they lock the arched timber doors near the gate, carters unhitch tired teams for the evening, and iron lamps brighten along the climbing street.
+  *return
+*if (day_of_week = "Hallowday")
+  The olive presses stand silent behind bolted arches and the storehouse doors remain shut for the rest day. Townsfolk in brushed wool stroll unhurriedly past the central conduit, stopping in small knots to trade news from the surrounding villages.
+  *return
+*if (day_of_week = "Marketday")
+  The street is packed from gate to square. Olive carts from Palmcote, hide wagons from Oxworth, and grain-and-loaf drays from Millstow edge past each other while clerks with ink-stained cuffs shout weigh-bill counts from the storehouse steps.
+  *return
+*if (current_season = "Spring")
+  Fresh whitewash brightens the merchant facades along the lane, and wagons roll steadily out the gate carrying lamp oil and barreled provisions toward the northern roads.
+*elseif (current_season = "Summer")
+  Storehouse doors stay propped wide to air the stone cellars, and townsfolk pause by the central conduit to splash cool water over their wrists in the warm Vale air.
+*elseif (current_season = "Autumn")
+  Wicker baskets heaped with harvested Palmcote olives crowd every yard beside the gate, and the heavy beam presses groan steadily from dawn onward.
+*else
+  Crisp woodsmoke hangs above the tiled roofs, wool-cloaked carters stamp warmth into their heels beside the gate braziers, and oil casks stack high inside the stone storehouses.
+*if (ht_vignette = 1)
+  Two broad-shouldered press-hands roll a newly bunged cask of golden olive oil out of an arched doorway onto a waiting handcart.
+*elseif (ht_vignette = 2)
+  A drover with dust on his shoulders leads a string of pack mules past the water conduit, heading down toward the gate.
+*elseif (ht_vignette = 3)
+  A clerk in a neat dark coat stops beside a grain wagon to inspect a wax-sealed waybill before waving the driver up the street.
+*elseif (ht_vignette = 4)
+  Two guards in House Falwick's livery descend from the keep road, trading a brief nod with the watchmen at the gate arch.
+*elseif (ht_vignette = 5)
+  A baker's boy weaves quickly between two parked drays carrying a wicker tray of warm Millstow barley loaves.
+*else
+  A cooper hammers a fresh iron hoop tight around an oil barrel beside a storehouse door, the sharp rings carrying cleanly up the lane.
+*return

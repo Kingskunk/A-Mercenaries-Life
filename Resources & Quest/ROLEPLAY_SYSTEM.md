@@ -57,6 +57,7 @@ A **character** (`RP_CHARACTERS`) is who the companion is in every scene. A **sc
 | `kind` | `"intimate"` (graded) or `"talk"`. Leaving it out means `"intimate"`, so always set it. |
 | `title`, `subtitle`, `setting` | Console header, and the room right now |
 | `scenePersona`, `sceneKnowledge` | Lines for this scene only, added after the character's (for example, which supper talks she has already told) |
+| `sceneScope` | Talk scenes: where the scene happens and how the game closes it, sent as `SCENE SCOPE` |
 | `undressed` | Overrides the kind's default for what the player wears in the prompt |
 | `starters`, `beats` | One-tap opening actions, and the moments the scene can move through |
 | `reciprocity`, `formatBoon`, `supportsEvaluation` | Grading, for graded kinds only |
@@ -69,6 +70,8 @@ A kind sets the narrator's opening role and its extra rules, the helper's sugges
 
 - `intimate`: a bedroom scene. It sends the hidden profile, has the reciprocity and dislike rules, and is graded afterwards.
 - `talk`: a conversation. There is no profile, no grade, and she deflects sex in character.
+  - The AI decides when a talk is over (2026-11-28). The scene's exit button stays hidden until the AI writes `[ACT_COMPLETE]` or the player types `/end`. On `[ACT_COMPLETE]` the composer is swapped for a "Keep talking" bar (`setSettled`), and the exit shows. A talk scene's `sceneScope` field tells the AI where the scene happens and how the game closes it (the exit label and the closing line), so the closing reply leaves her in place. Write one for every talk scene; the talk rules add it as `SCENE SCOPE`.
+  - A talk scene is offered once a day: each companion has a `*_rp_talk_day` stamp (`lv_`, `vm_`, `if_`).
 
 A new kind is a new key in `SCENE_KINDS` with every one of those fields. `resolveSceneProfile` returns null for any kind without a grader, so the profile is never sent or graded there.
 
